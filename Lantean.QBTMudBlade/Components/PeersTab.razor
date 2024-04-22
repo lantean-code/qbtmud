@@ -1,0 +1,32 @@
+﻿<MudTable T="Peer" Items="Peers" >
+    <HeaderContent>
+        <MudTh>Country/Region</MudTh>
+        <MudTh>IP</MudTh>
+        <MudTh>Port</MudTh>
+        <MudTh>Connection</MudTh>
+        <MudTh>Flags</MudTh>
+        <MudTh>Client</MudTh>
+        <MudTh>Progress</MudTh>
+        <MudTh>Download Speed</MudTh>
+        <MudTh>Upload Speed</MudTh>
+        <MudTh>Downloaded</MudTh>
+        <MudTh>Uploaded</MudTh>
+        <MudTh>Relevance</MudTh>
+        <MudTh>Files</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Country/Region"><MudImage ObjectFit="ObjectFit.Fill" Src="@($"https://flagcdn.com/20x15/{context.CountryCode}.png")"></MudImage></MudTd>
+        <MudTd DataLabel="IP">@context.IPAddress</MudTd>
+        <MudTd DataLabel="Port">@context.Port</MudTd>
+        <MudTd DataLabel="Connection">@context.Connection</MudTd>
+        <MudTd DataLabel="Flags">@context.Flags</MudTd>
+        <MudTd DataLabel="Client">@context.Client</MudTd>
+        <MudTd DataLabel="Progress">@DisplayHelpers.Percentage(context.Progress)</MudTd>
+        <MudTd DataLabel="Download Speed">@DisplayHelpers.Speed(context.DownloadSpeed)</MudTd>
+        <MudTd DataLabel="Upload Speed">@DisplayHelpers.Speed(context.UploadSpeed)</MudTd>
+        <MudTd DataLabel="Downloaded">@DisplayHelpers.Size(context.Downloaded)</MudTd>
+        <MudTd DataLabel="Uploaded">@DisplayHelpers.Size(context.Uploaded)</MudTd>
+        <MudTd DataLabel="Relevance">@DisplayHelpers.Percentage(context.Relevance)</MudTd>
+        <MudTd DataLabel="Files">@context.Files</MudTd>
+    </RowTemplate>
+</MudTable>

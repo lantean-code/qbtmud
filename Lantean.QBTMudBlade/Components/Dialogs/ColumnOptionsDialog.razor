@@ -1,0 +1,20 @@
+﻿@typeparam T
+
+<MudDialog>
+    <DialogContent>
+        <MudCard Class="w-100">
+            <MudList>
+                @foreach (var column in Columns)
+                {
+                    <MudListItem>
+                        <MudCheckBox T="bool" ValueChanged="@(c => SetSelected(c, column.Id))" Label="@column.Header" LabelPosition="LabelPosition.End" Value="@(SelectedColumns.Contains(column.Id))" />
+                    </MudListItem>
+                }
+            </MudList>
+        </MudCard>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>

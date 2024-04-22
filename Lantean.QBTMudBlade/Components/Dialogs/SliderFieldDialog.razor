@@ -1,0 +1,18 @@
+﻿@typeparam T
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudNumericField Label="@Label" Value="@Value" Min="Min" Max="Max"  />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSlider ValueLabel="true" Value="@Value" Min="Min" Max="Max" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>

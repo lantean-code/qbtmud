@@ -1,0 +1,99 @@
+﻿<MudTable T="ContentItem" Hover="true" FixedHeader="true" HeaderClass="table-head-bordered" Breakpoint="Breakpoint.None" Bordered="false" 
+    MultiSelection="true" Dense="true" SelectOnRowClick="false"
+    Items="Files"   
+    SelectedItems="SelectedItems" 
+    SelectedItemsChanged="SelectedItemsChanged"
+    OnRowClick="RowClick"
+    RowStyleFunc="RowStyle"
+    RowClassFunc="RowClass"
+    AllowUnsorted="false">
+    <ToolBarContent>
+        <MudToolBar DisableGutters="true" Dense="true">
+            <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFile" Title="Rename" />
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" Title="Choose Columns" />
+            <MudDivider Vertical="true" />
+            <MudMenu Icon="@Icons.Material.Outlined.FileDownloadOff" Label="Do Not Download" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                <MudMenuItem OnClick="DoNotDownloadLessThan100PercentAvailability" OnTouch="DoNotDownloadLessThan100PercentAvailability">Less Than 100% Availability</MudMenuItem>
+                <MudMenuItem OnClick="DoNotDownloadLessThan80PercentAvailability" OnTouch="DoNotDownloadLessThan80PercentAvailability">Less than 80% Availability</MudMenuItem>
+                <MudMenuItem OnClick="DoNotDownloadCurrentlyFilteredFiles" OnTouch="NormalPriorityCurrentlyFilteredFiles">Currently Filtered Files</MudMenuItem>
+            </MudMenu>
+            <MudMenu Icon="@Icons.Material.Outlined.FileDownload" Label="Normal Priority" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                <MudMenuItem OnClick="NormalPriorityLessThan100PercentAvailability" OnTouch="NormalPriorityLessThan100PercentAvailability">Less Than 100% Availability</MudMenuItem>
+                <MudMenuItem OnClick="NormalPriorityLessThan80PercentAvailability" OnTouch="NormalPriorityLessThan80PercentAvailability">Less than 80% Availability</MudMenuItem>
+                <MudMenuItem OnClick="NormalPriorityCurrentlyFilteredFiles" OnTouch="NormalPriorityCurrentlyFilteredFiles">Currently Filtered Files</MudMenuItem>
+            </MudMenu>
+            <MudIconButton Icon="@Icons.Material.Outlined.FilterList" OnClick="ShowFilterDialog" Title="Filter" />
+            <MudIconButton Icon="@Icons.Material.Outlined.FilterListOff" OnClick="RemoveFilter" Title="Remove Filter" />
+        </MudToolBar>
+        <MudSpacer />
+        <MudTextField T="string" Value="SearchText" ValueChanged="SearchTextChanged" Immediate="true" DebounceInterval="500" Placeholder="Filter file list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <ColGroup>
+        <col style="width: 30px" />
+        @foreach (var column in GetColumns())
+        {
+            var style = column.Width.HasValue ? $"width: {column.Width.Value}px" : null;
+            <col style="@style" />
+        }
+    </ColGroup>
+    <HeaderContent>
+        @foreach (var column in GetColumns())
+        {
+            <MudTh>
+                @if (column.SortSelector is not null)
+                {
+                    <MudTableSortLabel T="Torrent" SortDirectionChanged="@(c => SetSort(column.SortSelector, c))" InitialDirection="column.InitialDirection">@column.Header</MudTableSortLabel>
+                }
+                else
+                {
+                    @column.Header
+                }
+            </MudTh>
+        }
+    </HeaderContent>
+    <RowTemplate>
+        @foreach (var column in GetColumns())
+        {
+            <MudTd DataLabel="@column.Header" Class="@column.Class">
+                @column.RowTemplate(column.GetRowContext(context))
+            </MudTd>
+        }
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private RenderFragment<RowContext<ContentItem>> NameColumn
+    {
+        get
+        {
+            return context => __builder => 
+            {
+                <div style="@($"margin-left: {context.Data.Level * 56}px")">
+                    @if (context.Data.IsFolder)
+                    {
+                        <MudIconButton ButtonType="ButtonType.Button" Icon="@Icons.Material.Filled.ExpandLess" Class="@("pa-0 " + (ExpandedNodes.Contains(context.Data.Name) ? "rotate-180" : "rotate-90"))" OnClick="@(c => ToggleNode(context.Data, c))"></MudIconButton>
+                        <MudIcon Icon="@Icons.Material.Filled.Folder" Class="pt-2" Style="margin-right: 2px" />
+                    }
+                    @context.Data.DisplayName
+                </div>;
+            };
+        }
+    }
+
+    private RenderFragment<RowContext<ContentItem>> PriorityColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                <MudSelect T="Priority" Dense="true" Value="@context.Data.Priority" ValueChanged="@(priority => PriorityValueChanged(context.Data, priority))" Class="mt-0">
+                    <MudSelectItem T="Priority" Value="Priority.DoNotDownload">Do not download</MudSelectItem>
+                    <MudSelectItem T="Priority" Value="Priority.Normal">Normal</MudSelectItem>
+                    <MudSelectItem T="Priority" Value="Priority.High">High</MudSelectItem>
+                    <MudSelectItem T="Priority" Value="Priority.Maximum">Maximum</MudSelectItem>
+                </MudSelect>
+            };
+        }
+    }
+}

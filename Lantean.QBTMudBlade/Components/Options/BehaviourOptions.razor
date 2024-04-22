@@ -1,0 +1,69 @@
+﻿@inherits Options
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Language</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSelect T="string" Label="User Interface Language" Value="@("en-US")">
+                    <MudSelectItem Value="@("en-US")">English</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Log File</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Log file" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Save Path" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(!FileLogEnabled)" />
+            </MudItem>
+            <MudItem xs="3">
+                <MudCheckBox T="bool" Label="Backup the log after" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(!FileLogEnabled)" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudNumericField T="int" Label="KiB" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(!FileLogEnabled)" ShrinkLabel Min="1" />
+            </MudItem>
+            <MudItem xs="3">
+                <MudCheckBox T="bool" Label="Delete backups older than" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(!FileLogEnabled)" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudGrid>
+                    <MudItem xs="9">
+                        <MudNumericField T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(!FileLogEnabled)" ShrinkLabel Min="1" />
+                    </MudItem>
+                    <MudItem xs="3">
+                        <MudSelect T="int" Value="FileLogAgeType" ValueChanged="FileLogAgeTypeChanged" Disabled="@(!FileLogEnabled)" ShrinkLabel>
+                            <MudSelectItem Value="0">days</MudSelectItem>
+                            <MudSelectItem Value="1">months</MudSelectItem>
+                            <MudSelectItem Value="2">years</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Log performance warnings" Value="PerformanceWarning" ValueChanged="PerformanceWarningChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>

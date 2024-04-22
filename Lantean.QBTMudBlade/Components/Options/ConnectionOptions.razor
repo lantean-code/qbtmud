@@ -1,0 +1,72 @@
+﻿@inherits Options
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSelect T="int" Label="Peer connection protocol" Value="BittorrentProtocol" ValueChanged="BittorrentProtocolChanged">
+                    <MudSelectItem T="int" Value="0">TCP and μTP</MudSelectItem>
+                    <MudSelectItem T="int" Value="1">TCP</MudSelectItem>
+                    <MudSelectItem T="int" Value="2">μTP</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Listening Port</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="11">
+                <MudNumericField T="int" Label="Port used for incoming connections" Value="ListenPort" ValueChanged="ListenPortChanged" Min="@MinPortValue" Max="@MaxPortValue" />
+            </MudItem>
+            <MudItem xs="1">
+                <MudButton OnClick="GenerateRandomPort">Random</MudButton>
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Use UPnp / NAT-PMP port forwarding from my router" Value="Upnp" ValueChanged="UpnpChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Connections Limits</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudCheckBox T="bool" Label="Global maximum number of connections" Value="MaxConnecEnabled" ValueChanged="MaxConnecEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudNumericField T="int" Label="Connections" Value="MaxConnec" ValueChanged="MaxConnecChanged" ShrinkLabel Min="1" Disabled="@(!MaxConnecEnabled)" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudCheckBox T="bool" Label="Maximum number of connections per torrent" Value="MaxConnecPerTorrentEnabled" ValueChanged="MaxConnecPerTorrentEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudNumericField T="int" Label="Connections" Value="MaxConnecPerTorrent" ValueChanged="MaxConnecPerTorrentChanged" ShrinkLabel Min="1" Disabled="@(!MaxConnecPerTorrentEnabled)" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudCheckBox T="bool" Label="Global maximum number of upload slots" Value="MaxUploadsEnabled" ValueChanged="MaxUploadsEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudNumericField T="int" Label="Slots" Value="MaxUploads" ValueChanged="MaxUploadsChanged" ShrinkLabel Min="1" Disabled="@(!MaxUploadsEnabled)" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudCheckBox T="bool" Label="Maximum number of upload slots per torrent" Value="MaxUploadsPerTorrentEnabled" ValueChanged="MaxUploadsPerTorrentEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudNumericField T="int" Label="Slots" Value="MaxUploadsPerTorrent" ValueChanged="MaxUploadsPerTorrentChanged" ShrinkLabel Min="1" Disabled="@(!MaxUploadsPerTorrentEnabled)" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>

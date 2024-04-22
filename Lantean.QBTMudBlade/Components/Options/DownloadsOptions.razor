@@ -1,0 +1,287 @@
+﻿@inherits Options
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">When adding a torrent</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSelect T="string" Label="Torrent content layout" Value="TorrentContentLayout" ValueChanged="TorrentContentLayoutChanged" ShrinkLabel>
+                    <MudSelectItem Value="@("Original")">Original</MudSelectItem>
+                    <MudSelectItem Value="@("Subfolder")">Create subfolder</MudSelectItem>
+                    <MudSelectItem Value="@("NoSubfolder")">Don't create subfolder</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Add to top of queue" Value="AddToTopOfQueue" ValueChanged="AddToTopOfQueueChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Do not start the download automatically" Value="StartPausedEnabled" ValueChanged="StartPausedEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="string" Label="Torrent stop condition" Value="TorrentStopCondition" ValueChanged="TorrentStopConditionChanged" ShrinkLabel>
+                    <MudSelectItem Value="@("None")">None</MudSelectItem>
+                    <MudSelectItem Value="@("MetadataReceived")">Metadata received</MudSelectItem>
+                    <MudSelectItem Value="@("FilesChecked")">Files Checked</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Delete .torrent files afterwards" Value="AutoDeleteMode" ValueChanged="AutoDeleteModeChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Pre-allocate disk space for all files" Value="PreallocateAll" ValueChanged="PreallocateAllChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Append .!qB extension to incomplete files" Value="IncompleteFilesExt" ValueChanged="IncompleteFilesExtChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Saving Management</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSelect T="bool" Label="Default Torrent Management Mode" Value="AutoTmmEnabled" ValueChanged="AutoDeleteModeChanged" ShrinkLabel>
+                    <MudSelectItem Value="false">Manual</MudSelectItem>
+                    <MudSelectItem Value="true">Automatic</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="bool" Label="When Torrent Category changed" Value="TorrentChangedTmmEnabled" ValueChanged="TorrentChangedTmmEnabledChanged" ShrinkLabel>
+                    <MudSelectItem Value="true">Relocate torrent</MudSelectItem>
+                    <MudSelectItem Value="false">Switch torrent to Manual Mode</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="bool" Label="When Default Save Path changed" Value="SavePathChangedTmmEnabled" ValueChanged="SavePathChangedTmmEnabledChanged" ShrinkLabel>
+                    <MudSelectItem Value="true">Relocate affected torrents</MudSelectItem>
+                    <MudSelectItem Value="false">Switch affected torrents to Manual Mode</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="bool" Label="When Category Save Path changed" Value="CategoryChangedTmmEnabled" ValueChanged="CategoryChangedTmmEnabledChanged" ShrinkLabel>
+                    <MudSelectItem Value="true">Relocate affected torrents</MudSelectItem>
+                    <MudSelectItem Value="false">Switch affected torrents to Manual Mode</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Use Subcategories" Value="UseSubcategories" ValueChanged="UseSubcategoriesChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Default Save Path" Value="SavePath" ValueChanged="SavePathChanged" ShrinkLabel />
+            </MudItem>
+            <MudItem xs="12">
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudCheckBox T="bool" Label="Keep incomplete torrents in" Value="TempPathEnabled" ValueChanged="TempPathEnabledChanged" LabelPosition="LabelPosition.End" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="9">
+                        <MudTextField T="string" Label="Path" Value="TempPath" ValueChanged="TempPathChanged" ShrinkLabel Disabled="@(!TempPathEnabled)" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            <MudItem xs="12">
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudCheckBox T="bool" Label="Copy .torrent files to" Value="ExportDirEnabled" ValueChanged="ExportDirEnabledChanged" LabelPosition="LabelPosition.End" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="9">
+                        <MudTextField T="string" Label="Path" Value="ExportDir" ValueChanged="ExportDirChanged" ShrinkLabel Disabled="@(!TempPathEnabled)" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            <MudItem xs="12">
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudCheckBox T="bool" Label="Copy .torrent files for finished downloads to" Value="ExportDirFinEnabled" ValueChanged="ExportDirFinEnabledChanged" LabelPosition="LabelPosition.End" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="9">
+                        <MudTextField T="string" Label="Path" Value="ExportDirFin" ValueChanged="ExportDirFinChanged" ShrinkLabel Disabled="@(!TempPathEnabled)" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Automatically add torrents from</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudSimpleTable>
+            <thead>
+                <tr>
+                    <th>Monitored Folder</th>
+                    <th>Override Save Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in ScanDirs)
+                {
+                    <tr>
+                        <td>
+                            <MudTextField T="string" Label="Path" Value="@item.Key" ValueChanged="@(v => ScanDirsKeyChanged(item.Key, v))" />
+                        </td>
+                        <td>
+                            <MudGrid>
+                                <MudItem xs="@(item.Value.SavePath is null ? 12 : 3)">
+                                    <MudSelect T="string" Value="@item.Value.ToString()" ValueChanged="@(v => ScanDirsValueChanged(item.Key, v))">
+                                        <MudSelectItem T="string" Value="@("0")">Monitored folder</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@("1")">Default save location</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@(item.Value.SavePath is not null ? item.Value.SavePath : "")">Other...</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                @if (item.Value.SavePath is not null)
+                                {
+                                    <MudItem xs="9">
+                                        <MudTextField T="string" Label="Path" Value="@item.Value.SavePath" ValueChanged="@(v => ScanDirsValueChanged(item.Key, v))" />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                            
+                        </td>
+                    </tr>
+                }
+                @for (int i = 0; i < AddedScanDirs.Count; i++)
+                {
+                    var item = AddedScanDirs[i];
+                    var index = i;
+                    var isLast = i == AddedScanDirs.Count - 1;
+
+                    <tr>
+                        <td>
+                            <MudTextField T="string" Label="Path" Value="@item.Key" ValueChanged="@(v => AddedScanDirsKeyChanged(index, v))" VaMudListItemdation="IsVaMudListItemdNewKey" />
+                        </td>
+                        <td>
+                            <MudGrid>
+                                <MudItem xs="@(item.Value.SavePath is null ? (isLast ? 11 : 12) : 3)">
+                                    <MudSelect T="string" Value="@item.Value.ToString()" ValueChanged="@(v => AddedScanDirsValueChanged(index, v))">
+                                        <MudSelectItem T="string" Value="@("0")">Monitored folder</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@("1")">Default save location</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@(item.Value.SavePath is not null ? item.Value.SavePath : "")">Other...</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                @if (item.Value.SavePath is not null)
+                                {
+                                    <MudItem xs="@(isLast ? 8 : 9)">
+                                        <MudTextField T="string" Label="Path" Value="@item.Value.SavePath" ValueChanged="@(v => AddedScanDirsValueChanged(index, v))" />
+                                    </MudItem>
+                                }
+                                @if (isLast)
+                                {
+                                    <MudItem xs="1">
+                                        <MudIconButton Icon="@Icons.Material.Outlined.Add" OnCMudListItemck="AddNewScanDir" />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Excluded file names" Value="ExcludedFileNamesEnabled" ValueChanged="ExcludedFileNamesEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Excluded files names" Value="ExcludedFileNames" ValueChanged="ExcludedFileNamesChanged" MudListItemnes="5" ShrinkLabel Disabled="@(!ExcludedFileNamesEnabled)" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Email notification upon download completion" Value="MailNotificationEnabled" ValueChanged="MailNotificationEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="From" Value="MailNotificationSender" ValueChanged="MailNotificationSenderChanged" ShrinkLabel Disabled="@(!MailNotificationEnabled)" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="To" Value="MailNotificationEmail" ValueChanged="MailNotificationEmailChanged" ShrinkLabel Disabled="@(!MailNotificationEnabled)" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="SMTP server" Value="MailNotificationSmtp" ValueChanged="MailNotificationSmtpChanged" ShrinkLabel Disabled="@(!MailNotificationEnabled)" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="This server requires a secure connection (SSL)" Value="MailNotificationSslEnabled" ValueChanged="MailNotificationSslEnabledChanged" LabelPosition="LabelPosition.End" Disabled="@(!MailNotificationEnabled)" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Authentication" Value="MailNotificationAuthEnabled" ValueChanged="MailNotificationAuthEnabledChanged" LabelPosition="LabelPosition.End" Disabled="@(!MailNotificationEnabled)" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Username" Value="MailNotificationUsername" ValueChanged="MailNotificationUsernameChanged" ShrinkLabel Disabled="@(!(MailNotificationEnabled && MailNotificationAuthEnabled))" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Password" Value="MailNotificationPassword" ValueChanged="MailNotificationPasswordChanged" ShrinkLabel Disabled="@(!(MailNotificationEnabled && MailNotificationAuthEnabled))" InputType="InputType.Password" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Run exernal program</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Run external program on torrent added" Value="AutorunOnTorrentAddedEnabled" ValueChanged="AutorunOnTorrentAddedEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="External program" Value="AutorunOnTorrentAddedProgram" ValueChanged="AutorunOnTorrentAddedProgramChanged" ShrinkLabel Disabled="@(!AutorunOnTorrentAddedEnabled)" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Run external program on torrent finished" Value="AutorunEnabled" ValueChanged="AutorunEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="External program" Value="AutorunProgram" ValueChanged="AutorunProgramChanged" ShrinkLabel Disabled="@(!AutorunEnabled)" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudText>Supported parameters (case sensitive):</MudText>
+                <MudList>
+                    <MudListItem>%N: Torrent name</MudListItem>
+                    <MudListItem>%L: Category</MudListItem>
+                    <MudListItem>%G: Tags (separated by comma)</MudListItem>
+                    <MudListItem>%F: Content path (same as root path for multifile torrent)</MudListItem>
+                    <MudListItem>%R: Root path (first torrent subdirectory path)</MudListItem>
+                    <MudListItem>%D: Save path</MudListItem>
+                    <MudListItem>%C: Number of files</MudListItem>
+                    <MudListItem>%Z: Torrent size (bytes)</MudListItem>
+                    <MudListItem>%T: Current tracker</MudListItem>
+                    <MudListItem>%I: Info hash v1</MudListItem>
+                    <MudListItem>%J: Info hash v2</MudListItem>
+                    <MudListItem>%K: Torrent ID</MudListItem>
+                </MudList>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>

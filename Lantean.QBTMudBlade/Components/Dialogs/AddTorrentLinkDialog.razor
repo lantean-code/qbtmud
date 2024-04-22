@@ -1,0 +1,14 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField Label="Urls" Lines="10" @bind-Value="Urls" Variant="Variant.Filled" />
+            </MudItem>
+            <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption />
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Upload Torrents</MudButton>
+    </DialogActions>
+</MudDialog>

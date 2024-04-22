@@ -1,0 +1,39 @@
+﻿# Write glob rules for ignored files.
+# Check syntax on https://deepcode.freshdesk.com/support/solutions/articles/60000531055-how-can-i-ignore-files-or-directories-
+# Check examples on https://github.com/github/gitignore
+
+# Hidden directories and files
+.*
+
+# Common binary directories and files
+[Bb]in/
+[Oo]bj/
+*.exe
+*.dll
+
+# Logs and temporary files
+[Tt]emp/
+*.log
+
+# Build directories
+/build/
+/dist/
+/out/
+
+# Node modules and package directories
+node_modules/
+**/[Pp]ackages/*
+
+# Various cache directories
+*.cache
+/saved/
+/intermediates/
+/generated/
+/coverage/
+/tmp/
+
+# Specific directory exclusions
+/DocProject/Help/html/
+
+# Ignore files from .vs directory
+.vs/

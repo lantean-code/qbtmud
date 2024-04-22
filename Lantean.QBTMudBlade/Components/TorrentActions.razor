@@ -1,0 +1,88 @@
+﻿@if (Type == ParentType.StandaloneToolbar)
+{
+    <MudToolBar Dense="true" DisableGutters="true">
+        @ToolbarContent
+    </MudToolBar>
+}
+else if (Type == ParentType.Toolbar)
+{
+    @ToolbarContent
+}
+else
+{
+    <MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+        @foreach (var option in GetOptions())
+        {
+            <MudMenuItem Icon="@option.Icon" IconColor="option.Color" OnClick="option.Callback" OnTouch="option.Callback">
+                @if (option is Divider)
+                {
+                    <MudDivider />
+                }
+                else if (!option.Children.Any())
+                {
+                    @option.Name
+                }
+                else
+                {
+                    <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                        <ActivatorContent>
+                            <MudMenuItem>@option.Name</MudMenuItem>
+                        </ActivatorContent>
+
+                        <ChildContent>
+                            @foreach (var childItem in option.Children)
+                            {
+                                @ChildItem(childItem)
+                            }
+                        </ChildContent>
+                    </MudMenu>
+                }
+            </MudMenuItem>
+        }
+    </MudMenu>
+}
+
+@code {
+    private RenderFragment ToolbarContent =>
+    @<NonRendering>
+        @foreach (var option in GetOptions())
+        {
+            @if (option is Divider)
+            {
+                <MudDivider Vertical="true" />
+            }
+            else if (!option.Children.Any())
+            {
+                if (option.Icon is null)
+                {
+                    <MudButton Color="option.Color" OnClick="option.Callback">@option.Name</MudButton>
+                }
+                else
+                {
+                    <MudIconButton Title="@option.Name" Icon="@option.Icon" Color="option.Color" OnClick="option.Callback" />
+                }
+            }
+            else
+            {
+                <MudMenu Icon="@option.Icon" IconColor="@option.Color" Label="@option.Name" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                    @foreach (var childItem in option.Children)
+                    {
+                        @ChildItem(childItem)
+                    }
+                </MudMenu>
+            }
+        }
+    </NonRendering>;
+
+    private RenderFragment ChildItem(Action option) =>
+    @<NonRendering>
+        @if (option is Divider)
+        {
+            <MudDivider />
+        }
+        else
+        {
+            <MudMenuItem Icon="@option.Icon" IconColor="option.Color" OnClick="option.Callback" OnTouch="option.Callback">@option.Name</MudMenuItem>
+        }
+    </NonRendering>;
+}

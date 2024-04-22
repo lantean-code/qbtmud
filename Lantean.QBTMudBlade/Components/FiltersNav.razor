@@ -1,0 +1,27 @@
+﻿<MudNavMenu Dense="true">
+    <MudNavGroup Title="Status" @bind-Expanded="_statusExpanded">
+        @foreach (var (status, count) in Statuses)
+        {
+            var (icon, color) = DisplayHelpers.GetStatusIcon(status);
+            <FakeNavLink Active="@(Status == status)" Icon="@icon" IconColor="@color" OnClick="@(v => StatusValueChanged(status))">@($"{status.GetStatusName()} ({count})")</FakeNavLink>
+        }
+    </MudNavGroup>
+    <MudNavGroup Title="Categories" @bind-Expanded="_categoriesExpanded">
+        @foreach (var (category, count) in Categories)
+        {
+            <FakeNavLink Active="@(Category == category)" Icon="@Icons.Material.Filled.List" IconColor="Color.Info" OnClick="@(v => CategoryValueChanged(category))">@($"{category} ({count})")</FakeNavLink>
+        }
+    </MudNavGroup>
+    <MudNavGroup Title="Tags" @bind-Expanded="_tagsExpanded">
+        @foreach (var (tag, count) in Tags)
+        {
+            <FakeNavLink Active="@(Tag == tag)" Icon="@Icons.Material.Filled.Label" IconColor="Color.Info" OnClick="@(v => TagValueChanged(tag))">@($"{tag} ({count})")</FakeNavLink>
+        }
+    </MudNavGroup>
+    <MudNavGroup Title="Trackers" @bind-Expanded="_trackersExpanded">
+        @foreach (var (tracker, count) in Trackers)
+        {
+            <FakeNavLink Active="@(Tracker == tracker)" Icon="@Icons.Material.Filled.PinDrop" IconColor="Color.Info" OnClick="@(v => TrackerValueChanged(tracker))">@($"{GetHostName(tracker)} ({count})")</FakeNavLink>
+        }
+    </MudNavGroup>
+</MudNavMenu>

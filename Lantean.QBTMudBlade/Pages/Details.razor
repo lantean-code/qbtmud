@@ -1,0 +1,36 @@
+﻿@page "/details/{hash}"
+@layout DetailsLayout
+
+<MudToolBar DisableGutters="true" Dense="true">
+    @if (!DrawerOpen)
+    {
+        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" Title="Back to torrent list" />
+        <MudDivider Vertical="true" />
+    }
+    @if (Hash is not null)
+    {
+        <TorrentActions Type="ParentType.Toolbar" Hashes="@([Hash])" />
+    }
+    <MudDivider Vertical="true" />
+    <MudText Class="pl-5">@Name</MudText>
+</MudToolBar>
+
+<CascadingValue Value="RefreshInterval">
+    <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" KeepPanelsAlive="true" Border="true">
+        <MudTabPanel Text="General">
+            <GeneralTab Hash="@Hash" Active="@(ActiveTab == 0)" />
+        </MudTabPanel>
+        <MudTabPanel Text="Trackers">
+            <TrackersTab Hash="@Hash" Active="@(ActiveTab == 1)" />
+        </MudTabPanel>
+        <MudTabPanel Text="Peers">
+            <PeersTab Hash="@Hash" Active="@(ActiveTab == 2)" />
+        </MudTabPanel>
+        <MudTabPanel Text="HTTP Sources">
+            <WebSeedsTab Hash="@Hash" Active="@(ActiveTab == 3)" />
+        </MudTabPanel>
+        <MudTabPanel Text="Content">
+            <FilesTab Hash="@Hash" Active="@(ActiveTab == 4)" />
+        </MudTabPanel>
+    </MudTabs>
+</CascadingValue>

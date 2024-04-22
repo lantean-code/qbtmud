@@ -1,0 +1,15 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudText>Are you sure you want to remove the selected torrents from the transfer list?</MudText>
+
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox Label="Also permanently delete the files" @bind-Value="DeleteFiles" LabelPosition="LabelPosition.End" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Remove</MudButton>
+    </DialogActions>
+</MudDialog>

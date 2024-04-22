@@ -1,0 +1,10 @@
+﻿<div @onclick="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnClickHandler)"
+     class="@LinkClassname">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <MudIcon Icon="@Icon" Color="@IconColor" Class="@IconClassname" />
+    }
+    <div Class="mud-nav-link-text">
+        @ChildContent
+    </div>
+</div>

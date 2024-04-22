@@ -1,0 +1,18 @@
+﻿<MudNavMenu>
+    <MudNavLink Icon="@(Icons.Material.Outlined.NavigateBefore)" OnClick="NavigateBack">Back</MudNavLink>
+    <MudDivider />
+    @if (Torrents is null)
+    {
+        @for (var i = 0; i < 10; i++)
+        {
+            <MudSkeleton Animation="Animation.Pulse" Width="100%" Height="25px" />
+        }
+    }
+    else
+    {
+        foreach (var torrent in Torrents)
+        {
+            <MudNavLink Href="@("/details/" + torrent.Hash)">@torrent.Name</MudNavLink>
+        }
+    }
+</MudNavMenu>

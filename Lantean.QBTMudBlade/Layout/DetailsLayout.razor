@@ -1,0 +1,9 @@
+﻿@inherits LayoutComponentBase
+@layout LoggedInLayout
+
+<MudDrawer Open="DrawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" DisableOverlay="true">
+    <TorrentsListNav Torrents="Torrents" SelectedTorrent="@SelectedTorrent" />
+</MudDrawer>
+<MudMainContent>
+    @Body
+</MudMainContent>
