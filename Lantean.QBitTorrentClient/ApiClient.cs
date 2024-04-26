@@ -126,6 +126,24 @@ namespace Lantean.QBitTorrentClient
             return await response.Content.ReadAsStringAsync();
         }
 
+        public async Task<IReadOnlyList<NetworkInterface>> GetNetworkInterfaces()
+        {
+            var response = await _httpClient.GetAsync("app/networkInterfaceList");
+
+            response.EnsureSuccessStatusCode();
+
+            return await GetJsonList<NetworkInterface>(response.Content);
+        }
+
+        public async Task<IReadOnlyList<string>> GetNetworkInterfaceAddressList(string @interface)
+        {
+            var response = await _httpClient.GetAsync($"app/networkInterfaceAddressList?iface={@interface}");
+
+            response.EnsureSuccessStatusCode();
+
+            return await GetJsonList<string>(response.Content);
+        }
+
         #endregion Application
 
         #region Log
@@ -913,6 +931,11 @@ namespace Lantean.QBitTorrentClient
             var response = await _httpClient.PostAsync("torrents/renameFolder", content);
 
             response.EnsureSuccessStatusCode();
+        }
+
+        public Task<string> GetExportUrl(string hash)
+        {
+            return Task.FromResult($"{_httpClient.BaseAddress}torrents/export?hash={hash}");
         }
 
         #endregion Torrent management

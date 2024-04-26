@@ -37,6 +37,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("anonymous_mode")]
         public bool? AnonymousMode { get; set; }
 
+        [JsonPropertyName("app_instance_name")]
+        public string? AppInstanceName { get; set; }
+
         [JsonPropertyName("async_io_threads")]
         public int? AsyncIoThreads { get; set; }
 
@@ -102,6 +105,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("dht")]
         public bool? Dht { get; set; }
+
+        [JsonPropertyName("dht_bootstrap_nodes")]
+        public string? DhtBootstrapNodes { get; set; }
 
         [JsonPropertyName("disk_cache")]
         public int? DiskCache { get; set; }
@@ -286,6 +292,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("mail_notification_username")]
         public string? MailNotificationUsername { get; set; }
 
+        [JsonPropertyName("mark_of_the_web")]
+        public bool? MarkOfTheWeb { get; set; }
+
         [JsonPropertyName("max_active_checking_torrents")]
         public int? MaxActiveCheckingTorrents { get; set; }
 
@@ -400,6 +409,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("proxy_username")]
         public string? ProxyUsername { get; set; }
 
+        [JsonPropertyName("python_executable_path")]
+        public string? PythonExecutablePath { get; set; }
+
         [JsonPropertyName("queueing_enabled")]
         public bool? QueueingEnabled { get; set; }
 
@@ -429,6 +441,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("rss_download_repack_proper_episodes")]
         public bool? RssDownloadRepackProperEpisodes { get; set; }
+
+        [JsonPropertyName("rss_fetch_delay")]
+        public long? RssFetchDelay { get; set; }
 
         [JsonPropertyName("rss_max_articles_per_feed")]
         public int? RssMaxArticlesPerFeed { get; set; }
@@ -609,5 +624,8 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("web_ui_username")]
         public string? WebUiUsername { get; set; }
+
+        [JsonPropertyName("web_ui_password")]
+        public string? WebUiPassword { get; set; }
     }
 }

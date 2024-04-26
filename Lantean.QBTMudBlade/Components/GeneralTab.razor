@@ -1,97 +1,99 @@
-﻿<div class="pl-6 pt-6"><MudText Typo="Typo.h6">Transfer</MudText></div>
-<MudGrid Class="pl-6 pr-6 pb-6">
-    <MudItem xs="4">
-        <MudField Label="Time Active">@DisplayHelpers.Duration(Properties?.TimeElapsed)</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="ETA">@DisplayHelpers.Duration(Properties?.EstimatedTimeOfArrival)</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Connections">@DisplayHelpers.Duration(Properties?.Connections) @DisplayHelpers.EmptyIfNull(Properties?.ConnectionsLimit, "(", " max)")</MudField>
-    </MudItem>
+﻿<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
+    <MudText Typo="Typo.subtitle2" Class="pt-6">Transfer</MudText>
+    <MudGrid>
+        <MudItem xs="4">
+            <MudField Label="Time Active">@DisplayHelpers.Duration(Properties?.TimeElapsed)</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="ETA">@DisplayHelpers.Duration(Properties?.EstimatedTimeOfArrival)</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Connections">@DisplayHelpers.Duration(Properties?.Connections) @DisplayHelpers.EmptyIfNull(Properties?.ConnectionsLimit, "(", " max)")</MudField>
+        </MudItem>
 
-    <MudItem xs="4">
-        <MudField Label="Downloaded">@DisplayHelpers.Size(Properties?.TotalDownloaded) @DisplayHelpers.Size(Properties?.TotalDownloadedSession, "(", " this session)")</MudField>
-    </MudItem>
-    <MudItem xs="4">
-            <MudField Label="Uploaded">@DisplayHelpers.Size(Properties?.TotalUploaded) @DisplayHelpers.Size(Properties?.TotalUploaded, "(", " this session)")</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Seeds">@DisplayHelpers.Size(Properties?.Seeds) @DisplayHelpers.EmptyIfNull(Properties?.Seeds, "(", " total)")</MudField>
-    </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Downloaded">@DisplayHelpers.Size(Properties?.TotalDownloaded) @DisplayHelpers.Size(Properties?.TotalDownloadedSession, "(", " this session)")</MudField>
+        </MudItem>
+        <MudItem xs="4">
+                <MudField Label="Uploaded">@DisplayHelpers.Size(Properties?.TotalUploaded) @DisplayHelpers.Size(Properties?.TotalUploaded, "(", " this session)")</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Seeds">@DisplayHelpers.Size(Properties?.Seeds) @DisplayHelpers.EmptyIfNull(Properties?.Seeds, "(", " total)")</MudField>
+        </MudItem>
 
-    <MudItem xs="4">
-        <MudField Label="Download Speed">@DisplayHelpers.Speed(Properties?.DownloadSpeed) @DisplayHelpers.Speed(Properties?.DownloadSpeedAverage, "(", " avg.)")</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Upload Speed">@DisplayHelpers.Speed(Properties?.UploadSpeed) @DisplayHelpers.Speed(Properties?.UploadSpeedAverage, "(", " avg.)")</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Peers">@DisplayHelpers.Size(Properties?.Peers) @DisplayHelpers.EmptyIfNull(Properties?.Peers, "(", " total)")</MudField>
-    </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Download Speed">@DisplayHelpers.Speed(Properties?.DownloadSpeed) @DisplayHelpers.Speed(Properties?.DownloadSpeedAverage, "(", " avg.)")</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Upload Speed">@DisplayHelpers.Speed(Properties?.UploadSpeed) @DisplayHelpers.Speed(Properties?.UploadSpeedAverage, "(", " avg.)")</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Peers">@DisplayHelpers.Size(Properties?.Peers) @DisplayHelpers.EmptyIfNull(Properties?.Peers, "(", " total)")</MudField>
+        </MudItem>
 
-    <MudItem xs="4">
-        <MudField Label="Download Limit">@DisplayHelpers.Speed(Properties?.DownloadLimit)</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Upload Limit">@DisplayHelpers.Speed(Properties?.UploadLimit)</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Wasted">@DisplayHelpers.Size(Properties?.TotalWasted)</MudField>
-    </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Download Limit">@DisplayHelpers.Speed(Properties?.DownloadLimit)</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Upload Limit">@DisplayHelpers.Speed(Properties?.UploadLimit)</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Wasted">@DisplayHelpers.Size(Properties?.TotalWasted)</MudField>
+        </MudItem>
 
-    <MudItem xs="4">
-        <MudField Label="Share Ratio">@Properties?.ShareRatio.ToString("0.00")</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Reannounce In">@DisplayHelpers.Duration(Properties?.Reannounce)</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Last Seen Complete">@DisplayHelpers.DateTime(Properties?.LastSeen, "Never")</MudField>
-    </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Share Ratio">@Properties?.ShareRatio.ToString("0.00")</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Reannounce In">@DisplayHelpers.Duration(Properties?.Reannounce)</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Last Seen Complete">@DisplayHelpers.DateTime(Properties?.LastSeen, "Never")</MudField>
+        </MudItem>
 
-</MudGrid>
+    </MudGrid>
 
-<div class="pl-6 pt-6"><MudText Typo="Typo.h6">Information</MudText></div>
-<MudGrid Class="pl-6 pr-6 pb-6">
-    <MudItem xs="4">
-        <MudField Label="Total Size">@DisplayHelpers.Size(Properties?.TotalSize)</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Pieces">
-            @if (Properties is not null)
-            {
-                <text>@Properties.PiecesNum x @DisplayHelpers.Size(Properties.PieceSize) (have @Properties.PiecesHave)</text>
-            }
-        </MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Created By">@Properties?.CreatedBy</MudField>
-    </MudItem>
+    <MudText Typo="Typo.subtitle1" Class="pt-6">Information</MudText>
+    <MudGrid>
+        <MudItem xs="4">
+            <MudField Label="Total Size">@DisplayHelpers.Size(Properties?.TotalSize)</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Pieces">
+                @if (Properties is not null)
+                {
+                    <text>@Properties.PiecesNum x @DisplayHelpers.Size(Properties.PieceSize) (have @Properties.PiecesHave)</text>
+                }
+            </MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Created By">@Properties?.CreatedBy</MudField>
+        </MudItem>
 
-    <MudItem xs="4">
-        <MudField Label="Added On">@DisplayHelpers.DateTime(Properties?.AdditionDate)</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Completed On">@DisplayHelpers.DateTime(Properties?.CompletionDate)</MudField>
-    </MudItem>
-    <MudItem xs="4">
-        <MudField Label="Created On">@DisplayHelpers.DateTime(Properties?.CreationDate)</MudField>
-    </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Added On">@DisplayHelpers.DateTime(Properties?.AdditionDate)</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Completed On">@DisplayHelpers.DateTime(Properties?.CompletionDate)</MudField>
+        </MudItem>
+        <MudItem xs="4">
+            <MudField Label="Created On">@DisplayHelpers.DateTime(Properties?.CreationDate)</MudField>
+        </MudItem>
 
-    <MudItem xs="12">
-        <MudField Label="Info Hash v1">@Properties?.InfoHashV1</MudField>
-    </MudItem>
+        <MudItem xs="12">
+            <MudField Label="Info Hash v1">@Properties?.InfoHashV1</MudField>
+        </MudItem>
 
-    <MudItem xs="12">
-        <MudField Label="Info Hash v2">@Properties?.InfoHashV2</MudField>
-    </MudItem>
+        <MudItem xs="12">
+            <MudField Label="Info Hash v2">@Properties?.InfoHashV2</MudField>
+        </MudItem>
 
-    <MudItem xs="12">
-        <MudField Label="Save Path">@Properties?.SavePath</MudField>
-    </MudItem>
+        <MudItem xs="12">
+            <MudField Label="Save Path">@Properties?.SavePath</MudField>
+        </MudItem>
 
-    <MudItem xs="12">
-        <MudField Label="Commenet">@Properties?.Comment</MudField>
-    </MudItem>
-</MudGrid>
+        <MudItem xs="12">
+            <MudField Label="Comment">@Properties?.Comment</MudField>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

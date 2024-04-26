@@ -6,11 +6,17 @@ namespace Lantean.QBTMudBlade.Components.Options
     public abstract class Options : ComponentBase
     {
         private bool _preferencesRead;
-        protected UpdatePreferences UpdatePreferences { get; set; } = new UpdatePreferences();
+
+        protected const int MinPortValue = 1024;
+        protected const int MaxPortValue = 65535;
 
         [Parameter]
         [EditorRequired]
         public Preferences? Preferences { get; set; }
+
+        [Parameter]
+        [EditorRequired]
+        public UpdatePreferences UpdatePreferences { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -25,6 +31,8 @@ namespace Lantean.QBTMudBlade.Components.Options
 
         protected override void OnParametersSet()
         {
+            UpdatePreferences ??= new UpdatePreferences();
+
             if (_preferencesRead)
             {
                 return;

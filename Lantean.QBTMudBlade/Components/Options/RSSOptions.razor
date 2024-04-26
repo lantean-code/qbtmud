@@ -3,12 +3,56 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.h6"></MudText>
+            <MudText Typo="Typo.subtitle2">RSS Reader</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
-            
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Enable fetching RSS feeds" Value="RssProcessingEnabled" ValueChanged="RssProcessingEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Feeds refresh interval" Value="RssRefreshInterval" ValueChanged="RssRefreshIntervalChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">min</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Maximum number of articles per feed" Value="RssMaxArticlesPerFeed" ValueChanged="RssMaxArticlesPerFeedChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">RSS Torrent Auto Downloader</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Enable auto downloading of RSS torrents" Value="RssAutoDownloadingEnabled" ValueChanged="RssAutoDownloadingEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton OnClick="OpenRssRulesDialog" Variant="Variant.Filled">Edit auto downloading rules</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">RSS Smart Episode Filter</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Download REPACK/PROPER episodes" Value="RssDownloadRepackProperEpisodes" ValueChanged="RssDownloadRepackProperEpisodesChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Filters" Value="RssSmartEpisodeFilters" ValueChanged="RssSmartEpisodeFiltersChanged" Lines="5" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
         </MudGrid>
     </MudCardContent>
 </MudCard>

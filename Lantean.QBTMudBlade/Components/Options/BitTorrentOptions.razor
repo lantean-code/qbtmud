@@ -3,12 +3,133 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.h6"></MudText>
+            <MudText Typo="Typo.subtitle2">Privacy</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
-            
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Enable DHT (decentralized network) to find more peers" Value="Dht" ValueChanged="DhtChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Enable Peer Exchange (PeX) to find more peers" Value="Pex" ValueChanged="PexChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Enable Local Peer Discovery to find more peers" Value="Lsd" ValueChanged="LsdChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="int" Label="Encryption mode" Value="Encryption" ValueChanged="EncryptionChanged" ShrinkLabel Variant="Variant.Outlined">
+                    <MudSelectItem Value="0">Allow encryption</MudSelectItem>
+                    <MudSelectItem Value="1">Require encryption</MudSelectItem>
+                    <MudSelectItem Value="2">Disable encryption</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Enable anonymous mode" Value="AnonymousMode" ValueChanged="AnonymousModeChanged" LabelPosition="LabelPosition.End" />
+                <MudLink Href="https://github.com/qbittorrent/qBittorrent/wiki/Anonymous-Mode" Underline="Underline.Always" Target="https://github.com/qbittorrent/qBittorrent/wiki/Anonymous-Mode">More information</MudLink>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Max active checking torrents" Value="MaxActiveCheckingTorrents" ValueChanged="MaxActiveCheckingTorrentsChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">Torrent Queueing</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Queueing enabled" Value="QueueingEnabled" ValueChanged="QueueingEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Maximum active downloads" Value="MaxActiveDownloads" ValueChanged="MaxActiveDownloadsChanged" Min="0" Disabled="@(!QueueingEnabled)" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Maximum active uploads" Value="MaxActiveUploads" ValueChanged="MaxActiveUploadsChanged" Min="0" Disabled="@(!QueueingEnabled)" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Maximum active torrents" Value="MaxActiveTorrents" ValueChanged="MaxActiveTorrentsChanged" Min="0" Disabled="@(!QueueingEnabled)" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Do not count slow torrents in these limits" Value="DontCountSlowTorrents" ValueChanged="DontCountSlowTorrentsChanged" LabelPosition="LabelPosition.End" Disabled="@(!QueueingEnabled)" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Download rate threshold" Value="SlowTorrentDlRateThreshold" ValueChanged="SlowTorrentDlRateThresholdChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB/s</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Upload rate threshold" Value="SlowTorrentUlRateThreshold" ValueChanged="SlowTorrentUlRateThresholdChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB/s</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Torrent inactivity timer" Value="SlowTorrentInactiveTimer" ValueChanged="SlowTorrentInactiveTimerChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">seconds</MudText>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">Seeding Limits</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="3">
+                <MudCheckBox T="bool" Label="When ratio reaches" Value="MaxRatioEnabled" ValueChanged="MaxRatioEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudNumericField T="int" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(!MaxRatioEnabled)" Min="1" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="3">
+                <MudCheckBox T="bool" Label="When total seeding time reaches" Value="MaxSeedingTimeEnabled" ValueChanged="MaxSeedingTimeEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudNumericField T="int" Label="minutes" Value="MaxSeedingTime" ValueChanged="MaxSeedingTimeChanged" Disabled="@(!MaxSeedingTimeEnabled)" Min="1" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="3">
+                <MudCheckBox T="bool" Label="When inactive seeding time reaches" Value="MaxInactiveSeedingTimeEnabled" ValueChanged="MaxInactiveSeedingTimeEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudNumericField T="int" Label="minutes" Value="MaxInactiveSeedingTime" ValueChanged="MaxInactiveSeedingTimeChanged" Disabled="@(!MaxInactiveSeedingTimeEnabled)" Min="1" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="int" Value="MaxRatioAct" ValueChanged="MaxRatioActChanged" Disabled="@(!MaxRatioEnabled && !MaxSeedingTimeEnabled && !MaxInactiveSeedingTimeEnabled)" ShrinkLabel Variant="Variant.Outlined">
+                    <MudSelectItem Value="0">Stop torrent</MudSelectItem>
+                    <MudSelectItem Value="1">Remove torrent</MudSelectItem>
+                    <MudSelectItem Value="2">Remove torrent and its files</MudSelectItem>
+                    <MudSelectItem Value="3">Enable super seeding for torrent</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">Seeding Limits</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Automatically add these trackers to new downloads" Value="AddTrackersEnabled" ValueChanged="AddTrackersEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Trackers" Value="AddTrackers" ValueChanged="AddTrackersChanged" Lines="5" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
         </MudGrid>
     </MudCardContent>
 </MudCard>

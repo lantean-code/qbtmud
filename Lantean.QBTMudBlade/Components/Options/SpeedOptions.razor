@@ -3,12 +3,85 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.h6"></MudText>
+            <MudText Typo="Typo.subtitle2">Global Rate Limits</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
-            
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Upload" Value="UpLimit" ValueChanged="UpLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB/s</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Download" Value="DlLimit" ValueChanged="DlLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB/s</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudText Typo="Typo.body2">0 means unlimited</MudText>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">Alternative Rate Limits</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Upload" Value="AltUpLimit" ValueChanged="AltUpLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB/s</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="Download" Value="AltDlLimit" ValueChanged="AltDlLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB/s</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudText Typo="Typo.caption">0 means unlimited</MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Schedule the use of alternative rate limits" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTimePicker Label="From" Editable="true" Time="ScheduleFrom" TimeChanged="ScheduleFromChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTimePicker Label="To" Editable="true" Time="ScheduleTo" TimeChanged="ScheduleToChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="int" Value="SchedulerDays" ValueChanged="SchedulerDaysChanged" Disabled="@(!SchedulerEnabled)" ShrinkLabel Variant="Variant.Outlined">
+                    <MudSelectItem Value="0">Every day</MudSelectItem>
+                    <MudSelectItem Value="1">Weekdays</MudSelectItem>
+                    <MudSelectItem Value="2">Weekends</MudSelectItem>
+                    <MudSelectItem Value="3">Monday</MudSelectItem>
+                    <MudSelectItem Value="4">Tuesday</MudSelectItem>
+                    <MudSelectItem Value="5">Wednesday</MudSelectItem>
+                    <MudSelectItem Value="6">Thursday</MudSelectItem>
+                    <MudSelectItem Value="7">Friday</MudSelectItem>
+                    <MudSelectItem Value="8">Saturday</MudSelectItem>
+                    <MudSelectItem Value="9">Sunday</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">Rate Limits Settings</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Apply rate limit to µTP protocol" Value="LimitUtpRate" ValueChanged="LimitUtpRateChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Apply rate limit to transport overhead" Value="LimitTcpOverhead" ValueChanged="LimitTcpOverheadChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudCheckBox T="bool" Label="Apply rate limit to peers on LAN" Value="LimitLanPeers" ValueChanged="LimitLanPeersChanged" LabelPosition="LabelPosition.End" />
+            </MudItem>
         </MudGrid>
     </MudCardContent>
 </MudCard>

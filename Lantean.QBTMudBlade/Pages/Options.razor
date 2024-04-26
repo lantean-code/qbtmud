@@ -26,30 +26,30 @@
         <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(LostConnection || UpdatePreferences is null)" />
     </MudToolBar>
 
-    <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" KeepPanelsAlive="true" Border="true">
+    <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true">
         <MudTabPanel Text="Behaviour">
-            <BehaviourOptions @ref="BehaviourOptions" Preferences="Preferences" PreferencesChanged="PreferencesChanged" />
+            <BehaviourOptions @ref="BehaviourOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
         </MudTabPanel>
         <MudTabPanel Text="Downloads">
-            <DownloadsOptions @ref="DownloadsOptions" Preferences="Preferences" PreferencesChanged="PreferencesChanged" />
+            <DownloadsOptions @ref="DownloadsOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
         </MudTabPanel>
         <MudTabPanel Text="Connection">
-            <ConnectionOptions @ref="ConnectionOptions" Preferences="Preferences" PreferencesChanged="PreferencesChanged" />
+            <ConnectionOptions @ref="ConnectionOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
         </MudTabPanel>
         <MudTabPanel Text="Speed">
-            <SpeedOptions @ref="SpeedOptions" Preferences="Preferences" PreferencesChanged="PreferencesChanged" />
+            <SpeedOptions @ref="SpeedOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
         </MudTabPanel>
         <MudTabPanel Text="BitTorrent">
-            <BitTorrentOptions @ref="BitTorrentOptions" Preferences="Preferences" PreferencesChanged="PreferencesChanged" />
+            <BitTorrentOptions @ref="BitTorrentOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
         </MudTabPanel>
         <MudTabPanel Text="RSS">
-            <RSSOptions @ref="RSSOptions" Preferences="Preferences" PreferencesChanged="PreferencesChanged" />
+            <RSSOptions @ref="RSSOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
         </MudTabPanel>
         <MudTabPanel Text="Web UI">
-            <WebUIOptions @ref="WebUIOptions" Preferences="Preferences" PreferencesChanged="PreferencesChanged" />
+            <WebUIOptions @ref="WebUIOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
         </MudTabPanel>
         <MudTabPanel Text="Advanced">
-            <AdvancedOptions @ref="AdvancedOptions" Preferences="Preferences" PreferencesChanged="PreferencesChanged" />
+            <AdvancedOptions @ref="AdvancedOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
         </MudTabPanel>
     </MudTabs>
 </MudMainContent>

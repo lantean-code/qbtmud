@@ -19,6 +19,8 @@ namespace Lantean.QBTMudBlade.Components.Options
         protected string? I2pAddress { get; private set; }
         protected int I2pPort { get; private set; }
         protected bool I2pMixedMode { get; private set; }
+        protected bool ProxyDisabled { get; private set; }
+        protected bool ProxySocks4 { get; private set; }
         protected string? ProxyType { get; private set; }
         protected string? ProxyIp { get; private set; }
         protected int ProxyPort { get; private set; }
@@ -215,6 +217,8 @@ namespace Lantean.QBTMudBlade.Components.Options
         {
             ProxyType = value;
             UpdatePreferences.ProxyType = value;
+            ProxyDisabled = value == "None";
+            ProxySocks4 = value == "SOCKS4";
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
@@ -316,15 +320,17 @@ namespace Lantean.QBTMudBlade.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected const int MinPortValue = 1024;
-        protected const int MaxPortValue = 65535;
-
         protected async Task GenerateRandomPort()
         {
             var random = new Random();
             var port = random.Next(MinPortValue, MaxPortValue);
 
             await ListenPortChanged(port);
+        }
+
+        protected async Task UseSystemPort()
+        {
+            await ListenPortChanged(0);
         }
     }
 }

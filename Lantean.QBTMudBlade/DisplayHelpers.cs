@@ -260,7 +260,7 @@ namespace Lantean.QBTMudBlade
 
             var dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(value.Value);
 
-            return dateTimeOffset.ToLocalTime().ToString();
+            return dateTimeOffset.ToLocalTime().DateTime.ToString();
         }
 
         /// <summary>

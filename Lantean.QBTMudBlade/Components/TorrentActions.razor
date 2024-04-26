@@ -64,7 +64,7 @@ else
             }
             else
             {
-                <MudMenu Icon="@option.Icon" IconColor="@option.Color" Label="@option.Name" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                <MudMenu Icon="@option.Icon" IconColor="@option.Color" Class="icon-menu" Label="@option.Name" title="@option.Name" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
                     @foreach (var childItem in option.Children)
                     {
                         @ChildItem(childItem)

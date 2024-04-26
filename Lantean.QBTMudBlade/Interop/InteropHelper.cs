@@ -8,5 +8,10 @@ namespace Lantean.QBTMudBlade.Interop
         {
             return await runtime.InvokeAsync<BoundingClientRect?>("qbt.getBoundingClientRect", id);
         }
+
+        public static async Task FileDownload(this IJSRuntime runtime, string url, string? filename = null)
+        {
+            await runtime.InvokeVoidAsync("qbt.triggerFileDownload", url, filename);
+        }
     }
 }

@@ -260,10 +260,12 @@ namespace Lantean.QBTMudBlade.Components.Options
             UpdatePreferences.ScanDirs = ScanDirs;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
 
+#pragma warning disable S2583 // Conditionally executed code should be reachable
             if (AddedScanDirs.Count == 0)
             {
                 AddDefaultScanDir();
             }
+#pragma warning restore S2583 // Conditionally executed code should be reachable
         }
 
         protected void AddedScanDirsValueChanged(int index, string value)

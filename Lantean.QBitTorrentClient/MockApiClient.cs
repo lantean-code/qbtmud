@@ -76,6 +76,11 @@ namespace Lantean.QBitTorrentClient
             return _apiClient.EditTracker(hash, originalUrl, newUrl);
         }
 
+        public Task<string> GetExportUrl(string hash)
+        {
+            return _apiClient.GetExportUrl(hash);
+        }
+
         public Task<IReadOnlyDictionary<string, Category>> GetAllCategories()
         {
             return _apiClient.GetAllCategories();
@@ -114,6 +119,16 @@ namespace Lantean.QBitTorrentClient
         public Task<string> GetDefaultSavePath()
         {
             return _apiClient.GetDefaultSavePath();
+        }
+
+        public Task<IReadOnlyList<NetworkInterface>> GetNetworkInterfaces()
+        {
+            return _apiClient.GetNetworkInterfaces();
+        }
+
+        public Task<IReadOnlyList<string>> GetNetworkInterfaceAddressList(string @interface)
+        {
+            return _apiClient.GetNetworkInterfaceAddressList(@interface);
         }
 
         public Task<long> GetGlobalDownloadLimit()

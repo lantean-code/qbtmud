@@ -1,7 +1,9 @@
 ﻿using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Interop;
 using Lantean.QBTMudBlade.Models;
 using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components
@@ -25,6 +27,9 @@ namespace Lantean.QBTMudBlade.Components
 
         [Inject]
         public IClipboardService ClipboardService { get; set; } = default!;
+
+        [Inject]
+        public IJSRuntime JSRuntime { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -155,7 +160,7 @@ namespace Lantean.QBTMudBlade.Components
         protected async Task ToggleSuperSeeding()
         {
             var torrents = GetTorrents();
-            
+
             await ApiClient.SetSuperSeeding(false, null, torrents.Where(t => t.SuperSeeding).Select(t => t.Hash).ToArray());
             await ApiClient.SetSuperSeeding(true, null, torrents.Where(t => !t.SuperSeeding).Select(t => t.Hash).ToArray());
         }
@@ -195,9 +200,19 @@ namespace Lantean.QBTMudBlade.Components
             await ClipboardService.WriteToClipboard(value);
         }
 
+        protected async Task Copy(Func<Torrent, object?> selector)
+        {
+            await Copy(string.Join(Environment.NewLine, GetTorrents().Select(selector)));
+        }
+
         protected async Task Export()
         {
-            await Task.Delay(5);
+            foreach (var torrent in GetTorrents())
+            {
+                var url = await ApiClient.GetExportUrl(torrent.Hash);
+                await JSRuntime.FileDownload(url, $"{torrent.Name}.torrent");
+                await Task.Delay(200);
+            }
         }
 
         private IEnumerable<Torrent> GetTorrents()
@@ -265,11 +280,11 @@ namespace Lantean.QBTMudBlade.Components
                 }),
                 new Action("Copy", Icons.Material.Filled.FolderCopy, Color.Info, new List<Action>
                 {
-                    new Action("Name", Icons.Material.Filled.TextFields, Color.Info, EventCallback.Factory.Create(this, () => Copy(firstTorrent.Name))),
-                    new Action("Info hash v1", Icons.Material.Filled.Tag, Color.Info, EventCallback.Factory.Create(this, () => Copy(firstTorrent.InfoHashV1))),
-                    new Action("Info hash v2", Icons.Material.Filled.Tag, Color.Info, EventCallback.Factory.Create(this, () => Copy(firstTorrent.InfoHashV2))),
-                    new Action("Magnet link", Icons.Material.Filled.TextFields, Color.Info, EventCallback.Factory.Create(this, () => Copy(firstTorrent.MagnetUri))),
-                    new Action("Torrent ID", Icons.Material.Filled.TextFields, Color.Info, EventCallback.Factory.Create(this, () => Copy(firstTorrent.Hash))),
+                    new Action("Name", Icons.Material.Filled.TextFields, Color.Info, EventCallback.Factory.Create(this, () => Copy(t => t.Name))),
+                    new Action("Info hash v1", Icons.Material.Filled.Tag, Color.Info, EventCallback.Factory.Create(this, () => Copy(t => t.InfoHashV1))),
+                    new Action("Info hash v2", Icons.Material.Filled.Tag, Color.Info, EventCallback.Factory.Create(this, () => Copy(t => t.InfoHashV2))),
+                    new Action("Magnet link", Icons.Material.Filled.TextFields, Color.Info, EventCallback.Factory.Create(this, () => Copy(t => t.MagnetUri))),
+                    new Action("Torrent ID", Icons.Material.Filled.TextFields, Color.Info, EventCallback.Factory.Create(this, () => Copy(t => t.Hash))),
                 }),
                 new Action("Export", Icons.Material.Filled.SaveAlt, Color.Info, EventCallback.Factory.Create(this, Export)),
             };

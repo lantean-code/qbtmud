@@ -30,6 +30,10 @@ namespace Lantean.QBitTorrentClient
 
         Task<string> GetDefaultSavePath();
 
+        Task<IReadOnlyList<NetworkInterface>> GetNetworkInterfaces();
+
+        Task<IReadOnlyList<string>> GetNetworkInterfaceAddressList(string @interface);
+
         #endregion Application
 
         #region Log
@@ -161,6 +165,8 @@ namespace Lantean.QBitTorrentClient
         Task RenameFile(string hash, string oldPath, string newPath);
 
         Task RenameFolder(string hash, string oldPath, string newPath);
+
+        Task<string> GetExportUrl(string hash);
 
         #endregion Torrent management
 

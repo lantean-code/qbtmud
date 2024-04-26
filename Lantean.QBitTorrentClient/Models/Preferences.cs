@@ -17,6 +17,7 @@ namespace Lantean.QBitTorrentClient.Models
             bool announceToAllTiers,
             bool announceToAllTrackers,
             bool anonymousMode,
+            string appInstanceName,
             int asyncIoThreads,
             int autoDeleteMode,
             bool autoTmmEnabled,
@@ -39,6 +40,7 @@ namespace Lantean.QBitTorrentClient.Models
             string currentInterfaceName,
             string currentNetworkInterface,
             bool dht,
+            string dhtBootstrapNodes,
             int diskCache,
             int diskCacheTtl,
             int diskIoReadMode,
@@ -100,6 +102,7 @@ namespace Lantean.QBitTorrentClient.Models
             string mailNotificationSmtp,
             bool mailNotificationSslEnabled,
             string mailNotificationUsername,
+            bool markOfTheWeb,
             int maxActiveCheckingTorrents,
             int maxActiveDownloads,
             int maxActiveTorrents,
@@ -138,6 +141,7 @@ namespace Lantean.QBitTorrentClient.Models
             bool proxyRss,
             string proxyType,
             string proxyUsername,
+            string pythonExecutablePath,
             bool queueingEnabled,
             bool randomPort,
             bool reannounceWhenAddressChanged,
@@ -147,6 +151,7 @@ namespace Lantean.QBitTorrentClient.Models
             bool resolvePeerCountries,
             string resumeDataStorageType,
             bool rssAutoDownloadingEnabled,
+            long rssFetchDelay,
             bool rssDownloadRepackProperEpisodes,
             int rssMaxArticlesPerFeed,
             bool rssProcessingEnabled,
@@ -207,7 +212,8 @@ namespace Lantean.QBitTorrentClient.Models
             int webUiSessionTimeout,
             bool webUiUpnp,
             bool webUiUseCustomHttpHeadersEnabled,
-            string webUiUsername
+            string webUiUsername,
+            string webUiPassword
         )
         {
             AddToTopOfQueue = addToTopOfQueue;
@@ -221,6 +227,7 @@ namespace Lantean.QBitTorrentClient.Models
             AnnounceToAllTiers = announceToAllTiers;
             AnnounceToAllTrackers = announceToAllTrackers;
             AnonymousMode = anonymousMode;
+            AppInstanceName = appInstanceName;
             AsyncIoThreads = asyncIoThreads;
             AutoDeleteMode = autoDeleteMode;
             AutoTmmEnabled = autoTmmEnabled;
@@ -243,6 +250,7 @@ namespace Lantean.QBitTorrentClient.Models
             CurrentInterfaceName = currentInterfaceName;
             CurrentNetworkInterface = currentNetworkInterface;
             Dht = dht;
+            DhtBootstrapNodes = dhtBootstrapNodes;
             DiskCache = diskCache;
             DiskCacheTtl = diskCacheTtl;
             DiskIoReadMode = diskIoReadMode;
@@ -304,6 +312,7 @@ namespace Lantean.QBitTorrentClient.Models
             MailNotificationSmtp = mailNotificationSmtp;
             MailNotificationSslEnabled = mailNotificationSslEnabled;
             MailNotificationUsername = mailNotificationUsername;
+            MarkOfTheWeb = markOfTheWeb;
             MaxActiveCheckingTorrents = maxActiveCheckingTorrents;
             MaxActiveDownloads = maxActiveDownloads;
             MaxActiveTorrents = maxActiveTorrents;
@@ -342,6 +351,7 @@ namespace Lantean.QBitTorrentClient.Models
             ProxyRss = proxyRss;
             ProxyType = proxyType;
             ProxyUsername = proxyUsername;
+            PythonExecutablePath = pythonExecutablePath;
             QueueingEnabled = queueingEnabled;
             RandomPort = randomPort;
             ReannounceWhenAddressChanged = reannounceWhenAddressChanged;
@@ -352,6 +362,7 @@ namespace Lantean.QBitTorrentClient.Models
             ResumeDataStorageType = resumeDataStorageType;
             RssAutoDownloadingEnabled = rssAutoDownloadingEnabled;
             RssDownloadRepackProperEpisodes = rssDownloadRepackProperEpisodes;
+            RssFetchDelay = rssFetchDelay;
             RssMaxArticlesPerFeed = rssMaxArticlesPerFeed;
             RssProcessingEnabled = rssProcessingEnabled;
             RssRefreshInterval = rssRefreshInterval;
@@ -412,6 +423,7 @@ namespace Lantean.QBitTorrentClient.Models
             WebUiUpnp = webUiUpnp;
             WebUiUseCustomHttpHeadersEnabled = webUiUseCustomHttpHeadersEnabled;
             WebUiUsername = webUiUsername;
+            WebUiPassword = webUiPassword;
         }
 
         [JsonPropertyName("add_to_top_of_queue")]
@@ -446,6 +458,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("anonymous_mode")]
         public bool AnonymousMode { get; }
+
+        [JsonPropertyName("app_instance_name")]
+        public string AppInstanceName { get; }
 
         [JsonPropertyName("async_io_threads")]
         public int AsyncIoThreads { get; }
@@ -512,6 +527,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("dht")]
         public bool Dht { get; }
+
+        [JsonPropertyName("dht_bootstrap_nodes")]
+        public string DhtBootstrapNodes { get; }
 
         [JsonPropertyName("disk_cache")]
         public int DiskCache { get; }
@@ -696,6 +714,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("mail_notification_username")]
         public string MailNotificationUsername { get; }
 
+        [JsonPropertyName("mark_of_the_web")]
+        public bool MarkOfTheWeb { get; }
+
         [JsonPropertyName("max_active_checking_torrents")]
         public int MaxActiveCheckingTorrents { get; }
 
@@ -810,6 +831,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("proxy_username")]
         public string ProxyUsername { get; }
 
+        [JsonPropertyName("python_executable_path")]
+        public string PythonExecutablePath { get; }
+
         [JsonPropertyName("queueing_enabled")]
         public bool QueueingEnabled { get; }
 
@@ -839,6 +863,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("rss_download_repack_proper_episodes")]
         public bool RssDownloadRepackProperEpisodes { get; }
+
+        [JsonPropertyName("rss_fetch_delay")]
+        public long RssFetchDelay { get; }
 
         [JsonPropertyName("rss_max_articles_per_feed")]
         public int RssMaxArticlesPerFeed { get; }
@@ -1019,5 +1046,8 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("web_ui_username")]
         public string WebUiUsername { get; }
+
+        [JsonPropertyName("web_ui_password")]
+        public string WebUiPassword { get; }
     }
 }
