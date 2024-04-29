@@ -1,3 +1,3 @@
-﻿<MudField Variant="Variant.Outlined" InnerPadding="false" Label="@Label">
-    <MudSwitch T="bool" Value="@Value" ValueChanged="ValueChangedCallback" ThumbIcon="@(Value ? Icons.Material.Filled.Done : Icons.Material.Filled.Close)" ThumbIconColor="@(Value ? Color.Success : Color.Error)" Class="pt-1 pb-1" />
+﻿<MudField Variant="Variant.Outlined" InnerPadding="false" Label="@Label" HelperText="@HelperText">
+    <MudTickSwitch T="bool" Value="@Value" ValueChanged="ValueChangedCallback" Class="pt-1 pb-1" Disabled="Disabled" Validation="Validation" />
 </MudField>

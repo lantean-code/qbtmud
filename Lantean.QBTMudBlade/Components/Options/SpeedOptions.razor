@@ -9,13 +9,10 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Upload" Value="UpLimit" ValueChanged="UpLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB/s</MudText>
+                <MudNumericField T="int" Label="Upload" Value="UpLimit" ValueChanged="UpLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="UpLimitValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Download" Value="DlLimit" ValueChanged="DlLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB/s</MudText>
-            </MudItem>
-            <MudItem xs="12">
-                <MudText Typo="Typo.body2">0 means unlimited</MudText>
+                <MudNumericField T="int" Label="Download" Value="DlLimit" ValueChanged="DlLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="DlLimitValidation" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -30,16 +27,13 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Upload" Value="AltUpLimit" ValueChanged="AltUpLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB/s</MudText>
+                <MudNumericField T="int" Label="Upload" Value="AltUpLimit" ValueChanged="AltUpLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltUpLimitValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Download" Value="AltDlLimit" ValueChanged="AltDlLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB/s</MudText>
+                <MudNumericField T="int" Label="Download" Value="AltDlLimit" ValueChanged="AltDlLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltDlLimitValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudText Typo="Typo.caption">0 means unlimited</MudText>
-            </MudItem>
-            <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Schedule the use of alternative rate limits" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Schedule the use of alternative rate limits" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" />
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudTimePicker Label="From" Editable="true" Time="ScheduleFrom" TimeChanged="ScheduleFromChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" />
@@ -74,13 +68,13 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Apply rate limit to µTP protocol" Value="LimitUtpRate" ValueChanged="LimitUtpRateChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Apply rate limit to µTP protocol" Value="LimitUtpRate" ValueChanged="LimitUtpRateChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Apply rate limit to transport overhead" Value="LimitTcpOverhead" ValueChanged="LimitTcpOverheadChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Apply rate limit to transport overhead" Value="LimitTcpOverhead" ValueChanged="LimitTcpOverheadChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Apply rate limit to peers on LAN" Value="LimitLanPeers" ValueChanged="LimitLanPeersChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Apply rate limit to peers on LAN" Value="LimitLanPeers" ValueChanged="LimitLanPeersChanged" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

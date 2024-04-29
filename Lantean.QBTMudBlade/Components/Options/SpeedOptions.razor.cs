@@ -15,6 +15,46 @@
         protected TimeSpan ScheduleTo { get; private set; }
         protected int SchedulerDays { get; private set; }
 
+        protected Func<int, string?> UpLimitValidation = value =>
+        {
+            if (value < 0)
+            {
+                return "Global upload rate limit must be greater than 0 or disabled.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> DlLimitValidation = value =>
+        {
+            if (value < 0)
+            {
+                return "Global download rate limit must be greater than 0 or disabled.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> AltUpLimitValidation = value =>
+        {
+            if (value < 0)
+            {
+                return "Alternative upload rate limit must be greater than 0 or disabled.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> AltDlLimitValidation = value =>
+        {
+            if (value < 0)
+            {
+                return "Alternative download rate limit must be greater than 0 or disabled.";
+            }
+
+            return null;
+        };
+
         protected override bool SetOptions()
         {
             if (Preferences is null)

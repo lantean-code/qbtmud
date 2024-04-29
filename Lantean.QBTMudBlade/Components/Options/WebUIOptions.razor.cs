@@ -35,6 +35,87 @@
         protected string? DyndnsUsername { get; private set; }
         protected string? DyndnsPassword { get; private set; }
 
+        protected Func<int, string?> WebUiPortValidation = value =>
+        {
+            if (value < 1 || value > MaxPortValue)
+            {
+                return "The port used for the Web UI must be between 1 and 65535.";
+            }
+
+            return null;
+        };
+
+        protected Func<string?, string?> WebUiHttpsCertPathValidation => WebUiHttpsCertPathValidationFunc;
+
+        protected Func<string?, string?> WebUiHttpsKeyPathValidation => WebUiHttpsKeyPathValidationFunc;
+
+        protected Func<string?, string?> WebUiUsernameValidation = value =>
+        {
+            if (value is null || value.Length < 3)
+            {
+                return "The Web UI username must be at least 3 characters long.";
+            }
+
+            return null;
+        };
+
+        protected Func<string?, string?> WebUiPasswordValidation = value =>
+        {
+            if (value is null || value.Length < 6)
+            {
+                return "The Web UI password must be at least 6 characters long.";
+            }
+
+            return null;
+        };
+
+        protected Func<string?, string?> AlternativeWebuiPathValidation => AlternativeWebuiPathValidationFunc;
+
+        protected string? WebUiHttpsCertPathValidationFunc(string? value)
+        {
+            if (!UseHttps)
+            {
+                return null;
+            }
+
+            if (value is not null && value.Length > 0)
+            {
+                return null;
+            }
+
+            return "HTTPS certificate should not be empty.";
+        }
+
+        protected string? WebUiHttpsKeyPathValidationFunc(string? value)
+        {
+            if (!UseHttps)
+            {
+                return null;
+            }
+
+            if (value is not null && value.Length > 0)
+            {
+                return null;
+            }
+
+            return "HTTPS key should not be empty.";
+        }
+
+        protected string? AlternativeWebuiPathValidationFunc(string? value)
+        {
+            if (!AlternativeWebuiEnabled)
+            {
+                return null;
+            }
+
+            if (value is not null && value.Length > 0)
+            {
+                return null;
+            }
+
+            return "The alternative Web UI files location cannot be blank.";
+        }
+
         protected override bool SetOptions()
         {
             if (Preferences is null)

@@ -12,10 +12,10 @@
                 <MudTextField T="string" Label="Host" Value="WebUiAddress" ValueChanged="WebUiAddressChanged" ShrinkLabel Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12" md="4">
-                <MudNumericField T="int" Label="Port" Value="WebUiPort" ValueChanged="WebUiPortChanged" Min="@Options.MinPortValue" Max="@Options.MaxPortValue" ShrinkLabel Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Port" Value="WebUiPort" ValueChanged="WebUiPortChanged" Min="1" Max="@Options.MaxPortValue" ShrinkLabel Variant="Variant.Outlined" Validation="WebUiPortValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Use UPnP / NAT-PMP to forward the port from my router" Value="WebUiUpnp" ValueChanged="WebUiUpnpChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Use UPnP / NAT-PMP to forward the port from my router" Value="WebUiUpnp" ValueChanged="WebUiUpnpChanged" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -30,13 +30,13 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Use HTTPS instead of HTTP" Value="UseHttps" ValueChanged="UseHttpsChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Use HTTPS instead of HTTP" Value="UseHttps" ValueChanged="UseHttpsChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Certificate" Value="WebUiHttpsCertPath" ValueChanged="WebUiHttpsCertPathChanged" Disabled="@(!UseHttps)" ShrinkLabel Variant="Variant.Outlined" />
+                <MudTextField T="string" Label="Certificate" Value="WebUiHttpsCertPath" ValueChanged="WebUiHttpsCertPathChanged" Disabled="@(!UseHttps)" ShrinkLabel Variant="Variant.Outlined" Validation="WebUiHttpsCertPathValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Key" Value="WebUiHttpsKeyPath" ValueChanged="WebUiHttpsKeyPathChanged" Disabled="@(!UseHttps)" ShrinkLabel Variant="Variant.Outlined" />
+                <MudTextField T="string" Label="Key" Value="WebUiHttpsKeyPath" ValueChanged="WebUiHttpsKeyPathChanged" Disabled="@(!UseHttps)" ShrinkLabel Variant="Variant.Outlined" Validation="WebUiHttpsKeyPathValidation" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -51,16 +51,16 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Username" Value="WebUiUsername" ValueChanged="WebUiUsernameChanged" ShrinkLabel Variant="Variant.Outlined" />
+                <MudTextField T="string" Label="Username" Value="WebUiUsername" ValueChanged="WebUiUsernameChanged" ShrinkLabel Variant="Variant.Outlined" Validation="WebUiUsernameValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Password" Value="WebUiPassword" ValueChanged="WebUiPasswordChanged" InputType="InputType.Password" ShrinkLabel Variant="Variant.Outlined" />
+                <MudTextField T="string" Label="Password" Value="WebUiPassword" ValueChanged="WebUiPasswordChanged" InputType="InputType.Password" ShrinkLabel Variant="Variant.Outlined" Validation="WebUiPasswordValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Bypass authentication for clients on localhost" Value="BypassLocalAuth" ValueChanged="BypassLocalAuthChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Bypass authentication for clients on localhost" Value="BypassLocalAuth" ValueChanged="BypassLocalAuthChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Bypass authentication for clients in whitelisted IP subnets" Value="BypassAuthSubnetWhitelistEnabled" ValueChanged="BypassAuthSubnetWhitelistEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Bypass authentication for clients in whitelisted IP subnets" Value="BypassAuthSubnetWhitelistEnabled" ValueChanged="BypassAuthSubnetWhitelistEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="Trackers" Value="BypassAuthSubnetWhitelist" ValueChanged="BypassAuthSubnetWhitelistChanged" Lines="5" Disabled="@(!BypassAuthSubnetWhitelistEnabled)" ShrinkLabel Variant="Variant.Outlined" />
@@ -69,10 +69,10 @@
                 <MudNumericField T="int" Label="Ban client after consecutive failures" Value="WebUiMaxAuthFailCount" ValueChanged="WebUiMaxAuthFailCountChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="ban for" Value="WebUiBanDuration" ValueChanged="WebUiBanDurationChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">seconds</MudText>
+                <MudNumericField T="int" Label="ban for" Value="WebUiBanDuration" ValueChanged="WebUiBanDurationChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="seconds" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Session timeout" Value="WebUiSessionTimeout" ValueChanged="WebUiSessionTimeoutChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">seconds</MudText>
+                <MudNumericField T="int" Label="Session timeout" Value="WebUiSessionTimeout" ValueChanged="WebUiSessionTimeoutChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="seconds" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -87,10 +87,10 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Use alternative Web UI" Value="AlternativeWebuiEnabled" ValueChanged="AlternativeWebuiEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Use alternative Web UI" Value="AlternativeWebuiEnabled" ValueChanged="AlternativeWebuiEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Files location" Value="AlternativeWebuiPath" ValueChanged="AlternativeWebuiPathChanged" ShrinkLabel Variant="Variant.Outlined" />
+                <MudTextField T="string" Label="Files location" Value="AlternativeWebuiPath" ValueChanged="AlternativeWebuiPathChanged" ShrinkLabel Variant="Variant.Outlined" Validation="AlternativeWebuiPathValidation" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -105,16 +105,16 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable clickjacking protection" Value="WebUiClickjackingProtectionEnabled" ValueChanged="WebUiClickjackingProtectionEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable clickjacking protection" Value="WebUiClickjackingProtectionEnabled" ValueChanged="WebUiClickjackingProtectionEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable Cross-Site Request Forgery (CSRF) protection" Value="WebUiCsrfProtectionEnabled" ValueChanged="WebUiCsrfProtectionEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable Cross-Site Request Forgery (CSRF) protection" Value="WebUiCsrfProtectionEnabled" ValueChanged="WebUiCsrfProtectionEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable cookie Secure flag (requires HTTPS)" Value="WebUiSecureCookieEnabled" ValueChanged="WebUiSecureCookieEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable cookie Secure flag (requires HTTPS)" Value="WebUiSecureCookieEnabled" ValueChanged="WebUiSecureCookieEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable Host header validation" Value="WebUiHostHeaderValidationEnabled" ValueChanged="WebUiHostHeaderValidationEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable Host header validation" Value="WebUiHostHeaderValidationEnabled" ValueChanged="WebUiHostHeaderValidationEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="Server domains" Value="WebUiDomainList" ValueChanged="WebUiDomainListChanged" Lines="5" Disabled="@(!WebUiHostHeaderValidationEnabled)" ShrinkLabel Variant="Variant.Outlined" />
@@ -132,16 +132,16 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable clickjacking protection" Value="WebUiClickjackingProtectionEnabled" ValueChanged="WebUiClickjackingProtectionEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable clickjacking protection" Value="WebUiClickjackingProtectionEnabled" ValueChanged="WebUiClickjackingProtectionEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable Cross-Site Request Forgery (CSRF) protection" Value="WebUiCsrfProtectionEnabled" ValueChanged="WebUiCsrfProtectionEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable Cross-Site Request Forgery (CSRF) protection" Value="WebUiCsrfProtectionEnabled" ValueChanged="WebUiCsrfProtectionEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable cookie Secure flag (requires HTTPS)" Value="WebUiSecureCookieEnabled" ValueChanged="WebUiSecureCookieEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable cookie Secure flag (requires HTTPS)" Value="WebUiSecureCookieEnabled" ValueChanged="WebUiSecureCookieEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable Host header validation" Value="WebUiHostHeaderValidationEnabled" ValueChanged="WebUiHostHeaderValidationEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable Host header validation" Value="WebUiHostHeaderValidationEnabled" ValueChanged="WebUiHostHeaderValidationEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="Server domains" Value="WebUiDomainList" ValueChanged="WebUiDomainListChanged" Lines="5" Disabled="@(!WebUiHostHeaderValidationEnabled)" ShrinkLabel Variant="Variant.Outlined" />
@@ -159,7 +159,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Add custom HTTP headers" Value="WebUiUseCustomHttpHeadersEnabled" ValueChanged="WebUiUseCustomHttpHeadersEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Add custom HTTP headers" Value="WebUiUseCustomHttpHeadersEnabled" ValueChanged="WebUiUseCustomHttpHeadersEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="Server domains" Value="WebUiCustomHttpHeaders" ValueChanged="WebUiCustomHttpHeadersChanged" Lines="5" Disabled="@(!WebUiUseCustomHttpHeadersEnabled)" ShrinkLabel Variant="Variant.Outlined" />
@@ -177,7 +177,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable reverse proxy support" Value="WebUiReverseProxyEnabled" ValueChanged="WebUiReverseProxyEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable reverse proxy support" Value="WebUiReverseProxyEnabled" ValueChanged="WebUiReverseProxyEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="Trusted proxies list" Value="WebUiReverseProxiesList" ValueChanged="WebUiReverseProxiesListChanged" Lines="5" Disabled="@(!WebUiReverseProxyEnabled)" ShrinkLabel Variant="Variant.Outlined" />
@@ -195,7 +195,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Update my dynamic domain name" Value="DyndnsEnabled" ValueChanged="DyndnsEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Update my dynamic domain name" Value="DyndnsEnabled" ValueChanged="DyndnsEnabledChanged" />
             </MudItem>
             <MudItem xs="8">
                 <MudSelect T="int" Value="DyndnsService" ValueChanged="DyndnsServiceChanged" Disabled="@(!DyndnsEnabled)" ShrinkLabel Variant="Variant.Outlined">

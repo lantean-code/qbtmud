@@ -26,24 +26,24 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudSwitch T="bool" Label="Log file" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Log file" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="Save Path" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(!FileLogEnabled)" ShrinkLabel Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="3">
-                <MudSwitch T="bool" Label="Backup the log after" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(!FileLogEnabled)" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Backup the log after" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(!FileLogEnabled)" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Label="KiB" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(!FileLogEnabled)" Min="1" ShrinkLabel Variant="Variant.Outlined" HelperText="KiB" />
+                <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="1024000" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
             </MudItem>
             <MudItem xs="3">
-                <MudSwitch T="bool" Label="Delete backups older than" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(!FileLogEnabled)" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Delete backups older than" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(!FileLogEnabled)" />
             </MudItem>
             <MudItem xs="9">
                 <MudGrid>
                     <MudItem xs="9">
-                        <MudNumericField T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(!FileLogEnabled)" Min="1" ShrinkLabel Variant="Variant.Outlined" />
+                        <MudNumericField T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="365" ShrinkLabel Variant="Variant.Outlined" />
                     </MudItem>
                     <MudItem xs="3">
                         <MudSelect T="int" Value="FileLogAgeType" ValueChanged="FileLogAgeTypeChanged" Disabled="@(!FileLogEnabled)" ShrinkLabel Variant="Variant.Outlined">

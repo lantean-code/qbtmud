@@ -37,6 +37,46 @@ namespace Lantean.QBTMudBlade.Components.Options
         protected bool IpFilterTrackers { get; private set; }
         protected string? BannedIPs { get; private set; }
 
+        protected Func<int, string?> MaxConnectValidation = value =>
+        {
+            if (value < 0)
+            {
+                return "Maximum number of connections limit must be greater than 0 or disabled.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> MaxConnecPerTorrentValidation = value =>
+        {
+            if (value < 0)
+            {
+                return "Maximum number of connections per torrent limit must be greater than 0 or disabled.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> MaxUploadsValidation = value =>
+        {
+            if (value < 0)
+            {
+                return "Global number of upload slots limit must be greater than 0 or disabled.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> MaxUploadsPerTorrentValidation = value =>
+        {
+            if (value < 0)
+            {
+                return "Maximum number of upload slots per torrent limit must be greater than 0 or disabled.";
+            }
+
+            return null;
+        };
+
         protected override bool SetOptions()
         {
             if (Preferences is null)
@@ -326,11 +366,6 @@ namespace Lantean.QBTMudBlade.Components.Options
             var port = random.Next(MinPortValue, MaxPortValue);
 
             await ListenPortChanged(port);
-        }
-
-        protected async Task UseSystemPort()
-        {
-            await ListenPortChanged(0);
         }
     }
 }

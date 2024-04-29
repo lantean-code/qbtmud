@@ -26,6 +26,96 @@
         protected bool AddTrackersEnabled { get; private set; }
         protected string? AddTrackers { get; private set; }
 
+        protected Func<int, string?> MaxActiveDownloadsValidation = value =>
+        {
+            if (value < -1)
+            {
+                return "Maximum active downloads must be greater than -1.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> MaxActiveUploadsValidation = value =>
+        {
+            if (value < -1)
+            {
+                return "Maximum active uploads must be greater than -1.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> MaxActiveTorrentsValidation = value =>
+        {
+            if (value < -1)
+            {
+                return "Maximum active torrents must be greater than -1.";
+            }
+
+            return null;
+        };
+        
+        protected Func<int, string?> SlowTorrentDlRateThresholdValidation = value =>
+        {
+            if (value < 1)
+            {
+                return "Download rate threshold must be greater than 0.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> SlowTorrentUlRateThresholdValidation = value =>
+        {
+            if (value < 1)
+            {
+                return "Upload rate threshold must be greater than 0.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> SlowTorrentInactiveTimerValidation = value =>
+        {
+            if (value < 1)
+            {
+                return "Torrent inactivity timer must be greater than 0.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> MaxRatioValidation = value =>
+        {
+            if (value < 0 || value > 9998)
+            {
+                return "Share ratio limit must be between 0 and 9998.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> MaxSeedingTimeValidation = value =>
+        {
+            if (value < 0 || value > 525600)
+            {
+                return "Seeding time limit must be between 0 and 525600 minutes.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> MaxInactiveSeedingTimeValidation = value =>
+        {
+            if (value < 0 || value > 525600)
+            {
+                return "Seeding time limit must be between 0 and 525600 minutes.";
+            }
+
+            return null;
+        };
+
         protected override bool SetOptions()
         {
             if (Preferences is null)

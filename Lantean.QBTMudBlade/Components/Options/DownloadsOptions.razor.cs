@@ -279,6 +279,18 @@ namespace Lantean.QBTMudBlade.Components.Options
             AddDefaultScanDir();
         }
 
+        protected void RemoveAddedScanDir(int index)
+        {
+            AddedScanDirs.RemoveAt(index);
+        }
+
+        protected async Task RemoveExistingScanDir(string key)
+        {
+            ScanDirs.Remove(key);
+            UpdatePreferences.ScanDirs = ScanDirs;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
         protected async Task ExcludedFileNamesEnabledChanged(bool value)
         {
             ExcludedFileNamesEnabled = value;

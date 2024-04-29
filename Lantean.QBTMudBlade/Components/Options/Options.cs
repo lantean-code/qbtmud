@@ -8,6 +8,7 @@ namespace Lantean.QBTMudBlade.Components.Options
         private bool _preferencesRead;
 
         protected const int MinPortValue = 1024;
+        protected const int MinNonNegativePortValue = 0;
         protected const int MaxPortValue = 65535;
 
         [Parameter]
@@ -21,6 +22,26 @@ namespace Lantean.QBTMudBlade.Components.Options
         [Parameter]
         [EditorRequired]
         public EventCallback<UpdatePreferences> PreferencesChanged { get; set; }
+
+        protected Func<int, string?> PortNonNegativeValidation = (int port) =>
+        {
+            if (port < MinNonNegativePortValue || port > MaxPortValue)
+            {
+                return $"The port used for incoming connections must be between {MinNonNegativePortValue} and {MaxPortValue}.";
+            }
+
+            return null;
+        };
+
+        protected Func<int, string?> PortValidation = (int port) =>
+        {
+            if (port < MinPortValue || port > MaxPortValue)
+            {
+                return $"The port used for incoming connections must be between {MinPortValue} and {MaxPortValue}.";
+            }
+
+            return null;
+        };
 
         public async Task ResetAsync()
         {

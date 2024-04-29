@@ -15,7 +15,7 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Physical memory (RAM) usage limit (applied if libtorrent &gt;= 2.0)" Value="MemoryWorkingSetLimit" ValueChanged="MemoryWorkingSetLimitChanged" Min="0" title="This option is less effective on Linux" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">MiB</MudText>
+                <MudNumericField T="int" Label="Physical memory (RAM) usage limit (applied if libtorrent &gt;= 2.0)" Value="MemoryWorkingSetLimit" ValueChanged="MemoryWorkingSetLimitChanged" Min="0" HelperText="This option is less effective on Linux" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">MiB</MudText>
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="string" Label="Network interface" Value="CurrentNetworkInterface" ValueChanged="CurrentNetworkInterfaceChanged" ShrinkLabel Variant="Variant.Outlined">
@@ -38,31 +38,31 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Save resume data interval" Value="SaveResumeDataInterval" ValueChanged="SaveResumeDataIntervalChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">min</MudText>
+                <MudNumericField T="int" Label="Save resume data interval" Value="SaveResumeDataInterval" ValueChanged="SaveResumeDataIntervalChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="min" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label=".torrent file size limit" Value="TorrentFileSizeLimit" ValueChanged="TorrentFileSizeLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">MiB</MudText>
+                <MudNumericField T="int" Label=".torrent file size limit" Value="TorrentFileSizeLimit" ValueChanged="TorrentFileSizeLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Recheck torrents on completion" Value="RecheckCompletedTorrents" ValueChanged="RecheckCompletedTorrentsChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Recheck torrents on completion" Value="RecheckCompletedTorrents" ValueChanged="RecheckCompletedTorrentsChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Refresh interval" Value="RefreshInterval" ValueChanged="RefreshIntervalChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">ms</MudText>
+                <MudNumericField T="int" Label="Refresh interval" Value="RefreshInterval" ValueChanged="RefreshIntervalChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="ms" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Resolve peer countries" Value="ResolvePeerCountries" ValueChanged="ResolvePeerCountriesChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Resolve peer countries" Value="ResolvePeerCountries" ValueChanged="ResolvePeerCountriesChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Reannounce to all trackers when IP or port changed" Value="ReannounceWhenAddressChanged" ValueChanged="ReannounceWhenAddressChangedChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Reannounce to all trackers when IP or port changed" Value="ReannounceWhenAddressChanged" ValueChanged="ReannounceWhenAddressChangedChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable embedded tracker" Value="EnableEmbeddedTracker" ValueChanged="EnableEmbeddedTrackerChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable embedded tracker" Value="EnableEmbeddedTracker" ValueChanged="EnableEmbeddedTrackerChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="Embedded tracker port" Value="EmbeddedTrackerPort" ValueChanged="EmbeddedTrackerPortChanged" Min="@Options.MinPortValue" Max="@Options.MaxPortValue" ShrinkLabel Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Enable port forwarding for embedded tracker" Value="EmbeddedTrackerPortForwarding" ValueChanged="EmbeddedTrackerPortForwardingChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Enable port forwarding for embedded tracker" Value="EmbeddedTrackerPortForwarding" ValueChanged="EmbeddedTrackerPortForwardingChanged" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -92,16 +92,16 @@
                 <MudNumericField T="int" Label="File pool size" Value="FilePoolSize" ValueChanged="FilePoolSizeChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Outstanding memory when checking torrents" Value="CheckingMemoryUse" ValueChanged="CheckingMemoryUseChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">MiB</MudText>
+                <MudNumericField T="int" Label="Outstanding memory when checking torrents" Value="CheckingMemoryUse" ValueChanged="CheckingMemoryUseChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Disk cache (requires libtorrent &lt; 2.0)" Value="DiskCache" ValueChanged="DiskCacheChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">MiB</MudText>
+                <MudNumericField T="int" Label="Disk cache (requires libtorrent &lt; 2.0)" Value="DiskCache" ValueChanged="DiskCacheChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Disk cache expiry interval (requires libtorrent &lt; 2.0)" Value="DiskCacheTtl" ValueChanged="DiskCacheTtlChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">s</MudText>
+                <MudNumericField T="int" Label="Disk cache expiry interval (requires libtorrent &lt; 2.0)" Value="DiskCacheTtl" ValueChanged="DiskCacheTtlChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="s" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Disk queue size" Value="DiskQueueSize" ValueChanged="DiskQueueSizeChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB</MudText>
+                <MudNumericField T="int" Label="Disk queue size" Value="DiskQueueSize" ValueChanged="DiskQueueSizeChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="int" Label="Disk IO type (libtorrent &gt;= 2.0; requires restart)" Value="DiskIoType" ValueChanged="DiskIoTypeChanged" ShrinkLabel Variant="Variant.Outlined">
@@ -124,31 +124,31 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Coalesce reads &amp; writes (requires libtorrent &lt; 2.0)" Value="EnableCoalesceReadWrite" ValueChanged="EnableCoalesceReadWriteChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Coalesce reads &amp; writes (requires libtorrent &lt; 2.0)" Value="EnableCoalesceReadWrite" ValueChanged="EnableCoalesceReadWriteChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Use piece extent affinity" Value="EnablePieceExtentAffinity" ValueChanged="EnablePieceExtentAffinityChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Use piece extent affinity" Value="EnablePieceExtentAffinity" ValueChanged="EnablePieceExtentAffinityChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Send upload piece suggestions" Value="EnableUploadSuggestions" ValueChanged="EnableUploadSuggestionsChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Send upload piece suggestions" Value="EnableUploadSuggestions" ValueChanged="EnableUploadSuggestionsChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Send buffer watermark" Value="SendBufferWatermark" ValueChanged="SendBufferWatermarkChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB</MudText>
+                <MudNumericField T="int" Label="Send buffer watermark" Value="SendBufferWatermark" ValueChanged="SendBufferWatermarkChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Send buffer low watermark" Value="SendBufferLowWatermark" ValueChanged="SendBufferLowWatermarkChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB</MudText>
+                <MudNumericField T="int" Label="Send buffer low watermark" Value="SendBufferLowWatermark" ValueChanged="SendBufferLowWatermarkChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Send buffer watermark factor" Value="SendBufferWatermarkFactor" ValueChanged="SendBufferWatermarkFactorChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">%</MudText>
+                <MudNumericField T="int" Label="Send buffer watermark factor" Value="SendBufferWatermarkFactor" ValueChanged="SendBufferWatermarkFactorChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="Outgoing connections per second" Value="ConnectionSpeed" ValueChanged="ConnectionSpeedChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Socket send buffer size [0: system default]" Value="SocketSendBufferSize" ValueChanged="SocketSendBufferSizeChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB</MudText>
+                <MudNumericField T="int" Label="Socket send buffer size [0: system default]" Value="SocketSendBufferSize" ValueChanged="SocketSendBufferSizeChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Socket receive buffer size [0: system default]" Value="SocketReceiveBufferSize" ValueChanged="SocketReceiveBufferSizeChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">KiB</MudText>
+                <MudNumericField T="int" Label="Socket receive buffer size [0: system default]" Value="SocketReceiveBufferSize" ValueChanged="SocketReceiveBufferSizeChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="Socket backlog size" Value="SocketBacklogSize" ValueChanged="SocketBacklogSizeChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" />
@@ -172,19 +172,19 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Support internationalized domain name (IDN)" Value="IdnSupportEnabled" ValueChanged="IdnSupportEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Support internationalized domain name (IDN)" Value="IdnSupportEnabled" ValueChanged="IdnSupportEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Allow multiple connections from the same IP address" Value="EnableMultiConnectionsFromSameIp" ValueChanged="EnableMultiConnectionsFromSameIpChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Allow multiple connections from the same IP address" Value="EnableMultiConnectionsFromSameIp" ValueChanged="EnableMultiConnectionsFromSameIpChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Validate HTTPS tracker certificate" Value="ValidateHttpsTrackerCertificate" ValueChanged="ValidateHttpsTrackerCertificateChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Validate HTTPS tracker certificate" Value="ValidateHttpsTrackerCertificate" ValueChanged="ValidateHttpsTrackerCertificateChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Server-side request forgery (SSRF) mitigation" Value="SsrfMitigation" ValueChanged="SsrfMitigationChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Server-side request forgery (SSRF) mitigation" Value="SsrfMitigation" ValueChanged="SsrfMitigationChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Disallow connection to peers on privileged ports" Value="BlockPeersOnPrivilegedPorts" ValueChanged="BlockPeersOnPrivilegedPortsChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Disallow connection to peers on privileged ports" Value="BlockPeersOnPrivilegedPorts" ValueChanged="BlockPeersOnPrivilegedPortsChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="int" Label="Upload slots behavior" Value="UploadSlotsBehavior" ValueChanged="UploadSlotsBehaviorChanged" ShrinkLabel Variant="Variant.Outlined">
@@ -200,10 +200,10 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Always announce to all trackers in a tier" Value="AnnounceToAllTrackers" ValueChanged="AnnounceToAllTrackersChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Always announce to all trackers in a tier" Value="AnnounceToAllTrackers" ValueChanged="AnnounceToAllTrackersChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudCheckBox T="bool" Label="Always announce to all tiers" Value="AnnounceToAllTiers" ValueChanged="AnnounceToAllTiersChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Always announce to all tiers" Value="AnnounceToAllTiers" ValueChanged="AnnounceToAllTiersChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="IP address reported to trackers (requires restart)" Value="AnnounceIp" ValueChanged="AnnounceIpChanged" ShrinkLabel Variant="Variant.Outlined" />
@@ -215,13 +215,13 @@
                 <MudNumericField T="int" Label="Stop tracker timeout [0: disabled]" Value="StopTrackerTimeout" ValueChanged="StopTrackerTimeoutChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Peer turnover disconnect percentage:" Value="PeerTurnover" ValueChanged="PeerTurnoverChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">%</MudText>
+                <MudNumericField T="int" Label="Peer turnover disconnect percentage:" Value="PeerTurnover" ValueChanged="PeerTurnoverChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Peer turnover threshold percentage" Value="PeerTurnoverCutoff" ValueChanged="PeerTurnoverCutoffChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">%</MudText>
+                <MudNumericField T="int" Label="Peer turnover threshold percentage" Value="PeerTurnoverCutoff" ValueChanged="PeerTurnoverCutoffChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Peer turnover disconnect interval" Value="PeerTurnoverInterval" ValueChanged="PeerTurnoverIntervalChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">s</MudText>
+                <MudNumericField T="int" Label="Peer turnover disconnect interval" Value="PeerTurnoverInterval" ValueChanged="PeerTurnoverIntervalChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="s" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="Maximum outstanding requests to a single peer" Value="RequestQueueSize" ValueChanged="RequestQueueSizeChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" />
