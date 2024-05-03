@@ -13,5 +13,20 @@ namespace Lantean.QBTMudBlade.Interop
         {
             await runtime.InvokeVoidAsync("qbt.triggerFileDownload", url, filename);
         }
+
+        public static async Task Open(this IJSRuntime runtime, string url, bool newTab = false)
+        {
+            string? target = null;
+            if (newTab)
+            {
+                target = url;
+            }
+            await runtime.InvokeVoidAsync("qbt.open", url, target);
+        }
+
+        public static async Task RenderPiecesBar(this IJSRuntime runtime, string id, string hash, int[] pieces)
+        {
+            await runtime.InvokeVoidAsync("qbt.renderPiecesBar", id, hash, pieces);
+        }
     }
 }

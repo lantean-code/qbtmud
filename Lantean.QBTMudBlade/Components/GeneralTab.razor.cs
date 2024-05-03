@@ -8,6 +8,8 @@ namespace Lantean.QBTMudBlade.Components
 {
     public partial class GeneralTab : IAsyncDisposable
     {
+        private readonly bool _refreshEnabled = true;
+
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
 
@@ -50,6 +52,11 @@ namespace Lantean.QBTMudBlade.Components
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
+            if (!_refreshEnabled)
+            {
+                return;
+            }
+
             if (firstRender)
             {
                 using (var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(RefreshInterval)))
@@ -84,7 +91,8 @@ namespace Lantean.QBTMudBlade.Components
                 {
                     _timerCancellationToken.Cancel();
                     _timerCancellationToken.Dispose();
-                    await Task.Delay(0);
+
+                    await Task.CompletedTask;
                 }
 
                 _disposedValue = true;

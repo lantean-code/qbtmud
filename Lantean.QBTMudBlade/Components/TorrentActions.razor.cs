@@ -44,6 +44,11 @@ namespace Lantean.QBTMudBlade.Components
         [CascadingParameter]
         public MainData MainData { get; set; } = default!;
 
+        [CascadingParameter]
+        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+
+        protected MudMenu? ActionsMenu { get; set; }
+
         protected async Task Pause()
         {
             await ApiClient.PauseTorrents(Hashes);
@@ -203,6 +208,7 @@ namespace Lantean.QBTMudBlade.Components
         protected async Task Copy(Func<Torrent, object?> selector)
         {
             await Copy(string.Join(Environment.NewLine, GetTorrents().Select(selector)));
+            ActionsMenu?.CloseMenu();
         }
 
         protected async Task Export()
@@ -260,8 +266,8 @@ namespace Lantean.QBTMudBlade.Components
                 new Divider(),
                 new Action("Set location", Icons.Material.Filled.MyLocation, Color.Info, EventCallback.Factory.Create(this, SetLocation)),
                 new Action("Rename", Icons.Material.Filled.DriveFileRenameOutline, Color.Info, EventCallback.Factory.Create(this, Rename)),
-                new Action("Category", Icons.Material.Filled.List, Color.Info, categories),
-                new Action("Tags", Icons.Material.Filled.Label, Color.Info, tags),
+                new Action("Category", Icons.Material.Filled.List, Color.Info, categories, true),
+                new Action("Tags", Icons.Material.Filled.Label, Color.Info, tags, true),
                 new Action("Automatic Torrent Management", Icons.Material.Filled.Check, firstTorrent.AutomaticTorrentManagement ? Color.Info : Color.Transparent, EventCallback.Factory.Create(this, ToggleAutoTMM)),
                 new Divider(),
                 new Action("Limit upload rate", Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Info, EventCallback.Factory.Create(this, LimitUploadRate)),
@@ -289,15 +295,38 @@ namespace Lantean.QBTMudBlade.Components
                 new Action("Export", Icons.Material.Filled.SaveAlt, Color.Info, EventCallback.Factory.Create(this, Export)),
             };
 
+            if (Preferences?.QueueingEnabled == false)
+            {
+                options.RemoveAt(18);
+            }
+
             return options;
         }
     }
 
     public enum ParentType
     {
+        /// <summary>
+        /// Renders toolbar contents without the <see cref="MudToolBar"/> wrapper.
+        /// </summary>
+        ToolbarContents,
+        /// <summary>
+        /// Renders a <see cref="MudToolBar"/>.
+        /// </summary>
         Toolbar,
-        StandaloneToolbar,
+        /// <summary>
+        /// Renders a <see cref="MudMenu"/>.
+        /// </summary>
         Menu,
+        /// <summary>
+        /// Renders a <see cref="MudToolBar"/> with <see cref="MudIconButton"/> for basic actions and a <see cref="MudMenu"/> for actions with children.
+        /// </summary>
+        MixedToolbarContents,
+        /// <summary>
+        /// Renders toolbar contents without the <see cref="MudToolBar"/> wrapper with <see cref="MudIconButton"/> for basic actions and a <see cref="MudMenu"/> for actions with children.
+        /// </summary>
+        MixedToolbar,
+        InitialIconsOnly,
     }
 
     public class Divider : Action
@@ -309,7 +338,7 @@ namespace Lantean.QBTMudBlade.Components
 
     public class Action
     {
-        public Action(string name, string icon, Color color, EventCallback callback)
+        public Action(string name, string? icon, Color color, EventCallback callback)
         {
             Name = name;
             Icon = icon;
@@ -318,23 +347,26 @@ namespace Lantean.QBTMudBlade.Components
             Children = [];
         }
 
-        public Action(string name, string icon, Color color, IEnumerable<Action> children)
+        public Action(string name, string? icon, Color color, IEnumerable<Action> children, bool useTextButton = false)
         {
             Name = name;
             Icon = icon;
             Color = color;
             Callback = default;
             Children = children;
+            UseTextButton = useTextButton;
         }
 
         public string Name { get; }
 
-        public string Icon { get; }
+        public string? Icon { get; }
 
         public Color Color { get; }
 
         public EventCallback Callback { get; }
 
         public IEnumerable<Action> Children { get; }
+
+        public bool UseTextButton { get; }
     }
 }

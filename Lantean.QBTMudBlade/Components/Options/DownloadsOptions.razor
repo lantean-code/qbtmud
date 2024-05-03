@@ -86,7 +86,7 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Use Subcategories" Value="UseSubcategories" ValueChanged="UseSubcategoriesChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Use Subcategories" Value="UseSubcategories" ValueChanged="UseSubcategoriesChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="Default Save Path" Value="SavePath" ValueChanged="SavePathChanged" ShrinkLabel Variant="Variant.Outlined" />
@@ -94,7 +94,7 @@
             <MudItem xs="12">
                 <MudGrid>
                     <MudItem xs="12" sm="6" md="3">
-                        <MudFieldSwitch Label="Keep incomplete torrents in" Value="TempPathEnabled" ValueChanged="TempPathEnabledChanged" LabelPosition="LabelPosition.End" />
+                        <MudFieldSwitch Label="Keep incomplete torrents in" Value="TempPathEnabled" ValueChanged="TempPathEnabledChanged" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
                         <MudTextField T="string" Label="Path" Value="TempPath" ValueChanged="TempPathChanged" Disabled="@(!TempPathEnabled)" ShrinkLabel Variant="Variant.Outlined" />
@@ -104,7 +104,7 @@
             <MudItem xs="12">
                 <MudGrid>
                     <MudItem xs="12" sm="6" md="3">
-                        <MudFieldSwitch Label="Copy .torrent files to" Value="ExportDirEnabled" ValueChanged="ExportDirEnabledChanged" LabelPosition="LabelPosition.End" />
+                        <MudFieldSwitch Label="Copy .torrent files to" Value="ExportDirEnabled" ValueChanged="ExportDirEnabledChanged" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
                         <MudTextField T="string" Label="Path" Value="ExportDir" ValueChanged="ExportDirChanged" Disabled="@(!TempPathEnabled)" ShrinkLabel Variant="Variant.Outlined" />
@@ -114,7 +114,7 @@
             <MudItem xs="12">
                 <MudGrid>
                     <MudItem xs="12" sm="6" md="3">
-                        <MudFieldSwitch Label="Copy .torrent files for finished downloads to" Value="ExportDirFinEnabled" ValueChanged="ExportDirFinEnabledChanged" LabelPosition="LabelPosition.End" />
+                        <MudFieldSwitch Label="Copy .torrent files for finished downloads to" Value="ExportDirFinEnabled" ValueChanged="ExportDirFinEnabledChanged" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
                         <MudTextField T="string" Label="Path" Value="ExportDirFin" ValueChanged="ExportDirFinChanged" Disabled="@(!TempPathEnabled)" ShrinkLabel Variant="Variant.Outlined" />
@@ -222,7 +222,7 @@
     <MudCardContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Excluded file names" Value="ExcludedFileNamesEnabled" ValueChanged="ExcludedFileNamesEnabledChanged" LabelPosition="LabelPosition.End" />
+                <MudFieldSwitch Label="Excluded file names" Value="ExcludedFileNamesEnabled" ValueChanged="ExcludedFileNamesEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="Excluded files names" Value="ExcludedFileNames" ValueChanged="ExcludedFileNamesChanged" Lines="5" Disabled="@(!ExcludedFileNamesEnabled)" ShrinkLabel Variant="Variant.Outlined" />

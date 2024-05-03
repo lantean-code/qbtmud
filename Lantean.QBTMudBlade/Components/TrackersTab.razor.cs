@@ -80,7 +80,8 @@ namespace Lantean.QBTMudBlade.Components
                 {
                     _timerCancellationToken.Cancel();
                     _timerCancellationToken.Dispose();
-                    await Task.Delay(0);
+
+                    await Task.CompletedTask;
                 }
 
                 _disposedValue = true;

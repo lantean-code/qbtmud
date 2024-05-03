@@ -1,7 +1,13 @@
-﻿namespace Lantean.QBTMudBlade.Components.Options
+﻿using Microsoft.AspNetCore.Components;
+using MudBlazor;
+
+namespace Lantean.QBTMudBlade.Components.Options
 {
     public partial class RSSOptions : Options
     {
+        [Inject]
+        public IDialogService DialogService { get; set; } = default!;
+
         protected bool RssProcessingEnabled { get; private set; }
         protected int RssRefreshInterval { get; private set; }
         protected long RssFetchDelay { get; private set; }
@@ -79,7 +85,7 @@
 
         protected async Task OpenRssRulesDialog()
         {
-            await Task.Delay(0);
+            await DialogService.InvokeRssRulesDialog();
         }
     }
 }

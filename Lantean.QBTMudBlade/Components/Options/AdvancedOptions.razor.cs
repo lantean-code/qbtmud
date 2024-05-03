@@ -607,7 +607,5 @@ namespace Lantean.QBTMudBlade.Components.Options
             UpdatePreferences.I2pOutboundLength = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
-
-
     }
 }

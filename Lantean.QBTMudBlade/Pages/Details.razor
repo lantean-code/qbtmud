@@ -9,10 +9,10 @@
     }
     @if (Hash is not null)
     {
-        <TorrentActions Type="ParentType.Toolbar" Hashes="@([Hash])" />
+        <TorrentActions Type="ParentType.InitialIconsOnly" Hashes="@([Hash])" />
     }
     <MudDivider Vertical="true" />
-    <MudText Class="pl-5">@Name</MudText>
+    <MudText Class="pl-5 no-wrap">@Name</MudText>
 </MudToolBar>
 
 <CascadingValue Value="RefreshInterval">

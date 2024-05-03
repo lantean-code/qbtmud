@@ -13,12 +13,12 @@
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" Title="Choose Columns" />
             <MudDivider Vertical="true" />
-            <MudMenu Icon="@Icons.Material.Outlined.FileDownloadOff" Label="Do Not Download" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+            <MudMenu Icon="@Icons.Material.Outlined.FileDownloadOff" Label="Do Not Download" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="Do Not Download">
                 <MudMenuItem OnClick="DoNotDownloadLessThan100PercentAvailability" OnTouch="DoNotDownloadLessThan100PercentAvailability">Less Than 100% Availability</MudMenuItem>
                 <MudMenuItem OnClick="DoNotDownloadLessThan80PercentAvailability" OnTouch="DoNotDownloadLessThan80PercentAvailability">Less than 80% Availability</MudMenuItem>
                 <MudMenuItem OnClick="DoNotDownloadCurrentlyFilteredFiles" OnTouch="NormalPriorityCurrentlyFilteredFiles">Currently Filtered Files</MudMenuItem>
             </MudMenu>
-            <MudMenu Icon="@Icons.Material.Outlined.FileDownload" Label="Normal Priority" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+            <MudMenu Icon="@Icons.Material.Outlined.FileDownload" Label="Normal Priority" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="Download">
                 <MudMenuItem OnClick="NormalPriorityLessThan100PercentAvailability" OnTouch="NormalPriorityLessThan100PercentAvailability">Less Than 100% Availability</MudMenuItem>
                 <MudMenuItem OnClick="NormalPriorityLessThan80PercentAvailability" OnTouch="NormalPriorityLessThan80PercentAvailability">Less than 80% Availability</MudMenuItem>
                 <MudMenuItem OnClick="NormalPriorityCurrentlyFilteredFiles" OnTouch="NormalPriorityCurrentlyFilteredFiles">Currently Filtered Files</MudMenuItem>

@@ -15,7 +15,7 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Physical memory (RAM) usage limit (applied if libtorrent &gt;= 2.0)" Value="MemoryWorkingSetLimit" ValueChanged="MemoryWorkingSetLimitChanged" Min="0" HelperText="This option is less effective on Linux" ShrinkLabel Variant="Variant.Outlined" /> <MudText Typo="Typo.caption">MiB</MudText>
+                <MudNumericField T="int" Label="Physical memory (RAM) usage limit (applied if libtorrent &gt;= 2.0)" Value="MemoryWorkingSetLimit" ValueChanged="MemoryWorkingSetLimitChanged" Min="0" HelperText="This option is less effective on Linux" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="string" Label="Network interface" Value="CurrentNetworkInterface" ValueChanged="CurrentNetworkInterfaceChanged" ShrinkLabel Variant="Variant.Outlined">

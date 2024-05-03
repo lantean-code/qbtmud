@@ -1,7 +1,14 @@
-﻿namespace Lantean.QBTMudBlade.Components.Options
+﻿using Lantean.QBTMudBlade.Interop;
+using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+
+namespace Lantean.QBTMudBlade.Components.Options
 {
     public partial class WebUIOptions : Options
     {
+        [Inject]
+        public IJSRuntime JSRuntime { get; set; } = default!;
+
         protected string? Locale { get; private set; }
         protected bool PerformanceWarning { get; private set; }
         protected string? WebUiDomainList { get; private set; }
@@ -385,7 +392,20 @@
 
         protected async Task RegisterDyndnsService()
         {
-            await Task.Delay(0);
+            if (!DyndnsEnabled)
+            {
+                return;
+            }
+
+#pragma warning disable S1075 // URIs should not be hardcoded
+            var url = DyndnsService switch
+            {
+                0 => "https://www.dyndns.com/account/services/hosts/add.html",
+                1 => "http://www.no-ip.com/services/managed_dns/free_dynamic_dns.html",
+                _ => throw new InvalidOperationException($"DyndnsService value of {DyndnsService} is not supported."),
+            };
+#pragma warning restore S1075 // URIs should not be hardcoded
+            await JSRuntime.Open(url, true);
         }
     }
 }

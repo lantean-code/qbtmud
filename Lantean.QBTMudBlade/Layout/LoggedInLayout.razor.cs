@@ -37,6 +37,8 @@ namespace Lantean.QBTMudBlade.Layout
 
         protected Status Status { get; set; } = Status.All;
 
+        protected QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+
         protected string Version { get; set; } = "";
 
         protected string? SearchText { get; set; }
@@ -69,6 +71,7 @@ namespace Lantean.QBTMudBlade.Layout
 
             await InvokeAsync(StateHasChanged);
 
+            Preferences = await ApiClient.GetApplicationPreferences();
             Version = await ApiClient.GetApplicationVersion();
             var data = await ApiClient.GetMainData(_requestId);
             MainData = DataManager.CreateMainData(data);

@@ -225,5 +225,10 @@ namespace Lantean.QBTMudBlade
 
             return (List<PropertyFilterDefinition<T>>?)dialogResult.Data;
         }
+
+        public static async Task InvokeRssRulesDialog(this IDialogService dialogService)
+        {
+            await Task.Delay(0);
+        }
     }
 }

@@ -1,4 +1,6 @@
 ﻿<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
+    <MudText Typo="Typo.subtitle2" Class="pt-6">Progress</MudText>
+    <PieceProgress Pieces="Pieces" Hash="@Hash" />
     <MudText Typo="Typo.subtitle2" Class="pt-6">Transfer</MudText>
     <MudGrid>
         <MudItem xs="4">
@@ -53,7 +55,7 @@
 
     </MudGrid>
 
-    <MudText Typo="Typo.subtitle1" Class="pt-6">Information</MudText>
+    <MudText Typo="Typo.subtitle2" Class="pt-6">Information</MudText>
     <MudGrid>
         <MudItem xs="4">
             <MudField Label="Total Size">@DisplayHelpers.Size(Properties?.TotalSize)</MudField>

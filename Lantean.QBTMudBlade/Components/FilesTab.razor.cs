@@ -1,4 +1,5 @@
-﻿using Lantean.QBitTorrentClient;
+﻿using Blazored.LocalStorage;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Filter;
 using Lantean.QBTMudBlade.Models;
@@ -8,12 +9,15 @@ using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using System.Collections.ObjectModel;
 using System.Net;
-using static MudBlazor.CategoryTypes;
 
 namespace Lantean.QBTMudBlade.Components
 {
     public partial class FilesTab : IAsyncDisposable
     {
+        private readonly bool _refreshEnabled = true;
+
+        private const string _columnStorageKey = "FilesTab.Columns";
+
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
 
@@ -38,6 +42,9 @@ namespace Lantean.QBTMudBlade.Components
 
         [Inject]
         protected IDataManager DataManager { get; set; } = default!;
+
+        [Inject]
+        protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         protected HashSet<string> ExpandedNodes { get; set; } = [];
 
@@ -71,6 +78,22 @@ namespace Lantean.QBTMudBlade.Components
             SelectedColumns = _columns.Where(c => c.Enabled).Select(c => c.Id).ToHashSet();
         }
 
+        protected override async Task OnInitializedAsync()
+        {
+            if (!await LocalStorage.ContainKeyAsync(_columnStorageKey))
+            {
+                return;
+            }
+
+            var selectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(_columnStorageKey);
+            if (selectedColumns is null)
+            {
+                return;
+            }
+
+            SelectedColumns = selectedColumns;
+        }
+
         protected IEnumerable<ColumnDefinition<ContentItem>> GetColumns()
         {
             return _columns.Where(c => SelectedColumns.Contains(c.Id));
@@ -92,6 +115,8 @@ namespace Lantean.QBTMudBlade.Components
             }
 
             SelectedColumns = (HashSet<string>)result.Data;
+
+            await LocalStorage.SetItemAsync(_columnStorageKey, SelectedColumns);
         }
 
         protected async Task ShowFilterDialog()
@@ -163,7 +188,7 @@ namespace Lantean.QBTMudBlade.Components
                     _timerCancellationToken.Cancel();
                     _timerCancellationToken.Dispose();
 
-                    await Task.Delay(0);
+                    await Task.CompletedTask;
                 }
 
                 _disposedValue = true;
@@ -193,6 +218,11 @@ namespace Lantean.QBTMudBlade.Components
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
+            if (!_refreshEnabled)
+            {
+                return;
+            }
+
             if (!firstRender)
             {
                 return;
@@ -304,11 +334,11 @@ namespace Lantean.QBTMudBlade.Components
         protected string RowStyle(ContentItem item, int index)
         {
             var style = "user-select: none; cursor: pointer;";
-            if (_selectedIndex == item.Index)
+            if (_selectedIndex != item.Index)
             {
-                style += " background: #D3D3D3";
+                return style;
             }
-            return style;
+            return $"{style} background: #D3D3D3";
         }
 
         protected async Task SelectedItemsChanged(HashSet<ContentItem> selectedItems)

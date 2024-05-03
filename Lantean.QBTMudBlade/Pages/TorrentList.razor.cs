@@ -10,6 +10,8 @@ namespace Lantean.QBTMudBlade.Pages
 {
     public partial class TorrentList
     {
+        private const string _columnStorageKey = "TorrentList.Columns";
+
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
@@ -21,6 +23,9 @@ namespace Lantean.QBTMudBlade.Pages
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [CascadingParameter]
+        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         [CascadingParameter]
         public IEnumerable<Torrent>? Torrents { get; set; }
@@ -38,11 +43,31 @@ namespace Lantean.QBTMudBlade.Pages
 
         protected bool ToolbarButtonsEnabled => SelectedItems.Count > 0 || SelectedTorrent is not null;
 
+        protected override async Task OnInitializedAsync()
+        {
+            if (!await LocalStorage.ContainKeyAsync(_columnStorageKey))
+            {
+                return;
+            }
+
+            var selectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(_columnStorageKey);
+            if (selectedColumns is null)
+            {
+                return;
+            }
+
+            SelectedColumns = selectedColumns;
+        }
+
         protected override void OnParametersSet()
         {
             if (SelectedColumns.Count == 0)
             {
                 SelectedColumns = _columns.Where(c => c.Enabled).Select(c => c.Id).ToHashSet();
+                if (Preferences?.QueueingEnabled == false)
+                {
+                    SelectedColumns.Remove("#");
+                }
             }
             _sortSelector ??= _columns.First(c => c.Enabled).SortSelector;
         }
@@ -183,6 +208,8 @@ namespace Lantean.QBTMudBlade.Pages
             }
 
             SelectedColumns = (HashSet<string>)result.Data;
+
+            await LocalStorage.SetItemAsync(_columnStorageKey, SelectedColumns);
         }
 
         protected void ShowTorrent()

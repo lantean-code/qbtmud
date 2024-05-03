@@ -11,13 +11,15 @@
 
 <CascadingValue Value="Torrents">
     <CascadingValue Value="MainData">
-        <CascadingValue Value="CategoryChanged" Name="CategoryChanged">
-            <CascadingValue Value="StatusChanged" Name="StatusChanged">
-                <CascadingValue Value="TagChanged" Name="TagChanged">
-                    <CascadingValue Value="TrackerChanged" Name="TrackerChanged">
-                        <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
-                            <CascadingValue Value="@(MainData?.LostConnection ?? false)" Name="LostConnection">
-                            @Body
+        <CascadingValue Value="Preferences">
+            <CascadingValue Value="CategoryChanged" Name="CategoryChanged">
+                <CascadingValue Value="StatusChanged" Name="StatusChanged">
+                    <CascadingValue Value="TagChanged" Name="TagChanged">
+                        <CascadingValue Value="TrackerChanged" Name="TrackerChanged">
+                            <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
+                                <CascadingValue Value="@(MainData?.LostConnection ?? false)" Name="LostConnection">
+                                @Body
+                                </CascadingValue>
                             </CascadingValue>
                         </CascadingValue>
                     </CascadingValue>
