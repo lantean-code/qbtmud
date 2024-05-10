@@ -75,9 +75,8 @@ namespace Lantean.QBTMudBlade.Components
             {
                 savePath = torrent.SavePath;
             }
-            await Task.CompletedTask;
-            throw new InvalidOperationException("BOoooo");
-            //await DialogService.ShowSingleFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
+
+            await DialogService.ShowSingleFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
         }
 
         protected async Task Rename()
