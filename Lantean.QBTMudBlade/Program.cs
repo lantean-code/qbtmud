@@ -26,11 +26,15 @@ namespace Lantean.QBTMudBlade
 #endif
 
             builder.Services.AddTransient<CookieHandler>();
+            builder.Services.AddScoped<HttpLogger>();
             builder.Services
                 .AddScoped(sp => sp
                     .GetRequiredService<IHttpClientFactory>()
                     .CreateClient("API"))
-                .AddHttpClient("API", client => client.BaseAddress = new Uri(baseAddress, "/api/v2/")).AddHttpMessageHandler<CookieHandler>();
+                .AddHttpClient("API", client => client.BaseAddress = new Uri(baseAddress, "/api/v2/"))
+                .AddHttpMessageHandler<CookieHandler>()
+                .RemoveAllLoggers()
+                .AddLogger<HttpLogger>(wrapHandlersPipeline: true);
 
             builder.Services.AddScoped<ApiClient>();
             builder.Services.AddScoped<IApiClient, ApiClient>();
@@ -38,6 +42,12 @@ namespace Lantean.QBTMudBlade
             builder.Services.AddSingleton<IDataManager, DataManager>();
             builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddSingleton<IClipboardService, ClipboardService>();
+
+#if DEBUG
+            builder.Logging.SetMinimumLevel(LogLevel.Information);
+#else
+            builder.Logging.SetMinimumLevel(LogLevel.Error);
+#endif
 
             await builder.Build().RunAsync();
         }

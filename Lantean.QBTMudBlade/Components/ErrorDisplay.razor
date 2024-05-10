@@ -1,0 +1,9 @@
+﻿<MudList Clickable="true">
+    <MudListItem OnClick="ClearErrors">Clear Errors</MudListItem>
+    <MudListItem OnClick="ClearErrorsAndResumeAsync">Clear Errors and Resume</MudListItem>
+    <MudDivider />
+@foreach (var error in Errors)
+{
+    <MudListItem OnClick="@(e => ShowException(error))">@error.Message</MudListItem>
+}
+</MudList>

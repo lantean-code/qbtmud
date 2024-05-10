@@ -4,8 +4,8 @@
             <MudItem xs="12">
                 <MudTextField Label="Urls" Lines="10" @bind-Value="Urls" Variant="Variant.Outlined" />
             </MudItem>
-            <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption />
         </MudGrid>
+        <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="false" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Close</MudButton>

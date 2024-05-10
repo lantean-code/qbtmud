@@ -1,5 +1,6 @@
 ﻿using Lantean.QBTMudBlade.Models;
 using MudBlazor;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Channels;
 
@@ -173,8 +174,8 @@ namespace Lantean.QBTMudBlade.Services
             {
                 foreach (var hash in mainData.TorrentsRemoved)
                 {
-                    torrentList.Torrents.Remove(hash);
                     RemoveTorrentFromStates(torrentList, hash);
+                    torrentList.Torrents.Remove(hash);
                 }
             }
 
@@ -279,12 +280,20 @@ namespace Lantean.QBTMudBlade.Services
             torrentList.TagState[FilterHelper.TAG_UNTAGGED].AddIfTrueOrRemove(hash, FilterHelper.FilterTag(torrent, FilterHelper.TAG_UNTAGGED));
             foreach (var tag in torrentList.Tags)
             {
+                if (!torrentList.TagState.ContainsKey(tag))
+                {
+                    torrentList.TagState.Add(tag, []);
+                }
                 torrentList.TagState[tag].AddIfTrueOrRemove(hash, FilterHelper.FilterTag(torrent, tag));
             }
 
             torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].AddIfTrueOrRemove(hash, FilterHelper.FilterCategory(torrent, FilterHelper.CATEGORY_UNCATEGORIZED, torrentList.ServerState.UseSubcategories));
             foreach (var category in torrentList.Categories.Keys)
             {
+                if (!torrentList.CategoriesState.ContainsKey(category))
+                {
+                    torrentList.CategoriesState.Add(category, []);
+                }
                 torrentList.CategoriesState[category].AddIfTrueOrRemove(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
             }
 
@@ -296,6 +305,10 @@ namespace Lantean.QBTMudBlade.Services
             torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].AddIfTrueOrRemove(hash, FilterHelper.FilterTracker(torrent, FilterHelper.TRACKER_TRACKERLESS));
             foreach (var tracker in torrentList.Trackers.Keys)
             {
+                if (!torrentList.TrackersState.ContainsKey(tracker))
+                {
+                    torrentList.TrackersState.Add(tracker, []);
+                }
                 torrentList.TrackersState[tracker].AddIfTrueOrRemove(hash, FilterHelper.FilterTracker(torrent, tracker));
             }
         }

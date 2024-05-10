@@ -1,62 +1,68 @@
-﻿<MudItem xs="12">
-    <MudSelect Label="Torrent Management Mode" @bind-Value="TorrentManagementMode" Variant="Variant.Outlined">
-        <MudSelectItem Value="false">Manual</MudSelectItem>
-        <MudSelectItem Value="true">Automatic</MudSelectItem>
-    </MudSelect>
-</MudItem>
-<MudItem xs="12">
-    <MudTextField Label="Save files to location" @bind-Value="SavePath" Variant="Variant.Outlined"></MudTextField>
-</MudItem>
-@if (ShowCookieOption)
-{
+﻿<MudGrid>
     <MudItem xs="12">
-        <MudTextField Label="Cookie" @bind-Value="Cookie" Variant="Variant.Outlined"></MudTextField>
+        <MudSwitch Label="Additional Options" @bind-Value="Expanded" LabelPosition="LabelPosition.End" />
     </MudItem>
-}
-<MudItem xs="12">
-    <MudTextField Label="Rename" @bind-Value="RenameTorrent" Variant="Variant.Outlined"></MudTextField>
-</MudItem>
-<MudItem xs="12">
-    <MudSelect Label="Category" @bind-Value="Category" Variant="Variant.Outlined">
-        @foreach (var category in Categories)
+</MudGrid>
+<MudCollapse Expanded="Expanded">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudSelect Label="Torrent Management Mode" @bind-Value="TorrentManagementMode" Variant="Variant.Outlined">
+                <MudSelectItem Value="false">Manual</MudSelectItem>
+                <MudSelectItem Value="true">Automatic</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <MudTextField Label="Save files to location" @bind-Value="SavePath" Variant="Variant.Outlined"></MudTextField>
+        </MudItem>
+        @if (ShowCookieOption)
         {
-            <MudSelectItem Value="category">@category</MudSelectItem>
+            <MudItem xs="12">
+                <MudTextField Label="Cookie" @bind-Value="Cookie" Variant="Variant.Outlined"></MudTextField>
+            </MudItem>
         }
-    </MudSelect>
-</MudItem>
-<MudItem xs="12">
-    <MudFieldSwitch Label="Start torrent" @bind-Value="StartTorrent" />
-</MudItem>
-<MudItem xs="12">
-    <MudFieldSwitch Label="Add to top of queue" @bind-Value="AddToTopOfQueue" />
-</MudItem>
-<MudItem xs="12">
-    <MudSelect Label="Stop condition" @bind-Value="StopCondition" Variant="Variant.Outlined">
-        <MudSelectItem Value="@("None")">None</MudSelectItem>
-        <MudSelectItem Value="@("MetadataReceived")">Metadata received</MudSelectItem>
-        <MudSelectItem Value="@("FilesChecked")">Files checked</MudSelectItem>
-    </MudSelect>
-</MudItem>
-<MudItem xs="12">
-    <MudFieldSwitch Label="Add to top of queue" @bind-Value="AddToTopOfQueue" />
-</MudItem>
-<MudItem xs="12">
-    <MudFieldSwitch Label="Skip hash check" @bind-Value="SkipHashCheck" />
-</MudItem>
-<MudSelect Label="Content layout" @bind-Value="ContentLayout" Variant="Variant.Outlined">
-    <MudSelectItem Value="@("Original")">Original</MudSelectItem>
-    <MudSelectItem Value="@("Subfolder")">Create subfolder</MudSelectItem>
-    <MudSelectItem Value="@("NoSubfolder")">Don't create subfolder'</MudSelectItem>
-</MudSelect>
-<MudItem xs="12">
-    <MudFieldSwitch Label="Download in sequentual order" @bind-Value="DownloadInSequentialOrder" />
-</MudItem>
-<MudItem xs="12">
-    <MudFieldSwitch Label="Download first and last pieces first" @bind-Value="DownloadFirstAndLastPiecesFirst" />
-</MudItem>
-<MudItem xs="12">
-    <MudNumericField Label="Limit download rate" @bind-Value="DownloadLimit" Variant="Variant.Outlined" Min="0" />
-</MudItem>
-<MudItem xs="12">
-    <MudNumericField Label="Limit upload rate" @bind-Value="UploadLimit" Variant="Variant.Outlined" Min="0" />
-</MudItem>
+        <MudItem xs="12">
+            <MudTextField Label="Rename" @bind-Value="RenameTorrent" Variant="Variant.Outlined"></MudTextField>
+        </MudItem>
+        <MudItem xs="12">
+            <MudSelect Label="Category" @bind-Value="Category" Variant="Variant.Outlined">
+                @foreach (var category in Categories)
+                {
+                    <MudSelectItem Value="category">@category</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <MudFieldSwitch Label="Start torrent" @bind-Value="StartTorrent" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudFieldSwitch Label="Add to top of queue" @bind-Value="AddToTopOfQueue" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudSelect Label="Stop condition" @bind-Value="StopCondition" Variant="Variant.Outlined">
+                <MudSelectItem Value="@("None")">None</MudSelectItem>
+                <MudSelectItem Value="@("MetadataReceived")">Metadata received</MudSelectItem>
+                <MudSelectItem Value="@("FilesChecked")">Files checked</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <MudFieldSwitch Label="Skip hash check" @bind-Value="SkipHashCheck" />
+        </MudItem>
+        <MudSelect Label="Content layout" @bind-Value="ContentLayout" Variant="Variant.Outlined">
+            <MudSelectItem Value="@("Original")">Original</MudSelectItem>
+            <MudSelectItem Value="@("Subfolder")">Create subfolder</MudSelectItem>
+            <MudSelectItem Value="@("NoSubfolder")">Don't create subfolder'</MudSelectItem>
+        </MudSelect>
+        <MudItem xs="12">
+            <MudFieldSwitch Label="Download in sequentual order" @bind-Value="DownloadInSequentialOrder" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudFieldSwitch Label="Download first and last pieces first" @bind-Value="DownloadFirstAndLastPiecesFirst" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudNumericField Label="Limit download rate" @bind-Value="DownloadLimit" Variant="Variant.Outlined" Min="0" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudNumericField Label="Limit upload rate" @bind-Value="UploadLimit" Variant="Variant.Outlined" Min="0" />
+        </MudItem>
+    </MudGrid>
+</MudCollapse>

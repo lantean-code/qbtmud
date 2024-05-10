@@ -1,5 +1,7 @@
 ﻿using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Components;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Services;
 
@@ -20,9 +22,13 @@ namespace Lantean.QBTMudBlade.Layout
 
         protected bool DrawerOpen { get; set; } = true;
 
+        protected bool ErrorDrawerOpen { get; set; } = false;
+
         protected bool ShowMenu { get; set; } = false;
 
         public Guid Id => Guid.NewGuid();
+
+        protected EnhancedErrorBoundary? ErrorBoundary { get; set; }
 
         ResizeOptions IBrowserViewportObserver.ResizeOptions { get; } = new()
         {
@@ -64,6 +70,16 @@ namespace Lantean.QBTMudBlade.Layout
                 DrawerOpen = true;
             }
             await InvokeAsync(StateHasChanged);
+        }
+
+        protected void ToggleErrorDrawer()
+        {
+            ErrorDrawerOpen = !ErrorDrawerOpen;
+        }
+
+        protected void Cleared()
+        {
+            ErrorDrawerOpen = false;
         }
 
         protected virtual async Task DisposeAsync(bool disposing)

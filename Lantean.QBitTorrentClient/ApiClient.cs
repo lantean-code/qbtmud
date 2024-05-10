@@ -476,7 +476,7 @@ namespace Lantean.QBitTorrentClient
             {
                 foreach (var (name, stream) in torrents)
                 {
-                    content.Add(new StreamContent(stream), name);
+                    content.Add(new StreamContent(stream), "torrents", name);
                 }
             }
             if (savePath is not null)

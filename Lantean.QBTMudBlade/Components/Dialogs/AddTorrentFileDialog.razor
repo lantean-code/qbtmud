@@ -6,7 +6,7 @@
                     <ButtonTemplate>
                         <MudButton HtmlTag="label"
                                    Variant="Variant.Filled"
-                                   Color="Color.Secondary"
+                                   Color="Color.Primary"
                                    StartIcon="@Icons.Material.Filled.CloudUpload"
                                    for="@context.Id">
                             Choose files
@@ -14,8 +14,8 @@
                     </ButtonTemplate>
                 </MudFileUpload>
             </MudItem>
-            <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption />
         </MudGrid>
+        <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="true" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Close</MudButton>

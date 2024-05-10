@@ -12,6 +12,8 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         [Parameter]
         public bool ShowCookieOption { get; set; }
 
+        protected bool Expanded { get; set; }
+
         protected bool TorrentManagementMode { get; set; }
 
         protected string SavePath { get; set; } = default!;

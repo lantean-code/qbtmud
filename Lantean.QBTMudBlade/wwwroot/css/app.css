@@ -149,3 +149,9 @@ td.no-wrap {
         right: -5px;
         transform: rotate(270deg);
     }
+
+.overflow {
+    overflow: auto;
+    height: 200px;
+    width: 100%;
+}

@@ -39,7 +39,7 @@ namespace Lantean.QBTMudBlade.Components
         /// If true this component will render as a <see cref="MudToolBar"/> otherwise will render as a <see cref="MudMenu"/>.
         /// </summary>
         [Parameter]
-        public ParentType Type { get; set; }
+        public RenderType Type { get; set; }
 
         [CascadingParameter]
         public MainData MainData { get; set; } = default!;
@@ -48,6 +48,8 @@ namespace Lantean.QBTMudBlade.Components
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         protected MudMenu? ActionsMenu { get; set; }
+
+        protected bool Disabled => !Hashes.Any();
 
         protected async Task Pause()
         {
@@ -73,7 +75,9 @@ namespace Lantean.QBTMudBlade.Components
             {
                 savePath = torrent.SavePath;
             }
-            await DialogService.ShowSingleFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
+            await Task.CompletedTask;
+            throw new InvalidOperationException("BOoooo");
+            //await DialogService.ShowSingleFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
         }
 
         protected async Task Rename()
@@ -234,12 +238,11 @@ namespace Lantean.QBTMudBlade.Components
 
         private IEnumerable<Action> GetOptions()
         {
-            if (!Hashes.Any())
+            Torrent? torrent = null;
+            if (Hashes.Any())
             {
-                return [];
+                torrent = MainData.Torrents[Hashes.First()];
             }
-
-            var firstTorrent = MainData.Torrents[Hashes.First()];
 
             var categories = new List<Action>
             {
@@ -255,7 +258,7 @@ namespace Lantean.QBTMudBlade.Components
                 new Action("Remove All", Icons.Material.Filled.Remove, Color.Error, EventCallback.Factory.Create(this, RemoveTags)),
                 new Divider()
             };
-            tags.AddRange(MainData.Tags.Select(t => new Action(t, firstTorrent.Tags.Contains(t) ? Icons.Material.Filled.CheckBox : Icons.Material.Filled.CheckBoxOutlineBlank, Color.Default, EventCallback.Factory.Create(this, () => ToggleTag(t)))));
+            tags.AddRange(MainData.Tags.Select(t => new Action(t, (torrent?.Tags.Contains(t) == true) ? Icons.Material.Filled.CheckBox : Icons.Material.Filled.CheckBoxOutlineBlank, Color.Default, EventCallback.Factory.Create(this, () => ToggleTag(t)))));
 
             var options = new List<Action>
             {
@@ -268,11 +271,11 @@ namespace Lantean.QBTMudBlade.Components
                 new Action("Rename", Icons.Material.Filled.DriveFileRenameOutline, Color.Info, EventCallback.Factory.Create(this, Rename)),
                 new Action("Category", Icons.Material.Filled.List, Color.Info, categories, true),
                 new Action("Tags", Icons.Material.Filled.Label, Color.Info, tags, true),
-                new Action("Automatic Torrent Management", Icons.Material.Filled.Check, firstTorrent.AutomaticTorrentManagement ? Color.Info : Color.Transparent, EventCallback.Factory.Create(this, ToggleAutoTMM)),
+                new Action("Automatic Torrent Management", Icons.Material.Filled.Check, (torrent?.AutomaticTorrentManagement == true) ? Color.Info : Color.Transparent, EventCallback.Factory.Create(this, ToggleAutoTMM)),
                 new Divider(),
                 new Action("Limit upload rate", Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Info, EventCallback.Factory.Create(this, LimitUploadRate)),
                 new Action("Limit share ratio", Icons.Material.Filled.Percent, Color.Warning, EventCallback.Factory.Create(this, LimitShareRatio)),
-                new Action("Super seeding mode", Icons.Material.Filled.Check, firstTorrent.SuperSeeding ? Color.Info : Color.Transparent, EventCallback.Factory.Create(this, ToggleSuperSeeding)),
+                new Action("Super seeding mode", Icons.Material.Filled.Check, (torrent?.SuperSeeding == true) ? Color.Info : Color.Transparent, EventCallback.Factory.Create(this, ToggleSuperSeeding)),
                 new Divider(),
                 new Action("Force recheck", Icons.Material.Filled.Loop, Color.Info, EventCallback.Factory.Create(this, ForceRecheck)),
                 new Action("Force reannounce", Icons.Material.Filled.BroadcastOnHome, Color.Info, EventCallback.Factory.Create(this, ForceReannounce)),
@@ -304,7 +307,7 @@ namespace Lantean.QBTMudBlade.Components
         }
     }
 
-    public enum ParentType
+    public enum RenderType
     {
         /// <summary>
         /// Renders toolbar contents without the <see cref="MudToolBar"/> wrapper.

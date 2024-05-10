@@ -70,6 +70,11 @@ namespace Lantean.QBTMudBlade.Pages
                 }
             }
             _sortSelector ??= _columns.First(c => c.Enabled).SortSelector;
+
+            if (SelectedTorrent is not null && Torrents is not null && !Torrents.Contains(SelectedTorrent))
+            {
+                SelectedTorrent = null;
+            }
         }
 
         private IEnumerable<Torrent>? GetOrderedTorrents()

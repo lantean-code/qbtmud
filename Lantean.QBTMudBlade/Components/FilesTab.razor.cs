@@ -531,7 +531,7 @@ namespace Lantean.QBTMudBlade.Components
                 return;
             }
 
-            var files = FileList.Values.Where(f => f.Availability < value).Select(f => f.Index);
+            var files = FileList.Values.Where(f => !f.IsFolder && f.Availability < value).Select(f => f.Index);
 
             if (!files.Any())
             {
@@ -548,7 +548,7 @@ namespace Lantean.QBTMudBlade.Components
                 return;
             }
 
-            var files = GetFiles().Select(f => f.Index);
+            var files = GetFiles().Where(f => !f.IsFolder).Select(f => f.Index);
 
             if (!files.Any())
             {
