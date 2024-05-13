@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using System.Collections.ObjectModel;
+using System.Runtime.ExceptionServices;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -13,9 +14,17 @@ namespace Lantean.QBTMudBlade.Components
         [Parameter]
         public EventCallback OnClear { get; set; }
 
+        [Parameter]
+        public bool Disabled { get; set; }
+
         protected override Task OnErrorAsync(Exception exception)
         {
             _exceptions.Add(exception);
+
+            if (Disabled)
+            {
+                ExceptionDispatchInfo.Capture(exception).Throw();
+            }
 
             return Task.CompletedTask;
         }

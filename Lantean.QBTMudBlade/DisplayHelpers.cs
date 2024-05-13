@@ -28,6 +28,11 @@ namespace Lantean.QBTMudBlade
                 return "∞";
             }
 
+            if (seconds < 60)
+            {
+                return "< 1m";
+            }
+
             var time = TimeSpan.FromSeconds(seconds.Value);
             var sb = new StringBuilder();
             if (prefix is not null)
@@ -83,6 +88,11 @@ namespace Lantean.QBTMudBlade
             if (size is null)
             {
                 return "";
+            }
+
+            if (size < 0)
+            {
+                size = 0;
             }
 
             var stringBuilder = new StringBuilder();
@@ -273,6 +283,11 @@ namespace Lantean.QBTMudBlade
             if (value is null)
             {
                 return "";
+            }
+
+            if (value < 0)
+            {
+                value = 0;
             }
 
             if (value == 0)

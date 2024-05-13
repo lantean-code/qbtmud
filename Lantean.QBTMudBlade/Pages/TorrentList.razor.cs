@@ -10,7 +10,8 @@ namespace Lantean.QBTMudBlade.Pages
 {
     public partial class TorrentList
     {
-        private const string _columnStorageKey = "TorrentList.Columns";
+        private const string _columnSelectionStorageKey = "TorrentList.ColumnSelection";
+        private const string _columnSortStorageKey = "TorrentList.ColumnSort";
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -45,18 +46,18 @@ namespace Lantean.QBTMudBlade.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            if (!await LocalStorage.ContainKeyAsync(_columnStorageKey))
+            var selectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(_columnSelectionStorageKey);
+            if (selectedColumns is not null)
             {
-                return;
+                SelectedColumns = selectedColumns;
             }
 
-            var selectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(_columnStorageKey);
-            if (selectedColumns is null)
+            var columnSort = await LocalStorage.GetItemAsync<Tuple<string, SortDirection>>(_columnSortStorageKey);
+            if (columnSort is not null)
             {
-                return;
+                _sortColumn = columnSort.Item1;
+                _sortDirection = columnSort.Item2;
             }
-
-            SelectedColumns = selectedColumns;
         }
 
         protected override void OnParametersSet()
@@ -69,7 +70,7 @@ namespace Lantean.QBTMudBlade.Pages
                     SelectedColumns.Remove("#");
                 }
             }
-            _sortSelector ??= _columns.First(c => c.Enabled).SortSelector;
+            _sortColumn ??= _columns.First(c => c.Enabled).Id;
 
             if (SelectedTorrent is not null && Torrents is not null && !Torrents.Contains(SelectedTorrent))
             {
@@ -84,7 +85,9 @@ namespace Lantean.QBTMudBlade.Pages
                 return null;
             }
 
-            return Torrents.OrderByDirection(_sortDirection, _sortSelector ?? (t => t.Priority));
+            var sortSelector = _columns.Find(c => c.Id == _sortColumn)?.SortSelector;
+
+            return Torrents.OrderByDirection(_sortDirection, sortSelector ?? (t => t.Priority));
         }
 
         protected void SelectedItemsChanged(HashSet<Torrent> selectedItems)
@@ -214,7 +217,7 @@ namespace Lantean.QBTMudBlade.Pages
 
             SelectedColumns = (HashSet<string>)result.Data;
 
-            await LocalStorage.SetItemAsync(_columnStorageKey, SelectedColumns);
+            await LocalStorage.SetItemAsync(_columnSelectionStorageKey, SelectedColumns);
         }
 
         protected void ShowTorrent()
@@ -243,10 +246,12 @@ namespace Lantean.QBTMudBlade.Pages
             return _columns.Where(c => SelectedColumns.Contains(c.Id));
         }
 
-        private void SetSort(Func<Torrent, object?> sortSelector, SortDirection sortDirection)
+        private async Task SetSort(string columnId, SortDirection sortDirection)
         {
-            _sortSelector = sortSelector;
+            _sortColumn = columnId;
             _sortDirection = sortDirection;
+
+            await LocalStorage.SetItemAsync(_columnSortStorageKey, new Tuple<string, SortDirection>(columnId, sortDirection));
         }
 
         protected List<ColumnDefinition<Torrent>> _columns =
@@ -286,7 +291,7 @@ namespace Lantean.QBTMudBlade.Pages
             //CreateColumnDefinition("Reannounce In", t => t.Reannounce, enabled: false),
         ];
 
-        private Func<Torrent, object?>? _sortSelector;
+        private string? _sortColumn;
         private SortDirection _sortDirection;
 
         private static ColumnDefinition<Torrent> CreateColumnDefinition(string name, Func<Torrent, object?> selector, RenderFragment<RowContext<Torrent>> rowTemplate, int? width = null, string? tdClass = null, bool enabled = true)

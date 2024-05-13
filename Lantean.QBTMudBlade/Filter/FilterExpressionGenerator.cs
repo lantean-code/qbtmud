@@ -30,17 +30,17 @@ namespace Lantean.QBTMudBlade.Filter
                 return filter.Operator switch
                 {
                     FilterOperator.String.Contains =>
-                        propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => x != null && value != null && x.Contains(value, stringComparer))),
+                        propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => (string?)x != null && value != null && ((string)x).Contains(value, stringComparer))),
                     FilterOperator.String.NotContains =>
-                        propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => x != null && value != null && !x.Contains(value, stringComparer))),
+                        propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => (string?)x != null && value != null && !((string)x).Contains(value, stringComparer))),
                     FilterOperator.String.Equal =>
-                        propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => x != null && x.Equals(value, stringComparer))),
+                        propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => (string?)x != null && ((string)x).Equals(value, stringComparer))),
                     FilterOperator.String.NotEqual =>
-                        propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => x != null && !x.Equals(value, stringComparer))),
+                        propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => (string?)x != null && !((string)x).Equals(value, stringComparer))),
                     FilterOperator.String.StartsWith =>
-                        propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => x != null && value != null && x.StartsWith(value, stringComparer))),
+                        propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => (string?)x != null && value != null && ((string)x).StartsWith(value, stringComparer))),
                     FilterOperator.String.EndsWith =>
-                        propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => x != null && value != null && x.EndsWith(value, stringComparer))),
+                        propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => (string?)x != null && value != null && ((string)x).EndsWith(value, stringComparer))),
                     FilterOperator.String.Empty => propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => string.IsNullOrWhiteSpace(x))),
                     FilterOperator.String.NotEmpty => propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => !string.IsNullOrWhiteSpace(x))),
                     _ => x => true

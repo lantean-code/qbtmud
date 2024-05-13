@@ -26,7 +26,8 @@
     OnRowClick="RowClick"
     RowStyleFunc="RowStyle"
     RowClassFunc="RowClass"
-    AllowUnsorted="false">
+    AllowUnsorted="false"
+    Virtualize="true">
     <ColGroup>
         <col style="width: 30px" />
         @foreach (var column in GetColumns())
@@ -41,7 +42,7 @@
             <MudTh>
                 @if (column.SortSelector is not null)
                 {
-                    <MudTableSortLabel T="Torrent" SortDirectionChanged="@(c => SetSort(column.SortSelector, c))" InitialDirection="column.InitialDirection">@column.Header</MudTableSortLabel>
+                    <MudTableSortLabel T="ContentItem" SortDirectionChanged="@(c => SetSort(column.Id, c))" InitialDirection="column.InitialDirection">@column.Header</MudTableSortLabel>
                 }
                 else
                 {

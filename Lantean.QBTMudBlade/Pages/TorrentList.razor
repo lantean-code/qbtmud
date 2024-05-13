@@ -48,7 +48,7 @@
             <MudTh>
                 @if (column.SortSelector is not null)
                 {
-                    <MudTableSortLabel T="Torrent" SortDirectionChanged="@(c => SetSort(column.SortSelector, c))">@column.Header</MudTableSortLabel>
+                    <MudTableSortLabel T="Torrent" SortDirectionChanged="@(c => SetSort(column.Id, c))">@column.Header</MudTableSortLabel>
                 }
                 else
                 {

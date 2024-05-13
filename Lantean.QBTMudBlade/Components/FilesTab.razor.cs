@@ -16,14 +16,15 @@ namespace Lantean.QBTMudBlade.Components
     {
         private readonly bool _refreshEnabled = true;
 
-        private const string _columnStorageKey = "FilesTab.Columns";
+        private const string _columnSelectionStorageKey = "FilesTab.ColumnSelection";
+        private const string _columnSortStorageKey = "FilesTab.ColumnSort";
 
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
 
-        private Func<ContentItem, object?> SortSelector { get; set; } = c => c.Name;
+        private string? _sortColumn;
 
-        private SortDirection SortDirection { get; set; } = SortDirection.Ascending;
+        private SortDirection _sortDirection = SortDirection.Ascending;
 
         [Parameter]
         public bool Active { get; set; }
@@ -55,6 +56,7 @@ namespace Lantean.QBTMudBlade.Components
         protected HashSet<ContentItem> SelectedItems { get; set; } = [];
 
         protected List<ColumnDefinition<ContentItem>> _columns = [];
+        private List<PropertyFilterDefinition<ContentItem>>? _filterDefinitions;
 
         protected ContentItem? SelectedItem { get; set; }
 
@@ -80,18 +82,18 @@ namespace Lantean.QBTMudBlade.Components
 
         protected override async Task OnInitializedAsync()
         {
-            if (!await LocalStorage.ContainKeyAsync(_columnStorageKey))
+            var selectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(_columnSelectionStorageKey);
+            if (selectedColumns is not null)
             {
-                return;
+                SelectedColumns = selectedColumns;
             }
 
-            var selectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(_columnStorageKey);
-            if (selectedColumns is null)
+            var columnSort = await LocalStorage.GetItemAsync<Tuple<string, SortDirection>>(_columnSortStorageKey);
+            if (columnSort is not null)
             {
-                return;
+                _sortColumn = columnSort.Item1;
+                _sortDirection = columnSort.Item2;
             }
-
-            SelectedColumns = selectedColumns;
         }
 
         protected IEnumerable<ColumnDefinition<ContentItem>> GetColumns()
@@ -116,14 +118,14 @@ namespace Lantean.QBTMudBlade.Components
 
             SelectedColumns = (HashSet<string>)result.Data;
 
-            await LocalStorage.SetItemAsync(_columnStorageKey, SelectedColumns);
+            await LocalStorage.SetItemAsync(_columnSelectionStorageKey, SelectedColumns);
         }
 
         protected async Task ShowFilterDialog()
         {
             var parameters = new DialogParameters
             {
-                { nameof(FilterOptionsDialog<ContentItem>.FilterDefinitions), Filters },
+                { nameof(FilterOptionsDialog<ContentItem>.FilterDefinitions), _filterDefinitions },
             };
 
             var result = await DialogService.ShowAsync<FilterOptionsDialog<ContentItem>>("Filters", parameters, DialogHelper.FormDialogOptions);
@@ -134,14 +136,15 @@ namespace Lantean.QBTMudBlade.Components
                 return;
             }
 
-            var filterDefinitions = (List<PropertyFilterDefinition<ContentItem>>?)dialogResult.Data;
-            if (filterDefinitions is null)
+            _filterDefinitions = (List<PropertyFilterDefinition<ContentItem>>?)dialogResult.Data;
+            if (_filterDefinitions is null)
             {
+                Filters = null;
                 return;
             }
 
             var filters = new List<Func<ContentItem, bool>>();
-            foreach (var filterDefinition in filterDefinitions)
+            foreach (var filterDefinition in _filterDefinitions)
             {
                 var expression = Filter.FilterExpressionGenerator.GenerateExpression(filterDefinition, false);
                 filters.Add(expression.Compile());
@@ -154,6 +157,11 @@ namespace Lantean.QBTMudBlade.Components
         {
             Filters = null;
             await InvokeAsync(StateHasChanged);
+            if (FileList is null)
+            {
+                return;
+            }
+            SelectedItems = FileList.Values.Where(f => f.Priority != Priority.DoNotDownload).ToHashSet();
         }
 
         public async ValueTask DisposeAsync()
@@ -378,10 +386,12 @@ namespace Lantean.QBTMudBlade.Components
             }
         }
 
-        private void SetSort(Func<ContentItem, object?> sortSelector, SortDirection sortDirection)
+        private async Task SetSort(string columnId, SortDirection sortDirection)
         {
-            SortSelector = sortSelector;
-            SortDirection = sortDirection;
+            _sortColumn = columnId;
+            _sortDirection = sortDirection;
+
+            await LocalStorage.SetItemAsync(_columnSortStorageKey, new Tuple<string, SortDirection>(columnId, sortDirection));
         }
 
         protected void ToggleNode(ContentItem contentItem, MouseEventArgs args)
@@ -411,11 +421,19 @@ namespace Lantean.QBTMudBlade.Components
             return Files.Where(f => f.Name.StartsWith(contentItem.Name + Extensions.DirectorySeparator) && !f.IsFolder);
         }
 
+        private Func<ContentItem, object?> GetSortSelector()
+        {
+            var sortSelector = _columns.Find(c => c.Id == _sortColumn)?.SortSelector;
+
+            return sortSelector ?? (i => i.Name);
+        }
+
         private IEnumerable<ContentItem> GetDescendants(ContentItem folder, int level)
         {
             level++;
             var descendantsKey = folder.GetDescendantsKey(level);
-            foreach (var item in FileList!.Values.Where(f => f.Name.StartsWith(descendantsKey)).OrderByDirection(SortDirection, SortSelector))
+
+            foreach (var item in FileList!.Values.Where(f => f.Name.StartsWith(descendantsKey)).OrderByDirection(_sortDirection, GetSortSelector()))
             {
                 if (item.IsFolder)
                 {
@@ -474,12 +492,12 @@ namespace Lantean.QBTMudBlade.Components
             // this is a flat file structure
             if (maxLevel == 0)
             {
-                return FileList.Values.Where(FilterContentItem).OrderByDirection(SortDirection, SortSelector).ToList().AsReadOnly();
+                return FileList.Values.Where(FilterContentItem).OrderByDirection(_sortDirection, GetSortSelector()).ToList().AsReadOnly();
             }
 
             var list = new List<ContentItem>();
 
-            var folders = FileList.Values.Where(c => c.IsFolder && c.Level == 0).OrderByDirection(SortDirection, SortSelector).ToList();
+            var folders = FileList.Values.Where(c => c.IsFolder && c.Level == 0).OrderByDirection(_sortDirection, GetSortSelector()).ToList();
             foreach (var folder in folders)
             {
                 list.Add(folder);
