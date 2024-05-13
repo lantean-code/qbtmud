@@ -240,7 +240,11 @@ namespace Lantean.QBTMudBlade.Components
             Torrent? torrent = null;
             if (Hashes.Any())
             {
-                torrent = MainData.Torrents[Hashes.First()];
+                string key = Hashes.First();
+                if (!MainData.Torrents.TryGetValue(key, out torrent))
+                {
+                    Hashes = Hashes.Except([key]);
+                }
             }
 
             var categories = new List<Action>
