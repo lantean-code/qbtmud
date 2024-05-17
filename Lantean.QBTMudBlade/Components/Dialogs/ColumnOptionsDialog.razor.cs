@@ -13,6 +13,9 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         [EditorRequired]
         public List<ColumnDefinition<T>> Columns { get; set; } = default!;
 
+        [Parameter]
+        public Dictionary<string, int?> Widths { get; set; } = [];
+
         protected HashSet<string> SelectedColumns { get; set; } = [];
 
         protected override void OnParametersSet()
@@ -26,7 +29,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             }
         }
 
-        protected void SetSelected(bool selected, string id) 
+        protected void SetSelected(bool selected, string id)
         {
             if (selected)
             {
@@ -38,6 +41,75 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             }
         }
 
+        protected void SetWidth(string? value, string id)
+        {
+            var column = Columns.Find(c => c.Id == id);
+            var defaultWidth = column?.Width;
+
+            if (int.TryParse(value, out var width))
+            {
+                if (width == defaultWidth)
+                {
+                    Widths.Remove(id);
+                }
+                else
+                {
+                    Widths[id] = width;
+                }
+            }
+            else
+            {
+                if (defaultWidth is null)
+                {
+                    Widths.Remove(id);
+                }
+                else
+                {
+                    Widths[id] = null;
+                }
+            }
+        }
+
+        protected void MoveUp(int index)
+        {
+            if (index == 0)
+            {
+                return;
+            }
+
+            (Columns[index], Columns[index - 1]) = (Columns[index - 1], Columns[index]);
+        }
+
+        protected void MoveDown(int index)
+        {
+            if (index >= Columns.Count)
+            {
+                return;
+            }
+
+            (Columns[index], Columns[index + 1]) = (Columns[index + 1], Columns[index]);
+        }
+
+        protected string GetValue(int? value, string columnId)
+        {
+            if (Widths.TryGetValue(columnId, out var newWidth))
+            {
+                value = newWidth;
+            }
+
+            if (!value.HasValue)
+            {
+                return "";
+            }
+
+            if (value.Value <= 0)
+            {
+                return "auto";
+            }
+
+            return value.Value.ToString();
+        }
+
         protected void Cancel(MouseEventArgs args)
         {
             MudDialog.Cancel();
@@ -45,7 +117,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
 
         protected void Submit(MouseEventArgs args)
         {
-            MudDialog.Close(DialogResult.Ok(SelectedColumns));
+            MudDialog.Close(DialogResult.Ok((SelectedColumns, Widths)));
         }
     }
 }

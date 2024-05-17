@@ -18,48 +18,20 @@
     <MudSpacer />
     <MudTextField T="string" Value="SearchText" ValueChanged="SearchTextChanged" Immediate="true" DebounceInterval="500" Placeholder="Filter file list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
 </MudToolBar>
-<MudTable T="ContentItem" Hover="true" FixedHeader="true" HeaderClass="table-head-bordered" Breakpoint="Breakpoint.None" Bordered="false" 
-    MultiSelection="true" Dense="true" SelectOnRowClick="false"
-    Items="Files"   
-    SelectedItems="SelectedItems" 
+
+<DynamicTable
+    @ref="Table"
+    T="ContentItem" 
+    ColumnDefinitions="Columns" 
+    Items="Files" 
+    MultiSelection="true"
+    PreSorted="true"
+    SelectedItems="SelectedItems"
     SelectedItemsChanged="SelectedItemsChanged"
-    OnRowClick="RowClick"
-    RowStyleFunc="RowStyle"
-    RowClassFunc="RowClass"
-    AllowUnsorted="false"
-    Virtualize="true">
-    <ColGroup>
-        <col style="width: 30px" />
-        @foreach (var column in GetColumns())
-        {
-            var style = column.Width.HasValue ? $"width: {column.Width.Value}px" : null;
-            <col style="@style" />
-        }
-    </ColGroup>
-    <HeaderContent>
-        @foreach (var column in GetColumns())
-        {
-            <MudTh>
-                @if (column.SortSelector is not null)
-                {
-                    <MudTableSortLabel T="ContentItem" SortDirectionChanged="@(c => SetSort(column.Id, c))" InitialDirection="column.InitialDirection">@column.Header</MudTableSortLabel>
-                }
-                else
-                {
-                    @column.Header
-                }
-            </MudTh>
-        }
-    </HeaderContent>
-    <RowTemplate>
-        @foreach (var column in GetColumns())
-        {
-            <MudTd DataLabel="@column.Header" Class="@column.Class">
-                @column.RowTemplate(column.GetRowContext(context))
-            </MudTd>
-        }
-    </RowTemplate>
-</MudTable>
+    SelectedItemChanged="SelectedItemChanged"
+    SortColumnChanged="SortColumnChanged"
+    SortDirectionChanged="SortDirectionChanged"
+/>
 
 @code {
     private RenderFragment<RowContext<ContentItem>> NameColumn
@@ -68,11 +40,11 @@
         {
             return context => __builder => 
             {
-                <div style="@($"margin-left: {context.Data.Level * 56}px")">
+                <div style="@($"margin-left: {context.Data.Level * 14}px")">
                     @if (context.Data.IsFolder)
                     {
-                        <MudIconButton ButtonType="ButtonType.Button" Icon="@Icons.Material.Filled.ExpandLess" Class="@("pa-0 " + (ExpandedNodes.Contains(context.Data.Name) ? "rotate-180" : "rotate-90"))" OnClick="@(c => ToggleNode(context.Data, c))"></MudIconButton>
-                        <MudIcon Icon="@Icons.Material.Filled.Folder" Class="pt-2" Style="margin-right: 4px; position: relative; top: 3px" />
+                        <MudIconButton Edge="Edge.Start" ButtonType="ButtonType.Button" Icon="@(ExpandedNodes.Contains(context.Data.Name) ? Icons.Material.Filled.KeyboardArrowDown : Icons.Material.Filled.KeyboardArrowRight)" OnClick="@(c => ToggleNode(context.Data, c))"></MudIconButton>
+                        <MudIcon Icon="@Icons.Material.Filled.Folder" Class="pt-0" Style="margin-right: 4px; position: relative; top: 7px; margin-left: -15px" />
                     }
                     @context.Data.DisplayName
                 </div>;
@@ -92,6 +64,21 @@
                     <MudSelectItem T="Priority" Value="Priority.High">High</MudSelectItem>
                     <MudSelectItem T="Priority" Value="Priority.Maximum">Maximum</MudSelectItem>
                 </MudSelect>
+            };
+        }
+    }
+
+    private static RenderFragment<RowContext<ContentItem>> ProgressBarColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var value = (float?)context.GetValue();
+                var color = value < 1 ? Color.Success : Color.Info;
+                <MudProgressLinear title="Progress" Color="@color" Value="@((value ?? 0) * 100)" Class="progress-expand" Size="Size.Large">
+                    @DisplayHelpers.Percentage(value)
+                </MudProgressLinear>;
             };
         }
     }

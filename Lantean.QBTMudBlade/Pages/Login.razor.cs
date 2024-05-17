@@ -49,7 +49,7 @@ namespace Lantean.QBTMudBlade.Pages
 #if DEBUG
         protected override async Task OnInitializedAsync()
         {
-            await DoLogin("admin", "pdqYws6EQ");
+            await DoLogin("admin", "rp46PuPVn");
         }
 #endif
     }

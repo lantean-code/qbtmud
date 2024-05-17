@@ -30,6 +30,10 @@ namespace Lantean.QBTMudBlade.Layout
 
         protected EnhancedErrorBoundary? ErrorBoundary { get; set; }
 
+        protected bool IsDarkMode { get; set; }
+
+        protected MudThemeProvider MudThemeProvider { get; set; } = default!;
+
         ResizeOptions IBrowserViewportObserver.ResizeOptions { get; } = new()
         {
             ReportRate = 50,
@@ -53,10 +57,17 @@ namespace Lantean.QBTMudBlade.Layout
         {
             if (firstRender)
             {
+                IsDarkMode = await MudThemeProvider.GetSystemPreference();
+                await MudThemeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
                 await BrowserViewportService.SubscribeAsync(this, fireImmediately: true);
+                await InvokeAsync(StateHasChanged);
             }
+        }
 
-            await base.OnAfterRenderAsync(firstRender);
+        protected async Task OnSystemPreferenceChanged(bool value)
+        {
+            IsDarkMode = value;
+            await InvokeAsync(StateHasChanged);
         }
 
         public async Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs browserViewportEventArgs)

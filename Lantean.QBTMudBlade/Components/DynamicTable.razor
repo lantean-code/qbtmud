@@ -1,0 +1,58 @@
+﻿@typeparam T
+@inherits MudComponentBase
+
+<MudTable
+    @ref="Table"
+    Items="OrderedItems" 
+    T="T" 
+    Hover="true"
+    FixedHeader="true" 
+    HeaderClass="table-head-bordered" 
+    Dense="true" 
+    Breakpoint="Breakpoint.None" 
+    Bordered="true" 
+    Loading="@(Items is null)" 
+    SelectOnRowClick="false" 
+    Striped="Striped" 
+    Square="true" 
+    LoadingProgressColor="Color.Info" 
+    MultiSelection="MultiSelection"
+    SelectedItems="SelectedItems"
+    SelectedItemsChanged="SelectedItemsChangedInternal"
+    HorizontalScrollbar="true" 
+    OnRowClick="OnRowClickInternal"
+    RowStyleFunc="RowStyleFuncInternal"
+    Virtualize="true"
+    AllowUnsorted="false"
+    Class="@Class">
+    <ColGroup>
+        <col style="width: 30px" />
+        @foreach (var column in GetColumns())
+        {
+            <col style="@(GetColumnStyle(column))" />
+        }
+    </ColGroup>
+    <HeaderContent>
+        @foreach (var column in GetColumns())
+        {
+            <MudTh Class="overflow-cell" Style="@(GetColumnStyle(column))">
+                @if (column.SortSelector is not null)
+                {
+                    <MudTableSortLabel T="T" SortDirectionChanged="@(c => SetSort(column.Id, c))" SortDirection="@(column.Id == _sortColumn ? _sortDirection : SortDirection.None)">@column.Header</MudTableSortLabel>
+                }
+                else
+                {
+                    @column.Header
+                }
+            </MudTh>
+        }
+    </HeaderContent>
+    <RowTemplate>
+        @foreach (var column in GetColumns())
+        {
+            <MudTd DataLabel="@column.Header" Class="@(GetColumnClass(column, context))" Style="@(GetColumnStyle(column))">
+                @column.RowTemplate(column.GetRowContext(context))
+            </MudTd>
+        }
+    </RowTemplate>
+</MudTable>

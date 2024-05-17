@@ -1,5 +1,6 @@
 ﻿using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Layout
 {
@@ -10,6 +11,13 @@ namespace Lantean.QBTMudBlade.Layout
 
         [CascadingParameter]
         public IEnumerable<Torrent>? Torrents { get; set; }
+
+        [CascadingParameter(Name = "SortColumn")]
+        public string? SortColumn { get; set; }
+
+        [CascadingParameter(Name = "SortDirection")]
+        public SortDirection SortDirection { get; set; }
+
 
         protected string? SelectedTorrent { get; set; }
 

@@ -1,7 +1,7 @@
 ﻿<MudNavMenu>
     <MudNavLink Icon="@(Icons.Material.Outlined.NavigateBefore)" OnClick="NavigateBack">Back</MudNavLink>
     <MudDivider />
-    @if (Torrents is null)
+    @if (OrderedTorrents is null)
     {
         @for (var i = 0; i < 10; i++)
         {
@@ -10,7 +10,7 @@
     }
     else
     {
-        foreach (var torrent in Torrents)
+        foreach (var torrent in OrderedTorrents)
         {
             <MudNavLink Href="@("/details/" + torrent.Hash)">@torrent.Name</MudNavLink>
         }

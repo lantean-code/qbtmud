@@ -39,6 +39,10 @@ namespace Lantean.QBTMudBlade.Layout
 
         protected QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
+        protected string? SortColumn { get; set; }
+
+        protected SortDirection SortDirection { get; set; }
+
         protected string Version { get; set; } = "";
 
         protected string? SearchText { get; set; }
@@ -141,6 +145,10 @@ namespace Lantean.QBTMudBlade.Layout
         protected EventCallback<string> TrackerChanged => EventCallback.Factory.Create<string>(this, tracker => Tracker = tracker);
 
         protected EventCallback<string> SearchTermChanged => EventCallback.Factory.Create<string>(this, term => SearchText = term);
+
+        protected EventCallback<string> SortColumnChanged => EventCallback.Factory.Create<string>(this, columnId => SortColumn = columnId);
+
+        protected EventCallback<SortDirection> SortDirectionChanged => EventCallback.Factory.Create<SortDirection>(this, sortDirection => SortDirection = sortDirection);
 
         protected static (string, Color) GetConnectionIcon(string? status)
         {

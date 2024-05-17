@@ -155,3 +155,15 @@ td.no-wrap {
     height: 200px;
     width: 100%;
 }
+
+.overflow-cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-select .mud-input-control > .mud-input-control-input-container > div.mud-input.mud-input-text {
+    margin-top: 0;
+    margin-left: 5px;
+    margin-right: 5px;
+}

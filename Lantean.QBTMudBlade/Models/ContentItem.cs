@@ -1,5 +1,8 @@
-﻿namespace Lantean.QBTMudBlade.Models
+﻿using System.Diagnostics;
+
+namespace Lantean.QBTMudBlade.Models
 {
+    [DebuggerDisplay("{Name}")]
     public class ContentItem
     {
         public ContentItem(

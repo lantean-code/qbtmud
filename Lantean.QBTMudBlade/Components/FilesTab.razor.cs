@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using System.Collections.ObjectModel;
 using System.Net;
+using System.Linq;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -16,15 +17,9 @@ namespace Lantean.QBTMudBlade.Components
     {
         private readonly bool _refreshEnabled = true;
 
-        private const string _columnSelectionStorageKey = "FilesTab.ColumnSelection";
-        private const string _columnSortStorageKey = "FilesTab.ColumnSort";
 
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
-
-        private string? _sortColumn;
-
-        private SortDirection _sortDirection = SortDirection.Ascending;
 
         [Parameter]
         public bool Active { get; set; }
@@ -44,9 +39,6 @@ namespace Lantean.QBTMudBlade.Components
         [Inject]
         protected IDataManager DataManager { get; set; } = default!;
 
-        [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
-
         protected HashSet<string> ExpandedNodes { get; set; } = [];
 
         protected Dictionary<string, ContentItem>? FileList { get; set; }
@@ -55,70 +47,35 @@ namespace Lantean.QBTMudBlade.Components
 
         protected HashSet<ContentItem> SelectedItems { get; set; } = [];
 
-        protected List<ColumnDefinition<ContentItem>> _columns = [];
         private List<PropertyFilterDefinition<ContentItem>>? _filterDefinitions;
 
         protected ContentItem? SelectedItem { get; set; }
 
         protected string? SearchText { get; set; }
 
-        protected int? _selectedIndex { get; set; }
-
-        protected HashSet<string> SelectedColumns { get; set; }
-
         public IEnumerable<Func<ContentItem, bool>>? Filters { get; set; }
+
+        private readonly Dictionary<string, RenderFragment<RowContext<ContentItem>>> _columnRenderFragments = [];
+
+        private DynamicTable<ContentItem>? Table { get; set; }
+
+        private string? _sortColumn;
+        private SortDirection _sortDirection;
 
         public FilesTab()
         {
-            _columns.Add(CreateColumnDefinition("Name", c => c.Name, NameColumn, width: 200, initialDirection: SortDirection.Ascending));
-            _columns.Add(CreateColumnDefinition("Total Size", c => c.Size, c => DisplayHelpers.Size(c.Size)));
-            _columns.Add(CreateColumnDefinition("Progress", c => c.Progress, c => DisplayHelpers.Percentage(c.Progress)));
-            _columns.Add(CreateColumnDefinition("Priority", c => c.Priority, PriorityColumn));
-            _columns.Add(CreateColumnDefinition("Remaining", c => c.Remaining, c => DisplayHelpers.Size(c.Remaining)));
-            _columns.Add(CreateColumnDefinition("Availability", c => c.Availability, c => c.Availability.ToString("0.00")));
-
-            SelectedColumns = _columns.Where(c => c.Enabled).Select(c => c.Id).ToHashSet();
-        }
-
-        protected override async Task OnInitializedAsync()
-        {
-            var selectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(_columnSelectionStorageKey);
-            if (selectedColumns is not null)
-            {
-                SelectedColumns = selectedColumns;
-            }
-
-            var columnSort = await LocalStorage.GetItemAsync<Tuple<string, SortDirection>>(_columnSortStorageKey);
-            if (columnSort is not null)
-            {
-                _sortColumn = columnSort.Item1;
-                _sortDirection = columnSort.Item2;
-            }
-        }
-
-        protected IEnumerable<ColumnDefinition<ContentItem>> GetColumns()
-        {
-            return _columns.Where(c => SelectedColumns.Contains(c.Id));
+            _columnRenderFragments.Add("Name", NameColumn);
+            _columnRenderFragments.Add("Priority", PriorityColumn);
         }
 
         protected async Task ColumnOptions()
         {
-            DialogParameters parameters = new DialogParameters
-            {
-                { "Columns", _columns }
-            };
-
-            var reference = await DialogService.ShowAsync<ColumnOptionsDialog<ContentItem>>("ColumnOptions", parameters, DialogHelper.FormDialogOptions);
-
-            var result = await reference.Result;
-            if (result.Canceled)
+            if (Table is null)
             {
                 return;
             }
 
-            SelectedColumns = (HashSet<string>)result.Data;
-
-            await LocalStorage.SetItemAsync(_columnSelectionStorageKey, SelectedColumns);
+            await Table.ShowColumnOptionsDialog();
         }
 
         protected async Task ShowFilterDialog()
@@ -306,26 +263,13 @@ namespace Lantean.QBTMudBlade.Components
             await ApiClient.SetFilePriority(Hash, fileIndexes, MapPriority(priority));
         }
 
-        protected string RowClass(ContentItem contentItem, int index)
-        {
-            if (contentItem.Level == 0)
-            {
-                return "d-table-row";
-            }
-            if (ExpandedNodes.Contains(contentItem.Path))
-            {
-                return "d-table-row";
-            }
-            return "d-none";
-        }
-
         protected async Task RenameFile()
         {
-            if (Hash is null || FileList is null || _selectedIndex is null)
+            if (Hash is null || FileList is null || SelectedItem is null)
             {
                 return;
             }
-            var contentItem = FileList.Values.FirstOrDefault(c => c.Index == _selectedIndex.Value);
+            var contentItem = FileList.Values.FirstOrDefault(c => c.Index == SelectedItem.Index);
             if (contentItem is null)
             {
                 return;
@@ -334,19 +278,19 @@ namespace Lantean.QBTMudBlade.Components
             await DialogService.ShowSingleFieldDialog("Rename", "New name", name, async v => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + v));
         }
 
-        protected void RowClick(TableRowClickEventArgs<ContentItem> eventArgs)
+        protected void SortColumnChanged(string sortColumn)
         {
-            _selectedIndex = eventArgs.Item.Index;
+            _sortColumn = sortColumn;
         }
 
-        protected string RowStyle(ContentItem item, int index)
+        protected void SortDirectionChanged(SortDirection sortDirection)
         {
-            var style = "user-select: none; cursor: pointer;";
-            if (_selectedIndex != item.Index)
-            {
-                return style;
-            }
-            return $"{style} background: #D3D3D3";
+            _sortDirection = sortDirection;
+        }
+
+        protected void SelectedItemChanged(ContentItem item)
+        {
+            SelectedItem = item;
         }
 
         protected async Task SelectedItemsChanged(HashSet<ContentItem> selectedItems)
@@ -386,14 +330,6 @@ namespace Lantean.QBTMudBlade.Components
             }
         }
 
-        private async Task SetSort(string columnId, SortDirection sortDirection)
-        {
-            _sortColumn = columnId;
-            _sortDirection = sortDirection;
-
-            await LocalStorage.SetItemAsync(_columnSortStorageKey, new Tuple<string, SortDirection>(columnId, sortDirection));
-        }
-
         protected void ToggleNode(ContentItem contentItem, MouseEventArgs args)
         {
             if (ExpandedNodes.Contains(contentItem.Name))
@@ -404,11 +340,23 @@ namespace Lantean.QBTMudBlade.Components
             {
                 ExpandedNodes.Add(contentItem.Name);
             }
+
+            if (FileList is not null)
+            {
+                SelectedItems = GetFiles().Where(f => f.Priority != Priority.DoNotDownload).ToHashSet();
+            }
         }
 
         private static QBitTorrentClient.Models.Priority MapPriority(Priority priority)
         {
             return (QBitTorrentClient.Models.Priority)(int)priority;
+        }
+
+        private Func<ContentItem, object?> GetSortSelector()
+        {
+            var sortSelector = ColumnsDefinitions.Find(c => c.Id == _sortColumn)?.SortSelector;
+
+            return sortSelector ?? (i => i.Name);
         }
 
         private IEnumerable<ContentItem> GetChildren(ContentItem contentItem)
@@ -421,28 +369,28 @@ namespace Lantean.QBTMudBlade.Components
             return Files.Where(f => f.Name.StartsWith(contentItem.Name + Extensions.DirectorySeparator) && !f.IsFolder);
         }
 
-        private Func<ContentItem, object?> GetSortSelector()
-        {
-            var sortSelector = _columns.Find(c => c.Id == _sortColumn)?.SortSelector;
-
-            return sortSelector ?? (i => i.Name);
-        }
-
-        private IEnumerable<ContentItem> GetDescendants(ContentItem folder, int level)
+        private IEnumerable<ContentItem> GetChildren(ContentItem folder, int level)
         {
             level++;
             var descendantsKey = folder.GetDescendantsKey(level);
 
-            foreach (var item in FileList!.Values.Where(f => f.Name.StartsWith(descendantsKey)).OrderByDirection(_sortDirection, GetSortSelector()))
+            foreach (var item in FileList!.Values.Where(f => f.Name.StartsWith(descendantsKey) && f.Level == level).OrderByDirection(_sortDirection, GetSortSelector()))
             {
                 if (item.IsFolder)
                 {
-                    var descendants = GetDescendants(item, level);
-                    // if the filter returns some resutls then show folder item
+                    var descendants = GetChildren(item, level);
+                    // if the filter returns some results then show folder item
                     if (descendants.Any())
                     {
                         yield return item;
                     }
+
+                    // if the folder is not expanded - don't return children
+                    if (!ExpandedNodes.Contains(item.Name))
+                    {
+                        continue;
+                    }
+
                     // then show children
                     foreach (var descendant in descendants)
                     {
@@ -497,15 +445,19 @@ namespace Lantean.QBTMudBlade.Components
 
             var list = new List<ContentItem>();
 
-            var folders = FileList.Values.Where(c => c.IsFolder && c.Level == 0).OrderByDirection(_sortDirection, GetSortSelector()).ToList();
-            foreach (var folder in folders)
+            var rootItems = FileList.Values.Where(c => c.Level == 0).OrderByDirection(_sortDirection, GetSortSelector()).ToList();
+            foreach (var item in rootItems)
             {
-                list.Add(folder);
-                var level = 0;
-                var descendants = GetDescendants(folder, level);
-                foreach (var descendant in descendants)
+                list.Add(item);
+
+                if (item.IsFolder && ExpandedNodes.Contains(item.Name))
                 {
-                    list.Add(descendant);
+                    var level = 0;
+                    var descendants = GetChildren(item, level);
+                    foreach (var descendant in descendants)
+                    {
+                        list.Add(descendant);
+                    }
                 }
             }
 
@@ -576,7 +528,32 @@ namespace Lantean.QBTMudBlade.Components
             await ApiClient.SetFilePriority(Hash, files, priority);
         }
 
-        private static ColumnDefinition<ContentItem> CreateColumnDefinition(string name, Func<ContentItem, object?> selector, RenderFragment<RowContext<ContentItem>> rowTemplate, int? width = null, string? tdClass = null, bool enabled = true, SortDirection initialDirection = SortDirection.None)
+        protected IEnumerable<ColumnDefinition<ContentItem>> Columns => GetColumnDefinitions();
+
+        private IEnumerable<ColumnDefinition<ContentItem>> GetColumnDefinitions()
+        {
+            foreach (var columnDefinition in ColumnsDefinitions)
+            {
+                if (_columnRenderFragments.TryGetValue(columnDefinition.Header, out var fragment))
+                {
+                    columnDefinition.RowTemplate = fragment;
+                }
+
+                yield return columnDefinition;
+            }
+        }
+
+        public static List<ColumnDefinition<ContentItem>> ColumnsDefinitions { get; } =
+        [
+            CreateColumnDefinition("Name", c => c.Name, width: 200, initialDirection: SortDirection.Ascending, classFunc: c => c.IsFolder ? "pa-0" : "pa-3"),
+            CreateColumnDefinition("Total Size", c => c.Size, c => DisplayHelpers.Size(c.Size)),
+            CreateColumnDefinition("Progress", c => c.Progress, ProgressBarColumn, tdClass: "table-progress pl-2 pr-2"),
+            CreateColumnDefinition("Priority", c => c.Priority, tdClass: "table-select pa-0"),
+            CreateColumnDefinition("Remaining", c => c.Remaining, c => DisplayHelpers.Size(c.Remaining)),
+            CreateColumnDefinition("Availability", c => c.Availability, c => c.Availability.ToString("0.00")),
+        ];
+
+        private static ColumnDefinition<ContentItem> CreateColumnDefinition(string name, Func<ContentItem, object?> selector, RenderFragment<RowContext<ContentItem>> rowTemplate, int? width = null, string? tdClass = null, Func<ContentItem, string?>? classFunc = null, bool enabled = true, SortDirection initialDirection = SortDirection.None)
         {
             var cd = new ColumnDefinition<ContentItem>(name, selector, rowTemplate);
             cd.Class = "no-wrap";
@@ -584,6 +561,7 @@ namespace Lantean.QBTMudBlade.Components
             {
                 cd.Class += " " + tdClass;
             }
+            cd.ClassFunc = classFunc;
             cd.Width = width;
             cd.Enabled = enabled;
             cd.InitialDirection = initialDirection;
@@ -591,7 +569,7 @@ namespace Lantean.QBTMudBlade.Components
             return cd;
         }
 
-        private static ColumnDefinition<ContentItem> CreateColumnDefinition(string name, Func<ContentItem, object?> selector, Func<ContentItem, string>? formatter = null, int? width = null, string? tdClass = null, bool enabled = true, SortDirection initialDirection = SortDirection.None)
+        private static ColumnDefinition<ContentItem> CreateColumnDefinition(string name, Func<ContentItem, object?> selector, Func<ContentItem, string>? formatter = null, int? width = null, string? tdClass = null, Func<ContentItem, string?>? classFunc = null, bool enabled = true, SortDirection initialDirection = SortDirection.None)
         {
             var cd = new ColumnDefinition<ContentItem>(name, selector, formatter);
             cd.Class = "no-wrap";
@@ -599,6 +577,7 @@ namespace Lantean.QBTMudBlade.Components
             {
                 cd.Class += " " + tdClass;
             }
+            cd.ClassFunc = classFunc;
             cd.Width = width;
             cd.Enabled = enabled;
             cd.InitialDirection = initialDirection;

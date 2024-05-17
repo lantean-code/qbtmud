@@ -2,7 +2,7 @@
 @layout LoggedInLayout
 
 <MudDrawer Open="DrawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" DisableOverlay="true">
-    <TorrentsListNav Torrents="Torrents" SelectedTorrent="@SelectedTorrent" />
+    <TorrentsListNav Torrents="Torrents" SelectedTorrent="@SelectedTorrent" SortDirection="SortDirection" SortColumn="@SortColumn" />
 </MudDrawer>
 <MudMainContent>
     @Body

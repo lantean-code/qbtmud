@@ -3,14 +3,25 @@
 <MudDialog>
     <DialogContent>
         <MudCard Class="w-100">
-            <MudList>
-                @foreach (var column in Columns)
+            <MudGrid>
+                @for (var i = 0; i < Columns.Count; i++)
                 {
-                    <MudListItem>
-                        <MudCheckBox T="bool" ValueChanged="@(c => SetSelected(c, column.Id))" Label="@column.Header" LabelPosition="LabelPosition.End" Value="@(SelectedColumns.Contains(column.Id))" />
-                    </MudListItem>
+                    var column = Columns[i];
+                    var index = i;
+                    <MudItem xs="7">
+                            <MudCheckBox T="bool" ValueChanged="@(c => SetSelected(c, column.Id))" Label="@column.Header" LabelPosition="LabelPosition.End" Value="@(SelectedColumns.Contains(column.Id))" />
+                    </MudItem>
+                    <MudItem xs="3">
+                        <MudTextField T="string" Value="@(GetValue(column.Width, column.Id))" ValueChanged="@(c => SetWidth(c, column.Id))" Label="Width" Variant="Variant.Text" HelperText="px" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.WidthNormal" ShrinkLabel="true" OnAdornmentClick="@(c => SetWidth("auto", column.Id))" />
+                    </MudItem>
+                    <MudItem xs="1">
+                        <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowUp" Disabled="@(index == 0)" OnClick="@(e => MoveUp(index))" />
+                    </MudItem>
+                    <MudItem xs="1">
+                        <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowDown" Disabled="@(index == Columns.Count - 1)" OnClick="@(e => MoveDown(index))" />
+                    </MudItem>
                 }
-            </MudList>
+            </MudGrid>
         </MudCard>
     </DialogContent>
     <DialogActions>

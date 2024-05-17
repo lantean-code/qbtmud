@@ -226,6 +226,23 @@ namespace Lantean.QBTMudBlade
             return (List<PropertyFilterDefinition<T>>?)dialogResult.Data;
         }
 
+        public static async Task<(HashSet<string> SelectedColumns, Dictionary<string, int?> ColumnWidths)> ShowColumnsOptionsDialog<T>(this IDialogService dialogService, List<ColumnDefinition<T>> columnDefinitions, Dictionary<string, int?> widths)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(ColumnOptionsDialog<T>.Columns), columnDefinitions },
+            };
+
+            var reference = await dialogService.ShowAsync<ColumnOptionsDialog<T>>("Column Options", parameters, FormDialogOptions);
+            var result = await reference.Result;
+            if (result.Canceled)
+            {
+                return default;
+            }
+
+            return ((HashSet<string>, Dictionary<string, int?>))result.Data;        
+        }
+
         public static async Task InvokeRssRulesDialog(this IDialogService dialogService)
         {
             await Task.Delay(0);

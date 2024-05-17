@@ -2,6 +2,7 @@
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using static MudBlazor.Colors;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -53,24 +54,33 @@ namespace Lantean.QBTMudBlade.Components
 
         protected override async Task OnInitializedAsync()
         {
-            if (await LocalStorage.ContainKeyAsync(_statusSelectionStorageKey))
+            var status = await LocalStorage.GetItemAsStringAsync(_statusSelectionStorageKey);
+            if (status is not null)
             {
-                Status = await LocalStorage.GetItemAsStringAsync(_statusSelectionStorageKey) ?? Models.Status.All.ToString();
+                Status = status;
+                await StatusChanged.InvokeAsync(Enum.Parse<Status>(status));
             }
 
-            if (await LocalStorage.ContainKeyAsync(_categorySelectionStorageKey))
+            var category = await LocalStorage.GetItemAsStringAsync(_categorySelectionStorageKey);
+            if (category is not null)
             {
-                Category = await LocalStorage.GetItemAsStringAsync(_categorySelectionStorageKey) ?? FilterHelper.CATEGORY_ALL;
+                Category = category;
+                await CategoryChanged.InvokeAsync(category);
             }
 
-            if (await LocalStorage.ContainKeyAsync(_tagSelectionStorageKey))
-            {
-                Tag = await LocalStorage.GetItemAsStringAsync(_tagSelectionStorageKey) ?? FilterHelper.TAG_ALL;
-            }
 
-            if (await LocalStorage.ContainKeyAsync(_trackerSelectionStorageKey))
+            var tag = await LocalStorage.GetItemAsStringAsync(_tagSelectionStorageKey);
+            if (tag is not null)
             {
-                Tracker = await LocalStorage.GetItemAsStringAsync(_trackerSelectionStorageKey) ?? FilterHelper.TRACKER_ALL;
+                Tag = tag;
+                await TagChanged.InvokeAsync(tag);
+            }
+            
+            var tracker = await LocalStorage.GetItemAsStringAsync(_trackerSelectionStorageKey);
+            if (tracker is not null)
+            {
+                Tracker = tracker;
+                await TrackerChanged.InvokeAsync(tracker);
             }
         }
 
@@ -78,28 +88,60 @@ namespace Lantean.QBTMudBlade.Components
         {
             Status = value;
             await StatusChanged.InvokeAsync(Enum.Parse<Status>(value));
-            await LocalStorage.SetItemAsStringAsync(_statusSelectionStorageKey, value);
+
+            if (value != Models.Status.All.ToString())
+            {
+                await LocalStorage.SetItemAsStringAsync(_statusSelectionStorageKey, value);
+            }
+            else
+            {
+                await LocalStorage.RemoveItemAsync(_statusSelectionStorageKey);
+            }
         }
 
         protected async Task CategoryValueChanged(string value)
         {
             Category = value;
             await CategoryChanged.InvokeAsync(value);
-            await LocalStorage.SetItemAsStringAsync(_categorySelectionStorageKey, value);
+
+            if (value != FilterHelper.CATEGORY_ALL)
+            {
+                await LocalStorage.SetItemAsStringAsync(_categorySelectionStorageKey, value);
+            }
+            else
+            {
+                await LocalStorage.RemoveItemAsync(_categorySelectionStorageKey);
+            }
         }
 
         protected async Task TagValueChanged(string value)
         {
             Tag = value;
             await TagChanged.InvokeAsync(value);
-            await LocalStorage.SetItemAsStringAsync(_tagSelectionStorageKey, value);
+
+            if (value != FilterHelper.TAG_ALL)
+            {
+                await LocalStorage.SetItemAsStringAsync(_tagSelectionStorageKey, value);
+            }
+            else
+            {
+                await LocalStorage.RemoveItemAsync(_tagSelectionStorageKey);
+            }
         }
 
         protected async Task TrackerValueChanged(string value)
         {
             Tracker = value;
             await TrackerChanged.InvokeAsync(value);
-            await LocalStorage.SetItemAsStringAsync(_trackerSelectionStorageKey, value);
+
+            if (value != FilterHelper.TRACKER_ALL)
+            {
+                await LocalStorage.SetItemAsStringAsync(_trackerSelectionStorageKey, value);
+            }
+            else
+            {
+                await LocalStorage.RemoveItemAsync(_trackerSelectionStorageKey);
+            }
         }
 
         protected static string GetHostName(string tracker)

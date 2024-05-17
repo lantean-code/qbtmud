@@ -1,5 +1,6 @@
 ﻿using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Components;
 using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
@@ -10,9 +11,6 @@ namespace Lantean.QBTMudBlade.Pages
 {
     public partial class TorrentList
     {
-        private const string _columnSelectionStorageKey = "TorrentList.ColumnSelection";
-        private const string _columnSortStorageKey = "TorrentList.ColumnSort";
-
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
@@ -31,10 +29,14 @@ namespace Lantean.QBTMudBlade.Pages
         [CascadingParameter]
         public IEnumerable<Torrent>? Torrents { get; set; }
 
-        protected IEnumerable<Torrent>? OrderedTorrents => GetOrderedTorrents();
-
         [CascadingParameter(Name = "SearchTermChanged")]
         public EventCallback<string> SearchTermChanged { get; set; }
+
+        [CascadingParameter(Name = "SortColumnChanged")]
+        public EventCallback<string> SortColumnChanged { get; set; }
+
+        [CascadingParameter(Name = "SortDirectionChanged")]
+        public EventCallback<SortDirection> SortDirectionChanged { get; set; }
 
         protected string? SearchText { get; set; }
 
@@ -44,51 +46,7 @@ namespace Lantean.QBTMudBlade.Pages
 
         protected bool ToolbarButtonsEnabled => SelectedItems.Count > 0 || SelectedTorrent is not null;
 
-        protected override async Task OnInitializedAsync()
-        {
-            var selectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(_columnSelectionStorageKey);
-            if (selectedColumns is not null)
-            {
-                SelectedColumns = selectedColumns;
-            }
-
-            var columnSort = await LocalStorage.GetItemAsync<Tuple<string, SortDirection>>(_columnSortStorageKey);
-            if (columnSort is not null)
-            {
-                _sortColumn = columnSort.Item1;
-                _sortDirection = columnSort.Item2;
-            }
-        }
-
-        protected override void OnParametersSet()
-        {
-            if (SelectedColumns.Count == 0)
-            {
-                SelectedColumns = _columns.Where(c => c.Enabled).Select(c => c.Id).ToHashSet();
-                if (Preferences?.QueueingEnabled == false)
-                {
-                    SelectedColumns.Remove("#");
-                }
-            }
-            _sortColumn ??= _columns.First(c => c.Enabled).Id;
-
-            if (SelectedTorrent is not null && Torrents is not null && !Torrents.Contains(SelectedTorrent))
-            {
-                SelectedTorrent = null;
-            }
-        }
-
-        private IEnumerable<Torrent>? GetOrderedTorrents()
-        {
-            if (Torrents is null)
-            {
-                return null;
-            }
-
-            var sortSelector = _columns.Find(c => c.Id == _sortColumn)?.SortSelector;
-
-            return Torrents.OrderByDirection(_sortDirection, sortSelector ?? (t => t.Priority));
-        }
+        protected DynamicTable<Torrent>? Table { get; set; }
 
         protected void SelectedItemsChanged(HashSet<Torrent> selectedItems)
         {
@@ -99,13 +57,28 @@ namespace Lantean.QBTMudBlade.Pages
             }
         }
 
+        protected async Task SortDirectionChangedHandler(SortDirection sortDirection)
+        {
+            await SortDirectionChanged.InvokeAsync(sortDirection);
+        }
+
+        protected void SelectedItemChanged(Torrent torrent)
+        {
+            SelectedTorrent = torrent;
+        }
+
+        protected async Task SortColumnChangedHandler(string columnId)
+        {
+            await SortColumnChanged.InvokeAsync(columnId);
+        }
+
         protected async Task SearchTextChanged(string text)
         {
             SearchText = text;
             await SearchTermChanged.InvokeAsync(SearchText);
         }
 
-        protected async Task PauseTorrents(MouseEventArgs eventArgs)
+        protected async Task PauseTorrents()
         {
             await ApiClient.PauseTorrents(GetSelectedTorrents());
 
@@ -113,7 +86,7 @@ namespace Lantean.QBTMudBlade.Pages
             await InvokeAsync(StateHasChanged);
         }
 
-        protected async Task ResumeTorrents(MouseEventArgs eventArgs)
+        protected async Task ResumeTorrents()
         {
             await ApiClient.ResumeTorrents(GetSelectedTorrents());
 
@@ -121,7 +94,7 @@ namespace Lantean.QBTMudBlade.Pages
             await InvokeAsync(StateHasChanged);
         }
 
-        protected async Task RemoveTorrents(MouseEventArgs eventArgs)
+        protected async Task RemoveTorrents()
         {
             var reference = await DialogService.ShowAsync<DeleteDialog>("Remove torrent(s)?");
             var result = await reference.Result;
@@ -136,44 +109,18 @@ namespace Lantean.QBTMudBlade.Pages
             await InvokeAsync(StateHasChanged);
         }
 
-        protected async Task AddTorrentFile(MouseEventArgs eventArgs)
+        protected async Task AddTorrentFile()
         {
             await DialogService.InvokeAddTorrentFileDialog(ApiClient);
         }
 
-        protected async Task AddTorrentLink(MouseEventArgs eventArgs)
+        protected async Task AddTorrentLink()
         {
             await DialogService.InvokeAddTorrentLinkDialog(ApiClient);
         }
 
         protected void RowClick(TableRowClickEventArgs<Torrent> eventArgs)
         {
-            if (eventArgs.MouseEventArgs.CtrlKey)
-            {
-                if (SelectedItems.Contains(eventArgs.Item))
-                {
-                    SelectedItems.Remove(eventArgs.Item);
-                }
-                else
-                {
-                    SelectedItems.Add(eventArgs.Item);
-                }
-
-                return;
-            }
-
-            if (SelectedItems.Contains(eventArgs.Item))
-            {
-                SelectedItems.Remove(eventArgs.Item);
-            }
-            else
-            {
-                SelectedItems.Clear();
-                SelectedItems.Add(eventArgs.Item);
-            }
-
-            SelectedTorrent = eventArgs.Item;
-
             if (eventArgs.MouseEventArgs.Detail > 1)
             {
                 NavigationManager.NavigateTo("/details/" + SelectedTorrent);
@@ -195,29 +142,19 @@ namespace Lantean.QBTMudBlade.Pages
             return [];
         }
 
-        protected void Options(MouseEventArgs eventArgs)
+        protected void Options()
         {
             NavigationManager.NavigateTo("/options");
         }
 
-        protected async Task ColumnOptions()
+        public async Task ColumnOptions()
         {
-            DialogParameters parameters = new DialogParameters
-            {
-                { "Columns", _columns }
-            };
-
-            var reference = await DialogService.ShowAsync<ColumnOptionsDialog<Torrent>>("ColumnOptions", parameters, DialogHelper.FormDialogOptions);
-
-            var result = await reference.Result;
-            if (result.Canceled)
+            if (Table is null)
             {
                 return;
             }
 
-            SelectedColumns = (HashSet<string>)result.Data;
-
-            await LocalStorage.SetItemAsync(_columnSelectionStorageKey, SelectedColumns);
+            await Table.ShowColumnOptionsDialog();
         }
 
         protected void ShowTorrent()
@@ -229,35 +166,12 @@ namespace Lantean.QBTMudBlade.Pages
             NavigationManager.NavigateTo("/details/" + SelectedTorrent.Hash);
         }
 
-        protected string RowStyle(Torrent torrent, int index)
-        {
-            var style = "user-select: none; cursor: pointer;";
-            if (torrent == SelectedTorrent)
-            {
-                style += " background: #D3D3D3";
-            }
-            return style;
-        }
+        protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions;
 
-        protected HashSet<string> SelectedColumns { get; set; } = new HashSet<string>();
-
-        protected IEnumerable<ColumnDefinition<Torrent>> GetColumns()
-        {
-            return _columns.Where(c => SelectedColumns.Contains(c.Id));
-        }
-
-        private async Task SetSort(string columnId, SortDirection sortDirection)
-        {
-            _sortColumn = columnId;
-            _sortDirection = sortDirection;
-
-            await LocalStorage.SetItemAsync(_columnSortStorageKey, new Tuple<string, SortDirection>(columnId, sortDirection));
-        }
-
-        protected List<ColumnDefinition<Torrent>> _columns =
+        public static List<ColumnDefinition<Torrent>> ColumnsDefinitions { get; } =
         [
             CreateColumnDefinition("#", t => t.Priority),
-            CreateColumnDefinition("State Icon", t => t.State, IconColumn),
+            CreateColumnDefinition("", t => t.State, IconColumn),
             CreateColumnDefinition("Name", t => t.Name, width: 200),
             CreateColumnDefinition("Size", t => t.Size, t => DisplayHelpers.Size(t.Size)),
             CreateColumnDefinition("Total Size", t => t.TotalSize, t => DisplayHelpers.Size(t.TotalSize), enabled: false),
@@ -290,9 +204,6 @@ namespace Lantean.QBTMudBlade.Pages
             CreateColumnDefinition("Availability", t => t.Availability, enabled: false),
             //CreateColumnDefinition("Reannounce In", t => t.Reannounce, enabled: false),
         ];
-
-        private string? _sortColumn;
-        private SortDirection _sortDirection;
 
         private static ColumnDefinition<Torrent> CreateColumnDefinition(string name, Func<Torrent, object?> selector, RenderFragment<RowContext<Torrent>> rowTemplate, int? width = null, string? tdClass = null, bool enabled = true)
         {

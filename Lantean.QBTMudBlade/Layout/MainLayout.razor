@@ -2,35 +2,36 @@
 
 
 <EnhancedErrorBoundary @ref="ErrorBoundary" OnClear="Cleared">
-    
+    <MudThemeProvider @ref="MudThemeProvider" @bind-IsDarkMode="IsDarkMode" />
+    <MudDialogProvider />
+    <MudSnackbarProvider />
+
+    <PageTitle>qBittorrent Web UI</PageTitle>
+
+    <MudLayout>
+        <MudAppBar Elevation="1">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+            <MudText Typo="Typo.h5" Class="ml-3">qBittorrent Web UI</MudText>
+            <MudSpacer />
+            @if (ErrorBoundary?.Errors.Count > 0)
+            {
+                <MudBadge Content="@(ErrorBoundary?.Errors.Count ?? 0)" Color="Color.Error" Overlap="true">
+                    <MudIconButton Icon="@Icons.Material.Filled.Error" Color="Color.Default" OnClick="ToggleErrorDrawer" />
+                </MudBadge>
+            }
+            @if (ShowMenu)
+            {
+                <Menu />
+            }
+        </MudAppBar>
+        <MudDrawer Open="ErrorDrawerOpen" ClipMode="DrawerClipMode.Docked" Elevation="2" Anchor="Anchor.Right">
+            <ErrorDisplay ErrorBoundary="ErrorBoundary" />
+        </MudDrawer>
+        <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
+            <CascadingValue Value="IsDarkMode" Name="IsDarkMode">
+                @Body
+            </CascadingValue>
+        </CascadingValue>
+    </MudLayout>
 </EnhancedErrorBoundary>
 
-<MudThemeProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
-
-<PageTitle>qBittorrent Web UI</PageTitle>
-
-<MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
-        <MudText Typo="Typo.h5" Class="ml-3">qBittorrent Web UI</MudText>
-        <MudSpacer />
-        @if (ErrorBoundary?.Errors.Count > 0)
-        {
-            <MudBadge Content="@(ErrorBoundary?.Errors.Count ?? 0)" Color="Color.Error" Overlap="true">
-                <MudIconButton Icon="@Icons.Material.Filled.Error" Color="Color.Default" OnClick="ToggleErrorDrawer" />
-            </MudBadge>
-        }
-        @if (ShowMenu)
-        {
-            <Menu />
-        }
-    </MudAppBar>
-    <MudDrawer Open="ErrorDrawerOpen" ClipMode="DrawerClipMode.Docked" Elevation="2" Anchor="Anchor.Right">
-        <ErrorDisplay ErrorBoundary="ErrorBoundary" />
-    </MudDrawer>
-    <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
-        @Body
-    </CascadingValue>
-</MudLayout>

@@ -12,60 +12,22 @@
     <MudSpacer />
     <MudTextField Value="SearchText" TextChanged="SearchTextChanged" Immediate="true" DebounceInterval="1000" Placeholder="Filter torrent list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
 </MudToolBar>
-<MudTable
-    Items="OrderedTorrents" 
-    T="Torrent" 
-    Hover="true" 
-    FixedHeader="true" 
-    HeaderClass="table-head-bordered" 
-    Dense="true" 
-    Breakpoint="Breakpoint.None" 
-    Bordered="true" 
-    Loading="@(Torrents is null)" 
-    SelectOnRowClick="false" 
-    Striped="true" 
-    Square="true" 
-    LoadingProgressColor="Color.Info" 
-    MultiSelection="true"
-    SelectedItems="SelectedItems"
-    SelectedItemsChanged="SelectedItemsChanged"
-    HorizontalScrollbar="true" 
-    OnRowClick="RowClick"
-    RowStyleFunc="RowStyle"
-    Virtualize="true"
-    Class="torrent-list">
-    <ColGroup>
-        <col style="width: 30px" />
-        @foreach (var column in GetColumns())
-        {
-            var style = column.Width.HasValue ? $"width: {column.Width.Value}px" : null;
-            <col style="@style" />
-        }
-    </ColGroup>
-    <HeaderContent>
-        @foreach (var column in GetColumns())
-        {
-            <MudTh>
-                @if (column.SortSelector is not null)
-                {
-                    <MudTableSortLabel T="Torrent" SortDirectionChanged="@(c => SetSort(column.Id, c))">@column.Header</MudTableSortLabel>
-                }
-                else
-                {
-                    @column.Header
-                }
-            </MudTh>
-        }
-    </HeaderContent>
-    <RowTemplate>
-        @foreach (var column in GetColumns())
-        {
-            <MudTd DataLabel="@column.Header" Class="@column.Class">
-                @column.RowTemplate(column.GetRowContext(context))
-            </MudTd>
-        }
-    </RowTemplate>
-</MudTable>
+
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="ma-0 pa-0">
+    <DynamicTable
+        @ref="Table"
+        T="Torrent" 
+        ColumnDefinitions="Columns" 
+        ColumnFilter="@(c => c.Id != "#" || Preferences?.QueueingEnabled == true)" 
+        Items="Torrents" 
+        OnRowClick="RowClick" 
+        MultiSelection="true"
+        SelectedItemsChanged="SelectedItemsChanged"
+        SelectedItemChanged="SelectedItemChanged"
+        SortColumnChanged="SortColumnChangedHandler"
+        SortDirectionChanged="SortDirectionChangedHandler"
+    />
+</MudContainer>
 
 @code {
     private static RenderFragment<RowContext<Torrent>> ProgressBarColumn
@@ -76,7 +38,7 @@
             {
                 var value = (float?)context.GetValue();
                 var color = value < 1 ? Color.Success : Color.Info;
-                <MudProgressLinear title="Progress" Color="@(color)" Value="@((value ?? 0) * 100)" Class="progress-expand" Size="Size.Large">
+                <MudProgressLinear title="Progress" Color="@color" Value="@((value ?? 0) * 100)" Class="progress-expand" Size="Size.Large">
                     @DisplayHelpers.Percentage(value)
                 </MudProgressLinear>;
             };

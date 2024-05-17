@@ -48,6 +48,8 @@ namespace Lantean.QBTMudBlade
 
         public string? Class { get; set; }
 
+        public Func<T, string?>? ClassFunc { get; set; }
+
         public bool Enabled { get; set; } = true;
 
         public SortDirection InitialDirection { get; set; } = SortDirection.None;

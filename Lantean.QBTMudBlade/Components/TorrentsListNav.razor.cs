@@ -1,5 +1,7 @@
 ﻿using Lantean.QBTMudBlade.Models;
+using Lantean.QBTMudBlade.Pages;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -13,6 +15,26 @@ namespace Lantean.QBTMudBlade.Components
 
         [Parameter]
         public string? SelectedTorrent { get; set; }
+
+        [Parameter]
+        public SortDirection SortDirection { get; set; }
+
+        [Parameter]
+        public string? SortColumn { get; set; }
+
+        protected IEnumerable<Torrent>? OrderedTorrents => GetOrderedTorrents();
+
+        private IEnumerable<Torrent>? GetOrderedTorrents()
+        {
+            if (Torrents is null)
+            {
+                return null;
+            }
+
+            var sortSelector = TorrentList.ColumnsDefinitions.Find(t => t.Id == SortColumn)?.SortSelector ?? (t => t.Name);
+
+            return Torrents.OrderByDirection(SortDirection, sortSelector);
+        }
 
         protected void NavigateBack()
         {

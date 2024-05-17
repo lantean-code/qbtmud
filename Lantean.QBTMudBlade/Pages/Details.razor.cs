@@ -2,7 +2,6 @@
 using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Pages
@@ -48,7 +47,7 @@ namespace Lantean.QBTMudBlade.Pages
             return torrent.Name;
         }
 
-        protected async Task PauseTorrent(MouseEventArgs eventArgs)
+        protected async Task PauseTorrent()
         {
             if (Hash is null)
             {
@@ -58,7 +57,7 @@ namespace Lantean.QBTMudBlade.Pages
             await ApiClient.PauseTorrent(Hash);
         }
 
-        protected async Task ResumeTorrent(MouseEventArgs eventArgs)
+        protected async Task ResumeTorrent()
         {
             if (Hash is null)
             {
@@ -68,7 +67,7 @@ namespace Lantean.QBTMudBlade.Pages
             await ApiClient.ResumeTorrent(Hash);
         }
 
-        protected async Task RemoveTorrent(MouseEventArgs eventArgs)
+        protected async Task RemoveTorrent()
         {
             if (Hash is null)
             {
@@ -83,6 +82,8 @@ namespace Lantean.QBTMudBlade.Pages
             }
 
             await ApiClient.DeleteTorrent(Hash, (bool)result.Data);
+            
+            NavigationManager.NavigateTo("/");
         }
 
         protected void NavigateBack()

@@ -594,26 +594,35 @@ namespace Lantean.QBTMudBlade.Services
 
             var directories = contents.Where(c => c.Value.IsFolder).OrderByDescending(c => c.Value.Level);
 
-            foreach (var key in directories.Select(d => d.Key))
+            foreach (var directory in directories)
             {
-                var directoryContents = contents.Where(c => c.Value.Name.StartsWith(key + Extensions.DirectorySeparator) && !c.Value.IsFolder);
+                var key = directory.Key;
+                var level = directory.Value.Level;
+                var filesContents = contents.Where(c => c.Value.Name.StartsWith(key + Extensions.DirectorySeparator) && !c.Value.IsFolder).ToList();
+                var directoriesContents = contents.Where(c => c.Value.Name.StartsWith(key + Extensions.DirectorySeparator) && c.Value.IsFolder && c.Value.Level == level + 1).ToList();
+                var directoryContents = filesContents.Concat(directoriesContents);
+
+
                 var size = directoryContents.Sum(c => c.Value.Size);
                 var availability = directoryContents.Average(c => c.Value.Availability);
                 var downloaded = directoryContents.Sum(c => c.Value.Downloaded);
                 var progress = (float)downloaded / size;
 
-                var content = contents[key];
-                content.Availability = availability;
-                content.Size = size;
-                content.Progress = progress;
+                if (!contents.TryGetValue(key, out var dir))
+                {
+                    continue;
+                }
+                dir.Availability = availability;
+                dir.Size = size;
+                dir.Progress = progress;
                 var priorities = directoryContents.Select(d => d.Value.Priority).Distinct();
                 if (priorities.Count() == 1)
                 {
-                    content.Priority = priorities.First();
+                    dir.Priority = priorities.First();
                 }
                 else
                 {
-                    content.Priority = Priority.Mixed;
+                    dir.Priority = Priority.Mixed;
                 }
             }
 
