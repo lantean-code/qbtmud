@@ -166,7 +166,12 @@ namespace Lantean.QBTMudBlade
 
         public static bool FilterStatus(Torrent torrent, Status status)
         {
-            var state = torrent.State;
+            return FilterStatus(torrent.State, torrent.UploadSpeed, status);
+        }
+
+        public static bool FilterStatus(string state, long uploadSpeed, Status status)
+        {
+            
             bool inactive = false;
             switch (status)
             {
@@ -188,10 +193,11 @@ namespace Lantean.QBTMudBlade
                     break;
 
                 case Status.Completed:
-                    if (state != "uploading" && !state.Contains("UL"))
+                    if ((state != "uploading") && (!state.Contains("UP")))
                     {
                         return false;
                     }
+
                     break;
 
                 case Status.Resumed:
@@ -217,7 +223,7 @@ namespace Lantean.QBTMudBlade
                     bool check;
                     if (state == "stalledDL")
                     {
-                        check = torrent.UploadSpeed > 0;
+                        check = uploadSpeed > 0;
                     }
                     else
                     {

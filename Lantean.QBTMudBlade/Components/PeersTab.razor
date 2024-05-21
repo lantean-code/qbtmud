@@ -1,4 +1,19 @@
-﻿<MudTable T="Peer" Items="Peers" >
+﻿<MudTable 
+    Items="Peers"
+    T="Peer"
+    Hover="true"
+    FixedHeader="true" 
+    HeaderClass="table-head-bordered" 
+    Dense="true" 
+    Breakpoint="Breakpoint.None" 
+    Bordered="true" 
+    Striped="true" 
+    Square="true" 
+    LoadingProgressColor="Color.Info" 
+    HorizontalScrollbar="true" 
+    Virtualize="true"
+    AllowUnsorted="false"
+    SelectOnRowClick="false">
     <HeaderContent>
         <MudTh>Country/Region</MudTh>
         <MudTh>IP</MudTh>

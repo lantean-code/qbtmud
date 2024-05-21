@@ -2,14 +2,14 @@
 
 
 <EnhancedErrorBoundary @ref="ErrorBoundary" OnClear="Cleared">
-    <MudThemeProvider @ref="MudThemeProvider" @bind-IsDarkMode="IsDarkMode" />
+    <MudThemeProvider @ref="MudThemeProvider" @bind-IsDarkMode="IsDarkMode" Theme="Theme" />
     <MudDialogProvider />
     <MudSnackbarProvider />
 
     <PageTitle>qBittorrent Web UI</PageTitle>
 
     <MudLayout>
-        <MudAppBar Elevation="1">
+        <MudAppBar>
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
             <MudText Typo="Typo.h5" Class="ml-3">qBittorrent Web UI</MudText>
             <MudSpacer />
@@ -19,6 +19,7 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Error" Color="Color.Default" OnClick="ToggleErrorDrawer" />
                 </MudBadge>
             }
+            <MudSwitch T="bool" Label="Dark Mode" LabelPosition="LabelPosition.End" @bind-Value="IsDarkMode" />
             @if (ShowMenu)
             {
                 <Menu />
@@ -27,9 +28,11 @@
         <MudDrawer Open="ErrorDrawerOpen" ClipMode="DrawerClipMode.Docked" Elevation="2" Anchor="Anchor.Right">
             <ErrorDisplay ErrorBoundary="ErrorBoundary" />
         </MudDrawer>
-        <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
-            <CascadingValue Value="IsDarkMode" Name="IsDarkMode">
-                @Body
+        <CascadingValue Value="Theme">
+            <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
+                <CascadingValue Value="IsDarkMode" Name="IsDarkMode">
+                    @Body
+                </CascadingValue>
             </CascadingValue>
         </CascadingValue>
     </MudLayout>

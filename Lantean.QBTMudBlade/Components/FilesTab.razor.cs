@@ -5,18 +5,16 @@ using Lantean.QBTMudBlade.Filter;
 using Lantean.QBTMudBlade.Models;
 using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using System.Collections.ObjectModel;
 using System.Net;
-using System.Linq;
 
 namespace Lantean.QBTMudBlade.Components
 {
     public partial class FilesTab : IAsyncDisposable
     {
         private readonly bool _refreshEnabled = true;
-
+        private const string _expandedNodesStorageKey = "FilesTab.ExpandedNodes";
 
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
@@ -37,6 +35,9 @@ namespace Lantean.QBTMudBlade.Components
         protected IDialogService DialogService { get; set; } = default!;
 
         [Inject]
+        protected ILocalStorageService LocalStorage { get; set; } = default!;
+
+        [Inject]
         protected IDataManager DataManager { get; set; } = default!;
 
         protected HashSet<string> ExpandedNodes { get; set; } = [];
@@ -44,8 +45,6 @@ namespace Lantean.QBTMudBlade.Components
         protected Dictionary<string, ContentItem>? FileList { get; set; }
 
         protected IEnumerable<ContentItem> Files => GetFiles();
-
-        protected HashSet<ContentItem> SelectedItems { get; set; } = [];
 
         private List<PropertyFilterDefinition<ContentItem>>? _filterDefinitions;
 
@@ -59,6 +58,7 @@ namespace Lantean.QBTMudBlade.Components
 
         private DynamicTable<ContentItem>? Table { get; set; }
 
+        private string? _previousHash;
         private string? _sortColumn;
         private SortDirection _sortDirection;
 
@@ -110,15 +110,9 @@ namespace Lantean.QBTMudBlade.Components
             Filters = filters;
         }
 
-        protected async Task RemoveFilter()
+        protected void RemoveFilter()
         {
             Filters = null;
-            await InvokeAsync(StateHasChanged);
-            if (FileList is null)
-            {
-                return;
-            }
-            SelectedItems = FileList.Values.Where(f => f.Priority != Priority.DoNotDownload).ToHashSet();
         }
 
         public async ValueTask DisposeAsync()
@@ -160,15 +154,9 @@ namespace Lantean.QBTMudBlade.Components
             }
         }
 
-        protected async Task SearchTextChanged(string value)
+        protected void SearchTextChanged(string value)
         {
             SearchText = value;
-            await InvokeAsync(StateHasChanged);
-            if (FileList is null)
-            {
-                return;
-            }
-            SelectedItems = FileList.Values.Where(f => f.Priority != Priority.DoNotDownload).ToHashSet();
         }
 
         protected async Task EnabledValueChanged(ContentItem contentItem, bool value)
@@ -237,10 +225,25 @@ namespace Lantean.QBTMudBlade.Components
                 return;
             }
 
+            if (Hash == _previousHash)
+            {
+                return;
+            }
+
+            _previousHash = Hash;
+
             var contents = await ApiClient.GetTorrentContents(Hash);
             FileList = DataManager.CreateContentsList(contents);
 
-            SelectedItems = FileList.Values.Where(f => f.Priority != Priority.DoNotDownload).ToHashSet();
+            var expandedNodes = await LocalStorage.GetItemAsync<HashSet<string>>($"{_expandedNodesStorageKey}.{Hash}");
+            if (expandedNodes is not null)
+            {
+                ExpandedNodes = expandedNodes;
+            }
+            else
+            {
+                ExpandedNodes.Clear();
+            }
         }
 
         protected async Task PriorityValueChanged(ContentItem contentItem, Priority priority)
@@ -253,7 +256,7 @@ namespace Lantean.QBTMudBlade.Components
             IEnumerable<int> fileIndexes;
             if (contentItem.IsFolder)
             {
-                fileIndexes = GetChildren(contentItem).Where(c => !c.IsFolder).Select(c => c.Index);
+                fileIndexes = GetDescendants(contentItem).Where(c => !c.IsFolder).Select(c => c.Index);
             }
             else
             {
@@ -269,11 +272,13 @@ namespace Lantean.QBTMudBlade.Components
             {
                 return;
             }
+
             var contentItem = FileList.Values.FirstOrDefault(c => c.Index == SelectedItem.Index);
             if (contentItem is null)
             {
                 return;
             }
+
             var name = contentItem.GetFileName();
             await DialogService.ShowSingleFieldDialog("Rename", "New name", name, async v => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + v));
         }
@@ -293,44 +298,7 @@ namespace Lantean.QBTMudBlade.Components
             SelectedItem = item;
         }
 
-        protected async Task SelectedItemsChanged(HashSet<ContentItem> selectedItems)
-        {
-            if (Hash is null || Files is null)
-            {
-                return;
-            }
-
-            var unselectedItems = Files.Except(SelectedItems);
-
-            if (unselectedItems.Any())
-            {
-                await ApiClient.SetFilePriority(Hash, unselectedItems.Select(c => c.Index), QBitTorrentClient.Models.Priority.DoNotDownload);
-
-                foreach (var item in unselectedItems)
-                {
-                    Files.First(f => f == item).Priority = Priority.DoNotDownload;
-                }
-
-                await InvokeAsync(StateHasChanged);
-            }
-
-            var existingDoNotDownloads = Files.Where(f => f.Priority == Priority.DoNotDownload);
-            var newlySelectedFiles = selectedItems.Where(f => existingDoNotDownloads.Contains(f));
-
-            if (newlySelectedFiles.Any())
-            {
-                await ApiClient.SetFilePriority(Hash, newlySelectedFiles.Select(c => c.Index), QBitTorrentClient.Models.Priority.Normal);
-
-                foreach (var item in newlySelectedFiles)
-                {
-                    Files.First(f => f == item).Priority = Priority.Normal;
-                }
-
-                await InvokeAsync(StateHasChanged);
-            }
-        }
-
-        protected void ToggleNode(ContentItem contentItem, MouseEventArgs args)
+        protected async Task ToggleNode(ContentItem contentItem)
         {
             if (ExpandedNodes.Contains(contentItem.Name))
             {
@@ -341,10 +309,7 @@ namespace Lantean.QBTMudBlade.Components
                 ExpandedNodes.Add(contentItem.Name);
             }
 
-            if (FileList is not null)
-            {
-                SelectedItems = GetFiles().Where(f => f.Priority != Priority.DoNotDownload).ToHashSet();
-            }
+            await LocalStorage.SetItemAsync($"{_expandedNodesStorageKey}.{Hash}", ExpandedNodes);
         }
 
         private static QBitTorrentClient.Models.Priority MapPriority(Priority priority)
@@ -359,15 +324,15 @@ namespace Lantean.QBTMudBlade.Components
             return sortSelector ?? (i => i.Name);
         }
 
-        private IEnumerable<ContentItem> GetChildren(ContentItem contentItem)
+        private IEnumerable<ContentItem> GetDescendants(ContentItem contentItem)
         {
             if (!contentItem.IsFolder || Files is null)
             {
                 return [];
             }
 
-            return Files.Where(f => f.Name.StartsWith(contentItem.Name + Extensions.DirectorySeparator) && !f.IsFolder);
-        }
+            return FileList!.Values.Where(f => f.Name.StartsWith(contentItem.Name + Extensions.DirectorySeparator) && !f.IsFolder);
+        }        
 
         private IEnumerable<ContentItem> GetChildren(ContentItem folder, int level)
         {
@@ -545,7 +510,7 @@ namespace Lantean.QBTMudBlade.Components
 
         public static List<ColumnDefinition<ContentItem>> ColumnsDefinitions { get; } =
         [
-            CreateColumnDefinition("Name", c => c.Name, width: 200, initialDirection: SortDirection.Ascending, classFunc: c => c.IsFolder ? "pa-0" : "pa-3"),
+            CreateColumnDefinition("Name", c => c.Name, width: 400, initialDirection: SortDirection.Ascending, classFunc: c => c.IsFolder ? "pa-0" : "pa-3"),
             CreateColumnDefinition("Total Size", c => c.Size, c => DisplayHelpers.Size(c.Size)),
             CreateColumnDefinition("Progress", c => c.Progress, ProgressBarColumn, tdClass: "table-progress pl-2 pr-2"),
             CreateColumnDefinition("Priority", c => c.Priority, tdClass: "table-select pa-0"),

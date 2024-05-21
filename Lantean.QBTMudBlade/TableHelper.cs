@@ -42,6 +42,8 @@ namespace Lantean.QBTMudBlade
 
         public RenderFragment<RowContext<T>> RowTemplate { get; set; }
 
+        public bool IconOnly { get; set; }
+
         public int? Width { get; set; }
 
         public Func<T, string>? Formatter { get; set; }

@@ -24,9 +24,9 @@ namespace Lantean.QBTMudBlade.Interop
             await runtime.InvokeVoidAsync("qbt.open", url, target);
         }
 
-        public static async Task RenderPiecesBar(this IJSRuntime runtime, string id, string hash, int[] pieces)
+        public static async Task RenderPiecesBar(this IJSRuntime runtime, string id, string hash, int[] pieces, string? downloadingColor = null, string? haveColor = null, string? borderColor = null)
         {
-            await runtime.InvokeVoidAsync("qbt.renderPiecesBar", id, hash, pieces);
+            await runtime.InvokeVoidAsync("qbt.renderPiecesBar", id, hash, pieces, downloadingColor, haveColor, borderColor );
         }
     }
 }

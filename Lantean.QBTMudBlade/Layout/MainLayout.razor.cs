@@ -1,7 +1,6 @@
 ﻿using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Components;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Services;
 
@@ -40,6 +39,14 @@ namespace Lantean.QBTMudBlade.Layout
             NotifyOnBreakpointOnly = true
         };
 
+        protected MudTheme Theme { get; set; }
+
+        public MainLayout()
+        {
+            Theme = new MudTheme();
+            Theme.Typography.Default.FontFamily = ["Nunito Sans"];
+        }
+
         protected void ToggleDrawer()
         {
             DrawerOpen = !DrawerOpen;
@@ -64,13 +71,13 @@ namespace Lantean.QBTMudBlade.Layout
             }
         }
 
-        protected async Task OnSystemPreferenceChanged(bool value)
+        protected Task OnSystemPreferenceChanged(bool value)
         {
             IsDarkMode = value;
-            await InvokeAsync(StateHasChanged);
+            return Task.CompletedTask;
         }
 
-        public async Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs browserViewportEventArgs)
+        public Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs browserViewportEventArgs)
         {
             if (browserViewportEventArgs.Breakpoint == Breakpoint.Sm && DrawerOpen)
             {
@@ -80,7 +87,8 @@ namespace Lantean.QBTMudBlade.Layout
             {
                 DrawerOpen = true;
             }
-            await InvokeAsync(StateHasChanged);
+
+            return Task.CompletedTask;
         }
 
         protected void ToggleErrorDrawer()

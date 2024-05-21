@@ -1,4 +1,5 @@
 ﻿using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Components;
 using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Filter;
 using Lantean.QBTMudBlade.Models;
@@ -11,6 +12,8 @@ namespace Lantean.QBTMudBlade
         public static readonly DialogOptions FormDialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Medium, ClassBackground = "background-blur" };
 
         private static readonly DialogOptions _confirmDialogOptions = new() { ClassBackground = "background-blur" };
+
+        public const long _maxFileSize = 4194304;
 
         public static async Task InvokeAddTorrentFileDialog(this IDialogService dialogService, IApiClient apiClient)
         {
@@ -28,7 +31,7 @@ namespace Lantean.QBTMudBlade
             var files = new Dictionary<string, Stream>();
             foreach (var file in options.Files)
             {
-                var stream = file.OpenReadStream();
+                var stream = file.OpenReadStream(_maxFileSize);
                 streams.Add(stream);
                 files.Add(file.Name, stream);
             }
@@ -142,7 +145,7 @@ namespace Lantean.QBTMudBlade
             await onSuccess();
         }
 
-        public static async Task ShowConfirmDialog(this IDialogService dialogService, string title, string content, Action onSuccess)
+        public static async Task ShowConfirmDialog(this IDialogService dialogService, string title, string content, System.Action onSuccess)
         {
             await ShowConfirmDialog(dialogService, title, content, () =>
             {
@@ -175,8 +178,8 @@ namespace Lantean.QBTMudBlade
             var parameters = new DialogParameters
             {
                 { nameof(SliderFieldDialog<long>.Value), rate },
-                { nameof(SliderFieldDialog<long>.Min), 0 },
-                { nameof(SliderFieldDialog<long>.Max), 100 },
+                { nameof(SliderFieldDialog<long>.Min), 0L },
+                { nameof(SliderFieldDialog<long>.Max), 100L },
             };
             var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Upload Rate", parameters, FormDialogOptions);
 
@@ -194,8 +197,8 @@ namespace Lantean.QBTMudBlade
             var parameters = new DialogParameters
             {
                 { nameof(SliderFieldDialog<float>.Value), ratio },
-                { nameof(SliderFieldDialog<float>.Min), 0 },
-                { nameof(SliderFieldDialog<float>.Max), 100 },
+                { nameof(SliderFieldDialog<float>.Min), 0F },
+                { nameof(SliderFieldDialog<float>.Max), 100F },
             };
             var result = await dialogService.ShowAsync<SliderFieldDialog<float>>("Upload Rate", parameters, FormDialogOptions);
 
@@ -246,6 +249,17 @@ namespace Lantean.QBTMudBlade
         public static async Task InvokeRssRulesDialog(this IDialogService dialogService)
         {
             await Task.Delay(0);
+        }
+
+        public static async Task ShowSubMenu(this IDialogService dialogService, IEnumerable<string> hashes, TorrentAction parent)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(SubMenuDialog.ParentAction), parent },
+                { nameof(SubMenuDialog.Hashes), hashes }
+            };
+
+            await dialogService.ShowAsync<SubMenuDialog>("Actions", parameters, FormDialogOptions);
         }
     }
 }

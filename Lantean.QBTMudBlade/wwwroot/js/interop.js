@@ -20,7 +20,7 @@ window.qbt.open = (url, target) => {
     window.open(url, target);
 }
 
-window.qbt.renderPiecesBar = (id, hash, pieces) => {
+window.qbt.renderPiecesBar = (id, hash, pieces, downloadingColor, haveColor, borderColor) => {
     const parentElement = document.getElementById(id);
     if (window.qbt.hash !== hash) {
         if (parentElement) {
@@ -29,9 +29,19 @@ window.qbt.renderPiecesBar = (id, hash, pieces) => {
             }
         }
         window.qbt.hash = hash;
-        window.qbt.piecesBar = new window.qbt.PiecesBar([], {
+        const options = {
             height: 24
-        });
+        };
+        if (downloadingColor) {
+            options.downloadingColor = downloadingColor;
+        }
+        if (haveColor) {
+            options.haveColor = haveColor;
+        }
+        if (borderColor) {
+            options.borderColor = borderColor;
+        }
+        window.qbt.piecesBar = new window.qbt.PiecesBar([], options);
         window.qbt.piecesBar.clear();
     }
 

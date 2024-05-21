@@ -4,7 +4,6 @@ using Lantean.QBTMudBlade.Components;
 using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Pages
@@ -171,8 +170,8 @@ namespace Lantean.QBTMudBlade.Pages
         public static List<ColumnDefinition<Torrent>> ColumnsDefinitions { get; } =
         [
             CreateColumnDefinition("#", t => t.Priority),
-            CreateColumnDefinition("", t => t.State, IconColumn),
-            CreateColumnDefinition("Name", t => t.Name, width: 200),
+            CreateColumnDefinition("", t => t.State, IconColumn, iconOnly: true),
+            CreateColumnDefinition("Name", t => t.Name, width: 400),
             CreateColumnDefinition("Size", t => t.Size, t => DisplayHelpers.Size(t.Size)),
             CreateColumnDefinition("Total Size", t => t.TotalSize, t => DisplayHelpers.Size(t.TotalSize), enabled: false),
             CreateColumnDefinition("Done", t => t.Progress, ProgressBarColumn, tdClass: "table-progress pl-1 pr-1"),
@@ -205,7 +204,7 @@ namespace Lantean.QBTMudBlade.Pages
             //CreateColumnDefinition("Reannounce In", t => t.Reannounce, enabled: false),
         ];
 
-        private static ColumnDefinition<Torrent> CreateColumnDefinition(string name, Func<Torrent, object?> selector, RenderFragment<RowContext<Torrent>> rowTemplate, int? width = null, string? tdClass = null, bool enabled = true)
+        private static ColumnDefinition<Torrent> CreateColumnDefinition(string name, Func<Torrent, object?> selector, RenderFragment<RowContext<Torrent>> rowTemplate, int? width = null, string? tdClass = null, bool enabled = true, bool iconOnly = false)
         {
             var cd = new ColumnDefinition<Torrent>(name, selector, rowTemplate);
             cd.Class = "no-wrap";
@@ -215,11 +214,12 @@ namespace Lantean.QBTMudBlade.Pages
             }
             cd.Width = width;
             cd.Enabled = enabled;
+            cd.IconOnly = iconOnly;
 
             return cd;
         }
 
-        private static ColumnDefinition<Torrent> CreateColumnDefinition(string name, Func<Torrent, object?> selector, Func<Torrent, string>? formatter = null, int? width = null, string? tdClass = null, bool enabled = true)
+        private static ColumnDefinition<Torrent> CreateColumnDefinition(string name, Func<Torrent, object?> selector, Func<Torrent, string>? formatter = null, int? width = null, string? tdClass = null, bool enabled = true, bool iconOnly = false)
         {
             var cd = new ColumnDefinition<Torrent>(name, selector, formatter);
             cd.Class = "no-wrap";
@@ -229,6 +229,7 @@ namespace Lantean.QBTMudBlade.Pages
             }
             cd.Width = width;
             cd.Enabled = enabled;
+            cd.IconOnly = iconOnly;
 
             return cd;
         }

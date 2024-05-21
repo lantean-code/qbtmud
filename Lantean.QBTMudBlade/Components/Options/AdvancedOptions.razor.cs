@@ -95,7 +95,7 @@ namespace Lantean.QBTMudBlade.Components.Options
             CurrentNetworkInterface = Preferences.CurrentNetworkInterface;
             CurrentInterfaceAddress = Preferences.CurrentInterfaceAddress;
             SaveResumeDataInterval = Preferences.SaveResumeDataInterval;
-            TorrentFileSizeLimit = Preferences.TorrentFileSizeLimit;
+            TorrentFileSizeLimit = Preferences.TorrentFileSizeLimit / 1024 / 1024;
             RecheckCompletedTorrents = Preferences.RecheckCompletedTorrents;
             AppInstanceName = Preferences.AppInstanceName;
             RefreshInterval = Preferences.RefreshInterval;
@@ -109,7 +109,7 @@ namespace Lantean.QBTMudBlade.Components.Options
             CheckingMemoryUse = Preferences.CheckingMemoryUse;
             DiskCache = Preferences.DiskCache;
             DiskCacheTtl = Preferences.DiskCacheTtl;
-            DiskQueueSize = Preferences.DiskQueueSize;
+            DiskQueueSize = Preferences.DiskQueueSize / 1024;
             DiskIoType = Preferences.DiskIoType;
             DiskIoReadMode = Preferences.DiskIoReadMode;
             DiskIoWriteMode = Preferences.DiskIoWriteMode;
@@ -120,8 +120,8 @@ namespace Lantean.QBTMudBlade.Components.Options
             SendBufferLowWatermark = Preferences.SendBufferLowWatermark;
             SendBufferWatermarkFactor = Preferences.SendBufferWatermarkFactor;
             ConnectionSpeed = Preferences.ConnectionSpeed;
-            SocketSendBufferSize = Preferences.SocketSendBufferSize;
-            SocketReceiveBufferSize = Preferences.SocketReceiveBufferSize;
+            SocketSendBufferSize = Preferences.SocketSendBufferSize / 1024;
+            SocketReceiveBufferSize = Preferences.SocketReceiveBufferSize / 1024;
             SocketBacklogSize = Preferences.SocketBacklogSize;
             OutgoingPortsMin = Preferences.OutgoingPortsMin;
             OutgoingPortsMax = Preferences.OutgoingPortsMax;
@@ -198,7 +198,7 @@ namespace Lantean.QBTMudBlade.Components.Options
         protected async Task TorrentFileSizeLimitChanged(int value)
         {
             TorrentFileSizeLimit = value;
-            UpdatePreferences.TorrentFileSizeLimit = value;
+            UpdatePreferences.TorrentFileSizeLimit = value * 1024 * 1024;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
@@ -296,7 +296,7 @@ namespace Lantean.QBTMudBlade.Components.Options
         protected async Task DiskQueueSizeChanged(int value)
         {
             DiskQueueSize = value;
-            UpdatePreferences.DiskQueueSize = value;
+            UpdatePreferences.DiskQueueSize = value * 1024;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
@@ -373,14 +373,14 @@ namespace Lantean.QBTMudBlade.Components.Options
         protected async Task SocketSendBufferSizeChanged(int value)
         {
             SocketSendBufferSize = value;
-            UpdatePreferences.SocketSendBufferSize = value;
+            UpdatePreferences.SocketSendBufferSize = value * 1024;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task SocketReceiveBufferSizeChanged(int value)
         {
             SocketReceiveBufferSize = value;
-            UpdatePreferences.SocketReceiveBufferSize = value;
+            UpdatePreferences.SocketReceiveBufferSize = value * 1024;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 

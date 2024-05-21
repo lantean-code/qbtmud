@@ -139,11 +139,31 @@
             SlowTorrentInactiveTimer = Preferences.SlowTorrentInactiveTimer;
             MaxRatioEnabled = Preferences.MaxRatioEnabled;
             MaxRatio = Preferences.MaxRatio;
-            MaxSeedingTimeEnabled = Preferences.MaxSeedingTimeEnabled;
-            MaxSeedingTime = Preferences.MaxSeedingTime;
+
+            if (Preferences.MaxSeedingTimeEnabled)
+            {
+                MaxSeedingTimeEnabled = true;
+                MaxSeedingTime = Preferences.MaxSeedingTime;
+            }
+            else
+            {
+                MaxSeedingTimeEnabled = false;
+                MaxSeedingTime = 1440;
+            }
+            
             MaxRatioAct = Preferences.MaxRatioAct;
-            MaxInactiveSeedingTimeEnabled = Preferences.MaxInactiveSeedingTimeEnabled;
-            MaxInactiveSeedingTime = Preferences.MaxInactiveSeedingTime;
+
+            if (Preferences.MaxInactiveSeedingTimeEnabled)
+            {
+                MaxInactiveSeedingTimeEnabled = true;
+                MaxSeedingTime = Preferences.MaxInactiveSeedingTime;
+            }
+            else
+            {
+                MaxInactiveSeedingTimeEnabled = false;
+                MaxInactiveSeedingTime = 1440;
+            }
+
             AddTrackersEnabled = Preferences.AddTrackersEnabled;
             AddTrackers = Preferences.AddTrackers;
 

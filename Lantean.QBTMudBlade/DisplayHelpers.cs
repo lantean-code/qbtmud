@@ -33,7 +33,15 @@ namespace Lantean.QBTMudBlade
                 return "< 1m";
             }
 
-            var time = TimeSpan.FromSeconds(seconds.Value);
+            TimeSpan time;
+            try
+            {
+                time = TimeSpan.FromSeconds(seconds.Value);
+            }
+            catch (OverflowException)
+            {
+                return "∞";
+            }
             var sb = new StringBuilder();
             if (prefix is not null)
             {

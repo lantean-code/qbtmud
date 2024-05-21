@@ -5,7 +5,7 @@
     <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" Title="Add torrent link" />
     <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" Title="Add torrent file" />
     <MudDivider Vertical="true" />
-    <TorrentActions Type="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrents()" />
+    <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrents()" />
     <MudDivider Vertical="true" />
     <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" Disabled="@(!ToolbarButtonsEnabled)" OnClick="ShowTorrent" Title="View torrent details" />
     <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" Title="Choose Columns" />

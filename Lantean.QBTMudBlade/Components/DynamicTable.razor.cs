@@ -59,7 +59,7 @@ namespace Lantean.QBTMudBlade.Components
         public T? SelectedItem { get; set; }
 
         [Parameter]
-        public Func<ColumnDefinition<T>, bool> ColumnFilter { get; set; } = (t => true);
+        public Func<ColumnDefinition<T>, bool> ColumnFilter { get; set; } = t => true;
 
         [Parameter]
         public EventCallback<string> SortColumnChanged { get; set; }
@@ -104,11 +104,11 @@ namespace Lantean.QBTMudBlade.Components
             string? sortColumn;
             SortDirection sortDirection;
 
-            var storedColumnSort = await LocalStorage.GetItemAsync<Tuple<string, SortDirection>>(_columnSortStorageKey);
-            if (storedColumnSort is not null)
+            var sortData = await LocalStorage.GetItemAsync<SortData>(_columnSortStorageKey);
+            if (sortData is not null)
             {
-                sortColumn = storedColumnSort.Item1;
-                sortDirection = storedColumnSort.Item2;
+                sortColumn = sortData.SortColumn;
+                sortDirection = sortData.SortDirection;
             }
             else
             {
@@ -172,6 +172,12 @@ namespace Lantean.QBTMudBlade.Components
 
         private async Task SetSort(string columnId, SortDirection sortDirection)
         {
+            if (sortDirection == SortDirection.None)
+            {
+                return;
+            }
+            await LocalStorage.SetItemAsync(_columnSortStorageKey, new SortData(columnId, sortDirection));
+
             if (_sortColumn != columnId)
             {
                 _sortColumn = columnId;
@@ -183,8 +189,6 @@ namespace Lantean.QBTMudBlade.Components
                 _sortDirection = sortDirection;
                 await SortDirectionChanged.InvokeAsync(_sortDirection);
             }
-
-            await LocalStorage.SetItemAsync(_columnSortStorageKey, new Tuple<string, SortDirection>(columnId, sortDirection));
         }
 
         protected async Task OnRowClickInternal(TableRowClickEventArgs<T> eventArgs)
@@ -200,7 +204,7 @@ namespace Lantean.QBTMudBlade.Components
             var style = "user-select: none; cursor: pointer;";
             if (EqualityComparer<T>.Default.Equals(item, SelectedItem))
             {
-                style += " background-color: var(--mud-palette-dark-darken)";
+                style += " background-color: var(--mud-palette-grey-dark); color: var(--mud-palette-grey-light) !important;";
             }
             return style;
         }
@@ -208,6 +212,7 @@ namespace Lantean.QBTMudBlade.Components
         protected async Task SelectedItemsChangedInternal(HashSet<T> selectedItems)
         {
             await SelectedItemsChanged.InvokeAsync(selectedItems);
+            SelectedItems = selectedItems;
         }
 
         public async Task ShowColumnOptionsDialog()
@@ -222,8 +227,8 @@ namespace Lantean.QBTMudBlade.Components
             if (!SelectedColumns.SetEquals(result.SelectedColumns))
             {
                 SelectedColumns = result.SelectedColumns;
-                await SelectedColumnsChanged.InvokeAsync(SelectedColumns);
                 await LocalStorage.SetItemAsync(_columnSelectionStorageKey, SelectedColumns);
+                await SelectedColumnsChanged.InvokeAsync(SelectedColumns);
             }
 
             if (!DictionaryEqual(_columnWidths, result.ColumnWidths))
@@ -274,6 +279,19 @@ namespace Lantean.QBTMudBlade.Components
             }
 
             return className;
+        }
+
+        private sealed record SortData
+        {
+            public SortData(string sortColumn, SortDirection sortDirection)
+            {
+                SortColumn = sortColumn;
+                SortDirection = sortDirection;
+            }
+
+            public string SortColumn { get; init; }
+
+            public SortDirection SortDirection { get; init; }
         }
     }
 }

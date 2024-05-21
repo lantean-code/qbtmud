@@ -25,11 +25,37 @@ namespace Lantean.QBTMudBlade.Components
         [EditorRequired]
         public IReadOnlyList<PieceState> Pieces { get; set; } = [];
 
+        [CascadingParameter(Name = "IsDarkMode")] 
+        public bool IsDarkMode { get; set; }
+
+        [CascadingParameter]
+        public MudTheme Theme { get; set; } = default!;
+
         public Guid Id => Guid.NewGuid();
 
         protected override async Task OnParametersSetAsync()
         {
-            await JSRuntime.RenderPiecesBar("progress", Hash, Pieces.Select(s => (int)s).ToArray());
+            await RenderPiecesBar();
+        }
+
+        private async Task RenderPiecesBar()
+        {
+            string downloadingColor;
+            string haveColor;
+            string borderColor;
+            if (IsDarkMode)
+            {
+                downloadingColor = Theme.PaletteDark.Success.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+                haveColor = Theme.PaletteDark.Info.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+                borderColor = Theme.PaletteDark.White.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+            }
+            else
+            {
+                downloadingColor = Theme.Palette.Success.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+                haveColor = Theme.Palette.Info.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+                borderColor = Theme.Palette.Black.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+            }
+            await JSRuntime.RenderPiecesBar("progress", Hash, Pieces.Select(s => (int)s).ToArray(), downloadingColor, haveColor, borderColor);
         }
 
         ResizeOptions IBrowserViewportObserver.ResizeOptions { get; } = new()
@@ -50,7 +76,7 @@ namespace Lantean.QBTMudBlade.Components
 
         public async Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs browserViewportEventArgs)
         {
-            await JSRuntime.RenderPiecesBar("progress", Hash, Pieces.Select(s => (int)s).ToArray());
+            await RenderPiecesBar();
             await InvokeAsync(StateHasChanged);
         }
 

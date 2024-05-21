@@ -67,8 +67,8 @@ namespace Lantean.QBTMudBlade.Filter
         {
             if (fieldType.IsString)
             {
-                return new[]
-                {
+                return
+                [
                     String.Contains,
                     String.NotContains,
                     String.Equal,
@@ -77,12 +77,12 @@ namespace Lantean.QBTMudBlade.Filter
                     String.EndsWith,
                     String.Empty,
                     String.NotEmpty,
-                };
+                ];
             }
             if (fieldType.IsNumber)
             {
-                return new[]
-                {
+                return
+                [
                     Number.Equal,
                     Number.NotEqual,
                     Number.GreaterThan,
@@ -91,26 +91,27 @@ namespace Lantean.QBTMudBlade.Filter
                     Number.LessThanOrEqual,
                     Number.Empty,
                     Number.NotEmpty,
-                };
+                ];
             }
             if (fieldType.IsEnum)
             {
-                return new[] {
+                return
+                [
                     Enum.Is,
                     Enum.IsNot,
-                };
+                ];
             }
             if (fieldType.IsBoolean)
             {
-                return new[]
-                {
+                return
+                [
                     Boolean.Is,
-                };
+                ];
             }
             if (fieldType.IsDateTime)
             {
-                return new[]
-                {
+                return
+                [
                     DateTime.Is,
                     DateTime.IsNot,
                     DateTime.After,
@@ -119,19 +120,19 @@ namespace Lantean.QBTMudBlade.Filter
                     DateTime.OnOrBefore,
                     DateTime.Empty,
                     DateTime.NotEmpty,
-                };
+                ];
             }
             if (fieldType.IsGuid)
             {
-                return new[]
-                {
+                return
+                [
                     Guid.Equal,
                     Guid.NotEqual,
-                };
+                ];
             }
 
             // default
-            return Array.Empty<string>();
+            return [];
         }
     }
 }

@@ -1,4 +1,19 @@
-﻿<MudTable T="Lantean.QBitTorrentClient.Models.TorrentTrackers" Items="Trackers" >
+﻿<MudTable 
+    T="Lantean.QBitTorrentClient.Models.TorrentTrackers"
+    Items="Trackers"
+    Hover="true"
+    FixedHeader="true" 
+    HeaderClass="table-head-bordered" 
+    Dense="true" 
+    Breakpoint="Breakpoint.None" 
+    Bordered="true" 
+    Striped="true" 
+    Square="true" 
+    LoadingProgressColor="Color.Info" 
+    HorizontalScrollbar="true" 
+    Virtualize="true"
+    AllowUnsorted="false"
+    SelectOnRowClick="false">
     <HeaderContent>
         <MudTh>Tier</MudTh>
         <MudTh>URL</MudTh>

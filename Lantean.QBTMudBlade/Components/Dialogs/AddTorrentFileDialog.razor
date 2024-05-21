@@ -2,7 +2,7 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadFiles" Accept=".torrent">
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadFiles" Accept=".torrent" MaximumFileCount="50" >
                     <ButtonTemplate>
                         <MudButton HtmlTag="label"
                                    Variant="Variant.Filled"

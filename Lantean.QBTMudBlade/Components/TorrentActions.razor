@@ -1,42 +1,55 @@
-﻿@if (Type == RenderType.Toolbar)
+﻿@if (RenderType == RenderType.Toolbar)
 {
     <MudToolBar Dense="true" DisableGutters="true" WrapContent="true">
         @ToolbarContent
     </MudToolBar>
 }
-else if (Type == RenderType.ToolbarContents)
+else if (RenderType == RenderType.ToolbarContents)
 {
     @ToolbarContent
 }
-else if (Type == RenderType.MixedToolbar)
+else if (RenderType == RenderType.MixedToolbar)
 {
     <MudToolBar Dense="true" DisableGutters="true" WrapContent="true">
         @MixedToolbarContent
     </MudToolBar>
 }
-else if (Type == RenderType.MixedToolbarContents)
+else if (RenderType == RenderType.MixedToolbarContents)
 {
     @MixedToolbarContent
 }
-else if (Type == RenderType.InitialIconsOnly)
+else if (RenderType == RenderType.InitialIconsOnly)
 {
-    @foreach (var option in GetOptions().Take(5))
+    @foreach (var action in Actions.Take(5))
     {
-        @if (option is Divider)
+        @if (action is Divider)
         {
             <MudDivider Vertical="true" />
         }
         else
         {
-            <MudIconButton Title="@option.Name" Icon="@option.Icon" Color="option.Color" OnClick="option.Callback" Disabled="Disabled" />
+            <MudIconButton Title="@action.Name" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
         }
     }
 
-    @Menu(GetOptions().Skip(5));
+    @Menu(Actions.Skip(5))
+}
+else if (RenderType == RenderType.Children)
+{
+    var parent = Actions.FirstOrDefault(a => a.Name == ParentAction?.Name);
+    if (parent is not null)
+    {
+        <MudList Clickable="true">
+            @foreach (var action in parent.Children)
+            {
+                <MudListItem Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
+            }
+        </MudList>
+    }
 }
 else
 {
-    @Menu(GetOptions());
+    @Menu(Actions)
 }
 
 @code {
@@ -46,27 +59,27 @@ else
         {
             return __builder =>
             {
-                foreach (var option in GetOptions())
+                foreach (var action in Actions)
                 {
-                    if (option is Divider)
+                    if (action is Divider)
                     {
                         <MudDivider Vertical="true" />
                     }
-                    else if (!option.Children.Any())
+                    else if (!action.Children.Any())
                     {
-                        if (option.Icon is null)
+                        if (action.Icon is null)
                         {
-                            <MudButton Color="option.Color" OnClick="option.Callback">@option.Name</MudButton>
+                            <MudButton Color="action.Color" OnClick="action.Callback">@action.Name</MudButton>
                         }
                         else
                         {
-                            <MudIconButton Title="@option.Name" Icon="@option.Icon" Color="option.Color" OnClick="option.Callback" Disabled="Disabled" />
+                            <MudIconButton Title="@action.Name" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
                         }
                     }
                     else
                     {
-                        <MudMenu Icon="@option.Icon" IconColor="@option.Color" Label="@option.Name" title="@option.Name" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
-                            @foreach (var childItem in option.Children)
+                        <MudMenu Icon="@action.Icon" IconColor="@action.Color" Label="@action.Name" title="@action.Name" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                            @foreach (var childItem in action.Children)
                             {
                                 @ChildItem(childItem)
                             }
@@ -83,27 +96,27 @@ else
         {
             return __builder =>
             {
-                foreach (var option in GetOptions())
+                foreach (var action in Actions)
                 {
-                    if (option is Divider)
+                    if (action is Divider)
                     {
                         <MudDivider Vertical="true" />
                     }
-                    else if (!option.Children.Any())
+                    else if (!action.Children.Any())
                     {
-                        if (option.Icon is null)
+                        if (action.Icon is null)
                         {
-                            <MudButton Color="option.Color" OnClick="option.Callback" Disabled="Disabled">@option.Name</MudButton>
+                            <MudButton Color="action.Color" OnClick="action.Callback" Disabled="Disabled">@action.Name</MudButton>
                         }
                         else
                         {
-                            <MudIconButton Title="@option.Name" Icon="@option.Icon" Color="option.Color" OnClick="option.Callback" Disabled="Disabled" />
+                            <MudIconButton Title="@action.Name" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
                         }
                     }
                     else
                     {
-                        <MudMenu Label="@option.Name" title="@option.Name" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" EndIcon="@Icons.Material.Filled.ArrowDropDown">
-                            @foreach (var childItem in option.Children)
+                        <MudMenu Label="@action.Name" title="@action.Name" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" EndIcon="@Icons.Material.Filled.ArrowDropDown">
+                            @foreach (var childItem in action.Children)
                             {
                                 @ChildItem(childItem)
                             }
@@ -114,48 +127,48 @@ else
         }
     }
 
-    private RenderFragment ChildItem(Action option)
+    private RenderFragment ChildItem(TorrentAction action)
     {
         return __builder =>
         {
-            if (option is Divider)
+            if (action is Divider)
             {
                 <MudDivider />
             }
             else
             {
-                <MudMenuItem Icon="@option.Icon" IconColor="option.Color" OnClick="option.Callback" OnTouch="option.Callback" Disabled="Disabled">@option.Name</MudMenuItem>
+                <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" OnTouch="action.Callback" Disabled="Disabled">@action.Name</MudMenuItem>
             }
         };
     }
 
-    private RenderFragment Menu(IEnumerable<Action> actions)
+    private RenderFragment Menu(IEnumerable<TorrentAction> actions)
     {
         return __builder =>
         {
             <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="Actions" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())">
-                @foreach (var option in actions)
+                @foreach (var action in actions)
                 {
-                    @if (option is Divider)
+                    @if (action is Divider)
                     {
                         <MudDivider />
                     }
-                    else if (!option.Children.Any())
+                    else if (!action.Children.Any())
                     {
-                        <MudMenuItem Icon="@option.Icon" IconColor="option.Color" OnClick="option.Callback" OnTouch="option.Callback" Disabled="Disabled">
-                            @option.Name
+                        <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" OnTouch="action.Callback" Disabled="Disabled">
+                            @action.Name
                         </MudMenuItem>
                     }
                     else
                     {
-                        <MudMenuItem Icon="@option.Icon" IconColor="option.Color">
+                        <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnTouch="@(t => SubMenuTouch(action))" OnClick="@(t => SubMenuTouch(action))">
                             <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopLeft" ActivationEvent="MouseEvent.MouseOver" Icon="@Icons.Material.Filled.ArrowDropDown" DisableElevation="true" DisableRipple="true" Class="sub-menu">
                                 <ActivatorContent>
-                                    @option.Name
+                                    @action.Name
                                 </ActivatorContent>
 
                                 <ChildContent>
-                                    @foreach (var childItem in option.Children)
+                                    @foreach (var childItem in action.Children)
                                     {
                                         @ChildItem(childItem)
                                     }

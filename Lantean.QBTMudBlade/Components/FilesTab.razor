@@ -24,10 +24,8 @@
     T="ContentItem" 
     ColumnDefinitions="Columns" 
     Items="Files" 
-    MultiSelection="true"
+    MultiSelection="false"
     PreSorted="true"
-    SelectedItems="SelectedItems"
-    SelectedItemsChanged="SelectedItemsChanged"
     SelectedItemChanged="SelectedItemChanged"
     SortColumnChanged="SortColumnChanged"
     SortDirectionChanged="SortDirectionChanged"
@@ -43,7 +41,7 @@
                 <div style="@($"margin-left: {context.Data.Level * 14}px")">
                     @if (context.Data.IsFolder)
                     {
-                        <MudIconButton Edge="Edge.Start" ButtonType="ButtonType.Button" Icon="@(ExpandedNodes.Contains(context.Data.Name) ? Icons.Material.Filled.KeyboardArrowDown : Icons.Material.Filled.KeyboardArrowRight)" OnClick="@(c => ToggleNode(context.Data, c))"></MudIconButton>
+                        <MudIconButton Edge="Edge.Start" ButtonType="ButtonType.Button" Icon="@(ExpandedNodes.Contains(context.Data.Name) ? Icons.Material.Filled.KeyboardArrowDown : Icons.Material.Filled.KeyboardArrowRight)" OnClick="@(c => ToggleNode(context.Data))"></MudIconButton>
                         <MudIcon Icon="@Icons.Material.Filled.Folder" Class="pt-0" Style="margin-right: 4px; position: relative; top: 7px; margin-left: -15px" />
                     }
                     @context.Data.DisplayName

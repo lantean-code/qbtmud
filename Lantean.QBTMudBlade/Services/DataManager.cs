@@ -1,8 +1,4 @@
 ﻿using Lantean.QBTMudBlade.Models;
-using MudBlazor;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Channels;
 
 namespace Lantean.QBTMudBlade.Services
 {
@@ -563,8 +559,12 @@ namespace Lantean.QBTMudBlade.Services
         public Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files)
         {
             var contents = new Dictionary<string, ContentItem>();
+            if (files.Count == 0)
+            {
+                return contents;
+            }
 
-            var folderIndex = files.Max(f => f.Index) + 1;
+            var folderIndex = files.Min(f => f.Index) - 1;
 
             foreach (var file in files)
             {
@@ -582,7 +582,7 @@ namespace Lantean.QBTMudBlade.Services
                         var directoryPath = string.Join(Extensions.DirectorySeparator, paths[0..(i + 1)]);
                         if (!contents.ContainsKey(directoryPath))
                         {
-                            contents.Add(directoryPath, new ContentItem(directoryPath, directoryName, folderIndex++, Priority.Normal, 0, 0, 0, true, i));
+                            contents.Add(directoryPath, new ContentItem(directoryPath, directoryName, folderIndex--, Priority.Normal, 0, 0, 0, true, i));
                         }
                     }
 
@@ -600,13 +600,22 @@ namespace Lantean.QBTMudBlade.Services
                 var level = directory.Value.Level;
                 var filesContents = contents.Where(c => c.Value.Name.StartsWith(key + Extensions.DirectorySeparator) && !c.Value.IsFolder).ToList();
                 var directoriesContents = contents.Where(c => c.Value.Name.StartsWith(key + Extensions.DirectorySeparator) && c.Value.IsFolder && c.Value.Level == level + 1).ToList();
-                var directoryContents = filesContents.Concat(directoriesContents);
+                var allContents = filesContents.Concat(directoriesContents);
+                var priorities = allContents.Select(d => d.Value.Priority).Distinct();
+                var downloadingContents = allContents.Where(c => c.Value.Priority != Priority.DoNotDownload).ToList();
 
-
-                var size = directoryContents.Sum(c => c.Value.Size);
-                var availability = directoryContents.Average(c => c.Value.Availability);
-                var downloaded = directoryContents.Sum(c => c.Value.Downloaded);
-                var progress = (float)downloaded / size;
+                long size = 0;
+                float availability = 0;
+                long downloaded = 0;
+                float progress = 0;
+                if (downloadingContents.Count != 0)
+                {
+                    size = downloadingContents.Sum(c => c.Value.Size);
+                    availability = downloadingContents.Average(c => c.Value.Availability);
+                    downloaded = downloadingContents.Sum(c => c.Value.Downloaded);
+                    progress = (float)downloaded / size;
+                }
+                
 
                 if (!contents.TryGetValue(key, out var dir))
                 {
@@ -615,7 +624,6 @@ namespace Lantean.QBTMudBlade.Services
                 dir.Availability = availability;
                 dir.Size = size;
                 dir.Progress = progress;
-                var priorities = directoryContents.Select(d => d.Value.Priority).Distinct();
                 if (priorities.Count() == 1)
                 {
                     dir.Priority = priorities.First();

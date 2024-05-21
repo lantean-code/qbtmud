@@ -11,19 +11,20 @@
     Dense="true" 
     Breakpoint="Breakpoint.None" 
     Bordered="true" 
-    Loading="@(Items is null)" 
-    SelectOnRowClick="false" 
     Striped="Striped" 
     Square="true" 
     LoadingProgressColor="Color.Info" 
+    HorizontalScrollbar="true" 
+    Virtualize="true"
+    AllowUnsorted="false"
+    SelectOnRowClick="false" 
+    Loading="@(Items is null)" 
     MultiSelection="MultiSelection"
     SelectedItems="SelectedItems"
     SelectedItemsChanged="SelectedItemsChangedInternal"
-    HorizontalScrollbar="true" 
+    
     OnRowClick="OnRowClickInternal"
     RowStyleFunc="RowStyleFuncInternal"
-    Virtualize="true"
-    AllowUnsorted="false"
     Class="@Class">
     <ColGroup>
         <col style="width: 30px" />
@@ -35,10 +36,11 @@
     <HeaderContent>
         @foreach (var column in GetColumns())
         {
-            <MudTh Class="overflow-cell" Style="@(GetColumnStyle(column))">
+            var className = column.IconOnly ? null : "overflow-cell";
+            <MudTh Class="@className" Style="@(GetColumnStyle(column))">
                 @if (column.SortSelector is not null)
                 {
-                    <MudTableSortLabel T="T" SortDirectionChanged="@(c => SetSort(column.Id, c))" SortDirection="@(column.Id == _sortColumn ? _sortDirection : SortDirection.None)">@column.Header</MudTableSortLabel>
+                    <SortLabel SortDirectionChanged="@(c => SetSort(column.Id, c))" SortDirection="@(column.Id == _sortColumn ? _sortDirection : SortDirection.None)">@column.Header</SortLabel>
                 }
                 else
                 {

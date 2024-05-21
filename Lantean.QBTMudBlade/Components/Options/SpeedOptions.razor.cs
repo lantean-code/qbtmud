@@ -1,4 +1,6 @@
-﻿namespace Lantean.QBTMudBlade.Components.Options
+﻿using ByteSizeLib;
+
+namespace Lantean.QBTMudBlade.Components.Options
 {
     public partial class SpeedOptions : Options
     {
@@ -62,10 +64,10 @@
                 return false;
             }
 
-            UpLimit = Preferences.UpLimit;
-            DlLimit = Preferences.DlLimit;
-            AltUpLimit = Preferences.AltUpLimit;
-            AltDlLimit = Preferences.AltDlLimit;
+            UpLimit = Preferences.UpLimit / 1024;
+            DlLimit = Preferences.DlLimit / 1024;
+            AltUpLimit = Preferences.AltUpLimit / 1024;
+            AltDlLimit = Preferences.AltDlLimit / 1024;
             BittorrentProtocol = Preferences.BittorrentProtocol;
             LimitUtpRate = Preferences.LimitUtpRate;
             LimitTcpOverhead = Preferences.LimitTcpOverhead;
@@ -81,28 +83,28 @@
         protected async Task UpLimitChanged(int value)
         {
             UpLimit = value;
-            UpdatePreferences.UpLimit = value;
+            UpdatePreferences.UpLimit = value * 1024;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task DlLimitChanged(int value)
         {
             DlLimit = value;
-            UpdatePreferences.DlLimit = value;
+            UpdatePreferences.DlLimit = value * 1024;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task AltUpLimitChanged(int value)
         {
             AltUpLimit = value;
-            UpdatePreferences.AltUpLimit = value;
+            UpdatePreferences.AltUpLimit = value * 1024;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task AltDlLimitChanged(int value)
         {
             AltDlLimit = value;
-            UpdatePreferences.AltDlLimit = value;
+            UpdatePreferences.AltDlLimit = value * 1024;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 

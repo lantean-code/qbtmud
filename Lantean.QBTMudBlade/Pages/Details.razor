@@ -9,28 +9,31 @@
     }
     @if (Hash is not null)
     {
-        <TorrentActions Type="RenderType.InitialIconsOnly" Hashes="@([Hash])" />
+        <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="@([Hash])" />
     }
     <MudDivider Vertical="true" />
     <MudText Class="pl-5 no-wrap">@Name</MudText>
 </MudToolBar>
 
-<CascadingValue Value="RefreshInterval">
-    <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" KeepPanelsAlive="true" Border="true">
-        <MudTabPanel Text="General">
-            <GeneralTab Hash="@Hash" Active="@(ActiveTab == 0)" />
-        </MudTabPanel>
-        <MudTabPanel Text="Trackers">
-            <TrackersTab Hash="@Hash" Active="@(ActiveTab == 1)" />
-        </MudTabPanel>
-        <MudTabPanel Text="Peers">
-            <PeersTab Hash="@Hash" Active="@(ActiveTab == 2)" />
-        </MudTabPanel>
-        <MudTabPanel Text="HTTP Sources">
-            <WebSeedsTab Hash="@Hash" Active="@(ActiveTab == 3)" />
-        </MudTabPanel>
-        <MudTabPanel Text="Content">
-            <FilesTab Hash="@Hash" Active="@(ActiveTab == 4)" />
-        </MudTabPanel>
-    </MudTabs>
-</CascadingValue>
+@if (ShowTabs)
+{
+    <CascadingValue Value="RefreshInterval">
+        <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" KeepPanelsAlive="true" Border="true">
+            <MudTabPanel Text="General">
+                <GeneralTab Hash="@Hash" Active="@(ActiveTab == 0)" />
+            </MudTabPanel>
+            <MudTabPanel Text="Trackers">
+                <TrackersTab Hash="@Hash" Active="@(ActiveTab == 1)" />
+            </MudTabPanel>
+            <MudTabPanel Text="Peers">
+                <PeersTab Hash="@Hash" Active="@(ActiveTab == 2)" />
+            </MudTabPanel>
+            <MudTabPanel Text="HTTP Sources">
+                <WebSeedsTab Hash="@Hash" Active="@(ActiveTab == 3)" />
+            </MudTabPanel>
+            <MudTabPanel Text="Content">
+                <FilesTab Hash="@Hash" Active="@(ActiveTab == 4)" />
+            </MudTabPanel>
+        </MudTabs>
+    </CascadingValue>
+}
