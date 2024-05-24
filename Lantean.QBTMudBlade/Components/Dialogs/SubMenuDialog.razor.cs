@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Lantean.QBTMudBlade.Models;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
@@ -10,6 +11,14 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
 
         [Parameter]
         public TorrentAction? ParentAction { get; set; }
+
+        [Parameter]
+        public MainData MainData { get; set; } = default!;
+
+        [Parameter]
+        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+
+        protected bool MultiAction => ParentAction?.MultiAction ?? false;
 
         [Parameter]
         public IEnumerable<string> Hashes { get; set; } = [];

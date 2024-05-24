@@ -1,4 +1,5 @@
 ﻿using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Interop;
 using Lantean.QBTMudBlade.Models;
 using Lantean.QBTMudBlade.Services;
@@ -107,39 +108,6 @@ namespace Lantean.QBTMudBlade.Components
             await ApiClient.SetTorrentCategory(category, null, Hashes.ToArray());
         }
 
-        protected async Task AddCategory()
-        {
-            await DialogService.InvokeAddCategoryDialog(ApiClient, Hashes);
-        }
-
-        protected async Task ResetCategory()
-        {
-            await ApiClient.SetTorrentCategory("", null, Hashes.ToArray());
-        }
-
-        protected async Task AddTag()
-        {
-            await DialogService.ShowSingleFieldDialog("Add Tags", "Comma-separated tags", "", v => ApiClient.AddTorrentTags(v.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries), null, Hashes.ToArray()));
-        }
-
-        protected async Task RemoveTags()
-        {
-            var torrents = GetTorrents();
-
-            foreach (var torrent in torrents)
-            {
-                await ApiClient.RemoveTorrentTags(torrent.Tags, null, torrent.Hash);
-            }
-        }
-
-        protected async Task ToggleTag(string tag)
-        {
-            var torrents = GetTorrents();
-
-            await ApiClient.RemoveTorrentTag(tag, torrents.Where(t => t.Tags.Contains(tag)).Select(t => t.Hash));
-            await ApiClient.AddTorrentTag(tag, torrents.Where(t => !t.Tags.Contains(tag)).Select(t => t.Hash));
-        }
-
         protected async Task ToggleAutoTMM()
         {
             var torrents = GetTorrents();
@@ -231,9 +199,29 @@ namespace Lantean.QBTMudBlade.Components
             }
         }
 
+        protected async Task ShowTags()
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(ManageTagsDialog.Hashes), Hashes }
+            };
+            
+            await DialogService.ShowAsync<ManageTagsDialog>("Manage Torrent Tags", parameters, DialogHelper.FormDialogOptions);
+        }
+
+        protected async Task ShowCategories()
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(ManageCategoriesDialog.Hashes), Hashes }
+            };
+
+            await DialogService.ShowAsync<ManageCategoriesDialog>("Manage Torrent Categories", parameters, DialogHelper.FormDialogOptions);
+        }
+
         protected async Task SubMenuTouch(TorrentAction action)
         {
-            await DialogService.ShowSubMenu(Hashes, action);
+            await DialogService.ShowSubMenu(Hashes, action, MainData, Preferences);
         }
 
         private IEnumerable<Torrent> GetTorrents()
@@ -249,12 +237,16 @@ namespace Lantean.QBTMudBlade.Components
 
         private List<TorrentAction>? _actions;
 
-        private IReadOnlyList<TorrentAction> Actions
+        private IEnumerable<TorrentAction> Actions
         {
             get
             {
                 if (_actions is not null)
                 {
+                    if (Preferences?.QueueingEnabled == false)
+                    {
+                        return _actions.Where(a => a.Name != "Queue");
+                    }
                     return _actions;
                 }
 
@@ -268,22 +260,6 @@ namespace Lantean.QBTMudBlade.Components
                     }
                 }
 
-                var categories = new List<TorrentAction>
-                {
-                    new TorrentAction("New", Icons.Material.Filled.Add, Color.Info, CreateCallback(AddCategory)),
-                    new TorrentAction("Reset", Icons.Material.Filled.Remove, Color.Error, CreateCallback(ResetCategory)),
-                    new Divider()
-                };
-                categories.AddRange(MainData.Categories.Select(c => new TorrentAction(c.Value.Name, Icons.Material.Filled.List, Color.Info, CreateCallback(() => SetCategory(c.Key)))));
-
-                var tags = new List<TorrentAction>
-                {
-                    new TorrentAction("Add", Icons.Material.Filled.Add, Color.Info, CreateCallback(AddTag)),
-                    new TorrentAction("Remove All", Icons.Material.Filled.Remove, Color.Error, CreateCallback(RemoveTags)),
-                    new Divider()
-                };
-                tags.AddRange(MainData.Tags.Select(t => new TorrentAction(t, (torrent?.Tags.Contains(t) == true) ? Icons.Material.Filled.CheckBox : Icons.Material.Filled.CheckBoxOutlineBlank, Color.Default, CreateCallback(() => ToggleTag(t)))));
-
                 _actions = new List<TorrentAction>
                 {
                     new TorrentAction("Pause", Icons.Material.Filled.Pause, Color.Warning, CreateCallback(Pause)),
@@ -293,8 +269,8 @@ namespace Lantean.QBTMudBlade.Components
                     new Divider(),
                     new TorrentAction("Set location", Icons.Material.Filled.MyLocation, Color.Info, CreateCallback(SetLocation)),
                     new TorrentAction("Rename", Icons.Material.Filled.DriveFileRenameOutline, Color.Info, CreateCallback(Rename)),
-                    new TorrentAction("Category", Icons.Material.Filled.List, Color.Info, categories, true),
-                    new TorrentAction("Tags", Icons.Material.Filled.Label, Color.Info, tags, true),
+                    new TorrentAction("Category", Icons.Material.Filled.List, Color.Info, CreateCallback(ShowCategories)),
+                    new TorrentAction("Tags", Icons.Material.Filled.Label, Color.Info, CreateCallback(ShowTags)),
                     new TorrentAction("Automatic Torrent Management", Icons.Material.Filled.Check, (torrent?.AutomaticTorrentManagement == true) ? Color.Info : Color.Transparent, CreateCallback(ToggleAutoTMM)),
                     new Divider(),
                     new TorrentAction("Limit upload rate", Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Info, CreateCallback(LimitUploadRate)),
@@ -322,18 +298,13 @@ namespace Lantean.QBTMudBlade.Components
                     new TorrentAction("Export", Icons.Material.Filled.SaveAlt, Color.Info, CreateCallback(Export)),
                 };
 
-                if (Preferences?.QueueingEnabled == false)
-                {
-                    _actions.RemoveAt(18);
-                }
-
                 return _actions;
             }
         }
 
-        private EventCallback CreateCallback(Func<Task> action)
+        private EventCallback CreateCallback(Func<Task> action, bool ignoreAfterAction = false)
         {
-            if (AfterAction is not null)
+            if (AfterAction is not null && !ignoreAfterAction)
             {
                 return EventCallback.Factory.Create(this, async () =>
                 {
@@ -392,7 +363,7 @@ namespace Lantean.QBTMudBlade.Components
             Children = [];
         }
 
-        public TorrentAction(string name, string? icon, Color color, IEnumerable<TorrentAction> children, bool useTextButton = false)
+        public TorrentAction(string name, string? icon, Color color, IEnumerable<TorrentAction> children, bool multiAction = false, bool useTextButton = false)
         {
             Name = name;
             Icon = icon;
@@ -413,5 +384,7 @@ namespace Lantean.QBTMudBlade.Components
         public IEnumerable<TorrentAction> Children { get; }
 
         public bool UseTextButton { get; }
+
+        public bool MultiAction { get; }
     }
 }

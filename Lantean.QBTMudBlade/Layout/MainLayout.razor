@@ -2,39 +2,40 @@
 
 
 <EnhancedErrorBoundary @ref="ErrorBoundary" OnClear="Cleared">
-    <MudThemeProvider @ref="MudThemeProvider" @bind-IsDarkMode="IsDarkMode" Theme="Theme" />
-    <MudDialogProvider />
-    <MudSnackbarProvider />
-
-    <PageTitle>qBittorrent Web UI</PageTitle>
-
-    <MudLayout>
-        <MudAppBar>
-            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
-            <MudText Typo="Typo.h5" Class="ml-3">qBittorrent Web UI</MudText>
-            <MudSpacer />
-            @if (ErrorBoundary?.Errors.Count > 0)
-            {
-                <MudBadge Content="@(ErrorBoundary?.Errors.Count ?? 0)" Color="Color.Error" Overlap="true">
-                    <MudIconButton Icon="@Icons.Material.Filled.Error" Color="Color.Default" OnClick="ToggleErrorDrawer" />
-                </MudBadge>
-            }
-            <MudSwitch T="bool" Label="Dark Mode" LabelPosition="LabelPosition.End" @bind-Value="IsDarkMode" />
-            @if (ShowMenu)
-            {
-                <Menu />
-            }
-        </MudAppBar>
-        <MudDrawer Open="ErrorDrawerOpen" ClipMode="DrawerClipMode.Docked" Elevation="2" Anchor="Anchor.Right">
-            <ErrorDisplay ErrorBoundary="ErrorBoundary" />
-        </MudDrawer>
-        <CascadingValue Value="Theme">
-            <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
-                <CascadingValue Value="IsDarkMode" Name="IsDarkMode">
-                    @Body
-                </CascadingValue>
-            </CascadingValue>
-        </CascadingValue>
-    </MudLayout>
+ 
 </EnhancedErrorBoundary>
 
+<MudThemeProvider @ref="MudThemeProvider" @bind-IsDarkMode="IsDarkMode" Theme="Theme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<PageTitle>qBittorrent Web UI</PageTitle>
+
+<MudLayout>
+    <MudAppBar>
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+        <MudText Typo="Typo.h5" Class="ml-3">qBittorrent Web UI</MudText>
+        <MudSpacer />
+        @if (ErrorBoundary?.Errors.Count > 0)
+        {
+            <MudBadge Content="@(ErrorBoundary?.Errors.Count ?? 0)" Color="Color.Error" Overlap="true">
+                <MudIconButton Icon="@Icons.Material.Filled.Error" Color="Color.Default" OnClick="ToggleErrorDrawer" />
+            </MudBadge>
+        }
+        <MudSwitch T="bool" Label="Dark Mode" LabelPosition="LabelPosition.End" @bind-Value="IsDarkMode" />
+        @if (ShowMenu)
+        {
+            <Menu />
+        }
+    </MudAppBar>
+    <MudDrawer Open="ErrorDrawerOpen" ClipMode="DrawerClipMode.Docked" Elevation="2" Anchor="Anchor.Right">
+        <ErrorDisplay ErrorBoundary="ErrorBoundary" />
+    </MudDrawer>
+    <CascadingValue Value="Theme">
+        <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
+            <CascadingValue Value="IsDarkMode" Name="IsDarkMode">
+                @Body
+            </CascadingValue>
+        </CascadingValue>
+    </CascadingValue>
+</MudLayout>

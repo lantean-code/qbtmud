@@ -1,4 +1,5 @@
-﻿using Lantean.QBTMudBlade.Models;
+﻿using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
@@ -10,9 +11,18 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         [CascadingParameter]
         public MudDialogInstance MudDialog { get; set; } = default!;
 
+        [Inject]
+        protected IApiClient ApiClient { get; set; } = default!;
+
         protected string? Category { get; set; }
 
         protected string SavePath { get; set; } = "";
+
+        protected override async Task OnInitializedAsync()
+        {
+            var preferences = await ApiClient.GetApplicationPreferences();
+            SavePath = preferences.SavePath;
+        }
 
         protected void Cancel(MouseEventArgs args)
         {

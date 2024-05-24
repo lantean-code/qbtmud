@@ -1,9 +1,19 @@
 ﻿<MudDialog ContentStyle="mix-width: 400px">
     <DialogContent>
         <MudGrid>
-            <MudItem xl="12">
-                <TorrentActions Hashes="Hashes" ParentAction="ParentAction" RenderType="RenderType.Children" AfterAction="CloseDialog" />
+            <MudItem xs="12">
+                <CascadingValue Value="MainData">
+                    <CascadingValue Value="Preferences">
+                        <TorrentActions Hashes="Hashes" ParentAction="ParentAction" RenderType="RenderType.Children" AfterAction="CloseDialog" />
+                    </CascadingValue>
+                </CascadingValue>
             </MudItem>
         </MudGrid>
     </DialogContent>
+    <DialogActions>
+    @if (MultiAction)
+    {
+        <MudButton OnClick="Cancel">Close</MudButton>
+    }
+    </DialogActions>
 </MudDialog>

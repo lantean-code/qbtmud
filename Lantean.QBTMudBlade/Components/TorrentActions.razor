@@ -42,7 +42,14 @@ else if (RenderType == RenderType.Children)
         <MudList Clickable="true">
             @foreach (var action in parent.Children)
             {
-                <MudListItem Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
+                @if (action is Divider)
+                {
+                    <MudDivider />
+                }
+                else
+                {
+                    <MudListItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled">@action.Name</MudListItem>
+                }
             }
         </MudList>
     }

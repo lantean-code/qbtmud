@@ -14,14 +14,13 @@ namespace Lantean.QBitTorrentClient.Converters
 
             List<string> list;
             var value = reader.GetString();
-            if (value is null)
+            if (string.IsNullOrEmpty(value))
             {
                 list = [];
             }
             else
             {
-                var values = value.Split(',');
-                list = [.. values];
+                list = [.. value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
             }
 
             return list.AsReadOnly();

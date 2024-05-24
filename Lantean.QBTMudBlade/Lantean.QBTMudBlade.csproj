@@ -22,4 +22,10 @@
     <ProjectReference Include="..\Lantean.QBitTorrentClient\Lantean.QBitTorrentClient.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="Components\Dialogs\ManageCategoriesDialog.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
 </Project>

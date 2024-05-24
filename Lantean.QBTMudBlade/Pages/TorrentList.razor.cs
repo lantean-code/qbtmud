@@ -39,31 +39,20 @@ namespace Lantean.QBTMudBlade.Pages
 
         protected string? SearchText { get; set; }
 
-        protected Torrent? SelectedTorrent { get; set; }
-
         protected HashSet<Torrent> SelectedItems { get; set; } = [];
 
-        protected bool ToolbarButtonsEnabled => SelectedItems.Count > 0 || SelectedTorrent is not null;
+        protected bool ToolbarButtonsEnabled => SelectedItems.Count > 0;
 
         protected DynamicTable<Torrent>? Table { get; set; }
 
         protected void SelectedItemsChanged(HashSet<Torrent> selectedItems)
         {
             SelectedItems = selectedItems;
-            if (selectedItems.Count == 1)
-            {
-                SelectedTorrent = selectedItems.First();
-            }
         }
 
         protected async Task SortDirectionChangedHandler(SortDirection sortDirection)
         {
             await SortDirectionChanged.InvokeAsync(sortDirection);
-        }
-
-        protected void SelectedItemChanged(Torrent torrent)
-        {
-            SelectedTorrent = torrent;
         }
 
         protected async Task SortColumnChangedHandler(string columnId)
@@ -122,7 +111,12 @@ namespace Lantean.QBTMudBlade.Pages
         {
             if (eventArgs.MouseEventArgs.Detail > 1)
             {
-                NavigationManager.NavigateTo("/details/" + SelectedTorrent);
+                var torrent = SelectedItems.FirstOrDefault();
+                if (torrent is null)
+                {
+                    return;
+                }
+                NavigationManager.NavigateTo($"/details/{torrent.Hash}");
             }
         }
 
@@ -131,11 +125,6 @@ namespace Lantean.QBTMudBlade.Pages
             if (SelectedItems.Count > 0)
             {
                 return SelectedItems.Select(t => t.Hash);
-            }
-
-            if (SelectedTorrent is not null)
-            {
-                return [SelectedTorrent.Hash];
             }
 
             return [];
@@ -158,11 +147,12 @@ namespace Lantean.QBTMudBlade.Pages
 
         protected void ShowTorrent()
         {
-            if (SelectedTorrent is null)
+            var torrent = SelectedItems.FirstOrDefault();
+            if (torrent is null)
             {
                 return;
             }
-            NavigationManager.NavigateTo("/details/" + SelectedTorrent.Hash);
+            NavigationManager.NavigateTo($"/details/{torrent.Hash}");
         }
 
         protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions;
@@ -170,7 +160,7 @@ namespace Lantean.QBTMudBlade.Pages
         public static List<ColumnDefinition<Torrent>> ColumnsDefinitions { get; } =
         [
             CreateColumnDefinition("#", t => t.Priority),
-            CreateColumnDefinition("", t => t.State, IconColumn, iconOnly: true),
+            CreateColumnDefinition("Icon", t => t.State, IconColumn, iconOnly: true),
             CreateColumnDefinition("Name", t => t.Name, width: 400),
             CreateColumnDefinition("Size", t => t.Size, t => DisplayHelpers.Size(t.Size)),
             CreateColumnDefinition("Total Size", t => t.TotalSize, t => DisplayHelpers.Size(t.TotalSize), enabled: false),

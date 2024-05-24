@@ -37,14 +37,15 @@
         @foreach (var column in GetColumns())
         {
             var className = column.IconOnly ? null : "overflow-cell";
+            var columnHeader = column.IconOnly ? "" : column.Header;
             <MudTh Class="@className" Style="@(GetColumnStyle(column))">
                 @if (column.SortSelector is not null)
                 {
-                    <SortLabel SortDirectionChanged="@(c => SetSort(column.Id, c))" SortDirection="@(column.Id == _sortColumn ? _sortDirection : SortDirection.None)">@column.Header</SortLabel>
+                    <SortLabel SortDirectionChanged="@(c => SetSort(column.Id, c))" SortDirection="@(column.Id == _sortColumn ? _sortDirection : SortDirection.None)">@columnHeader</SortLabel>
                 }
                 else
                 {
-                    @column.Header
+                    @columnHeader
                 }
             </MudTh>
         }

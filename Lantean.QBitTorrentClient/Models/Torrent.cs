@@ -22,6 +22,7 @@ namespace Lantean.QBitTorrentClient.Models
             long? estimatedTimeOfArrival,
             bool? firstLastPiecePriority,
             bool? forceStart,
+            string hash,
             string? infoHashV1,
             string? infoHashV2,
             long? lastActivity,
@@ -70,6 +71,7 @@ namespace Lantean.QBitTorrentClient.Models
             EstimatedTimeOfArrival = estimatedTimeOfArrival;
             FirstLastPiecePriority = firstLastPiecePriority;
             ForceStart = forceStart;
+            Hash = hash;
             InfoHashV1 = infoHashV1;
             InfoHashV2 = infoHashV2;
             LastActivity = lastActivity;
@@ -148,6 +150,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("force_start")]
         public bool? ForceStart { get; }
+
+        [JsonPropertyName("hash")]
+        public string Hash { get; }
 
         [JsonPropertyName("infohash_v1")]
         public string? InfoHashV1 { get; }

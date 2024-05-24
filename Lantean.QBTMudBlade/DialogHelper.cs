@@ -4,14 +4,19 @@ using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Filter;
 using Lantean.QBTMudBlade.Models;
 using MudBlazor;
+using System.Collections.Generic;
 
 namespace Lantean.QBTMudBlade
 {
     public static class DialogHelper
     {
-        public static readonly DialogOptions FormDialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Medium, ClassBackground = "background-blur" };
+        public static readonly DialogOptions FormDialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Medium, ClassBackground = "background-blur", FullWidth = true };
 
-        private static readonly DialogOptions _confirmDialogOptions = new() { ClassBackground = "background-blur" };
+        public static readonly DialogOptions NonBlurFormDialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+        public static readonly DialogOptions ConfirmDialogOptions = new() { ClassBackground = "background-blur", MaxWidth = MaxWidth.Small, FullWidth = true };
+
+        public static readonly DialogOptions NonBlurConfirmDialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
 
         public const long _maxFileSize = 4194304;
 
@@ -109,23 +114,35 @@ namespace Lantean.QBTMudBlade
             await Task.Delay(0);
         }
 
-        public static async Task InvokeAddCategoryDialog(this IDialogService dialogService, IApiClient apiClient, IEnumerable<string>? hashes = null)
+        public static async Task<string?> ShowAddCategoryDialog(this IDialogService dialogService, IApiClient apiClient)
         {
-            var reference = await dialogService.ShowAsync<DeleteDialog>("New Category");
+            var reference = await dialogService.ShowAsync<AddCategoryDialog>("New Category", NonBlurFormDialogOptions);
             var result = await reference.Result;
             if (result.Canceled)
             {
-                return;
+                return null;
             }
 
             var category = (Category)result.Data;
 
             await apiClient.AddCategory(category.Name, category.SavePath);
 
-            if (hashes is not null)
+            return category.Name;
+        }
+
+        public static async Task<HashSet<string>?> ShowAddTagsDialog(this IDialogService dialogService, IApiClient apiClient)
+        {
+            var dialogReference = await dialogService.ShowAsync<AddTagDialog>("Add Tags", NonBlurFormDialogOptions);
+            var result = await dialogReference.Result;
+
+            if (result.Canceled)
             {
-                await apiClient.SetTorrentCategory(category.Name, null, hashes.ToArray());
+                return null;
             }
+
+            var tags = (HashSet<string>)result.Data;
+
+            return tags;
         }
 
         public static async Task ShowConfirmDialog(this IDialogService dialogService, string title, string content, Func<Task> onSuccess)
@@ -134,7 +151,7 @@ namespace Lantean.QBTMudBlade
             {
                 { nameof(ConfirmDialog.Content), content }
             };
-            var result = await dialogService.ShowAsync<ConfirmDialog>(title, parameters, _confirmDialogOptions);
+            var result = await dialogService.ShowAsync<ConfirmDialog>(title, parameters, ConfirmDialogOptions);
 
             var dialogResult = await result.Result;
             if (dialogResult.Canceled)
@@ -162,7 +179,7 @@ namespace Lantean.QBTMudBlade
                 { nameof(SingleFieldDialog<T>.Label), label },
                 { nameof(SingleFieldDialog<T>.Value), value }
             };
-            var result = await dialogService.ShowAsync<SingleFieldDialog<T>>(title, parameters, _confirmDialogOptions);
+            var result = await dialogService.ShowAsync<SingleFieldDialog<T>>(title, parameters, FormDialogOptions);
 
             var dialogResult = await result.Result;
             if (dialogResult.Canceled)
@@ -251,15 +268,17 @@ namespace Lantean.QBTMudBlade
             await Task.Delay(0);
         }
 
-        public static async Task ShowSubMenu(this IDialogService dialogService, IEnumerable<string> hashes, TorrentAction parent)
+        public static async Task ShowSubMenu(this IDialogService dialogService, IEnumerable<string> hashes, TorrentAction parent, MainData mainData, QBitTorrentClient.Models.Preferences? preferences)
         {
             var parameters = new DialogParameters
             {
                 { nameof(SubMenuDialog.ParentAction), parent },
-                { nameof(SubMenuDialog.Hashes), hashes }
+                { nameof(SubMenuDialog.Hashes), hashes },
+                { nameof(SubMenuDialog.MainData), mainData },
+                { nameof(SubMenuDialog.Preferences), preferences },
             };
 
-            await dialogService.ShowAsync<SubMenuDialog>("Actions", parameters, FormDialogOptions);
+            await dialogService.ShowAsync<SubMenuDialog>(parent.Name, parameters, FormDialogOptions);
         }
     }
 }

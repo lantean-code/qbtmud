@@ -66,9 +66,29 @@ namespace Lantean.QBitTorrentClient
             return apiClient.SetTorrentCategory(category, null, hash);
         }
 
+        public static Task SetTorrentCategory(this IApiClient apiClient, string category, IEnumerable<string> hashes)
+        {
+            return apiClient.SetTorrentCategory(category, null, hashes.ToArray());
+        }
+
+        public static Task RemoveTorrentCategory(this IApiClient apiClient, string hash)
+        {
+            return apiClient.SetTorrentCategory(string.Empty, null, hash);
+        }
+
+        public static Task RemoveTorrentCategory(this IApiClient apiClient, IEnumerable<string> hashes)
+        {
+            return apiClient.SetTorrentCategory(string.Empty, null, hashes.ToArray());
+        }
+
         public static Task RemoveTorrentTags(this IApiClient apiClient, IEnumerable<string> tags, string hash)
         {
             return apiClient.RemoveTorrentTags(tags, null, hash);
+        }
+
+        public static Task RemoveTorrentTags(this IApiClient apiClient, IEnumerable<string> tags, IEnumerable<string> hashes)
+        {
+            return apiClient.RemoveTorrentTags(tags, null, hashes.ToArray());
         }
 
         public static Task RemoveTorrentTag(this IApiClient apiClient, string tag, string hash)
@@ -86,6 +106,11 @@ namespace Lantean.QBitTorrentClient
             return apiClient.AddTorrentTags(tags, null, hash);
         }
 
+        public static Task AddTorrentTags(this IApiClient apiClient, IEnumerable<string> tags, IEnumerable<string> hashes)
+        {
+            return apiClient.AddTorrentTags(tags, null, hashes.ToArray());
+        }
+
         public static Task AddTorrentTag(this IApiClient apiClient, string tag, string hash)
         {
             return apiClient.AddTorrentTags([tag], hash);
@@ -95,6 +120,7 @@ namespace Lantean.QBitTorrentClient
         {
             return apiClient.AddTorrentTags([tag], null, hashes.ToArray());
         }
+        
 
         public static Task RecheckTorrent(this IApiClient apiClient, string hash)
         {

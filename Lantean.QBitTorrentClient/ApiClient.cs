@@ -798,7 +798,7 @@ namespace Lantean.QBitTorrentClient
         {
             var content = new FormUrlEncodedBuilder()
                 .AddAllOrPipeSeparated("hashes", all, hashes)
-                .AddPipeSeparated("tags", tags)
+                .AddCommaSeparated("tags", tags)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/addTags", content);
@@ -810,7 +810,7 @@ namespace Lantean.QBitTorrentClient
         {
             var content = new FormUrlEncodedBuilder()
                 .AddAllOrPipeSeparated("hashes", all, hashes)
-                .AddPipeSeparated("tags", tags)
+                .AddCommaSeparated("tags", tags)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/removeTags", content);
@@ -830,7 +830,7 @@ namespace Lantean.QBitTorrentClient
         public async Task CreateTags(IEnumerable<string> tags)
         {
             var content = new FormUrlEncodedBuilder()
-                .AddPipeSeparated("tags", tags)
+                .AddCommaSeparated("tags", tags)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/createTags", content);
@@ -841,7 +841,7 @@ namespace Lantean.QBitTorrentClient
         public async Task DeleteTags(IEnumerable<string> tags)
         {
             var content = new FormUrlEncodedBuilder()
-                .AddPipeSeparated("tags", tags)
+                .AddCommaSeparated("tags", tags)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/deleteTags", content);

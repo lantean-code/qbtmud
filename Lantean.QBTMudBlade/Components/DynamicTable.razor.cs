@@ -4,6 +4,7 @@ using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using System.Data.Common;
+using static MudBlazor.CategoryTypes;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -55,8 +56,8 @@ namespace Lantean.QBTMudBlade.Components
         [Parameter]
         public EventCallback<T> SelectedItemChanged { get; set; }
 
-        [Parameter]
-        public T? SelectedItem { get; set; }
+        //[Parameter]
+        //public T? SelectedItem { get; set; }
 
         [Parameter]
         public Func<ColumnDefinition<T>, bool> ColumnFilter { get; set; } = t => true;
@@ -193,16 +194,51 @@ namespace Lantean.QBTMudBlade.Components
 
         protected async Task OnRowClickInternal(TableRowClickEventArgs<T> eventArgs)
         {
-            SelectedItem = eventArgs.Item;
+            if (MultiSelection)
+            {
+                if (eventArgs.MouseEventArgs.CtrlKey)
+                {
+                    if (SelectedItems.Contains(eventArgs.Item))
+                    {
+                        SelectedItems.Remove(eventArgs.Item);
+                    }
+                    else
+                    {
+                        SelectedItems.Add(eventArgs.Item);
+                    }
+                }
+                else if (eventArgs.MouseEventArgs.AltKey)
+                {
+                    SelectedItems.Clear();
+                    SelectedItems.Add(eventArgs.Item);
+                }
+                else
+                {
+                    if (!SelectedItems.Contains(eventArgs.Item))
+                    {
+                        SelectedItems.Clear();
+                        SelectedItems.Add(eventArgs.Item);
+                    }
+                }
+            }
+            else
+            {
+                if (!SelectedItems.Contains(eventArgs.Item))
+                {
+                    SelectedItems.Clear();
+                    SelectedItems.Add(eventArgs.Item);
+                    await SelectedItemChanged.InvokeAsync(eventArgs.Item);
+                }
+            }
 
-            await SelectedItemChanged.InvokeAsync(SelectedItem);
             await OnRowClick.InvokeAsync(eventArgs);
         }
 
         protected string RowStyleFuncInternal(T item, int index)
         {
             var style = "user-select: none; cursor: pointer;";
-            if (EqualityComparer<T>.Default.Equals(item, SelectedItem))
+            //EqualityComparer<T>.Default.Equals(item, SelectedItem) || 
+            if (SelectedItems.Contains(item))
             {
                 style += " background-color: var(--mud-palette-grey-dark); color: var(--mud-palette-grey-light) !important;";
             }
