@@ -9,6 +9,9 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         [CascadingParameter]
         public MudDialogInstance MudDialog { get; set; } = default!;
 
+        [Parameter]
+        public int Count { get; set; }
+
         protected bool DeleteFiles { get; set; }
 
         protected void Cancel(MouseEventArgs args)

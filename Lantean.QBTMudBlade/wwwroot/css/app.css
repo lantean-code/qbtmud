@@ -89,10 +89,6 @@ code {
     height: 28px !important;
 }
 
-.torrent-list {
-    height: calc(100vh - 100px);
-}
-
 td.no-wrap {
     white-space: nowrap; /* Prevent text from wrapping to the next line */
     overflow: hidden; /* Hide any overflowing content */
@@ -158,4 +154,12 @@ td.no-wrap {
     margin-top: 0;
     margin-left: 5px;
     margin-right: 5px;
+}
+
+.torrent-list .mud-table-container {
+    height: calc(100vh - 149px);
+}
+
+.file-list .mud-table-container {
+    height: calc(100vh - 245px);
 }

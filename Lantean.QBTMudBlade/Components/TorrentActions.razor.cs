@@ -74,6 +74,8 @@ namespace Lantean.QBTMudBlade.Components
         protected async Task Remove()
         {
             await DialogService.InvokeDeleteTorrentDialog(ApiClient, Hashes.ToArray());
+
+            NavigationManager.NavigateTo("/");
         }
 
         protected async Task SetLocation()

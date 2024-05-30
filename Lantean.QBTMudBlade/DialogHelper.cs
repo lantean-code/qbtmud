@@ -99,7 +99,12 @@ namespace Lantean.QBTMudBlade
 
         public static async Task InvokeDeleteTorrentDialog(this IDialogService dialogService, IApiClient apiClient, params string[] hashes)
         {
-            var reference = await dialogService.ShowAsync<DeleteDialog>($"Remove torrent{(hashes.Length == 1 ? "" : "s")}?");
+            var parameters = new DialogParameters
+            {
+                { nameof(DeleteDialog.Count), hashes.Length }
+            };
+
+            var reference = await dialogService.ShowAsync<DeleteDialog>($"Remove torrent{(hashes.Length == 1 ? "" : "s")}?", parameters, ConfirmDialogOptions);
             var result = await reference.Result;
             if (result.Canceled)
             {
