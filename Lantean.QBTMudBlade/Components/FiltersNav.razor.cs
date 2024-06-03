@@ -1,8 +1,6 @@
 ﻿using Blazored.LocalStorage;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
-using static MudBlazor.Colors;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -68,14 +66,13 @@ namespace Lantean.QBTMudBlade.Components
                 await CategoryChanged.InvokeAsync(category);
             }
 
-
             var tag = await LocalStorage.GetItemAsStringAsync(_tagSelectionStorageKey);
             if (tag is not null)
             {
                 Tag = tag;
                 await TagChanged.InvokeAsync(tag);
             }
-            
+
             var tracker = await LocalStorage.GetItemAsStringAsync(_trackerSelectionStorageKey);
             if (tracker is not null)
             {

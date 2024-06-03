@@ -1,5 +1,4 @@
-﻿
-namespace Lantean.QBitTorrentClient.Models
+﻿namespace Lantean.QBitTorrentClient.Models
 {
     public class SaveLocation
     {

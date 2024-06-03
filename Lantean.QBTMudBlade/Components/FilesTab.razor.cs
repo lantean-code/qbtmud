@@ -192,7 +192,7 @@ namespace Lantean.QBTMudBlade.Components
                         {
                             files = await ApiClient.GetTorrentContents(Hash);
                         }
-                        catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
+                        catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
                         {
                             _timerCancellationToken.CancelIfNotDisposed();
                             return;
@@ -332,7 +332,7 @@ namespace Lantean.QBTMudBlade.Components
             }
 
             return FileList!.Values.Where(f => f.Name.StartsWith(contentItem.Name + Extensions.DirectorySeparator) && !f.IsFolder);
-        }        
+        }
 
         private IEnumerable<ContentItem> GetChildren(ContentItem folder, int level)
         {

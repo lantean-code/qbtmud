@@ -171,7 +171,6 @@ namespace Lantean.QBTMudBlade
 
         public static bool FilterStatus(string state, long uploadSpeed, Status status)
         {
-            
             bool inactive = false;
             switch (status)
             {

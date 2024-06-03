@@ -18,7 +18,6 @@ namespace Lantean.QBTMudBlade.Layout
         [CascadingParameter(Name = "SortDirection")]
         public SortDirection SortDirection { get; set; }
 
-
         protected string? SelectedTorrent { get; set; }
 
         protected override void OnParametersSet()

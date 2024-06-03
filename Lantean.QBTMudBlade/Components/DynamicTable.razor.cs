@@ -1,10 +1,6 @@
 ﻿using Blazored.LocalStorage;
-using Lantean.QBitTorrentClient.Models;
-using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Data.Common;
-using static MudBlazor.CategoryTypes;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -237,7 +233,7 @@ namespace Lantean.QBTMudBlade.Components
         protected string RowStyleFuncInternal(T item, int index)
         {
             var style = "user-select: none; cursor: pointer;";
-            //EqualityComparer<T>.Default.Equals(item, SelectedItem) || 
+            //EqualityComparer<T>.Default.Equals(item, SelectedItem) ||
             if (SelectedItems.Contains(item))
             {
                 style += " background-color: var(--mud-palette-grey-dark); color: var(--mud-palette-grey-light) !important;";

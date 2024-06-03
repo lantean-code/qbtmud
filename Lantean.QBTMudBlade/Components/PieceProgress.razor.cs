@@ -2,8 +2,8 @@
 using Lantean.QBTMudBlade.Interop;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using MudBlazor.Services;
 using MudBlazor;
+using MudBlazor.Services;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -25,7 +25,7 @@ namespace Lantean.QBTMudBlade.Components
         [EditorRequired]
         public IReadOnlyList<PieceState> Pieces { get; set; } = [];
 
-        [CascadingParameter(Name = "IsDarkMode")] 
+        [CascadingParameter(Name = "IsDarkMode")]
         public bool IsDarkMode { get; set; }
 
         [CascadingParameter]

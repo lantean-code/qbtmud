@@ -44,7 +44,6 @@ class PiecesBar {
     MAX_CANVAS_WIDTH = 4096;
 
     constructor(pieces, parameters) {
-
         this.id = 'piecesbar_' + (window.qbt.piecesBarUniqueId++);
         this.width = 0;
         this.height = 0;

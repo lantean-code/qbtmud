@@ -2,7 +2,6 @@
 using Lantean.QBTMudBlade.Models;
 using MudBlazor;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Text;
 
 namespace Lantean.QBTMudBlade
@@ -341,32 +340,43 @@ namespace Lantean.QBTMudBlade
                 case "forcedMetaDL":
                 case "downloading":
                     return (Icons.Material.Filled.Downloading, Color.Success);
+
                 case "forcedUP":
                 case "uploading":
                     return (Icons.Material.Filled.Upload, Color.Info);
+
                 case "stalledUP":
                     return (Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Info);
+
                 case "stalledDL":
                     return (Icons.Material.Filled.KeyboardDoubleArrowDown, Color.Success);
+
                 case "pausedDL":
                     return (Icons.Material.Filled.Pause, Color.Success);
+
                 case "pausedUP":
                     return (Icons.Material.Filled.Pause, Color.Info);
+
                 case "queuedDL":
                 case "queuedUP":
                     return (Icons.Material.Filled.Queue, Color.Default);
+
                 case "checkingDL":
                 case "checkingUP":
                     return (Icons.Material.Filled.Loop, Color.Info);
+
                 case "queuedForChecking":
                 case "checkingResumeData":
                     return (Icons.Material.Filled.Loop, Color.Warning);
+
                 case "moving":
                     return (Icons.Material.Filled.Moving, Color.Info);
+
                 case "error":
                 case "unknown":
                 case "missingFiles":
                     return (Icons.Material.Filled.Error, Color.Error);
+
                 default:
                     return (Icons.Material.Filled.QuestionMark, Color.Warning);
             }

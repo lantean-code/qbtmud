@@ -120,7 +120,6 @@ namespace Lantean.QBitTorrentClient
         {
             return apiClient.AddTorrentTags([tag], null, hashes.ToArray());
         }
-        
 
         public static Task RecheckTorrent(this IApiClient apiClient, string hash)
         {

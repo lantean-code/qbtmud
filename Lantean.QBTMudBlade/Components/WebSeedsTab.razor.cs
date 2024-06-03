@@ -65,7 +65,7 @@ namespace Lantean.QBTMudBlade.Components
                             {
                                 WebSeeds = await ApiClient.GetTorrentWebSeeds(Hash);
                             }
-                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
+                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
                             {
                                 _timerCancellationToken.CancelIfNotDisposed();
                                 return;

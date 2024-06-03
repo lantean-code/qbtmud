@@ -71,7 +71,7 @@ namespace Lantean.QBTMudBlade.Components
                             {
                                 peers = await ApiClient.GetTorrentPeersData(Hash, _requestId);
                             }
-                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
+                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
                             {
                                 _timerCancellationToken.CancelIfNotDisposed();
                                 return;

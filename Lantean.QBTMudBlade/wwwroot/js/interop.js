@@ -49,6 +49,6 @@ window.qbt.renderPiecesBar = (id, hash, pieces, downloadingColor, haveColor, bor
         const el = window.qbt.piecesBar.createElement();
         parentElement.appendChild(el);
     }
-    
+
     window.qbt.piecesBar.setPieces(pieces);
 }

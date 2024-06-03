@@ -1,7 +1,6 @@
 ﻿using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components

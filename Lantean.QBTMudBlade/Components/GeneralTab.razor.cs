@@ -70,7 +70,7 @@ namespace Lantean.QBTMudBlade.Components
                                 Pieces = await ApiClient.GetTorrentPieceStates(Hash);
                                 Properties = await ApiClient.GetTorrentProperties(Hash);
                             }
-                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
+                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
                             {
                                 _timerCancellationToken.CancelIfNotDisposed();
                                 return;

@@ -1,10 +1,9 @@
+using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
-using Blazored;
-using Blazored.LocalStorage;
 
 namespace Lantean.QBTMudBlade
 {

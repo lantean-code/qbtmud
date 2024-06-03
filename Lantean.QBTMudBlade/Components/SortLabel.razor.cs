@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using MudBlazor.Utilities;
-using static MudBlazor.CategoryTypes;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -53,7 +52,6 @@ namespace Lantean.QBTMudBlade.Components
             {
                 return;
             }
-
 
             SortDirection sortDirection;
             switch (SortDirection)

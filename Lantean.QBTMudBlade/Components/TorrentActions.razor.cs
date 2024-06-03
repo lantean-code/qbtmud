@@ -4,7 +4,6 @@ using Lantean.QBTMudBlade.Interop;
 using Lantean.QBTMudBlade.Models;
 using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 
@@ -207,7 +206,7 @@ namespace Lantean.QBTMudBlade.Components
             {
                 { nameof(ManageTagsDialog.Hashes), Hashes }
             };
-            
+
             await DialogService.ShowAsync<ManageTagsDialog>("Manage Torrent Tags", parameters, DialogHelper.FormDialogOptions);
         }
 
@@ -327,22 +326,27 @@ namespace Lantean.QBTMudBlade.Components
         /// Renders toolbar contents without the <see cref="MudToolBar"/> wrapper.
         /// </summary>
         ToolbarContents,
+
         /// <summary>
         /// Renders a <see cref="MudToolBar"/>.
         /// </summary>
         Toolbar,
+
         /// <summary>
         /// Renders a <see cref="MudMenu"/>.
         /// </summary>
         Menu,
+
         /// <summary>
         /// Renders a <see cref="MudToolBar"/> with <see cref="MudIconButton"/> for basic actions and a <see cref="MudMenu"/> for actions with children.
         /// </summary>
         MixedToolbarContents,
+
         /// <summary>
         /// Renders toolbar contents without the <see cref="MudToolBar"/> wrapper with <see cref="MudIconButton"/> for basic actions and a <see cref="MudMenu"/> for actions with children.
         /// </summary>
         MixedToolbar,
+
         InitialIconsOnly,
         Children,
     }

@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace Lantean.QBTMudBlade.Components.Options
+﻿namespace Lantean.QBTMudBlade.Components.Options
 {
     public partial class ConnectionOptions : Options
     {
@@ -97,7 +95,7 @@ namespace Lantean.QBTMudBlade.Components.Options
                 MaxConnecEnabled = false;
                 MaxConnec = 500;
             }
-            
+
             if (Preferences.MaxConnecPerTorrent > 0)
             {
                 MaxConnecPerTorrentEnabled = true;
@@ -179,7 +177,7 @@ namespace Lantean.QBTMudBlade.Components.Options
 
         protected void MaxConnecEnabledChanged(bool value)
         {
-            MaxConnecEnabled = value;            
+            MaxConnecEnabled = value;
         }
 
         protected async Task MaxConnecChanged(int value)

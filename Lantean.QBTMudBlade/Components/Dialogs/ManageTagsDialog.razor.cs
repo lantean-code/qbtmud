@@ -1,7 +1,6 @@
 ﻿using Lantean.QBitTorrentClient;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using static MudBlazor.CategoryTypes;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
 {
@@ -20,7 +19,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         public IEnumerable<string> Hashes { get; set; } = [];
 
         protected HashSet<string> Tags { get; set; } = [];
-        
+
         protected IList<IReadOnlyList<string>> TorrentTags { get; private set; } = [];
 
         protected override async Task OnInitializedAsync()

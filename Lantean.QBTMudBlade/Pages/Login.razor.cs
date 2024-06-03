@@ -32,11 +32,11 @@ namespace Lantean.QBTMudBlade.Pages
 
                 NavigationManager.NavigateTo("/");
             }
-            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.BadRequest)
             {
                 ApiError = "Invalid username or password.";
             }
-            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Forbidden)
+            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
             {
                 ApiError = "Requests from this client are currently unavailable.";
             }
@@ -47,10 +47,12 @@ namespace Lantean.QBTMudBlade.Pages
         }
 
 #if DEBUG
+
         protected override async Task OnInitializedAsync()
         {
             await DoLogin("admin", "23mIDZhvT");
         }
+
 #endif
     }
 

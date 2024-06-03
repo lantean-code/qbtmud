@@ -1,6 +1,4 @@
-﻿using ByteSizeLib;
-
-namespace Lantean.QBTMudBlade.Components.Options
+﻿namespace Lantean.QBTMudBlade.Components.Options
 {
     public partial class SpeedOptions : Options
     {
@@ -149,7 +147,7 @@ namespace Lantean.QBTMudBlade.Components.Options
             {
                 return;
             }
-            
+
             ScheduleFrom = value.Value;
             bool hasChanged = false;
             if (value.Value.Hours != Preferences?.ScheduleFromHour)

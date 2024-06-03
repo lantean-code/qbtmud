@@ -4,7 +4,6 @@ using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Filter;
 using Lantean.QBTMudBlade.Models;
 using MudBlazor;
-using System.Collections.Generic;
 
 namespace Lantean.QBTMudBlade
 {
@@ -265,7 +264,7 @@ namespace Lantean.QBTMudBlade
                 return default;
             }
 
-            return ((HashSet<string>, Dictionary<string, int?>))result.Data;        
+            return ((HashSet<string>, Dictionary<string, int?>))result.Data;
         }
 
         public static async Task InvokeRssRulesDialog(this IDialogService dialogService)

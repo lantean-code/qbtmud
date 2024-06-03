@@ -19,7 +19,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         public IEnumerable<string> Hashes { get; set; } = [];
 
         protected HashSet<string> Categories { get; set; } = [];
-        
+
         protected IList<string> TorrentCategories { get; private set; } = [];
 
         protected override async Task OnInitializedAsync()

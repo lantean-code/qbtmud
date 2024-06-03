@@ -41,7 +41,7 @@ namespace Lantean.QBTMudBlade.Filter
                         propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => (string?)x != null && value != null && ((string)x).StartsWith(value, stringComparer))),
                     FilterOperator.String.EndsWith =>
                         propertyExpression.Modify<T>((Expression<Func<object?, bool>>)(x => (string?)x != null && value != null && ((string)x).EndsWith(value, stringComparer))),
-                    FilterOperator.String.Empty => 
+                    FilterOperator.String.Empty =>
                         propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => string.IsNullOrWhiteSpace(x))),
                     FilterOperator.String.NotEmpty =>
                         propertyExpression.Modify<T>((Expression<Func<string?, bool>>)(x => !string.IsNullOrWhiteSpace(x))),

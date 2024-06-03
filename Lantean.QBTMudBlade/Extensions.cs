@@ -1,5 +1,4 @@
-﻿using Lantean.QBTMudBlade;
-using Lantean.QBTMudBlade.Models;
+﻿using Lantean.QBTMudBlade.Models;
 
 namespace Lantean.QBTMudBlade
 {

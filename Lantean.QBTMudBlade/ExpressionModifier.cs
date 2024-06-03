@@ -81,7 +81,7 @@ namespace Lantean.QBTMudBlade
             var propertyExpression = Expression.Property(parameterExpression, propertyInfo);
             var convertExpression = Expression.Convert(propertyExpression, typeof(object));
 
-            return (Expression.Lambda<Func<T, object?>>(convertExpression, parameterExpression), propertyInfo.PropertyType);        
+            return (Expression.Lambda<Func<T, object?>>(convertExpression, parameterExpression), propertyInfo.PropertyType);
         }
     }
 

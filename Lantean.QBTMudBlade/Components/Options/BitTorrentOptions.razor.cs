@@ -55,7 +55,7 @@
 
             return null;
         };
-        
+
         protected Func<int, string?> SlowTorrentDlRateThresholdValidation = value =>
         {
             if (value < 1)
@@ -150,7 +150,7 @@
                 MaxSeedingTimeEnabled = false;
                 MaxSeedingTime = 1440;
             }
-            
+
             MaxRatioAct = Preferences.MaxRatioAct;
 
             if (Preferences.MaxInactiveSeedingTimeEnabled)

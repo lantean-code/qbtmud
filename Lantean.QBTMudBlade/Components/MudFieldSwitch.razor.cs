@@ -21,7 +21,7 @@ namespace Lantean.QBTMudBlade.Components
         public bool Disabled { get; set; }
 
         /// <inheritdoc cref="MudBlazor.MudFormComponent{T}.Validation"/>
-        [Parameter] 
+        [Parameter]
         public object? Validation { get; set; }
 
         /// <inheritdoc cref="MudBlazor.MudField.HelperText"/>

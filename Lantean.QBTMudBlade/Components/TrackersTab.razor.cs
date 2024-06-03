@@ -59,7 +59,7 @@ namespace Lantean.QBTMudBlade.Components
                             {
                                 Trackers = await ApiClient.GetTorrentTrackers(Hash);
                             }
-                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
+                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
                             {
                                 _timerCancellationToken.CancelIfNotDisposed();
                                 return;

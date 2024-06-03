@@ -130,5 +130,3 @@ namespace Lantean.QBTMudBlade.Pages
         }
     }
 }
-
-

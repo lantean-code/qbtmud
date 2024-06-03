@@ -615,7 +615,6 @@ namespace Lantean.QBTMudBlade.Services
                     downloaded = downloadingContents.Sum(c => c.Value.Downloaded);
                     progress = (float)downloaded / size;
                 }
-                
 
                 if (!contents.TryGetValue(key, out var dir))
                 {
