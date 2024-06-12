@@ -45,7 +45,7 @@ namespace Lantean.QBTMudBlade.Models
 
         public long Downloaded => (long)Math.Round(Size * Progress, 0);
 
-        public long Remaining => Progress == 1 ? 0 : Size - Downloaded;
+        public long Remaining => Progress == 1 || Priority == Priority.DoNotDownload ? 0 : Size - Downloaded;
 
         public bool IsFolder { get; }
 

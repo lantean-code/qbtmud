@@ -49,5 +49,15 @@ namespace Lantean.QBTMudBlade
                 // disposed
             }
         }
+
+        public static bool IsFinished(this Torrent torrent)
+        {
+            return torrent.TotalSize == torrent.Downloaded;
+        }
+
+        public static bool MetaDownloaded(this Torrent torrent)
+        {
+            return !(torrent.State == "metaDL" || torrent.State == "forcedMetaDL" || torrent.TotalSize == -1);
+        }
     }
 }

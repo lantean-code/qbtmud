@@ -11,6 +11,8 @@ namespace Lantean.QBTMudBlade.Components
 {
     public partial class TorrentActions
     {
+        private readonly List<TorrentAction> _actions;
+
         [Inject]
         public IApiClient ApiClient { get; set; } = default!;
 
@@ -58,6 +60,47 @@ namespace Lantean.QBTMudBlade.Components
 
         protected bool Disabled => !Hashes.Any();
 
+        public TorrentActions()
+        {
+            _actions = new List<TorrentAction>
+            {
+                new TorrentAction("start", "Start", Icons.Material.Filled.PlayArrow, Color.Success, CreateCallback(Resume)),
+                new TorrentAction("pause", "Pause", Icons.Material.Filled.Pause, Color.Warning, CreateCallback(Pause)),
+                new TorrentAction("forceStart", "Force start", Icons.Material.Filled.Pause, Color.Warning, CreateCallback(ForceStart)),
+                new TorrentAction("delete", "Remove", Icons.Material.Filled.Delete, Color.Error, CreateCallback(Remove), separatorBefore: true),
+                new TorrentAction("setLocation", "Set location", Icons.Material.Filled.MyLocation, Color.Info, CreateCallback(SetLocation), separatorBefore: true),
+                new TorrentAction("rename", "Rename", Icons.Material.Filled.DriveFileRenameOutline, Color.Info, CreateCallback(Rename)),
+                new TorrentAction("renameFiles", "Rename files", Icons.Material.Filled.DriveFileRenameOutline, Color.Warning, CreateCallback(Rename)),
+                new TorrentAction("category", "Category", Icons.Material.Filled.List, Color.Info, CreateCallback(ShowCategories)),
+                new TorrentAction("tags", "Tags", Icons.Material.Filled.Label, Color.Info, CreateCallback(ShowTags)),
+                new TorrentAction("autoTorrentManagement", "Automatic Torrent Management", Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleAutoTMM)),
+                new TorrentAction("downloadLimit", "Limit download rate", Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Info, CreateCallback(LimitDownloadRate), separatorBefore: true),
+                new TorrentAction("uploadLimit", "Limit upload rate", Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Info, CreateCallback(LimitUploadRate)),
+                new TorrentAction("shareRatio", "Limit share ratio", Icons.Material.Filled.Percent, Color.Warning, CreateCallback(LimitShareRatio)),
+                new TorrentAction("superSeeding", "Super seeding mode", Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleSuperSeeding)),
+                new TorrentAction("sequentialDownload", "Download in sequential order", Icons.Material.Filled.Reorder, Color.Info, CreateCallback(DownloadSequential), separatorBefore: true),
+                new TorrentAction("firstLastPiecePrio", "Download first and last pieces first", Icons.Material.Filled.Navigation, Color.Info, CreateCallback(DownloadFirstLast)),
+                new TorrentAction("forceRecheck", "Force recheck", Icons.Material.Filled.Loop, Color.Info, CreateCallback(ForceRecheck), separatorBefore: true),
+                new TorrentAction("forceReannounce", "Force reannounce", Icons.Material.Filled.BroadcastOnHome, Color.Info, CreateCallback(ForceReannounce)),
+                new TorrentAction("queue", "Queue", Icons.Material.Filled.Queue, Color.Transparent, new List<TorrentAction>
+                {
+                    new TorrentAction("queueTop", "Move to top", Icons.Material.Filled.VerticalAlignTop, Color.Inherit, CreateCallback(MoveToTop)),
+                    new TorrentAction("queueUp", "Move up", Icons.Material.Filled.ArrowUpward, Color.Inherit, CreateCallback(MoveUp)),
+                    new TorrentAction("queueDown", "Move down", Icons.Material.Filled.ArrowDownward, Color.Inherit, CreateCallback(MoveDown)),
+                    new TorrentAction("queueBottom", "Move to bottom", Icons.Material.Filled.VerticalAlignBottom, Color.Inherit, CreateCallback(MoveToBottom)),
+                }, separatorBefore: true),
+                new TorrentAction("copy", "Copy", Icons.Material.Filled.FolderCopy, Color.Info, new List<TorrentAction>
+                {
+                    new TorrentAction("copyName", "Name", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Name))),
+                    new TorrentAction("copyHashv1", "Info hash v1", Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV1))),
+                    new TorrentAction("copyHashv2", "Info hash v2", Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV2))),
+                    new TorrentAction("copyMagnet", "Magnet link", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.MagnetUri))),
+                    new TorrentAction("copyId", "Torrent ID", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Hash))),
+                }),
+                new TorrentAction("export", "Export", Icons.Material.Filled.SaveAlt, Color.Info, CreateCallback(Export)),
+            };
+        }
+
         protected async Task Pause()
         {
             await ApiClient.PauseTorrents(Hashes);
@@ -68,6 +111,12 @@ namespace Lantean.QBTMudBlade.Components
         {
             await ApiClient.ResumeTorrents(Hashes);
             Snackbar.Add("Torrent resumed.");
+        }
+
+        protected async Task ForceStart()
+        {
+            await ApiClient.SetForceStart(true, null, Hashes.ToArray());
+            Snackbar.Add("Torrent force started.");
         }
 
         protected async Task Remove()
@@ -115,6 +164,18 @@ namespace Lantean.QBTMudBlade.Components
 
             await ApiClient.SetAutomaticTorrentManagement(false, null, torrents.Where(t => t.AutomaticTorrentManagement).Select(t => t.Hash).ToArray());
             await ApiClient.SetAutomaticTorrentManagement(true, null, torrents.Where(t => !t.AutomaticTorrentManagement).Select(t => t.Hash).ToArray());
+        }
+
+        protected async Task LimitDownloadRate()
+        {
+            long downloadLimit = -1;
+            string hash = Hashes.First();
+            if (Hashes.Any() && MainData.Torrents.TryGetValue(hash, out var torrent))
+            {
+                downloadLimit = torrent.UploadLimit;
+            }
+
+            await DialogService.InvokeDownloadRateDialog(ApiClient, downloadLimit, Hashes);
         }
 
         protected async Task LimitUploadRate()
@@ -220,6 +281,16 @@ namespace Lantean.QBTMudBlade.Components
             await DialogService.ShowAsync<ManageCategoriesDialog>("Manage Torrent Categories", parameters, DialogHelper.FormDialogOptions);
         }
 
+        protected async Task DownloadSequential()
+        {
+            await ApiClient.ToggleSequentialDownload(null, Hashes.ToArray());
+        }
+
+        protected async Task DownloadFirstLast()
+        {
+            await ApiClient.SetFirstLastPiecePriority(null, Hashes.ToArray());
+        }
+
         protected async Task SubMenuTouch(TorrentAction action)
         {
             await DialogService.ShowSubMenu(Hashes, action, MainData, Preferences);
@@ -236,71 +307,214 @@ namespace Lantean.QBTMudBlade.Components
             }
         }
 
-        private List<TorrentAction>? _actions;
+        private IEnumerable<TorrentAction> Actions => GetActions();
 
-        private IEnumerable<TorrentAction> Actions
+        private IEnumerable<TorrentAction> GetActions()
         {
-            get
+            var allAreSequentialDownload = true;
+            var thereAreSequentialDownload = false;
+            var allAreFirstLastPiecePrio = true;
+            var thereAreFirstLastPiecePrio = false;
+            var allAreDownloaded = true;
+            var allArePaused = true;
+            var thereArePaused = false;
+            var allAreForceStart = true;
+            var thereAreForceStart = false;
+            var allAreSuperSeeding = true;
+            var allAreAutoTmm = true;
+            var thereAreAutoTmm = false;
+
+            Torrent? firstTorrent = null;
+            foreach (var torrent in GetTorrents())
             {
-                if (_actions is not null)
+                if (firstTorrent is null)
                 {
-                    if (Preferences?.QueueingEnabled == false)
-                    {
-                        return _actions.Where(a => a.Name != "Queue");
-                    }
-                    return _actions;
+                    firstTorrent = torrent;
+                }
+                if (!torrent.SequentialDownload)
+                {
+                    allAreSequentialDownload = false;
+                }
+                else
+                {
+                    thereAreSequentialDownload = true;
                 }
 
-                Torrent? torrent = null;
-                if (Hashes.Any())
+                if (!torrent.FirstLastPiecePriority)
                 {
-                    string key = Hashes.First();
-                    if (!MainData.Torrents.TryGetValue(key, out torrent))
-                    {
-                        Hashes = Hashes.Except([key]);
-                    }
+                    allAreFirstLastPiecePrio = false;
+                }
+                else
+                {
+                    thereAreFirstLastPiecePrio = true;
                 }
 
-                _actions = new List<TorrentAction>
+                if (torrent.Progress != 1.0) // not downloaded
                 {
-                    new TorrentAction("Pause", Icons.Material.Filled.Pause, Color.Warning, CreateCallback(Pause)),
-                    new TorrentAction("Resume", Icons.Material.Filled.PlayArrow, Color.Success, CreateCallback(Resume)),
-                    new Divider(),
-                    new TorrentAction("Remove", Icons.Material.Filled.Delete, Color.Error, CreateCallback(Remove)),
-                    new Divider(),
-                    new TorrentAction("Set location", Icons.Material.Filled.MyLocation, Color.Info, CreateCallback(SetLocation)),
-                    new TorrentAction("Rename", Icons.Material.Filled.DriveFileRenameOutline, Color.Info, CreateCallback(Rename)),
-                    new TorrentAction("Category", Icons.Material.Filled.List, Color.Info, CreateCallback(ShowCategories)),
-                    new TorrentAction("Tags", Icons.Material.Filled.Label, Color.Info, CreateCallback(ShowTags)),
-                    new TorrentAction("Automatic Torrent Management", Icons.Material.Filled.Check, (torrent?.AutomaticTorrentManagement == true) ? Color.Info : Color.Transparent, CreateCallback(ToggleAutoTMM)),
-                    new Divider(),
-                    new TorrentAction("Limit upload rate", Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Info, CreateCallback(LimitUploadRate)),
-                    new TorrentAction("Limit share ratio", Icons.Material.Filled.Percent, Color.Warning, CreateCallback(LimitShareRatio)),
-                    new TorrentAction("Super seeding mode", Icons.Material.Filled.Check, (torrent?.SuperSeeding == true) ? Color.Info : Color.Transparent, CreateCallback(ToggleSuperSeeding)),
-                    new Divider(),
-                    new TorrentAction("Force recheck", Icons.Material.Filled.Loop, Color.Info, CreateCallback(ForceRecheck)),
-                    new TorrentAction("Force reannounce", Icons.Material.Filled.BroadcastOnHome, Color.Info, CreateCallback(ForceReannounce)),
-                    new Divider(),
-                    new TorrentAction("Queue", Icons.Material.Filled.Queue, Color.Transparent, new List<TorrentAction>
-                    {
-                        new TorrentAction("Move to top", Icons.Material.Filled.VerticalAlignTop, Color.Inherit, CreateCallback(MoveToTop)),
-                        new TorrentAction("Move up", Icons.Material.Filled.ArrowUpward, Color.Inherit, CreateCallback(MoveUp)),
-                        new TorrentAction("Move down", Icons.Material.Filled.ArrowDownward, Color.Inherit, CreateCallback(MoveDown)),
-                        new TorrentAction("Move to bottom", Icons.Material.Filled.VerticalAlignBottom, Color.Inherit, CreateCallback(MoveToBottom)),
-                    }),
-                    new TorrentAction("Copy", Icons.Material.Filled.FolderCopy, Color.Info, new List<TorrentAction>
-                    {
-                        new TorrentAction("Name", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Name))),
-                        new TorrentAction("Info hash v1", Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV1))),
-                        new TorrentAction("Info hash v2", Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV2))),
-                        new TorrentAction("Magnet link", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.MagnetUri))),
-                        new TorrentAction("Torrent ID", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Hash))),
-                    }),
-                    new TorrentAction("Export", Icons.Material.Filled.SaveAlt, Color.Info, CreateCallback(Export)),
-                };
+                    allAreDownloaded = false;
+                }
+                else if (!torrent.SuperSeeding)
+                {
+                    allAreSuperSeeding = false;
+                }
 
-                return _actions;
+                if (torrent.State != "pausedUP" && torrent.State != "pausedDL")
+                {
+                    allArePaused = false;
+                }
+                else
+                {
+                    thereArePaused = true;
+                }
+
+                if (!torrent.ForceStart)
+                {
+                    allAreForceStart = false;
+                }
+                else
+                {
+                    thereAreForceStart = true;
+                }
+
+                if (torrent.AutomaticTorrentManagement)
+                {
+                    thereAreAutoTmm = true;
+                }
+                else
+                {
+                    allAreAutoTmm = false;
+                }
             }
+
+            bool showSequentialDownload = true;
+            if (!allAreSequentialDownload && thereAreSequentialDownload)
+            {
+                showSequentialDownload = false;
+            }
+
+            bool showAreFirstLastPiecePrio = true;
+            if (!allAreFirstLastPiecePrio && thereAreFirstLastPiecePrio)
+            {
+                showAreFirstLastPiecePrio = false;
+            }
+
+            var actionStates = new Dictionary<string, ActionState>();
+
+            var showRenameFiles = Hashes.Count() == 1 && firstTorrent!.MetaDownloaded();
+            if (!showRenameFiles)
+            {
+                actionStates["renameFiles"] = ActionState.Hidden;
+            }
+
+            if (allAreDownloaded)
+            {
+                actionStates["downloadLimit"] = ActionState.Hidden;
+                actionStates["uploadLimit"] = ActionState.HasSeperator;
+                actionStates["sequentialDownload"] = ActionState.Hidden;
+                actionStates["firstLastPiecePrio"] = ActionState.Hidden;
+                actionStates["superSeeding"] = new ActionState { IsChecked = allAreSuperSeeding };
+            }
+            else
+            {
+                if (!showSequentialDownload && showAreFirstLastPiecePrio)
+                {
+                    actionStates["firstLastPiecePrio"] = ActionState.HasSeperator;
+                }
+
+                if (!showSequentialDownload)
+                {
+                    actionStates["sequentialDownload"] = ActionState.Hidden;
+                }
+
+                if (!showAreFirstLastPiecePrio)
+                {
+                    actionStates["firstLastPiecePrio"] = ActionState.Hidden;
+                }
+
+                if (!actionStates.TryGetValue("sequentialDownload", out var sequentialDownload))
+                {
+                    actionStates["sequentialDownload"] = new ActionState { IsChecked = allAreSequentialDownload };
+                }
+                else
+                {
+                    sequentialDownload.IsChecked = allAreSequentialDownload;
+                }
+
+                if (!actionStates.TryGetValue("firstLastPiecePrio", out var firstLastPiecePrio))
+                {
+                    actionStates["firstLastPiecePrio"] = new ActionState { IsChecked = allAreFirstLastPiecePrio };
+                }
+                else
+                {
+                    firstLastPiecePrio.IsChecked = allAreFirstLastPiecePrio;
+                }
+
+                actionStates["superSeeding"] = ActionState.Hidden;
+            }
+
+            if (allArePaused)
+            {
+                actionStates["pause"] = ActionState.Hidden;
+            }
+            else if (allAreForceStart)
+            {
+                actionStates["forceStart"] = ActionState.Hidden;
+            }
+            else if (!thereArePaused && !thereAreForceStart)
+            {
+                actionStates["start"] = ActionState.Hidden;
+            }
+
+            if (!allAreAutoTmm && thereAreAutoTmm)
+            {
+                actionStates["autoTorrentManagement"] = ActionState.Hidden;
+            }
+            else
+            {
+                actionStates["autoTorrentManagement"] = new ActionState { IsChecked = allAreAutoTmm };
+            }
+
+            return Filter(actionStates);
+        }
+
+        private IEnumerable<TorrentAction> Filter(Dictionary<string, ActionState> actionStates)
+        {
+            foreach (var action in _actions)
+            {
+                if (!actionStates.TryGetValue(action.Name, out var actionState))
+                {
+                    yield return action;
+                }
+                else
+                {
+
+                    if (actionState.Show is null || actionState.Show.Value)
+                    {
+                        var act = action with { };
+                        if (actionState.HasSeparator.HasValue)
+                        {
+                            act.SeparatorBefore = actionState.HasSeparator.Value;
+                        }
+                        if (actionState.IsChecked.HasValue)
+                        {
+                            act.IsChecked = actionState.IsChecked.Value;
+                        }
+                    }
+                }
+            }
+        }
+
+        private sealed class ActionState
+        {
+            public bool? Show { get; set; }
+
+            public bool? HasSeparator { get; set; }
+
+            public bool? IsChecked { get; set; }
+
+            public static readonly ActionState Hidden = new ActionState { Show = false };
+
+            public static readonly ActionState HasSeperator = new ActionState { HasSeparator = true };
         }
 
         private EventCallback CreateCallback(Func<Task> action, bool ignoreAfterAction = false)
@@ -351,46 +565,53 @@ namespace Lantean.QBTMudBlade.Components
         Children,
     }
 
-    public class Divider : TorrentAction
+    public record TorrentAction
     {
-        public Divider() : base("-", default!, Color.Default, default(EventCallback))
-        {
-        }
-    }
+        private readonly Color _color;
 
-    public class TorrentAction
-    {
-        public TorrentAction(string name, string? icon, Color color, EventCallback callback)
+        public TorrentAction(string name, string text, string? icon, Color color, EventCallback callback, bool separatorBefore = false)
         {
             Name = name;
+            Text = text;
             Icon = icon;
-            Color = color;
+            _color = color;
             Callback = callback;
+            SeparatorBefore = separatorBefore;
             Children = [];
         }
 
-        public TorrentAction(string name, string? icon, Color color, IEnumerable<TorrentAction> children, bool multiAction = false, bool useTextButton = false)
+        public TorrentAction(string name, string text, string? icon, Color color, IEnumerable<TorrentAction> children, bool multiAction = false, bool useTextButton = false, bool separatorBefore = false)
         {
             Name = name;
+            Text = text;
             Icon = icon;
-            Color = color;
+            _color = color;
             Callback = default;
             Children = children;
             UseTextButton = useTextButton;
+            SeparatorBefore = separatorBefore;
         }
 
         public string Name { get; }
 
+        public string Text { get; }
+
         public string? Icon { get; }
 
-        public Color Color { get; }
+        
+
+        public Color Color => IsChecked is null || IsChecked.Value ? _color : Color.Transparent;
 
         public EventCallback Callback { get; }
 
+        public bool SeparatorBefore { get; set; }
+        
         public IEnumerable<TorrentAction> Children { get; }
 
         public bool UseTextButton { get; }
 
         public bool MultiAction { get; }
+        
+        public bool? IsChecked { get; internal set; }
     }
 }

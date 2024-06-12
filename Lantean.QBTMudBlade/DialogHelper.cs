@@ -194,6 +194,25 @@ namespace Lantean.QBTMudBlade
             await onSuccess((T)dialogResult.Data);
         }
 
+        public static async Task InvokeDownloadRateDialog(this IDialogService dialogService, IApiClient apiClient, long rate, IEnumerable<string> hashes)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(SliderFieldDialog<long>.Value), rate },
+                { nameof(SliderFieldDialog<long>.Min), 0L },
+                { nameof(SliderFieldDialog<long>.Max), 100L },
+            };
+            var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Download Rate", parameters, FormDialogOptions);
+
+            var dialogResult = await result.Result;
+            if (dialogResult.Canceled)
+            {
+                return;
+            }
+
+            await apiClient.SetTorrentDownloadLimit((long)dialogResult.Data, null, hashes.ToArray());
+        }
+
         public static async Task InvokeUploadRateDialog(this IDialogService dialogService, IApiClient apiClient, long rate, IEnumerable<string> hashes)
         {
             var parameters = new DialogParameters
@@ -282,7 +301,7 @@ namespace Lantean.QBTMudBlade
                 { nameof(SubMenuDialog.Preferences), preferences },
             };
 
-            await dialogService.ShowAsync<SubMenuDialog>(parent.Name, parameters, FormDialogOptions);
+            await dialogService.ShowAsync<SubMenuDialog>(parent.Text, parameters, FormDialogOptions);
         }
     }
 }

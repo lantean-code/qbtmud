@@ -22,34 +22,30 @@ else if (RenderType == RenderType.InitialIconsOnly)
 {
     @foreach (var action in Actions.Take(5))
     {
-        @if (action is Divider)
+        @if (action.SeparatorBefore)
         {
             <MudDivider Vertical="true" />
         }
-        else
-        {
-            <MudIconButton Title="@action.Name" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
-        }
+
+        <MudIconButton Title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
     }
 
     @Menu(Actions.Skip(5))
 }
 else if (RenderType == RenderType.Children)
 {
-    var parent = Actions.FirstOrDefault(a => a.Name == ParentAction?.Name);
+    var parent = Actions.FirstOrDefault(a => a.Text == ParentAction?.Text);
     if (parent is not null)
     {
         <MudList Clickable="true">
             @foreach (var action in parent.Children)
             {
-                @if (action is Divider)
+                @if (action.SeparatorBefore)
                 {
                     <MudDivider />
                 }
-                else
-                {
-                    <MudListItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled">@action.Name</MudListItem>
-                }
+
+                <MudListItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled">@action.Text</MudListItem>
             }
         </MudList>
     }
@@ -68,24 +64,25 @@ else
             {
                 foreach (var action in Actions)
                 {
-                    if (action is Divider)
+                    if (action.SeparatorBefore)
                     {
                         <MudDivider Vertical="true" />
                     }
-                    else if (!action.Children.Any())
+                    
+                    if (!action.Children.Any())
                     {
                         if (action.Icon is null)
                         {
-                            <MudButton Color="action.Color" OnClick="action.Callback">@action.Name</MudButton>
+                            <MudButton Color="action.Color" OnClick="action.Callback">@action.Text</MudButton>
                         }
                         else
                         {
-                            <MudIconButton Title="@action.Name" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
+                            <MudIconButton Title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
                         }
                     }
                     else
                     {
-                        <MudMenu Icon="@action.Icon" IconColor="@action.Color" Label="@action.Name" title="@action.Name" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                        <MudMenu Icon="@action.Icon" IconColor="@action.Color" Label="@action.Text" title="@action.Text" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
                             @foreach (var childItem in action.Children)
                             {
                                 @ChildItem(childItem)
@@ -105,24 +102,25 @@ else
             {
                 foreach (var action in Actions)
                 {
-                    if (action is Divider)
+                    if (action.SeparatorBefore)
                     {
                         <MudDivider Vertical="true" />
                     }
-                    else if (!action.Children.Any())
+                    
+                    if (!action.Children.Any())
                     {
                         if (action.Icon is null)
                         {
-                            <MudButton Color="action.Color" OnClick="action.Callback" Disabled="Disabled">@action.Name</MudButton>
+                            <MudButton Color="action.Color" OnClick="action.Callback" Disabled="Disabled">@action.Text</MudButton>
                         }
                         else
                         {
-                            <MudIconButton Title="@action.Name" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
+                            <MudIconButton Title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
                         }
                     }
                     else
                     {
-                        <MudMenu Label="@action.Name" title="@action.Name" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" EndIcon="@Icons.Material.Filled.ArrowDropDown">
+                        <MudMenu Label="@action.Text" title="@action.Text" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" EndIcon="@Icons.Material.Filled.ArrowDropDown">
                             @foreach (var childItem in action.Children)
                             {
                                 @ChildItem(childItem)
@@ -138,14 +136,12 @@ else
     {
         return __builder =>
         {
-            if (action is Divider)
+            if (action.SeparatorBefore)
             {
                 <MudDivider />
             }
-            else
-            {
-                <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" OnTouch="action.Callback" Disabled="Disabled">@action.Name</MudMenuItem>
-            }
+
+            <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" OnTouch="action.Callback" Disabled="Disabled">@action.Text</MudMenuItem>
         };
     }
 
@@ -156,14 +152,15 @@ else
             <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="Actions" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())">
                 @foreach (var action in actions)
                 {
-                    @if (action is Divider)
+                    @if (action.SeparatorBefore)
                     {
                         <MudDivider />
                     }
-                    else if (!action.Children.Any())
+                    
+                    if (!action.Children.Any())
                     {
                         <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" OnTouch="action.Callback" Disabled="Disabled">
-                            @action.Name
+                            @action.Text
                         </MudMenuItem>
                     }
                     else
@@ -171,7 +168,7 @@ else
                         <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnTouch="@(t => SubMenuTouch(action))" OnClick="@(t => SubMenuTouch(action))">
                             <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopLeft" ActivationEvent="MouseEvent.MouseOver" Icon="@Icons.Material.Filled.ArrowDropDown" DisableElevation="true" DisableRipple="true" Class="sub-menu">
                                 <ActivatorContent>
-                                    @action.Name
+                                    @action.Text
                                 </ActivatorContent>
 
                                 <ChildContent>
