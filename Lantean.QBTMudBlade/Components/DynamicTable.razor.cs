@@ -300,7 +300,7 @@ namespace Lantean.QBTMudBlade.Components
                     }
                     else
                     {
-                        className = $"{className} {column.ClassFunc(data)}";
+                        className = $"{className} {funcClass}";
                     }
                 }
             }
