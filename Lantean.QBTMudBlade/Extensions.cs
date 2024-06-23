@@ -57,6 +57,11 @@ namespace Lantean.QBTMudBlade
 
         public static bool MetaDownloaded(this Torrent torrent)
         {
+            if (torrent is null)
+            {
+                return false;
+            }
+
             return !(torrent.State == "metaDL" || torrent.State == "forcedMetaDL" || torrent.TotalSize == -1);
         }
     }

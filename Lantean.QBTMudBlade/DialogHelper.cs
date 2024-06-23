@@ -149,6 +149,18 @@ namespace Lantean.QBTMudBlade
             return tags;
         }
 
+        public static async Task<bool> ShowConfirmDialog(this IDialogService dialogService, string title, string content)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(ConfirmDialog.Content), content }
+            };
+            var result = await dialogService.ShowAsync<ConfirmDialog>(title, parameters, ConfirmDialogOptions);
+
+            var dialogResult = await result.Result;
+            return !dialogResult.Canceled;
+        }
+
         public static async Task ShowConfirmDialog(this IDialogService dialogService, string title, string content, Func<Task> onSuccess)
         {
             var parameters = new DialogParameters
@@ -166,7 +178,7 @@ namespace Lantean.QBTMudBlade
             await onSuccess();
         }
 
-        public static async Task ShowConfirmDialog(this IDialogService dialogService, string title, string content, System.Action onSuccess)
+        public static async Task ShowConfirmDialog(this IDialogService dialogService, string title, string content, Action onSuccess)
         {
             await ShowConfirmDialog(dialogService, title, content, () =>
             {
@@ -269,11 +281,13 @@ namespace Lantean.QBTMudBlade
             return (List<PropertyFilterDefinition<T>>?)dialogResult.Data;
         }
 
-        public static async Task<(HashSet<string> SelectedColumns, Dictionary<string, int?> ColumnWidths)> ShowColumnsOptionsDialog<T>(this IDialogService dialogService, List<ColumnDefinition<T>> columnDefinitions, Dictionary<string, int?> widths)
+        public static async Task<(HashSet<string> SelectedColumns, Dictionary<string, int?> ColumnWidths)> ShowColumnsOptionsDialog<T>(this IDialogService dialogService, List<ColumnDefinition<T>> columnDefinitions, HashSet<string> selectedColumns, Dictionary<string, int?> widths)
         {
             var parameters = new DialogParameters
             {
                 { nameof(ColumnOptionsDialog<T>.Columns), columnDefinitions },
+                { nameof(ColumnOptionsDialog<T>.SelectedColumns), selectedColumns },
+                { nameof(ColumnOptionsDialog<T>.Widths), widths },
             };
 
             var reference = await dialogService.ShowAsync<ColumnOptionsDialog<T>>("Column Options", parameters, FormDialogOptions);

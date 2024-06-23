@@ -1,13 +1,18 @@
-﻿using Lantean.QBitTorrentClient;
+﻿using Blazored.LocalStorage;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Components;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using MudBlazor.Services;
+using static MudBlazor.Colors;
 
 namespace Lantean.QBTMudBlade.Layout
 {
     public partial class MainLayout : IBrowserViewportObserver, IAsyncDisposable
     {
+        private const string _isDarkModeStorageKey = "MainLayout.IsDarkMode";
+        private const string _drawerOpenStorageKey = "MainLayout.DrawerOpen";
+
         private bool _disposedValue;
 
         [Inject]
@@ -18,6 +23,9 @@ namespace Lantean.QBTMudBlade.Layout
 
         [Inject]
         private IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         protected bool DrawerOpen { get; set; } = true;
 
@@ -47,9 +55,10 @@ namespace Lantean.QBTMudBlade.Layout
             Theme.Typography.Default.FontFamily = ["Nunito Sans"];
         }
 
-        protected void ToggleDrawer()
+        protected async Task ToggleDrawer()
         {
             DrawerOpen = !DrawerOpen;
+            await LocalStorage.SetItemAsync(_drawerOpenStorageKey, DrawerOpen);
         }
 
         protected override async Task OnParametersSetAsync()
@@ -58,13 +67,27 @@ namespace Lantean.QBTMudBlade.Layout
             {
                 ShowMenu = await ApiClient.CheckAuthState();
             }
+
+            var drawerOpen = await LocalStorage.GetItemAsync<bool?>(_drawerOpenStorageKey);
+            if (drawerOpen is not null)
+            {
+                DrawerOpen = drawerOpen.Value;
+            }
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
-                IsDarkMode = await MudThemeProvider.GetSystemPreference();
+                var isDarkMode = await LocalStorage.GetItemAsync<bool?>(_isDarkModeStorageKey);
+                if (isDarkMode is null)
+                {
+                    IsDarkMode = await MudThemeProvider.GetSystemPreference();
+                }
+                else
+                {
+                    IsDarkMode = isDarkMode.Value;
+                }
                 await MudThemeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
                 await BrowserViewportService.SubscribeAsync(this, fireImmediately: true);
                 await InvokeAsync(StateHasChanged);
@@ -112,6 +135,12 @@ namespace Lantean.QBTMudBlade.Layout
 
                 _disposedValue = true;
             }
+        }
+
+        protected async Task DarkModeChanged(bool value)
+        {
+            IsDarkMode = value;
+            await LocalStorage.SetItemAsync(_isDarkModeStorageKey, value);
         }
 
         public async ValueTask DisposeAsync()

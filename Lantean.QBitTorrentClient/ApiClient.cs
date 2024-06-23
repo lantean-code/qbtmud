@@ -1,4 +1,5 @@
 ﻿using Lantean.QBitTorrentClient.Models;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -947,7 +948,153 @@ namespace Lantean.QBitTorrentClient
 
         #region Search
 
-        // not implementing Search right now
+
+
+        public async Task<int> StartSearch(string pattern, IEnumerable<string> plugins, string category = "all")
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("pattern", pattern)
+                .AddPipeSeparated("plugins", plugins)
+                .Add("category", category)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("search/start", content);
+
+            response.EnsureSuccessStatusCode();
+
+            var obj = await GetJson<Dictionary<string, JsonElement>>(response.Content);
+
+            return obj["id"].GetInt32();
+        }
+
+        public async Task StopSearch(int id)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("id", id)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("search/stop", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<SearchStatus?> GetSearchStatus(int id)
+        {
+            var query = new QueryBuilder();
+            query.Add("id", id);
+
+            var response = await _httpClient.GetAsync($"search/status{query}");
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            return (await GetJsonList<SearchStatus>(response.Content)).FirstOrDefault();
+        }
+
+        public async Task<IReadOnlyList<SearchStatus>> GetSearchesStatus()
+        {
+            var response = await _httpClient.GetAsync($"search/status");
+
+            response.EnsureSuccessStatusCode();
+
+            return await GetJsonList<SearchStatus>(response.Content);
+        }
+
+        public async Task<SearchResults> GetSearchResults(int id, int? limit = null, int? offset = null)
+        {
+            var query = new QueryBuilder();
+            query.Add("id", id);
+            if (limit is not null)
+            {
+                query.Add("limit", limit.Value);
+            }
+            if (offset is not null)
+            {
+                query.Add("offset", offset.Value);
+            }
+
+            var response = await _httpClient.GetAsync($"search/results{query}");
+
+            response.EnsureSuccessStatusCode();
+
+            return await GetJson<SearchResults>(response.Content);
+        }
+
+        public async Task DeleteSearch(int id)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("id", id)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("search/delete", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<IReadOnlyList<SearchPlugin>> GetSearchPlugins()
+        {
+            var response = await _httpClient.GetAsync($"search/plugins");
+
+            response.EnsureSuccessStatusCode();
+
+            return await GetJsonList<SearchPlugin>(response.Content);
+        }
+
+        public async Task InstallSearchPlugins(params string[] sources)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .AddPipeSeparated("sources", sources)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("search/installPlugin", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task UninstallSearchPlugins(params string[] names)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .AddPipeSeparated("names", names)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("search/uninstallPlugin", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task EnableSearchPlugins(params string[] names)
+        {
+            var content = new FormUrlEncodedBuilder()
+               .AddPipeSeparated("names", names)
+               .Add("enabble", true)
+               .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("search/enablePlugin", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task DisableSearchPlugins(params string[] names)
+        {
+            var content = new FormUrlEncodedBuilder()
+               .AddPipeSeparated("names", names)
+               .Add("enabble", false)
+               .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("search/enablePlugin", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task UpdateSearchPlugins()
+        {
+            var response = await _httpClient.PostAsync("search/updatePlugins", null);
+
+            response.EnsureSuccessStatusCode();
+        }
 
         #endregion Search
 

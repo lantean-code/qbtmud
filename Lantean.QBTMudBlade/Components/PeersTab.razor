@@ -12,9 +12,13 @@
     HorizontalScrollbar="true" 
     Virtualize="true"
     AllowUnsorted="false"
-    SelectOnRowClick="false">
+    SelectOnRowClick="false"
+    Class="details-list">
     <HeaderContent>
-        <MudTh>Country/Region</MudTh>
+        @if (ShowFlags)
+        {
+            <MudTh>Country/Region</MudTh>
+        }
         <MudTh>IP</MudTh>
         <MudTh>Port</MudTh>
         <MudTh>Connection</MudTh>
@@ -29,7 +33,10 @@
         <MudTh>Files</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Country/Region"><MudImage ObjectFit="ObjectFit.Fill" Src="@($"https://flagcdn.com/20x15/{context.CountryCode}.png")"></MudImage></MudTd>
+        @if (ShowFlags)
+        {
+            <MudTd DataLabel="Country/Region"><MudImage ObjectFit="ObjectFit.Fill" Src="@($"https://flagcdn.com/20x15/{context.CountryCode}.png")"></MudImage></MudTd>
+        }
         <MudTd DataLabel="IP">@context.IPAddress</MudTd>
         <MudTd DataLabel="Port">@context.Port</MudTd>
         <MudTd DataLabel="Connection">@context.Connection</MudTd>

@@ -17,9 +17,6 @@ namespace Lantean.QBTMudBlade.Pages
         protected IDialogService DialogService { get; set; } = default!;
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
-
-        [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [CascadingParameter]
@@ -66,37 +63,6 @@ namespace Lantean.QBTMudBlade.Pages
             await SearchTermChanged.InvokeAsync(SearchText);
         }
 
-        protected async Task PauseTorrents()
-        {
-            await ApiClient.PauseTorrents(GetSelectedTorrents());
-
-            SelectedItems.Clear();
-            await InvokeAsync(StateHasChanged);
-        }
-
-        protected async Task ResumeTorrents()
-        {
-            await ApiClient.ResumeTorrents(GetSelectedTorrents());
-
-            SelectedItems.Clear();
-            await InvokeAsync(StateHasChanged);
-        }
-
-        protected async Task RemoveTorrents()
-        {
-            var reference = await DialogService.ShowAsync<DeleteDialog>("Remove torrent(s)?");
-            var result = await reference.Result;
-            if (result.Canceled)
-            {
-                return;
-            }
-
-            await ApiClient.DeleteTorrents(GetSelectedTorrents(), (bool)result.Data);
-
-            SelectedItems.Clear();
-            await InvokeAsync(StateHasChanged);
-        }
-
         protected async Task AddTorrentFile()
         {
             await DialogService.InvokeAddTorrentFileDialog(ApiClient);
@@ -128,11 +94,6 @@ namespace Lantean.QBTMudBlade.Pages
             }
 
             return [];
-        }
-
-        protected void Options()
-        {
-            NavigationManager.NavigateTo("/options");
         }
 
         public async Task ColumnOptions()
@@ -186,7 +147,7 @@ namespace Lantean.QBTMudBlade.Pages
             CreateColumnDefinition("Remaining", t => t.AmountLeft, t => DisplayHelpers.Size(t.AmountLeft), enabled: false),
             CreateColumnDefinition("Time Active", t => t.TimeActive, t => DisplayHelpers.Duration(t.TimeActive), enabled: false),
             CreateColumnDefinition("Save path", t => t.SavePath, enabled: false),
-            CreateColumnDefinition("Completed", t => t.Completed, t => DisplayHelpers.DateTime(t.Completed), enabled: false),
+            CreateColumnDefinition("Completed", t => t.Completed, t => DisplayHelpers.Size(t.Completed), enabled: false),
             CreateColumnDefinition("Ratio Limit", t => t.RatioLimit, t => t.Ratio.ToString("0.00"), enabled: false),
             CreateColumnDefinition("Last Seen Complete", t => t.SeenComplete, t => DisplayHelpers.DateTime(t.SeenComplete), enabled: false),
             CreateColumnDefinition("Last Activity", t => t.LastActivity, t => DisplayHelpers.DateTime(t.LastActivity), enabled: false),

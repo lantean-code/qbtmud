@@ -1,0 +1,80 @@
+﻿@page "/search"
+@layout OtherLayout
+
+<MudToolBar DisableGutters="true" Dense="true">
+    @if (!DrawerOpen)
+    {
+        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" Title="Back to torrent list" />
+        <MudDivider Vertical="true" />
+    }
+    <MudDivider Vertical="true" />
+    <MudText Class="pl-5 no-wrap">Search</MudText>
+</MudToolBar>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField T="string" Label="Search" Value="SearchText" ValueChanged="SearchTextChanged" ShrinkLabel Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem md="2">
+                <MudSelect T="string" Label="Categories" Value="SelectedCategory" ValueChanged="SelectedCategoryChanged" ShrinkLabel Variant="Variant.Outlined">
+                    @foreach (var (value, name) in Categories)
+                    {
+                        <MudSelectItem Value="value">@name</MudSelectItem>
+                        if (value == "all")
+                        {
+                            <MudDivider />
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem md="2">
+                <MudSelect T="string" Label="Plugins" Value="SelectedPlugin" ValueChanged="SelectedPluginChanged" ShrinkLabel Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("all")">All</MudSelectItem>
+                    <MudDivider />
+                    @foreach (var (value, name) in Plugins)
+                    {
+                        <MudSelectItem Value="value">@name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem md="2">
+                <MudButton OnClick="DoSearch" FullWidth="true" Variant="Variant.Outlined">@(_searchId is null ? "Search" : "Stop")</MudButton>
+            </MudItem>
+            
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudTable 
+    Items="Results"
+    T="Lantean.QBitTorrentClient.Models.SearchResult"
+    Hover="true"
+    FixedHeader="true" 
+    HeaderClass="table-head-bordered" 
+    Dense="true" 
+    Breakpoint="Breakpoint.None" 
+    Bordered="true" 
+    Square="true" 
+    LoadingProgressColor="Color.Info" 
+    HorizontalScrollbar="true" 
+    Virtualize="true"
+    AllowUnsorted="false"
+    SelectOnRowClick="false"
+    Class="details-list">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Size</MudTh>
+        <MudTh>Seeders</MudTh>
+        <MudTh>Leechers</MudTh>
+        <MudTh>Search engine</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.FileName</MudTd>
+        <MudTd DataLabel="Size">@DisplayHelpers.Size(context.FileSize)</MudTd>
+        <MudTd DataLabel="Seeders">@context.Seeders</MudTd>
+        <MudTd DataLabel="Leechers">@context.Leechers</MudTd>
+        <MudTd DataLabel="Search engine">@context.SiteUrl</MudTd>
+    </RowTemplate>
+</MudTable>

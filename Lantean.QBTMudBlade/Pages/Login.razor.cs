@@ -19,9 +19,9 @@ namespace Lantean.QBTMudBlade.Pages
 
         protected string? ApiError { get; set; }
 
-        protected async Task LoginClick(EditContext context)
+        protected Task LoginClick(EditContext context)
         {
-            await DoLogin(Model.Username, Model.Password);
+            return DoLogin(Model.Username, Model.Password);
         }
 
         private async Task DoLogin(string username, string password)
@@ -47,9 +47,9 @@ namespace Lantean.QBTMudBlade.Pages
         }
 
 #if DEBUG
-        protected override async Task OnInitializedAsync()
+        protected override Task OnInitializedAsync()
         {
-            await DoLogin("admin", "MX6r8xzTP");
+            return DoLogin("admin", "6K3mtPNnQ");
         }
 #endif
     }

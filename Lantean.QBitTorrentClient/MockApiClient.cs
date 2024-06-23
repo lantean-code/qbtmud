@@ -378,5 +378,65 @@ namespace Lantean.QBitTorrentClient
         {
             return _apiClient.ToggleSequentialDownload(all, hashes);
         }
+
+        public Task<int> StartSearch(string pattern, IEnumerable<string> plugins, string category = "all")
+        {
+            return _apiClient.StartSearch(pattern, plugins, category);
+        }
+
+        public Task StopSearch(int id)
+        {
+            return _apiClient.StopSearch(id);
+        }
+
+        public Task<SearchStatus?> GetSearchStatus(int id)
+        {
+            return _apiClient.GetSearchStatus(id);
+        }
+
+        public Task<IReadOnlyList<SearchStatus>> GetSearchesStatus()
+        {
+            return _apiClient.GetSearchesStatus();
+        }
+
+        public Task<SearchResults> GetSearchResults(int id, int? limit = null, int? offset = null)
+        {
+            return _apiClient.GetSearchResults(id, limit, offset);
+        }
+
+        public Task DeleteSearch(int id)
+        {
+            return _apiClient.DeleteSearch(id);
+        }
+
+        public Task<IReadOnlyList<SearchPlugin>> GetSearchPlugins()
+        {
+            return _apiClient.GetSearchPlugins();
+        }
+
+        public Task InstallSearchPlugins(params string[] sources)
+        {
+            return _apiClient.InstallSearchPlugins(sources);
+        }
+
+        public Task UninstallSearchPlugins(params string[] names)
+        {
+            return _apiClient.UninstallSearchPlugins(names);
+        }
+
+        public Task EnableSearchPlugins(params string[] names)
+        {
+            return _apiClient.EnableSearchPlugins(names);
+        }
+
+        public Task DisableSearchPlugins(params string[] names)
+        {
+            return _apiClient.DisableSearchPlugins(names);
+        }
+
+        public Task UpdateSearchPlugins()
+        {
+            return _apiClient.UpdateSearchPlugins();
+        }
     }
 }

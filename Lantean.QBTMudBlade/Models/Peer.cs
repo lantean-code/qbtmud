@@ -3,12 +3,12 @@
     public class Peer
     {
         public Peer(
-            string ip,
+            string key,
             string client,
             string clientId,
             string connection,
-            string country,
-            string countryCode,
+            string? country,
+            string? countryCode,
             long downloaded,
             long downloadSpeed,
             string files,
@@ -21,7 +21,7 @@
             long uploaded,
             long uploadSpeed)
         {
-            IP = ip;
+            Key = key;
             Client = client;
             ClientId = clientId;
             Connection = connection;
@@ -40,12 +40,12 @@
             UploadSpeed = uploadSpeed;
         }
 
-        public string IP { get; }
+        public string Key { get; }
         public string Client { get; set; }
         public string ClientId { get; set; }
         public string Connection { get; set; }
-        public string Country { get; set; }
-        public string CountryCode { get; set; }
+        public string? Country { get; set; }
+        public string? CountryCode { get; set; }
         public long Downloaded { get; set; }
         public long DownloadSpeed { get; set; }
         public string Files { get; set; }
@@ -61,12 +61,12 @@
         public override bool Equals(object? obj)
         {
             if (obj is null) return false;
-            return ((Peer)obj).IP == IP;
+            return ((Peer)obj).Key == Key;
         }
 
         public override int GetHashCode()
         {
-            return IP.GetHashCode();
+            return Key.GetHashCode();
         }
     }
 }

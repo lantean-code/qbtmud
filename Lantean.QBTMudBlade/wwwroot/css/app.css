@@ -162,3 +162,12 @@ td.no-wrap {
 .file-list .mud-table-container {
     height: calc(100vh - 245px);
 }
+
+.details-list .mud-table-container {
+    height: calc(100vh - 200px);
+}
+
+.details-tab-contents {
+    height: calc(100vh - 200px);
+    overflow: auto;
+}

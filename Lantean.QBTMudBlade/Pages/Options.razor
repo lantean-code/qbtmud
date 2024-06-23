@@ -1,55 +1,41 @@
-﻿@page "/options"
-@layout LoggedInLayout
+﻿@page "/settings"
+@layout OtherLayout
 
-<MudDrawer Open="DrawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Width="250px">
-    <MudNavMenu>
-        <MudNavLink Icon="@(Icons.Material.Outlined.NavigateBefore)" OnClick="NavigateBack">Back</MudNavLink>
-        <MudDivider />
-        <FakeNavLink Active="@(ActiveTab == 0)" OnClick="@(e => ActiveTab = 0)">Behaviour</FakeNavLink>
-        <FakeNavLink Active="@(ActiveTab == 1)" OnClick="@(e => ActiveTab = 1)">Downloads</FakeNavLink>
-        <FakeNavLink Active="@(ActiveTab == 2)" OnClick="@(e => ActiveTab = 2)">Connection</FakeNavLink>
-        <FakeNavLink Active="@(ActiveTab == 3)" OnClick="@(e => ActiveTab = 3)">Speed</FakeNavLink>
-        <FakeNavLink Active="@(ActiveTab == 4)" OnClick="@(e => ActiveTab = 4)">BitTorrent</FakeNavLink>
-        <FakeNavLink Active="@(ActiveTab == 5)" OnClick="@(e => ActiveTab = 5)">RSS</FakeNavLink>
-        <FakeNavLink Active="@(ActiveTab == 6)" OnClick="@(e => ActiveTab = 6)">Web UI</FakeNavLink>
-        <FakeNavLink Active="@(ActiveTab == 7)" OnClick="@(e => ActiveTab = 7)">Advanced</FakeNavLink>
-    </MudNavMenu>
-</MudDrawer>
-<MudMainContent>
-    <MudToolBar DisableGutters="true" Dense="true">
-        @if (!DrawerOpen)
-        {
-            <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" />
-            <MudDivider Vertical="true" />
-        }
-        <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="@(LostConnection || UpdatePreferences is null)" />
-        <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(LostConnection || UpdatePreferences is null)" />
-    </MudToolBar>
+<NavigationLock ConfirmExternalNavigation="@(UpdatePreferences is not null)" OnBeforeInternalNavigation="ValidateExit" />
 
-    <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true">
-        <MudTabPanel Text="Behaviour">
-            <BehaviourOptions @ref="BehaviourOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
-        </MudTabPanel>
-        <MudTabPanel Text="Downloads">
-            <DownloadsOptions @ref="DownloadsOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
-        </MudTabPanel>
-        <MudTabPanel Text="Connection">
-            <ConnectionOptions @ref="ConnectionOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
-        </MudTabPanel>
-        <MudTabPanel Text="Speed">
-            <SpeedOptions @ref="SpeedOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
-        </MudTabPanel>
-        <MudTabPanel Text="BitTorrent">
-            <BitTorrentOptions @ref="BitTorrentOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
-        </MudTabPanel>
-        <MudTabPanel Text="RSS">
-            <RSSOptions @ref="RSSOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
-        </MudTabPanel>
-        <MudTabPanel Text="Web UI">
-            <WebUIOptions @ref="WebUIOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
-        </MudTabPanel>
-        <MudTabPanel Text="Advanced">
-            <AdvancedOptions @ref="AdvancedOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
-        </MudTabPanel>
-    </MudTabs>
-</MudMainContent>
+<MudToolBar DisableGutters="true" Dense="true">
+    @if (!DrawerOpen)
+    {
+        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" />
+        <MudDivider Vertical="true" />
+    }
+    <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="@(LostConnection || UpdatePreferences is null)" />
+    <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(LostConnection || UpdatePreferences is null)" />
+</MudToolBar>
+
+<MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true">
+    <MudTabPanel Text="Behaviour">
+        <BehaviourOptions @ref="BehaviourOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+    </MudTabPanel>
+    <MudTabPanel Text="Downloads">
+        <DownloadsOptions @ref="DownloadsOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+    </MudTabPanel>
+    <MudTabPanel Text="Connection">
+        <ConnectionOptions @ref="ConnectionOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+    </MudTabPanel>
+    <MudTabPanel Text="Speed">
+        <SpeedOptions @ref="SpeedOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+    </MudTabPanel>
+    <MudTabPanel Text="BitTorrent">
+        <BitTorrentOptions @ref="BitTorrentOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+    </MudTabPanel>
+    <MudTabPanel Text="RSS">
+        <RSSOptions @ref="RSSOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+    </MudTabPanel>
+    <MudTabPanel Text="Web UI">
+        <WebUIOptions @ref="WebUIOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+    </MudTabPanel>
+    <MudTabPanel Text="Advanced">
+        <AdvancedOptions @ref="AdvancedOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
+    </MudTabPanel>
+</MudTabs>

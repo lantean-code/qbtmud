@@ -44,8 +44,23 @@ namespace Lantean.QBTMudBlade.Components
                 return;
             }
 
-            Pieces = await ApiClient.GetTorrentPieceStates(Hash);
-            Properties = await ApiClient.GetTorrentProperties(Hash);
+            try
+            {
+                Properties = await ApiClient.GetTorrentProperties(Hash);
+            }
+            catch (HttpRequestException)
+            {
+                return;
+            }
+
+            try
+            {
+                Pieces = await ApiClient.GetTorrentPieceStates(Hash);
+            }
+            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+            {
+                Pieces = [];
+            }
 
             await InvokeAsync(StateHasChanged);
         }
@@ -67,12 +82,21 @@ namespace Lantean.QBTMudBlade.Components
                         {
                             try
                             {
-                                Pieces = await ApiClient.GetTorrentPieceStates(Hash);
                                 Properties = await ApiClient.GetTorrentProperties(Hash);
                             }
-                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
+                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
                             {
                                 _timerCancellationToken.CancelIfNotDisposed();
+                                return;
+                            }
+
+                            try
+                            {
+                                Pieces = await ApiClient.GetTorrentPieceStates(Hash);
+                            }
+                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+                            {
+                                Pieces = [];
                                 return;
                             }
                         }

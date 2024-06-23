@@ -249,7 +249,7 @@ namespace Lantean.QBTMudBlade.Components
 
         public async Task ShowColumnOptionsDialog()
         {
-            var result = await DialogService.ShowColumnsOptionsDialog(ColumnDefinitions.Where(ColumnFilter).ToList(), _columnWidths);
+            var result = await DialogService.ShowColumnsOptionsDialog(ColumnDefinitions.Where(ColumnFilter).ToList(), SelectedColumns, _columnWidths);
 
             if (result == default)
             {

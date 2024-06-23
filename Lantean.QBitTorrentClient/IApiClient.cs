@@ -178,7 +178,29 @@ namespace Lantean.QBitTorrentClient
 
         #region Search
 
-        // not implementing Search right now
+        Task<int> StartSearch(string pattern, IEnumerable<string> plugins, string category = "all");
+
+        Task StopSearch(int id);
+
+        Task<SearchStatus?> GetSearchStatus(int id);
+
+        Task<IReadOnlyList<SearchStatus>> GetSearchesStatus();
+
+        Task<SearchResults> GetSearchResults(int id, int? limit = null, int? offset = null);
+
+        Task DeleteSearch(int id);
+
+        Task<IReadOnlyList<SearchPlugin>> GetSearchPlugins();
+
+        Task InstallSearchPlugins(params string[] sources);
+
+        Task UninstallSearchPlugins(params string[] names);
+
+        Task EnableSearchPlugins(params string[] names);
+
+        Task DisableSearchPlugins(params string[] names);
+
+        Task UpdateSearchPlugins();
 
         #endregion Search
     }

@@ -9,6 +9,10 @@ namespace Lantean.QBTMudBlade.Components
     public partial class PeersTab : IAsyncDisposable
     {
         private bool _disposedValue;
+        protected string? _oldHash;
+        private int _requestId = 0;
+        private readonly CancellationTokenSource _timerCancellationToken = new();
+        private bool? _showFlags;
 
         [Parameter, EditorRequired]
         public string? Hash { get; set; }
@@ -18,6 +22,9 @@ namespace Lantean.QBTMudBlade.Components
 
         [CascadingParameter]
         public int RefreshInterval { get; set; }
+
+        [CascadingParameter]
+        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -29,8 +36,7 @@ namespace Lantean.QBTMudBlade.Components
 
         protected IEnumerable<Peer> Peers => PeerList?.Peers.Select(p => p.Value) ?? [];
 
-        private int _requestId = 0;
-        private readonly CancellationTokenSource _timerCancellationToken = new();
+        protected bool ShowFlags => _showFlags.GetValueOrDefault();
 
         protected override async Task OnParametersSetAsync()
         {
@@ -44,9 +50,33 @@ namespace Lantean.QBTMudBlade.Components
                 return;
             }
 
-            var torrentPeers = await ApiClient.GetTorrentPeersData(Hash, _requestId);
-            PeerList = DataManager.CreatePeerList(torrentPeers);
-            _requestId = torrentPeers.RequestId;
+            if (Hash != _oldHash)
+            {
+                _oldHash = Hash;
+                _requestId = 0;
+                PeerList = null;
+            }
+
+            var peers = await ApiClient.GetTorrentPeersData(Hash, _requestId);
+            if (PeerList is null || peers.FullUpdate)
+            {
+                PeerList = DataManager.CreatePeerList(peers);
+            }
+            else
+            {
+                DataManager.MergeTorrentPeers(peers, PeerList);
+            }
+            _requestId = peers.RequestId;
+
+            if (Preferences is not null && _showFlags is null)
+            {
+                _showFlags = Preferences.ResolvePeerCountries;
+            }
+
+            if (peers.ShowFlags.HasValue)
+            {
+                _showFlags = peers.ShowFlags.Value;
+            }
 
             await InvokeAsync(StateHasChanged);
         }

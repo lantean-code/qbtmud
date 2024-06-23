@@ -1,4 +1,4 @@
-﻿<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
+﻿<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="details-tab-contents">
     <MudText Typo="Typo.subtitle2" Class="pt-6">Progress</MudText>
     <PieceProgress Pieces="Pieces" Hash="@Hash" />
     <MudText Typo="Typo.subtitle2" Class="pt-6">Transfer</MudText>
@@ -17,7 +17,7 @@
             <MudField Label="Downloaded">@DisplayHelpers.Size(Properties?.TotalDownloaded) @DisplayHelpers.Size(Properties?.TotalDownloadedSession, "(", " this session)")</MudField>
         </MudItem>
         <MudItem xs="4">
-                <MudField Label="Uploaded">@DisplayHelpers.Size(Properties?.TotalUploaded) @DisplayHelpers.Size(Properties?.TotalUploaded, "(", " this session)")</MudField>
+            <MudField Label="Uploaded">@DisplayHelpers.Size(Properties?.TotalUploaded) @DisplayHelpers.Size(Properties?.TotalUploaded, "(", " this session)")</MudField>
         </MudItem>
         <MudItem xs="4">
             <MudField Label="Seeds">@DisplayHelpers.Size(Properties?.Seeds) @DisplayHelpers.EmptyIfNull(Properties?.Seeds, "(", " total)")</MudField>

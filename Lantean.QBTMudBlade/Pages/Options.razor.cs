@@ -3,6 +3,7 @@ using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMudBlade.Components.Options;
 using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Pages
@@ -62,18 +63,39 @@ namespace Lantean.QBTMudBlade.Pages
             UpdatePreferences = DataManager.MergePreferences(UpdatePreferences, preferences);
         }
 
-        protected async Task NavigateBack()
+        protected async Task ValidateExit(LocationChangingContext context)
         {
             if (UpdatePreferences is null)
             {
-                NavigationManager.NavigateTo("/");
                 return;
             }
 
-            await DialogService.ShowConfirmDialog(
+            var exit = await DialogService.ShowConfirmDialog(
                 "Unsaved Changed",
-                "Are you sure you want to leave without saving your changes?",
-                () => NavigationManager.NavigateTo("/"));
+                "Are you sure you want to leave without saving your changes?");
+
+            if (!exit)
+            {
+                context.PreventNavigation();
+            }
+        }
+
+        protected async Task NavigateBack()
+        {
+            //if (UpdatePreferences is null)
+            //{
+            //    NavigationManager.NavigateTo("/");
+            //    return;
+            //}
+
+            //await DialogService.ShowConfirmDialog(
+            //    "Unsaved Changed",
+            //    "Are you sure you want to leave without saving your changes?",
+            //    () => NavigationManager.NavigateTo("/"));
+
+            await Task.CompletedTask;
+
+            NavigationManager.NavigateTo("/");
         }
 
         protected async Task Undo()

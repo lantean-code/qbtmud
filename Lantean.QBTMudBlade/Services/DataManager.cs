@@ -11,11 +11,11 @@ namespace Lantean.QBTMudBlade.Services
             var peers = new Dictionary<string, Peer>();
             if (torrentPeers.Peers is not null)
             {
-                foreach (var (ip, peer) in torrentPeers.Peers)
+                foreach (var (key, peer) in torrentPeers.Peers)
                 {
-                    var newPeer = CreatePeer(ip, peer);
+                    var newPeer = CreatePeer(key, peer);
 
-                    peers[ip] = newPeer;
+                    peers[key] = newPeer;
                 }
             }
 
@@ -373,20 +373,20 @@ namespace Lantean.QBTMudBlade.Services
         {
             if (torrentPeers.PeersRemoved is not null)
             {
-                foreach (var peer in torrentPeers.PeersRemoved)
+                foreach (var key in torrentPeers.PeersRemoved)
                 {
-                    peerList.Peers.Remove(peer);
+                    peerList.Peers.Remove(key);
                 }
             }
 
             if (torrentPeers.Peers is not null)
             {
-                foreach (var (ip, peer) in torrentPeers.Peers)
+                foreach (var (key, peer) in torrentPeers.Peers)
                 {
-                    if (!peerList.Peers.TryGetValue(ip, out var existingPeer))
+                    if (!peerList.Peers.TryGetValue(key, out var existingPeer))
                     {
-                        var newPeer = CreatePeer(ip, peer);
-                        peerList.Peers.Add(ip, newPeer);
+                        var newPeer = CreatePeer(key, peer);
+                        peerList.Peers.Add(key, newPeer);
                     }
                     else
                     {
@@ -421,15 +421,15 @@ namespace Lantean.QBTMudBlade.Services
             return new Category(category.Name, category.SavePath!);
         }
 
-        private static Peer CreatePeer(string ip, QBitTorrentClient.Models.Peer peer)
+        private static Peer CreatePeer(string key, QBitTorrentClient.Models.Peer peer)
         {
             return new Peer(
-                ip,
+                key,
                 peer.Client!,
                 peer.ClientId!,
                 peer.Connection!,
-                peer.Country!,
-                peer.CountryCode!,
+                peer.Country,
+                peer.CountryCode,
                 peer.Downloaded!.Value,
                 peer.DownloadSpeed!.Value,
                 peer.Files!,

@@ -1,0 +1,16 @@
+﻿@page "/blocks"
+@layout OtherLayout
+
+<MudToolBar DisableGutters="true" Dense="true">
+    @if (!DrawerOpen)
+    {
+        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" Title="Back to torrent list" />
+        <MudDivider Vertical="true" />
+    }
+    <MudDivider Vertical="true" />
+    <MudText Class="pl-5 no-wrap">Blocked IPs</MudText>
+</MudToolBar>
+
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="details-tab-contents">
+    <p>Coming soon.</p>
+</MudContainer>

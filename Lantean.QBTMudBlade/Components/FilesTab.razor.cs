@@ -19,6 +19,13 @@ namespace Lantean.QBTMudBlade.Components
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
 
+        private List<PropertyFilterDefinition<ContentItem>>? _filterDefinitions;
+        private readonly Dictionary<string, RenderFragment<RowContext<ContentItem>>> _columnRenderFragments = [];
+
+        private string? _previousHash;
+        private string? _sortColumn;
+        private SortDirection _sortDirection;
+
         [Parameter]
         public bool Active { get; set; }
 
@@ -46,21 +53,15 @@ namespace Lantean.QBTMudBlade.Components
 
         protected IEnumerable<ContentItem> Files => GetFiles();
 
-        private List<PropertyFilterDefinition<ContentItem>>? _filterDefinitions;
-
         protected ContentItem? SelectedItem { get; set; }
 
         protected string? SearchText { get; set; }
 
         public IEnumerable<Func<ContentItem, bool>>? Filters { get; set; }
 
-        private readonly Dictionary<string, RenderFragment<RowContext<ContentItem>>> _columnRenderFragments = [];
-
         private DynamicTable<ContentItem>? Table { get; set; }
 
-        private string? _previousHash;
-        private string? _sortColumn;
-        private SortDirection _sortDirection;
+        
 
         public FilesTab()
         {
@@ -280,7 +281,7 @@ namespace Lantean.QBTMudBlade.Components
             }
 
             var name = contentItem.GetFileName();
-            await DialogService.ShowSingleFieldDialog("Rename", "New name", name, async v => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + v));
+            await DialogService.ShowSingleFieldDialog("Rename", "New name", name, async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
         }
 
         protected void SortColumnChanged(string sortColumn)
@@ -396,7 +397,7 @@ namespace Lantean.QBTMudBlade.Components
 
         private ReadOnlyCollection<ContentItem> GetFiles()
         {
-            if (FileList is null)
+            if (FileList is null || FileList.Values.Count == 0)
             {
                 return new ReadOnlyCollection<ContentItem>([]);
             }

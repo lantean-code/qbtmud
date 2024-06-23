@@ -20,23 +20,12 @@ namespace Lantean.QBTMudBlade.Components
         {
             var preferences = new UpdatePreferences
             {
-                AlternativeWebuiPath = null,
                 AlternativeWebuiEnabled = false,
             };
 
             await ApiClient.SetApplicationPreferences(preferences);
 
             NavigationManager.NavigateTo("/", true);
-        }
-
-        protected void Settings()
-        {
-            NavigationManager.NavigateTo("/options");
-        }
-
-        protected void Statistics()
-        {
-            NavigationManager.NavigateTo("/statistics");
         }
 
         protected async Task Logout()

@@ -2,8 +2,9 @@
 
 ## To-Do
 
-- Files -> Context menu alternative
-- Details -> Fixed height
 - Rename multiple files dialog
 - RSS feeds and dialogs
-- Search and dialogs
+- Search and dialogs (partially implemented)
+- Execution Log
+- Blocked IPs
+- About

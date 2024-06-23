@@ -14,17 +14,31 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         public List<ColumnDefinition<T>> Columns { get; set; } = default!;
 
         [Parameter]
+        [EditorRequired]
+        public HashSet<string> SelectedColumns { get; set; } = default!;
+
+        [Parameter]
         public Dictionary<string, int?> Widths { get; set; } = [];
 
-        protected HashSet<string> SelectedColumns { get; set; } = [];
+        protected HashSet<string> SelectedColumnsInternal { get; set; } = [];
 
         protected override void OnParametersSet()
         {
-            if (SelectedColumns.Count == 0)
+            if (SelectedColumnsInternal.Count == 0)
             {
-                foreach (var column in Columns.Where(c => c.Enabled))
+                if (SelectedColumns.Count != 0)
                 {
-                    SelectedColumns.Add(column.Id);
+                    foreach (var selectedColumn in SelectedColumns)
+                    {
+                        SelectedColumnsInternal.Add(selectedColumn);
+                    }
+                } 
+                else
+                {
+                    foreach (var column in Columns.Where(c => c.Enabled))
+                    {
+                        SelectedColumns.Add(column.Id);
+                    }
                 }
             }
         }
@@ -33,11 +47,11 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         {
             if (selected)
             {
-                SelectedColumns.Add(id);
+                SelectedColumnsInternal.Add(id);
             }
             else
             {
-                SelectedColumns.Remove(id);
+                SelectedColumnsInternal.Remove(id);
             }
         }
 
@@ -117,7 +131,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
 
         protected void Submit(MouseEventArgs args)
         {
-            MudDialog.Close(DialogResult.Ok((SelectedColumns, Widths)));
+            MudDialog.Close(DialogResult.Ok((SelectedColumnsInternal, Widths)));
         }
     }
 }
