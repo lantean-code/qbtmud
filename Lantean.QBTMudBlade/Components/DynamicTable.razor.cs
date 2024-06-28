@@ -190,6 +190,10 @@ namespace Lantean.QBTMudBlade.Components
 
         protected async Task OnRowClickInternal(TableRowClickEventArgs<T> eventArgs)
         {
+            if (eventArgs.Item is null)
+            {
+                return;
+            }
             if (MultiSelection)
             {
                 if (eventArgs.MouseEventArgs.CtrlKey)
@@ -236,7 +240,7 @@ namespace Lantean.QBTMudBlade.Components
             //EqualityComparer<T>.Default.Equals(item, SelectedItem) ||
             if (SelectedItems.Contains(item))
             {
-                style += " background-color: var(--mud-palette-grey-dark); color: var(--mud-palette-grey-light) !important;";
+                style += " background-color: var(--mud-palette-gray-dark); color: var(--mud-palette-gray-light) !important;";
             }
             return style;
         }

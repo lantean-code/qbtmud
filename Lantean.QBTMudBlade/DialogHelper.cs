@@ -9,11 +9,11 @@ namespace Lantean.QBTMudBlade
 {
     public static class DialogHelper
     {
-        public static readonly DialogOptions FormDialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Medium, ClassBackground = "background-blur", FullWidth = true };
+        public static readonly DialogOptions FormDialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Medium, BackgroundClass = "background-blur", FullWidth = true };
 
         public static readonly DialogOptions NonBlurFormDialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
 
-        public static readonly DialogOptions ConfirmDialogOptions = new() { ClassBackground = "background-blur", MaxWidth = MaxWidth.Small, FullWidth = true };
+        public static readonly DialogOptions ConfirmDialogOptions = new() { BackgroundClass = "background-blur", MaxWidth = MaxWidth.Small, FullWidth = true };
 
         public static readonly DialogOptions NonBlurConfirmDialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
 
@@ -23,7 +23,7 @@ namespace Lantean.QBTMudBlade
         {
             var result = await dialogService.ShowAsync<AddTorrentFileDialog>("Upload local torrent", FormDialogOptions);
             var dialogResult = await result.Result;
-            if (dialogResult.Canceled)
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return;
             }
@@ -69,7 +69,7 @@ namespace Lantean.QBTMudBlade
         {
             var result = await dialogService.ShowAsync<AddTorrentLinkDialog>("Download from URLs", FormDialogOptions);
             var dialogResult = await result.Result;
-            if (dialogResult.Canceled)
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return;
             }
@@ -104,13 +104,13 @@ namespace Lantean.QBTMudBlade
             };
 
             var reference = await dialogService.ShowAsync<DeleteDialog>($"Remove torrent{(hashes.Length == 1 ? "" : "s")}?", parameters, ConfirmDialogOptions);
-            var result = await reference.Result;
-            if (result.Canceled)
+            var dialogResult = await reference.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return;
             }
 
-            await apiClient.DeleteTorrents(hashes, (bool)result.Data);
+            await apiClient.DeleteTorrents(hashes, (bool)dialogResult.Data);
         }
 
         public static async Task InvokeRenameFilesDialog(this IDialogService dialogService, IApiClient apiClient, string hash)
@@ -121,13 +121,13 @@ namespace Lantean.QBTMudBlade
         public static async Task<string?> ShowAddCategoryDialog(this IDialogService dialogService, IApiClient apiClient)
         {
             var reference = await dialogService.ShowAsync<AddCategoryDialog>("New Category", NonBlurFormDialogOptions);
-            var result = await reference.Result;
-            if (result.Canceled)
+            var dialogResult = await reference.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return null;
             }
 
-            var category = (Category)result.Data;
+            var category = (Category)dialogResult.Data;
 
             await apiClient.AddCategory(category.Name, category.SavePath);
 
@@ -136,15 +136,15 @@ namespace Lantean.QBTMudBlade
 
         public static async Task<HashSet<string>?> ShowAddTagsDialog(this IDialogService dialogService, IApiClient apiClient)
         {
-            var dialogReference = await dialogService.ShowAsync<AddTagDialog>("Add Tags", NonBlurFormDialogOptions);
-            var result = await dialogReference.Result;
+            var reference = await dialogService.ShowAsync<AddTagDialog>("Add Tags", NonBlurFormDialogOptions);
+            var dialogResult = await reference.Result;
 
-            if (result.Canceled)
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return null;
             }
 
-            var tags = (HashSet<string>)result.Data;
+            var tags = (HashSet<string>)dialogResult.Data;
 
             return tags;
         }
@@ -158,7 +158,7 @@ namespace Lantean.QBTMudBlade
             var result = await dialogService.ShowAsync<ConfirmDialog>(title, parameters, ConfirmDialogOptions);
 
             var dialogResult = await result.Result;
-            return !dialogResult.Canceled;
+            return dialogResult is not null && !dialogResult.Canceled;
         }
 
         public static async Task ShowConfirmDialog(this IDialogService dialogService, string title, string content, Func<Task> onSuccess)
@@ -170,7 +170,7 @@ namespace Lantean.QBTMudBlade
             var result = await dialogService.ShowAsync<ConfirmDialog>(title, parameters, ConfirmDialogOptions);
 
             var dialogResult = await result.Result;
-            if (dialogResult.Canceled)
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return;
             }
@@ -198,7 +198,7 @@ namespace Lantean.QBTMudBlade
             var result = await dialogService.ShowAsync<SingleFieldDialog<T>>(title, parameters, FormDialogOptions);
 
             var dialogResult = await result.Result;
-            if (dialogResult.Canceled)
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return;
             }
@@ -217,7 +217,7 @@ namespace Lantean.QBTMudBlade
             var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Download Rate", parameters, FormDialogOptions);
 
             var dialogResult = await result.Result;
-            if (dialogResult.Canceled)
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return;
             }
@@ -236,7 +236,7 @@ namespace Lantean.QBTMudBlade
             var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Upload Rate", parameters, FormDialogOptions);
 
             var dialogResult = await result.Result;
-            if (dialogResult.Canceled)
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return;
             }
@@ -255,7 +255,7 @@ namespace Lantean.QBTMudBlade
             var result = await dialogService.ShowAsync<SliderFieldDialog<float>>("Upload Rate", parameters, FormDialogOptions);
 
             var dialogResult = await result.Result;
-            if (dialogResult.Canceled)
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return;
             }
@@ -273,7 +273,7 @@ namespace Lantean.QBTMudBlade
             var result = await dialogService.ShowAsync<FilterOptionsDialog<T>>("Filters", parameters, FormDialogOptions);
 
             var dialogResult = await result.Result;
-            if (dialogResult.Canceled)
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return null;
             }
@@ -291,13 +291,13 @@ namespace Lantean.QBTMudBlade
             };
 
             var reference = await dialogService.ShowAsync<ColumnOptionsDialog<T>>("Column Options", parameters, FormDialogOptions);
-            var result = await reference.Result;
-            if (result.Canceled)
+            var dialogResult = await reference.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return default;
             }
 
-            return ((HashSet<string>, Dictionary<string, int?>))result.Data;
+            return ((HashSet<string>, Dictionary<string, int?>))dialogResult.Data;
         }
 
         public static async Task InvokeRssRulesDialog(this IDialogService dialogService)

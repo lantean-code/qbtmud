@@ -66,7 +66,7 @@ namespace Lantean.QBTMudBlade.Components
             {
                 new TorrentAction("start", "Start", Icons.Material.Filled.PlayArrow, Color.Success, CreateCallback(Resume)),
                 new TorrentAction("pause", "Pause", Icons.Material.Filled.Pause, Color.Warning, CreateCallback(Pause)),
-                new TorrentAction("forceStart", "Force start", Icons.Material.Filled.Pause, Color.Warning, CreateCallback(ForceStart)),
+                new TorrentAction("forceStart", "Force start", Icons.Material.Filled.Forward, Color.Warning, CreateCallback(ForceStart)),
                 new TorrentAction("delete", "Remove", Icons.Material.Filled.Delete, Color.Error, CreateCallback(Remove), separatorBefore: true),
                 new TorrentAction("setLocation", "Set location", Icons.Material.Filled.MyLocation, Color.Info, CreateCallback(SetLocation), separatorBefore: true),
                 new TorrentAction("rename", "Rename", Icons.Material.Filled.DriveFileRenameOutline, Color.Info, CreateCallback(Rename)),
@@ -248,7 +248,10 @@ namespace Lantean.QBTMudBlade.Components
         protected async Task Copy(Func<Torrent, object?> selector)
         {
             await Copy(string.Join(Environment.NewLine, GetTorrents().Select(selector)));
-            ActionsMenu?.CloseMenu();
+            if (ActionsMenu is not null)
+            {
+                await ActionsMenu.CloseMenuAsync();
+            }
         }
 
         protected async Task Export()
@@ -487,7 +490,6 @@ namespace Lantean.QBTMudBlade.Components
                 }
                 else
                 {
-
                     if (actionState.Show is null || actionState.Show.Value)
                     {
                         var act = action with { };
@@ -499,6 +501,8 @@ namespace Lantean.QBTMudBlade.Components
                         {
                             act.IsChecked = actionState.IsChecked.Value;
                         }
+
+                        yield return act;
                     }
                 }
             }

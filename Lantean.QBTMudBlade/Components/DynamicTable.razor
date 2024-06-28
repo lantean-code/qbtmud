@@ -40,7 +40,7 @@
             <MudTh Class="@className" Style="@(GetColumnStyle(column))">
                 @if (column.SortSelector is not null)
                 {
-                    <SortLabel SortDirectionChanged="@(c => SetSort(column.Id, c))" SortDirection="@(column.Id == _sortColumn ? _sortDirection : SortDirection.None)">@columnHeader</SortLabel>
+                    <SortLabel Class="column-header" SortDirectionChanged="@(c => SetSort(column.Id, c))" SortDirection="@(column.Id == _sortColumn ? _sortDirection : SortDirection.None)">@columnHeader</SortLabel>
                 }
                 else
                 {

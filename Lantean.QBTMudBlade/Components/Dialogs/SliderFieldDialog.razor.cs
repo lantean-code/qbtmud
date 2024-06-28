@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using System.Numerics;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
 {
-    public partial class SliderFieldDialog<T>
+    public partial class SliderFieldDialog<T> where T : struct, INumber<T>
     {
         [CascadingParameter]
         public MudDialogInstance MudDialog { get; set; } = default!;
@@ -13,13 +14,13 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         public string Label { get; set; } = default!;
 
         [Parameter]
-        public T? Value { get; set; }
+        public T Value { get; set; }
 
         [Parameter]
-        public T? Min { get; set; }
+        public T Min { get; set; } = T.Zero;
 
         [Parameter]
-        public T? Max { get; set; }
+        public T Max { get; set; } = T.One;
 
         protected void Cancel(MouseEventArgs args)
         {

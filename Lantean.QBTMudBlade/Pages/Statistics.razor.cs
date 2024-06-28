@@ -22,12 +22,13 @@ namespace Lantean.QBTMudBlade.Pages
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
+        [CascadingParameter(Name = "RefreshInterval")]
+        public int RefreshInterval { get; set; }
+
         [Parameter]
         public string? Hash { get; set; }
 
         protected int ActiveTab { get; set; } = 0;
-
-        protected int RefreshInterval => MainData?.ServerState.RefreshInterval ?? 1500;
 
         protected ServerState? ServerState => MainData?.ServerState;
 

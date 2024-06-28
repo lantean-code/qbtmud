@@ -3,7 +3,7 @@
 
 <NavigationLock ConfirmExternalNavigation="@(UpdatePreferences is not null)" OnBeforeInternalNavigation="ValidateExit" />
 
-<MudToolBar DisableGutters="true" Dense="true">
+<MudToolBar Gutters="false" Dense="true">
     @if (!DrawerOpen)
     {
         <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" />

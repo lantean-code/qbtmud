@@ -1,6 +1,7 @@
 ﻿using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Pages
@@ -33,21 +34,11 @@ namespace Lantean.QBTMudBlade.Pages
         [Parameter]
         public string? Hash { get; set; }
 
-        protected int ActiveTab { get; set; } = 0;
-
-        protected int RefreshInterval => MainData?.ServerState.RefreshInterval ?? 1500;
-
-        protected ServerState? ServerState => MainData?.ServerState;
-
-        protected string? SearchText { get; set; }
-
-        protected string SelectedPlugin { get; set; } = "all";
-
-        protected string SelectedCategory { get; set; } = "all";
+        protected SearchForm Model { get; set; } = new SearchForm();
 
         protected Dictionary<string, string> Plugins => _plugins is null ? [] : _plugins.ToDictionary(a => a.Name, a => a.FullName);
 
-        protected Dictionary<string, string> Categories => GetCategories(SelectedPlugin);
+        protected Dictionary<string, string> Categories => GetCategories(Model.SelectedPlugin);
 
         protected IEnumerable<QBitTorrentClient.Models.SearchResult>? Results => _searchResults?.Results;
 
@@ -97,21 +88,6 @@ namespace Lantean.QBTMudBlade.Pages
             NavigationManager.NavigateTo("/");
         }
 
-        protected void SearchTextChanged(string value)
-        {
-            SearchText = value;
-        }
-
-        protected void SelectedCategoryChanged(string value)
-        {
-            SelectedCategory = value;
-        }
-
-        protected void SelectedPluginChanged(string value)
-        {
-            SelectedPlugin = value;
-        }
-
         private Dictionary<string, string> GetCategories(string plugin)
         {
             if (_plugins is null)
@@ -133,17 +109,17 @@ namespace Lantean.QBTMudBlade.Pages
             return pluginItem.SupportedCategories.ToDictionary(a => a.Id, a => a.Name);
         }
 
-        protected async Task DoSearch()
+        protected async Task DoSearch(EditContext editContext)
         {
             if (_searchId is null)
             {
-                if (string.IsNullOrEmpty(SearchText))
+                if (string.IsNullOrEmpty(Model.SearchText))
                 {
                     return;
                 }
 
                 _searchResults = null;
-                _searchId = await ApiClient.StartSearch(SearchText, [SelectedPlugin], SelectedCategory);
+                _searchId = await ApiClient.StartSearch(Model.SearchText, [Model.SelectedPlugin], Model.SelectedCategory);
             }
             else
             {

@@ -1,6 +1,6 @@
 ﻿@if (RenderType == RenderType.Toolbar)
 {
-    <MudToolBar Dense="true" DisableGutters="true" WrapContent="true">
+    <MudToolBar Dense="true" Gutters="false" WrapContent="true">
         @ToolbarContent
     </MudToolBar>
 }
@@ -10,7 +10,7 @@ else if (RenderType == RenderType.ToolbarContents)
 }
 else if (RenderType == RenderType.MixedToolbar)
 {
-    <MudToolBar Dense="true" DisableGutters="true" WrapContent="true">
+    <MudToolBar Dense="true" Gutters="false" WrapContent="true">
         @MixedToolbarContent
     </MudToolBar>
 }
@@ -27,7 +27,7 @@ else if (RenderType == RenderType.InitialIconsOnly)
             <MudDivider Vertical="true" />
         }
 
-        <MudIconButton Title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
+        <MudIconButton title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
     }
 
     @Menu(Actions.Skip(5))
@@ -37,7 +37,7 @@ else if (RenderType == RenderType.Children)
     var parent = Actions.FirstOrDefault(a => a.Text == ParentAction?.Text);
     if (parent is not null)
     {
-        <MudList Clickable="true">
+        <MudList T="string">
             @foreach (var action in parent.Children)
             {
                 @if (action.SeparatorBefore)
@@ -77,7 +77,7 @@ else
                         }
                         else
                         {
-                            <MudIconButton Title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
+                            <MudIconButton title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
                         }
                     }
                     else
@@ -115,7 +115,7 @@ else
                         }
                         else
                         {
-                            <MudIconButton Title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
+                            <MudIconButton title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
                         }
                     }
                     else
@@ -141,7 +141,7 @@ else
                 <MudDivider />
             }
 
-            <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" OnTouch="action.Callback" Disabled="Disabled">@action.Text</MudMenuItem>
+            <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled">@action.Text</MudMenuItem>
         };
     }
 
@@ -149,7 +149,7 @@ else
     {
         return __builder =>
         {
-            <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="Actions" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())">
+            <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="Actions" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" ActivationEvent="MouseEvent.LeftClick">
                 @foreach (var action in actions)
                 {
                     @if (action.SeparatorBefore)
@@ -159,14 +159,14 @@ else
                     
                     if (!action.Children.Any())
                     {
-                        <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" OnTouch="action.Callback" Disabled="Disabled">
+                        <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled">
                             @action.Text
                         </MudMenuItem>
                     }
                     else
                     {
-                        <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnTouch="@(t => SubMenuTouch(action))" OnClick="@(t => SubMenuTouch(action))">
-                            <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopLeft" ActivationEvent="MouseEvent.MouseOver" Icon="@Icons.Material.Filled.ArrowDropDown" DisableElevation="true" DisableRipple="true" Class="sub-menu">
+                        <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="@(t => SubMenuTouch(action))">
+                            <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopLeft" ActivationEvent="MouseEvent.MouseOver" Icon="@Icons.Material.Filled.ArrowDropDown" Ripple="false" Class="sub-menu">
                                 <ActivatorContent>
                                     @action.Text
                                 </ActivatorContent>

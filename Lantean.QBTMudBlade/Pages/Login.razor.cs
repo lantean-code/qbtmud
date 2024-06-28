@@ -1,8 +1,7 @@
 ﻿using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 namespace Lantean.QBTMudBlade.Pages
@@ -15,7 +14,7 @@ namespace Lantean.QBTMudBlade.Pages
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
-        protected LoginModel Model { get; set; } = new LoginModel();
+        protected LoginForm Model { get; set; } = new LoginForm();
 
         protected string? ApiError { get; set; }
 
@@ -49,19 +48,8 @@ namespace Lantean.QBTMudBlade.Pages
 #if DEBUG
         protected override Task OnInitializedAsync()
         {
-            return DoLogin("admin", "6K3mtPNnQ");
+            return DoLogin("admin", "STMeVwB22");
         }
 #endif
-    }
-
-    public class LoginModel
-    {
-        [Required]
-        [NotNull]
-        public string? Username { get; set; }
-
-        [Required]
-        [NotNull]
-        public string? Password { get; set; }
     }
 }

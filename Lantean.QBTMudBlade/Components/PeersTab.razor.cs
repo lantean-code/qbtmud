@@ -20,7 +20,7 @@ namespace Lantean.QBTMudBlade.Components
         [Parameter]
         public bool Active { get; set; }
 
-        [CascadingParameter]
+        [CascadingParameter(Name = "RefreshInterval")]
         public int RefreshInterval { get; set; }
 
         [CascadingParameter]

@@ -1,10 +1,10 @@
 ﻿@page "/rss"
 @layout OtherLayout
 
-<MudToolBar DisableGutters="true" Dense="true">
+<MudToolBar Gutters="false" Dense="true">
     @if (!DrawerOpen)
     {
-        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" Title="Back to torrent list" />
+        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
         <MudDivider Vertical="true" />
     }
     <MudDivider Vertical="true" />

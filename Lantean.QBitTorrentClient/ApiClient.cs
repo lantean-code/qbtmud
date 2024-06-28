@@ -887,10 +887,10 @@ namespace Lantean.QBitTorrentClient
         {
             var content = new FormUrlEncodedBuilder()
                 .AddAllOrPipeSeparated("hashes", all, hashes)
-                .Add("enable", value)
+                .Add("value", value)
                 .ToFormUrlEncodedContent();
 
-            var response = await _httpClient.PostAsync("torrents/setFOrceStart", content);
+            var response = await _httpClient.PostAsync("torrents/setForceStart", content);
 
             response.EnsureSuccessStatusCode();
         }
@@ -1105,16 +1105,30 @@ namespace Lantean.QBitTorrentClient
 
         private async Task<IReadOnlyList<T>> GetJsonList<T>(HttpContent content)
         {
-            var items = await GetJson<IEnumerable<T>>(content);
+            try
+            {
+                var items = await GetJson<IEnumerable<T>>(content);
 
-            return items.ToList().AsReadOnly();
+                return items.ToList().AsReadOnly();
+            }
+            catch
+            {
+                return [];
+            }
         }
 
         private async Task<IReadOnlyDictionary<TKey, TValue>> GetJsonDictionary<TKey, TValue>(HttpContent content) where TKey : notnull
         {
-            var items = await GetJson<IDictionary<TKey, TValue>>(content);
+            try
+            {
+                var items = await GetJson<IDictionary<TKey, TValue>>(content);
 
-            return items.AsReadOnly();
+                return items.AsReadOnly();
+            }
+            catch
+            {
+                return new Dictionary<TKey, TValue>().AsReadOnly();
+            }
         }
     }
 }

@@ -17,8 +17,12 @@ namespace Lantean.QBTMudBlade.Components
         [Parameter]
         public bool Disabled { get; set; }
 
+        [Inject]
+        public ILogger<EnhancedErrorBoundary> Logger { get; set; } = default!;
+
         protected override Task OnErrorAsync(Exception exception)
         {
+            Logger.LogError(exception, exception.Message);
             _exceptions.Add(exception);
 
             if (Disabled)

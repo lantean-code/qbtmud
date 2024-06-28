@@ -51,9 +51,9 @@ namespace Lantean.QBTMudBlade.Components
             }
             else
             {
-                downloadingColor = Theme.Palette.Success.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
-                haveColor = Theme.Palette.Info.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
-                borderColor = Theme.Palette.Black.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+                downloadingColor = Theme.PaletteLight.Success.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+                haveColor = Theme.PaletteLight.Info.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
+                borderColor = Theme.PaletteLight.Black.ToString(MudBlazor.Utilities.MudColorOutputFormats.RGBA);
             }
             await JSRuntime.RenderPiecesBar("progress", Hash, Pieces.Select(s => (int)s).ToArray(), downloadingColor, haveColor, borderColor);
         }

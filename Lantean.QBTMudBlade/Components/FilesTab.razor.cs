@@ -89,7 +89,7 @@ namespace Lantean.QBTMudBlade.Components
             var result = await DialogService.ShowAsync<FilterOptionsDialog<ContentItem>>("Filters", parameters, DialogHelper.FormDialogOptions);
 
             var dialogResult = await result.Result;
-            if (dialogResult.Canceled)
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
                 return;
             }

@@ -17,7 +17,7 @@ namespace Lantean.QBTMudBlade.Components
         [Parameter, EditorRequired]
         public string? Hash { get; set; }
 
-        [CascadingParameter]
+        [CascadingParameter(Name = "RefreshInterval")]
         public int RefreshInterval { get; set; }
 
         [Inject]

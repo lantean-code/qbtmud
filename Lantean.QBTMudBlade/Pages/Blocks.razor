@@ -1,16 +1,59 @@
 ﻿@page "/blocks"
 @layout OtherLayout
 
-<MudToolBar DisableGutters="true" Dense="true">
+<MudToolBar Gutters="false" Dense="true">
     @if (!DrawerOpen)
     {
-        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" Title="Back to torrent list" />
+        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
         <MudDivider Vertical="true" />
     }
     <MudDivider Vertical="true" />
     <MudText Class="pl-5 no-wrap">Blocked IPs</MudText>
 </MudToolBar>
 
-<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="details-tab-contents">
-    <p>Coming soon.</p>
-</MudContainer>
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardContent>
+        <EditForm Model="Model" OnSubmit="Submit">
+            <MudGrid>
+                <MudItem md="10">
+                    <MudTextField T="string" Label="Criteria" @bind-Value="Model.Criteria" ShrinkLabel Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem md="2">
+                    <MudButton ButtonType="ButtonType.Submit" FullWidth="true" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Search" Variant="Variant.Filled" Class="mt-6">Filter</MudButton>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </MudCardContent>
+</MudCard>
+
+<MudTable Items="Results"
+          T="Lantean.QBitTorrentClient.Models.PeerLog"
+          Hover="true"
+          FixedHeader="true"
+          HeaderClass="table-head-bordered"
+          Dense="true"
+          Breakpoint="Breakpoint.None"
+          Bordered="true"
+          Square="true"
+          LoadingProgressColor="Color.Info"
+          HorizontalScrollbar="true"
+          Virtualize="true"
+          AllowUnsorted="false"
+          SelectOnRowClick="false"
+          Class="search-list"
+          RowClassFunc="RowClass">
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Message</MudTh>
+        <MudTh>Timestamp</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Reason</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel="IP">@context.IPAddress</MudTd>
+        <MudTd DataLabel="Timestamp">@DisplayHelpers.DateTime(context.Timestamp)</MudTd>
+        <MudTd DataLabel="Status">@(context.Blocked ? "Blocked" : "Banned")</MudTd>
+        <MudTd DataLabel="Reason">@context.Reason</MudTd>
+    </RowTemplate>
+</MudTable>

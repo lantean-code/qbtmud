@@ -171,3 +171,23 @@ td.no-wrap {
     height: calc(100vh - 200px);
     overflow: auto;
 }
+
+.search-list .mud-table-container {
+    height: calc(100vh - 260px);
+}
+
+tr.log-normal td {
+    color: var(--mud-palette-text-primary) !important;
+}
+
+tr.log-info td {
+    color: var(--mud-palette-info) !important;
+}
+
+tr.log-warning td {
+    color: var(--mud-palette-warning) !important;
+}
+
+tr.log-critical td {
+    color: var(--mud-palette-error) !important;
+}
