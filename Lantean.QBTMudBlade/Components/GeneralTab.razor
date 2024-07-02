@@ -30,7 +30,7 @@
             <MudField Label="Upload Speed">@DisplayHelpers.Speed(Properties?.UploadSpeed) @DisplayHelpers.Speed(Properties?.UploadSpeedAverage, "(", " avg.)")</MudField>
         </MudItem>
         <MudItem xs="4">
-            <MudField Label="Peers">@DisplayHelpers.Size(Properties?.Peers) @DisplayHelpers.EmptyIfNull(Properties?.Peers, "(", " total)")</MudField>
+            <MudField Label="Peers">@DisplayHelpers.EmptyIfNull(Properties?.Peers) @DisplayHelpers.EmptyIfNull(Properties?.Peers, "(", " total)")</MudField>
         </MudItem>
 
         <MudItem xs="4">

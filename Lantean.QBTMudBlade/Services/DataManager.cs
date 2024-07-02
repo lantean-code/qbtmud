@@ -175,24 +175,6 @@ namespace Lantean.QBTMudBlade.Services
                 }
             }
 
-            if (mainData.Torrents is not null)
-            {
-                foreach (var (hash, torrent) in mainData.Torrents)
-                {
-                    if (!torrentList.Torrents.TryGetValue(hash, out var existingTorrent))
-                    {
-                        var newTorrent = CreateTorrent(hash, torrent);
-                        torrentList.Torrents.Add(hash, newTorrent);
-                        AddTorrentToStates(torrentList, hash);
-                    }
-                    else
-                    {
-                        UpdateTorrentStates(torrentList, hash);
-                        UpdateTorrent(existingTorrent, torrent);
-                    }
-                }
-            }
-
             if (mainData.Categories is not null)
             {
                 foreach (var (name, category) in mainData.Categories)
@@ -228,6 +210,24 @@ namespace Lantean.QBTMudBlade.Services
                     else
                     {
                         torrentList.Trackers[url] = hashes;
+                    }
+                }
+            }
+
+            if (mainData.Torrents is not null)
+            {
+                foreach (var (hash, torrent) in mainData.Torrents)
+                {
+                    if (!torrentList.Torrents.TryGetValue(hash, out var existingTorrent))
+                    {
+                        var newTorrent = CreateTorrent(hash, torrent);
+                        torrentList.Torrents.Add(hash, newTorrent);
+                        AddTorrentToStates(torrentList, hash);
+                    }
+                    else
+                    {
+                        UpdateTorrentStates(torrentList, hash);
+                        UpdateTorrent(existingTorrent, torrent);
                     }
                 }
             }
@@ -276,21 +276,25 @@ namespace Lantean.QBTMudBlade.Services
             torrentList.TagState[FilterHelper.TAG_UNTAGGED].AddIfTrueOrRemove(hash, FilterHelper.FilterTag(torrent, FilterHelper.TAG_UNTAGGED));
             foreach (var tag in torrentList.Tags)
             {
-                if (!torrentList.TagState.ContainsKey(tag))
+                if (!torrentList.TagState.TryGetValue(tag, out HashSet<string>? value))
                 {
-                    torrentList.TagState.Add(tag, []);
+                    value = [];
+                    torrentList.TagState.Add(tag, value);
                 }
-                torrentList.TagState[tag].AddIfTrueOrRemove(hash, FilterHelper.FilterTag(torrent, tag));
+
+                value.AddIfTrueOrRemove(hash, FilterHelper.FilterTag(torrent, tag));
             }
 
             torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].AddIfTrueOrRemove(hash, FilterHelper.FilterCategory(torrent, FilterHelper.CATEGORY_UNCATEGORIZED, torrentList.ServerState.UseSubcategories));
             foreach (var category in torrentList.Categories.Keys)
             {
-                if (!torrentList.CategoriesState.ContainsKey(category))
+                if (!torrentList.CategoriesState.TryGetValue(category, out HashSet<string>? value))
                 {
-                    torrentList.CategoriesState.Add(category, []);
+                    value = [];
+                    torrentList.CategoriesState.Add(category, value);
                 }
-                torrentList.CategoriesState[category].AddIfTrueOrRemove(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
+
+                value.AddIfTrueOrRemove(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
             }
 
             foreach (var status in _statuses)
@@ -301,11 +305,13 @@ namespace Lantean.QBTMudBlade.Services
             torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].AddIfTrueOrRemove(hash, FilterHelper.FilterTracker(torrent, FilterHelper.TRACKER_TRACKERLESS));
             foreach (var tracker in torrentList.Trackers.Keys)
             {
-                if (!torrentList.TrackersState.ContainsKey(tracker))
+                if (!torrentList.TrackersState.TryGetValue(tracker, out HashSet<string>? value))
                 {
-                    torrentList.TrackersState.Add(tracker, []);
+                    value = [];
+                    torrentList.TrackersState.Add(tracker, value);
                 }
-                torrentList.TrackersState[tracker].AddIfTrueOrRemove(hash, FilterHelper.FilterTracker(torrent, tracker));
+
+                value.AddIfTrueOrRemove(hash, FilterHelper.FilterTracker(torrent, tracker));
             }
         }
 
@@ -317,26 +323,42 @@ namespace Lantean.QBTMudBlade.Services
             torrentList.TagState[FilterHelper.TAG_UNTAGGED].RemoveIfTrue(hash, FilterHelper.FilterTag(torrent, FilterHelper.TAG_UNTAGGED));
             foreach (var tag in torrentList.Tags)
             {
-                torrentList.TagState[tag].RemoveIfTrue(hash, FilterHelper.FilterTag(torrent, tag));
+                if (!torrentList.TagState.TryGetValue(tag, out var tagState))
+                {
+                    continue;
+                }
+                tagState.RemoveIfTrue(hash, FilterHelper.FilterTag(torrent, tag));
             }
 
             torrentList.CategoriesState[FilterHelper.CATEGORY_ALL].Remove(hash);
             torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].RemoveIfTrue(hash, FilterHelper.FilterCategory(torrent, FilterHelper.CATEGORY_UNCATEGORIZED, torrentList.ServerState.UseSubcategories));
             foreach (var category in torrentList.Categories.Keys)
             {
-                torrentList.CategoriesState[category].RemoveIfTrue(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
+                if (!torrentList.CategoriesState.TryGetValue(category, out var categoryState))
+                {
+                    continue;
+                }
+                categoryState.RemoveIfTrue(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
             }
 
             foreach (var status in _statuses)
             {
-                torrentList.StatusState[status.ToString()].RemoveIfTrue(hash, FilterHelper.FilterStatus(torrent, status));
+                if (!torrentList.StatusState.TryGetValue(status.ToString(), out var statusState))
+                {
+                    continue;
+                }
+                statusState.RemoveIfTrue(hash, FilterHelper.FilterStatus(torrent, status));
             }
 
             torrentList.TrackersState[FilterHelper.TRACKER_ALL].Remove(hash);
             torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].RemoveIfTrue(hash, FilterHelper.FilterTracker(torrent, FilterHelper.TRACKER_TRACKERLESS));
             foreach (var tracker in torrentList.Trackers.Keys)
             {
-                torrentList.TrackersState[tracker].RemoveIfTrue(hash, FilterHelper.FilterTracker(torrent, tracker));
+                if (!torrentList.TrackersState.TryGetValue(tracker, out var trackerState))
+                {
+                    continue;
+                }
+                trackerState.RemoveIfTrue(hash, FilterHelper.FilterTracker(torrent, tracker));
             }
         }
 

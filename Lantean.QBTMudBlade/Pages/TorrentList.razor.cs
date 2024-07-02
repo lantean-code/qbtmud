@@ -151,7 +151,7 @@ namespace Lantean.QBTMudBlade.Pages
             CreateColumnDefinition("Ratio Limit", t => t.RatioLimit, t => t.Ratio.ToString("0.00"), enabled: false),
             CreateColumnDefinition("Last Seen Complete", t => t.SeenComplete, t => DisplayHelpers.DateTime(t.SeenComplete), enabled: false),
             CreateColumnDefinition("Last Activity", t => t.LastActivity, t => DisplayHelpers.DateTime(t.LastActivity), enabled: false),
-            CreateColumnDefinition("Availability", t => t.Availability, enabled: false),
+            CreateColumnDefinition("Availability", t => t.Availability, t => t.Availability.ToString("0.##"), enabled: false),
             //CreateColumnDefinition("Reannounce In", t => t.Reannounce, enabled: false),
         ];
 
