@@ -4,7 +4,6 @@ using Lantean.QBTMudBlade.Components;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using MudBlazor.Services;
-using static MudBlazor.Colors;
 
 namespace Lantean.QBTMudBlade.Layout
 {

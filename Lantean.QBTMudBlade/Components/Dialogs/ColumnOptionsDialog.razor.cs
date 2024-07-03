@@ -32,7 +32,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
                     {
                         SelectedColumnsInternal.Add(selectedColumn);
                     }
-                } 
+                }
                 else
                 {
                     foreach (var column in Columns.Where(c => c.Enabled))

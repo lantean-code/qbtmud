@@ -1,5 +1,6 @@
 ﻿using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components
@@ -52,9 +53,6 @@ namespace Lantean.QBTMudBlade.Components
         [Parameter]
         public EventCallback<T> SelectedItemChanged { get; set; }
 
-        //[Parameter]
-        //public T? SelectedItem { get; set; }
-
         [Parameter]
         public Func<ColumnDefinition<T>, bool> ColumnFilter { get; set; } = t => true;
 
@@ -67,17 +65,23 @@ namespace Lantean.QBTMudBlade.Components
         [Parameter]
         public EventCallback<HashSet<string>> SelectedColumnsChanged { get; set; }
 
+        [Parameter]
+        public EventCallback<TableDataContextMenuEventArgs<T>> OnTableDataContextMenu { get; set; }
+
+        [Parameter]
+        public EventCallback<TableDataLongPressEventArgs<T>> OnTableDataLongPress { get; set; }
+
         protected IEnumerable<T>? OrderedItems => GetOrderedItems();
 
         protected HashSet<string> SelectedColumns { get; set; } = [];
 
         private Dictionary<string, int?> _columnWidths = [];
 
-        private MudTable<T>? Table { get; set; }
-
         private string? _sortColumn;
 
         private SortDirection _sortDirection;
+
+        private readonly Dictionary<string, MudTd> _tds = [];
 
         protected override async Task OnInitializedAsync()
         {
@@ -251,6 +255,18 @@ namespace Lantean.QBTMudBlade.Components
             SelectedItems = selectedItems;
         }
 
+        protected Task OnContextMenuInternal(MouseEventArgs eventArgs, string columnId, T item)
+        {
+            var data = _tds[columnId];
+            return OnTableDataContextMenu.InvokeAsync(new TableDataContextMenuEventArgs<T>(eventArgs, data, item));
+        }
+
+        protected Task OnLongPressInternal(LongPressEventArgs eventArgs, string columnId, T item)
+        {
+            var data = _tds[columnId];
+            return OnTableDataLongPress.InvokeAsync(new TableDataLongPressEventArgs<T>(eventArgs, data, item));
+        }
+
         public async Task ShowColumnOptionsDialog()
         {
             var result = await DialogService.ShowColumnsOptionsDialog(ColumnDefinitions.Where(ColumnFilter).ToList(), SelectedColumns, _columnWidths);
@@ -290,7 +306,7 @@ namespace Lantean.QBTMudBlade.Components
             return style;
         }
 
-        private static string? GetColumnClass(ColumnDefinition<T> column, T data)
+        private string? GetColumnClass(ColumnDefinition<T> column, T data)
         {
             var className = column.Class;
             if (column.ClassFunc is not null)
@@ -312,6 +328,11 @@ namespace Lantean.QBTMudBlade.Components
             if (column.Width.HasValue)
             {
                 className = $"overflow-cell {className}";
+            }
+
+            if (OnTableDataContextMenu.HasDelegate)
+            {
+                className = $"no-default-context-menu {className}";
             }
 
             return className;

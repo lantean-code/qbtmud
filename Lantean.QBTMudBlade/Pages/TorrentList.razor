@@ -5,13 +5,15 @@
     <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="Add torrent link" />
     <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="Add torrent file" />
     <MudDivider Vertical="true" />
-    <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrents()" />
+    <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrentsHashes()" />
     <MudDivider Vertical="true" />
     <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" Disabled="@(!ToolbarButtonsEnabled)" OnClick="ShowTorrent" title="View torrent details" />
     <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
     <MudSpacer />
     <MudTextField Value="SearchText" TextChanged="SearchTextChanged" Immediate="true" DebounceInterval="1000" Placeholder="Filter torrent list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
 </MudToolBar>
+
+<TorrentActions @ref="ContextMenuActions" RenderType="RenderType.MenuWithoutActivator" Hashes="GetContextMenuTargetHashes()" PrimaryHash="@(ContextMenuItem?.Hash)" />
 
 <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="ma-0 pa-0">
     <DynamicTable
@@ -26,6 +28,8 @@
         SelectedItemsChanged="SelectedItemsChanged"
         SortColumnChanged="SortColumnChangedHandler"
         SortDirectionChanged="SortDirectionChangedHandler"
+        OnTableDataContextMenu="TableDataContextMenu"
+        OnTableDataLongPress="TableDataLongPress"
     />
 </MudContainer>
 

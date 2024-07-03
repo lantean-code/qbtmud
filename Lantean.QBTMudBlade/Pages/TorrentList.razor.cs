@@ -1,9 +1,8 @@
-﻿using Blazored.LocalStorage;
-using Lantean.QBitTorrentClient;
+﻿using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Components;
-using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Pages
@@ -41,6 +40,10 @@ namespace Lantean.QBTMudBlade.Pages
         protected bool ToolbarButtonsEnabled => SelectedItems.Count > 0;
 
         protected DynamicTable<Torrent>? Table { get; set; }
+
+        protected TorrentActions? ContextMenuActions { get; set; }
+
+        protected Torrent? ContextMenuItem { get; set; }
 
         protected void SelectedItemsChanged(HashSet<Torrent> selectedItems)
         {
@@ -86,7 +89,7 @@ namespace Lantean.QBTMudBlade.Pages
             }
         }
 
-        private IEnumerable<string> GetSelectedTorrents()
+        private IEnumerable<string> GetSelectedTorrentsHashes()
         {
             if (SelectedItems.Count > 0)
             {
@@ -94,6 +97,11 @@ namespace Lantean.QBTMudBlade.Pages
             }
 
             return [];
+        }
+
+        private IEnumerable<string> GetContextMenuTargetHashes()
+        {
+            return [(ContextMenuItem is null ? "fake" : ContextMenuItem.Hash)];
         }
 
         public async Task ColumnOptions()
@@ -114,6 +122,37 @@ namespace Lantean.QBTMudBlade.Pages
                 return;
             }
             NavigationManager.NavigateTo($"/details/{torrent.Hash}");
+        }
+
+        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<Torrent> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs.ClientX, eventArgs.MouseEventArgs.ClientY);
+        }
+
+        protected Task TableDataLongPress(TableDataLongPressEventArgs<Torrent> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs.ClientX, eventArgs.LongPressEventArgs.ClientY);
+        }
+
+        protected async Task ShowContextMenu(Torrent? torrent, double x, double y)
+        {
+            if (ContextMenuActions is null || ContextMenuActions.ActionsMenu is null)
+            {
+                return;
+            }
+
+            if (torrent is not null)
+            {
+                ContextMenuItem = torrent;
+            }
+
+            // emulate mouseeventargs for MudBlazor
+            var mouseEventArgs = new MouseEventArgs
+            {
+                OffsetX = x,
+                OffsetY = y,
+            };
+            await ContextMenuActions.ActionsMenu.OpenMenuAsync(mouseEventArgs);
         }
 
         protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions;

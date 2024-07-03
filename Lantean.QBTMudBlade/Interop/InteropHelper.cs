@@ -28,5 +28,10 @@ namespace Lantean.QBTMudBlade.Interop
         {
             await runtime.InvokeVoidAsync("qbt.renderPiecesBar", id, hash, pieces, downloadingColor, haveColor, borderColor);
         }
+
+        public static async Task WriteToClipboard(this IJSRuntime runtime, string value)
+        {
+            await runtime.InvokeVoidAsync("qbt.copyTextToClipboard", value);
+        }
     }
 }

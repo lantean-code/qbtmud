@@ -51,13 +51,13 @@
             <MudDivider Vertical="true" />
             <MudIcon Class="mx-1 mb-1" Icon="@Icons.Material.Outlined.Speed" Color="@((MainData?.ServerState.UseAltSpeedLimits ?? false) ? Color.Error : Color.Success)" />
             <MudDivider Vertical="true" />
-            <MudIcon Class="ml-1 mb-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowUp" Color="Color.Success" />
+            <MudIcon Class="ml-1 mb-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Success" />
             <MudText Class="mr-1 mb-1">
                 @DisplayHelpers.Size(MainData?.ServerState.DownloadInfoSpeed, null, "/s")
                 @DisplayHelpers.Size(MainData?.ServerState.DownloadInfoData, "(", ")")
             </MudText>
             <MudDivider Vertical="true" />
-            <MudIcon Class="ml-1 mb-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Info" />
+            <MudIcon Class="ml-1 mb-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowUp" Color="Color.Info" />
             <MudText Class="mr-1 mb-1">
                 @DisplayHelpers.Size(MainData?.ServerState.UploadInfoSpeed, null, "/s")
                 @DisplayHelpers.Size(MainData?.ServerState.UploadInfoData, "(", ")")

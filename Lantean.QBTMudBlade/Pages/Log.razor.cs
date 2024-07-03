@@ -71,6 +71,11 @@ namespace Lantean.QBTMudBlade.Pages
                 return "All";
             }
 
+            if (values.Count == 1)
+            {
+                return values[0];
+            }
+
             return $"{values.Count} selected";
         }
 

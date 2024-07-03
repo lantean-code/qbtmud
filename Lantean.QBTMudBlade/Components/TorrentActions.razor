@@ -37,7 +37,7 @@ else if (RenderType == RenderType.Children)
     var parent = Actions.FirstOrDefault(a => a.Text == ParentAction?.Text);
     if (parent is not null)
     {
-        <MudList T="string">
+        <MudList Class="unselectable" T="string">
             @foreach (var action in parent.Children)
             {
                 @if (action.SeparatorBefore)
@@ -50,9 +50,28 @@ else if (RenderType == RenderType.Children)
         </MudList>
     }
 }
-else
+else if (RenderType == RenderType.Menu)
 {
     @Menu(Actions)
+}
+else if (RenderType == RenderType.MenuWithoutActivator)
+{
+    <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" Style="display: none" PositionAtCursor="true" OpenChanged="ActionsMenuOpenChanged">
+        <ActivatorContent>
+
+        </ActivatorContent>
+        <ChildContent>
+            @if (PrimaryHash is not null)
+            {
+                <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" Disabled="Disabled" Href="@("/details/" + PrimaryHash)">View torrent details</MudMenuItem>
+                <MudDivider />
+            }
+            @MenuContents(Actions)
+        </ChildContent>
+    </MudMenu>
+    <MudOverlay LockScroll="true" AutoClose="true" Visible="OverlayVisible" VisibleChanged="OverlayVisibleChanged">
+        <div style="width: 100%; height: 100%" @oncontextmenu="@(e => OverlayVisible = false)" @oncontextmenu:preventDefault></div>
+    </MudOverlay>
 }
 
 @code {
@@ -149,39 +168,47 @@ else
     {
         return __builder =>
         {
-            <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="Actions" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" ActivationEvent="MouseEvent.LeftClick">
-                @foreach (var action in actions)
-                {
-                    @if (action.SeparatorBefore)
-                    {
-                        <MudDivider />
-                    }
-                    
-                    if (!action.Children.Any())
-                    {
-                        <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled">
-                            @action.Text
-                        </MudMenuItem>
-                    }
-                    else
-                    {
-                        <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="@(t => SubMenuTouch(action))">
-                            <MudMenu Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopLeft" ActivationEvent="MouseEvent.MouseOver" Icon="@Icons.Material.Filled.ArrowDropDown" Ripple="false" Class="sub-menu">
-                                <ActivatorContent>
-                                    @action.Text
-                                </ActivatorContent>
-
-                                <ChildContent>
-                                    @foreach (var childItem in action.Children)
-                                    {
-                                        @ChildItem(childItem)
-                                    }
-                                </ChildContent>
-                            </MudMenu>
-                        </MudMenuItem>
-                    }
-                }
+            <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="Actions" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" ActivationEvent="MouseEvent.LeftClick">
+                @MenuContents(actions)
             </MudMenu>
+        };
+    }
+
+    private RenderFragment MenuContents(IEnumerable<TorrentAction> actions)
+    {
+        return __builder =>
+        {
+            foreach (var action in actions)
+            {
+                if (action.SeparatorBefore)
+                {
+                    <MudDivider />
+                }
+
+                if (!action.Children.Any())
+                {
+                    <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled">
+                        @action.Text
+                    </MudMenuItem>
+                }
+                else
+                {
+                    <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="@(t => SubMenuTouch(action))">
+                        <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopLeft" ActivationEvent="MouseEvent.MouseOver" Icon="@Icons.Material.Filled.ArrowDropDown" Ripple="false" Class="sub-menu">
+                            <ActivatorContent>
+                                @action.Text
+                            </ActivatorContent>
+
+                            <ChildContent>
+                                @foreach (var childItem in action.Children)
+                                {
+                                    @ChildItem(childItem)
+                                }
+                            </ChildContent>
+                        </MudMenu>
+                    </MudMenuItem>
+                }
+            }
         };
     }
 }

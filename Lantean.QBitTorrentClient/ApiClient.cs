@@ -1,5 +1,4 @@
 ﻿using Lantean.QBitTorrentClient.Models;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -899,7 +898,7 @@ namespace Lantean.QBitTorrentClient
         {
             var content = new FormUrlEncodedBuilder()
                 .AddAllOrPipeSeparated("hashes", all, hashes)
-                .Add("enable", value)
+                .Add("value", value)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/setSuperSeeding", content);
@@ -1069,7 +1068,7 @@ namespace Lantean.QBitTorrentClient
         {
             var content = new FormUrlEncodedBuilder()
                .AddPipeSeparated("names", names)
-               .Add("enabble", true)
+               .Add("enable", true)
                .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("search/enablePlugin", content);
@@ -1081,7 +1080,7 @@ namespace Lantean.QBitTorrentClient
         {
             var content = new FormUrlEncodedBuilder()
                .AddPipeSeparated("names", names)
-               .Add("enabble", false)
+               .Add("enable", false)
                .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("search/enablePlugin", content);

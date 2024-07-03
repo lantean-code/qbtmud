@@ -52,3 +52,41 @@ window.qbt.renderPiecesBar = (id, hash, pieces, downloadingColor, haveColor, bor
 
     window.qbt.piecesBar.setPieces(pieces);
 }
+
+window.qbt.copyTextToClipboard = (text) => {
+    if (!navigator.clipboard) {
+        return fallbackCopyTextToClipboard(text);
+    }
+    return navigator.clipboard.writeText(text);
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+
+    // Avoid scrolling to bottom
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    let error;
+    try {
+        document.execCommand('copy');
+    } catch (err) {
+        error = err;
+    }
+
+    document.body.removeChild(textArea);
+
+    return new Promise((resolve, reject) => {
+        if (error) {
+            reject(error);
+        } else {
+            resolve();
+        }
+    })
+}

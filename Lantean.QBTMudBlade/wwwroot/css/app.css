@@ -191,3 +191,19 @@ tr.log-warning td {
 tr.log-critical td {
     color: var(--mud-palette-error) !important;
 }
+
+.unselectable {
+    -webkit-touch-callout: none; /* Disable callout on long press */
+    -webkit-user-select: none; /* Disable selection on iOS */
+    -moz-user-select: none; /* Disable selection on Firefox */
+    -ms-user-select: none; /* Disable selection on Internet Explorer/Edge */
+    user-select: none; /* Disable selection on modern browsers */
+}
+
+    .unselectable * {
+        -webkit-touch-callout: none; /* Disable callout on long press */
+        -webkit-user-select: none; /* Disable selection on iOS */
+        -moz-user-select: none; /* Disable selection on Firefox */
+        -ms-user-select: none; /* Disable selection on Internet Explorer/Edge */
+        user-select: none; /* Disable selection on modern browsers */
+    }

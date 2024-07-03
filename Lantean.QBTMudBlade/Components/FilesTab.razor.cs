@@ -61,7 +61,7 @@ namespace Lantean.QBTMudBlade.Components
 
         private DynamicTable<ContentItem>? Table { get; set; }
 
-        
+
 
         public FilesTab()
         {

@@ -15,10 +15,10 @@
     <MudCardContent>
         <EditForm Model="Model" OnSubmit="Submit">
             <MudGrid>
-                <MudItem md="8">
+                <MudItem md="7">
                     <MudTextField T="string" Label="Criteria" @bind-Value="Model.Criteria" ShrinkLabel Variant="Variant.Outlined" />
                 </MudItem>
-                <MudItem md="2">
+                <MudItem md="3">
                     <MudSelect @ref="CategoryMudSelect" T="string" Label="Categories" SelectedValues="Model.SelectedTypes" SelectedValuesChanged="SelectedValuesChanged" ShrinkLabel Variant="Variant.Outlined" MultiSelection="true" MultiSelectionTextFunc="GenerateSelectedText" SelectAll="true">
                         <MudSelectItem Value="@("Normal")">Normal</MudSelectItem>
                         <MudSelectItem Value="@("Info")">Info</MudSelectItem>

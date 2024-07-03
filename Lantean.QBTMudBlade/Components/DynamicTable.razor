@@ -2,7 +2,6 @@
 @inherits MudComponentBase
 
 <MudTable
-    @ref="Table"
     Items="OrderedItems" 
     T="T" 
     Hover="true"
@@ -52,8 +51,10 @@
     <RowTemplate>
         @foreach (var column in GetColumns())
         {
-            <MudTd DataLabel="@column.Header" Class="@(GetColumnClass(column, context))" Style="@(GetColumnStyle(column))">
-                @column.RowTemplate(column.GetRowContext(context))
+            <MudTd @ref="_tds[column.Id]" DataLabel="@column.Header" Class="@(GetColumnClass(column, context))" Style="@(GetColumnStyle(column))">
+                <div @oncontextmenu:preventDefault @oncontextmenu="c => OnContextMenuInternal(c, column.Id, context)" @onlongpress="c => OnLongPressInternal(c, column.Id, context)">
+                    @column.RowTemplate(column.GetRowContext(context))
+                </div>
             </MudTd>
         }
     </RowTemplate>

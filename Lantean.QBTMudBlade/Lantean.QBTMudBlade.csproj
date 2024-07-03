@@ -15,7 +15,7 @@
 	<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.6" PrivateAssets="all" />
 	<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
 	<PackageReference Include="MudBlazor" Version="7.0.0" />
-	<PackageReference Include="MudBlazor.ThemeManager" Version="1.1.0" />
+	<PackageReference Include="MudBlazor.ThemeManager" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
