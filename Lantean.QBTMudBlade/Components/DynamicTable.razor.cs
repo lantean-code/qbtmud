@@ -81,7 +81,7 @@ namespace Lantean.QBTMudBlade.Components
 
         private SortDirection _sortDirection;
 
-        private readonly Dictionary<string, MudTd> _tds = [];
+        private readonly Dictionary<string, MudTdExtended> _tds = [];
 
         protected override async Task OnInitializedAsync()
         {

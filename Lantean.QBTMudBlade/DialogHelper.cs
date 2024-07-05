@@ -232,6 +232,7 @@ namespace Lantean.QBTMudBlade
                 { nameof(SliderFieldDialog<long>.Value), rate },
                 { nameof(SliderFieldDialog<long>.Min), 0L },
                 { nameof(SliderFieldDialog<long>.Max), 100L },
+                { nameof(SliderFieldDialog<long>.Disabled), rate == -2 },
             };
             var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Upload Rate", parameters, FormDialogOptions);
 
@@ -252,7 +253,7 @@ namespace Lantean.QBTMudBlade
                 { nameof(SliderFieldDialog<float>.Min), 0F },
                 { nameof(SliderFieldDialog<float>.Max), 100F },
             };
-            var result = await dialogService.ShowAsync<SliderFieldDialog<float>>("Upload Rate", parameters, FormDialogOptions);
+            var result = await dialogService.ShowAsync<SliderFieldDialog<float>>("Share ratio", parameters, FormDialogOptions);
 
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)

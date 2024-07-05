@@ -22,6 +22,9 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         [Parameter]
         public T Max { get; set; } = T.One;
 
+        [Parameter]
+        public bool Disabled { get; set; }
+
         protected void Cancel(MouseEventArgs args)
         {
             MudDialog.Cancel();

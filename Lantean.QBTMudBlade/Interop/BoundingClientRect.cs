@@ -1,6 +1,6 @@
 ﻿namespace Lantean.QBTMudBlade.Interop
 {
-    public class BoundingClientRect
+    public class BoundingClientRect : ClientSize
     {
         public int Bottom { get; set; }
 
@@ -9,10 +9,6 @@
         public int Left { get; set; }
 
         public int Right { get; set; }
-
-        public int Width { get; set; }
-
-        public int Height { get; set; }
 
         public int X { get; set; }
 

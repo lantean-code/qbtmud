@@ -89,10 +89,10 @@ code {
         height: 28px !important;
     }
 
-td.no-wrap {
-    white-space: nowrap; /* Prevent text from wrapping to the next line */
-    overflow: hidden; /* Hide any overflowing content */
-    text-overflow: ellipsis; /* Display an ellipsis when the text overflows */
+.no-wrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .background-blur {
@@ -207,3 +207,8 @@ tr.log-critical td {
         -ms-user-select: none; /* Disable selection on Internet Explorer/Edge */
         user-select: none; /* Disable selection on modern browsers */
     }
+
+.filter-menu-item .mud-nav-link {
+    padding-left: 0px !important;
+    padding-inline-start: 10px !important;
+}

@@ -51,11 +51,9 @@
     <RowTemplate>
         @foreach (var column in GetColumns())
         {
-            <MudTd @ref="_tds[column.Id]" DataLabel="@column.Header" Class="@(GetColumnClass(column, context))" Style="@(GetColumnStyle(column))">
-                <div @oncontextmenu:preventDefault @oncontextmenu="c => OnContextMenuInternal(c, column.Id, context)" @onlongpress="c => OnLongPressInternal(c, column.Id, context)">
-                    @column.RowTemplate(column.GetRowContext(context))
-                </div>
-            </MudTd>
+            <MudTdExtended @ref="_tds[column.Id]" DataLabel="@column.Header" Class="@(GetColumnClass(column, context))" Style="@(GetColumnStyle(column))" OnLongPress="@(c => OnLongPressInternal(c, column.Id, context))" OnContextMenu="@(c => OnContextMenuInternal(c, column.Id, context))">
+                @column.RowTemplate(column.GetRowContext(context))
+            </MudTdExtended>
         }
     </RowTemplate>
 </MudTable>

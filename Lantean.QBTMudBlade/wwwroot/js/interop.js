@@ -10,10 +10,36 @@ window.qbt.triggerFileDownload = (url, fileName) => {
     anchorElement.remove();
 }
 
-window.qbt.getBoundingClientRect = (id) => {
-    const element = document.getElementById(id);
+window.qbt.getBoundingClientRect = (selector) => {
+    const element = getElementBySelector(selector);
 
     return element.getBoundingClientRect();
+}
+
+window.qbt.getInnerDimensions = (selector) => {
+    const element = getElementBySelector(selector);
+
+    const computedStyle = getComputedStyle(element);
+
+    const paddingX = parseFloat(computedStyle.paddingLeft) + parseFloat(computedStyle.paddingRight);
+    const paddingY = parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom);
+
+    const borderX = parseFloat(computedStyle.borderLeftWidth) + parseFloat(computedStyle.borderRightWidth);
+    const borderY = parseFloat(computedStyle.borderTopWidth) + parseFloat(computedStyle.borderBottomWidth);
+
+    // Element width and height minus padding and border
+
+    return {
+        height: element.offsetHeight - paddingY - borderY,
+        width: element.offsetWidth - paddingX - borderX,
+    };
+}
+
+window.qbt.getWindowSize = () => {
+    return {
+        height: window.innerHeight,
+        width: window.innerWidth,
+    };
 }
 
 window.qbt.open = (url, target) => {
@@ -89,4 +115,17 @@ function fallbackCopyTextToClipboard(text) {
             resolve();
         }
     })
+}
+
+function getElementBySelector(selector) {
+    const identifier = selector[0];
+    let element;
+
+    if (identifier == '#') {
+        element = document.getElementById(selector.substring(1));
+    } else if (identifier == '.') {
+        element = document.getElementsByClassName(selector.substring(1))[0];
+    }
+
+    return element;
 }

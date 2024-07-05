@@ -21,7 +21,6 @@
         T="Torrent" 
         Class="torrent-list"
         ColumnDefinitions="Columns" 
-        ColumnFilter="@(c => c.Id != "#" || Preferences?.QueueingEnabled == true)" 
         Items="Torrents" 
         OnRowClick="RowClick" 
         MultiSelection="true"

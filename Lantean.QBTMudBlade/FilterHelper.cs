@@ -111,7 +111,7 @@ namespace Lantean.QBTMudBlade
                 return torrent.Tracker == "";
             }
 
-            return torrent.Tracker == tracker;
+            return torrent.Tracker.Contains(tracker);
         }
 
         public static bool FilterCategory(Torrent torrent, string category, bool useSubcategories)

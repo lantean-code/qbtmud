@@ -48,7 +48,7 @@ namespace Lantean.QBTMudBlade.Pages
 #if DEBUG
         protected override Task OnInitializedAsync()
         {
-            return DoLogin("admin", "3fLWgdybJ");
+            return DoLogin("admin", "XHkLRqsPq");
         }
 #endif
     }

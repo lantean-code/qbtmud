@@ -4,7 +4,7 @@
 
 - Rename multiple files dialog
 - RSS feeds and dialogs
-- Search and dialogs (partially implemented)
-- Execution Log
-- Blocked IPs
 - About
+- Context menu for files list, filter (categories, tags & trackers)
+- Tag management page
+- Category management page

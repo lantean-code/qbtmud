@@ -4,9 +4,19 @@ namespace Lantean.QBTMudBlade.Interop
 {
     public static class InteropHelper
     {
-        public static async Task<BoundingClientRect?> GetBoundingClientRect(this IJSRuntime runtime, string id)
+        public static async Task<BoundingClientRect> GetBoundingClientRect(this IJSRuntime runtime, string selector)
         {
-            return await runtime.InvokeAsync<BoundingClientRect?>("qbt.getBoundingClientRect", id);
+            return await runtime.InvokeAsync<BoundingClientRect>("qbt.getBoundingClientRect", selector);
+        }
+        
+        public static async Task<ClientSize> GetWindowSize(this IJSRuntime runtime)
+        {
+            return await runtime.InvokeAsync<ClientSize>("qbt.getWindowSize");
+        }
+        
+        public static async Task<ClientSize> GetInnerDimensions(this IJSRuntime runtime, string selector)
+        {
+            return await runtime.InvokeAsync<ClientSize>("qbt.getInnerDimensions", selector);
         }
 
         public static async Task FileDownload(this IJSRuntime runtime, string url, string? filename = null)

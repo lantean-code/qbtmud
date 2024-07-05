@@ -46,7 +46,7 @@ namespace Lantean.QBTMudBlade.Components
 
         public Dictionary<string, int> Categories => MainData?.CategoriesState.ToDictionary(d => d.Key, d => d.Value.Count) ?? [];
 
-        public Dictionary<string, int> Trackers => MainData?.TrackersState.ToDictionary(d => d.Key, d => d.Value.Count) ?? [];
+        public Dictionary<string, int> Trackers => MainData?.TrackersState.GroupBy(d => GetHostName(d.Key)).Select(l => new KeyValuePair<string, int>(GetHostName(l.First().Key), l.Sum(i => i.Value.Count))).ToDictionary(d => d.Key, d => d.Value) ?? [];
 
         public Dictionary<string, int> Statuses => MainData?.StatusState.ToDictionary(d => d.Key, d => d.Value.Count) ?? [];
 

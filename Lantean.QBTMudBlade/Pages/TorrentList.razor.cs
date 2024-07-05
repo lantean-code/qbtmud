@@ -1,8 +1,10 @@
 ﻿using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Components;
+using Lantean.QBTMudBlade.Interop;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Pages
@@ -17,6 +19,9 @@ namespace Lantean.QBTMudBlade.Pages
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [Inject]
+        protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [CascadingParameter]
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
@@ -80,7 +85,7 @@ namespace Lantean.QBTMudBlade.Pages
         {
             if (eventArgs.MouseEventArgs.Detail > 1)
             {
-                var torrent = SelectedItems.FirstOrDefault();
+                var torrent = eventArgs.Item;
                 if (torrent is null)
                 {
                     return;
@@ -146,16 +151,43 @@ namespace Lantean.QBTMudBlade.Pages
                 ContextMenuItem = torrent;
             }
 
+            int? maxHeight = null;
+
+            var mainContentSize = await JSRuntime.GetInnerDimensions(".mud-main-content");
+            var contextMenuHeight = ContextMenuActions.CalculateMenuHeight();
+
+            // the bottom position of the window will be rendered off screen
+            if ((y - 64 + contextMenuHeight) >= (mainContentSize.Height))
+            {
+                // adjust the top of the context menu
+                var overshoot = Math.Abs(mainContentSize.Height -  (y + contextMenuHeight));
+                y -= overshoot;
+                if (y < 70)
+                {
+                    y = 70;
+                }
+
+                if ((y - 64 + contextMenuHeight) >= mainContentSize.Height)
+                {
+                    maxHeight = mainContentSize.Height - (int)y + 64;
+                }
+            }
+
+#pragma warning disable BL0005 // Component parameter should not be set outside of its component.
+            ContextMenuActions.ActionsMenu.MaxHeight = maxHeight;
+#pragma warning restore BL0005 // Component parameter should not be set outside of its component.
+
             // emulate mouseeventargs for MudBlazor
             var mouseEventArgs = new MouseEventArgs
             {
                 OffsetX = x,
                 OffsetY = y,
             };
+
             await ContextMenuActions.ActionsMenu.OpenMenuAsync(mouseEventArgs);
         }
 
-        protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions;
+        protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions.Where(c => c.Id != "#" || Preferences?.QueueingEnabled == true);
 
         public static List<ColumnDefinition<Torrent>> ColumnsDefinitions { get; } =
         [

@@ -11,7 +11,7 @@ namespace Lantean.QBTMudBlade.Components
 {
     public partial class TorrentActions
     {
-        private readonly List<TorrentAction> _actions;
+        private List<TorrentAction>? _actions;
 
         [Inject]
         public IApiClient ApiClient { get; set; } = default!;
@@ -27,9 +27,6 @@ namespace Lantean.QBTMudBlade.Components
 
         [Inject]
         public IDataManager DataManager { get; set; } = default!;
-
-        [Inject]
-        public IClipboardService ClipboardService { get; set; } = default!;
 
         [Inject]
         public IJSRuntime JSRuntime { get; set; } = default!;
@@ -54,10 +51,10 @@ namespace Lantean.QBTMudBlade.Components
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         [Parameter]
-        public TorrentAction? ParentAction { get; set; }
+        public MudDialogInstance? MudDialog { get; set; }
 
         [Parameter]
-        public Func<Task>? AfterAction { get; set; }
+        public TorrentAction? ParentAction { get; set; }
 
         public MudMenu? ActionsMenu { get; set; }
 
@@ -65,7 +62,7 @@ namespace Lantean.QBTMudBlade.Components
 
         protected bool OverlayVisible { get; set; }
 
-        public TorrentActions()
+        protected override void OnInitialized()
         {
             _actions =
             [
@@ -104,6 +101,16 @@ namespace Lantean.QBTMudBlade.Components
                 }),
                 new("export", "Export", Icons.Material.Filled.SaveAlt, Color.Info, CreateCallback(Export)),
             ];
+        }
+
+        public int CalculateMenuHeight()
+        {
+            var visibleActions = GetActions();
+
+            var actionCount = visibleActions.Count();
+            var separatorCount = visibleActions.Count(c => c.SeparatorBefore);
+
+            return (actionCount * 36) + (separatorCount * 1);
         }
 
         protected async Task OverlayVisibleChanged(bool value)
@@ -261,7 +268,6 @@ namespace Lantean.QBTMudBlade.Components
 
         protected async Task Copy(string value)
         {
-            //await ClipboardService.WriteToClipboard(value);
             await JSRuntime.WriteToClipboard(value);
         }
 
@@ -504,6 +510,10 @@ namespace Lantean.QBTMudBlade.Components
 
         private IEnumerable<TorrentAction> Filter(Dictionary<string, ActionState> actionStates)
         {
+            if (_actions is null)
+            {
+                yield break;
+            }
             foreach (var action in _actions)
             {
                 if (!actionStates.TryGetValue(action.Name, out var actionState))
@@ -543,14 +553,14 @@ namespace Lantean.QBTMudBlade.Components
             public static readonly ActionState HasSeperator = new() { HasSeparator = true };
         }
 
-        private EventCallback CreateCallback(Func<Task> action, bool ignoreAfterAction = false)
+        private EventCallback CreateCallback(Func<Task> action)
         {
-            if (AfterAction is not null && !ignoreAfterAction)
+            if (MudDialog is not null)
             {
                 return EventCallback.Factory.Create(this, async () =>
                 {
                     await action();
-                    await AfterAction();
+                    MudDialog?.Close();
                 });
             }
             else

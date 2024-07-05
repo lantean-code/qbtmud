@@ -34,7 +34,7 @@ else if (RenderType == RenderType.InitialIconsOnly)
 }
 else if (RenderType == RenderType.Children)
 {
-    var parent = Actions.FirstOrDefault(a => a.Text == ParentAction?.Text);
+    var parent = Actions.FirstOrDefault(a => a.Name == ParentAction?.Name);
     if (parent is not null)
     {
         <MudList Class="unselectable" T="string">
@@ -56,7 +56,7 @@ else if (RenderType == RenderType.Menu)
 }
 else if (RenderType == RenderType.MenuWithoutActivator)
 {
-    <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" Style="display: none" PositionAtCursor="true" OpenChanged="ActionsMenuOpenChanged">
+    <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" Style="display: none" PositionAtCursor="true" OpenChanged="ActionsMenuOpenChanged" PopoverClass="unselectable">
         <ActivatorContent>
 
         </ActivatorContent>
