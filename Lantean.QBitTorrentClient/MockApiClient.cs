@@ -56,7 +56,7 @@ namespace Lantean.QBitTorrentClient
             return _apiClient.DecreaseTorrentPriority(all, hashes);
         }
 
-        public Task DeleteTags(IEnumerable<string> tags)
+        public Task DeleteTags(params string[] tags)
         {
             return _apiClient.DeleteTags(tags);
         }

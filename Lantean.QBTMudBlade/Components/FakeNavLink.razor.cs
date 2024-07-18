@@ -38,7 +38,16 @@ namespace Lantean.QBTMudBlade.Components
         public EventCallback<MouseEventArgs> OnClick { get; set; }
 
         [Parameter]
+        public EventCallback<LongPressEventArgs> OnLongPress { get; set; }
+
+        [Parameter]
+        public EventCallback<MouseEventArgs> OnContextMenu { get; set; }
+
+        [Parameter]
         public RenderFragment? ChildContent { get; set; }
+
+        [Parameter]
+        public RenderFragment? ContextMenu { get; set; }
 
 
         protected string Classname =>
@@ -66,6 +75,16 @@ namespace Lantean.QBTMudBlade.Components
             }
 
             await OnClick.InvokeAsync(ev);
+        }
+
+        protected Task OnLongPressInternal(LongPressEventArgs e)
+        {
+            return OnLongPress.InvokeAsync(e);
+        }
+
+        protected Task OnContextMenuInternal(MouseEventArgs e)
+        {
+            return OnContextMenu.InvokeAsync(e);
         }
     }
 }

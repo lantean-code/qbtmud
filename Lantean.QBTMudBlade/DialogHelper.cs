@@ -120,7 +120,7 @@ namespace Lantean.QBTMudBlade
 
         public static async Task<string?> ShowAddCategoryDialog(this IDialogService dialogService, IApiClient apiClient)
         {
-            var reference = await dialogService.ShowAsync<AddCategoryDialog>("New Category", NonBlurFormDialogOptions);
+            var reference = await dialogService.ShowAsync<CategoryPropertiesDialog>("New Category", NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -132,6 +132,29 @@ namespace Lantean.QBTMudBlade
             await apiClient.AddCategory(category.Name, category.SavePath);
 
             return category.Name;
+        }
+
+        public static async Task<string?> ShowEditCategoryDialog(this IDialogService dialogService, IApiClient apiClient, string categoryName)
+        {
+            var category = (await apiClient.GetAllCategories()).FirstOrDefault(c => c.Key == categoryName).Value;
+            var parameters = new DialogParameters
+            {
+                { nameof(CategoryPropertiesDialog.Category), category?.Name },
+                { nameof(CategoryPropertiesDialog.SavePath), category?.SavePath },
+            };
+
+            var reference = await dialogService.ShowAsync<CategoryPropertiesDialog>("Edit Category", parameters, NonBlurFormDialogOptions);
+            var dialogResult = await reference.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+            {
+                return null;
+            }
+
+            var updatedCategory = (Category)dialogResult.Data;
+
+            await apiClient.EditCategory(updatedCategory.Name, updatedCategory.SavePath);
+
+            return updatedCategory.Name;
         }
 
         public static async Task<HashSet<string>?> ShowAddTagsDialog(this IDialogService dialogService, IApiClient apiClient)
@@ -208,11 +231,14 @@ namespace Lantean.QBTMudBlade
 
         public static async Task InvokeDownloadRateDialog(this IDialogService dialogService, IApiClient apiClient, long rate, IEnumerable<string> hashes)
         {
+            Func<long, string> labelFunc = v => v == Limits.NoLimit ? "No limit" : v.ToString();
+
             var parameters = new DialogParameters
             {
                 { nameof(SliderFieldDialog<long>.Value), rate },
                 { nameof(SliderFieldDialog<long>.Min), 0L },
                 { nameof(SliderFieldDialog<long>.Max), 100L },
+                { nameof(SingleFieldDialog<long>.LabelFunc), labelFunc }
             };
             var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Download Rate", parameters, FormDialogOptions);
 
@@ -232,7 +258,7 @@ namespace Lantean.QBTMudBlade
                 { nameof(SliderFieldDialog<long>.Value), rate },
                 { nameof(SliderFieldDialog<long>.Min), 0L },
                 { nameof(SliderFieldDialog<long>.Max), 100L },
-                { nameof(SliderFieldDialog<long>.Disabled), rate == -2 },
+                { nameof(SliderFieldDialog<long>.Disabled), rate == Limits.GlobalLimit },
             };
             var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Upload Rate", parameters, FormDialogOptions);
 
@@ -306,13 +332,13 @@ namespace Lantean.QBTMudBlade
             await Task.Delay(0);
         }
 
-        public static async Task ShowSubMenu(this IDialogService dialogService, IEnumerable<string> hashes, TorrentAction parent, MainData mainData, QBitTorrentClient.Models.Preferences? preferences)
+        public static async Task ShowSubMenu(this IDialogService dialogService, IEnumerable<string> hashes, TorrentAction parent, Dictionary<string, Torrent> torrents, QBitTorrentClient.Models.Preferences? preferences)
         {
             var parameters = new DialogParameters
             {
                 { nameof(SubMenuDialog.ParentAction), parent },
                 { nameof(SubMenuDialog.Hashes), hashes },
-                { nameof(SubMenuDialog.MainData), mainData },
+                { nameof(SubMenuDialog.Torrents), torrents },
                 { nameof(SubMenuDialog.Preferences), preferences },
             };
 

@@ -130,5 +130,33 @@ namespace Lantean.QBitTorrentClient
         {
             return apiClient.ReannounceTorrents(null, hash);
         }
+
+        public static async Task<IEnumerable<string>> RemoveUnusedCategories(this IApiClient apiClient)
+        {
+            var torrents = await apiClient.GetTorrentList();
+            var categories = await apiClient.GetAllCategories();
+
+            var selectedCategories = torrents.Select(t => t.Category).Distinct().ToList();
+
+            var unusedCategories = categories.Values.Select(v => v.Name).Except(selectedCategories).Where(v => v is not null).Select(v => v!).ToArray();
+
+            await apiClient.RemoveCategories(unusedCategories);
+
+            return unusedCategories;
+        }
+
+        public static async Task<IEnumerable<string>> RemoveUnusedTags(this IApiClient apiClient)
+        {
+            var torrents = await apiClient.GetTorrentList();
+            var tags = await apiClient.GetAllTags();
+
+            var selectedTags = torrents.Where(t => t.Tags is not null).SelectMany(t => t.Tags!).Distinct().ToList();
+
+            var unusedTags = tags.Except(selectedTags).ToArray();
+
+            await apiClient.DeleteTags(unusedTags);
+
+            return unusedTags;
+        }
     }
 }

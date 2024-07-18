@@ -13,7 +13,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         public TorrentAction? ParentAction { get; set; }
 
         [Parameter]
-        public MainData MainData { get; set; } = default!;
+        public Dictionary<string, Torrent> Torrents { get; set; } = default!;
 
         [Parameter]
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }

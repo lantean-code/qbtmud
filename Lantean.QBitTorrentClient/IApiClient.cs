@@ -150,7 +150,7 @@ namespace Lantean.QBitTorrentClient
 
         Task CreateTags(IEnumerable<string> tags);
 
-        Task DeleteTags(IEnumerable<string> tags);
+        Task DeleteTags(params string[] tags);
 
         Task SetAutomaticTorrentManagement(bool enable, bool? all = null, params string[] hashes);
 

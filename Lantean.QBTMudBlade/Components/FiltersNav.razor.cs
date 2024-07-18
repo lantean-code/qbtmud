@@ -1,6 +1,10 @@
 ﻿using Blazored.LocalStorage;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using MudBlazor;
+using System.Collections.Generic;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -10,6 +14,11 @@ namespace Lantean.QBTMudBlade.Components
         private const string _categorySelectionStorageKey = "FiltersNav.Selection.Category";
         private const string _tagSelectionStorageKey = "FiltersNav.Selection.Tag";
         private const string _trackerSelectionStorageKey = "FiltersNav.Selection.Tracker";
+
+        private const string _statusType = nameof(_statusType);
+        private const string _categoryType = nameof(_categoryType);
+        private const string _tagType = nameof(_tagType);
+        private const string _trackerType = nameof(_trackerType);
 
         private bool _statusExpanded = true;
         private bool _categoriesExpanded = true;
@@ -27,8 +36,17 @@ namespace Lantean.QBTMudBlade.Components
         [Inject]
         public ILocalStorageService LocalStorage { get; set; } = default!;
 
+        [Inject]
+        public IDialogService DialogService { get; set; } = default!;
+
+        [Inject]
+        public IApiClient ApiClient { get; set; } = default!;
+
         [CascadingParameter]
         public MainData? MainData { get; set; }
+
+        [CascadingParameter]
+        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         [Parameter]
         public EventCallback<string> CategoryChanged { get; set; }
@@ -42,13 +60,33 @@ namespace Lantean.QBTMudBlade.Components
         [Parameter]
         public EventCallback<string> TrackerChanged { get; set; }
 
-        public Dictionary<string, int> Tags => MainData?.TagState.ToDictionary(d => d.Key, d => d.Value.Count) ?? [];
+        protected Dictionary<string, int> Tags => GetTags();
 
-        public Dictionary<string, int> Categories => MainData?.CategoriesState.ToDictionary(d => d.Key, d => d.Value.Count) ?? [];
+        protected Dictionary<string, int> Categories => GetCategories();
 
-        public Dictionary<string, int> Trackers => MainData?.TrackersState.GroupBy(d => GetHostName(d.Key)).Select(l => new KeyValuePair<string, int>(GetHostName(l.First().Key), l.Sum(i => i.Value.Count))).ToDictionary(d => d.Key, d => d.Value) ?? [];
+        protected Dictionary<string, int> Trackers => GetTrackers();
 
-        public Dictionary<string, int> Statuses => MainData?.StatusState.ToDictionary(d => d.Key, d => d.Value.Count) ?? [];
+        protected Dictionary<string, int> Statuses => GetStatuses();
+
+        protected ContextMenu? StatusContextMenu { get; set; }
+
+        protected ContextMenu? CategoryContextMenu { get; set; }
+
+        protected ContextMenu? TagContextMenu { get; set; }
+
+        protected ContextMenu? TrackerContextMenu { get; set; }
+
+        protected string? ContextMenuStatus { get; set; }
+
+        protected bool IsCategoryTarget { get; set; }
+
+        protected string? ContextMenuCategory { get; set; }
+
+        protected bool IsTagTarget { get; set; }
+
+        protected string? ContextMenuTag { get; set; }
+
+        protected string? ContextMenuTracker { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
@@ -96,6 +134,28 @@ namespace Lantean.QBTMudBlade.Components
             }
         }
 
+        protected Task StatusOnContextMenu(MouseEventArgs args, string value)
+        {
+            return ShowStatusContextMenu(args, value);
+        }
+
+        protected Task StatusOnLongPress(LongPressEventArgs args, string value)
+        {
+            return ShowStatusContextMenu(args, value);
+        }
+
+        protected Task ShowStatusContextMenu(EventArgs args, string value)
+        {
+            if (StatusContextMenu is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            ContextMenuStatus = value;
+
+            return StatusContextMenu.OpenMenuAsync(args);
+        }
+
         protected async Task CategoryValueChanged(string value)
         {
             Category = value;
@@ -109,6 +169,29 @@ namespace Lantean.QBTMudBlade.Components
             {
                 await LocalStorage.RemoveItemAsync(_categorySelectionStorageKey);
             }
+        }
+
+        protected Task CategoryOnContextMenu(MouseEventArgs args, string value)
+        {
+            return ShowCategoryContextMenu(args, value);
+        }
+
+        protected Task CategoryOnLongPress(LongPressEventArgs args, string value)
+        {
+            return ShowCategoryContextMenu(args, value);
+        }
+
+        protected Task ShowCategoryContextMenu(EventArgs args, string value)
+        {
+            if (CategoryContextMenu is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            IsCategoryTarget = value != FilterHelper.CATEGORY_ALL && value != FilterHelper.CATEGORY_UNCATEGORIZED;
+            ContextMenuCategory = value;
+
+            return CategoryContextMenu.OpenMenuAsync(args);
         }
 
         protected async Task TagValueChanged(string value)
@@ -126,6 +209,29 @@ namespace Lantean.QBTMudBlade.Components
             }
         }
 
+        protected Task TagOnContextMenu(MouseEventArgs args, string value)
+        {
+            return ShowTagContextMenu(args, value);
+        }
+
+        protected Task TagOnLongPress(LongPressEventArgs args, string value)
+        {
+            return ShowTagContextMenu(args, value);
+        }
+
+        protected Task ShowTagContextMenu(EventArgs args, string value)
+        {
+            if (TagContextMenu is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            IsTagTarget = value != FilterHelper.TAG_ALL && value != FilterHelper.TAG_UNTAGGED;
+            ContextMenuTag = value;
+
+            return TagContextMenu.OpenMenuAsync(args);
+        }
+
         protected async Task TrackerValueChanged(string value)
         {
             Tracker = value;
@@ -141,7 +247,210 @@ namespace Lantean.QBTMudBlade.Components
             }
         }
 
-        protected static string GetHostName(string tracker)
+        protected Task TrackerOnContextMenu(MouseEventArgs args, string value)
+        {
+            return ShowTrackerContextMenu(args, value);
+        }
+
+        protected Task TrackerOnLongPress(LongPressEventArgs args, string value)
+        {
+            return ShowTrackerContextMenu(args, value);
+        }
+
+        protected Task ShowTrackerContextMenu(EventArgs args, string value)
+        {
+            if (TrackerContextMenu is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            ContextMenuTracker = value;
+
+            return TrackerContextMenu.OpenMenuAsync(args);
+        }
+
+        protected async Task AddCategory()
+        {
+            await DialogService.ShowAddCategoryDialog(ApiClient);
+        }
+
+        protected async Task EditCategory()
+        {
+            if (ContextMenuCategory is null)
+            {
+                return;
+            }
+
+            await DialogService.ShowEditCategoryDialog(ApiClient, ContextMenuCategory);
+        }
+
+        protected async Task RemoveCategory()
+        {
+            if (ContextMenuCategory is null)
+            {
+                return;
+            }
+
+            await ApiClient.RemoveCategories(ContextMenuCategory);
+
+            Categories.Remove(ContextMenuCategory);
+        }
+
+        protected async Task RemoveUnusedCategories()
+        {
+            var removedCategories = await ApiClient.RemoveUnusedCategories();
+
+            foreach (var removedCategory in removedCategories)
+            {
+                Categories.Remove(removedCategory);
+            }
+        }
+
+        protected async Task AddTag()
+        {
+            if (ContextMenuTag is null)
+            {
+                return;
+            }
+
+            await DialogService.ShowAddTagsDialog(ApiClient);
+        }
+
+        protected async Task RemoveTag()
+        {
+            if (ContextMenuTag is null)
+            {
+                return;
+            }
+
+            await ApiClient.DeleteTags(ContextMenuTag);
+
+            Tags.Remove(ContextMenuTag);
+        }
+
+        protected async Task RemoveUnusedTags()
+        {
+            var removedTags = await ApiClient.RemoveUnusedTags();
+
+            foreach (var removedTag in removedTags)
+            {
+                Tags.Remove(removedTag);
+            }
+        }
+
+        protected async Task ResumeTorrents(string type)
+        {
+            var torrents = GetAffectedTorrentHashes(type);
+
+            await ApiClient.ResumeTorrents(torrents);
+        }
+
+        protected async Task PauseTorrents(string type)
+        {
+            var torrents = GetAffectedTorrentHashes(type);
+
+            await ApiClient.PauseTorrents(torrents);
+        }
+
+        protected async Task RemoveTorrents(string type)
+        {
+            var torrents = GetAffectedTorrentHashes(type);
+
+            await DialogService.InvokeDeleteTorrentDialog(ApiClient, [.. torrents]);
+        }
+
+        private Dictionary<string, int> GetTags()
+        {
+            if (MainData is null)
+            {
+                return [];
+            }
+
+            return MainData.TagState.ToDictionary(d => d.Key, d => d.Value.Count);
+        }
+
+        private Dictionary<string, int> GetCategories()
+        {
+            if (MainData is null)
+            {
+                return [];
+            }
+
+            return MainData.CategoriesState.ToDictionary(d => d.Key, d => d.Value.Count);
+        }
+
+        private Dictionary<string, int> GetTrackers()
+        {
+            if (MainData is null)
+            {
+                return [];
+            }
+
+            return MainData.TrackersState
+                .GroupBy(d => GetHostName(d.Key))
+                .Select(l => new KeyValuePair<string, int>(GetHostName(l.First().Key), l.Sum(i => i.Value.Count)))
+                .ToDictionary(d => d.Key, d => d.Value);
+        }
+
+        private Dictionary<string, int> GetStatuses()
+        {
+            if (MainData is null)
+            {
+                return [];
+            }
+
+            return MainData.StatusState.ToDictionary(d => d.Key, d => d.Value.Count);
+        }
+
+        private List<string> GetAffectedTorrentHashes(string type)
+        {
+            if (MainData is null)
+            {
+                return [];
+            }
+
+            switch (type)
+            {
+                case _statusType:
+                    if (ContextMenuStatus is null)
+                    {
+                        return [];
+                    }
+
+                    var status = Enum.Parse<Status>(ContextMenuStatus);
+
+                    return MainData.Torrents.Where(t => FilterHelper.FilterStatus(t.Value, status)).Select(t => t.Value.Hash).ToList();
+
+                case _categoryType:
+                    if (ContextMenuCategory is null)
+                    {
+                        return [];
+                    }
+
+                    return MainData.Torrents.Where(t => FilterHelper.FilterCategory(t.Value, ContextMenuCategory, Preferences?.UseSubcategories ?? false)).Select(t => t.Value.Hash).ToList();
+
+                case _tagType:
+                    if (ContextMenuTag is null)
+                    {
+                        return [];
+                    }
+
+                    return MainData.Torrents.Where(t => FilterHelper.FilterTag(t.Value, ContextMenuTag)).Select(t => t.Value.Hash).ToList();
+
+                case _trackerType:
+                    if (ContextMenuTracker is null)
+                    {
+                        return [];
+                    }
+
+                    return MainData.Torrents.Where(t => FilterHelper.FilterTracker(t.Value, ContextMenuTracker)).Select(t => t.Value.Hash).ToList();
+
+                default:
+                    return [];
+            }
+        }
+
+        private static string GetHostName(string tracker)
         {
             try
             {

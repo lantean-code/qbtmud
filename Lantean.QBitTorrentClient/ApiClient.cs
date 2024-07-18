@@ -837,7 +837,7 @@ namespace Lantean.QBitTorrentClient
             response.EnsureSuccessStatusCode();
         }
 
-        public async Task DeleteTags(IEnumerable<string> tags)
+        public async Task DeleteTags(params string[] tags)
         {
             var content = new FormUrlEncodedBuilder()
                 .AddCommaSeparated("tags", tags)

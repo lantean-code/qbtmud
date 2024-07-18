@@ -11,7 +11,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         public MudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
-        public string Label { get; set; } = default!;
+        public string? Label { get; set; }
 
         [Parameter]
         public T Value { get; set; }
@@ -24,6 +24,15 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
 
         [Parameter]
         public bool Disabled { get; set; }
+
+        [Parameter]
+        public Func<T, string?>? LabelFunc { get; set; }
+
+        private string? GetLabel()
+        {
+            var label = LabelFunc?.Invoke(Value);
+            return label is null ? Label : label;
+        }
 
         protected void Cancel(MouseEventArgs args)
         {

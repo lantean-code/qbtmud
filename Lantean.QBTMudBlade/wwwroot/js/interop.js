@@ -13,7 +13,8 @@ window.qbt.triggerFileDownload = (url, fileName) => {
 window.qbt.getBoundingClientRect = (selector) => {
     const element = getElementBySelector(selector);
 
-    return element.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
+    return rect;
 }
 
 window.qbt.getInnerDimensions = (selector) => {
@@ -84,6 +85,21 @@ window.qbt.copyTextToClipboard = (text) => {
         return fallbackCopyTextToClipboard(text);
     }
     return navigator.clipboard.writeText(text);
+}
+
+window.qbt.clearSelection = () => {
+    if (window.getSelection) {
+        if (window.getSelection().empty) {
+            // Chrome
+            window.getSelection().empty();
+        } else if (window.getSelection().removeAllRanges) {
+            // Firefox
+            window.getSelection().removeAllRanges();
+        }
+    } else if (document.selection) {
+        // IE
+        document.selection.empty();
+    }
 }
 
 function fallbackCopyTextToClipboard(text) {

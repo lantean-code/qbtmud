@@ -43,5 +43,10 @@ namespace Lantean.QBTMudBlade.Interop
         {
             await runtime.InvokeVoidAsync("qbt.copyTextToClipboard", value);
         }
+
+        public static async Task ClearSelection(this IJSRuntime runtime)
+        {
+            await runtime.InvokeVoidAsync("qbt.clearSelection");
+        }
     }
 }

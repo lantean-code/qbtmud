@@ -73,6 +73,10 @@ else if (RenderType == RenderType.MenuWithoutActivator)
         <div style="width: 100%; height: 100%" @oncontextmenu="@(e => OverlayVisible = false)" @oncontextmenu:preventDefault></div>
     </MudOverlay>
 }
+else if (RenderType == RenderType.MenuItems)
+{
+    @MenuContents(Actions)
+}
 
 @code {
     private RenderFragment ToolbarContent

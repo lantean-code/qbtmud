@@ -44,10 +44,10 @@ namespace Lantean.QBTMudBlade.Components
         [Parameter]
         public RenderType RenderType { get; set; }
 
-        [CascadingParameter]
-        public MainData MainData { get; set; } = default!;
+        [Parameter, EditorRequired]
+        public Dictionary<string, Torrent> Torrents { get; set; } = default!;
 
-        [CascadingParameter]
+        [Parameter, EditorRequired]
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         [Parameter]
@@ -155,7 +155,7 @@ namespace Lantean.QBTMudBlade.Components
         protected async Task SetLocation()
         {
             string? savePath = null;
-            if (Hashes.Any() && MainData.Torrents.TryGetValue(Hashes.First(), out var torrent))
+            if (Hashes.Any() && Torrents.TryGetValue(Hashes.First(), out var torrent))
             {
                 savePath = torrent.SavePath;
             }
@@ -167,7 +167,7 @@ namespace Lantean.QBTMudBlade.Components
         {
             string? name = null;
             string hash = Hashes.First();
-            if (Hashes.Any() && MainData.Torrents.TryGetValue(hash, out var torrent))
+            if (Hashes.Any() && Torrents.TryGetValue(hash, out var torrent))
             {
                 name = torrent.Name;
             }
@@ -196,7 +196,7 @@ namespace Lantean.QBTMudBlade.Components
         {
             long downloadLimit = -1;
             string hash = Hashes.First();
-            if (Hashes.Any() && MainData.Torrents.TryGetValue(hash, out var torrent))
+            if (Hashes.Any() && Torrents.TryGetValue(hash, out var torrent))
             {
                 downloadLimit = torrent.UploadLimit;
             }
@@ -208,7 +208,7 @@ namespace Lantean.QBTMudBlade.Components
         {
             long uploadLimit = -1;
             string hash = Hashes.First();
-            if (Hashes.Any() && MainData.Torrents.TryGetValue(hash, out var torrent))
+            if (Hashes.Any() && Torrents.TryGetValue(hash, out var torrent))
             {
                 uploadLimit = torrent.UploadLimit;
             }
@@ -220,7 +220,7 @@ namespace Lantean.QBTMudBlade.Components
         {
             float ratioLimit = -1;
             string hash = Hashes.First();
-            if (Hashes.Any() && MainData.Torrents.TryGetValue(hash, out var torrent))
+            if (Hashes.Any() && Torrents.TryGetValue(hash, out var torrent))
             {
                 ratioLimit = torrent.RatioLimit;
             }
@@ -322,14 +322,14 @@ namespace Lantean.QBTMudBlade.Components
 
         protected async Task SubMenuTouch(TorrentAction action)
         {
-            await DialogService.ShowSubMenu(Hashes, action, MainData, Preferences);
+            await DialogService.ShowSubMenu(Hashes, action, Torrents, Preferences);
         }
 
         private IEnumerable<Torrent> GetTorrents()
         {
             foreach (var hash in Hashes)
             {
-                if (MainData.Torrents.TryGetValue(hash, out var torrent))
+                if (Torrents.TryGetValue(hash, out var torrent))
                 {
                     yield return torrent;
                 }
@@ -602,6 +602,8 @@ namespace Lantean.QBTMudBlade.Components
         Children,
 
         MenuWithoutActivator,
+
+        MenuItems,
     }
 
     public record TorrentAction

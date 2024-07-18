@@ -17,7 +17,10 @@ namespace Lantean.QBTMudBlade.Pages
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [CascadingParameter]
-        public MainData? MainData { get; set; }
+        public MainData MainData { get; set; } = default!;
+
+        [CascadingParameter]
+        public QBitTorrentClient.Models.Preferences Preferences { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }

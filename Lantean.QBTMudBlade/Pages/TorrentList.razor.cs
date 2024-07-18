@@ -29,6 +29,9 @@ namespace Lantean.QBTMudBlade.Pages
         [CascadingParameter]
         public IEnumerable<Torrent>? Torrents { get; set; }
 
+        [CascadingParameter]
+        public MainData MainData { get; set; } = default!;
+
         [CascadingParameter(Name = "SearchTermChanged")]
         public EventCallback<string> SearchTermChanged { get; set; }
 
@@ -49,6 +52,8 @@ namespace Lantean.QBTMudBlade.Pages
         protected TorrentActions? ContextMenuActions { get; set; }
 
         protected Torrent? ContextMenuItem { get; set; }
+
+        protected ContextMenu? ContextMenu { get; set; }
 
         protected void SelectedItemsChanged(HashSet<Torrent> selectedItems)
         {
@@ -131,24 +136,27 @@ namespace Lantean.QBTMudBlade.Pages
 
         protected Task TableDataContextMenu(TableDataContextMenuEventArgs<Torrent> eventArgs)
         {
-            return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs.ClientX, eventArgs.MouseEventArgs.ClientY);
+            return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
+            //return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs.ClientX, eventArgs.MouseEventArgs.ClientY);
         }
 
         protected Task TableDataLongPress(TableDataLongPressEventArgs<Torrent> eventArgs)
         {
-            return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs.ClientX, eventArgs.LongPressEventArgs.ClientY);
+            return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
+            //return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs.ClientX, eventArgs.LongPressEventArgs.ClientY);
         }
 
         protected async Task ShowContextMenu(Torrent? torrent, double x, double y)
         {
-            if (ContextMenuActions is null || ContextMenuActions.ActionsMenu is null)
-            {
-                return;
-            }
-
             if (torrent is not null)
             {
                 ContextMenuItem = torrent;
+            }
+
+            await JSRuntime.ClearSelection();
+            if (ContextMenuActions is null || ContextMenuActions.ActionsMenu is null)
+            {
+                return;
             }
 
             int? maxHeight = null;
@@ -169,7 +177,7 @@ namespace Lantean.QBTMudBlade.Pages
 
                 if ((y - 64 + contextMenuHeight) >= mainContentSize.Height)
                 {
-                    maxHeight = mainContentSize.Height - (int)y + 64;
+                    maxHeight = (int)mainContentSize.Height - (int)y + 64;
                 }
             }
 
@@ -185,6 +193,21 @@ namespace Lantean.QBTMudBlade.Pages
             };
 
             await ContextMenuActions.ActionsMenu.OpenMenuAsync(mouseEventArgs);
+        }
+
+        protected async Task ShowContextMenu(Torrent? torrent, EventArgs eventArgs)
+        {
+            if (torrent is not null)
+            {
+                ContextMenuItem = torrent;
+            }
+
+            if (ContextMenu is null)
+            {
+                return;
+            }
+
+            await ContextMenu.ToggleMenuAsync(eventArgs);
         }
 
         protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions.Where(c => c.Id != "#" || Preferences?.QueueingEnabled == true);

@@ -9,7 +9,7 @@
     }
     @if (Hash is not null)
     {
-        <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="@([Hash])" />
+        <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="@([Hash])" Torrents="MainData.Torrents" Preferences="Preferences" />
     }
     <MudDivider Vertical="true" />
     <MudText Class="pl-5 no-wrap">@Name</MudText>
