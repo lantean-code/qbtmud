@@ -2,6 +2,8 @@
 using Lantean.QBTMudBlade.Models;
 using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
+using System.Data;
 using System.Net;
 
 namespace Lantean.QBTMudBlade.Components
@@ -122,6 +124,26 @@ namespace Lantean.QBTMudBlade.Components
                 }
             }
         }
+
+        protected IEnumerable<ColumnDefinition<Peer>> Columns => ColumnsDefinitions.Where(c => c.Id != "country/region" || _showFlags == true);
+
+        public static List<ColumnDefinition<Peer>> ColumnsDefinitions { get; } =
+        [
+            new ColumnDefinition<Peer>("Country/Region", p => p.Country),
+            new ColumnDefinition<Peer>("IP", p => p.IPAddress),
+            new ColumnDefinition<Peer>("Port", p => p.Port),
+            new ColumnDefinition<Peer>("Connection", p => p.Connection),
+            new ColumnDefinition<Peer>("Flags", p => p.Flags),
+            new ColumnDefinition<Peer>("Client", p => p.Client),
+            new ColumnDefinition<Peer>("Progress", p => p.Progress, p => DisplayHelpers.Percentage(p.Progress)),
+            new ColumnDefinition<Peer>("Download Speed", p => p.DownloadSpeed, p => DisplayHelpers.Speed(p.DownloadSpeed)),
+            new ColumnDefinition<Peer>("Upload Speed", p => p.UploadSpeed, p => DisplayHelpers.Speed(p.UploadSpeed)),
+            new ColumnDefinition<Peer>("Downloaded", p => p.Downloaded, p => @DisplayHelpers.Size(p.Downloaded)),
+            new ColumnDefinition<Peer>("Uploaded", p => p.Uploaded, p => @DisplayHelpers.Size(p.Uploaded)),
+            new ColumnDefinition<Peer>("Relevance", p => p.Relevance, p => @DisplayHelpers.Percentage(p.Relevance)),
+            new ColumnDefinition<Peer>("Files", p => p.Files, p => p.Files),
+        ];
+
 
         protected virtual async Task DisposeAsync(bool disposing)
         {

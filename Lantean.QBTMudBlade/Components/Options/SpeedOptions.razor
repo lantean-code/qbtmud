@@ -9,10 +9,10 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Upload" Value="UpLimit" ValueChanged="UpLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="UpLimitValidation" />
+                <MudNumericField T="int" Label="Upload" Value="UpLimit" ValueChanged="UpLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="UpLimitValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Download" Value="DlLimit" ValueChanged="DlLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="DlLimitValidation" />
+                <MudNumericField T="int" Label="Download" Value="DlLimit" ValueChanged="DlLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="DlLimitValidation" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -27,10 +27,10 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Upload" Value="AltUpLimit" ValueChanged="AltUpLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltUpLimitValidation" />
+                <MudNumericField T="int" Label="Upload" Value="AltUpLimit" ValueChanged="AltUpLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltUpLimitValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Download" Value="AltDlLimit" ValueChanged="AltDlLimitChanged" Min="0" ShrinkLabel Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltDlLimitValidation" />
+                <MudNumericField T="int" Label="Download" Value="AltDlLimit" ValueChanged="AltDlLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltDlLimitValidation" />
             </MudItem>
             <MudItem xs="12">
                 <MudFieldSwitch Label="Schedule the use of alternative rate limits" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" />
@@ -42,7 +42,7 @@
                 <MudTimePicker Label="To" Editable="true" Time="ScheduleTo" TimeChanged="ScheduleToChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Value="SchedulerDays" ValueChanged="SchedulerDaysChanged" Disabled="@(!SchedulerEnabled)" ShrinkLabel Variant="Variant.Outlined">
+                <MudSelect T="int" Value="SchedulerDays" ValueChanged="SchedulerDaysChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined">
                     <MudSelectItem Value="0">Every day</MudSelectItem>
                     <MudSelectItem Value="1">Weekdays</MudSelectItem>
                     <MudSelectItem Value="2">Weekends</MudSelectItem>

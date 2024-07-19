@@ -313,7 +313,13 @@ namespace Lantean.QBTMudBlade.Components
                 return;
             }
 
-            await DialogService.ShowAddTagsDialog(ApiClient);
+            var tags = await DialogService.ShowAddTagsDialog();
+            if (tags is null || tags.Count == 0)
+            {
+                return;
+            }
+
+            await ApiClient.CreateTags(tags);
         }
 
         protected async Task RemoveTag()

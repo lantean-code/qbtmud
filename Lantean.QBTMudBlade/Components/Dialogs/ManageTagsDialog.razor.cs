@@ -101,7 +101,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
 
         protected async Task AddTag()
         {
-            var addedTags = await DialogService.ShowAddTagsDialog(ApiClient);
+            var addedTags = await DialogService.ShowAddTagsDialog();
 
             if (addedTags is null || addedTags.Count == 0)
             {

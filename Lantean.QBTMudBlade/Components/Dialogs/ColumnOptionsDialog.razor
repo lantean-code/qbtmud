@@ -12,7 +12,7 @@
                             <MudCheckBox T="bool" ValueChanged="@(c => SetSelected(c, column.Id))" Label="@column.Header" LabelPosition="LabelPosition.End" Value="@(SelectedColumnsInternal.Contains(column.Id))" />
                     </MudItem>
                     <MudItem xs="3">
-                        <MudTextField T="string" Value="@(GetValue(column.Width, column.Id))" ValueChanged="@(c => SetWidth(c, column.Id))" Label="Width" Variant="Variant.Text" HelperText="px" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.WidthNormal" ShrinkLabel="true" OnAdornmentClick="@(c => SetWidth("auto", column.Id))" />
+                        <MudTextField T="string" Value="@(GetValue(column.Width, column.Id))" ValueChanged="@(c => SetWidth(c, column.Id))" Label="Width" Variant="Variant.Text" HelperText="px" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.WidthNormal" OnAdornmentClick="@(c => SetWidth("auto", column.Id))" />
                     </MudItem>
                     <MudItem xs="1">
                         <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowUp" Disabled="@(index == 0)" OnClick="@(e => MoveUp(index))" />

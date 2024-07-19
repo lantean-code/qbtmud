@@ -1,42 +1,20 @@
-﻿<MudTable 
-    T="Lantean.QBitTorrentClient.Models.TorrentTrackers"
-    Items="Trackers"
-    Hover="true"
-    FixedHeader="true" 
-    HeaderClass="table-head-bordered" 
-    Dense="true" 
-    Breakpoint="Breakpoint.None" 
-    Bordered="true" 
-    Square="true" 
-    LoadingProgressColor="Color.Info" 
-    HorizontalScrollbar="true" 
-    Virtualize="true"
-    AllowUnsorted="false"
-    SelectOnRowClick="false"
-    Class="details-list">
-    <HeaderContent>
-        <MudTh>Tier</MudTh>
-        <MudTh>URL</MudTh>
-        <MudTh>Status</MudTh>
-        <MudTh>Peers</MudTh>
-        <MudTh>Seeds</MudTh>
-        <MudTh>Leeches</MudTh>
-        <MudTh>Times Downloaded</MudTh>
-        <MudTh>Message</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Tier">
-            @if (context.Tier >= 0)
-            {
-                <text>@context.Tier</text>
-            }
-        </MudTd>
-        <MudTd DataLabel="URL">@context.Url</MudTd>
-        <MudTd DataLabel="Status">@context.Status</MudTd>
-        <MudTd DataLabel="Peers">@context.Peers</MudTd>
-        <MudTd DataLabel="Seeds">@context.Seeds</MudTd>
-        <MudTd DataLabel="Leeches">@context.Leeches</MudTd>
-        <MudTd DataLabel="Times Downloaded">@context.Downloads</MudTd>
-        <MudTd DataLabel="Message">@context.Message</MudTd>
-    </RowTemplate>
-</MudTable>
+﻿<ContextMenu @ref="ContextMenu" Dense="true">
+    <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddTracker">Add trackers</MudMenuItem>
+    @if (ContextMenuItem is not null)
+    {
+        <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="EditTracker">Edit tracker URL</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveTracker">Remove tracker</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.FolderCopy" IconColor="Color.Info" OnClick="CopyTrackerUrl">Copy tracker url</MudMenuItem>
+    }
+</ContextMenu>
+
+<DynamicTable T="Lantean.QBitTorrentClient.Models.TorrentTracker"
+              ColumnDefinitions="Columns"
+              Items="Trackers"
+              MultiSelection="false"
+              PreSorted="true"
+              SortDirectionChanged="SortDirectionChanged"
+              SortColumnChanged="SortColumnChanged"
+              OnTableDataLongPress="TableDataLongPress"
+              OnTableDataContextMenu="TableDataContextMenu"
+              Class="details-list" />

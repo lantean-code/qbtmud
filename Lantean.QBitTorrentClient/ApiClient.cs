@@ -357,13 +357,13 @@ namespace Lantean.QBitTorrentClient
             return await GetJson<TorrentProperties>(response.Content);
         }
 
-        public async Task<IReadOnlyList<TorrentTrackers>> GetTorrentTrackers(string hash)
+        public async Task<IReadOnlyList<TorrentTracker>> GetTorrentTrackers(string hash)
         {
             var response = await _httpClient.GetAsync($"torrents/trackers?hash={hash}");
 
             response.EnsureSuccessStatusCode();
 
-            return await GetJsonList<TorrentTrackers>(response.Content);
+            return await GetJsonList<TorrentTracker>(response.Content);
         }
 
         public async Task<IReadOnlyList<WebSeed>> GetTorrentWebSeeds(string hash)

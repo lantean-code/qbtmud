@@ -2,10 +2,10 @@
 
 namespace Lantean.QBitTorrentClient.Models
 {
-    public record TorrentTrackers
+    public record TorrentTracker
     {
         [JsonConstructor]
-        public TorrentTrackers(
+        public TorrentTracker(
             string url,
             TrackerStatus status,
             int tier,

@@ -157,9 +157,24 @@ namespace Lantean.QBTMudBlade
             return updatedCategory.Name;
         }
 
-        public static async Task<HashSet<string>?> ShowAddTagsDialog(this IDialogService dialogService, IApiClient apiClient)
+        public static async Task<HashSet<string>?> ShowAddTagsDialog(this IDialogService dialogService)
         {
             var reference = await dialogService.ShowAsync<AddTagDialog>("Add Tags", NonBlurFormDialogOptions);
+            var dialogResult = await reference.Result;
+
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+            {
+                return null;
+            }
+
+            var tags = (HashSet<string>)dialogResult.Data;
+
+            return tags;
+        }
+
+        public static async Task<HashSet<string>?> ShowAddTrackersDialog(this IDialogService dialogService)
+        {
+            var reference = await dialogService.ShowAsync<AddTrackerDialog>("Add Tags", NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
 
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)

@@ -16,10 +16,10 @@
         <EditForm Model="Model" OnValidSubmit="DoSearch">
             <MudGrid>
                 <MudItem xs="12" md="4">
-                    <MudTextField T="string" Label="Criteria" @bind-Value="Model.SearchText" ShrinkLabel Variant="Variant.Outlined" />
+                    <MudTextField T="string" Label="Criteria" @bind-Value="Model.SearchText" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="2" md="3">
-                    <MudSelect T="string" Label="Categories" @bind-Value="Model.SelectedCategory" ShrinkLabel Variant="Variant.Outlined">
+                    <MudSelect T="string" Label="Categories" @bind-Value="Model.SelectedCategory" Variant="Variant.Outlined">
                         @foreach (var (value, name) in Categories)
                         {
                             <MudSelectItem Value="value">@name</MudSelectItem>
@@ -31,7 +31,7 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="2" md="3">
-                    <MudSelect T="string" Label="Plugins" @bind-Value="Model.SelectedPlugin" ShrinkLabel Variant="Variant.Outlined">
+                    <MudSelect T="string" Label="Plugins" @bind-Value="Model.SelectedPlugin" Variant="Variant.Outlined">
                         <MudSelectItem Value="@("all")">All</MudSelectItem>
                         <MudDivider />
                         @foreach (var (value, name) in Plugins)

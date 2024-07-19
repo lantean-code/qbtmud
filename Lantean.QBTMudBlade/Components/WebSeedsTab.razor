@@ -1,23 +1,5 @@
-﻿<MudTable
-    T="Lantean.QBitTorrentClient.Models.WebSeed"
-    Items="WebSeeds"
-    Hover="true"
-    FixedHeader="true" 
-    HeaderClass="table-head-bordered" 
-    Dense="true" 
-    Breakpoint="Breakpoint.None" 
-    Bordered="true" 
-    Square="true" 
-    LoadingProgressColor="Color.Info" 
-    HorizontalScrollbar="true" 
-    Virtualize="true"
-    AllowUnsorted="false"
-    SelectOnRowClick="false"
-    Class="details-list">
-    <HeaderContent>
-        <MudTh>URL</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Files">@context.Url</MudTd>
-    </RowTemplate>
-</MudTable>
+﻿<DynamicTable T="Lantean.QBitTorrentClient.Models.WebSeed"
+              ColumnDefinitions="Columns"
+              Items="WebSeeds"
+              MultiSelection="false"
+              Class="details-list" />

@@ -78,7 +78,7 @@ namespace Lantean.QBitTorrentClient
 
         Task<TorrentProperties> GetTorrentProperties(string hash);
 
-        Task<IReadOnlyList<TorrentTrackers>> GetTorrentTrackers(string hash);
+        Task<IReadOnlyList<TorrentTracker>> GetTorrentTrackers(string hash);
 
         Task<IReadOnlyList<WebSeed>> GetTorrentWebSeeds(string hash);
 

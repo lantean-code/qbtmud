@@ -49,8 +49,6 @@ namespace Lantean.QBTMudBlade.Pages
 
         protected DynamicTable<Torrent>? Table { get; set; }
 
-        protected TorrentActions? ContextMenuActions { get; set; }
-
         protected Torrent? ContextMenuItem { get; set; }
 
         protected ContextMenu? ContextMenu { get; set; }
@@ -137,62 +135,11 @@ namespace Lantean.QBTMudBlade.Pages
         protected Task TableDataContextMenu(TableDataContextMenuEventArgs<Torrent> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
-            //return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs.ClientX, eventArgs.MouseEventArgs.ClientY);
         }
 
         protected Task TableDataLongPress(TableDataLongPressEventArgs<Torrent> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
-            //return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs.ClientX, eventArgs.LongPressEventArgs.ClientY);
-        }
-
-        protected async Task ShowContextMenu(Torrent? torrent, double x, double y)
-        {
-            if (torrent is not null)
-            {
-                ContextMenuItem = torrent;
-            }
-
-            await JSRuntime.ClearSelection();
-            if (ContextMenuActions is null || ContextMenuActions.ActionsMenu is null)
-            {
-                return;
-            }
-
-            int? maxHeight = null;
-
-            var mainContentSize = await JSRuntime.GetInnerDimensions(".mud-main-content");
-            var contextMenuHeight = ContextMenuActions.CalculateMenuHeight();
-
-            // the bottom position of the window will be rendered off screen
-            if ((y - 64 + contextMenuHeight) >= (mainContentSize.Height))
-            {
-                // adjust the top of the context menu
-                var overshoot = Math.Abs(mainContentSize.Height -  (y + contextMenuHeight));
-                y -= overshoot;
-                if (y < 70)
-                {
-                    y = 70;
-                }
-
-                if ((y - 64 + contextMenuHeight) >= mainContentSize.Height)
-                {
-                    maxHeight = (int)mainContentSize.Height - (int)y + 64;
-                }
-            }
-
-#pragma warning disable BL0005 // Component parameter should not be set outside of its component.
-            ContextMenuActions.ActionsMenu.MaxHeight = maxHeight;
-#pragma warning restore BL0005 // Component parameter should not be set outside of its component.
-
-            // emulate mouseeventargs for MudBlazor
-            var mouseEventArgs = new MouseEventArgs
-            {
-                OffsetX = x,
-                OffsetY = y,
-            };
-
-            await ContextMenuActions.ActionsMenu.OpenMenuAsync(mouseEventArgs);
         }
 
         protected async Task ShowContextMenu(Torrent? torrent, EventArgs eventArgs)

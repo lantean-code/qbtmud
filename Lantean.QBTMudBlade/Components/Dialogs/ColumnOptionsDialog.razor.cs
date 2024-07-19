@@ -22,6 +22,8 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
 
         protected HashSet<string> SelectedColumnsInternal { get; set; } = [];
 
+        protected Dictionary<string, int?> WidthsInternal { get; set; } = [];
+
         protected override void OnParametersSet()
         {
             if (SelectedColumnsInternal.Count == 0)
@@ -39,6 +41,14 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
                     {
                         SelectedColumns.Add(column.Id);
                     }
+                }
+            }
+
+            if (WidthsInternal.Count == 0)
+            {
+                foreach (var width in Widths)
+                {
+                    WidthsInternal[width.Key] = width.Value;
                 }
             }
         }
@@ -64,22 +74,22 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             {
                 if (width == defaultWidth)
                 {
-                    Widths.Remove(id);
+                    WidthsInternal.Remove(id);
                 }
                 else
                 {
-                    Widths[id] = width;
+                    WidthsInternal[id] = width;
                 }
             }
             else
             {
                 if (defaultWidth is null)
                 {
-                    Widths.Remove(id);
+                    WidthsInternal.Remove(id);
                 }
                 else
                 {
-                    Widths[id] = null;
+                    WidthsInternal[id] = null;
                 }
             }
         }
@@ -106,7 +116,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
 
         protected string GetValue(int? value, string columnId)
         {
-            if (Widths.TryGetValue(columnId, out var newWidth))
+            if (WidthsInternal.TryGetValue(columnId, out var newWidth))
             {
                 value = newWidth;
             }
@@ -131,7 +141,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
 
         protected void Submit(MouseEventArgs args)
         {
-            MudDialog.Close(DialogResult.Ok((SelectedColumnsInternal, Widths)));
+            MudDialog.Close(DialogResult.Ok((SelectedColumnsInternal, WidthsInternal)));
         }
     }
 }

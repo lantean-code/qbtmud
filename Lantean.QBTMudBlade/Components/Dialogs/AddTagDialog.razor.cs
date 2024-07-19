@@ -34,6 +34,11 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             Tag = tag;
         }
 
+        protected void DeleteTag(string tag)
+        {
+            Tags.Remove(tag);
+        }
+
         protected void Cancel()
         {
             MudDialog.Cancel();

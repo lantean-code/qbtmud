@@ -3,6 +3,7 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using MudBlazor;
 using MudBlazor.Services;
 
 namespace Lantean.QBTMudBlade
@@ -48,6 +49,7 @@ namespace Lantean.QBTMudBlade
             builder.Logging.SetMinimumLevel(LogLevel.Error);
 #endif
 
+            MudGlobal.InputDefaults.ShrinkLabel = true;
             await builder.Build().RunAsync();
         }
     }

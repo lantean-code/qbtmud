@@ -89,5 +89,12 @@ namespace Lantean.QBTMudBlade.Components
 
             await InvokeAsync(StateHasChanged);
         }
+
+        protected IEnumerable<ColumnDefinition<WebSeed>> Columns => ColumnsDefinitions;
+
+        public static List<ColumnDefinition<WebSeed>> ColumnsDefinitions { get; } =
+        [
+            new ColumnDefinition<WebSeed>("URL", w => w.Url, w => w.Url),
+        ];
     }
 }

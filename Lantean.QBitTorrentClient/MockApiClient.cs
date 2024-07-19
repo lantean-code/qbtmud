@@ -209,7 +209,7 @@ namespace Lantean.QBitTorrentClient
             return _apiClient.GetTorrentProperties(hash);
         }
 
-        public Task<IReadOnlyList<TorrentTrackers>> GetTorrentTrackers(string hash)
+        public Task<IReadOnlyList<TorrentTracker>> GetTorrentTrackers(string hash)
         {
             return _apiClient.GetTorrentTrackers(hash);
         }
