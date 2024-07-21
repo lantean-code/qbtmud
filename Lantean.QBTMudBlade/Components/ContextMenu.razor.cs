@@ -82,18 +82,6 @@ namespace Lantean.QBTMudBlade.Components
         }
 
         /// <summary>
-        /// Closes the menu.
-        /// </summary>
-        public new Task CloseMenuAsync()
-        {
-            _open = false;
-            _popoverStyle = null;
-            StateHasChanged();
-
-            return OpenChanged.InvokeAsync(_open);
-        }
-
-        /// <summary>
         /// Opens the menu.
         /// </summary>
         /// <param name="args">
