@@ -1,8 +1,8 @@
-﻿<ContextMenu @ref="StatusContextMenu" Dense="true" InsideDrawer="true">
+﻿<ContextMenu @ref="StatusContextMenu" Dense="true" AdjustmentY="-60">
     @TorrentControls(_statusType)
 </ContextMenu>
 
-<ContextMenu @ref="CategoryContextMenu" Dense="true" InsideDrawer="true">
+<ContextMenu @ref="CategoryContextMenu" Dense="true" AdjustmentY="-60">
     <MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddCategory">Add category</MudMenuItem>
     @if (IsCategoryTarget)
     {
@@ -14,7 +14,7 @@
     @TorrentControls(_categoryType)
 </ContextMenu>
 
-<ContextMenu @ref="TagContextMenu" Dense="true" InsideDrawer="true">
+<ContextMenu @ref="TagContextMenu" Dense="true" AdjustmentY="-60">
     <MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddTag">Add tag</MudMenuItem>
     @if (IsTagTarget)
     {
@@ -25,7 +25,7 @@
     @TorrentControls(_tagType)
 </ContextMenu>
 
-<ContextMenu @ref="TrackerContextMenu" Dense="true" InsideDrawer="true">
+<ContextMenu @ref="TrackerContextMenu" Dense="true" AdjustmentY="-60">
     <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedCategories">Remove tracker</MudMenuItem>
     <MudDivider />
     @TorrentControls(_trackerType)
@@ -36,25 +36,25 @@
         @foreach (var (status, count) in Statuses)
         {
             var (icon, color) = DisplayHelpers.GetStatusIcon(status);
-            <FakeNavLink Class="filter-menu-item" Active="@(Status == status)" Icon="@icon" IconColor="@color" OnClick="@(e => StatusValueChanged(status))" OnContextMenu="@(e => StatusOnContextMenu(e, status))" OnLongPress="@(e => StatusOnLongPress(e, status))">@($"{status.GetStatusName()} ({count})")</FakeNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Status == status)" Icon="@icon" IconColor="@color" OnClick="@(e => StatusValueChanged(status))" OnContextMenu="@(e => StatusOnContextMenu(e, status))" OnLongPress="@(e => StatusOnLongPress(e, status))">@($"{status.GetStatusName()} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
     <MudNavGroup Title="Categories" @bind-Expanded="_categoriesExpanded">
         @foreach (var (category, count) in Categories)
         {
-            <FakeNavLink Class="filter-menu-item" Active="@(Category == category)" Icon="@Icons.Material.Filled.List" IconColor="Color.Info" OnClick="@(e => CategoryValueChanged(category))" OnContextMenu="@(e => CategoryOnContextMenu(e, category))" OnLongPress="@(e => CategoryOnLongPress(e, category))">@($"{category} ({count})")</FakeNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Category == category)" Icon="@Icons.Material.Filled.List" IconColor="Color.Info" OnClick="@(e => CategoryValueChanged(category))" OnContextMenu="@(e => CategoryOnContextMenu(e, category))" OnLongPress="@(e => CategoryOnLongPress(e, category))">@($"{category} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
     <MudNavGroup Title="Tags" @bind-Expanded="_tagsExpanded">
         @foreach (var (tag, count) in Tags)
         {
-            <FakeNavLink Class="filter-menu-item" Active="@(Tag == tag)" Icon="@Icons.Material.Filled.Label" IconColor="Color.Info" OnClick="@(e => TagValueChanged(tag))" OnContextMenu="@(e => TagOnContextMenu(e, tag))" OnLongPress="@(e => TagOnLongPress(e, tag))">@($"{tag} ({count})")</FakeNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Tag == tag)" Icon="@Icons.Material.Filled.Label" IconColor="Color.Info" OnClick="@(e => TagValueChanged(tag))" OnContextMenu="@(e => TagOnContextMenu(e, tag))" OnLongPress="@(e => TagOnLongPress(e, tag))">@($"{tag} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
     <MudNavGroup Title="Trackers" @bind-Expanded="_trackersExpanded">
         @foreach (var (tracker, count) in Trackers)
         {
-            <FakeNavLink Class="filter-menu-item" Active="@(Tracker == tracker)" Icon="@Icons.Material.Filled.PinDrop" IconColor="Color.Info" OnClick="@(e => TrackerValueChanged(tracker))" OnContextMenu="@(e => TrackerOnContextMenu(e, tracker))" OnLongPress="@(e => TrackerOnLongPress(e, tracker))">@($"{tracker} ({count})")</FakeNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Tracker == tracker)" Icon="@Icons.Material.Filled.PinDrop" IconColor="Color.Info" OnClick="@(e => TrackerValueChanged(tracker))" OnContextMenu="@(e => TrackerOnContextMenu(e, tracker))" OnLongPress="@(e => TrackerOnLongPress(e, tracker))">@($"{tracker} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
 </MudNavMenu>

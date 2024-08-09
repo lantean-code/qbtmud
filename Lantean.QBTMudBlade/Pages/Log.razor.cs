@@ -1,5 +1,7 @@
 ﻿using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMudBlade.Components.UI;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -36,6 +38,8 @@ namespace Lantean.QBTMudBlade.Pages
         protected List<QBitTorrentClient.Models.Log>? Results { get; private set; }
 
         protected MudSelect<string>? CategoryMudSelect { get; set; }
+
+        protected DynamicTable<QBitTorrentClient.Models.Log>? Table { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
@@ -154,5 +158,14 @@ namespace Lantean.QBTMudBlade.Pages
             }
         }
 
+        protected IEnumerable<ColumnDefinition<QBitTorrentClient.Models.Log>> Columns => ColumnsDefinitions;
+
+        public static List<ColumnDefinition<QBitTorrentClient.Models.Log>> ColumnsDefinitions { get; } =
+        [
+            new ColumnDefinition<QBitTorrentClient.Models.Log>("Id", l => l.Id),
+            new ColumnDefinition<QBitTorrentClient.Models.Log>("Message", l => l.Message),
+            new ColumnDefinition<QBitTorrentClient.Models.Log>("Timestamp", l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp)),
+            new ColumnDefinition<QBitTorrentClient.Models.Log>("Log type", l => l.Type),
+        ];
     }
 }

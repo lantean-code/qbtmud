@@ -9,13 +9,13 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Enable DHT (decentralized network) to find more peers" Value="Dht" ValueChanged="DhtChanged" />
+                <FieldSwitch Label="Enable DHT (decentralized network) to find more peers" Value="Dht" ValueChanged="DhtChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Enable Peer Exchange (PeX) to find more peers" Value="Pex" ValueChanged="PexChanged" />
+                <FieldSwitch Label="Enable Peer Exchange (PeX) to find more peers" Value="Pex" ValueChanged="PexChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Enable Local Peer Discovery to find more peers" Value="Lsd" ValueChanged="LsdChanged" />
+                <FieldSwitch Label="Enable Local Peer Discovery to find more peers" Value="Lsd" ValueChanged="LsdChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="int" Label="Encryption mode" Value="Encryption" ValueChanged="EncryptionChanged" Variant="Variant.Outlined">
@@ -25,7 +25,7 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="6">
-                <MudFieldSwitch Label="Enable anonymous mode" Value="AnonymousMode" ValueChanged="AnonymousModeChanged" />
+                <FieldSwitch Label="Enable anonymous mode" Value="AnonymousMode" ValueChanged="AnonymousModeChanged" />
             </MudItem>
             <MudItem xs="6">
                 <MudLink Href="https://github.com/qbittorrent/qBittorrent/wiki/Anonymous-Mode" Underline="Underline.Always" Target="https://github.com/qbittorrent/qBittorrent/wiki/Anonymous-Mode">More information</MudLink>
@@ -53,7 +53,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Queueing enabled" Value="QueueingEnabled" ValueChanged="QueueingEnabledChanged" />
+                <FieldSwitch Label="Queueing enabled" Value="QueueingEnabled" ValueChanged="QueueingEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="Maximum active downloads" Value="MaxActiveDownloads" ValueChanged="MaxActiveDownloadsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" Validation="MaxActiveDownloadsValidation" />
@@ -65,7 +65,7 @@
                 <MudNumericField T="int" Label="Maximum active torrents" Value="MaxActiveTorrents" ValueChanged="MaxActiveTorrentsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" Validation="MaxActiveTorrentsValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Do not count slow torrents in these limits" Value="DontCountSlowTorrents" ValueChanged="DontCountSlowTorrentsChanged" Disabled="@(!QueueingEnabled)" />
+                <FieldSwitch Label="Do not count slow torrents in these limits" Value="DontCountSlowTorrents" ValueChanged="DontCountSlowTorrentsChanged" Disabled="@(!QueueingEnabled)" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="Download rate threshold" Value="SlowTorrentDlRateThreshold" ValueChanged="SlowTorrentDlRateThresholdChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" Validation="SlowTorrentDlRateThresholdValidation" />
@@ -89,19 +89,19 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="3">
-                <MudFieldSwitch Label="When ratio reaches" Value="MaxRatioEnabled" ValueChanged="MaxRatioEnabledChanged" />
+                <FieldSwitch Label="When ratio reaches" Value="MaxRatioEnabled" ValueChanged="MaxRatioEnabledChanged" />
             </MudItem>
             <MudItem xs="9">
                 <MudNumericField T="int" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(!MaxRatioEnabled)" Min="0" Max="9998" Variant="Variant.Outlined" Validation="MaxRatioValidation" />
             </MudItem>
             <MudItem xs="3">
-                <MudFieldSwitch Label="When total seeding time reaches" Value="MaxSeedingTimeEnabled" ValueChanged="MaxSeedingTimeEnabledChanged" />
+                <FieldSwitch Label="When total seeding time reaches" Value="MaxSeedingTimeEnabled" ValueChanged="MaxSeedingTimeEnabledChanged" />
             </MudItem>
             <MudItem xs="9">
                 <MudNumericField T="int" Label="minutes" Value="MaxSeedingTime" ValueChanged="MaxSeedingTimeChanged" Disabled="@(!MaxSeedingTimeEnabled)" Min="0" Max="525600" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="minutes" Validation="MaxSeedingTimeValidation" />
             </MudItem>
             <MudItem xs="3">
-                <MudFieldSwitch Label="When inactive seeding time reaches" Value="MaxInactiveSeedingTimeEnabled" ValueChanged="MaxInactiveSeedingTimeEnabledChanged" />
+                <FieldSwitch Label="When inactive seeding time reaches" Value="MaxInactiveSeedingTimeEnabled" ValueChanged="MaxInactiveSeedingTimeEnabledChanged" />
             </MudItem>
             <MudItem xs="9">
                 <MudNumericField T="int" Label="minutes" Value="MaxInactiveSeedingTime" ValueChanged="MaxInactiveSeedingTimeChanged" Disabled="@(!MaxInactiveSeedingTimeEnabled)" Min="0" Max="525600" Variant="Variant.Outlined" Validation="MaxInactiveSeedingTimeValidation" />
@@ -127,7 +127,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Automatically add these trackers to new downloads" Value="AddTrackersEnabled" ValueChanged="AddTrackersEnabledChanged" />
+                <FieldSwitch Label="Automatically add these trackers to new downloads" Value="AddTrackersEnabled" ValueChanged="AddTrackersEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="Trackers" Value="AddTrackers" ValueChanged="AddTrackersChanged" Lines="5" Variant="Variant.Outlined" />

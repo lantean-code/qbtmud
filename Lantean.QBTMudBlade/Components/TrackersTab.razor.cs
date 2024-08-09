@@ -1,5 +1,6 @@
 ﻿using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMudBlade.Components.UI;
 using Lantean.QBTMudBlade.Interop;
 using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components;
@@ -16,6 +17,9 @@ namespace Lantean.QBTMudBlade.Components
 
         private string? _sortColumn;
         private SortDirection _sortDirection;
+
+        private const string _toolbar = nameof(_toolbar);
+        private const string _context = nameof(_context);
 
         [Parameter, EditorRequired]
         public string? Hash { get; set; }
@@ -44,7 +48,11 @@ namespace Lantean.QBTMudBlade.Components
 
         protected TorrentTracker? ContextMenuItem { get; set; }
 
+        protected TorrentTracker? SelectedItem { get; set; }
+
         protected ContextMenu? ContextMenu { get; set; }
+
+        protected DynamicTable<TorrentTracker>? Table { get; set; }
 
         protected override async Task OnParametersSetAsync()
         {
@@ -102,6 +110,16 @@ namespace Lantean.QBTMudBlade.Components
             StateHasChanged();
         }
 
+        protected async Task ColumnOptions()
+        {
+            if (Table is null)
+            {
+                return;
+            }
+
+            await Table.ShowColumnOptionsDialog();
+        }
+
         protected Task TableDataContextMenu(TableDataContextMenuEventArgs<TorrentTracker> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
@@ -131,6 +149,11 @@ namespace Lantean.QBTMudBlade.Components
             await ContextMenu.ToggleMenuAsync(eventArgs);
         }
 
+        protected void SelectedItemChanged(TorrentTracker torrentTracker)
+        {
+            SelectedItem = torrentTracker;
+        }
+
         protected async Task AddTracker()
         {
             if (Hash is null)
@@ -147,34 +170,69 @@ namespace Lantean.QBTMudBlade.Components
             await ApiClient.AddTrackersToTorrent(Hash, trackers);
         }
 
-        protected async Task EditTracker()
+        protected Task EditTrackerToolbar()
         {
-            if (Hash is null || ContextMenuItem is null)
-            {
-                return;
-            }
-
-            await DialogService.ShowSingleFieldDialog("Edit Tracker", "Tracker URL", ContextMenuItem.Url, async (value) => await ApiClient.EditTracker(Hash, ContextMenuItem.Url, value));
+            return EditTracker(SelectedItem);
         }
 
-        protected async Task RemoveTracker()
+        protected Task EditTrackerContextMenu()
         {
-            if (Hash is null || ContextMenuItem is null)
-            {
-                return;
-            }
-
-            await ApiClient.RemoveTrackers(Hash, [ContextMenuItem.Url]);
+            return EditTracker(ContextMenuItem);
         }
 
-        protected async Task CopyTrackerUrl()
+        protected async Task EditTracker(TorrentTracker? tracker)
         {
-            if (Hash is null || ContextMenuItem is null)
+            if (Hash is null || tracker is null)
             {
                 return;
             }
 
-            await JSRuntime.WriteToClipboard(ContextMenuItem.Url);
+            await DialogService.ShowSingleFieldDialog("Edit Tracker", "Tracker URL", tracker.Url, async (value) => await ApiClient.EditTracker(Hash, tracker.Url, value));
+        }
+
+        protected Task RemoveTrackerToolbar()
+        {
+            return RemoveTracker(SelectedItem);
+        }
+
+        protected Task RemoveTrackerContextMenu()
+        {
+            return RemoveTracker(ContextMenuItem);
+        }
+
+        protected async Task RemoveTracker(TorrentTracker? tracker)
+        {
+            if (Hash is null || tracker is null)
+            {
+                return;
+            }
+
+            await ApiClient.RemoveTrackers(Hash, [tracker.Url]);
+        }
+
+        protected Task CopyTrackerUrlToolbar()
+        {
+            return CopyTrackerUrl(SelectedItem);
+        }
+
+        protected Task CopyTrackerUrlContextMenu()
+        {
+            return CopyTrackerUrl(ContextMenuItem);
+        }
+
+        protected async Task CopyTrackerUrl(TorrentTracker? tracker)
+        {
+            if (Hash is null)
+            {
+                return;
+            }
+
+            if (tracker is null)
+            {
+                return;
+            }
+
+            await JSRuntime.WriteToClipboard(tracker.Url);
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)

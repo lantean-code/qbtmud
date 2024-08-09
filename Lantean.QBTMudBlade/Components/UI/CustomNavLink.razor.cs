@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Utilities;
 
-namespace Lantean.QBTMudBlade.Components
+namespace Lantean.QBTMudBlade.Components.UI
 {
-    public partial class FakeNavLink
+    public partial class CustomNavLink
     {
         [Parameter]
         public bool Active { get; set; }

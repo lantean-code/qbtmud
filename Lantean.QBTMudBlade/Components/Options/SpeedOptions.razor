@@ -33,7 +33,7 @@
                 <MudNumericField T="int" Label="Download" Value="AltDlLimit" ValueChanged="AltDlLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltDlLimitValidation" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Schedule the use of alternative rate limits" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" />
+                <FieldSwitch Label="Schedule the use of alternative rate limits" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" />
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudTimePicker Label="From" Editable="true" Time="ScheduleFrom" TimeChanged="ScheduleFromChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" />
@@ -68,13 +68,13 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Apply rate limit to µTP protocol" Value="LimitUtpRate" ValueChanged="LimitUtpRateChanged" />
+                <FieldSwitch Label="Apply rate limit to µTP protocol" Value="LimitUtpRate" ValueChanged="LimitUtpRateChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Apply rate limit to transport overhead" Value="LimitTcpOverhead" ValueChanged="LimitTcpOverheadChanged" />
+                <FieldSwitch Label="Apply rate limit to transport overhead" Value="LimitTcpOverhead" ValueChanged="LimitTcpOverheadChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Apply rate limit to peers on LAN" Value="LimitLanPeers" ValueChanged="LimitLanPeersChanged" />
+                <FieldSwitch Label="Apply rate limit to peers on LAN" Value="LimitLanPeers" ValueChanged="LimitLanPeersChanged" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

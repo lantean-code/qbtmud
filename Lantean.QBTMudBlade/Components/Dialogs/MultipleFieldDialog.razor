@@ -1,0 +1,24 @@
+﻿<MudDialog>
+    <DialogContent>
+        <table width="100%">
+            <tbody>
+                <tr>
+                    <td style="width: 100%"><MudTextField T="string" Label="@(Label)" Value="@Value" ValueChanged="SetValue" Required Variant="Variant.Outlined" /></td>
+                    <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddValue" /></td>
+                </tr>
+                @foreach (var value in NewValues)
+                {
+                    var valueRef = value;
+                    <tr>
+                        <td>@value</td>
+                        <td><MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(e => DeleteValue(valueRef))" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>

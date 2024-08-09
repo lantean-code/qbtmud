@@ -9,8 +9,10 @@ using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components
 {
-    public partial class TorrentActions
+    public partial class TorrentActions : IAsyncDisposable
     {
+        private bool _disposedValue;
+
         private List<TorrentAction>? _actions;
 
         [Inject]
@@ -30,6 +32,9 @@ namespace Lantean.QBTMudBlade.Components
 
         [Inject]
         public IJSRuntime JSRuntime { get; set; } = default!;
+
+        [Inject]
+        protected IKeyboardService KeyboardService { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -101,6 +106,14 @@ namespace Lantean.QBTMudBlade.Components
                 }),
                 new("export", "Export", Icons.Material.Filled.SaveAlt, Color.Info, CreateCallback(Export)),
             ];
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                await KeyboardService.RegisterKeypressEvent("Delete", k => Remove());
+            }
         }
 
         public int CalculateMenuHeight()
@@ -566,6 +579,27 @@ namespace Lantean.QBTMudBlade.Components
             else
             {
                 return EventCallback.Factory.Create(this, action);
+            }
+        }
+
+
+        public async ValueTask DisposeAsync()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            await DisposeAsync(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual async Task DisposeAsync(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    await KeyboardService.UnregisterKeypressEvent("Delete");
+                }
+
+                _disposedValue = true;
             }
         }
     }

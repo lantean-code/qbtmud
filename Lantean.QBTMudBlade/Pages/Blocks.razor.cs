@@ -1,5 +1,7 @@
 ﻿using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMudBlade.Components.UI;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -33,9 +35,11 @@ namespace Lantean.QBTMudBlade.Pages
 
         protected LogForm Model { get; set; } = new LogForm();
 
-        protected List<QBitTorrentClient.Models.PeerLog>? Results { get; private set; }
+        protected List<PeerLog>? Results { get; private set; }
 
         protected MudSelect<string>? CategoryMudSelect { get; set; }
+
+        protected DynamicTable<PeerLog>? Table { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
@@ -90,7 +94,7 @@ namespace Lantean.QBTMudBlade.Pages
             }
         }
 
-        protected static string RowClass(QBitTorrentClient.Models.PeerLog log, int index)
+        protected static string RowClass(PeerLog log, int index)
         {
             return $"log-{(log.Blocked ? "critical" : "normal")}";
         }
@@ -149,5 +153,15 @@ namespace Lantean.QBTMudBlade.Pages
             }
         }
 
+        protected IEnumerable<ColumnDefinition<PeerLog>> Columns => ColumnsDefinitions;
+
+        public static List<ColumnDefinition<PeerLog>> ColumnsDefinitions { get; } =
+        [
+            new ColumnDefinition<PeerLog>("Id", l => l.Id),
+            new ColumnDefinition<PeerLog>("Message", l => l.IPAddress),
+            new ColumnDefinition<PeerLog>("Timestamp", l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp)),
+            new ColumnDefinition<PeerLog>("Blocked", l => l.Blocked ? "Blocked" : "Banned"),
+            new ColumnDefinition<PeerLog>("Reason", l => l.Reason),
+        ];
     }
 }

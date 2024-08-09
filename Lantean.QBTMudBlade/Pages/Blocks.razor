@@ -26,37 +26,11 @@
     </MudCardContent>
 </MudCard>
 
-<MudTable Items="Results"
-          T="Lantean.QBitTorrentClient.Models.PeerLog"
-          Hover="true"
-          FixedHeader="true"
-          HeaderClass="table-head-bordered"
-          Dense="true"
-          Breakpoint="Breakpoint.None"
-          Bordered="true"
-          Square="true"
-          LoadingProgressColor="Color.Info"
-          HorizontalScrollbar="true"
-          Virtualize="true"
-          AllowUnsorted="false"
-          SelectOnRowClick="false"
-          Class="search-list"
-          RowClassFunc="RowClass">
-    <NoRecordsContent>
-        <MudText Typo="Typo.h6">Nothing has been blocked.</MudText>
-    </NoRecordsContent>
-    <HeaderContent>
-        <MudTh>Id</MudTh>
-        <MudTh>Message</MudTh>
-        <MudTh>Timestamp</MudTh>
-        <MudTh>Status</MudTh>
-        <MudTh>Reason</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Id">@context.Id</MudTd>
-        <MudTd DataLabel="IP">@context.IPAddress</MudTd>
-        <MudTd DataLabel="Timestamp">@DisplayHelpers.DateTime(context.Timestamp)</MudTd>
-        <MudTd DataLabel="Status">@(context.Blocked ? "Blocked" : "Banned")</MudTd>
-        <MudTd DataLabel="Reason">@context.Reason</MudTd>
-    </RowTemplate>
-</MudTable>
+<DynamicTable @ref="Table"
+              T="Lantean.QBitTorrentClient.Models.PeerLog"
+              ColumnDefinitions="Columns"
+              Items="Results"
+              MultiSelection="false"
+              SelectOnRowClick="false"
+              RowClassFunc="RowClass"
+              Class="search-list" />

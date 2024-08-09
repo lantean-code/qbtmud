@@ -3,7 +3,7 @@
 <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
     <EnhancedErrorBoundary @ref="ErrorBoundary" OnClear="Cleared">
         <MudThemeProvider @ref="MudThemeProvider" @bind-IsDarkMode="IsDarkMode" Theme="Theme" />
-        <MudDialogProvider />
+        <MudDialogProvider CloseButton="true" CloseOnEscapeKey="true" />
         <MudSnackbarProvider />
         <MudPopoverProvider />
 
@@ -20,7 +20,7 @@
                         <MudIconButton Icon="@Icons.Material.Filled.Error" Color="Color.Default" OnClick="ToggleErrorDrawer" />
                     </MudBadge>
                 }
-                <MudSwitch T="bool" Label="Dark Mode" LabelPosition="LabelPosition.End" Value="IsDarkMode" ValueChanged="DarkModeChanged" />
+                <MudSwitch T="bool" Label="Dark Mode" LabelPosition="LabelPosition.End" Value="IsDarkMode" ValueChanged="DarkModeChanged" Class="pl-3" />
                 @if (ShowMenu)
                 {
                     <Menu />

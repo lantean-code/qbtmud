@@ -1,5 +1,24 @@
-﻿<DynamicTable T="Peer"
+﻿<ContextMenu @ref="ContextMenu" Dense="true">
+    <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddPeer">Add peer</MudMenuItem>
+    @if (ContextMenuItem is not null)
+    {
+        <MudMenuItem Icon="@Icons.Material.Filled.DisabledByDefault" IconColor="Color.Info" OnClick="BanPeerContextMenu">Ban peer</MudMenuItem>
+    }
+</ContextMenu>
+
+<MudToolBar Gutters="false" Dense="true">
+    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddPeer">Add peer</MudIconButton>
+    <MudIconButton Icon="@Icons.Material.Filled.DisabledByDefault" Color="Color.Error" OnClick="BanPeerToolbar" Disabled="@(SelectedItem is null)">Ban peer</MudIconButton>
+    <MudDivider Vertical="true" />
+    <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
+</MudToolBar>
+
+<DynamicTable T="Peer"
               ColumnDefinitions="Columns"
               Items="Peers"
               MultiSelection="false"
+              SelectOnRowClick="true"
+              OnTableDataLongPress="TableDataLongPress"
+              OnTableDataContextMenu="TableDataContextMenu"
+              SelectedItemChanged="SelectedItemChanged"
               Class="details-list" />

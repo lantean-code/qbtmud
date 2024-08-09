@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
-namespace Lantean.QBTMudBlade.Components
+namespace Lantean.QBTMudBlade.Components.UI
 {
     public partial class DynamicTable<T> : MudComponentBase
     {
@@ -71,6 +71,9 @@ namespace Lantean.QBTMudBlade.Components
         [Parameter]
         public EventCallback<TableDataLongPressEventArgs<T>> OnTableDataLongPress { get; set; }
 
+        [Parameter]
+        public Func<T, int, string>? RowClassFunc { get; set; }
+
         protected IEnumerable<T>? OrderedItems => GetOrderedItems();
 
         protected HashSet<string> SelectedColumns { get; set; } = [];
@@ -81,7 +84,7 @@ namespace Lantean.QBTMudBlade.Components
 
         private SortDirection _sortDirection;
 
-        private readonly Dictionary<string, MudTdExtended> _tds = [];
+        private readonly Dictionary<string, TdExtended> _tds = [];
 
         protected override async Task OnInitializedAsync()
         {
@@ -225,14 +228,11 @@ namespace Lantean.QBTMudBlade.Components
                     }
                 }
             }
-            else
+            else if (SelectOnRowClick && !SelectedItems.Contains(eventArgs.Item))
             {
-                if (!SelectedItems.Contains(eventArgs.Item))
-                {
-                    SelectedItems.Clear();
-                    SelectedItems.Add(eventArgs.Item);
-                    await SelectedItemChanged.InvokeAsync(eventArgs.Item);
-                }
+                SelectedItems.Clear();
+                SelectedItems.Add(eventArgs.Item);
+                await SelectedItemChanged.InvokeAsync(eventArgs.Item);
             }
 
             await OnRowClick.InvokeAsync(eventArgs);
@@ -241,12 +241,21 @@ namespace Lantean.QBTMudBlade.Components
         protected string RowStyleFuncInternal(T item, int index)
         {
             var style = "user-select: none; cursor: pointer;";
-            //EqualityComparer<T>.Default.Equals(item, SelectedItem) ||
-            if (SelectedItems.Contains(item))
+            if (SelectOnRowClick && SelectedItems.Contains(item))
             {
                 style += " background-color: var(--mud-palette-gray-dark); color: var(--mud-palette-gray-light) !important;";
             }
             return style;
+        }
+
+        protected string RowClassFuncInternal(T item, int index)
+        {
+            if (RowClassFunc is not null)
+            {
+                return RowClassFunc(item, index);
+            }
+
+            return string.Empty;
         }
 
         protected async Task SelectedItemsChangedInternal(HashSet<T> selectedItems)

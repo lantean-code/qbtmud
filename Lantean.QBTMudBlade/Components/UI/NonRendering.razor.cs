@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 
-namespace Lantean.QBTMudBlade.Components
+namespace Lantean.QBTMudBlade.Components.UI
 {
     /// <summary>
     /// A simple razor wrapper that only renders the child content without any additonal html markup

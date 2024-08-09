@@ -2,7 +2,7 @@
 using MudBlazor;
 using MudBlazor.Utilities;
 
-namespace Lantean.QBTMudBlade.Components
+namespace Lantean.QBTMudBlade.Components.UI
 {
     public partial class SortLabel : MudComponentBase
     {

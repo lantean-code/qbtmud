@@ -32,10 +32,10 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <MudFieldSwitch Label="Start torrent" @bind-Value="StartTorrent" />
+            <FieldSwitch Label="Start torrent" @bind-Value="StartTorrent" />
         </MudItem>
         <MudItem xs="12">
-            <MudFieldSwitch Label="Add to top of queue" @bind-Value="AddToTopOfQueue" />
+            <FieldSwitch Label="Add to top of queue" @bind-Value="AddToTopOfQueue" />
         </MudItem>
         <MudItem xs="12">
             <MudSelect Label="Stop condition" @bind-Value="StopCondition" Variant="Variant.Outlined">
@@ -45,7 +45,7 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <MudFieldSwitch Label="Skip hash check" @bind-Value="SkipHashCheck" />
+            <FieldSwitch Label="Skip hash check" @bind-Value="SkipHashCheck" />
         </MudItem>
         <MudSelect Label="Content layout" @bind-Value="ContentLayout" Variant="Variant.Outlined">
             <MudSelectItem Value="@("Original")">Original</MudSelectItem>
@@ -53,10 +53,10 @@
             <MudSelectItem Value="@("NoSubfolder")">Don't create subfolder'</MudSelectItem>
         </MudSelect>
         <MudItem xs="12">
-            <MudFieldSwitch Label="Download in sequentual order" @bind-Value="DownloadInSequentialOrder" />
+            <FieldSwitch Label="Download in sequentual order" @bind-Value="DownloadInSequentialOrder" />
         </MudItem>
         <MudItem xs="12">
-            <MudFieldSwitch Label="Download first and last pieces first" @bind-Value="DownloadFirstAndLastPiecesFirst" />
+            <FieldSwitch Label="Download first and last pieces first" @bind-Value="DownloadFirstAndLastPiecesFirst" />
         </MudItem>
         <MudItem xs="12">
             <MudNumericField Label="Limit download rate" @bind-Value="DownloadLimit" Variant="Variant.Outlined" Min="0" />

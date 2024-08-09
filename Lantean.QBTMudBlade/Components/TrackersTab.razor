@@ -2,19 +2,31 @@
     <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddTracker">Add trackers</MudMenuItem>
     @if (ContextMenuItem is not null)
     {
-        <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="EditTracker">Edit tracker URL</MudMenuItem>
-        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveTracker">Remove tracker</MudMenuItem>
-        <MudMenuItem Icon="@Icons.Material.Filled.FolderCopy" IconColor="Color.Info" OnClick="CopyTrackerUrl">Copy tracker url</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="EditTrackerToolbar">Edit tracker URL</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveTrackerContextMenu">Remove tracker</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.FolderCopy" IconColor="Color.Info" OnClick="CopyTrackerUrlContextMenu">Copy tracker url</MudMenuItem>
     }
 </ContextMenu>
 
-<DynamicTable T="Lantean.QBitTorrentClient.Models.TorrentTracker"
+<MudToolBar Gutters="false" Dense="true">
+    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddTracker">Add trackers</MudIconButton>
+    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" OnClick="EditTrackerToolbar" Disabled="@(SelectedItem is null)">Edit tracker URL</MudIconButton>
+    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="RemoveTrackerToolbar" Disabled="@(SelectedItem is null)">Remove tracker</MudIconButton>
+    <MudIconButton Icon="@Icons.Material.Filled.FolderCopy" Color="Color.Info" OnClick="CopyTrackerUrlToolbar" Disabled="@(SelectedItem is null)">Copy tracker url</MudIconButton>
+    <MudDivider Vertical="true" />
+    <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
+</MudToolBar>
+
+<DynamicTable @ref="Table"
+              T="Lantean.QBitTorrentClient.Models.TorrentTracker"
               ColumnDefinitions="Columns"
               Items="Trackers"
               MultiSelection="false"
+              SelectOnRowClick="false"
               PreSorted="true"
               SortDirectionChanged="SortDirectionChanged"
               SortColumnChanged="SortColumnChanged"
               OnTableDataLongPress="TableDataLongPress"
               OnTableDataContextMenu="TableDataContextMenu"
-              Class="details-list" />
+              SelectedItemChanged="SelectedItemChanged"
+              Class="file-list" />

@@ -42,6 +42,7 @@ namespace Lantean.QBTMudBlade
             builder.Services.AddSingleton<IDataManager, DataManager>();
             builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddSingleton<IClipboardService, ClipboardService>();
+            builder.Services.AddSingleton<IKeyboardService, KeyboardService>();
 
 #if DEBUG
             builder.Logging.SetMinimumLevel(LogLevel.Information);

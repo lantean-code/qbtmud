@@ -21,7 +21,7 @@ namespace Lantean.QBTMudBlade.Models
             Index = index;
             Priority = priority;
             Progress = progress;
-            Size = priority == Priority.DoNotDownload ? 0 : size;
+            Size = size;
             Availability = availability;
             IsFolder = isFolder;
             Level = level;

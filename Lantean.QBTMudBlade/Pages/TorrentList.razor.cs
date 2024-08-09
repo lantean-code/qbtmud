@@ -1,7 +1,7 @@
 ﻿using Lantean.QBitTorrentClient;
-using Lantean.QBTMudBlade.Components;
-using Lantean.QBTMudBlade.Interop;
+using Lantean.QBTMudBlade.Components.UI;
 using Lantean.QBTMudBlade.Models;
+using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -9,8 +9,14 @@ using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Pages
 {
-    public partial class TorrentList
+    public partial class TorrentList : IAsyncDisposable
     {
+        private bool _disposedValue;
+
+        private static KeyboardEvent _addTorrentFileKey = new KeyboardEvent("a") { AltKey = true };
+        private static KeyboardEvent _addTorrentLinkKey = new KeyboardEvent("l") { AltKey = true };
+
+
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
@@ -22,6 +28,9 @@ namespace Lantean.QBTMudBlade.Pages
 
         [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
+
+        [Inject]
+        protected IKeyboardService KeyboardService { get; set; } = default!;
 
         [CascadingParameter]
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
@@ -41,6 +50,9 @@ namespace Lantean.QBTMudBlade.Pages
         [CascadingParameter(Name = "SortDirectionChanged")]
         public EventCallback<SortDirection> SortDirectionChanged { get; set; }
 
+        [CascadingParameter(Name = "DrawerOpen")]
+        public bool DrawerOpen { get; set; }
+
         protected string? SearchText { get; set; }
 
         protected HashSet<Torrent> SelectedItems { get; set; } = [];
@@ -52,6 +64,15 @@ namespace Lantean.QBTMudBlade.Pages
         protected Torrent? ContextMenuItem { get; set; }
 
         protected ContextMenu? ContextMenu { get; set; }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                await KeyboardService.RegisterKeypressEvent(_addTorrentFileKey, k => AddTorrentFile());
+                await KeyboardService.RegisterKeypressEvent(_addTorrentLinkKey, k => AddTorrentLink());
+            }
+        }
 
         protected void SelectedItemsChanged(HashSet<Torrent> selectedItems)
         {
@@ -122,9 +143,20 @@ namespace Lantean.QBTMudBlade.Pages
             await Table.ShowColumnOptionsDialog();
         }
 
-        protected void ShowTorrent()
+        protected void ShowTorrentToolbar()
         {
             var torrent = SelectedItems.FirstOrDefault();
+            
+            NavigateToTorrent(torrent);
+        }
+
+        protected void ShowTorrentContextMenu()
+        {
+            NavigateToTorrent(ContextMenuItem);
+        }
+
+        protected void NavigateToTorrent(Torrent? torrent)
+        {
             if (torrent is null)
             {
                 return;
@@ -162,11 +194,11 @@ namespace Lantean.QBTMudBlade.Pages
         public static List<ColumnDefinition<Torrent>> ColumnsDefinitions { get; } =
         [
             CreateColumnDefinition("#", t => t.Priority),
-            CreateColumnDefinition("Icon", t => t.State, IconColumn, iconOnly: true),
+            CreateColumnDefinition("Icon", t => t.State, IconColumn, iconOnly: true, width: 25),
             CreateColumnDefinition("Name", t => t.Name, width: 400),
             CreateColumnDefinition("Size", t => t.Size, t => DisplayHelpers.Size(t.Size)),
             CreateColumnDefinition("Total Size", t => t.TotalSize, t => DisplayHelpers.Size(t.TotalSize), enabled: false),
-            CreateColumnDefinition("Done", t => t.Progress, ProgressBarColumn, tdClass: "table-progress pl-1 pr-1"),
+            CreateColumnDefinition("Done", t => t.Progress, ProgressBarColumn, tdClass: "table-progress"),
             CreateColumnDefinition("Status", t => t.State, t => DisplayHelpers.State(t.State)),
             CreateColumnDefinition("Seeds", t => t.NumberSeeds),
             CreateColumnDefinition("Peers", t => t.NumberLeeches),
@@ -199,7 +231,7 @@ namespace Lantean.QBTMudBlade.Pages
         private static ColumnDefinition<Torrent> CreateColumnDefinition(string name, Func<Torrent, object?> selector, RenderFragment<RowContext<Torrent>> rowTemplate, int? width = null, string? tdClass = null, bool enabled = true, bool iconOnly = false)
         {
             var cd = new ColumnDefinition<Torrent>(name, selector, rowTemplate);
-            cd.Class = "no-wrap";
+            cd.Class = iconOnly ? "icon-cell" : "no-wrap";
             if (tdClass is not null)
             {
                 cd.Class += " " + tdClass;
@@ -214,7 +246,7 @@ namespace Lantean.QBTMudBlade.Pages
         private static ColumnDefinition<Torrent> CreateColumnDefinition(string name, Func<Torrent, object?> selector, Func<Torrent, string>? formatter = null, int? width = null, string? tdClass = null, bool enabled = true, bool iconOnly = false)
         {
             var cd = new ColumnDefinition<Torrent>(name, selector, formatter);
-            cd.Class = "no-wrap";
+            cd.Class = iconOnly ? "icon-cell" : "no-wrap";
             if (tdClass is not null)
             {
                 cd.Class += " " + tdClass;
@@ -224,6 +256,27 @@ namespace Lantean.QBTMudBlade.Pages
             cd.IconOnly = iconOnly;
 
             return cd;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            await DisposeAsync(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual async Task DisposeAsync(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    await KeyboardService.UnregisterKeypressEvent(_addTorrentFileKey);
+                    await KeyboardService.UnregisterKeypressEvent(_addTorrentLinkKey);
+                }
+
+                _disposedValue = true;
+            }
         }
     }
 }

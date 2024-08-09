@@ -81,8 +81,7 @@ code {
 }
 
 .table-progress {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    padding: 0 !important;
 }
 
     .table-progress .progress-expand {
@@ -211,4 +210,12 @@ tr.log-critical td {
 .filter-menu-item .mud-nav-link {
     padding-left: 0px !important;
     padding-inline-start: 10px !important;
+}
+
+td.icon-cell {
+    padding: 2px 0 0 7px !important;
+}
+
+td .folder-button {
+    padding: 6px 16px 6px 16px !important;
 }

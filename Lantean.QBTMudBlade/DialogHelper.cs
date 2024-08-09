@@ -98,6 +98,11 @@ namespace Lantean.QBTMudBlade
 
         public static async Task InvokeDeleteTorrentDialog(this IDialogService dialogService, IApiClient apiClient, params string[] hashes)
         {
+            if (hashes.Length == 0)
+            {
+                return;
+            }
+
             var parameters = new DialogParameters
             {
                 { nameof(DeleteDialog.Count), hashes.Length }
@@ -118,9 +123,9 @@ namespace Lantean.QBTMudBlade
             await Task.Delay(0);
         }
 
-        public static async Task<string?> ShowAddCategoryDialog(this IDialogService dialogService, IApiClient apiClient)
+        public static async Task<string?> InvokeAddCategoryDialog(this IDialogService dialogService, IApiClient apiClient)
         {
-            var reference = await dialogService.ShowAsync<CategoryPropertiesDialog>("New Category", NonBlurFormDialogOptions);
+            var reference = await dialogService.ShowAsync<CategoryPropertiesDialog>("Add Category", NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -134,7 +139,7 @@ namespace Lantean.QBTMudBlade
             return category.Name;
         }
 
-        public static async Task<string?> ShowEditCategoryDialog(this IDialogService dialogService, IApiClient apiClient, string categoryName)
+        public static async Task<string?> InvokeEditCategoryDialog(this IDialogService dialogService, IApiClient apiClient, string categoryName)
         {
             var category = (await apiClient.GetAllCategories()).FirstOrDefault(c => c.Key == categoryName).Value;
             var parameters = new DialogParameters
@@ -174,7 +179,7 @@ namespace Lantean.QBTMudBlade
 
         public static async Task<HashSet<string>?> ShowAddTrackersDialog(this IDialogService dialogService)
         {
-            var reference = await dialogService.ShowAsync<AddTrackerDialog>("Add Tags", NonBlurFormDialogOptions);
+            var reference = await dialogService.ShowAsync<AddTrackerDialog>("Add Tracker", NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
 
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
@@ -185,6 +190,21 @@ namespace Lantean.QBTMudBlade
             var tags = (HashSet<string>)dialogResult.Data;
 
             return tags;
+        }
+
+        public static async Task<HashSet<QBitTorrentClient.Models.PeerId>?> ShowAddPeersDialog(this IDialogService dialogService)
+        {
+            var reference = await dialogService.ShowAsync<AddPeerDialog>("Add Peer", NonBlurFormDialogOptions);
+            var dialogResult = await reference.Result;
+
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+            {
+                return null;
+            }
+
+            var peers = (HashSet<QBitTorrentClient.Models.PeerId>)dialogResult.Data;
+
+            return peers;
         }
 
         public static async Task<bool> ShowConfirmDialog(this IDialogService dialogService, string title, string content)

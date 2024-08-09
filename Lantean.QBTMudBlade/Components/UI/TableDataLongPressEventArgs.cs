@@ -1,14 +1,13 @@
-﻿using Microsoft.AspNetCore.Components.Web;
-using MudBlazor;
+﻿using MudBlazor;
 
-namespace Lantean.QBTMudBlade.Components
+namespace Lantean.QBTMudBlade.Components.UI
 {
-    public class TableDataContextMenuEventArgs<T> : EventArgs
+    public class TableDataLongPressEventArgs<T> : EventArgs
     {
         //
         // Summary:
         //     The coordinates of the click.
-        public MouseEventArgs MouseEventArgs { get; }
+        public LongPressEventArgs LongPressEventArgs { get; }
 
         //
         // Summary:
@@ -33,9 +32,9 @@ namespace Lantean.QBTMudBlade.Components
         //
         //   item:
         //     The data related to the row which was context-clicked.
-        public TableDataContextMenuEventArgs(MouseEventArgs mouseEventArgs, MudTd data, T? item)
+        public TableDataLongPressEventArgs(LongPressEventArgs longPressEventArgs, MudTd data, T? item)
         {
-            MouseEventArgs = mouseEventArgs;
+            LongPressEventArgs = longPressEventArgs;
             Data = data;
             Item = item;
         }

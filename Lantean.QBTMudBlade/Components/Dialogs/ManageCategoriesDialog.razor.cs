@@ -105,7 +105,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
 
         protected async Task AddCategory()
         {
-            var addedCategoy = await DialogService.ShowAddCategoryDialog(ApiClient);
+            var addedCategoy = await DialogService.InvokeAddCategoryDialog(ApiClient);
             if (addedCategoy is null)
             {
                 return;

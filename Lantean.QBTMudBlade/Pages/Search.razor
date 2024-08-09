@@ -49,34 +49,10 @@
     </MudCardContent>
 </MudCard>
 
-<MudTable 
-    Items="Results"
-    T="Lantean.QBitTorrentClient.Models.SearchResult"
-    Hover="true"
-    FixedHeader="true" 
-    HeaderClass="table-head-bordered" 
-    Dense="true" 
-    Breakpoint="Breakpoint.None" 
-    Bordered="true" 
-    Square="true" 
-    LoadingProgressColor="Color.Info" 
-    HorizontalScrollbar="true" 
-    Virtualize="true"
-    AllowUnsorted="false"
-    SelectOnRowClick="false"
-    Class="search-list">
-    <HeaderContent>
-        <MudTh>Name</MudTh>
-        <MudTh>Size</MudTh>
-        <MudTh>Seeders</MudTh>
-        <MudTh>Leechers</MudTh>
-        <MudTh>Search engine</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Name">@context.FileName</MudTd>
-        <MudTd DataLabel="Size">@DisplayHelpers.Size(context.FileSize)</MudTd>
-        <MudTd DataLabel="Seeders">@context.Seeders</MudTd>
-        <MudTd DataLabel="Leechers">@context.Leechers</MudTd>
-        <MudTd DataLabel="Search engine">@context.SiteUrl</MudTd>
-    </RowTemplate>
-</MudTable>
+<DynamicTable @ref="Table"
+              T="Lantean.QBitTorrentClient.Models.SearchResult"
+              ColumnDefinitions="Columns"
+              Items="Results"
+              MultiSelection="false"
+              SelectOnRowClick="false"
+              Class="search-list" />

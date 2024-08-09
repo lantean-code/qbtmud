@@ -26,19 +26,19 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Log file" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" />
+                <FieldSwitch Label="Log file" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="Save Path" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="3">
-                <MudFieldSwitch Label="Backup the log after" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(!FileLogEnabled)" />
+                <FieldSwitch Label="Backup the log after" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(!FileLogEnabled)" />
             </MudItem>
             <MudItem xs="9">
                 <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
             </MudItem>
             <MudItem xs="3">
-                <MudFieldSwitch Label="Delete backups older than" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(!FileLogEnabled)" />
+                <FieldSwitch Label="Delete backups older than" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(!FileLogEnabled)" />
             </MudItem>
             <MudItem xs="9">
                 <MudGrid>
@@ -67,7 +67,7 @@
     <MudCardContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Log performance warnings" Value="PerformanceWarning" ValueChanged="PerformanceWarningChanged" />
+                <FieldSwitch Label="Log performance warnings" Value="PerformanceWarning" ValueChanged="PerformanceWarningChanged" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

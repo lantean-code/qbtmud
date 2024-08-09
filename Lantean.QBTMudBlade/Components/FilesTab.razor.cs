@@ -1,6 +1,7 @@
 ﻿using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Components.Dialogs;
+using Lantean.QBTMudBlade.Components.UI;
 using Lantean.QBTMudBlade.Filter;
 using Lantean.QBTMudBlade.Models;
 using Lantean.QBTMudBlade.Services;
@@ -55,13 +56,15 @@ namespace Lantean.QBTMudBlade.Components
 
         protected ContentItem? SelectedItem { get; set; }
 
+        protected ContentItem? ContextMenuItem { get; set; }
+
         protected string? SearchText { get; set; }
 
         public IEnumerable<Func<ContentItem, bool>>? Filters { get; set; }
 
         private DynamicTable<ContentItem>? Table { get; set; }
 
-
+        private ContextMenu? ContextMenu { get; set; }
 
         public FilesTab()
         {
@@ -123,22 +126,6 @@ namespace Lantean.QBTMudBlade.Components
             GC.SuppressFinalize(this);
         }
 
-        protected static float CalculateProgress(IEnumerable<ContentItem> items)
-        {
-            return (float)items.Sum(i => i.Downloaded) / items.Sum(i => i.Size);
-        }
-
-        protected static Priority GetPriority(IEnumerable<ContentItem> items)
-        {
-            var distinctPriorities = items.Select(i => i.Priority).Distinct();
-            if (distinctPriorities.Count() == 1)
-            {
-                return distinctPriorities.First();
-            }
-
-            return Priority.Mixed;
-        }
-
         protected virtual async Task DisposeAsync(bool disposing)
         {
             if (!_disposedValue)
@@ -155,19 +142,42 @@ namespace Lantean.QBTMudBlade.Components
             }
         }
 
+        protected static Priority GetPriority(IEnumerable<ContentItem> items)
+        {
+            var distinctPriorities = items.Select(i => i.Priority).Distinct();
+            if (distinctPriorities.Count() == 1)
+            {
+                return distinctPriorities.First();
+            }
+
+            return Priority.Mixed;
+        }
+
         protected void SearchTextChanged(string value)
         {
             SearchText = value;
         }
 
-        protected async Task EnabledValueChanged(ContentItem contentItem, bool value)
+        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<ContentItem> eventArgs)
         {
-            if (Hash is null)
+            return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
+        }
+
+        protected Task TableDataLongPress(TableDataLongPressEventArgs<ContentItem> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
+        }
+
+        private async Task ShowContextMenu(ContentItem? contentItem, EventArgs eventArgs)
+        {
+            ContextMenuItem = contentItem;
+
+            if (ContextMenu is null)
             {
                 return;
             }
 
-            await ApiClient.SetFilePriority(Hash, [contentItem.Index], MapPriority(value ? Priority.Normal : Priority.DoNotDownload));
+            await ContextMenu.OpenMenuAsync(eventArgs);
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -267,21 +277,43 @@ namespace Lantean.QBTMudBlade.Components
             await ApiClient.SetFilePriority(Hash, fileIndexes, MapPriority(priority));
         }
 
-        protected async Task RenameFile()
+        protected Task RenameFileToolbar()
         {
-            if (Hash is null || FileList is null || SelectedItem is null)
+            if (SelectedItem is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return RenameFiles(SelectedItem);
+        }
+
+        protected Task RenameFileContextMenu()
+        {
+            if (ContextMenuItem is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return RenameFiles(ContextMenuItem);
+        }
+
+        private async Task RenameFiles(params ContentItem[] contentItems)
+        {
+            if (Hash is null || contentItems.Length == 0)
             {
                 return;
             }
 
-            var contentItem = FileList.Values.FirstOrDefault(c => c.Index == SelectedItem.Index);
-            if (contentItem is null)
+            if (contentItems.Length == 1)
             {
-                return;
+                var contentItem = contentItems[0];
+                var name = contentItem.GetFileName();
+                await DialogService.ShowSingleFieldDialog("Rename", "New name", name, async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
             }
-
-            var name = contentItem.GetFileName();
-            await DialogService.ShowSingleFieldDialog("Rename", "New name", name, async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
+            else
+            {
+                await DialogService.InvokeRenameFilesDialog(ApiClient, Hash);
+            }
         }
 
         protected void SortColumnChanged(string sortColumn)
@@ -511,7 +543,7 @@ namespace Lantean.QBTMudBlade.Components
 
         public static List<ColumnDefinition<ContentItem>> ColumnsDefinitions { get; } =
         [
-            CreateColumnDefinition("Name", c => c.Name, width: 400, initialDirection: SortDirection.Ascending, classFunc: c => c.IsFolder ? "pa-0" : "pa-3"),
+            CreateColumnDefinition("Name", c => c.Name, width: 400, initialDirection: SortDirection.Ascending, classFunc: c => c.IsFolder ? "pa-0" : "pa-2"),
             CreateColumnDefinition("Total Size", c => c.Size, c => DisplayHelpers.Size(c.Size)),
             CreateColumnDefinition("Progress", c => c.Progress, ProgressBarColumn, tdClass: "table-progress pl-2 pr-2"),
             CreateColumnDefinition("Priority", c => c.Priority, tdClass: "table-select pa-0"),

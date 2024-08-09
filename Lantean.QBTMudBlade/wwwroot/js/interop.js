@@ -102,6 +102,66 @@ window.qbt.clearSelection = () => {
     }
 }
 
+let supportedEvents = new Map();
+
+document.addEventListener('keyup', event => {
+    const key = getKey(event);
+
+    console.log(key);
+    console.log(event);
+
+    const references = supportedEvents.get(key);
+    if (!references) {
+        return;
+    }
+
+    console.log(references);
+
+    references.forEach(dotNetObjectReference => {
+        dotNetObjectReference.invokeMethodAsync('HandleKeyPressEvent', {
+            key: event.key,
+            code: event.code,
+            altKey: event.altKey,
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+            shiftKey: event.shiftKey,
+        }).catch(error => {
+            console.error("Error handling key press:", error);
+        });
+    });
+});
+
+window.qbt.registerKeypressEvent = (keyboardEventArgs, dotNetObjectReference) => {
+    const key = getKey(keyboardEventArgs);
+
+    const references = supportedEvents.get(key);
+    if (references) {
+        references.set(dotNetObjectReference._id, dotNetObjectReference);
+    }
+    else {
+        const references = new Map();
+        references.set(dotNetObjectReference._id, dotNetObjectReference);
+        supportedEvents.set(key, references);
+    }
+
+    
+}
+
+window.qbt.unregisterKeypressEvent = (keyboardEventArgs, dotNetObjectReference) => {
+    const key = getKey(keyboardEventArgs);
+
+    const references = supportedEvents.get(key);
+    if (!references) {
+        return;
+    }
+
+    references.delete(dotNetObjectReference._id);
+}
+
+function getKey(keyboardEvent) {
+    return keyboardEvent.key + (keyboardEvent.ctrlKey ? '1' : '0') + (keyboardEvent.shiftKey ? '1' : '0') + (keyboardEvent.altKey ? '1' : '0') + (keyboardEvent.metaKey ? '1' : '0') + (keyboardEvent.repeat ? '1' : '0');
+}
+
 function fallbackCopyTextToClipboard(text) {
     const textArea = document.createElement("textarea");
     textArea.value = text;

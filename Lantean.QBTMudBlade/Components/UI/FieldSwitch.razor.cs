@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
 
-namespace Lantean.QBTMudBlade.Components
+namespace Lantean.QBTMudBlade.Components.UI
 {
-    public partial class MudFieldSwitch
+    public partial class FieldSwitch
     {
         /// <inheritdoc cref="MudBlazor.MudBooleanInput{T}.Value"/>
         [Parameter]

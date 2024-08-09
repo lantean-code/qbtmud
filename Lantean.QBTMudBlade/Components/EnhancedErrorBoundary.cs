@@ -33,12 +33,11 @@ namespace Lantean.QBTMudBlade.Components
             return Task.CompletedTask;
         }
 
-        public async Task RecoverAndClearErrors()
+        public Task RecoverAndClearErrors()
         {
             Recover();
-            _exceptions.Clear();
 
-            await OnClear.InvokeAsync();
+            return ClearErrors();
         }
 
         public async Task ClearErrors()

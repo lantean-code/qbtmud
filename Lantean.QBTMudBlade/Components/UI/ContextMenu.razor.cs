@@ -5,17 +5,18 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Utilities;
 
-namespace Lantean.QBTMudBlade.Components
+namespace Lantean.QBTMudBlade.Components.UI
 {
     // This is a very hacky approach but works for now.
     // This needs to inherit from MudMenu because MudMenuItem needs a MudMenu passed to it to control the close of the menu when an item is clicked.
     // MudPopover isn't ideal for this because that is designed to be used relative to an activator which in these cases it isn't.
-    // Ideally this should be changed to use something like the way the DialogService works. 
-    public partial class ContextMenu : MudMenu
-    {
-        private const double _diff = 64;
+    // Ideally this should be changed to use something like the way the DialogService works.
 
+    // Or - rework this to have a hidden MudMenu and hook into the OpenChanged event to monitor when the MudMenuItem closes it.
+    public partial class ContextMenu : MudComponentBase
+    {
         private bool _open;
+        private bool _showChildren;
         private string? _popoverStyle;
         private string? _id;
 
@@ -23,7 +24,7 @@ namespace Lantean.QBTMudBlade.Components
         private double _y;
         private bool _isResized = false;
 
-        private const double _drawerWidth = 235;
+        private const double _diff = 64;
 
         private string Id
         {
@@ -41,44 +42,99 @@ namespace Lantean.QBTMudBlade.Components
         [Inject]
         public IPopoverService PopoverService { get; set; } = default!;
 
-        [CascadingParameter(Name = "DrawerOpen")]
-        public bool DrawerOpen { get; set; }
+        /// <summary>
+        /// If true, compact vertical padding will be applied to all menu items.
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.PopupAppearance)]
+        public bool Dense { get; set; }
+
+        /// <summary>
+        /// Set to true if you want to prevent page from scrolling when the menu is open
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.PopupAppearance)]
+        public bool LockScroll { get; set; }
+
+        /// <summary>
+        /// If true, the list menu will be same width as the parent.
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.PopupAppearance)]
+        public bool FullWidth { get; set; }
+
+        /// <summary>
+        /// Sets the max height the menu can have when open.
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.PopupAppearance)]
+        public int? MaxHeight { get; set; }
+
+        /// <summary>
+        /// Set the anchor origin point to determine where the popover will open from.
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.PopupAppearance)]
+        public Origin AnchorOrigin { get; set; } = Origin.TopLeft;
+
+        /// <summary>
+        /// Sets the transform origin point for the popover.
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.PopupAppearance)]
+        public Origin TransformOrigin { get; set; } = Origin.TopLeft;
+
+        /// <summary>
+        /// If true, menu will be disabled.
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.Behavior)]
+        public bool Disabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether to show a ripple effect when the user clicks the button. Default is true.
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.Appearance)]
+        public bool Ripple { get; set; } = true;
+
+        /// <summary>
+        /// Determines whether the component has a drop-shadow. Default is true
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.Appearance)]
+        public bool DropShadow { get; set; } = true;
+
+        /// <summary>
+        /// Add menu items here
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.PopupBehavior)]
+        public RenderFragment? ChildContent { get; set; }
+
+        /// <summary>
+        /// Fired when the menu <see cref="Open"/> property changes.
+        /// </summary>
+        [Parameter]
+        [Category(CategoryTypes.Menu.PopupBehavior)]
+        public EventCallback<bool> OpenChanged { get; set; }
 
         [Parameter]
-        public bool InsideDrawer { get; set; }
+        public int AdjustmentX { get; set; }
 
-        public new string? Label { get; }
+        [Parameter]
+        public int AdjustmentY { get; set; }
 
-        public new string? AriaLabel { get; }
+        protected MudMenu? FakeMenu { get; set; }
 
-        public new string? Icon { get; }
-
-        public new Color IconColor { get; } = Color.Inherit;
-
-        public new string? StartIcon { get; }
-
-        public new string? EndIcon { get; }
-
-        public new Color Color { get; } = Color.Default;
-
-        public new Size Size { get; } = Size.Medium;
-
-        public new Variant Variant { get; } = Variant.Text;
-
-        public new bool PositionAtCursor { get; } = true;
-
-        public new RenderFragment? ActivatorContent { get; } = null;
-
-        public new MouseEvent ActivationEvent { get; } = MouseEvent.LeftClick;
-
-        public new string? ListClass { get; } = "unselectable";
-
-        public new string? PopoverClass { get; } = "unselectable";
-
-        public ContextMenu()
+        protected void FakeOpenChanged(bool value)
         {
-            AnchorOrigin = Origin.TopLeft;
-            TransformOrigin = Origin.TopLeft;
+            if (!value)
+            {
+                _open = false;
+            }
+
+            StateHasChanged();
         }
 
         /// <summary>
@@ -86,9 +142,8 @@ namespace Lantean.QBTMudBlade.Components
         /// </summary>
         /// <param name="args">
         /// The arguments of the calling mouse/pointer event.
-        /// If <see cref="PositionAtCursor"/> is true, the menu will be positioned using the coordinates in this parameter.
         /// </param>
-        public new async Task OpenMenuAsync(EventArgs args)
+        public async Task OpenMenuAsync(EventArgs args)
         {
             if (Disabled)
             {
@@ -97,6 +152,11 @@ namespace Lantean.QBTMudBlade.Components
 
             // long press on iOS triggers selection, so clear it
             await JSRuntime.ClearSelection();
+
+            if (args is not LongPressEventArgs)
+            {
+                _showChildren = true;
+            }
 
             _open = true;
             _isResized = false;
@@ -111,11 +171,29 @@ namespace Lantean.QBTMudBlade.Components
             StateHasChanged();
 
             await OpenChanged.InvokeAsync(_open);
+
+            // long press on iOS triggers selection, so clear it
+            await JSRuntime.ClearSelection();
+
+            if (args is LongPressEventArgs)
+            {
+                await Task.Delay(1000);
+                _showChildren = true;
+            }
         }
 
         /// <summary>
-        /// Sets the popover style ONLY when there is an activator.
+        /// Closes the menu.
         /// </summary>
+        public Task CloseMenuAsync()
+        {
+            _open = false;
+            _popoverStyle = null;
+            StateHasChanged();
+
+            return OpenChanged.InvokeAsync(_open);
+        }
+
         private void SetPopoverStyle(double x, double y)
         {
             _popoverStyle = $"margin-top: {y.ToPx()}; margin-left: {x.ToPx()};";
@@ -124,7 +202,7 @@ namespace Lantean.QBTMudBlade.Components
         /// <summary>
         /// Toggle the visibility of the menu.
         /// </summary>
-        public new async Task ToggleMenuAsync(EventArgs args)
+        public async Task ToggleMenuAsync(EventArgs args)
         {
             if (Disabled)
             {
@@ -169,17 +247,13 @@ namespace Lantean.QBTMudBlade.Components
             }
 
             // the bottom position of the popover will be rendered off screen
-            if ((_y - _diff + contextMenuHeight.Value) >= (mainContentSize.Height))
+            if (_y - _diff + contextMenuHeight.Value >= mainContentSize.Height)
             {
                 // adjust the top of the context menu
                 var overshoot = Math.Abs(mainContentSize.Height - (_y - _diff + contextMenuHeight.Value));
                 _y -= overshoot;
-                //if (_y < 70)
-                //{
-                //    _y = 70;
-                //}
 
-                if ((_y - _diff + contextMenuHeight) >= mainContentSize.Height)
+                if (_y - _diff + contextMenuHeight >= mainContentSize.Height)
                 {
                     MaxHeight = (int)(mainContentSize.Height - _y + _diff);
                 }
@@ -214,7 +288,7 @@ namespace Lantean.QBTMudBlade.Components
                 throw new NotSupportedException("Invalid eventArgs type.");
             }
 
-            return (x - (DrawerOpen && !InsideDrawer ? _drawerWidth : 0), y - (InsideDrawer ? _diff : 0));
+            return (x + AdjustmentX, y + AdjustmentY);
         }
     }
 }

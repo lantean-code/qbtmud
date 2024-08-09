@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
-namespace Lantean.QBTMudBlade.Components
+namespace Lantean.QBTMudBlade.Components.UI
 {
-    public partial class MudTdExtended : MudTd
+    public partial class TdExtended : MudTd
     {
         [Parameter]
         public EventCallback<LongPressEventArgs> OnLongPress { get; set; }

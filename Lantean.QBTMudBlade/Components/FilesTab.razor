@@ -1,5 +1,9 @@
-﻿<MudToolBar Gutters="false" Dense="true">
-    <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFile" title="Rename" />
+﻿<ContextMenu @ref="ContextMenu" Dense="true">
+    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu">Rename</MudMenuItem>
+</ContextMenu>
+
+<MudToolBar Gutters="false" Dense="true">
+    <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileToolbar" title="Rename" />
     <MudDivider Vertical="true" />
     <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
     <MudDivider Vertical="true" />
@@ -25,10 +29,13 @@
     ColumnDefinitions="Columns" 
     Items="Files" 
     MultiSelection="false"
+    SelectOnRowClick="true"
     PreSorted="true"
     SelectedItemChanged="SelectedItemChanged"
     SortColumnChanged="SortColumnChanged"
     SortDirectionChanged="SortDirectionChanged"
+    OnTableDataContextMenu="TableDataContextMenu"
+    OnTableDataLongPress="TableDataLongPress"
     Class="file-list"
 />
 
@@ -39,10 +46,10 @@
         {
             return context => __builder => 
             {
-                <div style="@($"margin-left: {context.Data.Level * 14}px")">
+                <div style="@($"margin-left: {(context.Data.Level * 14) + (context.Data.Level >= 1 ? 16 : 0)}px")">
                     @if (context.Data.IsFolder)
                     {
-                        <MudIconButton Edge="Edge.Start" ButtonType="ButtonType.Button" Icon="@(ExpandedNodes.Contains(context.Data.Name) ? Icons.Material.Filled.KeyboardArrowDown : Icons.Material.Filled.KeyboardArrowRight)" OnClick="@(c => ToggleNode(context.Data))"></MudIconButton>
+                        <MudIconButton Class="folder-button" Edge="Edge.Start" ButtonType="ButtonType.Button" Icon="@(ExpandedNodes.Contains(context.Data.Name) ? Icons.Material.Filled.KeyboardArrowDown : Icons.Material.Filled.KeyboardArrowRight)" OnClick="@(c => ToggleNode(context.Data))"></MudIconButton>
                         <MudIcon Icon="@Icons.Material.Filled.Folder" Class="pt-0" Style="margin-right: 4px; position: relative; top: 7px; margin-left: -15px" />
                     }
                     @context.Data.DisplayName

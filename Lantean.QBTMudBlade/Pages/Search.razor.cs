@@ -1,4 +1,5 @@
 ﻿using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Components.UI;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -41,6 +42,8 @@ namespace Lantean.QBTMudBlade.Pages
         protected Dictionary<string, string> Categories => GetCategories(Model.SelectedPlugin);
 
         protected IEnumerable<QBitTorrentClient.Models.SearchResult>? Results => _searchResults?.Results;
+
+        protected DynamicTable<QBitTorrentClient.Models.SearchResult>? Table { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
@@ -145,6 +148,17 @@ namespace Lantean.QBTMudBlade.Pages
                 }
             }
         }
+
+        protected IEnumerable<ColumnDefinition<QBitTorrentClient.Models.SearchResult>> Columns => ColumnsDefinitions;
+
+        public static List<ColumnDefinition<QBitTorrentClient.Models.SearchResult>> ColumnsDefinitions { get; } =
+        [
+            new ColumnDefinition<QBitTorrentClient.Models.SearchResult>("Name", l => l.FileName),
+            new ColumnDefinition<QBitTorrentClient.Models.SearchResult>("Size", l => @DisplayHelpers.Size(l.FileSize)),
+            new ColumnDefinition<QBitTorrentClient.Models.SearchResult>("Seeders", l => l.Seeders),
+            new ColumnDefinition<QBitTorrentClient.Models.SearchResult>("Leechers", l => l.Leechers),
+            new ColumnDefinition<QBitTorrentClient.Models.SearchResult>("Search engine", l => l.SiteUrl),
+        ];
 
         protected virtual void Dispose(bool disposing)
         {

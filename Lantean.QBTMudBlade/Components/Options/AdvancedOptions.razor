@@ -44,25 +44,25 @@
                 <MudNumericField T="int" Label=".torrent file size limit" Value="TorrentFileSizeLimit" ValueChanged="TorrentFileSizeLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Recheck torrents on completion" Value="RecheckCompletedTorrents" ValueChanged="RecheckCompletedTorrentsChanged" />
+                <FieldSwitch Label="Recheck torrents on completion" Value="RecheckCompletedTorrents" ValueChanged="RecheckCompletedTorrentsChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="Refresh interval" Value="RefreshInterval" ValueChanged="RefreshIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="ms" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Resolve peer countries" Value="ResolvePeerCountries" ValueChanged="ResolvePeerCountriesChanged" />
+                <FieldSwitch Label="Resolve peer countries" Value="ResolvePeerCountries" ValueChanged="ResolvePeerCountriesChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Reannounce to all trackers when IP or port changed" Value="ReannounceWhenAddressChanged" ValueChanged="ReannounceWhenAddressChangedChanged" />
+                <FieldSwitch Label="Reannounce to all trackers when IP or port changed" Value="ReannounceWhenAddressChanged" ValueChanged="ReannounceWhenAddressChangedChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Enable embedded tracker" Value="EnableEmbeddedTracker" ValueChanged="EnableEmbeddedTrackerChanged" />
+                <FieldSwitch Label="Enable embedded tracker" Value="EnableEmbeddedTracker" ValueChanged="EnableEmbeddedTrackerChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="Embedded tracker port" Value="EmbeddedTrackerPort" ValueChanged="EmbeddedTrackerPortChanged" Min="@Options.MinPortValue" Max="@Options.MaxPortValue" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Enable port forwarding for embedded tracker" Value="EmbeddedTrackerPortForwarding" ValueChanged="EmbeddedTrackerPortForwardingChanged" />
+                <FieldSwitch Label="Enable port forwarding for embedded tracker" Value="EmbeddedTrackerPortForwarding" ValueChanged="EmbeddedTrackerPortForwardingChanged" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -124,13 +124,13 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Coalesce reads &amp; writes (requires libtorrent &lt; 2.0)" Value="EnableCoalesceReadWrite" ValueChanged="EnableCoalesceReadWriteChanged" />
+                <FieldSwitch Label="Coalesce reads &amp; writes (requires libtorrent &lt; 2.0)" Value="EnableCoalesceReadWrite" ValueChanged="EnableCoalesceReadWriteChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Use piece extent affinity" Value="EnablePieceExtentAffinity" ValueChanged="EnablePieceExtentAffinityChanged" />
+                <FieldSwitch Label="Use piece extent affinity" Value="EnablePieceExtentAffinity" ValueChanged="EnablePieceExtentAffinityChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Send upload piece suggestions" Value="EnableUploadSuggestions" ValueChanged="EnableUploadSuggestionsChanged" />
+                <FieldSwitch Label="Send upload piece suggestions" Value="EnableUploadSuggestions" ValueChanged="EnableUploadSuggestionsChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="Send buffer watermark" Value="SendBufferWatermark" ValueChanged="SendBufferWatermarkChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
@@ -172,19 +172,19 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Support internationalized domain name (IDN)" Value="IdnSupportEnabled" ValueChanged="IdnSupportEnabledChanged" />
+                <FieldSwitch Label="Support internationalized domain name (IDN)" Value="IdnSupportEnabled" ValueChanged="IdnSupportEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Allow multiple connections from the same IP address" Value="EnableMultiConnectionsFromSameIp" ValueChanged="EnableMultiConnectionsFromSameIpChanged" />
+                <FieldSwitch Label="Allow multiple connections from the same IP address" Value="EnableMultiConnectionsFromSameIp" ValueChanged="EnableMultiConnectionsFromSameIpChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Validate HTTPS tracker certificate" Value="ValidateHttpsTrackerCertificate" ValueChanged="ValidateHttpsTrackerCertificateChanged" />
+                <FieldSwitch Label="Validate HTTPS tracker certificate" Value="ValidateHttpsTrackerCertificate" ValueChanged="ValidateHttpsTrackerCertificateChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Server-side request forgery (SSRF) mitigation" Value="SsrfMitigation" ValueChanged="SsrfMitigationChanged" />
+                <FieldSwitch Label="Server-side request forgery (SSRF) mitigation" Value="SsrfMitigation" ValueChanged="SsrfMitigationChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Disallow connection to peers on privileged ports" Value="BlockPeersOnPrivilegedPorts" ValueChanged="BlockPeersOnPrivilegedPortsChanged" />
+                <FieldSwitch Label="Disallow connection to peers on privileged ports" Value="BlockPeersOnPrivilegedPorts" ValueChanged="BlockPeersOnPrivilegedPortsChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="int" Label="Upload slots behavior" Value="UploadSlotsBehavior" ValueChanged="UploadSlotsBehaviorChanged" Variant="Variant.Outlined">
@@ -200,10 +200,10 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Always announce to all trackers in a tier" Value="AnnounceToAllTrackers" ValueChanged="AnnounceToAllTrackersChanged" />
+                <FieldSwitch Label="Always announce to all trackers in a tier" Value="AnnounceToAllTrackers" ValueChanged="AnnounceToAllTrackersChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudFieldSwitch Label="Always announce to all tiers" Value="AnnounceToAllTiers" ValueChanged="AnnounceToAllTiersChanged" />
+                <FieldSwitch Label="Always announce to all tiers" Value="AnnounceToAllTiers" ValueChanged="AnnounceToAllTiersChanged" />
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="IP address reported to trackers (requires restart)" Value="AnnounceIp" ValueChanged="AnnounceIpChanged" Variant="Variant.Outlined" />

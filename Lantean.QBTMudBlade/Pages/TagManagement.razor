@@ -1,0 +1,38 @@
+﻿@page "/tags"
+@layout OtherLayout
+
+<MudToolBar Gutters="false" Dense="true">
+    @if (!DrawerOpen)
+    {
+        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+        <MudDivider Vertical="true" />
+    }
+    <MudDivider Vertical="true" />
+    <MudIconButton Icon="@Icons.Material.Filled.NewLabel" OnClick="AddTag" title="Add Tag" />
+    <MudText Class="pl-5 no-wrap">Tags</MudText>
+</MudToolBar>
+
+<DynamicTable @ref="Table"
+              T="string"
+              ColumnDefinitions="Columns"
+              Items="Results"
+              MultiSelection="false"
+              SelectOnRowClick="false"
+              Class="details-list" />
+
+@code {
+    private RenderFragment<RowContext<string>> ActionsColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var value = (string?)context.GetValue();
+                <MudButtonGroup>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(e => DeleteTag(value))" />
+                </MudButtonGroup>
+                ;
+            };
+        }
+    }
+}

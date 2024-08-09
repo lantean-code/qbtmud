@@ -23,9 +23,13 @@
     SelectedItemsChanged="SelectedItemsChangedInternal"
     OnRowClick="OnRowClickInternal"
     RowStyleFunc="RowStyleFuncInternal"
+    RowClassFunc="RowClassFuncInternal"
     Class="@Class">
     <ColGroup>
-        <col style="width: 30px" />
+        @if (MultiSelection)
+        {
+            <col style="width: 30px" />
+        }
         @foreach (var column in GetColumns())
         {
             <col style="@(GetColumnStyle(column))" />
@@ -51,9 +55,9 @@
     <RowTemplate>
         @foreach (var column in GetColumns())
         {
-            <MudTdExtended @ref="_tds[column.Id]" DataLabel="@column.Header" Class="@(GetColumnClass(column, context))" Style="@(GetColumnStyle(column))" OnLongPress="@(c => OnLongPressInternal(c, column.Id, context))" OnContextMenu="@(c => OnContextMenuInternal(c, column.Id, context))">
+            <TdExtended @ref="_tds[column.Id]" DataLabel="@column.Header" Class="@(GetColumnClass(column, context))" Style="@(GetColumnStyle(column))" OnLongPress="@(c => OnLongPressInternal(c, column.Id, context))" OnContextMenu="@(c => OnContextMenuInternal(c, column.Id, context))">
                 @column.RowTemplate(column.GetRowContext(context))
-            </MudTdExtended>
+            </TdExtended>
         }
     </RowTemplate>
 </MudTable>

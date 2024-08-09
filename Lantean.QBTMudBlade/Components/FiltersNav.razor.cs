@@ -1,10 +1,10 @@
 ﻿using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Components.UI;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
-using System.Collections.Generic;
 
 namespace Lantean.QBTMudBlade.Components
 {
@@ -271,7 +271,7 @@ namespace Lantean.QBTMudBlade.Components
 
         protected async Task AddCategory()
         {
-            await DialogService.ShowAddCategoryDialog(ApiClient);
+            await DialogService.InvokeAddCategoryDialog(ApiClient);
         }
 
         protected async Task EditCategory()
@@ -281,7 +281,7 @@ namespace Lantean.QBTMudBlade.Components
                 return;
             }
 
-            await DialogService.ShowEditCategoryDialog(ApiClient, ContextMenuCategory);
+            await DialogService.InvokeEditCategoryDialog(ApiClient, ContextMenuCategory);
         }
 
         protected async Task RemoveCategory()

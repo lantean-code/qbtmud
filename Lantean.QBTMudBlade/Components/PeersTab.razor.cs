@@ -1,4 +1,5 @@
 ﻿using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Components.UI;
 using Lantean.QBTMudBlade.Models;
 using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components;
@@ -16,6 +17,9 @@ namespace Lantean.QBTMudBlade.Components
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool? _showFlags;
 
+        private const string _toolbar = nameof(_toolbar);
+        private const string _context = nameof(_context);
+
         [Parameter, EditorRequired]
         public string? Hash { get; set; }
 
@@ -29,6 +33,9 @@ namespace Lantean.QBTMudBlade.Components
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         [Inject]
+        protected IDialogService DialogService { get; set; } = default!;
+
+        [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
@@ -39,6 +46,14 @@ namespace Lantean.QBTMudBlade.Components
         protected IEnumerable<Peer> Peers => PeerList?.Peers.Select(p => p.Value) ?? [];
 
         protected bool ShowFlags => _showFlags.GetValueOrDefault();
+
+        protected Peer? ContextMenuItem { get; set; }
+
+        protected Peer? SelectedItem { get; set; }
+
+        protected ContextMenu? ContextMenu { get; set; }
+
+        protected DynamicTable<Peer>? Table { get; set; }
 
         protected override async Task OnParametersSetAsync()
         {
@@ -81,6 +96,78 @@ namespace Lantean.QBTMudBlade.Components
             }
 
             await InvokeAsync(StateHasChanged);
+        }
+
+        protected async Task AddPeer()
+        {
+            if (Hash is null)
+            {
+                return;
+            }
+
+            var peers = await DialogService.ShowAddPeersDialog();
+            if (peers is null || peers.Count == 0)
+            {
+                return;
+            }
+
+            await ApiClient.AddPeers([Hash], peers);
+        }
+
+        protected Task BanPeerToolbar()
+        {
+            return BanPeer(SelectedItem);
+        }
+
+        protected Task BanPeerContextMenu()
+        {
+            return BanPeer(ContextMenuItem);
+        }
+
+        private async Task BanPeer(Peer? peer)
+        {
+            if (Hash is null || peer is null)
+            {
+                return;
+            }
+            await ApiClient.BanPeers([new QBitTorrentClient.Models.PeerId(peer.IPAddress, peer.Port)]);
+        }
+
+        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<Peer> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
+        }
+
+        protected Task TableDataLongPress(TableDataLongPressEventArgs<Peer> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
+        }
+
+        protected async Task ShowContextMenu(Peer? peer, EventArgs eventArgs)
+        {
+            ContextMenuItem = peer;
+
+            if (ContextMenu is null)
+            {
+                return;
+            }
+
+            await ContextMenu.ToggleMenuAsync(eventArgs);
+        }
+
+        protected void SelectedItemChanged(Peer peer)
+        {
+            SelectedItem = peer;
+        }
+
+        protected async Task ColumnOptions()
+        {
+            if (Table is null)
+            {
+                return;
+            }
+
+            await Table.ShowColumnOptionsDialog();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -141,9 +228,8 @@ namespace Lantean.QBTMudBlade.Components
             new ColumnDefinition<Peer>("Downloaded", p => p.Downloaded, p => @DisplayHelpers.Size(p.Downloaded)),
             new ColumnDefinition<Peer>("Uploaded", p => p.Uploaded, p => @DisplayHelpers.Size(p.Uploaded)),
             new ColumnDefinition<Peer>("Relevance", p => p.Relevance, p => @DisplayHelpers.Percentage(p.Relevance)),
-            new ColumnDefinition<Peer>("Files", p => p.Files, p => p.Files),
+            new ColumnDefinition<Peer>("Files", p => p.Files),
         ];
-
 
         protected virtual async Task DisposeAsync(bool disposing)
         {

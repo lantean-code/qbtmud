@@ -34,32 +34,11 @@
     </MudCardContent>
 </MudCard>
 
-<MudTable Items="Results"
-          T="Lantean.QBitTorrentClient.Models.Log"
-          Hover="true"
-          FixedHeader="true"
-          HeaderClass="table-head-bordered"
-          Dense="true"
-          Breakpoint="Breakpoint.None"
-          Bordered="true"
-          Square="true"
-          LoadingProgressColor="Color.Info"
-          HorizontalScrollbar="true"
-          Virtualize="true"
-          AllowUnsorted="false"
-          SelectOnRowClick="false"
-          Class="search-list"
-          RowClassFunc="RowClass">
-    <HeaderContent>
-        <MudTh>Id</MudTh>
-        <MudTh>Message</MudTh>
-        <MudTh>Timestamp</MudTh>
-        <MudTh>Log Type</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Od">@context.Id</MudTd>
-        <MudTd DataLabel="Message">@context.Message</MudTd>
-        <MudTd DataLabel="Timestamp">@DisplayHelpers.DateTime(context.Timestamp)</MudTd>
-        <MudTd DataLabel="Log Type">@context.Type</MudTd>
-    </RowTemplate>
-</MudTable>
+<DynamicTable @ref="Table"
+              T="Lantean.QBitTorrentClient.Models.Log"
+              ColumnDefinitions="Columns"
+              Items="Results"
+              MultiSelection="false"
+              SelectOnRowClick="false"
+              RowClassFunc="RowClass"
+              Class="search-list" />
