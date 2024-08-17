@@ -16,6 +16,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             if (firstRender)
             {
                 await KeyboardService.RegisterKeypressEvent("Enter", k => Submit(k));
+                await KeyboardService.Focus();
             }
         }
 
@@ -28,6 +29,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
                 if (disposing)
                 {
                     await KeyboardService.UnregisterKeypressEvent("Enter");
+                    await KeyboardService.UnFocus();
                 }
 
                 _disposedValue = true;

@@ -103,21 +103,20 @@ window.qbt.clearSelection = () => {
 }
 
 let supportedEvents = new Map();
+let focusInstance = null;
 
 document.addEventListener('keyup', event => {
     const key = getKey(event);
-
-    console.log(key);
-    console.log(event);
 
     const references = supportedEvents.get(key);
     if (!references) {
         return;
     }
 
-    console.log(references);
-
     references.forEach(dotNetObjectReference => {
+        if (focusInstance && dotNetObjectReference !== focusInstance) {
+            return;
+        }
         dotNetObjectReference.invokeMethodAsync('HandleKeyPressEvent', {
             key: event.key,
             code: event.code,
@@ -143,8 +142,6 @@ window.qbt.registerKeypressEvent = (keyboardEventArgs, dotNetObjectReference) =>
         references.set(dotNetObjectReference._id, dotNetObjectReference);
         supportedEvents.set(key, references);
     }
-
-    
 }
 
 window.qbt.unregisterKeypressEvent = (keyboardEventArgs, dotNetObjectReference) => {
@@ -156,6 +153,14 @@ window.qbt.unregisterKeypressEvent = (keyboardEventArgs, dotNetObjectReference) 
     }
 
     references.delete(dotNetObjectReference._id);
+}
+
+window.qbt.keyPressFocusInstance = dotNetObjectReference => {
+    focusInstance = dotNetObjectReference;
+}
+
+window.qbt.keyPressUnFocusInstance = dotNetObjectReference => {
+    focusInstance = null;
 }
 
 function getKey(keyboardEvent) {

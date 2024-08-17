@@ -1,11 +1,21 @@
 ﻿using Lantean.QBTMudBlade.Models;
+using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
 {
-    public partial class AddTorrentLinkDialog
+    public partial class AddTorrentLinkDialog : IAsyncDisposable
     {
+        private bool _disposedValue;
+        private readonly KeyboardEvent _ctrlEnterKey = new KeyboardEvent("Enter")
+        {
+            CtrlKey = true,
+        };
+
+        [Inject]
+        protected IKeyboardService KeyboardService { get; set; } = default!;
+
         [CascadingParameter]
         public MudDialogInstance MudDialog { get; set; } = default!;
 
@@ -14,6 +24,19 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         protected string? Urls { get; set; }
 
         protected AddTorrentOptions TorrentOptions { get; set; } = default!;
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                await KeyboardService.RegisterKeypressEvent(_ctrlEnterKey, k =>
+                {
+                    Submit();
+                    return Task.CompletedTask;
+                });
+                await KeyboardService.Focus();
+            }
+        }
 
         protected void Cancel()
         {
@@ -31,19 +54,25 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             MudDialog.Close(DialogResult.Ok(options));
         }
 
-        protected override Task Submit(KeyboardEvent keyboardEvent)
+        protected virtual async ValueTask DisposeAsync(bool disposing)
         {
-            Submit();
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    await KeyboardService.UnregisterKeypressEvent(_ctrlEnterKey);
+                    await KeyboardService.UnFocus();
+                }
 
-            return Task.CompletedTask;
+                _disposedValue = true;
+            }
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
+        public async ValueTask DisposeAsync()
         {
-            if (firstRender && UrlsTextField is not null)
-            {
-                await UrlsTextField.FocusAsync();
-            }
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            await DisposeAsync(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

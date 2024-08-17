@@ -1,10 +1,10 @@
-﻿@inherits SubmittableDialog
-
-<MudDialog>
+﻿<MudDialog>
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField @ref="UrlsTextField" Label="Urls" Lines="10" @bind-Value="Urls" Variant="Variant.Outlined" AutoFocus="true" />
+                <MudFocusTrap>
+                    <MudTextField @ref="UrlsTextField" Label="Urls" Lines="10" @bind-Value="Urls" Variant="Variant.Outlined" AutoFocus="true" />
+                </MudFocusTrap>
             </MudItem>
         </MudGrid>
         <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="false" />

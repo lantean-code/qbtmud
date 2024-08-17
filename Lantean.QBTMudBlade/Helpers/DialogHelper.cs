@@ -95,11 +95,11 @@ namespace Lantean.QBTMudBlade.Helpers
                 options.DownloadFirstAndLastPiecesFirst);
         }
 
-        public static async Task InvokeDeleteTorrentDialog(this IDialogService dialogService, IApiClient apiClient, params string[] hashes)
+        public static async Task<bool> InvokeDeleteTorrentDialog(this IDialogService dialogService, IApiClient apiClient, params string[] hashes)
         {
             if (hashes.Length == 0)
             {
-                return;
+                return false;
             }
 
             var parameters = new DialogParameters
@@ -111,10 +111,12 @@ namespace Lantean.QBTMudBlade.Helpers
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
-                return;
+                return false;
             }
 
             await apiClient.DeleteTorrents(hashes, (bool)dialogResult.Data);
+
+            return true;
         }
 
         public static async Task InvokeRenameFilesDialog(this IDialogService dialogService, IApiClient apiClient, string hash)
