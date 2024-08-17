@@ -270,13 +270,14 @@ namespace Lantean.QBTMudBlade.Helpers
 
             var parameters = new DialogParameters
             {
-                { nameof(SliderFieldDialog<long>.Value), rate },
                 { nameof(SliderFieldDialog<long>.Min), -1L },
-                { nameof(SliderFieldDialog<long>.Max), 100L },
-                { nameof(SliderFieldDialog<long>.Value), rate },
+                { nameof(SliderFieldDialog<long>.Max), 1000L },
+                { nameof(SliderFieldDialog<long>.Value), rate / 1024 },
                 { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
                 { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
-                { nameof(SliderFieldDialog<long>.Label), "Download rate limit" }
+                { nameof(SliderFieldDialog<long>.Label), "Download rate limit" },
+                { nameof(SliderFieldDialog<long>.Adornment), Adornment.End },
+                { nameof(SliderFieldDialog<long>.AdornmentText), "KiB/s" },
             };
             var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Download Rate", parameters, FormDialogOptions);
 
@@ -285,8 +286,8 @@ namespace Lantean.QBTMudBlade.Helpers
             {
                 return;
             }
-
-            await apiClient.SetTorrentDownloadLimit((long)dialogResult.Data, null, hashes.ToArray());
+            var kibs = (long)dialogResult.Data;
+            await apiClient.SetTorrentDownloadLimit(kibs * 1024, null, hashes.ToArray());
         }
 
         public static async Task InvokeUploadRateDialog(this IDialogService dialogService, IApiClient apiClient, long rate, IEnumerable<string> hashes)
@@ -296,13 +297,14 @@ namespace Lantean.QBTMudBlade.Helpers
 
             var parameters = new DialogParameters
             {
-                { nameof(SliderFieldDialog<long>.Value), rate },
                 { nameof(SliderFieldDialog<long>.Min), -1L },
-                { nameof(SliderFieldDialog<long>.Max), 100L },
-                { nameof(SliderFieldDialog<long>.Value), rate },
+                { nameof(SliderFieldDialog<long>.Max), 1000L },
+                { nameof(SliderFieldDialog<long>.Value), rate / 1024 },
                 { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
                 { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
-                { nameof(SliderFieldDialog<long>.Label), "Upload rate limit" }
+                { nameof(SliderFieldDialog<long>.Label), "Upload rate limit" },
+                { nameof(SliderFieldDialog<long>.Adornment), Adornment.End },
+                { nameof(SliderFieldDialog<long>.AdornmentText), "KiB/s" },
             };
             var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Upload Rate", parameters, FormDialogOptions);
 
@@ -311,8 +313,8 @@ namespace Lantean.QBTMudBlade.Helpers
             {
                 return;
             }
-
-            await apiClient.SetTorrentUploadLimit((long)dialogResult.Data, null, hashes.ToArray());
+            var kibs = (long)dialogResult.Data;
+            await apiClient.SetTorrentUploadLimit(kibs * 1024, null, hashes.ToArray());
         }
 
         public static async Task InvokeShareRatioDialog(this IDialogService dialogService, IApiClient apiClient, IEnumerable<Torrent> torrents)

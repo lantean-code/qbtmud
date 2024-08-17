@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Lantean.QBTMudBlade.Models;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
-using System.ComponentModel;
 using System.Numerics;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
@@ -27,10 +27,16 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         public bool Disabled { get; set; }
 
         [Parameter]
-        public Func<T, string?>? ValueDisplayFunc { get; set; }
+        public Func<T, string>? ValueDisplayFunc { get; set; }
 
         [Parameter]
         public Func<string, T>? ValueGetFunc { get; set; }
+
+        [Parameter]
+        public Adornment Adornment { get; set; }
+
+        [Parameter]
+        public string? AdornmentText { get; set; }
 
         private string? GetDisplayValue()
         {
@@ -47,7 +53,8 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         {
             if (ValueGetFunc is not null)
             {
-                Value = ValueGetFunc.Invoke(value);
+                T val = ValueGetFunc.Invoke(value);
+                Value = val;
 
                 return;
             }
@@ -62,14 +69,21 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             }
         }
 
-        protected void Cancel(MouseEventArgs args)
+        protected void Cancel()
         {
             MudDialog.Cancel();
         }
 
-        protected void Submit(MouseEventArgs args)
+        protected void Submit()
         {
             MudDialog.Close(DialogResult.Ok(Value));
+        }
+
+        protected override Task Submit(KeyboardEvent keyboardEvent)
+        {
+            Submit();
+
+            return Task.CompletedTask;
         }
     }
 }
