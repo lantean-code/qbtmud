@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Lantean.QBTMudBlade.Models;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
@@ -40,6 +41,13 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         protected void Submit()
         {
             MudDialog.Close(Trackers);
+        }
+
+        protected override Task Submit(KeyboardEvent keyboardEvent)
+        {
+            Submit();
+
+            return Task.CompletedTask;
         }
     }
 }

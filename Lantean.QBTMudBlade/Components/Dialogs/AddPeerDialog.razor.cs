@@ -1,4 +1,5 @@
 ﻿using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -49,6 +50,13 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         protected void Submit()
         {
             MudDialog.Close(Peers);
+        }
+
+        protected override Task Submit(KeyboardEvent keyboardEvent)
+        {
+            Submit();
+
+            return Task.CompletedTask;
         }
     }
 }

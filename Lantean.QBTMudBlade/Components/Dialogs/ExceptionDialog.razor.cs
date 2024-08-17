@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
@@ -12,7 +11,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         [Parameter]
         public Exception? Exception { get; set; }
 
-        protected void Close(MouseEventArgs args)
+        protected void Close()
         {
             MudDialog.Cancel();
         }

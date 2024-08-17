@@ -1,7 +1,6 @@
 ﻿using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
@@ -102,12 +101,12 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             ShareRatioType = value;
         }
 
-        protected void Cancel(MouseEventArgs args)
+        protected void Cancel()
         {
             MudDialog.Cancel();
         }
 
-        protected void Submit(MouseEventArgs args)
+        protected void Submit()
         {
             var result = new ShareRatio();
             if (ShareRatioType == Limits.GlobalLimit)
@@ -125,6 +124,13 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
                 result.InactiveSeedingTimeLimit = InactiveMinutesEnabled ? InactiveMinutes : Limits.NoLimit;
             }
             MudDialog.Close(DialogResult.Ok(result));
+        }
+
+        protected override Task Submit(KeyboardEvent keyboardEvent)
+        {
+            Submit();
+
+            return Task.CompletedTask;
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
@@ -30,12 +29,12 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             SavePath ??= _savePath;
         }
 
-        protected void Cancel(MouseEventArgs args)
+        protected void Cancel()
         {
             MudDialog.Cancel();
         }
 
-        protected void Submit(MouseEventArgs args)
+        protected void Submit()
         {
             if (Category is null)
             {
@@ -48,6 +47,13 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             }
 
             MudDialog.Close(DialogResult.Ok(new Category(Category, SavePath)));
+        }
+
+        protected override Task Submit(KeyboardEvent keyboardEvent)
+        {
+            Submit();
+
+            return Task.CompletedTask;
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Lantean.QBTMudBlade.Filter;
+using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using System.Reflection;
 
@@ -108,12 +108,12 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             Value = null;
         }
 
-        protected void Cancel(MouseEventArgs args)
+        protected void Cancel()
         {
             MudDialog.Cancel();
         }
 
-        protected void Submit(MouseEventArgs args)
+        protected void Submit()
         {
             if (Column is not null && Operator is not null && !(FilterDefinitions?.Exists(d => d.Column == Column) ?? false))
             {
@@ -121,6 +121,13 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             }
 
             MudDialog.Close(DialogResult.Ok(FilterDefinitions));
+        }
+
+        protected override Task Submit(KeyboardEvent keyboardEvent)
+        {
+            Submit();
+
+            return Task.CompletedTask;
         }
     }
 }

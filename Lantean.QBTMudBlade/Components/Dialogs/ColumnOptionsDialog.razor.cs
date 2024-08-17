@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
+﻿using Lantean.QBTMudBlade.Models;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
@@ -134,14 +134,21 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             return value.Value.ToString();
         }
 
-        protected void Cancel(MouseEventArgs args)
+        protected void Cancel()
         {
             MudDialog.Cancel();
         }
 
-        protected void Submit(MouseEventArgs args)
+        protected void Submit()
         {
             MudDialog.Close(DialogResult.Ok((SelectedColumnsInternal, WidthsInternal)));
+        }
+
+        protected override Task Submit(KeyboardEvent keyboardEvent)
+        {
+            Submit();
+
+            return Task.CompletedTask;
         }
     }
 }
