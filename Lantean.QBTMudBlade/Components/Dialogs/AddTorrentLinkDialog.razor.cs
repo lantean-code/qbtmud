@@ -29,11 +29,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         {
             if (firstRender)
             {
-                await KeyboardService.RegisterKeypressEvent(_ctrlEnterKey, k =>
-                {
-                    Submit();
-                    return Task.CompletedTask;
-                });
+                await KeyboardService.RegisterKeypressEvent(_ctrlEnterKey, Submit);
                 await KeyboardService.Focus();
             }
         }
@@ -52,6 +48,13 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
             }
             var options = new AddTorrentLinkOptions(Urls, TorrentOptions.GetTorrentOptions());
             MudDialog.Close(DialogResult.Ok(options));
+        }
+
+        protected Task Submit(KeyboardEvent keyboardEvent)
+        {
+            Submit();
+
+            return Task.CompletedTask;
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)
