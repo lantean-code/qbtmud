@@ -114,7 +114,7 @@ document.addEventListener('keyup', event => {
     }
 
     references.forEach(dotNetObjectReference => {
-        if (focusInstance && dotNetObjectReference !== focusInstance) {
+        if (focusInstance && dotNetObjectReference._id != focusInstance._id) {
             return;
         }
         dotNetObjectReference.invokeMethodAsync('HandleKeyPressEvent', {
