@@ -81,7 +81,7 @@ namespace Lantean.QBTMudBlade.Layout
                 var isDarkMode = await LocalStorage.GetItemAsync<bool?>(_isDarkModeStorageKey);
                 if (isDarkMode is null)
                 {
-                    IsDarkMode = await MudThemeProvider.GetSystemPreference();
+                    IsDarkMode = true;
                 }
                 else
                 {

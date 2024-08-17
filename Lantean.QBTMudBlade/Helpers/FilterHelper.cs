@@ -1,6 +1,6 @@
 ﻿using Lantean.QBTMudBlade.Models;
 
-namespace Lantean.QBTMudBlade
+namespace Lantean.QBTMudBlade.Helpers
 {
     public static class FilterHelper
     {
@@ -192,7 +192,7 @@ namespace Lantean.QBTMudBlade
                     break;
 
                 case Status.Completed:
-                    if ((state != "uploading") && (!state.Contains("UP")))
+                    if (state != "uploading" && !state.Contains("UP"))
                     {
                         return false;
                     }

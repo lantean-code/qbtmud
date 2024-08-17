@@ -155,7 +155,7 @@ else if (RenderType == RenderType.MenuItems)
         }
     }
 
-    private RenderFragment ChildItem(TorrentAction action)
+    private RenderFragment ChildItem(UIAction action)
     {
         return __builder =>
         {
@@ -168,7 +168,7 @@ else if (RenderType == RenderType.MenuItems)
         };
     }
 
-    private RenderFragment Menu(IEnumerable<TorrentAction> actions)
+    private RenderFragment Menu(IEnumerable<UIAction> actions)
     {
         return __builder =>
         {
@@ -178,7 +178,7 @@ else if (RenderType == RenderType.MenuItems)
         };
     }
 
-    private RenderFragment MenuContents(IEnumerable<TorrentAction> actions)
+    private RenderFragment MenuContents(IEnumerable<UIAction> actions)
     {
         return __builder =>
         {

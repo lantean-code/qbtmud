@@ -1,6 +1,4 @@
-﻿using Lantean.QBTMudBlade.Models;
-
-namespace Lantean.QBTMudBlade
+﻿namespace Lantean.QBTMudBlade.Models
 {
     public struct FilterState
     {

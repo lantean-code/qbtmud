@@ -10,15 +10,13 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         public MudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
-        public TorrentAction? ParentAction { get; set; }
+        public UIAction? ParentAction { get; set; }
 
         [Parameter]
         public Dictionary<string, Torrent> Torrents { get; set; } = default!;
 
         [Parameter]
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
-
-        protected bool MultiAction => ParentAction?.MultiAction ?? false;
 
         [Parameter]
         public IEnumerable<string> Hashes { get; set; } = [];

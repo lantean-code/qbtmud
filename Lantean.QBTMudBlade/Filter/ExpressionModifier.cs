@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 
-namespace Lantean.QBTMudBlade
+namespace Lantean.QBTMudBlade.Filter
 {
     internal static class ExpressionModifier
     {

@@ -4,7 +4,7 @@ using MudBlazor;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
-namespace Lantean.QBTMudBlade
+namespace Lantean.QBTMudBlade.Helpers
 {
     public static class DisplayHelpers
     {

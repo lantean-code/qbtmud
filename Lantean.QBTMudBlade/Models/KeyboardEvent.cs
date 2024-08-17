@@ -78,8 +78,7 @@ namespace Lantean.QBTMudBlade.Models
         {
             var modifiers = (CtrlKey ? "Ctrl" : "") + (ShiftKey ? "Shift" : "") + (AltKey ? "Alt" : "") + (MetaKey ? "Meta" : "");
 
-            return modifiers + (modifiers.Length == 0 ? "" : "+") + Key + (Repeat ? "-repeated" : "");
-            //return Key + (CtrlKey ? '1' : '0') + (ShiftKey ? '1' : '0') + (AltKey ? '1' : '0') + (MetaKey ? '1' : '0') + (Repeat ? '1' : '0');
+            return modifiers + (modifiers.Length == 0 ? "" : "+") + (Key == "+" ? "'+'" : "+") + (Repeat ? "-repeated" : "");
         }
 
         public override int GetHashCode()

@@ -3,18 +3,7 @@
 
 <MudDrawer Open="DrawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Overlay="false">
     <MudNavMenu>
-        <MudNavLink Icon="@(Icons.Material.Outlined.Navigation)" OnClick="NavigateBack">Torrents</MudNavLink>
-        <MudDivider />
-        <MudNavLink Icon="@Icons.Material.Filled.PieChart" Href="/statistics">Statistics</MudNavLink>
-        <MudNavLink Icon="@Icons.Material.Filled.Search" Href="/search">Search</MudNavLink>
-        <MudNavLink Icon="@Icons.Material.Filled.RssFeed" Href="/rss">RSS</MudNavLink>
-        <MudNavLink Icon="@Icons.Material.Filled.List" Href="/log">Execution Log</MudNavLink>
-        <MudNavLink Icon="@Icons.Material.Filled.DisabledByDefault" Href="/blocks">Blocked IPs</MudNavLink>
-        <MudDivider />
-        <MudNavLink Icon="@Icons.Material.Filled.Label" Href="/tags">Tag Management</MudNavLink>
-        <MudNavLink Icon="@Icons.Material.Filled.List" Href="/categories">Category Management</MudNavLink>
-        <MudDivider />
-        <MudNavLink Icon="@Icons.Material.Filled.Settings" Href="/settings">Settings</MudNavLink>
+        <ApplicationActions IsMenu="false" />
     </MudNavMenu>
 </MudDrawer>
 <MudMainContent>

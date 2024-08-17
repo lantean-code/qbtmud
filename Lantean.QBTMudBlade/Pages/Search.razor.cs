@@ -1,5 +1,6 @@
 ﻿using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Components.UI;
+using Lantean.QBTMudBlade.Helpers;
 using Lantean.QBTMudBlade.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;

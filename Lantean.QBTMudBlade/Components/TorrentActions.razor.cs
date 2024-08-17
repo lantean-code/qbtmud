@@ -1,5 +1,6 @@
 ﻿using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Components.Dialogs;
+using Lantean.QBTMudBlade.Helpers;
 using Lantean.QBTMudBlade.Interop;
 using Lantean.QBTMudBlade.Models;
 using Lantean.QBTMudBlade.Services;
@@ -13,7 +14,7 @@ namespace Lantean.QBTMudBlade.Components
     {
         private bool _disposedValue;
 
-        private List<TorrentAction>? _actions;
+        private List<UIAction>? _actions;
 
         [Inject]
         public IApiClient ApiClient { get; set; } = default!;
@@ -59,7 +60,7 @@ namespace Lantean.QBTMudBlade.Components
         public MudDialogInstance? MudDialog { get; set; }
 
         [Parameter]
-        public TorrentAction? ParentAction { get; set; }
+        public UIAction? ParentAction { get; set; }
 
         public MudMenu? ActionsMenu { get; set; }
 
@@ -89,14 +90,14 @@ namespace Lantean.QBTMudBlade.Components
                 new("firstLastPiecePrio", "Download first and last pieces first", Icons.Material.Filled.Check, Color.Info, CreateCallback(DownloadFirstLast)),
                 new("forceRecheck", "Force recheck", Icons.Material.Filled.Loop, Color.Info, CreateCallback(ForceRecheck), separatorBefore: true),
                 new("forceReannounce", "Force reannounce", Icons.Material.Filled.BroadcastOnHome, Color.Info, CreateCallback(ForceReannounce)),
-                new("queue", "Queue", Icons.Material.Filled.Queue, Color.Transparent, new List<TorrentAction>
+                new("queue", "Queue", Icons.Material.Filled.Queue, Color.Transparent, new List<UIAction>
                 {
                     new("queueTop", "Move to top", Icons.Material.Filled.VerticalAlignTop, Color.Inherit, CreateCallback(MoveToTop)),
                     new("queueUp", "Move up", Icons.Material.Filled.ArrowUpward, Color.Inherit, CreateCallback(MoveUp)),
                     new("queueDown", "Move down", Icons.Material.Filled.ArrowDownward, Color.Inherit, CreateCallback(MoveDown)),
                     new("queueBottom", "Move to bottom", Icons.Material.Filled.VerticalAlignBottom, Color.Inherit, CreateCallback(MoveToBottom)),
                 }, separatorBefore: true),
-                new("copy", "Copy", Icons.Material.Filled.FolderCopy, Color.Info, new List<TorrentAction>
+                new("copy", "Copy", Icons.Material.Filled.FolderCopy, Color.Info, new List<UIAction>
                 {
                     new("copyName", "Name", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Name))),
                     new("copyHashv1", "Info hash v1", Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV1))),
@@ -335,7 +336,7 @@ namespace Lantean.QBTMudBlade.Components
             await ApiClient.SetFirstLastPiecePriority(null, Hashes.ToArray());
         }
 
-        protected async Task SubMenuTouch(TorrentAction action)
+        protected async Task SubMenuTouch(UIAction action)
         {
             await DialogService.ShowSubMenu(Hashes, action, Torrents, Preferences);
         }
@@ -351,9 +352,9 @@ namespace Lantean.QBTMudBlade.Components
             }
         }
 
-        private IEnumerable<TorrentAction> Actions => GetActions();
+        private IEnumerable<UIAction> Actions => GetActions();
 
-        private IEnumerable<TorrentAction> GetActions()
+        private IEnumerable<UIAction> GetActions()
         {
             var allAreSequentialDownload = true;
             var thereAreSequentialDownload = false;
@@ -523,7 +524,7 @@ namespace Lantean.QBTMudBlade.Components
             return Filter(actionStates);
         }
 
-        private IEnumerable<TorrentAction> Filter(Dictionary<string, ActionState> actionStates)
+        private IEnumerable<UIAction> Filter(Dictionary<string, ActionState> actionStates)
         {
             if (_actions is null)
             {
@@ -640,55 +641,5 @@ namespace Lantean.QBTMudBlade.Components
         MenuWithoutActivator,
 
         MenuItems,
-    }
-
-    public record TorrentAction
-    {
-        private readonly Color _color;
-
-        public TorrentAction(string name, string text, string? icon, Color color, EventCallback callback, bool separatorBefore = false)
-        {
-            Name = name;
-            Text = text;
-            Icon = icon;
-            _color = color;
-            Callback = callback;
-            SeparatorBefore = separatorBefore;
-            Children = [];
-        }
-
-        public TorrentAction(string name, string text, string? icon, Color color, IEnumerable<TorrentAction> children, bool multiAction = false, bool useTextButton = false, bool separatorBefore = false)
-        {
-            Name = name;
-            Text = text;
-            Icon = icon;
-            _color = color;
-            Callback = default;
-            Children = children;
-            UseTextButton = useTextButton;
-            SeparatorBefore = separatorBefore;
-        }
-
-        public string Name { get; }
-
-        public string Text { get; }
-
-        public string? Icon { get; }
-
-
-
-        public Color Color => IsChecked is null || IsChecked.Value ? _color : Color.Transparent;
-
-        public EventCallback Callback { get; }
-
-        public bool SeparatorBefore { get; set; }
-
-        public IEnumerable<TorrentAction> Children { get; }
-
-        public bool UseTextButton { get; }
-
-        public bool MultiAction { get; }
-
-        public bool? IsChecked { get; internal set; }
     }
 }

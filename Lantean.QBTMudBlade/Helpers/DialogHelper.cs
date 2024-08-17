@@ -1,11 +1,10 @@
 ﻿using Lantean.QBitTorrentClient;
-using Lantean.QBTMudBlade.Components;
 using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Filter;
 using Lantean.QBTMudBlade.Models;
 using MudBlazor;
 
-namespace Lantean.QBTMudBlade
+namespace Lantean.QBTMudBlade.Helpers
 {
     public static class DialogHelper
     {
@@ -238,7 +237,7 @@ namespace Lantean.QBTMudBlade
 
         public static async Task ShowConfirmDialog(this IDialogService dialogService, string title, string content, Action onSuccess)
         {
-            await ShowConfirmDialog(dialogService, title, content, () =>
+            await dialogService.ShowConfirmDialog(title, content, () =>
             {
                 onSuccess();
 
@@ -389,7 +388,7 @@ namespace Lantean.QBTMudBlade
             await Task.Delay(0);
         }
 
-        public static async Task ShowSubMenu(this IDialogService dialogService, IEnumerable<string> hashes, TorrentAction parent, Dictionary<string, Torrent> torrents, QBitTorrentClient.Models.Preferences? preferences)
+        public static async Task ShowSubMenu(this IDialogService dialogService, IEnumerable<string> hashes, UIAction parent, Dictionary<string, Torrent> torrents, QBitTorrentClient.Models.Preferences? preferences)
         {
             var parameters = new DialogParameters
             {

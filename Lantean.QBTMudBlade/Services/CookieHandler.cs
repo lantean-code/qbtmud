@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
-namespace Lantean.QBTMudBlade
+namespace Lantean.QBTMudBlade.Services
 {
     public class CookieHandler : DelegatingHandler
     {

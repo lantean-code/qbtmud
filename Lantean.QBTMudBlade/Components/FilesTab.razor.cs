@@ -3,6 +3,7 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBTMudBlade.Components.Dialogs;
 using Lantean.QBTMudBlade.Components.UI;
 using Lantean.QBTMudBlade.Filter;
+using Lantean.QBTMudBlade.Helpers;
 using Lantean.QBTMudBlade.Models;
 using Lantean.QBTMudBlade.Services;
 using Microsoft.AspNetCore.Components;
