@@ -26,6 +26,12 @@
     <Content Update="Components\Dialogs\ManageCategoriesDialog.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
+    <Content Update="Components\Dialogs\ShareRatioDialog.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="Components\Dialogs\NumericFieldDialog.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
     <Content Update="Pages\TagManagement.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>

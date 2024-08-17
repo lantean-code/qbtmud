@@ -41,7 +41,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12" md="6">
-                <FieldSwitch T="bool" Label="Global maximum number of connections" Value="MaxConnecEnabled" ValueChanged="MaxConnecEnabledChanged" />
+                <FieldSwitch Label="Global maximum number of connections" Value="MaxConnecEnabled" ValueChanged="MaxConnecEnabledChanged" />
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudNumericField T="int" Label="Connections" Value="MaxConnec" ValueChanged="MaxConnecChanged" Min="0" Disabled="@(!MaxConnecEnabled)" Variant="Variant.Outlined" Validation="MaxConnectValidation" />

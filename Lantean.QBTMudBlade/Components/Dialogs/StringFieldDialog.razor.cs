@@ -4,7 +4,7 @@ using MudBlazor;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
 {
-    public partial class SingleFieldDialog<T>
+    public partial class StringFieldDialog
     {
         [CascadingParameter]
         public MudDialogInstance MudDialog { get; set; } = default!;
@@ -13,19 +13,10 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         public string? Label { get; set; }
 
         [Parameter]
-        public T? Value { get; set; }
+        public string? Value { get; set; }
 
         [Parameter]
         public bool Disabled { get; set; }
-
-        [Parameter]
-        public Func<T?, string?>? LabelFunc { get; set; }
-
-        private string? GetLabel()
-        {
-            var label = LabelFunc?.Invoke(Value);
-            return label is null ? Label : label;
-        }
 
         protected void Cancel(MouseEventArgs args)
         {

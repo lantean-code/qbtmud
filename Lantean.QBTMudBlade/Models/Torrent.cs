@@ -50,7 +50,9 @@
             long uploaded,
             long uploadedSession,
             long uploadSpeed,
-            long reannounce)
+            long reannounce,
+            float inactiveSeedingTimeLimit,
+            float maxInactiveSeedingTime)
         {
             Hash = hash;
             AddedOn = addedOn;
@@ -100,6 +102,8 @@
             UploadedSession = uploadedSession;
             UploadSpeed = uploadSpeed;
             Reannounce = reannounce;
+            InactiveSeedingTimeLimit = inactiveSeedingTimeLimit;
+            MaxInactiveSeedingTime = maxInactiveSeedingTime;
         }
 
         protected Torrent()
@@ -212,6 +216,10 @@
         public long UploadSpeed { get; set; }
 
         public long Reannounce { get; set; }
+
+        public float InactiveSeedingTimeLimit { get; set; }
+        
+        public float MaxInactiveSeedingTime { get; set; }
 
         public override bool Equals(object? obj)
         {

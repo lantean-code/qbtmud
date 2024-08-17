@@ -173,7 +173,7 @@ namespace Lantean.QBTMudBlade.Components
                 savePath = torrent.SavePath;
             }
 
-            await DialogService.ShowSingleFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
+            await DialogService.ShowStringFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
         }
 
         protected async Task Rename()
@@ -184,7 +184,7 @@ namespace Lantean.QBTMudBlade.Components
             {
                 name = torrent.Name;
             }
-            await DialogService.ShowSingleFieldDialog("Rename", "Name", name, v => ApiClient.SetTorrentName(v, hash));
+            await DialogService.ShowStringFieldDialog("Rename", "Name", name, v => ApiClient.SetTorrentName(v, hash));
         }
 
         protected async Task RenameFiles()
@@ -211,7 +211,7 @@ namespace Lantean.QBTMudBlade.Components
             string hash = Hashes.First();
             if (Hashes.Any() && Torrents.TryGetValue(hash, out var torrent))
             {
-                downloadLimit = torrent.UploadLimit;
+                downloadLimit = torrent.DownloadLimit;
             }
 
             await DialogService.InvokeDownloadRateDialog(ApiClient, downloadLimit, Hashes);
@@ -231,14 +231,16 @@ namespace Lantean.QBTMudBlade.Components
 
         protected async Task LimitShareRatio()
         {
-            float ratioLimit = -1;
-            string hash = Hashes.First();
-            if (Hashes.Any() && Torrents.TryGetValue(hash, out var torrent))
+            var torrents = new List<Torrent>();
+            foreach (var hash in Hashes)
             {
-                ratioLimit = torrent.RatioLimit;
+                if (Torrents.TryGetValue(hash, out var torrent))
+                {
+                    torrents.Add(torrent);
+                }
             }
 
-            await DialogService.InvokeShareRatioDialog(ApiClient, ratioLimit, Hashes);
+            await DialogService.InvokeShareRatioDialog(ApiClient, torrents);
         }
 
         protected async Task ToggleSuperSeeding()

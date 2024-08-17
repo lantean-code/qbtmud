@@ -246,14 +246,14 @@ namespace Lantean.QBTMudBlade
             });
         }
 
-        public static async Task ShowSingleFieldDialog<T>(this IDialogService dialogService, string title, string label, T? value, Func<T, Task> onSuccess)
+        public static async Task ShowStringFieldDialog(this IDialogService dialogService, string title, string label, string? value, Func<string, Task> onSuccess)
         {
             var parameters = new DialogParameters
             {
-                { nameof(SingleFieldDialog<T>.Label), label },
-                { nameof(SingleFieldDialog<T>.Value), value }
+                { nameof(StringFieldDialog.Label), label },
+                { nameof(StringFieldDialog.Value), value }
             };
-            var result = await dialogService.ShowAsync<SingleFieldDialog<T>>(title, parameters, FormDialogOptions);
+            var result = await dialogService.ShowAsync<StringFieldDialog>(title, parameters, FormDialogOptions);
 
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
@@ -261,19 +261,23 @@ namespace Lantean.QBTMudBlade
                 return;
             }
 
-            await onSuccess((T)dialogResult.Data);
+            await onSuccess((string)dialogResult.Data);
         }
 
         public static async Task InvokeDownloadRateDialog(this IDialogService dialogService, IApiClient apiClient, long rate, IEnumerable<string> hashes)
         {
-            Func<long, string> labelFunc = v => v == Limits.NoLimit ? "No limit" : v.ToString();
+            Func<long, string> valueDisplayFunc = v => v == Limits.NoLimit ? "∞" : v.ToString();
+            Func<string, long> valueGetFunc = v => v == "∞" ? Limits.NoLimit : long.Parse(v);
 
             var parameters = new DialogParameters
             {
                 { nameof(SliderFieldDialog<long>.Value), rate },
-                { nameof(SliderFieldDialog<long>.Min), 0L },
+                { nameof(SliderFieldDialog<long>.Min), -1L },
                 { nameof(SliderFieldDialog<long>.Max), 100L },
-                { nameof(SingleFieldDialog<long>.LabelFunc), labelFunc }
+                { nameof(SliderFieldDialog<long>.Value), rate },
+                { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
+                { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
+                { nameof(SliderFieldDialog<long>.Label), "Download rate limit" }
             };
             var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Download Rate", parameters, FormDialogOptions);
 
@@ -288,12 +292,18 @@ namespace Lantean.QBTMudBlade
 
         public static async Task InvokeUploadRateDialog(this IDialogService dialogService, IApiClient apiClient, long rate, IEnumerable<string> hashes)
         {
+            Func<long, string> valueDisplayFunc = v => v == Limits.NoLimit ? "∞" : v.ToString();
+            Func<string, long> valueGetFunc = v => v == "∞" ? Limits.NoLimit : long.Parse(v);
+
             var parameters = new DialogParameters
             {
                 { nameof(SliderFieldDialog<long>.Value), rate },
-                { nameof(SliderFieldDialog<long>.Min), 0L },
+                { nameof(SliderFieldDialog<long>.Min), -1L },
                 { nameof(SliderFieldDialog<long>.Max), 100L },
-                { nameof(SliderFieldDialog<long>.Disabled), rate == Limits.GlobalLimit },
+                { nameof(SliderFieldDialog<long>.Value), rate },
+                { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
+                { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
+                { nameof(SliderFieldDialog<long>.Label), "Upload rate limit" }
             };
             var result = await dialogService.ShowAsync<SliderFieldDialog<long>>("Upload Rate", parameters, FormDialogOptions);
 
@@ -306,15 +316,25 @@ namespace Lantean.QBTMudBlade
             await apiClient.SetTorrentUploadLimit((long)dialogResult.Data, null, hashes.ToArray());
         }
 
-        public static async Task InvokeShareRatioDialog(this IDialogService dialogService, IApiClient apiClient, float ratio, IEnumerable<string> hashes)
+        public static async Task InvokeShareRatioDialog(this IDialogService dialogService, IApiClient apiClient, IEnumerable<Torrent> torrents)
         {
+            var torrentShareRatios = torrents.Select(t => new ShareRatioMax
+            {
+                InactiveSeedingTimeLimit = t.InactiveSeedingTimeLimit,
+                MaxInactiveSeedingTime = t.InactiveSeedingTimeLimit,
+                MaxRatio = t.MaxRatio,
+                MaxSeedingTime = t.MaxSeedingTime,
+                RatioLimit = t.RatioLimit,
+                SeedingTimeLimit = t.SeedingTimeLimit,
+            });
+
+            var torrentsHaveSameShareRatio = torrentShareRatios.Distinct().Count() == 1;
+
             var parameters = new DialogParameters
             {
-                { nameof(SliderFieldDialog<float>.Value), ratio },
-                { nameof(SliderFieldDialog<float>.Min), 0F },
-                { nameof(SliderFieldDialog<float>.Max), 100F },
+                { nameof(ShareRatioDialog.Value), torrentsHaveSameShareRatio ? torrentShareRatios.FirstOrDefault() : null },
             };
-            var result = await dialogService.ShowAsync<SliderFieldDialog<float>>("Share ratio", parameters, FormDialogOptions);
+            var result = await dialogService.ShowAsync<ShareRatioDialog>("Share ratio", parameters, FormDialogOptions);
 
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
@@ -322,7 +342,9 @@ namespace Lantean.QBTMudBlade
                 return;
             }
 
-            await apiClient.SetTorrentShareLimit((float)dialogResult.Data, 0, null, hashes.ToArray());
+            var shareRatio = (ShareRatio)dialogResult.Data;
+
+            await apiClient.SetTorrentShareLimit(shareRatio.RatioLimit, shareRatio.SeedingTimeLimit, shareRatio.InactiveSeedingTimeLimit, null, torrents.Select(t => t.Hash).ToArray());
         }
 
         public static async Task<List<PropertyFilterDefinition<T>>?> ShowFilterOptionsDialog<T>(this IDialogService dialogService, List<PropertyFilterDefinition<T>>? propertyFilterDefinitions)

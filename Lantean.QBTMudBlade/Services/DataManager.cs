@@ -532,7 +532,9 @@ namespace Lantean.QBTMudBlade.Services
                 torrent.Uploaded.GetValueOrDefault(),
                 torrent.UploadedSession.GetValueOrDefault(),
                 torrent.UploadSpeed.GetValueOrDefault(),
-                torrent.Reannounce ?? 0);
+                torrent.Reannounce ?? 0,
+                torrent.InactiveSeedingTimeLimit.GetValueOrDefault(),
+                torrent.MaxInactiveSeedingTime.GetValueOrDefault());
         }
 
         private static void UpdateCategory(Category existingCategory, QBitTorrentClient.Models.Category category)
@@ -593,6 +595,8 @@ namespace Lantean.QBTMudBlade.Services
             existingTorrent.UploadedSession = torrent.UploadedSession ?? existingTorrent.UploadedSession;
             existingTorrent.UploadSpeed = torrent.UploadSpeed ?? existingTorrent.UploadSpeed;
             existingTorrent.Reannounce = torrent.Reannounce ?? existingTorrent.Reannounce;
+            existingTorrent.InactiveSeedingTimeLimit = torrent.InactiveSeedingTimeLimit ?? existingTorrent.InactiveSeedingTimeLimit;
+            existingTorrent.MaxInactiveSeedingTime = torrent.MaxInactiveSeedingTime ?? existingTorrent.MaxInactiveSeedingTime;
         }
 
         public Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files)

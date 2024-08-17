@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
-using System.ComponentModel;
 using System.Numerics;
 
 namespace Lantean.QBTMudBlade.Components.Dialogs
 {
-    public partial class SliderFieldDialog<T> where T : struct, INumber<T>
+    public partial class NumericFieldDialog<T> where T : struct, INumber<T>
     {
         [CascadingParameter]
         public MudDialogInstance MudDialog { get; set; } = default!;
@@ -27,7 +26,7 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         public bool Disabled { get; set; }
 
         [Parameter]
-        public Func<T, string?>? ValueDisplayFunc { get; set; }
+        public Func<T, string>? ValueDisplayFunc { get; set; }
 
         [Parameter]
         public Func<string, T>? ValueGetFunc { get; set; }
@@ -36,11 +35,6 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         {
             var value = ValueDisplayFunc?.Invoke(Value);
             return value is null ? Value.ToString() : value;
-        }
-
-        protected void ValueChanged(T value)
-        {
-            Value = value;
         }
 
         protected void ValueChanged(string value)

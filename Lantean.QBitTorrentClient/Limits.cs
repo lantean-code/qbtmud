@@ -2,8 +2,8 @@
 {
     public static class Limits
     {
-        public const long GlobalLimit = -2;
+        public const int GlobalLimit = -2;
 
-        public const long NoLimit = -1;
+        public const int NoLimit = -1;
     }
 }

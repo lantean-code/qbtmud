@@ -6,9 +6,6 @@
             <MudItem xs="12">
                 <MudNumericField T="string" Label="@Label" Value="@GetDisplayValue()" ValueChanged="ValueChanged" Min="@(Min.ToString())" Max="@(Max.ToString())" Disabled="Disabled" Variant="Variant.Outlined" />
             </MudItem>
-            <MudItem xs="12">
-                <MudSlider T="T" ValueLabel="true" Value="@Value" ValueChanged="ValueChanged" Min="@Min" Max="@Max" Disabled="Disabled" />
-            </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>

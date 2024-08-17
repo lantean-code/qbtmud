@@ -54,7 +54,9 @@ namespace Lantean.QBitTorrentClient.Models
             long? uploaded,
             long? uploadedSession,
             long? uploadSpeed,
-            long? reannounce)
+            long? reannounce,
+            float? inactiveSeedingTimeLimit,
+            float? maxInactiveSeedingTime)
         {
             AddedOn = addedOn;
             AmountLeft = amountLeft;
@@ -104,6 +106,8 @@ namespace Lantean.QBitTorrentClient.Models
             UploadedSession = uploadedSession;
             UploadSpeed = uploadSpeed;
             Reannounce = reannounce;
+            InactiveSeedingTimeLimit = inactiveSeedingTimeLimit;
+            MaxInactiveSeedingTime = maxInactiveSeedingTime;
         }
 
         [JsonPropertyName("added_on")]
@@ -250,5 +254,11 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("reannounce")]
         public long? Reannounce { get; }
+
+        [JsonPropertyName("inactive_seeding_time_limit")]
+        public float? InactiveSeedingTimeLimit { get; }
+
+        [JsonPropertyName("max_inactive_seeding_time")]
+        public float? MaxInactiveSeedingTime { get; }
     }
 }

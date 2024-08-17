@@ -675,12 +675,13 @@ namespace Lantean.QBitTorrentClient
             response.EnsureSuccessStatusCode();
         }
 
-        public async Task SetTorrentShareLimit(float ratioLimit, float seedingTimeLimit, bool? all = null, params string[] hashes)
+        public async Task SetTorrentShareLimit(float ratioLimit, float seedingTimeLimit, float inactiveSeedingTimeLimit, bool? all = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
                 .AddAllOrPipeSeparated("hashes", all, hashes)
                 .Add("ratioLimit", ratioLimit)
                 .Add("seedingTimeLimit", seedingTimeLimit)
+                .Add("inactiveSeedingTimeLimit", inactiveSeedingTimeLimit)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/setShareLimits", content);

@@ -122,7 +122,7 @@ namespace Lantean.QBitTorrentClient
 
         Task SetTorrentDownloadLimit(long limit, bool? all = null, params string[] hashes);
 
-        Task SetTorrentShareLimit(float ratioLimit, float seedingTimeLimit, bool? all = null, params string[] hashes);
+        Task SetTorrentShareLimit(float ratioLimit, float seedingTimeLimit, float inactiveSeedingTimeLimit, bool? all = null, params string[] hashes);
 
         Task<IReadOnlyDictionary<string, long>> GetTorrentUploadLimit(bool? all = null, params string[] hashes);
 

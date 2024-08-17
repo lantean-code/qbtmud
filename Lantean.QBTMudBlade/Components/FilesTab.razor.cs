@@ -308,7 +308,7 @@ namespace Lantean.QBTMudBlade.Components
             {
                 var contentItem = contentItems[0];
                 var name = contentItem.GetFileName();
-                await DialogService.ShowSingleFieldDialog("Rename", "New name", name, async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
+                await DialogService.ShowStringFieldDialog("Rename", "New name", name, async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
             }
             else
             {

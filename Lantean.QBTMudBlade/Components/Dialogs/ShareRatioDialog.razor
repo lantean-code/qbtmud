@@ -1,0 +1,35 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudRadioGroup T="int" Value="ShareRatioType" ValueChanged="ShareRatioTypeChanged">
+                    <MudRadio T="int" Value="-2">Use global share limit</MudRadio>
+                    <MudRadio T="int" Value="-1">Set no share limit</MudRadio>
+                    <MudRadio T="int" Value="0">Set share limit to</MudRadio>
+                </MudRadioGroup>
+            </MudItem>
+            <MudItem xs="3">
+                <FieldSwitch Label="Ratio" Value="RatioEnabled" ValueChanged="RatioEnabledChanged" Disabled="@(!CustomEnabled)" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudNumericField T="float" Value="Ratio" ValueChanged="RatioChanged" Disabled="@(!CustomEnabled)" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
+            </MudItem>
+            <MudItem xs="3">
+                <FieldSwitch Label="Total minutes" Value="TotalMinutesEnabled" ValueChanged="TotalMinutesEnabledChanged" Disabled="@(!CustomEnabled)" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudNumericField T="int" Value="TotalMinutes" ValueChanged="TotalMinutesChanged" Disabled="@(!CustomEnabled)" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
+            </MudItem>
+            <MudItem xs="3">
+                <FieldSwitch Label="Inactive minutes" Value="InactiveMinutesEnabled" ValueChanged="InactiveMinutesEnabledChanged" Disabled="@(!CustomEnabled)" />
+            </MudItem>
+            <MudItem xs="9">
+                <MudNumericField T="int" Value="InactiveMinutes" ValueChanged="InactiveMinutesChanged" Disabled="@(!CustomEnabled)" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>

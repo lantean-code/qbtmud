@@ -187,7 +187,7 @@ namespace Lantean.QBTMudBlade.Components
                 return;
             }
 
-            await DialogService.ShowSingleFieldDialog("Edit Tracker", "Tracker URL", tracker.Url, async (value) => await ApiClient.EditTracker(Hash, tracker.Url, value));
+            await DialogService.ShowStringFieldDialog("Edit Tracker", "Tracker URL", tracker.Url, async (value) => await ApiClient.EditTracker(Hash, tracker.Url, value));
         }
 
         protected Task RemoveTrackerToolbar()
