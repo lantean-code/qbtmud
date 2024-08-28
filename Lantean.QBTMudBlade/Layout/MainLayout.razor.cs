@@ -30,8 +30,6 @@ namespace Lantean.QBTMudBlade.Layout
 
         protected bool ErrorDrawerOpen { get; set; } = false;
 
-        protected bool ShowMenu { get; set; } = false;
-
         public Guid Id => Guid.NewGuid();
 
         protected EnhancedErrorBoundary? ErrorBoundary { get; set; }
@@ -39,6 +37,8 @@ namespace Lantean.QBTMudBlade.Layout
         protected bool IsDarkMode { get; set; }
 
         protected MudThemeProvider MudThemeProvider { get; set; } = default!;
+
+        private Menu Menu { get; set; } = default!;
 
         ResizeOptions IBrowserViewportObserver.ResizeOptions { get; } = new()
         {
@@ -62,11 +62,6 @@ namespace Lantean.QBTMudBlade.Layout
 
         protected override async Task OnParametersSetAsync()
         {
-            if (!ShowMenu)
-            {
-                ShowMenu = await ApiClient.CheckAuthState();
-            }
-
             var drawerOpen = await LocalStorage.GetItemAsync<bool?>(_drawerOpenStorageKey);
             if (drawerOpen is not null)
             {

@@ -1,16 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
-namespace Lantean.QBTMudBlade
+namespace Lantean.QBTMudBlade.Models
 {
-    public static class TableHelper
-    {
-        public static void CreateColumn(string name)
-        {
-            // do it
-        }
-    }
-
     public class ColumnDefinition<T>
     {
         public ColumnDefinition(string header, Func<T, object?> sortSelector, Func<T, string>? formatter = null, string? tdClass = null, int? width = null)
@@ -59,27 +51,6 @@ namespace Lantean.QBTMudBlade
         public RowContext<T> GetRowContext(T data)
         {
             return new RowContext<T>(Header, data, Formatter is null ? SortSelector : Formatter);
-        }
-    }
-
-    public record RowContext<T>
-    {
-        private readonly Func<T, object?> _valueGetter;
-
-        public RowContext(string headerText, T data, Func<T, object?> valueGetter)
-        {
-            HeaderText = headerText;
-            Data = data;
-            _valueGetter = valueGetter;
-        }
-
-        public string HeaderText { get; }
-
-        public T Data { get; set; }
-
-        public object? GetValue()
-        {
-            return _valueGetter(Data);
         }
     }
 }

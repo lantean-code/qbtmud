@@ -14,7 +14,7 @@ namespace Lantean.QBTMudBlade.Pages
         private int? _searchId;
         private bool _disposedValue;
         private readonly CancellationTokenSource _timerCancellationToken = new();
-        private int _refreshInterval = 1500;
+        private readonly int _refreshInterval = 1500;
 
         private QBitTorrentClient.Models.SearchResults? _searchResults;
 

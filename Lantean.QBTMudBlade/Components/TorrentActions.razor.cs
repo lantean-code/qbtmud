@@ -90,21 +90,21 @@ namespace Lantean.QBTMudBlade.Components
                 new("firstLastPiecePrio", "Download first and last pieces first", Icons.Material.Filled.Check, Color.Info, CreateCallback(DownloadFirstLast)),
                 new("forceRecheck", "Force recheck", Icons.Material.Filled.Loop, Color.Info, CreateCallback(ForceRecheck), separatorBefore: true),
                 new("forceReannounce", "Force reannounce", Icons.Material.Filled.BroadcastOnHome, Color.Info, CreateCallback(ForceReannounce)),
-                new("queue", "Queue", Icons.Material.Filled.Queue, Color.Transparent, new List<UIAction>
-                {
+                new("queue", "Queue", Icons.Material.Filled.Queue, Color.Transparent,
+                [
                     new("queueTop", "Move to top", Icons.Material.Filled.VerticalAlignTop, Color.Inherit, CreateCallback(MoveToTop)),
                     new("queueUp", "Move up", Icons.Material.Filled.ArrowUpward, Color.Inherit, CreateCallback(MoveUp)),
                     new("queueDown", "Move down", Icons.Material.Filled.ArrowDownward, Color.Inherit, CreateCallback(MoveDown)),
                     new("queueBottom", "Move to bottom", Icons.Material.Filled.VerticalAlignBottom, Color.Inherit, CreateCallback(MoveToBottom)),
-                }, separatorBefore: true),
-                new("copy", "Copy", Icons.Material.Filled.FolderCopy, Color.Info, new List<UIAction>
-                {
+                ], separatorBefore: true),
+                new("copy", "Copy", Icons.Material.Filled.FolderCopy, Color.Info,
+                [
                     new("copyName", "Name", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Name))),
                     new("copyHashv1", "Info hash v1", Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV1))),
                     new("copyHashv2", "Info hash v2", Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV2))),
                     new("copyMagnet", "Magnet link", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.MagnetUri))),
                     new("copyId", "Torrent ID", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Hash))),
-                }),
+                ]),
                 new("export", "Export", Icons.Material.Filled.SaveAlt, Color.Info, CreateCallback(Export)),
             ];
         }

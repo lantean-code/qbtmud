@@ -81,21 +81,8 @@ namespace Lantean.QBTMudBlade.Pages
             }
         }
 
-        protected async Task NavigateBack()
+        protected void NavigateBack()
         {
-            //if (UpdatePreferences is null)
-            //{
-            //    NavigationManager.NavigateTo("/");
-            //    return;
-            //}
-
-            //await DialogService.ShowConfirmDialog(
-            //    "Unsaved Changed",
-            //    "Are you sure you want to leave without saving your changes?",
-            //    () => NavigationManager.NavigateTo("/"));
-
-            await Task.CompletedTask;
-
             NavigationManager.NavigateTo("/");
         }
 

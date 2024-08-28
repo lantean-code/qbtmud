@@ -1,6 +1,6 @@
 ﻿namespace Lantean.QBTMudBlade.Models
 {
-    public struct FilterState
+    public readonly struct FilterState
     {
         public FilterState(string category, Status status, string tag, string tracker, bool useSubcategories, string? terms)
         {

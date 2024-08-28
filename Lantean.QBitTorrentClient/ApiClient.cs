@@ -942,13 +942,145 @@ namespace Lantean.QBitTorrentClient
 
         #region RSS
 
-        // not implementing RSS right now
+        public async Task AddRssFolder(string path)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("path", path)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("rss/addFolder", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task AddRssFeed(string url, string? path = null)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("url", url)
+                .AddIfNotNullOrEmpty("path", path)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("rss/addFeed", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task RemoveRssItem(string path)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("path", path)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("rss/removeItem", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task MoveRssItem(string itemPath, string destPath)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("itemPath", itemPath)
+                .Add("destPath", destPath)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("rss/moveItem", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<IReadOnlyDictionary<string, RssItem>> GetAllRssItems(bool? withData = null)
+        {
+            var content = new QueryBuilder()
+                .AddIfNotNullOrEmpty("withData", withData);
+
+            var response = await _httpClient.GetAsync("rss/items", content);
+
+            response.EnsureSuccessStatusCode();
+
+            return await GetJsonDictionary<string, RssItem>(response.Content);
+        }
+
+        public async Task MarkRssItemAsRead(string itemPath, string? articleId = null)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("itemPath", itemPath)
+                .AddIfNotNullOrEmpty("articleId", articleId)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("rss/markAsRead", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task RefreshRssItem(string itemPath)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("itemPath", itemPath)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("rss/refresh", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task SetRssAutoDownloadingRule(string ruleName, AutoDownloadingRule ruleDef)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("ruleName", ruleName)
+                .Add("ruleName", JsonSerializer.Serialize(ruleDef))
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("rss/setRule", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task RenameRssAutoDownloadingRule(string ruleName, string newRuleName)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("ruleName", ruleName)
+                .Add("newRuleName", newRuleName)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("rss/renameRule", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task RemoveRssAutoDownloadingRule(string ruleName)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("ruleName", ruleName)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("rss/removeRule", content);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<IReadOnlyDictionary<string, AutoDownloadingRule>> GetAllRssAutoDownloadingRules()
+        {
+            var response = await _httpClient.GetAsync("rss/rules");
+
+            response.EnsureSuccessStatusCode();
+
+            return await GetJsonDictionary<string, AutoDownloadingRule>(response.Content);
+        }
+
+        public async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> GetRssMatchingArticles(string ruleName)
+        {
+            var response = await _httpClient.GetAsync("rss/matchingArticles");
+
+            response.EnsureSuccessStatusCode();
+
+            var dictionary = await GetJsonDictionary<string, IEnumerable<string>>(response.Content);
+
+            return ((IDictionary<string, IReadOnlyList<string>>)dictionary.ToDictionary(d => d.Key, d => d.Value.ToList().AsReadOnly())).AsReadOnly();
+        }
 
         #endregion RSS
 
         #region Search
-
-
 
         public async Task<int> StartSearch(string pattern, IEnumerable<string> plugins, string category = "all")
         {

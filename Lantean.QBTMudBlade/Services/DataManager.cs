@@ -69,9 +69,11 @@ namespace Lantean.QBTMudBlade.Services
 
             var serverState = CreateServerState(mainData.ServerState);
 
-            var tagState = new Dictionary<string, HashSet<string>>(tags.Count + 2);
-            tagState.Add(FilterHelper.TAG_ALL, torrents.Keys.ToHashSet());
-            tagState.Add(FilterHelper.TAG_UNTAGGED, torrents.Values.Where(t => FilterHelper.FilterTag(t, FilterHelper.TAG_UNTAGGED)).ToHashesHashSet());
+            var tagState = new Dictionary<string, HashSet<string>>(tags.Count + 2)
+            {
+                { FilterHelper.TAG_ALL, torrents.Keys.ToHashSet() },
+                { FilterHelper.TAG_UNTAGGED, torrents.Values.Where(t => FilterHelper.FilterTag(t, FilterHelper.TAG_UNTAGGED)).ToHashesHashSet() }
+            };
             foreach (var tag in tags)
             {
                 tagState.Add(tag, torrents.Values.Where(t => FilterHelper.FilterTag(t, tag)).ToHashesHashSet());

@@ -14,8 +14,8 @@ namespace Lantean.QBTMudBlade.Pages
     {
         private bool _disposedValue;
 
-        private static KeyboardEvent _addTorrentFileKey = new KeyboardEvent("a") { AltKey = true };
-        private static KeyboardEvent _addTorrentLinkKey = new KeyboardEvent("l") { AltKey = true };
+        private static readonly KeyboardEvent _addTorrentFileKey = new("a") { AltKey = true };
+        private static readonly KeyboardEvent _addTorrentLinkKey = new("l") { AltKey = true };
 
 
         [Inject]

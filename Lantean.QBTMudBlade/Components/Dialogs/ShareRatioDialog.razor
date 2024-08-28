@@ -20,7 +20,7 @@
                 <FieldSwitch Label="Ratio" Value="RatioEnabled" ValueChanged="RatioEnabledChanged" Disabled="@(!CustomEnabled)" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="float" Value="Ratio" ValueChanged="RatioChanged" Disabled="@(!(CustomEnabled && RatioEnabled))" Min="1" Max="1024000" Format="F2" Variant="Variant.Outlined" />
+                <MudNumericField T="float" Value="Ratio" ValueChanged="RatioChanged" Disabled="@(!(CustomEnabled && RatioEnabled))" Min="0" Max="1024000" Step="0.1F" Format="F2" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="Total minutes" Value="TotalMinutesEnabled" ValueChanged="TotalMinutesEnabledChanged" Disabled="@(!CustomEnabled)" />

@@ -64,9 +64,14 @@ namespace Lantean.QBTMudBlade.Helpers
             }
         }
 
-        public static async Task InvokeAddTorrentLinkDialog(this IDialogService dialogService, IApiClient apiClient)
+        public static async Task InvokeAddTorrentLinkDialog(this IDialogService dialogService, IApiClient apiClient, string? url = null)
         {
-            var result = await dialogService.ShowAsync<AddTorrentLinkDialog>("Download from URLs", FormDialogOptions);
+            var parameters = new DialogParameters
+            {
+                { nameof(AddTorrentLinkDialog.Url), url }
+            };
+
+            var result = await dialogService.ShowAsync<AddTorrentLinkDialog>("Download from URLs", parameters, FormDialogOptions);
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {

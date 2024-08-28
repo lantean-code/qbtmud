@@ -13,22 +13,27 @@ namespace Lantean.QBTMudBlade.Services
 
         public object? LogRequestStart(HttpRequestMessage request)
         {
-            //_logger.LogInformation(
-            //    "Sending '{Request.Method}' to '{Request.Host}{Request.Path}'",
-            //    request.Method,
-            //    request.RequestUri?.GetComponents(UriComponents.SchemeAndServer, UriFormat.Unescaped),
-            //    request.RequestUri!.PathAndQuery);
+#if DEBUG
+            _logger.LogInformation(
+                "Sending '{Request.Method}' to '{Request.Host}{Request.Path}'",
+                request.Method,
+                request.RequestUri?.GetComponents(UriComponents.SchemeAndServer, UriFormat.Unescaped),
+                request.RequestUri!.PathAndQuery);
+#endif
             return null;
+
         }
 
         public void LogRequestStop(
             object? context, HttpRequestMessage request, HttpResponseMessage response, TimeSpan elapsed)
         {
-            //_logger.LogInformation(
-            //    "Received '{Response.StatusCodeInt} {Response.StatusCodeString}' after {Response.ElapsedMilliseconds}ms",
-            //    (int)response.StatusCode,
-            //    response.StatusCode,
-            //    elapsed.TotalMilliseconds.ToString("F1"));
+#if DEBUG
+            _logger.LogInformation(
+                "Received '{Response.StatusCodeInt} {Response.StatusCodeString}' after {Response.ElapsedMilliseconds}ms",
+                (int)response.StatusCode,
+                response.StatusCode,
+                elapsed.TotalMilliseconds.ToString("F1"));
+#endif
         }
 
         public void LogRequestFailed(

@@ -22,11 +22,21 @@ namespace Lantean.QBitTorrentClient
             return this;
         }
 
-        public QueryBuilder AddIfNotNullOrEmpty(string key, string value)
+        public QueryBuilder AddIfNotNullOrEmpty(string key, string? value)
         {
             if (!string.IsNullOrEmpty(value))
             {
                 _parameters.Add(new KeyValuePair<string, string>(key, value));
+            }
+
+            return this;
+        }
+
+        public QueryBuilder AddIfNotNullOrEmpty<T>(string key, T? value) where T : struct
+        {
+            if (value.HasValue)
+            {
+                _parameters.Add(new KeyValuePair<string, string>(key, value.ToString()!));
             }
 
             return this;

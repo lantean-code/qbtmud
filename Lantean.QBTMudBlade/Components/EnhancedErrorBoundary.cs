@@ -22,7 +22,7 @@ namespace Lantean.QBTMudBlade.Components
 
         protected override Task OnErrorAsync(Exception exception)
         {
-            Logger.LogError(exception, exception.Message);
+            Logger.LogError(exception, "An application error occurred: {message}.", exception.Message);
             _exceptions.Add(exception);
 
             if (Disabled)

@@ -19,11 +19,22 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         [CascadingParameter]
         public MudDialogInstance MudDialog { get; set; } = default!;
 
+        [Parameter]
+        public string? Url { get; set; }
+
         protected MudTextField<string?>? UrlsTextField { get; set; }
 
         protected string? Urls { get; set; }
 
         protected AddTorrentOptions TorrentOptions { get; set; } = default!;
+
+        protected override void OnInitialized()
+        {
+            if (Url is not null)
+            {
+                Urls = Url;
+            }
+        }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {

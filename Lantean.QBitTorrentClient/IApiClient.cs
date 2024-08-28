@@ -172,7 +172,29 @@ namespace Lantean.QBitTorrentClient
 
         #region RSS
 
-        // not implementing RSS right now
+        Task AddRssFolder(string path);
+
+        Task AddRssFeed(string url, string? path = null);
+
+        Task RemoveRssItem(string path);
+
+        Task MoveRssItem(string itemPath, string destPath);
+
+        Task<IReadOnlyDictionary<string, RssItem>> GetAllRssItems(bool? withData = null);
+
+        Task MarkRssItemAsRead(string itemPath, string? articleId = null);
+
+        Task RefreshRssItem(string itemPath);
+
+        Task SetRssAutoDownloadingRule(string ruleName, AutoDownloadingRule ruleDef);
+
+        Task RenameRssAutoDownloadingRule(string ruleName, string newRuleName);
+
+        Task RemoveRssAutoDownloadingRule(string ruleName);
+
+        Task<IReadOnlyDictionary<string, AutoDownloadingRule>> GetAllRssAutoDownloadingRules();
+
+        Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> GetRssMatchingArticles(string ruleName);
 
         #endregion RSS
 

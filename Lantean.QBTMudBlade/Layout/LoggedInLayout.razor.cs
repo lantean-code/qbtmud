@@ -1,4 +1,5 @@
 ﻿using Lantean.QBitTorrentClient;
+using Lantean.QBTMudBlade.Components;
 using Lantean.QBTMudBlade.Helpers;
 using Lantean.QBTMudBlade.Models;
 using Lantean.QBTMudBlade.Services;
@@ -27,6 +28,9 @@ namespace Lantean.QBTMudBlade.Layout
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
+
+        [CascadingParameter]
+        public Menu? Menu { get; set; }
 
         protected MainData? MainData { get; set; }
 
@@ -85,6 +89,8 @@ namespace Lantean.QBTMudBlade.Layout
             _refreshInterval = MainData.ServerState.RefreshInterval;
 
             IsAuthenticated = true;
+
+            Menu?.ShowMenu(Preferences);
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)

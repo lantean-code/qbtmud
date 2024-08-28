@@ -219,3 +219,7 @@ td.icon-cell {
 td .folder-button {
     padding: 6px 16px 6px 16px !important;
 }
+
+.rss-contents {
+    height: calc(100vh - 149px);
+}

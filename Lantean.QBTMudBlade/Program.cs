@@ -20,7 +20,9 @@ namespace Lantean.QBTMudBlade
 
             Uri baseAddress;
 #if DEBUG
+#pragma warning disable S1075 // URIs should not be hardcoded - used for debugging only
             baseAddress = new Uri("http://localhost:8080");
+#pragma warning restore S1075 // URIs should not be hardcoded
 #else
             baseAddress = new Uri(builder.HostEnvironment.BaseAddress);
 #endif
