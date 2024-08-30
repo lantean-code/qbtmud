@@ -16,6 +16,8 @@ namespace Lantean.QBTMudBlade.Helpers
 
         public static readonly DialogOptions NonBlurConfirmDialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
 
+        public static readonly DialogOptions FullScreenDialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.ExtraExtraLarge, BackgroundClass = "background-blur", FullWidth = true };
+
         public const long _maxFileSize = 4194304;
 
         public static async Task InvokeAddTorrentFileDialog(this IDialogService dialogService, IApiClient apiClient)
@@ -252,7 +254,17 @@ namespace Lantean.QBTMudBlade.Helpers
             });
         }
 
-        public static async Task ShowStringFieldDialog(this IDialogService dialogService, string title, string label, string? value, Func<string, Task> onSuccess)
+        public static async Task InvokeStringFieldDialog(this IDialogService dialogService, string title, string label, string? value, Func<string, Task> onSuccess)
+        {
+            var result = await ShowStringFieldDialog(dialogService, title, label, value);
+
+            if (result is not null)
+            {
+                await onSuccess(result);
+            }
+        }
+
+        public static async Task<string?> ShowStringFieldDialog(this IDialogService dialogService, string title, string label, string? value)
         {
             var parameters = new DialogParameters
             {
@@ -264,10 +276,10 @@ namespace Lantean.QBTMudBlade.Helpers
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
-                return;
+                return null;
             }
 
-            await onSuccess((string)dialogResult.Data);
+            return (string)dialogResult.Data;
         }
 
         public static async Task InvokeDownloadRateDialog(this IDialogService dialogService, IApiClient apiClient, long rate, IEnumerable<string> hashes)
@@ -394,7 +406,7 @@ namespace Lantean.QBTMudBlade.Helpers
 
         public static async Task InvokeRssRulesDialog(this IDialogService dialogService)
         {
-            await Task.Delay(0);
+            await dialogService.ShowAsync<RssRulesDialog>("Edit Rss Auto Downloading Rules", FullScreenDialogOptions);
         }
 
         public static async Task ShowSubMenu(this IDialogService dialogService, IEnumerable<string> hashes, UIAction parent, Dictionary<string, Torrent> torrents, QBitTorrentClient.Models.Preferences? preferences)

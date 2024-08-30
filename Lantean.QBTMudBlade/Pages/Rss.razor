@@ -7,32 +7,33 @@
         <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
         <MudDivider Vertical="true" />
     }
+    <MudText Class="px-5 no-wrap">RSS</MudText>
+    <MudDivider Vertical="true" />
     <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" title="New subscription" />
-    <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" title="Mark items read" />
+    <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(SelectedFeed is null)" title="Mark items read" />
     <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="UpdateAll" title="Update all" />
     <MudDivider Vertical="true" />
     <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="Edit auto downloading rules" />
-    <MudDivider Vertical="true" />
-    <MudText Class="pl-5 no-wrap">RSS</MudText>
 </MudToolBar>
 
 <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
     <MudGrid Class="rss-contents">
         <MudItem xs="4" Style="height: 100%">
-            <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedFeed" SelectedValueChanged="SelectedFeedChanged">
-                @foreach (var (key, feed) in Items)
+            <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedFeed" SelectedValueChanged="SelectedFeedChanged" Dense>
+                <MudListItem Icon="@Icons.Material.Filled.MarkEmailUnread" Text="@($"Unread ({UnreadCount})")" Value="@("unread")" />
+                @foreach (var (key, feed) in Feeds)
                 {
-                    <MudListItem Icon="@Icons.Material.Filled.Wifi" Text="@feed.Title" Value="@key" />
+                    <MudListItem Icon="@(feed.IsLoading ? Icons.Material.Filled.Sync : Icons.Material.Filled.Wifi)" Class="@(feed.IsLoading ? "spin-animation" : "")" Text="@($"{feed.Title} ({feed.UnreadCount})")" Value="@key" />
                 }
             </MudList>
         </MudItem>
-        <MudItem xs="4" Style="height: 100%">
-            @if (SelectedFeed is not null && SelectedRssItem?.Articles is not null)
+        <MudItem xs="4" Style="height: 100%; overflow: auto">
+            @if (Articles.Count > 0)
             {
-                <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedArticle" SelectedValueChanged="SelectedArticleChanged">
-                    @foreach (var article in SelectedRssItem.Articles)
+                <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedArticle" SelectedValueChanged="SelectedArticleChanged" Dense>
+                    @foreach (var article in Articles)
                     {
-                        <MudListItem Text="@article.Title" Value="article.Id" />
+                        <MudListItem Text="@article.Title" Value="article.Id" Icon="@Icons.Material.Filled.Check" IconColor="@(article.IsRead ? Color.Success : Color.Transparent)" />
                     }
                 </MudList>
             }
@@ -42,24 +43,24 @@
             }
         </MudItem>
         <MudItem xs="4" Style="height: 100%">
-            @if (SelectedFeed is not null && SelectedArticle is not null && SelectedRssArticle is not null)
+            @if (Article is not null)
             {
                 <MudCard>
                     <MudCardHeader>
                         <CardHeaderContent>
-                            <MudText Typo="Typo.h6">@SelectedRssArticle.Title</MudText>
+                            <MudText Typo="Typo.h6" Style="overflow-wrap: anywhere">@Article.Title</MudText>
                         </CardHeaderContent>
                         <CardHeaderActions>
                             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense>
-                                <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(SelectedRssArticle.TorrentURL)" title="Download">Download</MudMenuItem>
-                                <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@SelectedRssArticle.TorrentURL" Target="@SelectedRssArticle.TorrentURL" title="Download">Open torrent URL</MudMenuItem>
+                                <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="Download">Download</MudMenuItem>
+                                <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="Download">Open torrent URL</MudMenuItem>
                             </MudMenu>
                         </CardHeaderActions>
                     </MudCardHeader>
 
                     <MudCardContent>
-                        <MudText Typo="Typo.subtitle2" Style="overflow-wrap: anywhere">@SelectedRssArticle.Date</MudText>
-                        <MudText Typo="Typo.body1">@SelectedRssArticle.Description</MudText>
+                        <MudText Typo="Typo.subtitle2">@Article.Date</MudText>
+                        <MudText Typo="Typo.body1">@Article.Description</MudText>
                     </MudCardContent>
                 </MudCard>
             }

@@ -14,7 +14,8 @@ namespace Lantean.QBitTorrentClient.Models
             string? link,
             string? thumbnail,
             string? title,
-            string? torrentURL)
+            string? torrentURL,
+            bool isRead)
         {
             Category = category;
             Comments = comments;
@@ -25,33 +26,37 @@ namespace Lantean.QBitTorrentClient.Models
             Thumbnail = thumbnail;
             Title = title;
             TorrentURL = torrentURL;
+            IsRead = isRead;
         }
 
         [JsonPropertyName("category")]
-        public string? Category { get; set; }
+        public string? Category { get; }
 
         [JsonPropertyName("comments")]
-        public string? Comments { get; set; }
+        public string? Comments { get; }
 
         [JsonPropertyName("date")]
-        public string? Date { get; set; }
+        public string? Date { get; }
 
         [JsonPropertyName("description")]
-        public string? Description { get; set; }
+        public string? Description { get; }
 
         [JsonPropertyName("id")]
-        public string? Id { get; set; }
+        public string? Id { get; }
 
         [JsonPropertyName("link")]
-        public string? Link { get; set; }
+        public string? Link { get; }
 
         [JsonPropertyName("thumbnail")]
-        public string? Thumbnail { get; set; }
+        public string? Thumbnail { get; }
 
         [JsonPropertyName("title")]
-        public string? Title { get; set; }
+        public string? Title { get; }
 
         [JsonPropertyName("torrentURL")]
-        public string? TorrentURL { get; set; }
+        public string? TorrentURL { get; }
+
+        [JsonPropertyName("isRead")]
+        public bool IsRead { get; }
     }
 }

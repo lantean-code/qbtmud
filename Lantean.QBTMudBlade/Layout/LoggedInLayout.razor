@@ -22,7 +22,9 @@
                                         <CascadingValue Value="TrackerChanged" Name="TrackerChanged">
                                             <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
                                                 <CascadingValue Value="@(MainData?.LostConnection ?? false)" Name="LostConnection">
-                                                @Body
+                                                    <CascadingValue Value="Version" Name="Version">
+                                                        @Body
+                                                    </CascadingValue>
                                                 </CascadingValue>
                                             </CascadingValue>
                                         </CascadingValue>

@@ -223,3 +223,21 @@ td .folder-button {
 .rss-contents {
     height: calc(100vh - 149px);
 }
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.spin-animation svg {
+    animation: spin 1s linear infinite;
+}
+
+.mud-dialog .mud-dialog-content {
+    padding-top: 4px !important;
+}

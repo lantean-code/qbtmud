@@ -1018,7 +1018,7 @@ namespace Lantean.QBitTorrentClient
                 .Add("itemPath", itemPath)
                 .ToFormUrlEncodedContent();
 
-            var response = await _httpClient.PostAsync("rss/refresh", content);
+            var response = await _httpClient.PostAsync("rss/refreshItem", content);
 
             response.EnsureSuccessStatusCode();
         }
@@ -1027,7 +1027,7 @@ namespace Lantean.QBitTorrentClient
         {
             var content = new FormUrlEncodedBuilder()
                 .Add("ruleName", ruleName)
-                .Add("ruleName", JsonSerializer.Serialize(ruleDef))
+                .Add("ruleDef", JsonSerializer.Serialize(ruleDef))
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("rss/setRule", content);
@@ -1069,13 +1069,16 @@ namespace Lantean.QBitTorrentClient
 
         public async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> GetRssMatchingArticles(string ruleName)
         {
-            var response = await _httpClient.GetAsync("rss/matchingArticles");
+            var query = new QueryBuilder()
+                .Add("ruleName", ruleName);
+
+            var response = await _httpClient.GetAsync($"rss/matchingArticles{query}");
 
             response.EnsureSuccessStatusCode();
 
             var dictionary = await GetJsonDictionary<string, IEnumerable<string>>(response.Content);
 
-            return ((IDictionary<string, IReadOnlyList<string>>)dictionary.ToDictionary(d => d.Key, d => d.Value.ToList().AsReadOnly())).AsReadOnly();
+            return dictionary.ToDictionary(d => d.Key, d => (IReadOnlyList<string>)d.Value.ToList().AsReadOnly()).AsReadOnly();
         }
 
         #endregion RSS

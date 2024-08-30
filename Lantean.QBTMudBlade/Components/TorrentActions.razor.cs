@@ -177,7 +177,7 @@ namespace Lantean.QBTMudBlade.Components
                 savePath = torrent.SavePath;
             }
 
-            await DialogService.ShowStringFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
+            await DialogService.InvokeStringFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
         }
 
         protected async Task Rename()
@@ -188,7 +188,7 @@ namespace Lantean.QBTMudBlade.Components
             {
                 name = torrent.Name;
             }
-            await DialogService.ShowStringFieldDialog("Rename", "Name", name, v => ApiClient.SetTorrentName(v, hash));
+            await DialogService.InvokeStringFieldDialog("Rename", "Name", name, v => ApiClient.SetTorrentName(v, hash));
         }
 
         protected async Task RenameFiles()

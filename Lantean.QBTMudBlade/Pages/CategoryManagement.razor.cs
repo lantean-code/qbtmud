@@ -85,7 +85,8 @@ namespace Lantean.QBTMudBlade.Pages
         public static List<ColumnDefinition<Category>> ColumnsDefinitions { get; } =
         [
             new ColumnDefinition<Category>("Name", l => l.Name),
-            new ColumnDefinition<Category>("Save path", l => l.SavePath)
+            new ColumnDefinition<Category>("Save path", l => l.SavePath),
+            new ColumnDefinition<Category>("Actions", l => l)
         ];
     }
 }

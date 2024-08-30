@@ -9,6 +9,8 @@
         <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" />
         <MudDivider Vertical="true" />
     }
+    <MudText Class="px-5 no-wrap">Settings</MudText>
+    <MudDivider Vertical="true" />
     <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="@(LostConnection || UpdatePreferences is null)" />
     <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(LostConnection || UpdatePreferences is null)" />
 </MudToolBar>

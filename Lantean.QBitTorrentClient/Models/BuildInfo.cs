@@ -10,12 +10,14 @@ namespace Lantean.QBitTorrentClient.Models
             string libTorrentVersion,
             string boostVersion,
             string openSSLVersion,
+            string zlibVersion,
             int bitness)
         {
             QTVersion = qTVersion;
             LibTorrentVersion = libTorrentVersion;
             BoostVersion = boostVersion;
             OpenSSLVersion = openSSLVersion;
+            ZLibVersion = zlibVersion;
             Bitness = bitness;
         }
 
@@ -30,6 +32,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("openssl")]
         public string OpenSSLVersion { get; }
+
+        [JsonPropertyName("zlib")]
+        public string ZLibVersion { get; }
 
         [JsonPropertyName("bitness")]
         public int Bitness { get; }

@@ -18,6 +18,11 @@ namespace Lantean.QBTMudBlade.Components.Dialogs
         [Parameter]
         public bool Disabled { get; set; }
 
+        protected void ValueChanged(string value)
+        {
+            Value = value;
+        }
+
         protected void Cancel()
         {
             MudDialog.Cancel();
