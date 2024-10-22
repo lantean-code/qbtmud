@@ -1,3 +1,0 @@
-﻿namespace Lantean.QBTFluent.Comparers
-{
-}

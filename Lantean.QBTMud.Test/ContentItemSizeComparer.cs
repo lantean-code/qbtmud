@@ -1,0 +1,3 @@
+﻿namespace Lantean.QBTMud.Test
+{
+}

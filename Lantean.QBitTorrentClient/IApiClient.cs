@@ -92,6 +92,10 @@ namespace Lantean.QBitTorrentClient
 
         Task ResumeTorrents(bool? all = null, params string[] hashes);
 
+        Task StartTorrents(bool? all = null, params string[] hashes);
+
+        Task StopTorrents(bool? all = null, params string[] hashes);
+
         Task DeleteTorrents(bool? all = null, bool deleteFiles = false, params string[] hashes);
 
         Task RecheckTorrents(bool? all = null, params string[] hashes);

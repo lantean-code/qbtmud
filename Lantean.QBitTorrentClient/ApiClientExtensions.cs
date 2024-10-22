@@ -19,6 +19,21 @@ namespace Lantean.QBitTorrentClient
             return apiClient.PauseTorrents(true);
         }
 
+        public static Task StopTorrent(this IApiClient apiClient, string hash)
+        {
+            return apiClient.StopTorrents(null, hash);
+        }
+
+        public static Task StopTorrents(this IApiClient apiClient, IEnumerable<string> hashes)
+        {
+            return apiClient.StopTorrents(null, hashes.ToArray());
+        }
+
+        public static Task StopAllTorrents(this IApiClient apiClient)
+        {
+            return apiClient.StopTorrents(true);
+        }
+
         public static Task ResumeTorrent(this IApiClient apiClient, string hash)
         {
             return apiClient.ResumeTorrents(null, hash);
@@ -32,6 +47,21 @@ namespace Lantean.QBitTorrentClient
         public static Task ResumeAllTorrents(this IApiClient apiClient)
         {
             return apiClient.ResumeTorrents(true);
+        }
+
+        public static Task StartTorrent(this IApiClient apiClient, string hash)
+        {
+            return apiClient.StartTorrents(null, hash);
+        }
+
+        public static Task StartTorrents(this IApiClient apiClient, IEnumerable<string> hashes)
+        {
+            return apiClient.StartTorrents(null, hashes.ToArray());
+        }
+
+        public static Task StartAllTorrents(this IApiClient apiClient)
+        {
+            return apiClient.StartTorrents(true);
         }
 
         public static Task DeleteTorrent(this IApiClient apiClient, string hash, bool deleteFiles)

@@ -40,7 +40,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("auth/login", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             var responseContent = await response.Content.ReadAsStringAsync();
             if (responseContent == "Fails.")
@@ -53,7 +53,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.PostAsync("auth/logout", null);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         #endregion Authentication
@@ -64,7 +64,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync("app/version");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await response.Content.ReadAsStringAsync();
         }
@@ -73,7 +73,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync("app/webapiVersion");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await response.Content.ReadAsStringAsync();
         }
@@ -82,7 +82,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync("app/buildInfo");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJson<BuildInfo>(response.Content);
         }
@@ -91,14 +91,14 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.PostAsync("app/shutdown", null);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<Preferences> GetApplicationPreferences()
         {
             var response = await _httpClient.GetAsync("app/preferences");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJson<Preferences>(response.Content);
         }
@@ -113,14 +113,14 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("app/setPreferences", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<string> GetDefaultSavePath()
         {
             var response = await _httpClient.GetAsync("app/defaultSavePath");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await response.Content.ReadAsStringAsync();
         }
@@ -129,7 +129,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync("app/networkInterfaceList");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<NetworkInterface>(response.Content);
         }
@@ -138,7 +138,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync($"app/networkInterfaceAddressList?iface={@interface}");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<string>(response.Content);
         }
@@ -173,7 +173,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.GetAsync($"log/main", query);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<Log>(response.Content);
         }
@@ -188,7 +188,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.GetAsync($"log/peers", query);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<PeerLog>(response.Content);
         }
@@ -201,7 +201,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync($"sync/maindata?rid={requestId}");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJson<MainData>(response.Content);
         }
@@ -210,7 +210,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync($"sync/torrentPeers?hash={hash}&rid={requestId}");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJson<TorrentPeers>(response.Content);
         }
@@ -223,7 +223,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync("transfer/info");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJson<GlobalTransferInfo>(response.Content);
         }
@@ -232,7 +232,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync("transfer/speedLimitsMode");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             var value = await response.Content.ReadAsStringAsync();
 
@@ -243,14 +243,14 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.PostAsync("transfer/toggleSpeedLimitsMode", null);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<long> GetGlobalDownloadLimit()
         {
             var response = await _httpClient.GetAsync("transfer/downloadLimit");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             var value = await response.Content.ReadAsStringAsync();
 
@@ -265,14 +265,14 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("transfer/setDownloadLimit", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<long> GetGlobalUploadLimit()
         {
             var response = await _httpClient.GetAsync("transfer/uploadLimit");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             var value = await response.Content.ReadAsStringAsync();
 
@@ -287,7 +287,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("transfer/setUploadLimit", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task BanPeers(IEnumerable<PeerId> peers)
@@ -298,7 +298,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("transfer/banPeers", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         #endregion Transfer info
@@ -343,7 +343,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.GetAsync("torrents/info", query);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<Torrent>(response.Content);
         }
@@ -352,7 +352,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync($"torrents/properties?hash={hash}");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJson<TorrentProperties>(response.Content);
         }
@@ -361,7 +361,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync($"torrents/trackers?hash={hash}");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<TorrentTracker>(response.Content);
         }
@@ -370,7 +370,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync($"torrents/webseeds?hash={hash}");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<WebSeed>(response.Content);
         }
@@ -385,7 +385,7 @@ namespace Lantean.QBitTorrentClient
             }
             var response = await _httpClient.GetAsync("torrents/files", query);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<FileData>(response.Content);
         }
@@ -394,7 +394,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync($"torrents/pieceStates?hash={hash}");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<PieceState>(response.Content);
         }
@@ -403,7 +403,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync($"torrents/pieceHashes?hash={hash}");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<string>(response.Content);
         }
@@ -416,7 +416,18 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/pause", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
+        public async Task StopTorrents(bool? all = null, params string[] hashes)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .AddAllOrPipeSeparated("hashes", all, hashes)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("torrents/stop", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task ResumeTorrents(bool? all = null, params string[] hashes)
@@ -427,7 +438,18 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/resume", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
+        public async Task StartTorrents(bool? all = null, params string[] hashes)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .AddAllOrPipeSeparated("hashes", all, hashes)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("torrents/start", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task DeleteTorrents(bool? all = null, bool deleteFiles = false, params string[] hashes)
@@ -439,7 +461,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/delete", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task RecheckTorrents(bool? all = null, params string[] hashes)
@@ -450,7 +472,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/recheck", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task ReannounceTorrents(bool? all = null, params string[] hashes)
@@ -461,7 +483,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/reannounce", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task AddTorrent(IEnumerable<string>? urls = null, Dictionary<string, Stream>? torrents = null, string? savePath = null, string? cookie = null, string? category = null, IEnumerable<string>? tags = null, bool? skipChecking = null, bool? paused = null, string? contentLayout = null, string? renameTorrent = null, long? uploadLimit = null, long? downloadLimit = null, float? ratioLimit = null, int? seedingTimeLimit = null, bool? autoTorrentManagement = null, bool? sequentialDownload = null, bool? firstLastPiecePriority = null)
@@ -541,7 +563,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/add", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task AddTrackersToTorrent(string hash, IEnumerable<string> urls)
@@ -553,7 +575,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/addTrackers", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task EditTracker(string hash, string originalUrl, string newUrl)
@@ -566,7 +588,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/editTracker", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task RemoveTrackers(string hash, IEnumerable<string> urls)
@@ -578,7 +600,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/removeTrackers", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task AddPeers(IEnumerable<string> hashes, IEnumerable<PeerId> peers)
@@ -590,7 +612,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/addPeers", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task IncreaseTorrentPriority(bool? all = null, params string[] hashes)
@@ -601,7 +623,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/increasePrio", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task DecreaseTorrentPriority(bool? all = null, params string[] hashes)
@@ -612,7 +634,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/decreasePrio", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task MaximalTorrentPriority(bool? all = null, params string[] hashes)
@@ -623,7 +645,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/topPrio", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task MinimalTorrentPriority(bool? all = null, params string[] hashes)
@@ -634,7 +656,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/bottomPrio", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task SetFilePriority(string hash, IEnumerable<int> id, Priority priority)
@@ -647,7 +669,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/filePrio", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<IReadOnlyDictionary<string, long>> GetTorrentDownloadLimit(bool? all = null, params string[] hashes)
@@ -658,7 +680,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/downloadLimit", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonDictionary<string, long>(response.Content);
         }
@@ -672,7 +694,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/setDownloadLimit", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task SetTorrentShareLimit(float ratioLimit, float seedingTimeLimit, float inactiveSeedingTimeLimit, bool? all = null, params string[] hashes)
@@ -686,7 +708,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/setShareLimits", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<IReadOnlyDictionary<string, long>> GetTorrentUploadLimit(bool? all = null, params string[] hashes)
@@ -697,7 +719,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/uploadLimit", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonDictionary<string, long>(response.Content);
         }
@@ -711,7 +733,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/setUploadLimit", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task SetTorrentLocation(string location, bool? all = null, params string[] hashes)
@@ -723,7 +745,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/setLocation", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task SetTorrentName(string name, string hash)
@@ -735,7 +757,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/rename", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task SetTorrentCategory(string category, bool? all = null, params string[] hashes)
@@ -747,14 +769,14 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/setCategory", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<IReadOnlyDictionary<string, Category>> GetAllCategories()
         {
             var response = await _httpClient.GetAsync("torrents/categories");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonDictionary<string, Category>(response.Content);
         }
@@ -768,7 +790,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/createCategory", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task EditCategory(string category, string savePath)
@@ -780,7 +802,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/editCategory", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task RemoveCategories(params string[] categories)
@@ -791,7 +813,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/removeCategories", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task AddTorrentTags(IEnumerable<string> tags, bool? all = null, params string[] hashes)
@@ -803,7 +825,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/addTags", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task RemoveTorrentTags(IEnumerable<string> tags, bool? all = null, params string[] hashes)
@@ -815,14 +837,14 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/removeTags", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<IReadOnlyList<string>> GetAllTags()
         {
             var response = await _httpClient.GetAsync("torrents/tags");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<string>(response.Content);
         }
@@ -835,7 +857,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/createTags", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task DeleteTags(params string[] tags)
@@ -846,7 +868,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/deleteTags", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task SetAutomaticTorrentManagement(bool enable, bool? all = null, params string[] hashes)
@@ -858,7 +880,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/setAutoManagement", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task ToggleSequentialDownload(bool? all = null, params string[] hashes)
@@ -869,7 +891,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/toggleSequentialDownload", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task SetFirstLastPiecePriority(bool? all = null, params string[] hashes)
@@ -880,7 +902,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/toggleFirstLastPiecePrio", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task SetForceStart(bool value, bool? all = null, params string[] hashes)
@@ -892,7 +914,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/setForceStart", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task SetSuperSeeding(bool value, bool? all = null, params string[] hashes)
@@ -904,7 +926,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/setSuperSeeding", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task RenameFile(string hash, string oldPath, string newPath)
@@ -917,7 +939,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/renameFile", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task RenameFolder(string hash, string oldPath, string newPath)
@@ -930,7 +952,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("torrents/renameFolder", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public Task<string> GetExportUrl(string hash)
@@ -950,7 +972,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("rss/addFolder", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task AddRssFeed(string url, string? path = null)
@@ -962,7 +984,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("rss/addFeed", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task RemoveRssItem(string path)
@@ -973,7 +995,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("rss/removeItem", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task MoveRssItem(string itemPath, string destPath)
@@ -985,7 +1007,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("rss/moveItem", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<IReadOnlyDictionary<string, RssItem>> GetAllRssItems(bool? withData = null)
@@ -995,7 +1017,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.GetAsync("rss/items", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonDictionary<string, RssItem>(response.Content);
         }
@@ -1009,7 +1031,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("rss/markAsRead", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task RefreshRssItem(string itemPath)
@@ -1020,7 +1042,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("rss/refreshItem", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task SetRssAutoDownloadingRule(string ruleName, AutoDownloadingRule ruleDef)
@@ -1032,7 +1054,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("rss/setRule", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task RenameRssAutoDownloadingRule(string ruleName, string newRuleName)
@@ -1044,7 +1066,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("rss/renameRule", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task RemoveRssAutoDownloadingRule(string ruleName)
@@ -1055,14 +1077,14 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("rss/removeRule", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<IReadOnlyDictionary<string, AutoDownloadingRule>> GetAllRssAutoDownloadingRules()
         {
             var response = await _httpClient.GetAsync("rss/rules");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonDictionary<string, AutoDownloadingRule>(response.Content);
         }
@@ -1074,7 +1096,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.GetAsync($"rss/matchingArticles{query}");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             var dictionary = await GetJsonDictionary<string, IEnumerable<string>>(response.Content);
 
@@ -1095,7 +1117,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("search/start", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             var obj = await GetJson<Dictionary<string, JsonElement>>(response.Content);
 
@@ -1110,7 +1132,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("search/stop", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<SearchStatus?> GetSearchStatus(int id)
@@ -1124,7 +1146,7 @@ namespace Lantean.QBitTorrentClient
                 return null;
             }
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return (await GetJsonList<SearchStatus>(response.Content)).FirstOrDefault();
         }
@@ -1133,7 +1155,7 @@ namespace Lantean.QBitTorrentClient
         {
             var response = await _httpClient.GetAsync($"search/status");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<SearchStatus>(response.Content);
         }
@@ -1153,7 +1175,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.GetAsync($"search/results{query}");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJson<SearchResults>(response.Content);
         }
@@ -1166,14 +1188,14 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("search/delete", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<IReadOnlyList<SearchPlugin>> GetSearchPlugins()
         {
             var response = await _httpClient.GetAsync($"search/plugins");
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
 
             return await GetJsonList<SearchPlugin>(response.Content);
         }
@@ -1186,7 +1208,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("search/installPlugin", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task UninstallSearchPlugins(params string[] names)
@@ -1197,7 +1219,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("search/uninstallPlugin", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task EnableSearchPlugins(params string[] names)
@@ -1209,7 +1231,7 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("search/enablePlugin", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task DisableSearchPlugins(params string[] names)
@@ -1221,14 +1243,14 @@ namespace Lantean.QBitTorrentClient
 
             var response = await _httpClient.PostAsync("search/enablePlugin", content);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task UpdateSearchPlugins()
         {
             var response = await _httpClient.PostAsync("search/updatePlugins", null);
 
-            response.EnsureSuccessStatusCode();
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         #endregion Search
@@ -1264,6 +1286,17 @@ namespace Lantean.QBitTorrentClient
             {
                 return new Dictionary<TKey, TValue>().AsReadOnly();
             }
+        }
+
+        private async Task<HttpResponseMessage> ThrowIfNotSuccessfulStatusCode(HttpResponseMessage response)
+        {
+            if (response.IsSuccessStatusCode)
+            {
+                return response;
+            }
+
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(errorMessage, null, response.StatusCode);
         }
     }
 }

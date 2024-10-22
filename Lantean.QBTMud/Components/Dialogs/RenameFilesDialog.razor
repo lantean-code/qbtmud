@@ -1,0 +1,42 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <DynamicTable T="FileRow"
+                              ColumnDefinitions="Columns"
+                              Items="Files"
+                              MultiSelection="true"
+                              SelectedItems="SelectedItems"
+                              SelectedItemsChanged="SelectedItemsChanged"
+                              PreSorted="true"
+                              SortColumnChanged="SortColumnChanged"
+                              SortDirectionChanged="SortDirectionChanged"
+                              Class="file-list" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Rename</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private static RenderFragment<RowContext<FileRow>> NameColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                <div style="@($"margin-left: {(context.Data.Level * 14) + (context.Data.Level >= 1 ? 16 : 0)}px")">
+                    @if (context.Data.IsFolder)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Folder" Class="pt-0" Style="margin-right: 4px; position: relative; top: 7px; margin-left: -15px" />
+                    }
+                    @context.Data.OriginalName
+                </div>
+                ;
+            };
+        }
+    }
+}

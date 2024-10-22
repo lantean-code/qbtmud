@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34511.84
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lantean.QBTMud.Test", "Lantean.QBTMud.Test\Lantean.QBTMud.Test.csproj", "{715E075C-1D86-4A7F-BC72-E1E24A294F17}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lantean.QBitTorrentClient", "Lantean.QBitTorrentClient\Lantean.QBitTorrentClient.csproj", "{F0DDAB07-0D6C-40C7-AFE6-08FF2C4CC7E7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lantean.QBTMud", "Lantean.QBTMud\Lantean.QBTMud.csproj", "{83BC76CC-D51B-42AF-A6EE-FA400C300098}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1BF1A631-87D7-4039-A701-88C5E0234B63}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{715E075C-1D86-4A7F-BC72-E1E24A294F17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{715E075C-1D86-4A7F-BC72-E1E24A294F17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{715E075C-1D86-4A7F-BC72-E1E24A294F17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{715E075C-1D86-4A7F-BC72-E1E24A294F17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0DDAB07-0D6C-40C7-AFE6-08FF2C4CC7E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0DDAB07-0D6C-40C7-AFE6-08FF2C4CC7E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0DDAB07-0D6C-40C7-AFE6-08FF2C4CC7E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0DDAB07-0D6C-40C7-AFE6-08FF2C4CC7E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83BC76CC-D51B-42AF-A6EE-FA400C300098}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83BC76CC-D51B-42AF-A6EE-FA400C300098}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83BC76CC-D51B-42AF-A6EE-FA400C300098}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83BC76CC-D51B-42AF-A6EE-FA400C300098}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {82E46DB7-956A-4971-BB18-1F20650EC1A4}
+	EndGlobalSection
+EndGlobal
