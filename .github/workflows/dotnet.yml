@@ -1,28 +1,63 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: Build and Test Blazor WebAssembly
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - '**'
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Install .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '8.x'
+
+      - name: Install GitVersion
+        uses: GitTools/actions/gitversion/setup@v0.9.14
+        with:
+          versionSpec: '5.x'
+
+      - name: Get GitVersion
+        id: gitversion
+        run: |
+          gitversion /output json /showvariable FullSemVer > gitversion.json
+        shell: bash
+
+      - name: Install GitVersion in JSON
+        id: extract_version
+        run: echo "##[set-output name=version;]$(jq -r '.FullSemVer' gitversion.json)"
+      
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Run Tests
+        run: dotnet test --no-build --configuration Release
+
+      - name: Publish (only on master)
+        if: github.ref == 'refs/heads/master'
+        run: dotnet publish -c Release -o output
+
+      - name: Prepare Release ZIP
+        if: github.ref == 'refs/heads/master'
+        run: |
+          mv output/wwwroot public
+          zip -r "qbt-mud-v${{ steps.extract_version.outputs.version }}.zip" public
+
+      - name: Upload to GitHub Release
+        if: github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "qbt-mud-v${{ steps.extract_version.outputs.version }}.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
