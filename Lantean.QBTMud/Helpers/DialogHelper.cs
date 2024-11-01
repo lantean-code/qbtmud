@@ -53,29 +53,55 @@ namespace Lantean.QBTMud.Helpers
                 files.Add(file.Name, stream);
             }
 
-            await apiClient.AddTorrent(
-                urls: null,
-                files,
-                options.SavePath,
-                options.Cookie,
-                options.Category,
-                tags: null,
-                options.SkipHashCheck,
-                !options.StartTorrent,
-                options.ContentLayout,
-                options.RenameTorrent,
-                options.UploadLimit,
-                options.DownloadLimit,
-                ratioLimit: null,
-                seedingTimeLimit: null,
-                options.TorrentManagementMode,
-                options.DownloadInSequentialOrder,
-                options.DownloadFirstAndLastPiecesFirst);
+            var addTorrentParams = CreateAddTorrentParams(options);
+            addTorrentParams.Torrents = files;
+
+            await apiClient.AddTorrent(addTorrentParams);
 
             foreach (var stream in streams)
             {
                 await stream.DisposeAsync();
             }
+        }
+
+        private static QBitTorrentClient.Models.AddTorrentParams CreateAddTorrentParams(TorrentOptions options)
+        {
+            var addTorrentParams = new QBitTorrentClient.Models.AddTorrentParams();
+            addTorrentParams.AddToTopOfQueue = options.AddToTopOfQueue;
+            addTorrentParams.AutoTorrentManagement = options.TorrentManagementMode;
+            addTorrentParams.Category = options.Category;
+            if (!string.IsNullOrEmpty(options.ContentLayout))
+            {
+                addTorrentParams.ContentLayout = Enum.Parse<QBitTorrentClient.Models.TorrentContentLayout>(options.ContentLayout);
+            }
+            if (string.IsNullOrEmpty(options.Cookie))
+            {
+                addTorrentParams.Cookie = options.Cookie;
+            }
+            addTorrentParams.DownloadLimit = options.DownloadLimit;
+            addTorrentParams.DownloadPath = options.DownloadPath;
+            addTorrentParams.FirstLastPiecePriority = options.DownloadFirstAndLastPiecesFirst;
+            addTorrentParams.InactiveSeedingTimeLimit = options.InactiveSeedingTimeLimit;
+            addTorrentParams.Paused = !options.StartTorrent;
+            addTorrentParams.RatioLimit = options.RatioLimit;
+            addTorrentParams.RenameTorrent = options.RenameTorrent;
+            addTorrentParams.SavePath = options.SavePath;
+            addTorrentParams.SeedingTimeLimit = options.SeedingTimeLimit;
+            addTorrentParams.SequentialDownload = options.DownloadInSequentialOrder;
+            if (!string.IsNullOrEmpty(options.ShareLimitAction))
+            {
+                addTorrentParams.ShareLimitAction = Enum.Parse<QBitTorrentClient.Models.ShareLimitAction>(options.ShareLimitAction);
+            }
+            addTorrentParams.SkipChecking = options.SkipHashCheck;
+            if (!string.IsNullOrEmpty(options.StopCondition))
+            {
+                addTorrentParams.StopCondition = Enum.Parse<QBitTorrentClient.Models.StopCondition>(options.StopCondition);
+            }
+            addTorrentParams.Stopped = !options.StartTorrent;
+            addTorrentParams.Tags = options.Tags;
+            addTorrentParams.UploadLimit = options.UploadLimit;
+            addTorrentParams.UseDownloadPath = options.UseDownloadPath;
+            return addTorrentParams;
         }
 
         public static async Task InvokeAddTorrentLinkDialog(this IDialogService dialogService, IApiClient apiClient, string? url = null)
@@ -94,24 +120,10 @@ namespace Lantean.QBTMud.Helpers
 
             var options = (AddTorrentLinkOptions)dialogResult.Data;
 
-            await apiClient.AddTorrent(
-                urls: options.Urls,
-                torrents: null,
-                options.SavePath,
-                options.Cookie,
-                options.Category,
-                tags: null,
-                options.SkipHashCheck,
-                !options.StartTorrent,
-                options.ContentLayout,
-                options.RenameTorrent,
-                options.UploadLimit,
-                options.DownloadLimit,
-                ratioLimit: null,
-                seedingTimeLimit: null,
-                options.TorrentManagementMode,
-                options.DownloadInSequentialOrder,
-                options.DownloadFirstAndLastPiecesFirst);
+            var addTorrentParams = CreateAddTorrentParams(options);
+            addTorrentParams.Urls = options.Urls;
+
+            await apiClient.AddTorrent(addTorrentParams);
         }
 
         public static async Task<bool> InvokeDeleteTorrentDialog(this IDialogService dialogService, IApiClient apiClient, params string[] hashes)
@@ -192,7 +204,7 @@ namespace Lantean.QBTMud.Helpers
         {
             var parameters = new DialogParameters
             {
-                //{ nameof(RenameFilesDialog.Hash), hash }
+                { nameof(RenameFilesDialog.Hash), hash }
             };
 
             await dialogService.ShowAsync<RenameFilesDialog>("Rename Files", parameters, FullScreenDialogOptions);

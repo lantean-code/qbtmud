@@ -1,4 +1,6 @@
-﻿namespace Lantean.QBTMud.Models
+﻿using Lantean.QBitTorrentClient.Models;
+
+namespace Lantean.QBTMud.Models
 {
     public record TorrentOptions
     {
@@ -61,5 +63,12 @@
         public long DownloadLimit { get; }
 
         public long UploadLimit { get; }
+        public string? DownloadPath { get; internal set; }
+        public int? InactiveSeedingTimeLimit { get; internal set; }
+        public float? RatioLimit { get; internal set; }
+        public int? SeedingTimeLimit { get; internal set; }
+        public string? ShareLimitAction { get; internal set; }
+        public bool? UseDownloadPath { get; internal set; }
+        public IEnumerable<string>? Tags { get; internal set; }
     }
 }

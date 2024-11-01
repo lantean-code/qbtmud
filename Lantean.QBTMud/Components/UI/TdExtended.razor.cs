@@ -1,5 +1,4 @@
-﻿using Lantean.QBTMud.EventHandlers;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 

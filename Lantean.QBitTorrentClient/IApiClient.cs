@@ -74,7 +74,7 @@ namespace Lantean.QBitTorrentClient
 
         #region Torrent management
 
-        Task<IReadOnlyList<Torrent>> GetTorrentList(string? filter = null, string? category = null, string? tag = null, string? sort = null, bool? reverse = null, int? limit = null, int? offset = null, params string[] hashes);
+        Task<IReadOnlyList<Torrent>> GetTorrentList(string? filter = null, string? category = null, string? tag = null, string? sort = null, bool? reverse = null, int? limit = null, int? offset = null, bool? isPrivate = null, params string[] hashes);
 
         Task<TorrentProperties> GetTorrentProperties(string hash);
 
@@ -102,7 +102,7 @@ namespace Lantean.QBitTorrentClient
 
         Task ReannounceTorrents(bool? all = null, params string[] hashes);
 
-        Task AddTorrent(IEnumerable<string>? urls = null, Dictionary<string, Stream>? torrents = null, string? savePath = null, string? cookie = null, string? category = null, IEnumerable<string>? tags = null, bool? skipChecking = null, bool? paused = null, string? contentLayout = null, string? renameTorrent = null, long? uploadLimit = null, long? downloadLimit = null, float? ratioLimit = null, int? seedingTimeLimit = null, bool? autoTorrentManagement = null, bool? sequentialDownload = null, bool? firstLastPiecePriority = null);
+        Task AddTorrent(AddTorrentParams addTorrentParams);
 
         Task AddTrackersToTorrent(string hash, IEnumerable<string> urls);
 
@@ -116,9 +116,9 @@ namespace Lantean.QBitTorrentClient
 
         Task DecreaseTorrentPriority(bool? all = null, params string[] hashes);
 
-        Task MaximalTorrentPriority(bool? all = null, params string[] hashes);
+        Task MaxTorrentPriority(bool? all = null, params string[] hashes);
 
-        Task MinimalTorrentPriority(bool? all = null, params string[] hashes);
+        Task MinTorrentPriority(bool? all = null, params string[] hashes);
 
         Task SetFilePriority(string hash, IEnumerable<int> id, Priority priority);
 

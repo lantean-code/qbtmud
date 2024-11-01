@@ -109,7 +109,7 @@ namespace Lantean.QBTMud.Components
                 new("delete", "Remove", Icons.Material.Filled.Delete, Color.Error, CreateCallback(Remove), separatorBefore: true),
                 new("setLocation", "Set location", Icons.Material.Filled.MyLocation, Color.Info, CreateCallback(SetLocation), separatorBefore: true),
                 new("rename", "Rename", Icons.Material.Filled.DriveFileRenameOutline, Color.Info, CreateCallback(Rename)),
-                new("renameFiles", "Rename files", Icons.Material.Filled.DriveFileRenameOutline, Color.Warning, CreateCallback(Rename)),
+                new("renameFiles", "Rename files", Icons.Material.Filled.DriveFileRenameOutline, Color.Warning, CreateCallback(RenameFiles)),
                 new("category", "Category", Icons.Material.Filled.List, Color.Info, CreateCallback(ShowCategories)),
                 new("tags", "Tags", Icons.Material.Filled.Label, Color.Info, CreateCallback(ShowTags)),
                 new("autoTorrentManagement", "Automatic Torrent Management", Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleAutoTMM)),
@@ -174,14 +174,30 @@ namespace Lantean.QBTMud.Components
 
         protected async Task Pause()
         {
-            await ApiClient.PauseTorrents(Hashes);
-            Snackbar.Add("Torrent paused.");
+            if (MajorVersion < 5)
+            {
+                await ApiClient.PauseTorrents(Hashes);
+                Snackbar.Add("Torrent paused.");
+            }
+            else
+            {
+                await ApiClient.StopTorrents(Hashes);
+                Snackbar.Add("Torrent stopped.");
+            }
         }
 
         protected async Task Resume()
         {
-            await ApiClient.ResumeTorrents(Hashes);
-            Snackbar.Add("Torrent resumed.");
+            if (MajorVersion < 5)
+            {
+                await ApiClient.ResumeTorrents(Hashes);
+                Snackbar.Add("Torrent resumed.");
+            }
+            else
+            {
+                await ApiClient.StartTorrents(Hashes);
+                Snackbar.Add("Torrent started.");
+            }
         }
 
         protected async Task ForceStart()
@@ -298,7 +314,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task MoveToTop()
         {
-            await ApiClient.MaximalTorrentPriority(null, Hashes.ToArray());
+            await ApiClient.MaxTorrentPriority(null, Hashes.ToArray());
         }
 
         protected async Task MoveUp()
@@ -313,7 +329,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task MoveToBottom()
         {
-            await ApiClient.MinimalTorrentPriority(null, Hashes.ToArray());
+            await ApiClient.MinTorrentPriority(null, Hashes.ToArray());
         }
 
         protected async Task Copy(string value)
@@ -557,18 +573,18 @@ namespace Lantean.QBTMud.Components
 
             if (MajorVersion >= 5)
             {
-                if (actionStates.ContainsKey("start"))
+                if (actionStates.TryGetValue("start", out ActionState? startActionState))
                 {
-                    actionStates["start"].TextOverride = "Start";
+                    startActionState.TextOverride = "Start";
                 }
                 else
                 {
                     actionStates["start"] = new ActionState { TextOverride = "Start" };
                 }
 
-                if (actionStates.ContainsKey("pause"))
+                if (actionStates.TryGetValue("pause", out ActionState? stopActionState))
                 {
-                    actionStates["pause"].TextOverride = "Stop";
+                    stopActionState.TextOverride = "Stop";
                 }
                 else
                 {

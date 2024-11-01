@@ -1,5 +1,4 @@
-﻿using Lantean.QBTMud.EventHandlers;
-using MudBlazor;
+﻿using MudBlazor;
 
 namespace Lantean.QBTMud.Components.UI
 {

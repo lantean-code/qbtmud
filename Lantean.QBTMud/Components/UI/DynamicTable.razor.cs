@@ -1,5 +1,4 @@
 ﻿using Blazored.LocalStorage;
-using Lantean.QBTMud.EventHandlers;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;

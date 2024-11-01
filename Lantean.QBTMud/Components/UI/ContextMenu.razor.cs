@@ -1,5 +1,4 @@
-﻿using Lantean.QBTMud.EventHandlers;
-using Lantean.QBTMud.Interop;
+﻿using Lantean.QBTMud.Interop;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;

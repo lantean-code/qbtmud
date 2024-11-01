@@ -27,6 +27,11 @@
             content.AddString(name, value.ToString());
         }
 
+        public static void AddString(this MultipartFormDataContent content, string name, Enum value)
+        {
+            content.AddString(name, value.ToString());
+        }
+
         public static void AddString(this MultipartFormDataContent content, string name, DateTimeOffset value, bool useSeconds = true)
         {
             content.AddString(name, useSeconds ? value.ToUnixTimeSeconds() : value.ToUnixTimeMilliseconds());

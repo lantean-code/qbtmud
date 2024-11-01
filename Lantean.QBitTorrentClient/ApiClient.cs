@@ -305,7 +305,7 @@ namespace Lantean.QBitTorrentClient
 
         #region Torrent management
 
-        public async Task<IReadOnlyList<Torrent>> GetTorrentList(string? filter = null, string? category = null, string? tag = null, string? sort = null, bool? reverse = null, int? limit = null, int? offset = null, params string[] hashes)
+        public async Task<IReadOnlyList<Torrent>> GetTorrentList(string? filter = null, string? category = null, string? tag = null, string? sort = null, bool? reverse = null, int? limit = null, int? offset = null, bool? isPrivate = null, params string[] hashes)
         {
             var query = new QueryBuilder();
             if (filter is not null)
@@ -339,6 +339,10 @@ namespace Lantean.QBitTorrentClient
             if (hashes.Length > 0)
             {
                 query.Add("hashes", string.Join('|', hashes));
+            }
+            if (isPrivate is not null)
+            {
+                query.Add("private", isPrivate.Value ? "true" : "false");
             }
 
             var response = await _httpClient.GetAsync("torrents/info", query);
@@ -486,79 +490,110 @@ namespace Lantean.QBitTorrentClient
             await ThrowIfNotSuccessfulStatusCode(response);
         }
 
-        public async Task AddTorrent(IEnumerable<string>? urls = null, Dictionary<string, Stream>? torrents = null, string? savePath = null, string? cookie = null, string? category = null, IEnumerable<string>? tags = null, bool? skipChecking = null, bool? paused = null, string? contentLayout = null, string? renameTorrent = null, long? uploadLimit = null, long? downloadLimit = null, float? ratioLimit = null, int? seedingTimeLimit = null, bool? autoTorrentManagement = null, bool? sequentialDownload = null, bool? firstLastPiecePriority = null)
+        public async Task AddTorrent(AddTorrentParams addTorrentParams)
         {
             var content = new MultipartFormDataContent();
-            if (urls is not null)
+            if (addTorrentParams.Urls is not null)
             {
-                content.AddString("urls", string.Join('\n', urls));
+                content.AddString("urls", string.Join('\n', addTorrentParams.Urls));
             }
-            if (torrents is not null)
+            if (addTorrentParams.Torrents is not null)
             {
-                foreach (var (name, stream) in torrents)
+                foreach (var (name, stream) in addTorrentParams.Torrents)
                 {
                     content.Add(new StreamContent(stream), "torrents", name);
                 }
             }
-            if (savePath is not null)
+            if (addTorrentParams.SkipChecking is not null)
             {
-                content.AddString("savepath", savePath);
+                content.AddString("skip_checking", addTorrentParams.SkipChecking.Value);
             }
-            if (cookie is not null)
+            if (addTorrentParams.SequentialDownload is not null)
             {
-                content.AddString("cookie", cookie);
+                content.AddString("sequentialDownload", addTorrentParams.SequentialDownload.Value);
             }
-            if (category is not null)
+            if (addTorrentParams.FirstLastPiecePriority is not null)
             {
-                content.AddString("category", category);
+                content.AddString("firstLastPiecePrio", addTorrentParams.FirstLastPiecePriority.Value);
             }
-            if (tags is not null)
+            if (addTorrentParams.AddToTopOfQueue is not null)
             {
-                content.AddString("tags", string.Join(',', tags));
+                content.AddString("addToTopOfQueue", addTorrentParams.AddToTopOfQueue.Value);
             }
-            if (skipChecking is not null)
+            // v4
+            if (addTorrentParams.Paused is not null)
             {
-                content.AddString("skip_checking", skipChecking.Value);
+                content.AddString("paused", addTorrentParams.Paused.Value);
             }
-            if (paused is not null)
+            // v5
+            if (addTorrentParams.Stopped is not null)
             {
-                content.AddString("paused", paused.Value);
+                content.AddString("stopped", addTorrentParams.Stopped.Value);
             }
-            if (contentLayout is not null)
+            if (addTorrentParams.SavePath is not null)
             {
-                content.AddString("contentLayout", contentLayout);
+                content.AddString("savepath", addTorrentParams.SavePath);
             }
-            if (renameTorrent is not null)
+            if (addTorrentParams.DownloadPath is not null)
             {
-                content.AddString("rename", renameTorrent);
+                content.AddString("downloadPath", addTorrentParams.DownloadPath);
             }
-            if (uploadLimit is not null)
+            if (addTorrentParams.UseDownloadPath is not null)
             {
-                content.AddString("upLimit", uploadLimit.Value);
+                content.AddString("useDownloadPath", addTorrentParams.UseDownloadPath.Value);
             }
-            if (downloadLimit is not null)
+            if (addTorrentParams.Category is not null)
             {
-                content.AddString("dlLimit", downloadLimit.Value);
+                content.AddString("category", addTorrentParams.Category);
             }
-            if (ratioLimit is not null)
+            if (addTorrentParams.Tags is not null)
             {
-                content.AddString("ratioLimit", ratioLimit.Value);
+                content.AddString("tags", string.Join(',', addTorrentParams.Tags));
             }
-            if (seedingTimeLimit is not null)
+            if (addTorrentParams.RenameTorrent is not null)
             {
-                content.AddString("seedingTimeLimit", seedingTimeLimit.Value);
+                content.AddString("rename", addTorrentParams.RenameTorrent);
             }
-            if (autoTorrentManagement is not null)
+            if (addTorrentParams.UploadLimit is not null)
             {
-                content.AddString("autoTMM", autoTorrentManagement.Value);
+                content.AddString("upLimit", addTorrentParams.UploadLimit.Value);
             }
-            if (sequentialDownload is not null)
+            if (addTorrentParams.DownloadLimit is not null)
             {
-                content.AddString("sequentialDownload", sequentialDownload.Value);
+                content.AddString("dlLimit", addTorrentParams.DownloadLimit.Value);
             }
-            if (firstLastPiecePriority is not null)
+            if (addTorrentParams.RatioLimit is not null)
             {
-                content.AddString("firstLastPiecePrio", firstLastPiecePriority.Value);
+                content.AddString("ratioLimit", addTorrentParams.RatioLimit.Value);
+            }
+            if (addTorrentParams.SeedingTimeLimit is not null)
+            {
+                content.AddString("seedingTimeLimit", addTorrentParams.SeedingTimeLimit.Value);
+            }
+            if (addTorrentParams.InactiveSeedingTimeLimit is not null)
+            {
+                content.AddString("inactiveSeedingTimeLimit", addTorrentParams.InactiveSeedingTimeLimit.Value);
+            }
+            if (addTorrentParams.ShareLimitAction is not null)
+            {
+                content.AddString("shareLimitAction", addTorrentParams.ShareLimitAction.Value);
+            }
+            if (addTorrentParams.AutoTorrentManagement is not null)
+            {
+                content.AddString("autoTMM", addTorrentParams.AutoTorrentManagement.Value);
+            }
+            if (addTorrentParams.StopCondition is not null)
+            {
+                content.AddString("stopCondition", addTorrentParams.StopCondition.Value);
+            }
+            if (addTorrentParams.ContentLayout is not null)
+            {
+                content.AddString("contentLayout", addTorrentParams.ContentLayout.Value);
+            }
+
+            if (addTorrentParams.Cookie is not null)
+            {
+                content.AddString("cookie", addTorrentParams.Cookie);
             }
 
             var response = await _httpClient.PostAsync("torrents/add", content);
@@ -606,7 +641,7 @@ namespace Lantean.QBitTorrentClient
         public async Task AddPeers(IEnumerable<string> hashes, IEnumerable<PeerId> peers)
         {
             var content = new FormUrlEncodedBuilder()
-                .AddPipeSeparated("hash", hashes)
+                .AddPipeSeparated("hashes", hashes)
                 .AddPipeSeparated("urls", peers)
                 .ToFormUrlEncodedContent();
 
@@ -618,7 +653,7 @@ namespace Lantean.QBitTorrentClient
         public async Task IncreaseTorrentPriority(bool? all = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
-                .AddAllOrPipeSeparated("hash", all, hashes)
+                .AddAllOrPipeSeparated("hashes", all, hashes)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/increasePrio", content);
@@ -629,7 +664,7 @@ namespace Lantean.QBitTorrentClient
         public async Task DecreaseTorrentPriority(bool? all = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
-                .AddAllOrPipeSeparated("hash", all, hashes)
+                .AddAllOrPipeSeparated("hashes", all, hashes)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/decreasePrio", content);
@@ -637,10 +672,10 @@ namespace Lantean.QBitTorrentClient
             await ThrowIfNotSuccessfulStatusCode(response);
         }
 
-        public async Task MaximalTorrentPriority(bool? all = null, params string[] hashes)
+        public async Task MaxTorrentPriority(bool? all = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
-                .AddAllOrPipeSeparated("hash", all, hashes)
+                .AddAllOrPipeSeparated("hashes", all, hashes)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/topPrio", content);
@@ -648,10 +683,10 @@ namespace Lantean.QBitTorrentClient
             await ThrowIfNotSuccessfulStatusCode(response);
         }
 
-        public async Task MinimalTorrentPriority(bool? all = null, params string[] hashes)
+        public async Task MinTorrentPriority(bool? all = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
-                .AddAllOrPipeSeparated("hash", all, hashes)
+                .AddAllOrPipeSeparated("hashes", all, hashes)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/bottomPrio", content);

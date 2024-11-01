@@ -6,6 +6,7 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using System.Collections.ObjectModel;
+using static MudBlazor.Colors;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -51,6 +52,11 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private ReadOnlyCollection<FileRow> GetFiles()
         {
+            if (!FileList.Any())
+            {
+                return new ReadOnlyCollection<FileRow>([]);
+            }
+
             var maxLevel = FileList.Max(f => f.Level);
             // this is a flat file structure
             if (maxLevel == 0)
@@ -321,65 +327,107 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected bool UseRegex { get; set; }
 
-        protected void UseRegexChanged(bool value)
+        protected async Task UseRegexChanged(bool value)
         {
             UseRegex = value;
+
+            await UpdatePreferences(p => p.UseRegex = value);
         }
 
         protected bool MatchAllOccurrences { get; set; }
 
-        protected void MatchAllOccurrencesChanged(bool value)
+        protected async Task MatchAllOccurrencesChanged(bool value)
         {
             MatchAllOccurrences = value;
+
+            await UpdatePreferences(p => p.MatchAllOccurrences = value);
         }
 
         protected bool CaseSensitive { get; set; }
 
-        protected void CaseSensitiveChanged(bool value)
+        protected async Task CaseSensitiveChanged(bool value)
         {
             CaseSensitive = value;
+
+            await UpdatePreferences(p => p.CaseSensitive = value);
         }
 
         protected string Replacement { get; set; } = "";
 
-        protected void ReplacementChanged(string value)
+        protected async Task ReplacementChanged(string value)
         {
             Replacement = value;
+
+            await UpdatePreferences(p => p.Replace = value);
         }
 
         protected AppliesTo AppliesToValue { get; set; } = AppliesTo.FilenameExtension;
 
-        protected void AppliesToChanged(AppliesTo value)
+        protected async Task AppliesToChanged(AppliesTo value)
         {
             AppliesToValue = value;
+
+            await UpdatePreferences(p => p.AppliesTo = value);
         }
 
         protected bool IncludeFiles { get; set; } = true;
 
-        protected void IncludeFilesChanged(bool value)
+        protected async Task IncludeFilesChanged(bool value)
         {
             IncludeFiles = value;
+
+            await UpdatePreferences(p => p.IncludeFiles = value);
         }
 
         protected bool IncludeFolders { get; set; }
 
-        protected void IncludeFoldersChanged(bool value)
+        protected async Task IncludeFoldersChanged(bool value)
         {
             IncludeFolders = value;
+
+            await UpdatePreferences(p => p.IncludeFolders = value);
         }
 
         protected int FileEnumerationStart { get; set; }
 
-        protected void FileEnumerationStartChanged(int value)
+        protected async Task FileEnumerationStartChanged(int value)
         {
             FileEnumerationStart = value;
+
+            await UpdatePreferences(p => p.FileEnumerationStart = value);
         }
 
         protected bool ReplaceAll { get; set; }
 
-        protected void ReplaceAllChanged(bool value)
+        protected async Task ReplaceAllChanged(bool value)
         {
             ReplaceAll = value;
+
+            await UpdatePreferences(p => p.ReplaceAll = value);
+        }
+
+        protected bool RememberMultiRenameSettings { get; set; }
+
+        protected async Task RememberMultiRenameSettingsChanged(bool value)
+        {
+            RememberMultiRenameSettings = value;
+
+            await UpdatePreferences(p => p.RememberPreferences = value);
+        }
+
+        private async Task UpdatePreferences(Action<MultiRenamePreferences> updateAction)
+        {
+            var preferences = await LocalStorage.GetItemAsync<MultiRenamePreferences>(_preferencesStorageKey) ?? new();
+            updateAction(preferences);
+            if (preferences.RememberPreferences)
+            {
+                await LocalStorage.SetItemAsync(_preferencesStorageKey, preferences);
+            }
+            else
+            {
+                await LocalStorage.RemoveItemAsync(_preferencesStorageKey);
+            }
+            
         }
 
         protected override async Task OnInitializedAsync()
@@ -414,8 +462,43 @@ namespace Lantean.QBTMud.Components.Dialogs
             MudDialog.Cancel();
         }
 
-        protected void Submit()
+        protected async Task Submit()
         {
+            if (Hash is null)
+            {
+                MudDialog.Close();
+
+                return;
+            }
+
+            var renamedFiles = FileNameMatcher.GetRenamedFiles(
+                SelectedItems,
+                Search,
+                UseRegex,
+                Replacement,
+                MatchAllOccurrences,
+                CaseSensitive,
+                AppliesToValue,
+                IncludeFiles,
+                IncludeFolders,
+                ReplaceAll,
+                FileEnumerationStart);
+
+            foreach (var (_, renamedFile) in renamedFiles)
+            {
+                var oldPath = renamedFile.Path + renamedFile.OriginalName;
+                var newPath = renamedFile.Path + renamedFile.NewName;
+                if (renamedFile.IsFolder)
+                {
+                    
+                    await ApiClient.RenameFolder(Hash, oldPath, newPath);
+                }
+                else
+                {
+                    await ApiClient.RenameFile(Hash, oldPath, newPath);
+                }
+            }
+
             MudDialog.Close();
         }
 

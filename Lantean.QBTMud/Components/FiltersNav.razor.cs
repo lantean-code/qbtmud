@@ -1,7 +1,6 @@
 ﻿using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.EventHandlers;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
