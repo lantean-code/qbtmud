@@ -1,4 +1,4 @@
-name: Build and Test Blazor WebAssembly
+name: Build, Test, and Release Blazor WebAssembly App
 
 on:
   push:
@@ -11,35 +11,30 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
-      - name: Install .NET
-        uses: actions/setup-dotnet@v2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.x'
+          dotnet-version: '8.0.x'
 
       - name: Install GitVersion
-        uses: GitTools/actions/gitversion/setup@v0.9.14
+        uses: gittools/actions/gitversion/setup@v0.9.14
         with:
           versionSpec: '5.x'
 
-      - name: Get GitVersion
+      - name: Determine Version
         id: gitversion
-        run: |
-          gitversion /output json /showvariable FullSemVer > gitversion.json
-        shell: bash
+        run: echo "Version: ${{ steps.gitversion.outputs.FullSemVer }}"
 
-      - name: Install GitVersion in JSON
-        id: extract_version
-        run: echo "##[set-output name=version;]$(jq -r '.FullSemVer' gitversion.json)"
-      
       - name: Restore dependencies
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release
+        run: dotnet build --configuration Release --no-restore
 
       - name: Run Tests
         run: dotnet test --no-build --configuration Release
@@ -51,13 +46,30 @@ jobs:
       - name: Prepare Release ZIP
         if: github.ref == 'refs/heads/master'
         run: |
-          mv output/wwwroot public
-          zip -r "qbt-mud-v${{ steps.extract_version.outputs.version }}.zip" public
+          cd output
+          mv wwwroot public
+          zip -r "../qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip" public
+        shell: bash
 
-      - name: Upload to GitHub Release
+      - name: Create GitHub Release
         if: github.ref == 'refs/heads/master'
-        uses: softprops/action-gh-release@v1
+        uses: actions/create-release@v1
         with:
-          files: "qbt-mud-v${{ steps.extract_version.outputs.version }}.zip"
+          tag_name: v${{ steps.gitversion.outputs.FullSemVer }}
+          release_name: Release v${{ steps.gitversion.outputs.FullSemVer }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Asset
+        if: github.ref == 'refs/heads/master'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip
+          asset_name: qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip
+          asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
