@@ -28,7 +28,7 @@ jobs:
 
       - name: Determine Version
         id: gitversion
-        run: gitversion /output json /showvariable FullSemVer
+        run: $GITVERSION_PATH/gitversion /output json /showvariable FullSemVer
         shell: bash
 
       - name: Restore dependencies
