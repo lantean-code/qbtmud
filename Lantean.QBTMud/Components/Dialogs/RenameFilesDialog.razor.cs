@@ -484,19 +484,20 @@ namespace Lantean.QBTMud.Components.Dialogs
                 ReplaceAll,
                 FileEnumerationStart);
 
-            foreach (var (_, renamedFile) in renamedFiles)
+            foreach (var (_, renamedFile) in renamedFiles.Where(f => !f.Value.IsFolder))
             {
                 var oldPath = renamedFile.Path + renamedFile.OriginalName;
                 var newPath = renamedFile.Path + renamedFile.NewName;
-                if (renamedFile.IsFolder)
-                {
-                    
-                    await ApiClient.RenameFolder(Hash, oldPath, newPath);
-                }
-                else
-                {
-                    await ApiClient.RenameFile(Hash, oldPath, newPath);
-                }
+
+                await ApiClient.RenameFile(Hash, oldPath, newPath);
+            }
+
+            foreach (var (_, renamedFile) in renamedFiles.Where(f => f.Value.IsFolder).OrderBy(f => f.Value.Path.Split(Extensions.DirectorySeparator)))
+            {
+                var oldPath = renamedFile.Path + renamedFile.OriginalName;
+                var newPath = renamedFile.Path + renamedFile.NewName;
+                
+                await ApiClient.RenameFolder(Hash, oldPath, newPath);
             }
 
             MudDialog.Close();

@@ -9,16 +9,15 @@
                     <MudItem xs="12">
                         <MudTextField T="string" Label="Search files" Value="Search" ValueChanged="SearchChanged" Variant="Variant.Outlined" />
                     </MudItem>
-                    <MudItem xs="12">
+                    <MudItem xs="12" lg="4">
                         <FieldSwitch Label="Use regular expressions" Value="UseRegex" ValueChanged="UseRegexChanged" />
                     </MudItem>
-                    <MudItem xs="12">
+                    <MudItem xs="12" lg="4">
                         <FieldSwitch Label="Match all occurrences" Value="MatchAllOccurrences" ValueChanged="MatchAllOccurrencesChanged" />
                     </MudItem>
-                    <MudItem xs="12">
+                    <MudItem xs="12" lg="4">
                         <FieldSwitch Label="Case sensitive" Value="CaseSensitive" ValueChanged="CaseSensitiveChanged" />
                     </MudItem>
-                    <MudDivider />
                     <MudItem xs="12">
                         <MudTextField T="string" Label="Replacement" Value="Replacement" ValueChanged="ReplacementChanged" Variant="Variant.Outlined" />
                     </MudItem>
@@ -29,20 +28,19 @@
                             <MudSelectItem T="AppliesTo" Value="AppliesTo.Extension">Extension</MudSelectItem>
                         </MudSelect>
                     </MudItem>
-                    <MudItem xs="12">
+                    <MudItem xs="12" lg="4">
                         <FieldSwitch Label="Include files" Value="IncludeFiles" ValueChanged="IncludeFilesChanged" />
                     </MudItem>
-                    <MudItem xs="12">
+                    <MudItem xs="12" lg="4">
                         <FieldSwitch Label="Include folders" Value="IncludeFolders" ValueChanged="IncludeFoldersChanged" />
                     </MudItem>
-                    <MudItem xs="12" md="6">
+                    <MudItem xs="12" lg="4">
                         <MudNumericField T="int" Label="Enumerate files" Value="FileEnumerationStart" ValueChanged="FileEnumerationStartChanged" Min="0" Variant="Variant.Outlined" />
                     </MudItem>
-                    <MudDivider />
                     <MudItem xs="12">
                         <MudSelect T="bool" Label="Replace type" Value="ReplaceAll" ValueChanged="ReplaceAllChanged" Variant="Variant.Outlined">
-                            <MudSelectItem T="bool" Value="true">Replace</MudSelectItem>
-                            <MudSelectItem T="bool" Value="false">Replace all</MudSelectItem>
+                            <MudSelectItem T="bool" Value="false">Replace</MudSelectItem>
+                            <MudSelectItem T="bool" Value="true">Replace all</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                 </MudGrid>
