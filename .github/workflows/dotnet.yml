@@ -30,7 +30,9 @@ jobs:
 
       - name: Determine Version
         id: gitversion
-        run: dotnet gitversion /output json /showvariable FullSemVer
+        run: |
+          VERSION=$(dotnet gitversion /output json /showvariable FullSemVer)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
         shell: bash
 
       - name: Restore dependencies
@@ -51,13 +53,13 @@ jobs:
         run: |
           cd output
           mv wwwroot public
-          zip -r "../qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip" public
+          zip -r "../qbt-mud-v${{ env.VERSION }}.zip" public
         shell: bash
 
       - name: Check if Tag Exists
         id: check_tag
         run: |
-          if git rev-parse "v${{ steps.gitversion.outputs.FullSemVer }}" >/dev/null 2>&1; then
+          if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
             echo "TAG_EXISTS=true" >> $GITHUB_ENV
           else
             echo "TAG_EXISTS=false" >> $GITHUB_ENV
@@ -68,8 +70,8 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: v${{ steps.gitversion.outputs.FullSemVer }}
-          release_name: Release v${{ steps.gitversion.outputs.FullSemVer }}
+          tag_name: v${{ env.VERSION }}
+          release_name: Release v${{ env.VERSION }}
           draft: false
           prerelease: false
         env:
@@ -80,8 +82,8 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip
-          asset_name: qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip
+          asset_path: qbt-mud-v${{ env.VERSION }}.zip
+          asset_name: qbt-mud-v${{ env.VERSION }}.zip
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
