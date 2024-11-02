@@ -44,7 +44,7 @@ jobs:
 
       - name: Publish (only on master)
         if: github.ref == 'refs/heads/master'
-        run: dotnet publish -c Release -o output
+        run: dotnet publish Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output
 
       - name: Prepare Release ZIP
         if: github.ref == 'refs/heads/master'
@@ -56,6 +56,7 @@ jobs:
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/master'
+        id: create_release  # Add an ID to reference this step's outputs
         uses: actions/create-release@v1
         with:
           tag_name: v${{ steps.gitversion.outputs.FullSemVer }}
@@ -70,7 +71,7 @@ jobs:
         if: github.ref == 'refs/heads/master'
         uses: actions/upload-release-asset@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}  # Reference the upload URL from the release step
           asset_path: qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip
           asset_name: qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip
           asset_content_type: application/zip
