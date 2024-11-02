@@ -54,24 +54,32 @@ jobs:
           zip -r "../qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip" public
         shell: bash
 
+      - name: Check if Tag Exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ steps.gitversion.outputs.FullSemVer }}" >/dev/null 2>&1; then
+            echo "TAG_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "TAG_EXISTS=false" >> $GITHUB_ENV
+          fi
+
       - name: Create GitHub Release
-        if: github.ref == 'refs/heads/master'
-        id: create_release  # Add an ID to reference this step's outputs
+        if: github.ref == 'refs/heads/master' && env.TAG_EXISTS == 'false'
+        id: create_release
         uses: actions/create-release@v1
         with:
           tag_name: v${{ steps.gitversion.outputs.FullSemVer }}
           release_name: Release v${{ steps.gitversion.outputs.FullSemVer }}
           draft: false
           prerelease: false
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Asset
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master' && env.TAG_EXISTS == 'false'
         uses: actions/upload-release-asset@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}  # Reference the upload URL from the release step
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip
           asset_name: qbt-mud-v${{ steps.gitversion.outputs.FullSemVer }}.zip
           asset_content_type: application/zip
