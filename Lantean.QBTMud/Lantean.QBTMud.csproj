@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Lantean.QBitTorrentClient\Lantean.QBitTorrentClient.csproj" />
+    <ProjectReference Include="..\Lantean.QBT\Lantean.QBT.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,7 @@
 using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
+using Lantean.QBT.Services;
+using Lantean.QBT.ViewModels;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -41,10 +43,15 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<ApiClient>();
             builder.Services.AddScoped<IApiClient, ApiClient>();
 
-            builder.Services.AddSingleton<IDataManager, DataManager>();
             builder.Services.AddBlazoredLocalStorage();
+            builder.Services.AddSingleton<IStorageService, LocalStorageStorageService>();
+
+            builder.Services.AddSingleton<IDataManager, DataManager>();
+            
             builder.Services.AddSingleton<IClipboardService, ClipboardService>();
             builder.Services.AddTransient<IKeyboardService, KeyboardService>();
+
+            builder.Services.AddTransient<BlocksViewModel>();
 
 #if DEBUG
             builder.Logging.SetMinimumLevel(LogLevel.Information);

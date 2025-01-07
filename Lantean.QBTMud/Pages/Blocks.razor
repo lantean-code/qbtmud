@@ -11,7 +11,7 @@
     <MudText Class="pl-5 no-wrap">Blocked IPs</MudText>
 </MudToolBar>
 
-<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+@* <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardContent>
         <EditForm Model="Model" OnSubmit="Submit">
             <MudGrid>
@@ -24,12 +24,11 @@
             </MudGrid>
         </EditForm>
     </MudCardContent>
-</MudCard>
+</MudCard> *@
 
-<DynamicTable @ref="Table"
-              T="Lantean.QBitTorrentClient.Models.PeerLog"
+<DynamicTable T="Lantean.QBitTorrentClient.Models.PeerLog"
               ColumnDefinitions="Columns"
-              Items="Results"
+              Items="ViewModel.Results"
               MultiSelection="false"
               SelectOnRowClick="false"
               RowClassFunc="RowClass"

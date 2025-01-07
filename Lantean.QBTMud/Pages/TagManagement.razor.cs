@@ -21,9 +21,6 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
-        [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
-
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 

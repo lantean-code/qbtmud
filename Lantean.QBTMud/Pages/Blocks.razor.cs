@@ -1,12 +1,9 @@
-﻿using Blazored.LocalStorage;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
-using Lantean.QBTMud.Components.UI;
+﻿using Lantean.QBitTorrentClient.Models;
+using Lantean.QBT.ViewModels;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using MudBlazor;
 using System.Net;
 
 namespace Lantean.QBTMud.Pages
@@ -14,59 +11,27 @@ namespace Lantean.QBTMud.Pages
     public partial class Blocks : IAsyncDisposable
     {
         private readonly bool _refreshEnabled = true;
-        private const string _selectedTypesStorageKey = "Blocks.SelectedTypes";
 
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
 
         [Inject]
-        protected IApiClient ApiClient { get; set; } = default!;
-
-        [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected BlocksViewModel ViewModel { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
-        [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
-
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
-        protected LogForm Model { get; set; } = new LogForm();
-
-        protected List<PeerLog>? Results { get; private set; }
-
-        protected MudSelect<string>? CategoryMudSelect { get; set; }
-
-        protected DynamicTable<PeerLog>? Table { get; set; }
-
-        protected override async Task OnInitializedAsync()
+        protected override void OnInitialized()
         {
-            var selectedTypes = await LocalStorage.GetItemAsync<IEnumerable<string>>(_selectedTypesStorageKey);
-            if (selectedTypes is not null)
-            {
-                Model.SelectedTypes = selectedTypes;
-            }
-            else
-            {
-                Model.SelectedTypes = ["Normal"];
-            }
-
-            await DoSearch();
+            ViewModel.PropertyChanged += (_, _) => StateHasChanged();
         }
 
         protected void NavigateBack()
         {
             NavigationManager.NavigateTo("/");
-        }
-
-        protected async Task SelectedValuesChanged(IEnumerable<string> values)
-        {
-            Model.SelectedTypes = values;
-
-            await LocalStorage.SetItemAsync(_selectedTypesStorageKey, Model.SelectedTypes);
         }
 
         protected static string GenerateSelectedText(List<string> values)
@@ -79,20 +44,9 @@ namespace Lantean.QBTMud.Pages
             return $"{values.Count} selected";
         }
 
-        protected Task Submit(EditContext editContext)
+        protected void Submit(EditContext editContext)
         {
-            return DoSearch();
-        }
-
-        private async Task DoSearch()
-        {
-            var results = await ApiClient.GetPeerLog(Model.LastKnownId);
-            if (results.Count > 0)
-            {
-                Results ??= [];
-                Results.AddRange(results);
-                Model.LastKnownId = results[^1].Id;
-            }
+            ViewModel.SearchCommand.Execute(editContext);
         }
 
         protected static string RowClass(PeerLog log, int index)
@@ -113,7 +67,7 @@ namespace Lantean.QBTMud.Pages
             {
                 if (disposing)
                 {
-                    _timerCancellationToken.Cancel();
+                    await _timerCancellationToken.CancelAsync();
                     _timerCancellationToken.Dispose();
 
                     await Task.CompletedTask;
@@ -141,7 +95,7 @@ namespace Lantean.QBTMud.Pages
                 {
                     try
                     {
-                        await DoSearch();
+                        await ViewModel.SearchCommand.ExecuteAsync(null);
                     }
                     catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
                     {
