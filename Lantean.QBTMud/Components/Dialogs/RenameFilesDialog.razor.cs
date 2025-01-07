@@ -6,7 +6,6 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using System.Collections.ObjectModel;
-using static MudBlazor.Colors;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
