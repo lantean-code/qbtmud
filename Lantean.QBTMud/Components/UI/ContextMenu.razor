@@ -9,7 +9,7 @@
             MaxHeight="@MaxHeight"
             AnchorOrigin="@AnchorOrigin"
             TransformOrigin="TransformOrigin"
-            RelativeWidth="@FullWidth"
+            RelativeWidth="@(FullWidth ? DropdownWidth.Relative : DropdownWidth.Adaptive)"
             OverflowBehavior="OverflowBehavior.FlipAlways"
             Style="@_popoverStyle"
             @ontouchend:preventDefault>

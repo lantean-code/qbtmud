@@ -7,12 +7,6 @@ using MudBlazor.Utilities;
 
 namespace Lantean.QBTMud.Components.UI
 {
-    // This is a very hacky approach but works for now.
-    // This needs to inherit from MudMenu because MudMenuItem needs a MudMenu passed to it to control the close of the menu when an item is clicked.
-    // MudPopover isn't ideal for this because that is designed to be used relative to an activator which in these cases it isn't.
-    // Ideally this should be changed to use something like the way the DialogService works.
-
-    // Or - rework this to have a hidden MudMenu and hook into the OpenChanged event to monitor when the MudMenuItem closes it.
     public partial class ContextMenu : MudComponentBase
     {
         private bool _open;

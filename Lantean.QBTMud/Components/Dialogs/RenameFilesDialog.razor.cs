@@ -30,7 +30,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [CascadingParameter]
-        public MudDialogInstance MudDialog { get; set; } = default!;
+        IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         public string? Hash { get; set; }

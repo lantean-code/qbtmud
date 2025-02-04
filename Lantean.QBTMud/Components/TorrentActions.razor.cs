@@ -63,7 +63,7 @@ namespace Lantean.QBTMud.Components
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         [Parameter]
-        public MudDialogInstance? MudDialog { get; set; }
+        public IMudDialogInstance? MudDialog { get; set; }
 
         [Parameter]
         public UIAction? ParentAction { get; set; }
@@ -441,7 +441,7 @@ namespace Lantean.QBTMud.Components
                     thereAreFirstLastPiecePrio = true;
                 }
 
-                if (torrent.Progress != 1.0) // not downloaded
+                if (torrent.Progress > 0.999999) // not downloaded
                 {
                     allAreDownloaded = false;
                 }

@@ -1,7 +1,7 @@
 ﻿@page "/"
 @layout ListLayout
 
-<ContextMenu @ref="ContextMenu" Dense="true" AdjustmentX="@(DrawerOpen ? -235 : 0)">
+<ContextMenu @ref="ContextMenu" Dense="true" FullWidth="false">
     <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" OnClick="ShowTorrentContextMenu">View torrent details</MudMenuItem>
     <MudDivider />
     <TorrentActions RenderType="RenderType.MenuItems" Hashes="GetContextMenuTargetHashes()" PrimaryHash="@(ContextMenuItem?.Hash)" Torrents="MainData.Torrents" Preferences="Preferences" />

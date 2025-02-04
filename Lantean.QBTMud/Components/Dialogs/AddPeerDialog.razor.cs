@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class AddPeerDialog
     {
         [CascadingParameter]
-        public MudDialogInstance MudDialog { get; set; } = default!;
+        public IMudDialogInstance MudDialog { get; set; } = default!;
 
         protected HashSet<PeerId> Peers { get; } = [];
 

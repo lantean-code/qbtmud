@@ -1,5 +1,5 @@
 ﻿<div class="@Classname">
-    <div @onclick="EventUtil.AsNonRenderingEventHandler<MouseEventArgs>(OnClickHandler)" class="@LinkClassname" @onlongpress="OnLongPressInternal" @oncontextmenu="OnContextMenuInternal" @oncontextmenu:preventDefault>
+    <div @onclick="this.AsNonRenderingEventHandler<MouseEventArgs>(OnClickHandler)" class="@LinkClassname" @onlongpress="OnLongPressInternal" @oncontextmenu="OnContextMenuInternal" @oncontextmenu:preventDefault>
         @if (!string.IsNullOrEmpty(Icon))
         {
             <MudIcon Icon="@Icon" Color="@IconColor" Class="@IconClassname" />
