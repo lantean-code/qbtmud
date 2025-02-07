@@ -23,16 +23,15 @@
                 <MudSwitch T="bool" Label="Dark Mode" LabelPlacement="Placement.End" Value="IsDarkMode" ValueChanged="DarkModeChanged" Class="pl-3" />
                 <Menu @ref="Menu" />
             </MudAppBar>
-            @if (IsDebug)
-            {
-                <MudDrawer Open="ErrorDrawerOpen" ClipMode="DrawerClipMode.Docked" Elevation="2" Anchor="Anchor.Right">
-                    <ErrorDisplay ErrorBoundary="ErrorBoundary" />
-                </MudDrawer>
-            }
+            <MudDrawer @bind-Open="ErrorDrawerOpen" ClipMode="DrawerClipMode.Docked" Elevation="2" Anchor="Anchor.Right">
+                <ErrorDisplay ErrorBoundary="ErrorBoundary" />
+            </MudDrawer>
             <CascadingValue Value="Theme">
                 <CascadingValue Value="IsDarkMode" Name="IsDarkMode">
                     <CascadingValue Value="Menu">
-                        @Body
+                        <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
+                            @Body
+                        </CascadingValue>
                     </CascadingValue>
                 </CascadingValue>
             </CascadingValue>

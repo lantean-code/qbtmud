@@ -2,6 +2,7 @@
     <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu">Rename</MudMenuItem>
 </ContextMenu>
 
+<div style="overflow-x: auto; white-space: nowrap; width: 100%;">
 <MudToolBar Gutters="false" Dense="true">
     <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileToolbar" title="Rename" />
     <MudDivider Vertical="true" />
@@ -22,6 +23,7 @@
     <MudSpacer />
     <MudTextField T="string" Value="SearchText" ValueChanged="SearchTextChanged" Immediate="true" DebounceInterval="500" Placeholder="Filter file list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
 </MudToolBar>
+</div>
 
 <DynamicTable
     @ref="Table"

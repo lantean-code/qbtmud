@@ -7,6 +7,7 @@
     <TorrentActions RenderType="RenderType.MenuItems" Hashes="GetContextMenuTargetHashes()" PrimaryHash="@(ContextMenuItem?.Hash)" Torrents="MainData.Torrents" Preferences="Preferences" />
 </ContextMenu>
 
+<div style="overflow-x: auto; white-space: nowrap; width: 100%;">
 <MudToolBar Gutters="false" Dense="true">
     <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="Add torrent link" />
     <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="Add torrent file" />
@@ -18,6 +19,7 @@
     <MudSpacer />
     <MudTextField Value="SearchText" TextChanged="SearchTextChanged" Immediate="true" DebounceInterval="1000" Placeholder="Filter torrent list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
 </MudToolBar>
+</div>
 
 <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="ma-0 pa-0">
     <DynamicTable
