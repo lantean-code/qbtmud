@@ -7,7 +7,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class ConfirmDialog
     {
         [CascadingParameter]
-        public MudDialogInstance MudDialog { get; set; } = default!;
+        IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         public string Content { get; set; } = default!;

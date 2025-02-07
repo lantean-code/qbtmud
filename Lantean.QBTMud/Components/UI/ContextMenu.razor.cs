@@ -7,12 +7,6 @@ using MudBlazor.Utilities;
 
 namespace Lantean.QBTMud.Components.UI
 {
-    // This is a very hacky approach but works for now.
-    // This needs to inherit from MudMenu because MudMenuItem needs a MudMenu passed to it to control the close of the menu when an item is clicked.
-    // MudPopover isn't ideal for this because that is designed to be used relative to an activator which in these cases it isn't.
-    // Ideally this should be changed to use something like the way the DialogService works.
-
-    // Or - rework this to have a hidden MudMenu and hook into the OpenChanged event to monitor when the MudMenuItem closes it.
     public partial class ContextMenu : MudComponentBase
     {
         private bool _open;
@@ -61,7 +55,7 @@ namespace Lantean.QBTMud.Components.UI
         /// </summary>
         [Parameter]
         [Category(CategoryTypes.Menu.PopupAppearance)]
-        public bool FullWidth { get; set; }
+        public DropdownWidth RelativeWidth { get; set; }
 
         /// <summary>
         /// Sets the max height the menu can have when open.
@@ -219,56 +213,58 @@ namespace Lantean.QBTMud.Components.UI
             }
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
+        protected override Task OnAfterRenderAsync(bool firstRender)
         {
             if (!_isResized)
             {
-                await DeterminePosition();
+                //await DeterminePosition();
             }
+
+            return Task.CompletedTask;
         }
 
-        private async Task DeterminePosition()
-        {
-            var mainContentSize = await JSRuntime.GetInnerDimensions(".mud-main-content");
-            double? contextMenuHeight = null;
-            double? contextMenuWidth = null;
+        //private async Task DeterminePosition()
+        //{
+        //    var mainContentSize = await JSRuntime.GetInnerDimensions(".mud-main-content");
+        //    double? contextMenuHeight = null;
+        //    double? contextMenuWidth = null;
 
-            var popoverHolder = PopoverService.ActivePopovers.FirstOrDefault(p => p.UserAttributes.ContainsKey("tracker") && (string?)p.UserAttributes["tracker"] == Id);
+        //    var popoverHolder = PopoverService.ActivePopovers.FirstOrDefault(p => p.UserAttributes.ContainsKey("tracker") && (string?)p.UserAttributes["tracker"] == Id);
 
-            var popoverSize = await JSRuntime.GetBoundingClientRect($"#popovercontent-{popoverHolder?.Id}");
-            if (popoverSize.Height > 0)
-            {
-                contextMenuHeight = popoverSize.Height;
-                contextMenuWidth = popoverSize.Width;
-            }
-            else
-            {
-                return;
-            }
+        //    var popoverSize = await JSRuntime.GetBoundingClientRect($"#popovercontent-{popoverHolder?.Id}");
+        //    if (popoverSize.Height > 0)
+        //    {
+        //        contextMenuHeight = popoverSize.Height;
+        //        contextMenuWidth = popoverSize.Width;
+        //    }
+        //    else
+        //    {
+        //        return;
+        //    }
 
-            // the bottom position of the popover will be rendered off screen
-            if (_y - _diff + contextMenuHeight.Value >= mainContentSize.Height)
-            {
-                // adjust the top of the context menu
-                var overshoot = Math.Abs(mainContentSize.Height - (_y - _diff + contextMenuHeight.Value));
-                _y -= overshoot;
+        //    // the bottom position of the popover will be rendered off screen
+        //    if (_y - _diff + contextMenuHeight.Value >= mainContentSize.Height)
+        //    {
+        //        // adjust the top of the context menu
+        //        var overshoot = Math.Abs(mainContentSize.Height - (_y - _diff + contextMenuHeight.Value));
+        //        _y -= overshoot;
 
-                if (_y - _diff + contextMenuHeight >= mainContentSize.Height)
-                {
-                    MaxHeight = (int)(mainContentSize.Height - _y + _diff);
-                }
-            }
+        //        if (_y - _diff + contextMenuHeight >= mainContentSize.Height)
+        //        {
+        //            MaxHeight = (int)(mainContentSize.Height - _y + _diff);
+        //        }
+        //    }
 
-            if (_x + contextMenuWidth.Value > mainContentSize.Width)
-            {
-                var overshoot = Math.Abs(mainContentSize.Width - (_x + contextMenuWidth.Value));
-                _x -= overshoot;
-            }
+        //    if (_x + contextMenuWidth.Value > mainContentSize.Width)
+        //    {
+        //        var overshoot = Math.Abs(mainContentSize.Width - (_x + contextMenuWidth.Value));
+        //        _x -= overshoot;
+        //    }
 
-            SetPopoverStyle(_x, _y);
-            _isResized = true;
-            await InvokeAsync(StateHasChanged);
-        }
+        //    SetPopoverStyle(_x, _y);
+        //    _isResized = true;
+        //    await InvokeAsync(StateHasChanged);
+        //}
 
         private (double x, double y) GetPositionFromArgs(EventArgs eventArgs)
         {

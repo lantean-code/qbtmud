@@ -10,7 +10,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private readonly List<string> _unsavedRuleNames = [];
 
         [CascadingParameter]
-        public MudDialogInstance MudDialog { get; set; } = default!;
+        IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Inject]
         protected IDialogService DialogService { get; set; } = default!;

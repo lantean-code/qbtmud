@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class AddTorrentFileDialog
     {
         [CascadingParameter]
-        public MudDialogInstance MudDialog { get; set; } = default!;
+        IMudDialogInstance MudDialog { get; set; } = default!;
 
         protected IReadOnlyList<IBrowserFile> Files { get; set; } = [];
 

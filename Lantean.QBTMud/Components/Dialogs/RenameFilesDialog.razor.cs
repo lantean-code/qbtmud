@@ -6,7 +6,6 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using System.Collections.ObjectModel;
-using static MudBlazor.Colors;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -31,7 +30,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [CascadingParameter]
-        public MudDialogInstance MudDialog { get; set; } = default!;
+        IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         public string? Hash { get; set; }
