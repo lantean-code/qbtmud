@@ -5,9 +5,10 @@
     <DialogContent>
         <MudCard Class="w-100" Elevation="0">
             <MudGrid>
-                @for (var i = 0; i < Columns.Count; i++)
+                @for (var i = 0; i < OrderedColumns.Length; i++)
                 {
-                    var column = Columns[i];
+                    var item = OrderedColumns[i];
+                    var column = Columns.First(c => c.Id == item);
                     var index = i;
                     <MudItem xs="7">
                         <MudCheckBox T="bool" ValueChanged="@(c => SetSelected(c, column.Id))" Label="@column.Header" LabelPlacement="Placement.End" Value="@(SelectedColumnsInternal.Contains(column.Id))" />

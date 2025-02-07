@@ -191,13 +191,13 @@ else if (RenderType == RenderType.MenuItems)
 
                 if (!action.Children.Any())
                 {
-                    <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled">
+                    <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled" Class="icon-menu-dense">
                         @action.Text
                     </MudMenuItem>
                 }
                 else
                 {
-                    <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="@(t => SubMenuTouch(action))">
+                    <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="@(t => SubMenuTouch(action))" Class="icon-menu-dense">
                         <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopLeft" ActivationEvent="MouseEvent.MouseOver" Icon="@Icons.Material.Filled.ArrowDropDown" Ripple="false" Class="sub-menu">
                             <ActivatorContent>
                                 @action.Text

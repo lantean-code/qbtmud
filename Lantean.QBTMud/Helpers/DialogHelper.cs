@@ -328,13 +328,14 @@ namespace Lantean.QBTMud.Helpers
             return tags;
         }
 
-        public static async Task<(HashSet<string> SelectedColumns, Dictionary<string, int?> ColumnWidths)> ShowColumnsOptionsDialog<T>(this IDialogService dialogService, List<ColumnDefinition<T>> columnDefinitions, HashSet<string> selectedColumns, Dictionary<string, int?> widths)
+        public static async Task<(HashSet<string> SelectedColumns, Dictionary<string, int?> ColumnWidths, Dictionary<string, int> ColumnOrder)> ShowColumnsOptionsDialog<T>(this IDialogService dialogService, List<ColumnDefinition<T>> columnDefinitions, HashSet<string> selectedColumns, Dictionary<string, int?> widths, Dictionary<string, int> order)
         {
             var parameters = new DialogParameters
             {
                 { nameof(ColumnOptionsDialog<T>.Columns), columnDefinitions },
                 { nameof(ColumnOptionsDialog<T>.SelectedColumns), selectedColumns },
                 { nameof(ColumnOptionsDialog<T>.Widths), widths },
+                { nameof(ColumnOptionsDialog<T>.Order), order },
             };
 
             var reference = await dialogService.ShowAsync<ColumnOptionsDialog<T>>("Column Options", parameters, FormDialogOptions);
@@ -344,7 +345,7 @@ namespace Lantean.QBTMud.Helpers
                 return default;
             }
 
-            return ((HashSet<string>, Dictionary<string, int?>))dialogResult.Data;
+            return ((HashSet<string>, Dictionary<string, int?>, Dictionary<string, int>))dialogResult.Data;
         }
 
         public static async Task<bool> ShowConfirmDialog(this IDialogService dialogService, string title, string content)

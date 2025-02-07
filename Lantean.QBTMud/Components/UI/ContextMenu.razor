@@ -8,19 +8,17 @@
             Class="unselectable"
             MaxHeight="@MaxHeight"
             AnchorOrigin="@AnchorOrigin"
-            TransformOrigin="TransformOrigin"
-            RelativeWidth="@(FullWidth ? DropdownWidth.Relative : DropdownWidth.Adaptive)"
+            TransformOrigin="@TransformOrigin"
+            RelativeWidth="@RelativeWidth"
             OverflowBehavior="OverflowBehavior.FlipAlways"
             Style="@_popoverStyle"
             @ontouchend:preventDefault>
     <CascadingValue Value="@(FakeMenu)">
         @if (_showChildren)
         {
-            <MudList T="object"
-            Class="unselectable"
-                 Dense="@Dense">
+            <MudList T="object" Class="unselectable"  Dense="@Dense">
                 @ChildContent
-        </MudList>
+            </MudList>
         }
     </CascadingValue>
 </MudPopover>

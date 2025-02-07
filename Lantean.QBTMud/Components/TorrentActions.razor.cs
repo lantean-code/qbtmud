@@ -104,7 +104,7 @@ namespace Lantean.QBTMud.Components
             _actions =
             [
                 new("start", "Start", Icons.Material.Filled.PlayArrow, Color.Success, CreateCallback(Resume)),
-                new("pause", "Pause", Icons.Material.Filled.Pause, Color.Warning, CreateCallback(Pause)),
+                new("pause", "Pause", MajorVersion < 5 ? Icons.Material.Filled.Pause : Icons.Material.Filled.Stop, Color.Warning, CreateCallback(Pause)),
                 new("forceStart", "Force start", Icons.Material.Filled.Forward, Color.Warning, CreateCallback(ForceStart)),
                 new("delete", "Remove", Icons.Material.Filled.Delete, Color.Error, CreateCallback(Remove), separatorBefore: true),
                 new("setLocation", "Set location", Icons.Material.Filled.MyLocation, Color.Info, CreateCallback(SetLocation), separatorBefore: true),

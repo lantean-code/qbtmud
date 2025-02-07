@@ -7,7 +7,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class ColumnOptionsDialog<T>
     {
         [CascadingParameter]
-        IMudDialogInstance MudDialog { get; set; } = default!;
+        private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -20,9 +20,14 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Parameter]
         public Dictionary<string, int?> Widths { get; set; } = [];
 
+        [Parameter]
+        public Dictionary<string, int> Order { get; set; } = [];
+
         protected HashSet<string> SelectedColumnsInternal { get; set; } = [];
 
         protected Dictionary<string, int?> WidthsInternal { get; set; } = [];
+
+        protected Dictionary<string, int> OrderInternal { get; set; } = [];
 
         protected override void OnParametersSet()
         {
@@ -49,6 +54,25 @@ namespace Lantean.QBTMud.Components.Dialogs
                 foreach (var width in Widths)
                 {
                     WidthsInternal[width.Key] = width.Value;
+                }
+            }
+
+            if (OrderInternal.Count == 0)
+            {
+                if (Order.Count == 0)
+                {
+                    for (int i = 0; i < Columns.Count; i++)
+                    {
+                        var column = Columns[i];
+                        OrderInternal.Add(column.Id, i);
+                    }
+                }
+                else
+                {
+                    foreach (var order in Order)
+                    {
+                        OrderInternal[order.Key] = order.Value;
+                    }
                 }
             }
         }
@@ -101,7 +125,15 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            (Columns[index], Columns[index - 1]) = (Columns[index - 1], Columns[index]);
+            var currentId = OrderInternal.FirstOrDefault(o => o.Value == index).Key;
+            var otherId = OrderInternal.FirstOrDefault(o => o.Value == index - 1).Key;
+
+            OrderInternal[otherId] = index;
+            OrderInternal[currentId] = index - 1;
+
+            //(Columns[index], Columns[index - 1]) = (Columns[index - 1], Columns[index]);
+
+            StateHasChanged();
         }
 
         protected void MoveDown(int index)
@@ -111,7 +143,15 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            (Columns[index], Columns[index + 1]) = (Columns[index + 1], Columns[index]);
+            var currentId = OrderInternal.FirstOrDefault(o => o.Value == index).Key;
+            var otherId = OrderInternal.FirstOrDefault(o => o.Value == index + 1).Key;
+
+            OrderInternal[otherId] = index;
+            OrderInternal[currentId] = index + 1;
+
+            //(Columns[index], Columns[index + 1]) = (Columns[index + 1], Columns[index]);
+
+            StateHasChanged();
         }
 
         protected string GetValue(int? value, string columnId)
@@ -134,6 +174,13 @@ namespace Lantean.QBTMud.Components.Dialogs
             return value.Value.ToString();
         }
 
+        private string[] OrderedColumns => GetOrderedColumns();
+
+        private string[] GetOrderedColumns()
+        {
+            return OrderInternal.OrderBy(x => x.Value).Select(x => x.Key).ToArray();
+        }
+
         protected void Cancel()
         {
             MudDialog.Cancel();
@@ -141,7 +188,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected void Submit()
         {
-            MudDialog.Close(DialogResult.Ok((SelectedColumnsInternal, WidthsInternal)));
+            MudDialog.Close(DialogResult.Ok((SelectedColumnsInternal, WidthsInternal, OrderInternal)));
         }
 
         protected override Task Submit(KeyboardEvent keyboardEvent)

@@ -193,7 +193,7 @@ namespace Lantean.QBTMud.Pages
         public static List<ColumnDefinition<Torrent>> ColumnsDefinitions { get; } =
         [
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("#", t => t.Priority),
-            ColumnDefinitionHelper.CreateColumnDefinition("Icon", t => t.State, IconColumn, iconOnly: true, width: 25),
+            ColumnDefinitionHelper.CreateColumnDefinition("Icon", t => t.State, IconColumn, iconOnly: true, width: 25, tdClass: "table-icon"),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Name", t => t.Name, width: 400),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Size", t => t.Size, t => DisplayHelpers.Size(t.Size)),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Total Size", t => t.TotalSize, t => DisplayHelpers.Size(t.TotalSize), enabled: false),

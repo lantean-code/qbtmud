@@ -241,3 +241,14 @@ td .folder-button {
 .mud-dialog .mud-dialog-content {
     padding-top: 4px !important;
 }
+
+.icon-menu-dense {
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.table-icon {
+    width: 25px;
+    max-width: 25px;
+    padding: 0 8px !important;
+}

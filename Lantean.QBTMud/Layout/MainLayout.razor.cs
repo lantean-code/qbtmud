@@ -44,6 +44,12 @@ namespace Lantean.QBTMud.Layout
 
         protected MudTheme Theme { get; set; }
 
+#if DEBUG
+        private bool IsDebug { get; } = true;
+#else
+        private bool IsDebug { get; } = false;
+#endif
+
         public MainLayout()
         {
             Theme = new MudTheme();

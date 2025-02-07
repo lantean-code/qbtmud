@@ -13,6 +13,7 @@ namespace Lantean.QBTMud.Components.UI
         private readonly string _columnSelectionStorageKey = $"DynamicTable{_typeName}.ColumnSelection";
         private readonly string _columnSortStorageKey = $"DynamicTable{_typeName}.ColumnSort";
         private readonly string _columnWidthsStorageKey = $"DynamicTable{_typeName}.ColumnWidths";
+        private readonly string _columnOrderStorageKey = $"DynamicTable{_typeName}.ColumnOrder";
 
         [Inject]
         public ILocalStorageService LocalStorage { get; set; } = default!;
@@ -81,6 +82,8 @@ namespace Lantean.QBTMud.Components.UI
         protected HashSet<string> SelectedColumns { get; set; } = [];
 
         private Dictionary<string, int?> _columnWidths = [];
+
+        private Dictionary<string, int> _columnOrder = [];
 
         private string? _sortColumn;
 
@@ -165,8 +168,29 @@ namespace Lantean.QBTMud.Components.UI
         protected IEnumerable<ColumnDefinition<T>> GetColumns()
         {
             var filteredColumns = ColumnDefinitions.Where(c => SelectedColumns.Contains(c.Id)).Where(ColumnFilter);
-            foreach (var column in filteredColumns)
+            if (_columnOrder.Count == 0)
             {
+                foreach (var column in filteredColumns)
+                {
+                    if (_columnWidths.TryGetValue(column.Id, out var value))
+                    {
+                        column.Width = value;
+                    }
+
+                    yield return column;
+                }
+
+                yield break;
+            }
+
+            var columnDictionary = filteredColumns.ToDictionary(c => c.Id);
+            foreach (var columnId in _columnOrder.OrderBy(c => c.Value).Select(c => c.Key))
+            {
+                if (!columnDictionary.TryGetValue(columnId, out var column))
+                {
+                    continue;
+                }
+
                 if (_columnWidths.TryGetValue(column.Id, out var value))
                 {
                     column.Width = value;
@@ -280,7 +304,7 @@ namespace Lantean.QBTMud.Components.UI
 
         public async Task ShowColumnOptionsDialog()
         {
-            var result = await DialogService.ShowColumnsOptionsDialog(ColumnDefinitions.Where(ColumnFilter).ToList(), SelectedColumns, _columnWidths);
+            var result = await DialogService.ShowColumnsOptionsDialog(ColumnDefinitions.Where(ColumnFilter).ToList(), SelectedColumns, _columnWidths, _columnOrder);
 
             if (result == default)
             {
@@ -299,11 +323,17 @@ namespace Lantean.QBTMud.Components.UI
                 _columnWidths = result.ColumnWidths;
                 await LocalStorage.SetItemAsync(_columnWidthsStorageKey, _columnWidths);
             }
+
+            if (!DictionaryEqual(_columnOrder, result.ColumnOrder))
+            {
+                _columnOrder = result.ColumnOrder;
+                await LocalStorage.SetItemAsync(_columnOrderStorageKey, _columnOrder);
+            }
         }
 
-        private static bool DictionaryEqual(Dictionary<string, int?> left, Dictionary<string, int?> right)
+        private static bool DictionaryEqual<TKey, TValue>(Dictionary<TKey, TValue> left, Dictionary<TKey, TValue> right) where TKey : notnull
         {
-            return left.Keys.Count == right.Keys.Count && left.Keys.All(k => right.ContainsKey(k) && left[k] == right[k]);
+            return left.Keys.Count == right.Keys.Count && left.Keys.All(k => right.ContainsKey(k) && Equals(left[k], right[k]));
         }
 
         private static string? GetColumnStyle(ColumnDefinition<T> column)

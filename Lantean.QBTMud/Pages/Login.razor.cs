@@ -49,7 +49,7 @@ namespace Lantean.QBTMud.Pages
 
         protected override Task OnInitializedAsync()
         {
-            return DoLogin("admin", "cIYfeJr49");
+            return DoLogin("admin", "5FUM5pATq");
         }
 
 #endif
