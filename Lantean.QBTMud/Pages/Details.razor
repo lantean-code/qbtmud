@@ -1,6 +1,7 @@
 ﻿@page "/details/{hash}"
 @layout DetailsLayout
 
+<div style="overflow-x: auto; white-space: nowrap; width: 100%;">
 <MudToolBar Gutters="false" Dense="true">
     @if (!DrawerOpen)
     {
@@ -14,6 +15,7 @@
     <MudDivider Vertical="true" />
     <MudText Class="pl-5 no-wrap">@Name</MudText>
 </MudToolBar>
+</div>
 
 @if (ShowTabs)
 {

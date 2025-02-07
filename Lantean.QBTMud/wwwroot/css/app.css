@@ -155,7 +155,7 @@ code {
 }
 
 .torrent-list .mud-table-container {
-    height: calc(100vh - 149px);
+    height: calc(100vh - 160px);
 }
 
 .file-list .mud-table-container {
@@ -251,4 +251,8 @@ td .folder-button {
     width: 25px;
     max-width: 25px;
     padding: 0 8px !important;
+}
+
+.mud-popover .mud-divider:last-child {
+    display: none;
 }

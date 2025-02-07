@@ -36,23 +36,23 @@
                 </CascadingValue>
             </CascadingValue>
         </CascadingValue>
-        <MudAppBar Bottom="true" Fixed="true" Elevation="0" Dense="true" Style="background-color: var(--mud-palette-dark-lighten);">
+        <MudAppBar Bottom="true" Fixed="true" Elevation="0" Dense="true" Style="background-color: var(--mud-palette-dark-lighten); z-index: 900">
             @if (MainData?.LostConnection == true)
             {
-                <MudText Class="mx-2 mb-1" Color="Color.Error">qBittorrent client is not reachable</MudText>
+                <MudText Class="mx-2 mb-1 d-none d-sm-flex" Color="Color.Error">qBittorrent client is not reachable</MudText>
             }
             <MudSpacer />
-            <MudText Class="mx-2 mb-1">@DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk, "Free space: ")</MudText>
-            <MudDivider Vertical="true" />
-            <MudText Class="mx-2 mb-1">DHT @(MainData?.ServerState.DHTNodes ?? 0) nodes</MudText>
-            <MudDivider Vertical="true" />
+            <MudText Class="mx-2 mb-1 d-none d-sm-flex">@DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk, "Free space: ")</MudText>
+            <MudDivider Vertical="true" Class="d-none d-sm-flex" />
+            <MudText Class="mx-2 mb-1 d-none d-sm-flex">DHT @(MainData?.ServerState.DHTNodes ?? 0) nodes</MudText>
+            <MudDivider Vertical="true" Class="d-none d-sm-flex" />
             @{
                 var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);
             }
             <MudIcon Class="mx-1 mb-1" Icon="@icon" Color="@colour" Title="MainData?.ServerState.ConnectionStatus" />
-            <MudDivider Vertical="true" />
+            <MudDivider Vertical="true" Class="" />
             <MudIcon Class="mx-1 mb-1" Icon="@Icons.Material.Outlined.Speed" Color="@((MainData?.ServerState.UseAltSpeedLimits ?? false) ? Color.Error : Color.Success)" />
-            <MudDivider Vertical="true" />
+            <MudDivider Vertical="true" Class="" />
             <MudIcon Class="ml-1 mb-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Success" />
             <MudText Class="mr-1 mb-1">
                 @DisplayHelpers.Size(MainData?.ServerState.DownloadInfoSpeed, null, "/s")

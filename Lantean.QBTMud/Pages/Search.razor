@@ -18,7 +18,7 @@
                 <MudItem xs="12" md="4">
                     <MudTextField T="string" Label="Criteria" @bind-Value="Model.SearchText" Variant="Variant.Outlined" />
                 </MudItem>
-                <MudItem xs="2" md="3">
+                <MudItem xs="12" md="3">
                     <MudSelect T="string" Label="Categories" @bind-Value="Model.SelectedCategory" Variant="Variant.Outlined">
                         @foreach (var (value, name) in Categories)
                         {
@@ -30,17 +30,21 @@
                         }
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="2" md="3">
+                <MudItem xs="12" md="3">
                     <MudSelect T="string" Label="Plugins" @bind-Value="Model.SelectedPlugin" Variant="Variant.Outlined">
                         <MudSelectItem Value="@("all")">All</MudSelectItem>
-                        <MudDivider />
+                        @if (Plugins.Count > 0)
+                        {
+                            <MudDivider />
+
+                        }
                         @foreach (var (value, name) in Plugins)
                         {
                             <MudSelectItem Value="value">@name</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="2" md="2">
+                <MudItem xs="12" md="2">
                     <MudButton ButtonType="ButtonType.Submit" FullWidth="true" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Search" Variant="Variant.Filled" Class="mt-6">@(_searchId is null ? "Search" : "Stop")</MudButton>
                 </MudItem>
             

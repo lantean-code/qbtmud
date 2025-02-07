@@ -44,12 +44,6 @@ namespace Lantean.QBTMud.Layout
 
         protected MudTheme Theme { get; set; }
 
-#if DEBUG
-        private bool IsDebug { get; } = true;
-#else
-        private bool IsDebug { get; } = false;
-#endif
-
         public MainLayout()
         {
             Theme = new MudTheme();
@@ -96,9 +90,9 @@ namespace Lantean.QBTMud.Layout
             return Task.CompletedTask;
         }
 
-        public Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs browserViewportEventArgs)
+        public async Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs browserViewportEventArgs)
         {
-            if (browserViewportEventArgs.Breakpoint == Breakpoint.Sm && DrawerOpen)
+            if (browserViewportEventArgs.Breakpoint <= Breakpoint.Sm)
             {
                 DrawerOpen = false;
             }
@@ -107,7 +101,17 @@ namespace Lantean.QBTMud.Layout
                 DrawerOpen = true;
             }
 
-            return Task.CompletedTask;
+            if (ErrorBoundary?.Errors.Count > 0)
+            {
+                ErrorDrawerOpen = true;
+            }
+            else
+            {
+                await Task.Delay(250);
+                ErrorDrawerOpen = false;
+            }
+
+            await InvokeAsync(StateHasChanged);
         }
 
         protected void ToggleErrorDrawer()
