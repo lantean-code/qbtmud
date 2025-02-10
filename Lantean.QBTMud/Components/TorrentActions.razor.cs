@@ -441,7 +441,7 @@ namespace Lantean.QBTMud.Components
                     thereAreFirstLastPiecePrio = true;
                 }
 
-                if (torrent.Progress > 0.999999) // not downloaded
+                if (torrent.Progress < 0.999999) // not downloaded
                 {
                     allAreDownloaded = false;
                 }
