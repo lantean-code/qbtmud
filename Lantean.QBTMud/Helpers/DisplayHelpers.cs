@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Helpers
             {
                 time = TimeSpan.FromSeconds(seconds.Value);
             }
-            catch (OverflowException)
+            catch
             {
                 return "∞";
             }
