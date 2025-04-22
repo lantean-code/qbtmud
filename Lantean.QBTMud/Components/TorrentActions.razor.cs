@@ -12,10 +12,7 @@ namespace Lantean.QBTMud.Components
 {
     public partial class TorrentActions : IAsyncDisposable
     {
-        private const int _defaultVersion = 5;
-
         private bool _disposedValue;
-        private int? _version;
 
         private List<UIAction>? _actions;
 
@@ -74,30 +71,7 @@ namespace Lantean.QBTMud.Components
 
         protected bool OverlayVisible { get; set; }
 
-        protected int MajorVersion
-        {
-            get
-            {
-                if (_version is not null)
-                {
-                    return _version.Value;
-                }
-
-                if (string.IsNullOrEmpty(Version))
-                {
-                    return _defaultVersion;
-                }
-
-                if (!System.Version.TryParse(Version.Replace("v", ""), out var version))
-                {
-                    return _defaultVersion;
-                }
-
-                _version = version.Major;
-
-                return _version.Value;
-            }
-        }
+        protected int MajorVersion => VersionHelper.GetMajorVersion(Version);
 
         protected override void OnInitialized()
         {
