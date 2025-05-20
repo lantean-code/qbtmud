@@ -20,6 +20,11 @@ qbtmud replicates all core features of the qBittorrent WebUI, including:
 - **Bandwidth Scheduler** – Schedule bandwidth limits.
 - **WebUI Access** – Remotely manage torrents through the WebUI.
 
+![image](https://github.com/user-attachments/assets/c4e383fd-bff0-4367-b6de-79e19a632f11)
+![image](https://github.com/user-attachments/assets/4ff56ed6-cc11-42cd-a070-23f086fd8821)
+![image](https://github.com/user-attachments/assets/e321c5a2-ccf1-4205-828d-7ed7adade7dd)
+
+
 For a detailed explanation of these features, refer to the [qBittorrent Options Guide](https://github.com/qbittorrent/qBittorrent/wiki/Explanation-of-Options-in-qBittorrent).
 
 ---
