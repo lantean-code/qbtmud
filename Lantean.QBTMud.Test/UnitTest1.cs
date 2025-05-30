@@ -21,7 +21,7 @@ namespace Lantean.QBTMud.Test
             Test2(a => a.Name);
         }
 
-        private void Test2(Expression<Func<TestClass, object>> expr)
+        private void Test2(Expression<Func<TestClass, object?>> expr)
         {
             var body = expr.Body;
         }
@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Test
 
             var l = Expression.Lambda<Func<TestClass, object>>(convertExpression, expression);
 
-            Expression<Func<TestClass, object>> expr2 = a => a.Name;
+            Expression<Func<TestClass, object?>> expr2 = a => a.Name;
 
             var x = l.Compile();
             var res = (long)x(new TestClass { Name = "Name", Value = 12 });
@@ -58,9 +58,9 @@ namespace Lantean.QBTMud.Test
 
     public class TestClass
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public long Value { get; set; }
     }

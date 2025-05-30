@@ -129,7 +129,7 @@ namespace Lantean.QBTMud.Helpers
                 return "";
             }
 
-            return Size(size);
+            return Size(size, prefix, suffix);
         }
 
         /// <summary>
