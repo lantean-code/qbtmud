@@ -14,9 +14,6 @@ namespace Lantean.QBTMud.Layout
         private bool _disposedValue;
 
         [Inject]
-        protected NavigationManager NavigationManager { get; set; } = default!;
-
-        [Inject]
         private IBrowserViewportService BrowserViewportService { get; set; } = default!;
 
         [Inject]
@@ -78,13 +75,13 @@ namespace Lantean.QBTMud.Layout
                 {
                     IsDarkMode = isDarkMode.Value;
                 }
-                await MudThemeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
+                await MudThemeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChanged);
                 await BrowserViewportService.SubscribeAsync(this, fireImmediately: true);
                 await InvokeAsync(StateHasChanged);
             }
         }
 
-        protected Task OnSystemPreferenceChanged(bool value)
+        protected Task OnSystemDarkModeChanged(bool value)
         {
             IsDarkMode = value;
             return Task.CompletedTask;

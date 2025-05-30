@@ -83,7 +83,7 @@ namespace Lantean.QBTMud.Layout
             Preferences = await ApiClient.GetApplicationPreferences();
             Version = await ApiClient.GetApplicationVersion();
             var data = await ApiClient.GetMainData(_requestId);
-            MainData = DataManager.CreateMainData(data);
+            MainData = DataManager.CreateMainData(data, Version);
 
             _requestId = data.ResponseId;
             _refreshInterval = MainData.ServerState.RefreshInterval;
@@ -128,7 +128,7 @@ namespace Lantean.QBTMud.Layout
 
                         if (MainData is null || data.FullUpdate)
                         {
-                            MainData = DataManager.CreateMainData(data);
+                            MainData = DataManager.CreateMainData(data, Version);
                         }
                         else
                         {

@@ -8,6 +8,7 @@
         Completed,
         Resumed,
         Paused,
+        Stopped,
         Active,
         Inactive,
         Stalled,
@@ -15,6 +16,6 @@
         StalledDownloading,
         Checking,
         Errored,
-        Stopped
+        
     }
 }
