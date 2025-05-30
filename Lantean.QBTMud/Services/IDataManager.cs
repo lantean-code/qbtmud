@@ -4,7 +4,7 @@ namespace Lantean.QBTMud.Services
 {
     public interface IDataManager
     {
-        MainData CreateMainData(QBitTorrentClient.Models.MainData mainData);
+        MainData CreateMainData(QBitTorrentClient.Models.MainData mainData, string version);
 
         Torrent CreateTorrent(string hash, QBitTorrentClient.Models.Torrent torrent);
 

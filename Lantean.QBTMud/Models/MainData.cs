@@ -11,7 +11,8 @@
             Dictionary<string, HashSet<string>> tagState,
             Dictionary<string, HashSet<string>> categoriesState,
             Dictionary<string, HashSet<string>> statusState,
-            Dictionary<string, HashSet<string>> trackersState)
+            Dictionary<string, HashSet<string>> trackersState,
+            int majorVersion)
         {
             Torrents = torrents.ToDictionary();
             Tags = tags.ToHashSet();
@@ -22,6 +23,7 @@
             CategoriesState = categoriesState;
             StatusState = statusState;
             TrackersState = trackersState;
+            MajorVersion = majorVersion;
         }
 
         public Dictionary<string, Torrent> Torrents { get; }
@@ -36,5 +38,6 @@
         public Dictionary<string, HashSet<string>> TrackersState { get; }
         public string? SelectedTorrentHash { get; set; }
         public bool LostConnection { get; set; }
+        public int MajorVersion { get; }
     }
 }
