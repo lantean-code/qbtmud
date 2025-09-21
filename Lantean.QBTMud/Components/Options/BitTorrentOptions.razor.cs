@@ -17,7 +17,7 @@
         protected int SlowTorrentUlRateThreshold { get; private set; }
         protected int SlowTorrentInactiveTimer { get; private set; }
         protected bool MaxRatioEnabled { get; private set; }
-        protected int MaxRatio { get; private set; }
+        protected float MaxRatio { get; private set; }
         protected bool MaxSeedingTimeEnabled { get; private set; }
         protected int MaxSeedingTime { get; private set; }
         protected int MaxRatioAct { get; private set; }
@@ -275,7 +275,7 @@
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task MaxRatioChanged(int value)
+        protected async Task MaxRatioChanged(float value)
         {
             MaxRatio = value;
             UpdatePreferences.MaxRatio = value;

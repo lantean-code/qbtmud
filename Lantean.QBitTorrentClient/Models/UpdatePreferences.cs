@@ -323,7 +323,7 @@ namespace Lantean.QBitTorrentClient.Models
         public bool? MaxInactiveSeedingTimeEnabled { get; set; }
 
         [JsonPropertyName("max_ratio")]
-        public int? MaxRatio { get; set; }
+        public float? MaxRatio { get; set; }
 
         [JsonPropertyName("max_ratio_act")]
         public int? MaxRatioAct { get; set; }
