@@ -92,7 +92,9 @@
                 <FieldSwitch Label="When ratio reaches" Value="MaxRatioEnabled" ValueChanged="MaxRatioEnabledChanged" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(!MaxRatioEnabled)" Min="0" Max="9998" Variant="Variant.Outlined" Validation="MaxRatioValidation" />
+                <MudNumericField T="float" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged"
+                    Disabled="@(!MaxRatioEnabled)" Min="0" Max="9998" Variant="Variant.Outlined"
+                    Validation="MaxRatioValidation" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="When total seeding time reaches" Value="MaxSeedingTimeEnabled" ValueChanged="MaxSeedingTimeEnabledChanged" />
