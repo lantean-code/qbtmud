@@ -39,12 +39,19 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            var tags = new List<string>(mainData.Tags?.Count ?? 0);
+            var tags = new List<string>();
             if (mainData.Tags is not null)
             {
+                var seenTags = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var tag in mainData.Tags)
                 {
-                    tags.Add(tag);
+                    var normalizedTag = NormalizeTag(tag);
+                    if (string.IsNullOrEmpty(normalizedTag) || !seenTags.Add(normalizedTag))
+                    {
+                        continue;
+                    }
+
+                    tags.Add(normalizedTag);
                 }
             }
 
@@ -157,8 +164,14 @@ namespace Lantean.QBTMud.Services
             {
                 foreach (var tag in mainData.TagsRemoved)
                 {
-                    torrentList.Tags.Remove(tag);
-                    torrentList.TagState.Remove(tag);
+                    var normalizedTag = NormalizeTag(tag);
+                    if (string.IsNullOrEmpty(normalizedTag))
+                    {
+                        continue;
+                    }
+
+                    torrentList.Tags.Remove(normalizedTag);
+                    torrentList.TagState.Remove(normalizedTag);
                 }
             }
 
@@ -200,7 +213,19 @@ namespace Lantean.QBTMud.Services
             {
                 foreach (var tag in mainData.Tags)
                 {
-                    torrentList.Tags.Add(tag);
+                    var normalizedTag = NormalizeTag(tag);
+                    if (string.IsNullOrEmpty(normalizedTag))
+                    {
+                        continue;
+                    }
+
+                    torrentList.Tags.Add(normalizedTag);
+                    if (!torrentList.TagState.ContainsKey(normalizedTag))
+                    {
+                        torrentList.TagState[normalizedTag] = torrentList.Torrents.Values
+                            .Where(t => FilterHelper.FilterTag(t, normalizedTag))
+                            .ToHashesHashSet();
+                    }
                 }
             }
 
@@ -508,6 +533,12 @@ namespace Lantean.QBTMud.Services
 
         public Torrent CreateTorrent(string hash, QBitTorrentClient.Models.Torrent torrent)
         {
+            var normalizedTags = torrent.Tags?
+                .Select(NormalizeTag)
+                .Where(static tag => !string.IsNullOrEmpty(tag))
+                .ToList()
+                ?? new List<string>();
+
             return new Torrent(
                 hash,
                 torrent.AddedOn.GetValueOrDefault(),
@@ -548,7 +579,7 @@ namespace Lantean.QBTMud.Services
                 torrent.Size.GetValueOrDefault(),
                 torrent.State!,
                 torrent.SuperSeeding.GetValueOrDefault(),
-                torrent.Tags!,
+                normalizedTags,
                 torrent.TimeActive.GetValueOrDefault(),
                 torrent.TotalSize.GetValueOrDefault(),
                 torrent.Tracker!,
@@ -559,6 +590,19 @@ namespace Lantean.QBTMud.Services
                 torrent.Reannounce ?? 0,
                 torrent.InactiveSeedingTimeLimit.GetValueOrDefault(),
                 torrent.MaxInactiveSeedingTime.GetValueOrDefault());
+        }
+
+        private static string NormalizeTag(string? tag)
+        {
+            if (string.IsNullOrEmpty(tag))
+            {
+                return string.Empty;
+            }
+
+            var separatorIndex = tag.IndexOf('\t');
+            var normalized = (separatorIndex >= 0) ? tag[..separatorIndex] : tag;
+
+            return normalized.Trim();
         }
 
         private static void UpdateCategory(Category existingCategory, QBitTorrentClient.Models.Category category)
@@ -609,7 +653,14 @@ namespace Lantean.QBTMud.Services
             if (torrent.Tags is not null)
             {
                 existingTorrent.Tags.Clear();
-                existingTorrent.Tags.AddRange(torrent.Tags);
+                foreach (var tag in torrent.Tags)
+                {
+                    var normalizedTag = NormalizeTag(tag);
+                    if (!string.IsNullOrEmpty(normalizedTag))
+                    {
+                        existingTorrent.Tags.Add(normalizedTag);
+                    }
+                }
             }
             existingTorrent.TimeActive = torrent.TimeActive ?? existingTorrent.TimeActive;
             existingTorrent.TotalSize = torrent.TotalSize ?? existingTorrent.TotalSize;

@@ -119,34 +119,34 @@ namespace Lantean.QBTMud.Helpers
             switch (category)
             {
                 case CATEGORY_ALL:
-                    break;
+                    return true;
 
                 case CATEGORY_UNCATEGORIZED:
                     if (!string.IsNullOrEmpty(torrent.Category))
                     {
                         return false;
                     }
-                    break;
 
+                    return true;
                 default:
+                    if (string.IsNullOrEmpty(torrent.Category))
+                    {
+                        return false;
+                    }
+
                     if (!useSubcategories)
                     {
-                        if (torrent.Category != category)
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            if (!torrent.Category.StartsWith(category))
-                            {
-                                return false;
-                            }
-                        }
+                        return string.Equals(torrent.Category, category, StringComparison.Ordinal);
                     }
-                    break;
-            }
 
-            return true;
+                    if (string.Equals(torrent.Category, category, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+
+                    var prefix = string.Concat(category, "/");
+                    return torrent.Category.StartsWith(prefix, StringComparison.Ordinal);
+            }
         }
 
         public static bool FilterTag(Torrent torrent, string tag)
