@@ -25,6 +25,10 @@
         protected int MaxInactiveSeedingTime { get; private set; }
         protected bool AddTrackersEnabled { get; private set; }
         protected string? AddTrackers { get; private set; }
+        protected bool AddTrackersFromUrlEnabled { get; private set; }
+        protected string? AddTrackersUrl { get; private set; }
+        protected string? AddTrackersUrlList { get; private set; }
+        protected bool MergeTrackers { get; private set; }
 
         protected Func<int, string?> MaxActiveDownloadsValidation = value =>
         {
@@ -166,6 +170,10 @@
 
             AddTrackersEnabled = Preferences.AddTrackersEnabled;
             AddTrackers = Preferences.AddTrackers;
+            AddTrackersFromUrlEnabled = Preferences.AddTrackersFromUrlEnabled;
+            AddTrackersUrl = Preferences.AddTrackersUrl;
+            AddTrackersUrlList = Preferences.AddTrackersUrlList;
+            MergeTrackers = Preferences.MergeTrackers;
 
             return true;
         }
@@ -328,6 +336,34 @@
         {
             AddTrackers = value;
             UpdatePreferences.AddTrackers = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task AddTrackersFromUrlEnabledChanged(bool value)
+        {
+            AddTrackersFromUrlEnabled = value;
+            UpdatePreferences.AddTrackersFromUrlEnabled = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task AddTrackersUrlChanged(string value)
+        {
+            AddTrackersUrl = value;
+            UpdatePreferences.AddTrackersUrl = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task AddTrackersUrlListChanged(string value)
+        {
+            AddTrackersUrlList = value;
+            UpdatePreferences.AddTrackersUrlList = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task MergeTrackersChanged(bool value)
+        {
+            MergeTrackers = value;
+            UpdatePreferences.MergeTrackers = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
     }

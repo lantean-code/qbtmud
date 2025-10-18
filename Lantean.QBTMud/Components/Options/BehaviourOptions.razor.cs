@@ -20,6 +20,14 @@ namespace Lantean.QBTMud.Components.Options
 
         protected bool PerformanceWarning { get; set; }
 
+        protected bool StatusBarExternalIp { get; set; }
+
+        protected bool ConfirmTorrentDeletion { get; set; }
+
+        protected bool ConfirmTorrentRecheck { get; set; }
+
+        protected bool DeleteTorrentContentFiles { get; set; }
+
         protected override bool SetOptions()
         {
             if (Preferences is null)
@@ -35,6 +43,10 @@ namespace Lantean.QBTMud.Components.Options
             FileLogAge = Preferences.FileLogAge;
             FileLogAgeType = Preferences.FileLogAgeType;
             PerformanceWarning = Preferences.PerformanceWarning;
+            StatusBarExternalIp = Preferences.StatusBarExternalIp;
+            ConfirmTorrentDeletion = Preferences.ConfirmTorrentDeletion;
+            ConfirmTorrentRecheck = Preferences.ConfirmTorrentRecheck;
+            DeleteTorrentContentFiles = Preferences.DeleteTorrentContentFiles;
 
             return true;
         }
@@ -93,6 +105,34 @@ namespace Lantean.QBTMud.Components.Options
         {
             PerformanceWarning = value;
             UpdatePreferences.PerformanceWarning = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task StatusBarExternalIpChanged(bool value)
+        {
+            StatusBarExternalIp = value;
+            UpdatePreferences.StatusBarExternalIp = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task ConfirmTorrentDeletionChanged(bool value)
+        {
+            ConfirmTorrentDeletion = value;
+            UpdatePreferences.ConfirmTorrentDeletion = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task ConfirmTorrentRecheckChanged(bool value)
+        {
+            ConfirmTorrentRecheck = value;
+            UpdatePreferences.ConfirmTorrentRecheck = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task DeleteTorrentContentFilesChanged(bool value)
+        {
+            DeleteTorrentContentFiles = value;
+            UpdatePreferences.DeleteTorrentContentFiles = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
     }

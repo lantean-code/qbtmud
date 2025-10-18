@@ -14,6 +14,7 @@ namespace Lantean.QBTMud.Components.Options
         protected string? CurrentNetworkInterface { get; private set; }
         protected string? CurrentInterfaceAddress { get; private set; }
         protected int SaveResumeDataInterval { get; private set; }
+        protected int SaveStatisticsInterval { get; private set; }
         protected int TorrentFileSizeLimit { get; private set; }
         protected bool RecheckCompletedTorrents { get; private set; }
         protected string? AppInstanceName { get; private set; }
@@ -50,6 +51,7 @@ namespace Lantean.QBTMud.Components.Options
         protected bool IdnSupportEnabled { get; private set; }
         protected bool EnableMultiConnectionsFromSameIp { get; private set; }
         protected bool ValidateHttpsTrackerCertificate { get; private set; }
+        protected bool IgnoreSslErrors { get; private set; }
         protected bool SsrfMitigation { get; private set; }
         protected bool BlockPeersOnPrivilegedPorts { get; private set; }
         protected bool EnableEmbeddedTracker { get; private set; }
@@ -62,11 +64,13 @@ namespace Lantean.QBTMud.Components.Options
         protected bool AnnounceToAllTrackers { get; private set; }
         protected bool AnnounceToAllTiers { get; private set; }
         protected string? AnnounceIp { get; private set; }
+        protected int AnnouncePort { get; private set; }
         protected int MaxConcurrentHttpAnnounces { get; private set; }
         protected int StopTrackerTimeout { get; private set; }
         protected int PeerTurnover { get; private set; }
         protected int PeerTurnoverCutoff { get; private set; }
         protected int PeerTurnoverInterval { get; private set; }
+        protected int HostnameCacheTtl { get; private set; }
         protected int RequestQueueSize { get; private set; }
         protected string? DhtBootstrapNodes { get; private set; }
         protected int I2pInboundQuantity { get; private set; }
@@ -95,6 +99,7 @@ namespace Lantean.QBTMud.Components.Options
             CurrentNetworkInterface = Preferences.CurrentNetworkInterface;
             CurrentInterfaceAddress = Preferences.CurrentInterfaceAddress;
             SaveResumeDataInterval = Preferences.SaveResumeDataInterval;
+            SaveStatisticsInterval = Preferences.SaveStatisticsInterval;
             TorrentFileSizeLimit = Preferences.TorrentFileSizeLimit / 1024 / 1024;
             RecheckCompletedTorrents = Preferences.RecheckCompletedTorrents;
             AppInstanceName = Preferences.AppInstanceName;
@@ -131,6 +136,7 @@ namespace Lantean.QBTMud.Components.Options
             IdnSupportEnabled = Preferences.IdnSupportEnabled;
             EnableMultiConnectionsFromSameIp = Preferences.EnableMultiConnectionsFromSameIp;
             ValidateHttpsTrackerCertificate = Preferences.ValidateHttpsTrackerCertificate;
+            IgnoreSslErrors = Preferences.IgnoreSslErrors;
             SsrfMitigation = Preferences.SsrfMitigation;
             BlockPeersOnPrivilegedPorts = Preferences.BlockPeersOnPrivilegedPorts;
             EnableEmbeddedTracker = Preferences.EnableEmbeddedTracker;
@@ -143,11 +149,13 @@ namespace Lantean.QBTMud.Components.Options
             AnnounceToAllTrackers = Preferences.AnnounceToAllTrackers;
             AnnounceToAllTiers = Preferences.AnnounceToAllTiers;
             AnnounceIp = Preferences.AnnounceIp;
+            AnnouncePort = Preferences.AnnouncePort;
             MaxConcurrentHttpAnnounces = Preferences.MaxConcurrentHttpAnnounces;
             StopTrackerTimeout = Preferences.StopTrackerTimeout;
             PeerTurnover = Preferences.PeerTurnover;
             PeerTurnoverCutoff = Preferences.PeerTurnoverCutoff;
             PeerTurnoverInterval = Preferences.PeerTurnoverInterval;
+            HostnameCacheTtl = Preferences.HostnameCacheTtl;
             RequestQueueSize = Preferences.RequestQueueSize;
             DhtBootstrapNodes = Preferences.DhtBootstrapNodes;
             I2pInboundQuantity = Preferences.I2pInboundQuantity;
@@ -192,6 +200,13 @@ namespace Lantean.QBTMud.Components.Options
         {
             SaveResumeDataInterval = value;
             UpdatePreferences.SaveResumeDataInterval = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task SaveStatisticsIntervalChanged(int value)
+        {
+            SaveStatisticsInterval = value;
+            UpdatePreferences.SaveStatisticsInterval = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
@@ -447,6 +462,13 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
+        protected async Task IgnoreSslErrorsChanged(bool value)
+        {
+            IgnoreSslErrors = value;
+            UpdatePreferences.IgnoreSslErrors = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
         protected async Task SsrfMitigationChanged(bool value)
         {
             SsrfMitigation = value;
@@ -531,6 +553,13 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
+        protected async Task AnnouncePortChanged(int value)
+        {
+            AnnouncePort = value;
+            UpdatePreferences.AnnouncePort = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
         protected async Task MaxConcurrentHttpAnnouncesChanged(int value)
         {
             MaxConcurrentHttpAnnounces = value;
@@ -556,6 +585,13 @@ namespace Lantean.QBTMud.Components.Options
         {
             PeerTurnoverCutoff = value;
             UpdatePreferences.PeerTurnoverCutoff = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task HostnameCacheTtlChanged(int value)
+        {
+            HostnameCacheTtl = value;
+            UpdatePreferences.HostnameCacheTtl = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 

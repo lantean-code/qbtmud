@@ -710,13 +710,18 @@ namespace Lantean.QBTMud.Services
                 original = new QBitTorrentClient.Models.UpdatePreferences
                 {
                     AddToTopOfQueue = changed.AddToTopOfQueue,
+                    AddStoppedEnabled = changed.AddStoppedEnabled,
                     AddTrackers = changed.AddTrackers,
                     AddTrackersEnabled = changed.AddTrackersEnabled,
+                    AddTrackersFromUrlEnabled = changed.AddTrackersFromUrlEnabled,
+                    AddTrackersUrl = changed.AddTrackersUrl,
+                    AddTrackersUrlList = changed.AddTrackersUrlList,
                     AltDlLimit = changed.AltDlLimit,
                     AltUpLimit = changed.AltUpLimit,
                     AlternativeWebuiEnabled = changed.AlternativeWebuiEnabled,
                     AlternativeWebuiPath = changed.AlternativeWebuiPath,
                     AnnounceIp = changed.AnnounceIp,
+                    AnnouncePort = changed.AnnouncePort,
                     AnnounceToAllTiers = changed.AnnounceToAllTiers,
                     AnnounceToAllTrackers = changed.AnnounceToAllTrackers,
                     AnonymousMode = changed.AnonymousMode,
@@ -736,11 +741,14 @@ namespace Lantean.QBTMud.Services
                     BypassAuthSubnetWhitelistEnabled = changed.BypassAuthSubnetWhitelistEnabled,
                     BypassLocalAuth = changed.BypassLocalAuth,
                     CategoryChangedTmmEnabled = changed.CategoryChangedTmmEnabled,
+                    ConfirmTorrentDeletion = changed.ConfirmTorrentDeletion,
+                    ConfirmTorrentRecheck = changed.ConfirmTorrentRecheck,
                     CheckingMemoryUse = changed.CheckingMemoryUse,
                     ConnectionSpeed = changed.ConnectionSpeed,
                     CurrentInterfaceAddress = changed.CurrentInterfaceAddress,
                     CurrentInterfaceName = changed.CurrentInterfaceName,
                     CurrentNetworkInterface = changed.CurrentNetworkInterface,
+                    DeleteTorrentContentFiles = changed.DeleteTorrentContentFiles,
                     Dht = changed.Dht,
                     DiskCache = changed.DiskCache,
                     DiskCacheTtl = changed.DiskCacheTtl,
@@ -776,6 +784,7 @@ namespace Lantean.QBTMud.Services
                     FileLogPath = changed.FileLogPath,
                     FilePoolSize = changed.FilePoolSize,
                     HashingThreads = changed.HashingThreads,
+                    HostnameCacheTtl = changed.HostnameCacheTtl,
                     I2pAddress = changed.I2pAddress,
                     I2pEnabled = changed.I2pEnabled,
                     I2pInboundLength = changed.I2pInboundLength,
@@ -785,6 +794,7 @@ namespace Lantean.QBTMud.Services
                     I2pOutboundQuantity = changed.I2pOutboundQuantity,
                     I2pPort = changed.I2pPort,
                     IdnSupportEnabled = changed.IdnSupportEnabled,
+                    IgnoreSslErrors = changed.IgnoreSslErrors,
                     IncompleteFilesExt = changed.IncompleteFilesExt,
                     IpFilterEnabled = changed.IpFilterEnabled,
                     IpFilterPath = changed.IpFilterPath,
@@ -858,6 +868,7 @@ namespace Lantean.QBTMud.Services
                     SavePath = changed.SavePath,
                     SavePathChangedTmmEnabled = changed.SavePathChangedTmmEnabled,
                     SaveResumeDataInterval = changed.SaveResumeDataInterval,
+                    SaveStatisticsInterval = changed.SaveStatisticsInterval,
                     ScanDirs = changed.ScanDirs,
                     ScheduleFromHour = changed.ScheduleFromHour,
                     ScheduleFromMin = changed.ScheduleFromMin,
@@ -874,13 +885,17 @@ namespace Lantean.QBTMud.Services
                     SocketBacklogSize = changed.SocketBacklogSize,
                     SocketReceiveBufferSize = changed.SocketReceiveBufferSize,
                     SocketSendBufferSize = changed.SocketSendBufferSize,
+                    SslEnabled = changed.SslEnabled,
+                    SslListenPort = changed.SslListenPort,
                     SsrfMitigation = changed.SsrfMitigation,
                     StartPausedEnabled = changed.StartPausedEnabled,
+                    StatusBarExternalIp = changed.StatusBarExternalIp,
                     StopTrackerTimeout = changed.StopTrackerTimeout,
                     TempPath = changed.TempPath,
                     TempPathEnabled = changed.TempPathEnabled,
                     TorrentChangedTmmEnabled = changed.TorrentChangedTmmEnabled,
                     TorrentContentLayout = changed.TorrentContentLayout,
+                    TorrentContentRemoveOption = changed.TorrentContentRemoveOption,
                     TorrentFileSizeLimit = changed.TorrentFileSizeLimit,
                     TorrentStopCondition = changed.TorrentStopCondition,
                     UpLimit = changed.UpLimit,
@@ -891,9 +906,11 @@ namespace Lantean.QBTMud.Services
                     UseCategoryPathsInManualMode = changed.UseCategoryPathsInManualMode,
                     UseHttps = changed.UseHttps,
                     UseSubcategories = changed.UseSubcategories,
+                    UseUnwantedFolder = changed.UseUnwantedFolder,
                     UtpTcpMixedMode = changed.UtpTcpMixedMode,
                     ValidateHttpsTrackerCertificate = changed.ValidateHttpsTrackerCertificate,
                     WebUiAddress = changed.WebUiAddress,
+                    WebUiApiKey = changed.WebUiApiKey,
                     WebUiBanDuration = changed.WebUiBanDuration,
                     WebUiClickjackingProtectionEnabled = changed.WebUiClickjackingProtectionEnabled,
                     WebUiCsrfProtectionEnabled = changed.WebUiCsrfProtectionEnabled,
@@ -916,13 +933,18 @@ namespace Lantean.QBTMud.Services
             else
             {
                 original.AddToTopOfQueue = changed.AddToTopOfQueue ?? original.AddToTopOfQueue;
+                original.AddStoppedEnabled = changed.AddStoppedEnabled ?? original.AddStoppedEnabled;
                 original.AddTrackers = changed.AddTrackers ?? original.AddTrackers;
                 original.AddTrackersEnabled = changed.AddTrackersEnabled ?? original.AddTrackersEnabled;
+                original.AddTrackersFromUrlEnabled = changed.AddTrackersFromUrlEnabled ?? original.AddTrackersFromUrlEnabled;
+                original.AddTrackersUrl = changed.AddTrackersUrl ?? original.AddTrackersUrl;
+                original.AddTrackersUrlList = changed.AddTrackersUrlList ?? original.AddTrackersUrlList;
                 original.AltDlLimit = changed.AltDlLimit ?? original.AltDlLimit;
                 original.AltUpLimit = changed.AltUpLimit ?? original.AltUpLimit;
                 original.AlternativeWebuiEnabled = changed.AlternativeWebuiEnabled ?? original.AlternativeWebuiEnabled;
                 original.AlternativeWebuiPath = changed.AlternativeWebuiPath ?? original.AlternativeWebuiPath;
                 original.AnnounceIp = changed.AnnounceIp ?? original.AnnounceIp;
+                original.AnnouncePort = changed.AnnouncePort ?? original.AnnouncePort;
                 original.AnnounceToAllTiers = changed.AnnounceToAllTiers ?? original.AnnounceToAllTiers;
                 original.AnnounceToAllTrackers = changed.AnnounceToAllTrackers ?? original.AnnounceToAllTrackers;
                 original.AnonymousMode = changed.AnonymousMode ?? original.AnonymousMode;
@@ -942,11 +964,14 @@ namespace Lantean.QBTMud.Services
                 original.BypassAuthSubnetWhitelistEnabled = changed.BypassAuthSubnetWhitelistEnabled ?? original.BypassAuthSubnetWhitelistEnabled;
                 original.BypassLocalAuth = changed.BypassLocalAuth ?? original.BypassLocalAuth;
                 original.CategoryChangedTmmEnabled = changed.CategoryChangedTmmEnabled ?? original.CategoryChangedTmmEnabled;
+                original.ConfirmTorrentDeletion = changed.ConfirmTorrentDeletion ?? original.ConfirmTorrentDeletion;
+                original.ConfirmTorrentRecheck = changed.ConfirmTorrentRecheck ?? original.ConfirmTorrentRecheck;
                 original.CheckingMemoryUse = changed.CheckingMemoryUse ?? original.CheckingMemoryUse;
                 original.ConnectionSpeed = changed.ConnectionSpeed ?? original.ConnectionSpeed;
                 original.CurrentInterfaceAddress = changed.CurrentInterfaceAddress ?? original.CurrentInterfaceAddress;
                 original.CurrentInterfaceName = changed.CurrentInterfaceName ?? original.CurrentInterfaceName;
                 original.CurrentNetworkInterface = changed.CurrentNetworkInterface ?? original.CurrentNetworkInterface;
+                original.DeleteTorrentContentFiles = changed.DeleteTorrentContentFiles ?? original.DeleteTorrentContentFiles;
                 original.Dht = changed.Dht ?? original.Dht;
                 original.DiskCache = changed.DiskCache ?? original.DiskCache;
                 original.DiskCacheTtl = changed.DiskCacheTtl ?? original.DiskCacheTtl;
@@ -982,6 +1007,7 @@ namespace Lantean.QBTMud.Services
                 original.FileLogPath = changed.FileLogPath ?? original.FileLogPath;
                 original.FilePoolSize = changed.FilePoolSize ?? original.FilePoolSize;
                 original.HashingThreads = changed.HashingThreads ?? original.HashingThreads;
+                original.HostnameCacheTtl = changed.HostnameCacheTtl ?? original.HostnameCacheTtl;
                 original.I2pAddress = changed.I2pAddress ?? original.I2pAddress;
                 original.I2pEnabled = changed.I2pEnabled ?? original.I2pEnabled;
                 original.I2pInboundLength = changed.I2pInboundLength ?? original.I2pInboundLength;
@@ -991,6 +1017,7 @@ namespace Lantean.QBTMud.Services
                 original.I2pOutboundQuantity = changed.I2pOutboundQuantity ?? original.I2pOutboundQuantity;
                 original.I2pPort = changed.I2pPort ?? original.I2pPort;
                 original.IdnSupportEnabled = changed.IdnSupportEnabled ?? original.IdnSupportEnabled;
+                original.IgnoreSslErrors = changed.IgnoreSslErrors ?? original.IgnoreSslErrors;
                 original.IncompleteFilesExt = changed.IncompleteFilesExt ?? original.IncompleteFilesExt;
                 original.IpFilterEnabled = changed.IpFilterEnabled ?? original.IpFilterEnabled;
                 original.IpFilterPath = changed.IpFilterPath ?? original.IpFilterPath;
@@ -1064,6 +1091,7 @@ namespace Lantean.QBTMud.Services
                 original.SavePath = changed.SavePath ?? original.SavePath;
                 original.SavePathChangedTmmEnabled = changed.SavePathChangedTmmEnabled ?? original.SavePathChangedTmmEnabled;
                 original.SaveResumeDataInterval = changed.SaveResumeDataInterval ?? original.SaveResumeDataInterval;
+                original.SaveStatisticsInterval = changed.SaveStatisticsInterval ?? original.SaveStatisticsInterval;
                 original.ScanDirs = changed.ScanDirs ?? original.ScanDirs;
                 original.ScheduleFromHour = changed.ScheduleFromHour ?? original.ScheduleFromHour;
                 original.ScheduleFromMin = changed.ScheduleFromMin ?? original.ScheduleFromMin;
@@ -1080,13 +1108,17 @@ namespace Lantean.QBTMud.Services
                 original.SocketBacklogSize = changed.SocketBacklogSize ?? original.SocketBacklogSize;
                 original.SocketReceiveBufferSize = changed.SocketReceiveBufferSize ?? original.SocketReceiveBufferSize;
                 original.SocketSendBufferSize = changed.SocketSendBufferSize ?? original.SocketSendBufferSize;
+                original.SslEnabled = changed.SslEnabled ?? original.SslEnabled;
+                original.SslListenPort = changed.SslListenPort ?? original.SslListenPort;
                 original.SsrfMitigation = changed.SsrfMitigation ?? original.SsrfMitigation;
                 original.StartPausedEnabled = changed.StartPausedEnabled ?? original.StartPausedEnabled;
+                original.StatusBarExternalIp = changed.StatusBarExternalIp ?? original.StatusBarExternalIp;
                 original.StopTrackerTimeout = changed.StopTrackerTimeout ?? original.StopTrackerTimeout;
                 original.TempPath = changed.TempPath ?? original.TempPath;
                 original.TempPathEnabled = changed.TempPathEnabled ?? original.TempPathEnabled;
                 original.TorrentChangedTmmEnabled = changed.TorrentChangedTmmEnabled ?? original.TorrentChangedTmmEnabled;
                 original.TorrentContentLayout = changed.TorrentContentLayout ?? original.TorrentContentLayout;
+                original.TorrentContentRemoveOption = changed.TorrentContentRemoveOption ?? original.TorrentContentRemoveOption;
                 original.TorrentFileSizeLimit = changed.TorrentFileSizeLimit ?? original.TorrentFileSizeLimit;
                 original.TorrentStopCondition = changed.TorrentStopCondition ?? original.TorrentStopCondition;
                 original.UpLimit = changed.UpLimit ?? original.UpLimit;
@@ -1097,9 +1129,11 @@ namespace Lantean.QBTMud.Services
                 original.UseCategoryPathsInManualMode = changed.UseCategoryPathsInManualMode ?? original.UseCategoryPathsInManualMode;
                 original.UseHttps = changed.UseHttps ?? original.UseHttps;
                 original.UseSubcategories = changed.UseSubcategories ?? original.UseSubcategories;
+                original.UseUnwantedFolder = changed.UseUnwantedFolder ?? original.UseUnwantedFolder;
                 original.UtpTcpMixedMode = changed.UtpTcpMixedMode ?? original.UtpTcpMixedMode;
                 original.ValidateHttpsTrackerCertificate = changed.ValidateHttpsTrackerCertificate ?? original.ValidateHttpsTrackerCertificate;
                 original.WebUiAddress = changed.WebUiAddress ?? original.WebUiAddress;
+                original.WebUiApiKey = changed.WebUiApiKey ?? original.WebUiApiKey;
                 original.WebUiBanDuration = changed.WebUiBanDuration ?? original.WebUiBanDuration;
                 original.WebUiClickjackingProtectionEnabled = changed.WebUiClickjackingProtectionEnabled ?? original.WebUiClickjackingProtectionEnabled;
                 original.WebUiCsrfProtectionEnabled = changed.WebUiCsrfProtectionEnabled ?? original.WebUiCsrfProtectionEnabled;

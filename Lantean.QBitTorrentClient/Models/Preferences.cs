@@ -429,11 +429,23 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("add_to_top_of_queue")]
         public bool AddToTopOfQueue { get; }
 
+        [JsonPropertyName("add_stopped_enabled")]
+        public bool AddStoppedEnabled { get; init; }
+
         [JsonPropertyName("add_trackers")]
         public string AddTrackers { get; }
 
         [JsonPropertyName("add_trackers_enabled")]
         public bool AddTrackersEnabled { get; }
+
+        [JsonPropertyName("add_trackers_from_url_enabled")]
+        public bool AddTrackersFromUrlEnabled { get; init; }
+
+        [JsonPropertyName("add_trackers_url")]
+        public string? AddTrackersUrl { get; init; }
+
+        [JsonPropertyName("add_trackers_url_list")]
+        public string? AddTrackersUrlList { get; init; }
 
         [JsonPropertyName("alt_dl_limit")]
         public int AltDlLimit { get; }
@@ -449,6 +461,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("announce_ip")]
         public string AnnounceIp { get; }
+
+        [JsonPropertyName("announce_port")]
+        public int AnnouncePort { get; init; }
 
         [JsonPropertyName("announce_to_all_tiers")]
         public bool AnnounceToAllTiers { get; }
@@ -510,6 +525,12 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("category_changed_tmm_enabled")]
         public bool CategoryChangedTmmEnabled { get; }
 
+        [JsonPropertyName("confirm_torrent_deletion")]
+        public bool ConfirmTorrentDeletion { get; init; }
+
+        [JsonPropertyName("confirm_torrent_recheck")]
+        public bool ConfirmTorrentRecheck { get; init; }
+
         [JsonPropertyName("checking_memory_use")]
         public int CheckingMemoryUse { get; }
 
@@ -524,6 +545,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("current_network_interface")]
         public string CurrentNetworkInterface { get; }
+
+        [JsonPropertyName("delete_torrent_content_files")]
+        public bool DeleteTorrentContentFiles { get; init; }
 
         [JsonPropertyName("dht")]
         public bool Dht { get; }
@@ -633,6 +657,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("hashing_threads")]
         public int HashingThreads { get; }
 
+        [JsonPropertyName("hostname_cache_ttl")]
+        public int HostnameCacheTtl { get; init; }
+
         [JsonPropertyName("i2p_address")]
         public string I2pAddress { get; }
 
@@ -659,6 +686,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("idn_support_enabled")]
         public bool IdnSupportEnabled { get; }
+
+        [JsonPropertyName("ignore_ssl_errors")]
+        public bool IgnoreSslErrors { get; init; }
 
         [JsonPropertyName("incomplete_files_ext")]
         public bool IncompleteFilesExt { get; }
@@ -888,6 +918,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("save_resume_data_interval")]
         public int SaveResumeDataInterval { get; }
 
+        [JsonPropertyName("save_statistics_interval")]
+        public int SaveStatisticsInterval { get; init; }
+
         [JsonPropertyName("scan_dirs")]
         public Dictionary<string, SaveLocation> ScanDirs { get; }
 
@@ -936,11 +969,20 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("socket_send_buffer_size")]
         public int SocketSendBufferSize { get; }
 
+        [JsonPropertyName("ssl_enabled")]
+        public bool SslEnabled { get; init; }
+
+        [JsonPropertyName("ssl_listen_port")]
+        public int SslListenPort { get; init; }
+
         [JsonPropertyName("ssrf_mitigation")]
         public bool SsrfMitigation { get; }
 
         [JsonPropertyName("start_paused_enabled")]
         public bool StartPausedEnabled { get; }
+
+        [JsonPropertyName("status_bar_external_ip")]
+        public bool StatusBarExternalIp { get; init; }
 
         [JsonPropertyName("stop_tracker_timeout")]
         public int StopTrackerTimeout { get; }
@@ -956,6 +998,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("torrent_content_layout")]
         public string TorrentContentLayout { get; }
+
+        [JsonPropertyName("torrent_content_remove_option")]
+        public string? TorrentContentRemoveOption { get; init; }
 
         [JsonPropertyName("torrent_file_size_limit")]
         public int TorrentFileSizeLimit { get; }
@@ -987,6 +1032,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("use_subcategories")]
         public bool UseSubcategories { get; }
 
+        [JsonPropertyName("use_unwanted_folder")]
+        public bool UseUnwantedFolder { get; init; }
+
         [JsonPropertyName("utp_tcp_mixed_mode")]
         public int UtpTcpMixedMode { get; }
 
@@ -995,6 +1043,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("web_ui_address")]
         public string WebUiAddress { get; }
+
+        [JsonPropertyName("web_ui_api_key")]
+        public string? WebUiApiKey { get; init; }
 
         [JsonPropertyName("web_ui_ban_duration")]
         public int WebUiBanDuration { get; }

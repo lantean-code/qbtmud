@@ -1,4 +1,4 @@
-﻿@inherits Options
+@inherits Options
 
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
@@ -29,13 +29,13 @@
                 <FieldSwitch Label="Log file" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Save Path" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined" />
+                <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Save Path" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="Backup the log after" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(!FileLogEnabled)" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
+                <MudNumericField Immediate="true" DebounceInterval="250" T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="Delete backups older than" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(!FileLogEnabled)" />
@@ -43,7 +43,7 @@
             <MudItem xs="9">
                 <MudGrid>
                     <MudItem xs="9">
-                        <MudNumericField T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="365" Variant="Variant.Outlined" />
+                        <MudNumericField Immediate="true" DebounceInterval="250" T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="365" Variant="Variant.Outlined" />
                     </MudItem>
                     <MudItem xs="3">
                         <MudSelect T="int" Value="FileLogAgeType" ValueChanged="FileLogAgeTypeChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined">
@@ -72,3 +72,42 @@
         </MudGrid>
     </MudCardContent>
 </MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">Status Bar</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <FieldSwitch Label="Display current external IP address on status bar" Value="StatusBarExternalIp" ValueChanged="StatusBarExternalIpChanged" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">Confirmation</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <FieldSwitch Label="Confirm when deleting torrents" Value="ConfirmTorrentDeletion" ValueChanged="ConfirmTorrentDeletionChanged" />
+            </MudItem>
+            <MudItem xs="12">
+                <FieldSwitch Label="Confirm when rechecking torrents" Value="ConfirmTorrentRecheck" ValueChanged="ConfirmTorrentRecheckChanged" />
+            </MudItem>
+            <MudItem xs="12">
+                <FieldSwitch Label="Also delete torrent content when deleting torrents" Value="DeleteTorrentContentFiles" ValueChanged="DeleteTorrentContentFilesChanged" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+
+

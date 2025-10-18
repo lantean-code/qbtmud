@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Components.Options
         protected bool AddToTopOfQueue { get; set; }
         protected bool StartPausedEnabled { get; set; }
         protected string? TorrentStopCondition { get; set; }
-        protected bool AutoDeleteMode { get; set; }
+        protected int AutoDeleteMode { get; set; }
         protected bool PreallocateAll { get; set; }
         protected bool IncompleteFilesExt { get; set; }
         protected bool AutoTmmEnabled { get; set; }
@@ -51,9 +51,9 @@ namespace Lantean.QBTMud.Components.Options
             // when adding a torrent
             TorrentContentLayout = Preferences.TorrentContentLayout;
             AddToTopOfQueue = Preferences.AddToTopOfQueue;
-            StartPausedEnabled = Preferences.StartPausedEnabled;
+            StartPausedEnabled = Preferences.AddStoppedEnabled || Preferences.StartPausedEnabled;
             TorrentStopCondition = Preferences.TorrentStopCondition;
-            AutoDeleteMode = Preferences.AutoDeleteMode == 1;
+            AutoDeleteMode = Preferences.AutoDeleteMode is >= 0 and <= 2 ? Preferences.AutoDeleteMode : 0;
             PreallocateAll = Preferences.PreallocateAll;
             IncompleteFilesExt = Preferences.IncompleteFilesExt;
 
@@ -120,6 +120,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             StartPausedEnabled = value;
             UpdatePreferences.StartPausedEnabled = value;
+            UpdatePreferences.AddStoppedEnabled = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
@@ -130,10 +131,10 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task AutoDeleteModeChanged(bool value)
+        protected async Task AutoDeleteModeChanged(int value)
         {
             AutoDeleteMode = value;
-            UpdatePreferences.AutoDeleteMode = value ? 1 : 0;
+            UpdatePreferences.AutoDeleteMode = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 

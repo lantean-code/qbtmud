@@ -1,4 +1,4 @@
-﻿@inherits Options
+@inherits Options
 
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
@@ -29,7 +29,11 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Delete .torrent files afterwards" Value="AutoDeleteMode" ValueChanged="AutoDeleteModeChanged" />
+                <MudSelect T="int" Label="Delete .torrent files afterwards" Value="AutoDeleteMode" ValueChanged="AutoDeleteModeChanged" Variant="Variant.Outlined">
+                    <MudSelectItem Value="0">Never</MudSelectItem>
+                    <MudSelectItem Value="1">If added successfully</MudSelectItem>
+                    <MudSelectItem Value="2">Always</MudSelectItem>
+                </MudSelect>
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -62,7 +66,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="bool" Label="Default Torrent Management Mode" Value="AutoTmmEnabled" ValueChanged="AutoDeleteModeChanged" Variant="Variant.Outlined">
+                <MudSelect T="bool" Label="Default Torrent Management Mode" Value="AutoTmmEnabled" ValueChanged="AutoTmmEnabledChanged" Variant="Variant.Outlined">
                     <MudSelectItem Value="false">Manual</MudSelectItem>
                     <MudSelectItem Value="true">Automatic</MudSelectItem>
                 </MudSelect>
@@ -89,7 +93,7 @@
                 <FieldSwitch Label="Use Subcategories" Value="UseSubcategories" ValueChanged="UseSubcategoriesChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Default Save Path" Value="SavePath" ValueChanged="SavePathChanged" Variant="Variant.Outlined" />
+                <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Default Save Path" Value="SavePath" ValueChanged="SavePathChanged" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
                 <MudGrid>
@@ -97,7 +101,7 @@
                         <FieldSwitch Label="Keep incomplete torrents in" Value="TempPathEnabled" ValueChanged="TempPathEnabledChanged" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
-                        <MudTextField T="string" Label="Path" Value="TempPath" ValueChanged="TempPathChanged" Disabled="@(!TempPathEnabled)" Variant="Variant.Outlined" />
+                        <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Path" Value="TempPath" ValueChanged="TempPathChanged" Disabled="@(!TempPathEnabled)" Variant="Variant.Outlined" />
                     </MudItem>
                 </MudGrid>
             </MudItem>
@@ -107,7 +111,7 @@
                         <FieldSwitch Label="Copy .torrent files to" Value="ExportDirEnabled" ValueChanged="ExportDirEnabledChanged" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
-                        <MudTextField T="string" Label="Path" Value="ExportDir" ValueChanged="ExportDirChanged" Disabled="@(!TempPathEnabled)" Variant="Variant.Outlined" />
+                        <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Path" Value="ExportDir" ValueChanged="ExportDirChanged" Disabled="@(!TempPathEnabled)" Variant="Variant.Outlined" />
                     </MudItem>
                 </MudGrid>
             </MudItem>
@@ -117,7 +121,7 @@
                         <FieldSwitch Label="Copy .torrent files for finished downloads to" Value="ExportDirFinEnabled" ValueChanged="ExportDirFinEnabledChanged" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
-                        <MudTextField T="string" Label="Path" Value="ExportDirFin" ValueChanged="ExportDirFinChanged" Disabled="@(!TempPathEnabled)" Variant="Variant.Outlined" />
+                        <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Path" Value="ExportDirFin" ValueChanged="ExportDirFinChanged" Disabled="@(!TempPathEnabled)" Variant="Variant.Outlined" />
                     </MudItem>
                 </MudGrid>
             </MudItem>
@@ -144,7 +148,7 @@
                 {
                     <tr>
                         <td>
-                            <MudTextField T="string" Label="Path" Value="@item.Key" ValueChanged="@(v => ScanDirsKeyChanged(item.Key, v))" Validation="IsValidNewKey" />
+                            <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Path" Value="@item.Key" ValueChanged="@(v => ScanDirsKeyChanged(item.Key, v))" Validation="IsValidNewKey" />
                         </td>
                         <td>
                             <MudGrid>
@@ -158,7 +162,7 @@
                                 @if (item.Value.SavePath is not null)
                                 {
                                     <MudItem xs="8">
-                                        <MudTextField T="string" Label="Path" Value="@item.Value.SavePath" ValueChanged="@(v => ScanDirsValueChanged(item.Key, v))" Variant="Variant.Outlined" />
+                                        <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Path" Value="@item.Value.SavePath" ValueChanged="@(v => ScanDirsValueChanged(item.Key, v))" Variant="Variant.Outlined" />
                                     </MudItem>
                                 }
                                 <MudItem xs="1">
@@ -177,7 +181,7 @@
 
                     <tr>
                         <td>
-                            <MudTextField T="string" Label="Path" Value="@item.Key" ValueChanged="@(v => AddedScanDirsKeyChanged(index, v))" Validation="IsValidNewKey" />
+                            <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Path" Value="@item.Key" ValueChanged="@(v => AddedScanDirsKeyChanged(index, v))" Validation="IsValidNewKey" />
                         </td>
                         <td>
                             <MudGrid>
@@ -191,7 +195,7 @@
                                 @if (item.Value.SavePath is not null)
                                 {
                                     <MudItem xs="@(isLast ? 8 : 9)">
-                                        <MudTextField T="string" Label="Path" Value="@item.Value.SavePath" ValueChanged="@(v => AddedScanDirsValueChanged(index, v))" Variant="Variant.Outlined" />
+                                        <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Path" Value="@item.Value.SavePath" ValueChanged="@(v => AddedScanDirsValueChanged(index, v))" Variant="Variant.Outlined" />
                                     </MudItem>
                                 }
                                 <MudItem xs="1">
@@ -225,7 +229,7 @@
                 <FieldSwitch Label="Excluded file names" Value="ExcludedFileNamesEnabled" ValueChanged="ExcludedFileNamesEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Excluded files names" Value="ExcludedFileNames" ValueChanged="ExcludedFileNamesChanged" Lines="5" Disabled="@(!ExcludedFileNamesEnabled)" Variant="Variant.Outlined" />
+                <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Excluded files names" Value="ExcludedFileNames" ValueChanged="ExcludedFileNamesChanged" Lines="5" Disabled="@(!ExcludedFileNamesEnabled)" Variant="Variant.Outlined" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -243,13 +247,13 @@
                 <FieldSwitch Label="Email notification upon download completion" Value="MailNotificationEnabled" ValueChanged="MailNotificationEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="From" Value="MailNotificationSender" ValueChanged="MailNotificationSenderChanged" Disabled="@(!MailNotificationEnabled)" Variant="Variant.Outlined" />
+                <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="From" Value="MailNotificationSender" ValueChanged="MailNotificationSenderChanged" Disabled="@(!MailNotificationEnabled)" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="To" Value="MailNotificationEmail" ValueChanged="MailNotificationEmailChanged" Disabled="@(!MailNotificationEnabled)" Variant="Variant.Outlined" />
+                <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="To" Value="MailNotificationEmail" ValueChanged="MailNotificationEmailChanged" Disabled="@(!MailNotificationEnabled)" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="SMTP server" Value="MailNotificationSmtp" ValueChanged="MailNotificationSmtpChanged" Disabled="@(!MailNotificationEnabled)" Variant="Variant.Outlined" />
+                <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="SMTP server" Value="MailNotificationSmtp" ValueChanged="MailNotificationSmtpChanged" Disabled="@(!MailNotificationEnabled)" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="This server requires a secure connection (SSL)" Value="MailNotificationSslEnabled" ValueChanged="MailNotificationSslEnabledChanged" Disabled="@(!MailNotificationEnabled)" />
@@ -258,10 +262,10 @@
                 <FieldSwitch Label="Authentication" Value="MailNotificationAuthEnabled" ValueChanged="MailNotificationAuthEnabledChanged" Disabled="@(!MailNotificationEnabled)" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Username" Value="MailNotificationUsername" ValueChanged="MailNotificationUsernameChanged" Disabled="@(!(MailNotificationEnabled && MailNotificationAuthEnabled))" Variant="Variant.Outlined" />
+                <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Username" Value="MailNotificationUsername" ValueChanged="MailNotificationUsernameChanged" Disabled="@(!(MailNotificationEnabled && MailNotificationAuthEnabled))" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Password" Value="MailNotificationPassword" ValueChanged="MailNotificationPasswordChanged" Disabled="@(!(MailNotificationEnabled && MailNotificationAuthEnabled))" InputType="InputType.Password" Variant="Variant.Outlined" />
+                <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="Password" Value="MailNotificationPassword" ValueChanged="MailNotificationPasswordChanged" Disabled="@(!(MailNotificationEnabled && MailNotificationAuthEnabled))" InputType="InputType.Password" Variant="Variant.Outlined" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -279,13 +283,13 @@
                 <FieldSwitch Label="Run external program on torrent added" Value="AutorunOnTorrentAddedEnabled" ValueChanged="AutorunOnTorrentAddedEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="External program" Value="AutorunOnTorrentAddedProgram" ValueChanged="AutorunOnTorrentAddedProgramChanged" Disabled="@(!AutorunOnTorrentAddedEnabled)" Variant="Variant.Outlined" />
+                <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="External program" Value="AutorunOnTorrentAddedProgram" ValueChanged="AutorunOnTorrentAddedProgramChanged" Disabled="@(!AutorunOnTorrentAddedEnabled)" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="Run external program on torrent finished" Value="AutorunEnabled" ValueChanged="AutorunEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="External program" Value="AutorunProgram" ValueChanged="AutorunProgramChanged" Disabled="@(!AutorunEnabled)" Variant="Variant.Outlined" />
+                <MudTextField Immediate="true" DebounceInterval="250" T="string" Label="External program" Value="AutorunProgram" ValueChanged="AutorunProgramChanged" Disabled="@(!AutorunEnabled)" Variant="Variant.Outlined" />
             </MudItem>
             <MudItem xs="12">
                 <MudText>Supported parameters (case sensitive):</MudText>
@@ -307,3 +311,6 @@
         </MudGrid>
     </MudCardContent>
 </MudCard>
+
+
+
