@@ -220,12 +220,11 @@ namespace Lantean.QBTMud.Services
                     }
 
                     torrentList.Tags.Add(normalizedTag);
-                    if (!torrentList.TagState.ContainsKey(normalizedTag))
-                    {
-                        torrentList.TagState[normalizedTag] = torrentList.Torrents.Values
-                            .Where(t => FilterHelper.FilterTag(t, normalizedTag))
-                            .ToHashesHashSet();
-                    }
+                    var matchingHashes = torrentList.Torrents
+                        .Where(pair => FilterHelper.FilterTag(pair.Value, normalizedTag))
+                        .Select(pair => pair.Key)
+                        .ToHashSet();
+                    torrentList.TagState[normalizedTag] = matchingHashes;
                 }
             }
 

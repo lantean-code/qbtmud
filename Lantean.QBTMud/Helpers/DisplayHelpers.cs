@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Helpers
             const long InfiniteEtaSentinelSeconds = 8_640_000; // ~100 days, used by qBittorrent for "infinite" ETA.
             var value = seconds.Value;
 
-            if (value >= long.MaxValue || value >= (long)TimeSpan.MaxValue.TotalSeconds || value == InfiniteEtaSentinelSeconds)
+            if (value >= long.MaxValue || value >= TimeSpan.MaxValue.TotalSeconds || value == InfiniteEtaSentinelSeconds)
             {
                 return "∞";
             }

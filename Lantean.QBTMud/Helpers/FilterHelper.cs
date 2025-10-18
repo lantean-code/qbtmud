@@ -207,7 +207,7 @@ namespace Lantean.QBTMud.Helpers
                     break;
 
                 case Status.Paused:
-                    if (!state.Contains("paused") || !state.Contains("stopped"))
+                    if (!state.Contains("paused") && !state.Contains("stopped"))
                     {
                         return false;
                     }
