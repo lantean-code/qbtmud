@@ -435,5 +435,22 @@ namespace Lantean.QBTMud.Helpers
 
             await dialogService.ShowAsync<SubMenuDialog>(parent.Text, parameters, FormDialogOptions);
         }
+
+        public static async Task<QBitTorrentClient.Models.SearchPlugin?> ShowSearchPluginsDialog(this IDialogService dialogService)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(SearchPluginsDialog.Hashes), "" },
+            };
+            
+            var result = await dialogService.ShowAsync<SearchPluginsDialog>("Search Plugins", parameters, FormDialogOptions);
+            var dialogResult = await result.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+            {
+                return null;
+            }
+
+            return (QBitTorrentClient.Models.SearchPlugin)dialogResult.Data;
+        }
     }
 }
