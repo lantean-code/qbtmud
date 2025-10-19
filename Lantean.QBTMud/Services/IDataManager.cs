@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Services
 
         Torrent CreateTorrent(string hash, QBitTorrentClient.Models.Torrent torrent);
 
-        void MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList);
+        bool MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList, out bool filterChanged);
 
         PeerList CreatePeerList(QBitTorrentClient.Models.TorrentPeers torrentPeers);
 

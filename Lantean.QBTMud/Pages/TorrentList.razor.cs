@@ -35,10 +35,13 @@ namespace Lantean.QBTMud.Pages
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         [CascadingParameter]
-        public IEnumerable<Torrent>? Torrents { get; set; }
+        public IReadOnlyList<Torrent>? Torrents { get; set; }
 
         [CascadingParameter]
         public MainData MainData { get; set; } = default!;
+
+        [CascadingParameter(Name = "LostConnection")]
+        public bool LostConnection { get; set; }
 
         [CascadingParameter(Name = "SearchTermChanged")]
         public EventCallback<string> SearchTermChanged { get; set; }
@@ -64,6 +67,13 @@ namespace Lantean.QBTMud.Pages
 
         protected ContextMenu? ContextMenu { get; set; }
 
+        private object? _lastRenderedTorrents;
+        private QBitTorrentClient.Models.Preferences? _lastPreferences;
+        private bool _lastLostConnection;
+        private bool _hasRendered;
+        private bool _pendingSelectionChange;
+        private int _lastSelectionCount;
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -73,9 +83,61 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
+        protected override bool ShouldRender()
+        {
+            if (!_hasRendered)
+            {
+                _hasRendered = true;
+                _lastRenderedTorrents = Torrents;
+                _lastPreferences = Preferences;
+                _lastLostConnection = LostConnection;
+                _pendingSelectionChange = false;
+                _lastSelectionCount = SelectedItems.Count;
+                return true;
+            }
+
+            if (_pendingSelectionChange)
+            {
+                _pendingSelectionChange = false;
+                _lastSelectionCount = SelectedItems.Count;
+                return true;
+            }
+
+            if (!ReferenceEquals(_lastRenderedTorrents, Torrents))
+            {
+                _lastRenderedTorrents = Torrents;
+                _lastPreferences = Preferences;
+                _lastLostConnection = LostConnection;
+                _lastSelectionCount = SelectedItems.Count;
+                return true;
+            }
+
+            if (!ReferenceEquals(_lastPreferences, Preferences))
+            {
+                _lastPreferences = Preferences;
+                _lastSelectionCount = SelectedItems.Count;
+                return true;
+            }
+
+            if (_lastLostConnection != LostConnection)
+            {
+                _lastLostConnection = LostConnection;
+                _lastSelectionCount = SelectedItems.Count;
+                return true;
+            }
+
+            return false;
+        }
+
         protected void SelectedItemsChanged(HashSet<Torrent> selectedItems)
         {
             SelectedItems = selectedItems;
+            if (_lastSelectionCount != SelectedItems.Count)
+            {
+                _pendingSelectionChange = true;
+                _lastSelectionCount = SelectedItems.Count;
+                InvokeAsync(StateHasChanged);
+            }
         }
 
         protected async Task SortDirectionChangedHandler(SortDirection sortDirection)
