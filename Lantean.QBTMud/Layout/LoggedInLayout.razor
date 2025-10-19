@@ -10,7 +10,8 @@
 }
 
 <CascadingValue Value="Torrents">
-    <CascadingValue Value="MainData">
+    <CascadingValue Value="_torrentsVersion" Name="TorrentsVersion">
+        <CascadingValue Value="MainData">
         <CascadingValue Value="Preferences">
             <CascadingValue Value="SortColumnChanged" Name="SortColumnChanged">
                 <CascadingValue Value="SortColumn" Name="SortColumn">
@@ -65,5 +66,6 @@
                 @DisplayHelpers.Size(MainData?.ServerState.UploadInfoData, "(", ")")
             </MudText>
         </MudAppBar>
+        </CascadingValue>
     </CascadingValue>
 </CascadingValue>

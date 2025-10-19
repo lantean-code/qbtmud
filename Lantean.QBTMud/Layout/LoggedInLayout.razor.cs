@@ -63,6 +63,7 @@ namespace Lantean.QBTMud.Layout
         private IReadOnlyList<Torrent> _visibleTorrents = Array.Empty<Torrent>();
 
         private bool _torrentsDirty = true;
+        private int _torrentsVersion;
 
         private IReadOnlyList<Torrent> GetTorrents()
         {
@@ -156,6 +157,10 @@ namespace Lantean.QBTMud.Layout
                             if (filterChanged)
                             {
                                 MarkTorrentsDirty();
+                            }
+                            else if (dataChanged)
+                            {
+                                IncrementTorrentsVersion();
                             }
                             shouldRender = dataChanged;
                         }
@@ -256,6 +261,15 @@ namespace Lantean.QBTMud.Layout
         private void MarkTorrentsDirty()
         {
             _torrentsDirty = true;
+            IncrementTorrentsVersion();
+        }
+
+        private void IncrementTorrentsVersion()
+        {
+            unchecked
+            {
+                _torrentsVersion++;
+            }
         }
 
 

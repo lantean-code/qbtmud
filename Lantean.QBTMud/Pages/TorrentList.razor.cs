@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -43,6 +43,9 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter(Name = "LostConnection")]
         public bool LostConnection { get; set; }
 
+        [CascadingParameter(Name = "TorrentsVersion")]
+        public int TorrentsVersion { get; set; }
+
         [CascadingParameter(Name = "SearchTermChanged")]
         public EventCallback<string> SearchTermChanged { get; set; }
 
@@ -59,7 +62,7 @@ namespace Lantean.QBTMud.Pages
 
         protected HashSet<Torrent> SelectedItems { get; set; } = [];
 
-        protected bool ToolbarButtonsEnabled => SelectedItems.Count > 0;
+        protected bool ToolbarButtonsEnabled => _toolbarButtonsEnabled;
 
         protected DynamicTable<Torrent>? Table { get; set; }
 
@@ -71,9 +74,11 @@ namespace Lantean.QBTMud.Pages
         private QBitTorrentClient.Models.Preferences? _lastPreferences;
         private bool _lastLostConnection;
         private bool _hasRendered;
-        private bool _pendingSelectionChange;
         private int _lastSelectionCount;
+        private int _lastTorrentsVersion = -1;
+        private bool _pendingSelectionChange;
 
+        private bool _toolbarButtonsEnabled;
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -91,8 +96,9 @@ namespace Lantean.QBTMud.Pages
                 _lastRenderedTorrents = Torrents;
                 _lastPreferences = Preferences;
                 _lastLostConnection = LostConnection;
-                _pendingSelectionChange = false;
+                _lastTorrentsVersion = TorrentsVersion;
                 _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
             }
 
@@ -100,6 +106,18 @@ namespace Lantean.QBTMud.Pages
             {
                 _pendingSelectionChange = false;
                 _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
+                return true;
+            }
+
+            if (_lastTorrentsVersion != TorrentsVersion)
+            {
+                _lastTorrentsVersion = TorrentsVersion;
+                _lastRenderedTorrents = Torrents;
+                _lastPreferences = Preferences;
+                _lastLostConnection = LostConnection;
+                _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
             }
 
@@ -109,6 +127,7 @@ namespace Lantean.QBTMud.Pages
                 _lastPreferences = Preferences;
                 _lastLostConnection = LostConnection;
                 _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
             }
 
@@ -116,6 +135,7 @@ namespace Lantean.QBTMud.Pages
             {
                 _lastPreferences = Preferences;
                 _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
             }
 
@@ -123,6 +143,14 @@ namespace Lantean.QBTMud.Pages
             {
                 _lastLostConnection = LostConnection;
                 _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
+                return true;
+            }
+
+            if (_lastSelectionCount != SelectedItems.Count)
+            {
+                _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
             }
 
@@ -132,12 +160,9 @@ namespace Lantean.QBTMud.Pages
         protected void SelectedItemsChanged(HashSet<Torrent> selectedItems)
         {
             SelectedItems = selectedItems;
-            if (_lastSelectionCount != SelectedItems.Count)
-            {
-                _pendingSelectionChange = true;
-                _lastSelectionCount = SelectedItems.Count;
-                InvokeAsync(StateHasChanged);
-            }
+            _toolbarButtonsEnabled = SelectedItems.Count > 0;
+            _pendingSelectionChange = true;
+            InvokeAsync(StateHasChanged);
         }
 
         protected async Task SortDirectionChangedHandler(SortDirection sortDirection)
@@ -311,3 +336,4 @@ namespace Lantean.QBTMud.Pages
         }
     }
 }
+
