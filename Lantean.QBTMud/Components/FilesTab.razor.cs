@@ -21,6 +21,9 @@ namespace Lantean.QBTMud.Components
 
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
+        private static readonly ReadOnlyCollection<ContentItem> EmptyContentItems = new ReadOnlyCollection<ContentItem>(Array.Empty<ContentItem>());
+        private ReadOnlyCollection<ContentItem> _visibleFiles = EmptyContentItems;
+        private bool _filesDirty = true;
 
         private List<PropertyFilterDefinition<ContentItem>>? _filterDefinitions;
         private readonly Dictionary<string, RenderFragment<RowContext<ContentItem>>> _columnRenderFragments = [];
@@ -103,6 +106,7 @@ namespace Lantean.QBTMud.Components
             if (_filterDefinitions is null)
             {
                 Filters = null;
+                MarkFilesDirty();
                 return;
             }
 
@@ -114,11 +118,13 @@ namespace Lantean.QBTMud.Components
             }
 
             Filters = filters;
+            MarkFilesDirty();
         }
 
         protected void RemoveFilter()
         {
             Filters = null;
+            MarkFilesDirty();
         }
 
         public async ValueTask DisposeAsync()
@@ -158,6 +164,7 @@ namespace Lantean.QBTMud.Components
         protected void SearchTextChanged(string value)
         {
             SearchText = value;
+            MarkFilesDirty();
         }
 
         protected Task TableDataContextMenu(TableDataContextMenuEventArgs<ContentItem> eventArgs)
@@ -198,6 +205,7 @@ namespace Lantean.QBTMud.Components
             {
                 while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync())
                 {
+                    var hasUpdates = false;
                     if (Active && Hash is not null)
                     {
                         IReadOnlyList<QBitTorrentClient.Models.FileData> files;
@@ -214,14 +222,20 @@ namespace Lantean.QBTMud.Components
                         if (FileList is null)
                         {
                             FileList = DataManager.CreateContentsList(files);
+                            hasUpdates = true;
                         }
                         else
                         {
-                            DataManager.MergeContentsList(files, FileList);
+                            hasUpdates = DataManager.MergeContentsList(files, FileList);
                         }
                     }
 
-                    await InvokeAsync(StateHasChanged);
+                    if (hasUpdates)
+                    {
+                        MarkFilesDirty();
+                        PruneSelectionIfMissing();
+                        await InvokeAsync(StateHasChanged);
+                    }
                 }
             }
         }
@@ -247,6 +261,8 @@ namespace Lantean.QBTMud.Components
 
             var contents = await ApiClient.GetTorrentContents(Hash);
             FileList = DataManager.CreateContentsList(contents);
+            MarkFilesDirty();
+            PruneSelectionIfMissing();
 
             var expandedNodes = await LocalStorage.GetItemAsync<HashSet<string>>($"{_expandedNodesStorageKey}.{Hash}");
             if (expandedNodes is not null)
@@ -257,6 +273,8 @@ namespace Lantean.QBTMud.Components
             {
                 ExpandedNodes.Clear();
             }
+
+            MarkFilesDirty();
         }
 
         protected async Task PriorityValueChanged(ContentItem contentItem, Priority priority)
@@ -321,11 +339,13 @@ namespace Lantean.QBTMud.Components
         protected void SortColumnChanged(string sortColumn)
         {
             _sortColumn = sortColumn;
+            MarkFilesDirty();
         }
 
         protected void SortDirectionChanged(SortDirection sortDirection)
         {
             _sortDirection = sortDirection;
+            MarkFilesDirty();
         }
 
         protected void SelectedItemChanged(ContentItem item)
@@ -344,6 +364,7 @@ namespace Lantean.QBTMud.Components
                 ExpandedNodes.Add(contentItem.Name);
             }
 
+            MarkFilesDirty();
             await LocalStorage.SetItemAsync($"{_expandedNodesStorageKey}.{Hash}", ExpandedNodes);
         }
 
@@ -367,44 +388,6 @@ namespace Lantean.QBTMud.Components
             }
 
             return FileList!.Values.Where(f => f.Name.StartsWith(contentItem.Name + Extensions.DirectorySeparator) && !f.IsFolder);
-        }
-
-        private IEnumerable<ContentItem> GetChildren(ContentItem folder)
-        {
-            var childLevel = folder.Level + 1;
-            var prefix = string.Concat(folder.Name, Extensions.DirectorySeparator);
-
-            foreach (var item in FileList!.Values.Where(f => f.Level == childLevel && f.Name.StartsWith(prefix, StringComparison.Ordinal)).OrderByDirection(_sortDirection, GetSortSelector()))
-            {
-                if (item.IsFolder)
-                {
-                    var descendants = GetChildren(item);
-                    // if the filter returns some results then show folder item
-                    if (descendants.Any())
-                    {
-                        yield return item;
-                    }
-
-                    // if the folder is not expanded - don't return children
-                    if (!ExpandedNodes.Contains(item.Name))
-                    {
-                        continue;
-                    }
-
-                    // then show children
-                    foreach (var descendant in descendants)
-                    {
-                        yield return descendant;
-                    }
-                }
-                else
-                {
-                    if (FilterContentItem(item))
-                    {
-                        yield return item;
-                    }
-                }
-            }
         }
 
         private bool FilterContentItem(ContentItem item)
@@ -431,36 +414,129 @@ namespace Lantean.QBTMud.Components
 
         private ReadOnlyCollection<ContentItem> GetFiles()
         {
+            if (!_filesDirty)
+            {
+                return _visibleFiles;
+            }
+
+            _visibleFiles = BuildVisibleFiles();
+            _filesDirty = false;
+
+            return _visibleFiles;
+        }
+
+        private ReadOnlyCollection<ContentItem> BuildVisibleFiles()
+        {
             if (FileList is null || FileList.Values.Count == 0)
             {
-                return new ReadOnlyCollection<ContentItem>([]);
+                return EmptyContentItems;
             }
 
-            var maxLevel = FileList.Values.Max(f => f.Level);
-            // this is a flat file structure
-            if (maxLevel == 0)
+            var lookup = BuildChildrenLookup();
+            if (!lookup.TryGetValue(string.Empty, out var roots))
             {
-                return FileList.Values.Where(FilterContentItem).OrderByDirection(_sortDirection, GetSortSelector()).ToList().AsReadOnly();
+                return EmptyContentItems;
             }
 
-            var list = new List<ContentItem>();
+            var sortSelector = GetSortSelector();
+            var orderedRoots = roots.OrderByDirection(_sortDirection, sortSelector).ToList();
+            var result = new List<ContentItem>(FileList.Values.Count);
 
-            var rootItems = FileList.Values.Where(c => c.Level == 0).OrderByDirection(_sortDirection, GetSortSelector()).ToList();
-            foreach (var item in rootItems)
+            foreach (var item in orderedRoots)
             {
-                list.Add(item);
-
-                if (item.IsFolder && ExpandedNodes.Contains(item.Name))
+                if (item.IsFolder)
                 {
-                    var descendants = GetChildren(item);
-                    foreach (var descendant in descendants)
+                    result.Add(item);
+
+                    if (!ExpandedNodes.Contains(item.Name))
                     {
-                        list.Add(descendant);
+                        continue;
+                    }
+
+                    var descendants = GetVisibleDescendants(item, lookup, sortSelector);
+                    result.AddRange(descendants);
+                }
+                else
+                {
+                    if (FilterContentItem(item))
+                    {
+                        result.Add(item);
                     }
                 }
             }
 
-            return list.AsReadOnly();
+            return new ReadOnlyCollection<ContentItem>(result);
+        }
+
+        private Dictionary<string, List<ContentItem>> BuildChildrenLookup()
+        {
+            var lookup = new Dictionary<string, List<ContentItem>>(FileList!.Count);
+
+            foreach (var item in FileList!.Values)
+            {
+                var parentPath = item.Level == 0 ? string.Empty : item.Name.GetDirectoryPath();
+                if (!lookup.TryGetValue(parentPath, out var children))
+                {
+                    children = [];
+                    lookup[parentPath] = children;
+                }
+
+                children.Add(item);
+            }
+
+            return lookup;
+        }
+
+        private List<ContentItem> GetVisibleDescendants(ContentItem folder, Dictionary<string, List<ContentItem>> lookup, Func<ContentItem, object?> sortSelector)
+        {
+            if (!lookup.TryGetValue(folder.Name, out var children))
+            {
+                return [];
+            }
+
+            var orderedChildren = children.OrderByDirection(_sortDirection, sortSelector).ToList();
+            var visible = new List<ContentItem>();
+
+            foreach (var child in orderedChildren)
+            {
+                if (child.IsFolder)
+                {
+                    var descendants = GetVisibleDescendants(child, lookup, sortSelector);
+                    if (descendants.Count != 0)
+                    {
+                        visible.Add(child);
+
+                        if (ExpandedNodes.Contains(child.Name))
+                        {
+                            visible.AddRange(descendants);
+                        }
+                    }
+                }
+                else if (FilterContentItem(child))
+                {
+                    visible.Add(child);
+                }
+            }
+
+            return visible;
+        }
+
+        private void MarkFilesDirty()
+        {
+            _filesDirty = true;
+        }
+
+        private void PruneSelectionIfMissing()
+        {
+            if (SelectedItem is not null && (FileList is null || !FileList.ContainsKey(SelectedItem.Name)))
+            {
+                SelectedItem = null;
+            }
+
+            if (ContextMenuItem is not null && (FileList is null || !FileList.ContainsKey(ContextMenuItem.Name)))
+            {
+                ContextMenuItem = null;
+            }
         }
 
         protected async Task DoNotDownloadLessThan100PercentAvailability()

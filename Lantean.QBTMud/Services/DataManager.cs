@@ -745,6 +745,111 @@ namespace Lantean.QBTMud.Services
             return result;
         }
 
+        private static bool UpdateContentItem(ContentItem destination, ContentItem source)
+        {
+            const float floatTolerance = 0.0001f;
+            var changed = false;
+
+            if (destination.Priority != source.Priority)
+            {
+                destination.Priority = source.Priority;
+                changed = true;
+            }
+
+            if (System.Math.Abs(destination.Progress - source.Progress) > floatTolerance)
+            {
+                destination.Progress = source.Progress;
+                changed = true;
+            }
+
+            if (destination.Size != source.Size)
+            {
+                destination.Size = source.Size;
+                changed = true;
+            }
+
+            if (System.Math.Abs(destination.Availability - source.Availability) > floatTolerance)
+            {
+                destination.Availability = source.Availability;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private struct DirectoryAccumulator
+        {
+            public long TotalSize { get; private set; }
+
+            private long _activeSize;
+            private double _progressSum;
+            private double _availabilitySum;
+            private Priority? _priority;
+            private bool _mixedPriority;
+
+            public void Add(Priority priority, float progress, long size, float availability)
+            {
+                TotalSize += size;
+
+                if (priority != Priority.DoNotDownload)
+                {
+                    _activeSize += size;
+                    _progressSum += progress * size;
+                    _availabilitySum += availability * size;
+                }
+
+                if (!_priority.HasValue)
+                {
+                    _priority = priority;
+                }
+                else if (_priority.Value != priority)
+                {
+                    _mixedPriority = true;
+                }
+            }
+
+            public Priority ResolvePriority()
+            {
+                if (_mixedPriority)
+                {
+                    return Priority.Mixed;
+                }
+
+                return _priority ?? Priority.Normal;
+            }
+
+            public float ResolveProgress()
+            {
+                if (_activeSize == 0 || TotalSize == 0)
+                {
+                    return 0f;
+                }
+
+                var value = _progressSum / _activeSize;
+                if (value < 0)
+                {
+                    return 0f;
+                }
+
+                if (value > 1)
+                {
+                    return 1f;
+                }
+
+                return (float)value;
+            }
+
+            public float ResolveAvailability()
+            {
+                if (_activeSize == 0 || TotalSize == 0)
+                {
+                    return 0f;
+                }
+
+                return (float)(_availabilitySum / _activeSize);
+            }
+        }
+
         private sealed class ContentTreeNode
         {
             public ContentTreeNode(ContentItem? item, ContentTreeNode? parent)
@@ -1180,24 +1285,120 @@ namespace Lantean.QBTMud.Services
             return original;
         }
 
-        public void MergeContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files, Dictionary<string, ContentItem> contents)
+        public bool MergeContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files, Dictionary<string, ContentItem> contents)
         {
-            var contentsList = CreateContentsList(files);
-
-            foreach (var (key, value) in contentsList)
+            if (files.Count == 0)
             {
-                if (contents.TryGetValue(key, out var content))
+                if (contents.Count == 0)
                 {
-                    content.Availability = value.Availability;
-                    content.Priority = value.Priority;
-                    content.Progress = value.Progress;
-                    content.Size = value.Size;
+                    return false;
+                }
+
+                contents.Clear();
+                return true;
+            }
+
+            var hasChanges = false;
+            var seenPaths = new HashSet<string>(files.Count * 2);
+            var directoryAccumulators = new Dictionary<string, DirectoryAccumulator>();
+
+            var minExistingIndex = contents.Count == 0
+                ? int.MaxValue
+                : contents.Values.Min(c => c.Index);
+            var minFileIndex = files.Min(f => f.Index);
+            var nextFolderIndex = System.Math.Min(minExistingIndex, minFileIndex) - 1;
+
+            foreach (var file in files)
+            {
+                var priority = (Priority)(int)file.Priority;
+                var pathSegments = file.Name.Split(Extensions.DirectorySeparator);
+                var level = pathSegments.Length - 1;
+                var displayName = pathSegments[^1];
+                var filePath = file.Name;
+                seenPaths.Add(filePath);
+
+                if (contents.TryGetValue(filePath, out var existingFile))
+                {
+                    var updatedFile = new ContentItem(filePath, displayName, file.Index, priority, file.Progress, file.Size, file.Availability, false, level);
+                    if (UpdateContentItem(existingFile, updatedFile))
+                    {
+                        hasChanges = true;
+                    }
                 }
                 else
                 {
-                    contents[key] = value;
+                    var newFile = new ContentItem(filePath, displayName, file.Index, priority, file.Progress, file.Size, file.Availability, false, level);
+                    contents[filePath] = newFile;
+                    hasChanges = true;
+                }
+
+                string directoryPath = string.Empty;
+                for (var i = 0; i < level; i++)
+                {
+                    var segment = pathSegments[i];
+                    if (segment == ".unwanted")
+                    {
+                        continue;
+                    }
+
+                    directoryPath = string.IsNullOrEmpty(directoryPath)
+                        ? segment
+                        : string.Concat(directoryPath, Extensions.DirectorySeparator, segment);
+
+                    seenPaths.Add(directoryPath);
+
+                    if (!contents.TryGetValue(directoryPath, out var directoryItem))
+                    {
+                        var newDirectory = new ContentItem(directoryPath, segment, nextFolderIndex--, Priority.Normal, 0, 0, 0, true, i);
+                        contents[directoryPath] = newDirectory;
+                        hasChanges = true;
+                    }
+
+                    if (!directoryAccumulators.TryGetValue(directoryPath, out var accumulator))
+                    {
+                        accumulator = new DirectoryAccumulator();
+                    }
+
+                    accumulator.Add(priority, file.Progress, file.Size, file.Availability);
+                    directoryAccumulators[directoryPath] = accumulator;
                 }
             }
+
+            var keysToRemove = contents.Keys.Where(key => !seenPaths.Contains(key)).ToList();
+            if (keysToRemove.Count != 0)
+            {
+                hasChanges = true;
+                foreach (var key in keysToRemove)
+                {
+                    contents.Remove(key);
+                }
+            }
+
+            foreach (var (directoryPath, accumulator) in directoryAccumulators)
+            {
+                if (!contents.TryGetValue(directoryPath, out var directoryItem))
+                {
+                    continue;
+                }
+
+                var updatedDirectory = new ContentItem(
+                    directoryPath,
+                    directoryItem.DisplayName,
+                    directoryItem.Index,
+                    accumulator.ResolvePriority(),
+                    accumulator.ResolveProgress(),
+                    accumulator.TotalSize,
+                    accumulator.ResolveAvailability(),
+                    true,
+                    directoryItem.Level);
+
+                if (UpdateContentItem(directoryItem, updatedDirectory))
+                {
+                    hasChanges = true;
+                }
+            }
+
+            return hasChanges;
         }
 
         public RssList CreateRssList(IReadOnlyDictionary<string, QBitTorrentClient.Models.RssItem> rssItems)
