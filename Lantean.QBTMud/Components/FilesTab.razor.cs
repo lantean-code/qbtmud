@@ -8,6 +8,7 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System;
 using System.Collections.ObjectModel;
 using System.Net;
 
@@ -368,16 +369,16 @@ namespace Lantean.QBTMud.Components
             return FileList!.Values.Where(f => f.Name.StartsWith(contentItem.Name + Extensions.DirectorySeparator) && !f.IsFolder);
         }
 
-        private IEnumerable<ContentItem> GetChildren(ContentItem folder, int level)
+        private IEnumerable<ContentItem> GetChildren(ContentItem folder)
         {
-            level++;
-            var descendantsKey = folder.GetDescendantsKey(level);
+            var childLevel = folder.Level + 1;
+            var prefix = string.Concat(folder.Name, Extensions.DirectorySeparator);
 
-            foreach (var item in FileList!.Values.Where(f => f.Name.StartsWith(descendantsKey) && f.Level == level).OrderByDirection(_sortDirection, GetSortSelector()))
+            foreach (var item in FileList!.Values.Where(f => f.Level == childLevel && f.Name.StartsWith(prefix, StringComparison.Ordinal)).OrderByDirection(_sortDirection, GetSortSelector()))
             {
                 if (item.IsFolder)
                 {
-                    var descendants = GetChildren(item, level);
+                    var descendants = GetChildren(item);
                     // if the filter returns some results then show folder item
                     if (descendants.Any())
                     {
@@ -451,8 +452,7 @@ namespace Lantean.QBTMud.Components
 
                 if (item.IsFolder && ExpandedNodes.Contains(item.Name))
                 {
-                    var level = 0;
-                    var descendants = GetChildren(item, level);
+                    var descendants = GetChildren(item);
                     foreach (var descendant in descendants)
                     {
                         list.Add(descendant);

@@ -625,82 +625,140 @@ namespace Lantean.QBTMud.Services
 
         public Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files)
         {
-            var contents = new Dictionary<string, ContentItem>();
+            return BuildContentsTree(files);
+        }
+
+        private static Dictionary<string, ContentItem> BuildContentsTree(IReadOnlyList<QBitTorrentClient.Models.FileData> files)
+        {
+            var result = new Dictionary<string, ContentItem>();
             if (files.Count == 0)
             {
-                return contents;
+                return result;
             }
 
             var folderIndex = files.Min(f => f.Index) - 1;
+            var nodes = new Dictionary<string, ContentTreeNode>(files.Count * 2);
+            var root = new ContentTreeNode(null, null);
 
             foreach (var file in files)
             {
-                if (!file.Name.Contains(Extensions.DirectorySeparator))
+                var parent = root;
+                string? parentPath = parent.Item?.Name;
+
+                var segments = file.Name.Split(Extensions.DirectorySeparator);
+                var directoriesLength = segments.Length - 1;
+
+                for (var i = 0; i < directoriesLength; i++)
                 {
-                    contents.Add(file.Name, new ContentItem(file.Name, file.Name, file.Index, (Priority)(int)file.Priority, file.Progress, file.Size, file.Availability));
-                }
-                else
-                {
-                    var nameAndPath = file.Name.Split(Extensions.DirectorySeparator);
-                    var paths = nameAndPath[..^1];
-                    for (var i = 0; i < paths.Length; i++)
+                    var folderName = segments[i];
+                    if (folderName == ".unwanted")
                     {
-                        var directoryName = paths[i];
-                        var directoryPath = string.Join(Extensions.DirectorySeparator, paths[0..(i + 1)]);
-                        if (!contents.ContainsKey(directoryPath))
-                        {
-                            contents.Add(directoryPath, new ContentItem(directoryPath, directoryName, folderIndex--, Priority.Normal, 0, 0, 0, true, i));
-                        }
+                        continue;
                     }
 
-                    var displayName = nameAndPath[^1];
+                    var folderPath = string.IsNullOrEmpty(parentPath)
+                        ? folderName
+                        : string.Concat(parentPath, Extensions.DirectorySeparator, folderName);
 
-                    contents.Add(file.Name, new ContentItem(file.Name, displayName, file.Index, (Priority)(int)file.Priority, file.Progress, file.Size, file.Availability, false, paths.Length));
+                    if (!nodes.TryGetValue(folderPath, out var folderNode))
+                    {
+                        var level = (parent.Item?.Level ?? -1) + 1;
+                        var folderItem = new ContentItem(folderPath, folderName, folderIndex--, Priority.Normal, 0, 0, 0, true, level);
+                        folderNode = new ContentTreeNode(folderItem, parent);
+                        nodes[folderPath] = folderNode;
+                        parent.Children[folderPath] = folderNode;
+                    }
+
+                    parent = folderNode;
+                    parentPath = parent.Item!.Name;
                 }
+
+                var displayName = segments[^1];
+                var fileLevel = (parent.Item?.Level ?? -1) + 1;
+                var fileItem = new ContentItem(file.Name, displayName, file.Index, (Priority)(int)file.Priority, file.Progress, file.Size, file.Availability, false, fileLevel);
+                var fileNode = new ContentTreeNode(fileItem, parent);
+                nodes[file.Name] = fileNode;
+                parent.Children[fileItem.Name] = fileNode;
             }
 
-            var directories = contents.Where(c => c.Value.IsFolder).OrderByDescending(c => c.Value.Level);
+            var folders = nodes.Values
+                .Where(n => n.Item is not null && n.Item.IsFolder)
+                .OrderByDescending(n => n.Item!.Level)
+                .ToList();
 
-            foreach (var directory in directories)
+            foreach (var folder in folders)
             {
-                var key = directory.Key;
-                var level = directory.Value.Level;
-                var filesContents = contents.Where(c => c.Value.Name.StartsWith(key + Extensions.DirectorySeparator) && !c.Value.IsFolder).ToList();
-                var directoriesContents = contents.Where(c => c.Value.Name.StartsWith(key + Extensions.DirectorySeparator) && c.Value.IsFolder && c.Value.Level == level + 1).ToList();
-                var allContents = filesContents.Concat(directoriesContents);
-                var priorities = allContents.Select(d => d.Value.Priority).Distinct();
-                var downloadingContents = allContents.Where(c => c.Value.Priority != Priority.DoNotDownload && !c.Value.IsFolder).ToList();
-
-                long size = 0;
-                float availability = 0;
-                long downloaded = 0;
-                float progress = 0;
-                if (downloadingContents.Count != 0)
+                var folderItem = folder.Item!;
+                if (folder.Children.Count == 0)
                 {
-                    size = downloadingContents.Sum(c => c.Value.Size);
-                    availability = downloadingContents.Average(c => c.Value.Availability);
-                    downloaded = downloadingContents.Sum(c => c.Value.Downloaded);
-                    progress = (float)downloaded / size;
+                    folderItem.Size = 0;
+                    folderItem.Progress = 0;
+                    folderItem.Availability = 0;
+                    folderItem.Priority = Priority.Normal;
+                    continue;
                 }
 
-                if (!contents.TryGetValue(key, out var dir))
+                long sizeSum = 0;
+                double progressSum = 0;
+                double availabilitySum = 0;
+                var firstChild = true;
+                var aggregatedPriority = Priority.Normal;
+
+                foreach (var child in folder.Children.Values)
+                {
+                    var childItem = child.Item!;
+                    sizeSum += childItem.Size;
+
+                    if (firstChild)
+                    {
+                        aggregatedPriority = childItem.Priority;
+                        firstChild = false;
+                    }
+                    else if (aggregatedPriority != childItem.Priority)
+                    {
+                        aggregatedPriority = Priority.Mixed;
+                    }
+
+                    if (childItem.Priority != Priority.DoNotDownload)
+                    {
+                        progressSum += childItem.Progress * childItem.Size;
+                        availabilitySum += childItem.Availability * childItem.Size;
+                    }
+                }
+
+                folderItem.Size = sizeSum;
+                folderItem.Progress = sizeSum > 0 ? (float)(progressSum / sizeSum) : 0;
+                folderItem.Availability = sizeSum > 0 ? (float)(availabilitySum / sizeSum) : 0;
+                folderItem.Priority = firstChild ? Priority.Normal : aggregatedPriority;
+            }
+
+            foreach (var node in nodes.Values)
+            {
+                if (node.Item is null)
                 {
                     continue;
                 }
-                dir.Availability = availability;
-                dir.Size = size;
-                dir.Progress = progress;
-                if (priorities.Count() == 1)
-                {
-                    dir.Priority = priorities.First();
-                }
-                else
-                {
-                    dir.Priority = Priority.Mixed;
-                }
+
+                result[node.Item.Name] = node.Item;
             }
 
-            return contents;
+            return result;
+        }
+
+        private sealed class ContentTreeNode
+        {
+            public ContentTreeNode(ContentItem? item, ContentTreeNode? parent)
+            {
+                Item = item;
+                Parent = parent;
+                Children = new Dictionary<string, ContentTreeNode>();
+            }
+
+            public ContentItem? Item { get; }
+
+            public ContentTreeNode? Parent { get; }
+
+            public Dictionary<string, ContentTreeNode> Children { get; }
         }
 
         public QBitTorrentClient.Models.UpdatePreferences MergePreferences(QBitTorrentClient.Models.UpdatePreferences? original, QBitTorrentClient.Models.UpdatePreferences changed)
