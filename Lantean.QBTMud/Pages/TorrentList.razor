@@ -1,7 +1,7 @@
 ﻿@page "/"
 @layout ListLayout
 
-<MudMenu @ref="ContextMenu" Dense="true" RelativeWidth="DropdownWidth.Ignore" PositionAtCursor="true">
+<MudMenu @ref="ContextMenu" Dense="true" RelativeWidth="DropdownWidth.Ignore" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" OnClick="ShowTorrentContextMenu">View torrent details</MudMenuItem>
     <MudDivider />
     <TorrentActions RenderType="RenderType.MenuItems" Hashes="GetContextMenuTargetHashes()" PrimaryHash="@(ContextMenuItem?.Hash)" Torrents="MainData.Torrents" Preferences="Preferences" />

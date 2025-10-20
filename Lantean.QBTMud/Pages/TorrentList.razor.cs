@@ -79,6 +79,7 @@ namespace Lantean.QBTMud.Pages
         private bool _pendingSelectionChange;
 
         private bool _toolbarButtonsEnabled;
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -338,4 +339,3 @@ namespace Lantean.QBTMud.Pages
         }
     }
 }
-

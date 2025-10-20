@@ -1,6 +1,4 @@
-using System;
-using Lantean.QBTMud;
-using Microsoft.AspNetCore.Components.Web;
+﻿using Microsoft.AspNetCore.Components.Web;
 
 namespace Lantean.QBTMud.Helpers
 {
@@ -8,10 +6,7 @@ namespace Lantean.QBTMud.Helpers
     {
         public static EventArgs NormalizeForContextMenu(this EventArgs eventArgs)
         {
-            if (eventArgs is null)
-            {
-                throw new ArgumentNullException(nameof(eventArgs));
-            }
+            ArgumentNullException.ThrowIfNull(eventArgs);
 
             if (eventArgs is LongPressEventArgs longPressEventArgs)
             {
@@ -23,10 +18,7 @@ namespace Lantean.QBTMud.Helpers
 
         public static MouseEventArgs ToMouseEventArgs(this LongPressEventArgs longPressEventArgs)
         {
-            if (longPressEventArgs is null)
-            {
-                throw new ArgumentNullException(nameof(longPressEventArgs));
-            }
+            ArgumentNullException.ThrowIfNull(longPressEventArgs);
 
             return new MouseEventArgs
             {
@@ -41,6 +33,7 @@ namespace Lantean.QBTMud.Helpers
                 ScreenX = longPressEventArgs.ScreenX,
                 ScreenY = longPressEventArgs.ScreenY,
                 Type = longPressEventArgs.Type ?? "contextmenu",
+                Detail = -1,
             };
         }
     }

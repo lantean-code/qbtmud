@@ -4,7 +4,6 @@ using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
-using System;
 
 namespace Lantean.QBTMud.Components.UI
 {
@@ -91,6 +90,8 @@ namespace Lantean.QBTMud.Components.UI
         private string? _sortColumn;
 
         private SortDirection _sortDirection;
+
+        private DateTimeOffset? _suppressRowClickUntil;
 
         private readonly Dictionary<string, TdExtended> _tds = [];
 
@@ -287,6 +288,17 @@ namespace Lantean.QBTMud.Components.UI
 
         protected async Task OnRowClickInternal(TableRowClickEventArgs<T> eventArgs)
         {
+            if (_suppressRowClickUntil is not null)
+            {
+                if (DateTimeOffset.UtcNow <= _suppressRowClickUntil.Value)
+                {
+                    _suppressRowClickUntil = null;
+                    return;
+                }
+
+                _suppressRowClickUntil = null;
+            }
+
             if (eventArgs.Item is null)
             {
                 return;
@@ -362,6 +374,7 @@ namespace Lantean.QBTMud.Components.UI
 
         protected Task OnLongPressInternal(LongPressEventArgs eventArgs, string columnId, T item)
         {
+            _suppressRowClickUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
             var data = _tds[columnId];
             return OnTableDataLongPress.InvokeAsync(new TableDataLongPressEventArgs<T>(eventArgs, data, item));
         }

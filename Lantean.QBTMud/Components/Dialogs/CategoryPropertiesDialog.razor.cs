@@ -10,7 +10,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private string _savePath = string.Empty;
 
         [CascadingParameter]
-        IMudDialogInstance MudDialog { get; set; } = default!;
+        private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;

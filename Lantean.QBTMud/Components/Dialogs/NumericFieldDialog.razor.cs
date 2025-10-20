@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class NumericFieldDialog<T> where T : struct, INumber<T>
     {
         [CascadingParameter]
-        IMudDialogInstance MudDialog { get; set; } = default!;
+        private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         public string? Label { get; set; }

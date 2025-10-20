@@ -1,6 +1,4 @@
-using System;
-using System.Linq;
-using Lantean.QBitTorrentClient;
+﻿using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -271,7 +269,6 @@ namespace Lantean.QBTMud.Layout
                 _torrentsVersion++;
             }
         }
-
 
         protected virtual void Dispose(bool disposing)
         {

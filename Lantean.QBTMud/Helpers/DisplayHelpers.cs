@@ -83,7 +83,6 @@ namespace Lantean.QBTMud.Helpers
             return sb.ToString();
         }
 
-
         /// <summary>
         /// Formats a file size in bytes into an appropriate unit based on the size.
         /// </summary>

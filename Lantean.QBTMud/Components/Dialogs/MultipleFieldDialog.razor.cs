@@ -7,7 +7,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class MultipleFieldDialog
     {
         [CascadingParameter]
-        IMudDialogInstance MudDialog { get; set; } = default!;
+        private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         public string Label { get; set; } = default!;
