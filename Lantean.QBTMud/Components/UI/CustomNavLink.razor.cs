@@ -59,6 +59,7 @@ namespace Lantean.QBTMud.Components.UI
             new CssBuilder("mud-nav-link")
                 .AddClass($"mud-nav-link-disabled", Disabled)
                 .AddClass("active", Active)
+                .AddClass("unselectable", OnLongPress.HasDelegate || OnContextMenu.HasDelegate)
                 .Build();
 
         protected string IconClassname =>

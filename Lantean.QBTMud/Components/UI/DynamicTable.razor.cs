@@ -435,12 +435,23 @@ namespace Lantean.QBTMud.Components.UI
 
             if (column.Width.HasValue)
             {
-                className = $"overflow-cell {className}";
+                className = string.IsNullOrWhiteSpace(className)
+                    ? "overflow-cell"
+                    : $"overflow-cell {className}";
             }
 
             if (OnTableDataContextMenu.HasDelegate)
             {
-                className = $"no-default-context-menu {className}";
+                className = string.IsNullOrWhiteSpace(className)
+                    ? "no-default-context-menu"
+                    : $"no-default-context-menu {className}";
+            }
+
+            if (OnTableDataLongPress.HasDelegate)
+            {
+                className = string.IsNullOrWhiteSpace(className)
+                    ? "unselectable"
+                    : $"unselectable {className}";
             }
 
             return className;
