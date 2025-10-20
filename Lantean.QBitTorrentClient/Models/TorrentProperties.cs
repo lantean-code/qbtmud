@@ -14,7 +14,7 @@ namespace Lantean.QBitTorrentClient.Models
             long downloadLimit,
             long downloadSpeed,
             long downloadSpeedAverage,
-            int estimatedTimeOfArrival,
+            long estimatedTimeOfArrival,
             long lastSeen,
             int connections,
             int connectionsLimit,
@@ -104,7 +104,7 @@ namespace Lantean.QBitTorrentClient.Models
         public long DownloadSpeedAverage { get; }
 
         [JsonPropertyName("eta")]
-        public int EstimatedTimeOfArrival { get; }
+        public long EstimatedTimeOfArrival { get; }
 
         [JsonPropertyName("last_seen")]
         public long LastSeen { get; }
