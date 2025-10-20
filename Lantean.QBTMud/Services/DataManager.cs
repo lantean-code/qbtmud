@@ -40,12 +40,19 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            var tags = new List<string>(mainData.Tags?.Count ?? 0);
+            var tags = new List<string>();
             if (mainData.Tags is not null)
             {
+                var seenTags = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var tag in mainData.Tags)
                 {
-                    tags.Add(tag);
+                    var normalizedTag = NormalizeTag(tag);
+                    if (string.IsNullOrEmpty(normalizedTag) || !seenTags.Add(normalizedTag))
+                    {
+                        continue;
+                    }
+
+                    tags.Add(normalizedTag);
                 }
             }
 
@@ -168,15 +175,17 @@ namespace Lantean.QBTMud.Services
             {
                 foreach (var tag in mainData.TagsRemoved)
                 {
-                    if (torrentList.Tags.Remove(tag))
+                    var normalizedTag = NormalizeTag(tag);
+                    if (string.IsNullOrEmpty(normalizedTag))
                     {
-                        dataChanged = true;
+                        continue;
+                    }
+
+                    if (torrentList.TagState.Remove(normalizedTag))
+                    {
                         filterChanged = true;
                     }
-                    if (torrentList.TagState.Remove(tag))
-                    {
-                        filterChanged = true;
-                    }
+                    torrentList.TagState.Remove(normalizedTag);
                 }
             }
 
@@ -231,11 +240,22 @@ namespace Lantean.QBTMud.Services
             {
                 foreach (var tag in mainData.Tags)
                 {
-                    if (torrentList.Tags.Add(tag))
+                    var normalizedTag = NormalizeTag(tag);
+                    if (string.IsNullOrEmpty(normalizedTag))
+                    {
+                        continue;
+                    }
+
+                    if (torrentList.Tags.Add(normalizedTag))
                     {
                         dataChanged = true;
                         filterChanged = true;
                     }
+                    var matchingHashes = torrentList.Torrents
+                        .Where(pair => FilterHelper.FilterTag(pair.Value, normalizedTag))
+                        .Select(pair => pair.Key)
+                        .ToHashSet();
+                    torrentList.TagState[normalizedTag] = matchingHashes;
                 }
             }
 
@@ -689,6 +709,12 @@ namespace Lantean.QBTMud.Services
 
         public Torrent CreateTorrent(string hash, QBitTorrentClient.Models.Torrent torrent)
         {
+            var normalizedTags = torrent.Tags?
+                .Select(NormalizeTag)
+                .Where(static tag => !string.IsNullOrEmpty(tag))
+                .ToList()
+                ?? new List<string>();
+
             return new Torrent(
                 hash,
                 torrent.AddedOn.GetValueOrDefault(),
@@ -729,7 +755,7 @@ namespace Lantean.QBTMud.Services
                 torrent.Size.GetValueOrDefault(),
                 torrent.State!,
                 torrent.SuperSeeding.GetValueOrDefault(),
-                torrent.Tags!,
+                normalizedTags,
                 torrent.TimeActive.GetValueOrDefault(),
                 torrent.TotalSize.GetValueOrDefault(),
                 torrent.Tracker!,
@@ -740,6 +766,19 @@ namespace Lantean.QBTMud.Services
                 torrent.Reannounce ?? 0,
                 torrent.InactiveSeedingTimeLimit.GetValueOrDefault(),
                 torrent.MaxInactiveSeedingTime.GetValueOrDefault());
+        }
+
+        private static string NormalizeTag(string? tag)
+        {
+            if (string.IsNullOrEmpty(tag))
+            {
+                return string.Empty;
+            }
+
+            var separatorIndex = tag.IndexOf('\t');
+            var normalized = (separatorIndex >= 0) ? tag[..separatorIndex] : tag;
+
+            return normalized.Trim();
         }
 
         private static bool UpdateCategory(Category existingCategory, QBitTorrentClient.Models.Category category)
@@ -1004,10 +1043,14 @@ namespace Lantean.QBTMud.Services
 
             if (torrent.Tags is not null)
             {
-                if (!existingTorrent.Tags.SequenceEqual(torrent.Tags))
+                var normalizedTags = torrent.Tags.Select(NormalizeTag)
+                                    .Where(static tag => !string.IsNullOrEmpty(tag))
+                                    .ToList();
+
+                if (!existingTorrent.Tags.SequenceEqual(normalizedTags))
                 {
                     existingTorrent.Tags.Clear();
-                    existingTorrent.Tags.AddRange(torrent.Tags);
+                    existingTorrent.Tags.AddRange(normalizedTags);
                     dataChanged = true;
                     filterChanged = true;
                 }
