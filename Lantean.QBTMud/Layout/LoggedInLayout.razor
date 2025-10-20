@@ -50,7 +50,7 @@
             @{
                 var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);
             }
-            <MudIcon Class="mx-1 mb-1" Icon="@icon" Color="@colour" Title="MainData?.ServerState.ConnectionStatus" />
+            <MudIcon Class="mx-1 mb-1" Icon="@icon" Color="@colour" Title="@MainData?.ServerState.ConnectionStatus" />
             <MudDivider Vertical="true" Class="" />
             <MudIcon Class="mx-1 mb-1" Icon="@Icons.Material.Outlined.Speed" Color="@((MainData?.ServerState.UseAltSpeedLimits ?? false) ? Color.Error : Color.Success)" />
             <MudDivider Vertical="true" Class="" />

@@ -195,12 +195,12 @@ namespace Lantean.QBTMud.Layout
 
         protected static (string, Color) GetConnectionIcon(string? status)
         {
-            if (status is null)
+            return status switch
             {
-                return (Icons.Material.Outlined.SignalWifiOff, Color.Warning);
-            }
-
-            return (Icons.Material.Outlined.SignalWifi4Bar, Color.Success);
+                "firewalled" => (Icons.Material.Outlined.SignalWifiStatusbarConnectedNoInternet4, Color.Warning),
+                "connected" => (Icons.Material.Outlined.SignalWifi4Bar, Color.Success),
+                _ => (Icons.Material.Outlined.SignalWifiOff, Color.Error),
+            };
         }
 
         private void OnCategoryChanged(string category)
