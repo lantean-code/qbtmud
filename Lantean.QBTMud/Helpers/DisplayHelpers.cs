@@ -19,28 +19,28 @@ namespace Lantean.QBTMud.Helpers
         {
             if (seconds is null)
             {
-                return "";
+                return string.Empty;
             }
 
-            if (seconds == 8640000)
+            const long InfiniteEtaSentinelSeconds = 8_640_000; // ~100 days, used by qBittorrent for "infinite" ETA.
+            var value = seconds.Value;
+
+            if (value >= long.MaxValue || value >= TimeSpan.MaxValue.TotalSeconds || value == InfiniteEtaSentinelSeconds)
             {
                 return "∞";
             }
 
-            if (seconds < 60)
+            if (value <= 0)
             {
                 return "< 1m";
             }
 
-            TimeSpan time;
-            try
+            var time = TimeSpan.FromSeconds(value);
+            if (time.TotalMinutes < 1)
             {
-                time = TimeSpan.FromSeconds(seconds.Value);
+                return "< 1m";
             }
-            catch
-            {
-                return "∞";
-            }
+
             var sb = new StringBuilder();
             if (prefix is not null)
             {

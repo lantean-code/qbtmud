@@ -1,11 +1,13 @@
 ﻿@inherits LayoutComponentBase
 @layout LoggedInLayout
 
-<MudDrawer Open="DrawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Overlay="false">
-    <MudNavMenu>
-        <ApplicationActions IsMenu="false" Preferences="Preferences" />
-    </MudNavMenu>
-</MudDrawer>
-<MudMainContent>
-    @Body
-</MudMainContent>
+<div class="app-shell__body">
+    <MudDrawer Open="DrawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Overlay="false" Class="app-shell__sidebar">
+        <MudNavMenu>
+            <ApplicationActions IsMenu="false" Preferences="Preferences" />
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent Class="app-shell__main">
+        @Body
+    </MudMainContent>
+</div>

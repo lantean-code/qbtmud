@@ -1,43 +1,46 @@
 ﻿@page "/"
 @layout ListLayout
 
-<ContextMenu @ref="ContextMenu" Dense="true" RelativeWidth="DropdownWidth.Ignore" AdjustmentX="-242" AdjustmentY="0">
+<MudMenu @ref="ContextMenu" Dense="true" RelativeWidth="DropdownWidth.Ignore" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" OnClick="ShowTorrentContextMenu">View torrent details</MudMenuItem>
     <MudDivider />
     <TorrentActions RenderType="RenderType.MenuItems" Hashes="GetContextMenuTargetHashes()" PrimaryHash="@(ContextMenuItem?.Hash)" Torrents="MainData.Torrents" Preferences="Preferences" />
-</ContextMenu>
+</MudMenu>
 
-<div style="overflow-x: auto; white-space: nowrap; width: 100%;">
-<MudToolBar Gutters="false" Dense="true">
-    <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="Add torrent link" />
-    <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="Add torrent file" />
-    <MudDivider Vertical="true" />
-    <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrentsHashes()" Torrents="MainData.Torrents" Preferences="Preferences" />
-    <MudDivider Vertical="true" />
-    <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" Disabled="@(!ToolbarButtonsEnabled)" OnClick="ShowTorrentToolbar" title="View torrent details" />
-    <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
-    <MudSpacer />
-    <MudTextField Value="SearchText" TextChanged="SearchTextChanged" Immediate="true" DebounceInterval="1000" Placeholder="Filter torrent list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-</MudToolBar>
+<div class="content-panel">
+    <div class="content-panel__toolbar content-panel__toolbar--scroll">
+        <MudToolBar Gutters="false" Dense="true">
+            <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="Add torrent link" />
+            <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="Add torrent file" />
+            <MudDivider Vertical="true" />
+            <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrentsHashes()" Torrents="MainData.Torrents" Preferences="Preferences" />
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" Disabled="@(!ToolbarButtonsEnabled)" OnClick="ShowTorrentToolbar" title="View torrent details" />
+            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
+            <MudSpacer />
+            <MudTextField Value="SearchText" TextChanged="SearchTextChanged" Immediate="true" DebounceInterval="1000" Placeholder="Filter torrent list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </MudToolBar>
+    </div>
+    <div class="content-panel__body">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="ma-0 pa-0 content-panel__container">
+            <DynamicTable
+                @ref="Table"
+                T="Torrent" 
+                Class="torrent-list content-panel__table"
+                ColumnDefinitions="Columns" 
+                Items="Torrents" 
+                OnRowClick="RowClick" 
+                MultiSelection="true"
+                SelectOnRowClick="true"
+                SelectedItemsChanged="SelectedItemsChanged"
+                SortColumnChanged="SortColumnChangedHandler"
+                SortDirectionChanged="SortDirectionChangedHandler"
+                OnTableDataContextMenu="TableDataContextMenu"
+                OnTableDataLongPress="TableDataLongPress"
+            />
+        </MudContainer>
+    </div>
 </div>
-
-<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="ma-0 pa-0">
-    <DynamicTable
-        @ref="Table"
-        T="Torrent" 
-        Class="torrent-list"
-        ColumnDefinitions="Columns" 
-        Items="Torrents" 
-        OnRowClick="RowClick" 
-        MultiSelection="true"
-        SelectOnRowClick="true"
-        SelectedItemsChanged="SelectedItemsChanged"
-        SortColumnChanged="SortColumnChangedHandler"
-        SortDirectionChanged="SortDirectionChangedHandler"
-        OnTableDataContextMenu="TableDataContextMenu"
-        OnTableDataLongPress="TableDataLongPress"
-    />
-</MudContainer>
 
 @code {
     private static RenderFragment<RowContext<Torrent>> ProgressBarColumn

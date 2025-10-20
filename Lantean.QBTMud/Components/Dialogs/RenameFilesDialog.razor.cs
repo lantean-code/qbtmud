@@ -30,7 +30,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [CascadingParameter]
-        IMudDialogInstance MudDialog { get; set; } = default!;
+        private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         public string? Hash { get; set; }
@@ -426,7 +426,6 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 await LocalStorage.RemoveItemAsync(_preferencesStorageKey);
             }
-            
         }
 
         protected override async Task OnInitializedAsync()
@@ -495,7 +494,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 var oldPath = renamedFile.Path + renamedFile.OriginalName;
                 var newPath = renamedFile.Path + renamedFile.NewName;
-                
+
                 await ApiClient.RenameFolder(Hash, oldPath, newPath);
             }
 

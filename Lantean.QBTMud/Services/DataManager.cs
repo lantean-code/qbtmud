@@ -39,12 +39,19 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            var tags = new List<string>(mainData.Tags?.Count ?? 0);
+            var tags = new List<string>();
             if (mainData.Tags is not null)
             {
+                var seenTags = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var tag in mainData.Tags)
                 {
-                    tags.Add(tag);
+                    var normalizedTag = NormalizeTag(tag);
+                    if (string.IsNullOrEmpty(normalizedTag) || !seenTags.Add(normalizedTag))
+                    {
+                        continue;
+                    }
+
+                    tags.Add(normalizedTag);
                 }
             }
 
@@ -142,14 +149,24 @@ namespace Lantean.QBTMud.Services
                 serverState.WriteCacheOverload.GetValueOrDefault());
         }
 
-        public void MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList)
+        public bool MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList, out bool filterChanged)
         {
+            filterChanged = false;
+            var dataChanged = false;
+
             if (mainData.CategoriesRemoved is not null)
             {
                 foreach (var category in mainData.CategoriesRemoved)
                 {
-                    torrentList.Categories.Remove(category);
-                    torrentList.CategoriesState.Remove(category);
+                    if (torrentList.Categories.Remove(category))
+                    {
+                        dataChanged = true;
+                        filterChanged = true;
+                    }
+                    if (torrentList.CategoriesState.Remove(category))
+                    {
+                        filterChanged = true;
+                    }
                 }
             }
 
@@ -157,8 +174,17 @@ namespace Lantean.QBTMud.Services
             {
                 foreach (var tag in mainData.TagsRemoved)
                 {
-                    torrentList.Tags.Remove(tag);
-                    torrentList.TagState.Remove(tag);
+                    var normalizedTag = NormalizeTag(tag);
+                    if (string.IsNullOrEmpty(normalizedTag))
+                    {
+                        continue;
+                    }
+
+                    if (torrentList.TagState.Remove(normalizedTag))
+                    {
+                        filterChanged = true;
+                    }
+                    torrentList.TagState.Remove(normalizedTag);
                 }
             }
 
@@ -166,8 +192,15 @@ namespace Lantean.QBTMud.Services
             {
                 foreach (var tracker in mainData.TrackersRemoved)
                 {
-                    torrentList.Trackers.Remove(tracker);
-                    torrentList.TrackersState.Remove(tracker);
+                    if (torrentList.Trackers.Remove(tracker))
+                    {
+                        dataChanged = true;
+                        filterChanged = true;
+                    }
+                    if (torrentList.TrackersState.Remove(tracker))
+                    {
+                        filterChanged = true;
+                    }
                 }
             }
 
@@ -175,8 +208,12 @@ namespace Lantean.QBTMud.Services
             {
                 foreach (var hash in mainData.TorrentsRemoved)
                 {
-                    RemoveTorrentFromStates(torrentList, hash);
-                    torrentList.Torrents.Remove(hash);
+                    if (torrentList.Torrents.Remove(hash))
+                    {
+                        RemoveTorrentFromStates(torrentList, hash);
+                        dataChanged = true;
+                        filterChanged = true;
+                    }
                 }
             }
 
@@ -188,10 +225,12 @@ namespace Lantean.QBTMud.Services
                     {
                         var newCategory = CreateCategory(category);
                         torrentList.Categories.Add(name, newCategory);
+                        dataChanged = true;
+                        filterChanged = true;
                     }
-                    else
+                    else if (UpdateCategory(existingCategory, category))
                     {
-                        UpdateCategory(existingCategory, category);
+                        dataChanged = true;
                     }
                 }
             }
@@ -200,7 +239,22 @@ namespace Lantean.QBTMud.Services
             {
                 foreach (var tag in mainData.Tags)
                 {
-                    torrentList.Tags.Add(tag);
+                    var normalizedTag = NormalizeTag(tag);
+                    if (string.IsNullOrEmpty(normalizedTag))
+                    {
+                        continue;
+                    }
+
+                    if (torrentList.Tags.Add(normalizedTag))
+                    {
+                        dataChanged = true;
+                        filterChanged = true;
+                    }
+                    var matchingHashes = torrentList.Torrents
+                        .Where(pair => FilterHelper.FilterTag(pair.Value, normalizedTag))
+                        .Select(pair => pair.Key)
+                        .ToHashSet();
+                    torrentList.TagState[normalizedTag] = matchingHashes;
                 }
             }
 
@@ -208,13 +262,16 @@ namespace Lantean.QBTMud.Services
             {
                 foreach (var (url, hashes) in mainData.Trackers)
                 {
-                    if (!torrentList.Trackers.TryGetValue(url, out _))
+                    if (!torrentList.Trackers.TryGetValue(url, out var existingHashes))
                     {
                         torrentList.Trackers.Add(url, hashes);
+                        dataChanged = true;
+                        filterChanged = true;
                     }
-                    else
+                    else if (!existingHashes.SequenceEqual(hashes))
                     {
                         torrentList.Trackers[url] = hashes;
+                        dataChanged = true;
                     }
                 }
             }
@@ -228,67 +285,65 @@ namespace Lantean.QBTMud.Services
                         var newTorrent = CreateTorrent(hash, torrent);
                         torrentList.Torrents.Add(hash, newTorrent);
                         AddTorrentToStates(torrentList, hash, torrentList.MajorVersion);
+                        dataChanged = true;
+                        filterChanged = true;
                     }
                     else
                     {
-                        UpdateTorrentStates(torrentList, hash);
-                        UpdateTorrent(existingTorrent, torrent);
+                        var previousSnapshot = CreateSnapshot(existingTorrent);
+                        var updateResult = UpdateTorrent(existingTorrent, torrent);
+                        if (updateResult.FilterChanged)
+                        {
+                            UpdateTorrentStates(torrentList, hash, previousSnapshot, existingTorrent);
+                            filterChanged = true;
+                        }
+                        if (updateResult.DataChanged)
+                        {
+                            dataChanged = true;
+                        }
                     }
                 }
             }
 
             if (mainData.ServerState is not null)
             {
-                UpdateServerState(torrentList.ServerState, mainData.ServerState);
+                if (UpdateServerState(torrentList.ServerState, mainData.ServerState))
+                {
+                    dataChanged = true;
+                }
             }
+
+            return dataChanged;
         }
 
         private static void AddTorrentToStates(MainData torrentList, string hash, int version)
         {
-            var torrent = torrentList.Torrents[hash];
+            if (!torrentList.Torrents.TryGetValue(hash, out var torrent))
+            {
+                return;
+            }
 
             torrentList.TagState[FilterHelper.TAG_ALL].Add(hash);
-            torrentList.TagState[FilterHelper.TAG_UNTAGGED].AddIfTrue(hash, FilterHelper.FilterTag(torrent, FilterHelper.TAG_UNTAGGED));
-            foreach (var tag in torrentList.Tags)
-            {
-                if (!torrentList.TagState.TryGetValue(tag, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.TagState.Add(tag, value);
-                }
-
-                value.AddIfTrue(hash, FilterHelper.FilterTag(torrent, tag));
-            }
+            UpdateTagStateForAddition(torrentList, torrent, hash);
 
             torrentList.CategoriesState[FilterHelper.CATEGORY_ALL].Add(hash);
-            torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].AddIfTrue(hash, FilterHelper.FilterCategory(torrent, FilterHelper.CATEGORY_UNCATEGORIZED, torrentList.ServerState.UseSubcategories));
-            foreach (var category in torrentList.Categories.Keys)
-            {
-                if (!torrentList.CategoriesState.TryGetValue(category, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.CategoriesState.Add(category, value);
-                }
-
-                value.AddIfTrue(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
-            }
+            UpdateCategoryState(torrentList, torrent, hash, previousCategory: null);
 
             foreach (var status in GetStatuses(version))
             {
-                torrentList.StatusState[status.ToString()].AddIfTrue(hash, FilterHelper.FilterStatus(torrent, status));
+                if (!torrentList.StatusState.TryGetValue(status.ToString(), out var statusSet))
+                {
+                    continue;
+                }
+
+                if (FilterHelper.FilterStatus(torrent, status))
+                {
+                    statusSet.Add(hash);
+                }
             }
 
             torrentList.TrackersState[FilterHelper.TRACKER_ALL].Add(hash);
-            torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].AddIfTrue(hash, FilterHelper.FilterTracker(torrent, FilterHelper.TRACKER_TRACKERLESS));
-            foreach (var tracker in torrentList.Trackers.Keys)
-            {
-                if (!torrentList.TrackersState.TryGetValue(tracker, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.TrackersState.Add(tracker, value);
-                }
-                value.AddIfTrue(hash, FilterHelper.FilterTracker(torrent, tracker));
-            }
+            UpdateTrackerState(torrentList, torrent, hash, previousTracker: null);
         }
 
         private static Status[] GetStatuses(int version)
@@ -310,77 +365,28 @@ namespace Lantean.QBTMud.Services
             return _statusArray;
         }
 
-        private static void UpdateTorrentStates(MainData torrentList, string hash)
+        private static void UpdateTorrentStates(MainData torrentList, string hash, TorrentSnapshot previousSnapshot, Torrent updatedTorrent)
         {
-            var torrent = torrentList.Torrents[hash];
-
-            torrentList.TagState[FilterHelper.TAG_UNTAGGED].AddIfTrueOrRemove(hash, FilterHelper.FilterTag(torrent, FilterHelper.TAG_UNTAGGED));
-            foreach (var tag in torrentList.Tags)
-            {
-                if (!torrentList.TagState.TryGetValue(tag, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.TagState.Add(tag, value);
-                }
-
-                value.AddIfTrueOrRemove(hash, FilterHelper.FilterTag(torrent, tag));
-            }
-
-            torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].AddIfTrueOrRemove(hash, FilterHelper.FilterCategory(torrent, FilterHelper.CATEGORY_UNCATEGORIZED, torrentList.ServerState.UseSubcategories));
-            foreach (var category in torrentList.Categories.Keys)
-            {
-                if (!torrentList.CategoriesState.TryGetValue(category, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.CategoriesState.Add(category, value);
-                }
-
-                value.AddIfTrueOrRemove(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
-            }
-
-            foreach (var status in GetStatuses(torrentList.MajorVersion))
-            {
-                torrentList.StatusState[status.ToString()].AddIfTrueOrRemove(hash, FilterHelper.FilterStatus(torrent, status));
-            }
-
-            torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].AddIfTrueOrRemove(hash, FilterHelper.FilterTracker(torrent, FilterHelper.TRACKER_TRACKERLESS));
-            foreach (var tracker in torrentList.Trackers.Keys)
-            {
-                if (!torrentList.TrackersState.TryGetValue(tracker, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.TrackersState.Add(tracker, value);
-                }
-
-                value.AddIfTrueOrRemove(hash, FilterHelper.FilterTracker(torrent, tracker));
-            }
+            UpdateTagStateForUpdate(torrentList, hash, previousSnapshot.Tags, updatedTorrent.Tags);
+            UpdateCategoryState(torrentList, updatedTorrent, hash, previousSnapshot.Category);
+            UpdateStatusState(torrentList, hash, previousSnapshot.State, previousSnapshot.UploadSpeed, updatedTorrent.State, updatedTorrent.UploadSpeed);
+            UpdateTrackerState(torrentList, updatedTorrent, hash, previousSnapshot.Tracker);
         }
 
         private static void RemoveTorrentFromStates(MainData torrentList, string hash)
         {
-            var torrent = torrentList.Torrents[hash];
+            if (!torrentList.Torrents.TryGetValue(hash, out var torrent))
+            {
+                return;
+            }
+
+            var snapshot = CreateSnapshot(torrent);
 
             torrentList.TagState[FilterHelper.TAG_ALL].Remove(hash);
-            torrentList.TagState[FilterHelper.TAG_UNTAGGED].RemoveIfTrue(hash, FilterHelper.FilterTag(torrent, FilterHelper.TAG_UNTAGGED));
-            foreach (var tag in torrentList.Tags)
-            {
-                if (!torrentList.TagState.TryGetValue(tag, out var tagState))
-                {
-                    continue;
-                }
-                tagState.RemoveIfTrue(hash, FilterHelper.FilterTag(torrent, tag));
-            }
+            UpdateTagStateForRemoval(torrentList, hash, snapshot.Tags);
 
             torrentList.CategoriesState[FilterHelper.CATEGORY_ALL].Remove(hash);
-            torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].RemoveIfTrue(hash, FilterHelper.FilterCategory(torrent, FilterHelper.CATEGORY_UNCATEGORIZED, torrentList.ServerState.UseSubcategories));
-            foreach (var category in torrentList.Categories.Keys)
-            {
-                if (!torrentList.CategoriesState.TryGetValue(category, out var categoryState))
-                {
-                    continue;
-                }
-                categoryState.RemoveIfTrue(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
-            }
+            UpdateCategoryStateForRemoval(torrentList, hash, snapshot.Category);
 
             foreach (var status in GetStatuses(torrentList.MajorVersion))
             {
@@ -388,48 +394,172 @@ namespace Lantean.QBTMud.Services
                 {
                     continue;
                 }
-                statusState.RemoveIfTrue(hash, FilterHelper.FilterStatus(torrent, status));
+
+                if (FilterHelper.FilterStatus(snapshot.State, snapshot.UploadSpeed, status))
+                {
+                    statusState.Remove(hash);
+                }
             }
 
             torrentList.TrackersState[FilterHelper.TRACKER_ALL].Remove(hash);
-            torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].RemoveIfTrue(hash, FilterHelper.FilterTracker(torrent, FilterHelper.TRACKER_TRACKERLESS));
-            foreach (var tracker in torrentList.Trackers.Keys)
-            {
-                if (!torrentList.TrackersState.TryGetValue(tracker, out var trackerState))
-                {
-                    continue;
-                }
-                trackerState.RemoveIfTrue(hash, FilterHelper.FilterTracker(torrent, tracker));
-            }
+            UpdateTrackerStateForRemoval(torrentList, hash, snapshot.Tracker);
         }
 
-        private static void UpdateServerState(ServerState existingServerState, QBitTorrentClient.Models.ServerState serverState)
+        private static bool UpdateServerState(ServerState existingServerState, QBitTorrentClient.Models.ServerState serverState)
         {
-            existingServerState.AllTimeDownloaded = serverState.AllTimeDownloaded ?? existingServerState.AllTimeDownloaded;
-            existingServerState.AllTimeUploaded = serverState.AllTimeUploaded ?? existingServerState.AllTimeUploaded;
-            existingServerState.AverageTimeQueue = serverState.AverageTimeQueue ?? existingServerState.AverageTimeQueue;
-            existingServerState.ConnectionStatus = serverState.ConnectionStatus ?? existingServerState.ConnectionStatus;
-            existingServerState.DHTNodes = serverState.DHTNodes ?? existingServerState.DHTNodes;
-            existingServerState.DownloadInfoData = serverState.DownloadInfoData ?? existingServerState.DownloadInfoData;
-            existingServerState.DownloadInfoSpeed = serverState.DownloadInfoSpeed ?? existingServerState.DownloadInfoSpeed;
-            existingServerState.DownloadRateLimit = serverState.DownloadRateLimit ?? existingServerState.DownloadRateLimit;
-            existingServerState.FreeSpaceOnDisk = serverState.FreeSpaceOnDisk ?? existingServerState.FreeSpaceOnDisk;
-            existingServerState.GlobalRatio = serverState.GlobalRatio ?? existingServerState.GlobalRatio;
-            existingServerState.QueuedIOJobs = serverState.QueuedIOJobs ?? existingServerState.QueuedIOJobs;
-            existingServerState.Queuing = serverState.Queuing ?? existingServerState.Queuing;
-            existingServerState.ReadCacheHits = serverState.ReadCacheHits ?? existingServerState.ReadCacheHits;
-            existingServerState.ReadCacheOverload = serverState.ReadCacheOverload ?? existingServerState.ReadCacheOverload;
-            existingServerState.RefreshInterval = serverState.RefreshInterval ?? existingServerState.RefreshInterval;
-            existingServerState.TotalBuffersSize = serverState.TotalBuffersSize ?? existingServerState.TotalBuffersSize;
-            existingServerState.TotalPeerConnections = serverState.TotalPeerConnections ?? existingServerState.TotalPeerConnections;
-            existingServerState.TotalQueuedSize = serverState.TotalQueuedSize ?? existingServerState.TotalQueuedSize;
-            existingServerState.TotalWastedSession = serverState.TotalWastedSession ?? existingServerState.TotalWastedSession;
-            existingServerState.UploadInfoData = serverState.UploadInfoData ?? existingServerState.UploadInfoData;
-            existingServerState.UploadInfoSpeed = serverState.UploadInfoSpeed ?? existingServerState.UploadInfoSpeed;
-            existingServerState.UploadRateLimit = serverState.UploadRateLimit ?? existingServerState.UploadRateLimit;
-            existingServerState.UseAltSpeedLimits = serverState.UseAltSpeedLimits ?? existingServerState.UseAltSpeedLimits;
-            existingServerState.UseSubcategories = serverState.UseSubcategories ?? existingServerState.UseSubcategories;
-            existingServerState.WriteCacheOverload = serverState.WriteCacheOverload ?? existingServerState.WriteCacheOverload;
+            var changed = false;
+
+            if (serverState.AllTimeDownloaded.HasValue && existingServerState.AllTimeDownloaded != serverState.AllTimeDownloaded.Value)
+            {
+                existingServerState.AllTimeDownloaded = serverState.AllTimeDownloaded.Value;
+                changed = true;
+            }
+
+            if (serverState.AllTimeUploaded.HasValue && existingServerState.AllTimeUploaded != serverState.AllTimeUploaded.Value)
+            {
+                existingServerState.AllTimeUploaded = serverState.AllTimeUploaded.Value;
+                changed = true;
+            }
+
+            if (serverState.AverageTimeQueue.HasValue && existingServerState.AverageTimeQueue != serverState.AverageTimeQueue.Value)
+            {
+                existingServerState.AverageTimeQueue = serverState.AverageTimeQueue.Value;
+                changed = true;
+            }
+
+            if (serverState.ConnectionStatus is not null && existingServerState.ConnectionStatus != serverState.ConnectionStatus)
+            {
+                existingServerState.ConnectionStatus = serverState.ConnectionStatus;
+                changed = true;
+            }
+
+            if (serverState.DHTNodes.HasValue && existingServerState.DHTNodes != serverState.DHTNodes.Value)
+            {
+                existingServerState.DHTNodes = serverState.DHTNodes.Value;
+                changed = true;
+            }
+
+            if (serverState.DownloadInfoData.HasValue && existingServerState.DownloadInfoData != serverState.DownloadInfoData.Value)
+            {
+                existingServerState.DownloadInfoData = serverState.DownloadInfoData.Value;
+                changed = true;
+            }
+
+            if (serverState.DownloadInfoSpeed.HasValue && existingServerState.DownloadInfoSpeed != serverState.DownloadInfoSpeed.Value)
+            {
+                existingServerState.DownloadInfoSpeed = serverState.DownloadInfoSpeed.Value;
+                changed = true;
+            }
+
+            if (serverState.DownloadRateLimit.HasValue && existingServerState.DownloadRateLimit != serverState.DownloadRateLimit.Value)
+            {
+                existingServerState.DownloadRateLimit = serverState.DownloadRateLimit.Value;
+                changed = true;
+            }
+
+            if (serverState.FreeSpaceOnDisk.HasValue && existingServerState.FreeSpaceOnDisk != serverState.FreeSpaceOnDisk.Value)
+            {
+                existingServerState.FreeSpaceOnDisk = serverState.FreeSpaceOnDisk.Value;
+                changed = true;
+            }
+
+            if (serverState.GlobalRatio.HasValue && existingServerState.GlobalRatio != serverState.GlobalRatio.Value)
+            {
+                existingServerState.GlobalRatio = serverState.GlobalRatio.Value;
+                changed = true;
+            }
+
+            if (serverState.QueuedIOJobs.HasValue && existingServerState.QueuedIOJobs != serverState.QueuedIOJobs.Value)
+            {
+                existingServerState.QueuedIOJobs = serverState.QueuedIOJobs.Value;
+                changed = true;
+            }
+
+            if (serverState.Queuing.HasValue && existingServerState.Queuing != serverState.Queuing.Value)
+            {
+                existingServerState.Queuing = serverState.Queuing.Value;
+                changed = true;
+            }
+
+            if (serverState.ReadCacheHits.HasValue && existingServerState.ReadCacheHits != serverState.ReadCacheHits.Value)
+            {
+                existingServerState.ReadCacheHits = serverState.ReadCacheHits.Value;
+                changed = true;
+            }
+
+            if (serverState.ReadCacheOverload.HasValue && existingServerState.ReadCacheOverload != serverState.ReadCacheOverload.Value)
+            {
+                existingServerState.ReadCacheOverload = serverState.ReadCacheOverload.Value;
+                changed = true;
+            }
+
+            if (serverState.RefreshInterval.HasValue && existingServerState.RefreshInterval != serverState.RefreshInterval.Value)
+            {
+                existingServerState.RefreshInterval = serverState.RefreshInterval.Value;
+                changed = true;
+            }
+
+            if (serverState.TotalBuffersSize.HasValue && existingServerState.TotalBuffersSize != serverState.TotalBuffersSize.Value)
+            {
+                existingServerState.TotalBuffersSize = serverState.TotalBuffersSize.Value;
+                changed = true;
+            }
+
+            if (serverState.TotalPeerConnections.HasValue && existingServerState.TotalPeerConnections != serverState.TotalPeerConnections.Value)
+            {
+                existingServerState.TotalPeerConnections = serverState.TotalPeerConnections.Value;
+                changed = true;
+            }
+
+            if (serverState.TotalQueuedSize.HasValue && existingServerState.TotalQueuedSize != serverState.TotalQueuedSize.Value)
+            {
+                existingServerState.TotalQueuedSize = serverState.TotalQueuedSize.Value;
+                changed = true;
+            }
+
+            if (serverState.TotalWastedSession.HasValue && existingServerState.TotalWastedSession != serverState.TotalWastedSession.Value)
+            {
+                existingServerState.TotalWastedSession = serverState.TotalWastedSession.Value;
+                changed = true;
+            }
+
+            if (serverState.UploadInfoData.HasValue && existingServerState.UploadInfoData != serverState.UploadInfoData.Value)
+            {
+                existingServerState.UploadInfoData = serverState.UploadInfoData.Value;
+                changed = true;
+            }
+
+            if (serverState.UploadInfoSpeed.HasValue && existingServerState.UploadInfoSpeed != serverState.UploadInfoSpeed.Value)
+            {
+                existingServerState.UploadInfoSpeed = serverState.UploadInfoSpeed.Value;
+                changed = true;
+            }
+
+            if (serverState.UploadRateLimit.HasValue && existingServerState.UploadRateLimit != serverState.UploadRateLimit.Value)
+            {
+                existingServerState.UploadRateLimit = serverState.UploadRateLimit.Value;
+                changed = true;
+            }
+
+            if (serverState.UseAltSpeedLimits.HasValue && existingServerState.UseAltSpeedLimits != serverState.UseAltSpeedLimits.Value)
+            {
+                existingServerState.UseAltSpeedLimits = serverState.UseAltSpeedLimits.Value;
+                changed = true;
+            }
+
+            if (serverState.UseSubcategories.HasValue && existingServerState.UseSubcategories != serverState.UseSubcategories.Value)
+            {
+                existingServerState.UseSubcategories = serverState.UseSubcategories.Value;
+                changed = true;
+            }
+
+            if (serverState.WriteCacheOverload.HasValue && existingServerState.WriteCacheOverload != serverState.WriteCacheOverload.Value)
+            {
+                existingServerState.WriteCacheOverload = serverState.WriteCacheOverload.Value;
+                changed = true;
+            }
+
+            return changed;
         }
 
         public void MergeTorrentPeers(QBitTorrentClient.Models.TorrentPeers torrentPeers, PeerList peerList)
@@ -508,6 +638,12 @@ namespace Lantean.QBTMud.Services
 
         public Torrent CreateTorrent(string hash, QBitTorrentClient.Models.Torrent torrent)
         {
+            var normalizedTags = torrent.Tags?
+                .Select(NormalizeTag)
+                .Where(static tag => !string.IsNullOrEmpty(tag))
+                .ToList()
+                ?? new List<string>();
+
             return new Torrent(
                 hash,
                 torrent.AddedOn.GetValueOrDefault(),
@@ -548,7 +684,7 @@ namespace Lantean.QBTMud.Services
                 torrent.Size.GetValueOrDefault(),
                 torrent.State!,
                 torrent.SuperSeeding.GetValueOrDefault(),
-                torrent.Tags!,
+                normalizedTags,
                 torrent.TimeActive.GetValueOrDefault(),
                 torrent.TotalSize.GetValueOrDefault(),
                 torrent.Tracker!,
@@ -561,146 +697,873 @@ namespace Lantean.QBTMud.Services
                 torrent.MaxInactiveSeedingTime.GetValueOrDefault());
         }
 
-        private static void UpdateCategory(Category existingCategory, QBitTorrentClient.Models.Category category)
+        private static string NormalizeTag(string? tag)
         {
-            existingCategory.SavePath = category.SavePath ?? existingCategory.SavePath;
+            if (string.IsNullOrEmpty(tag))
+            {
+                return string.Empty;
+            }
+
+            var separatorIndex = tag.IndexOf('\t');
+            var normalized = (separatorIndex >= 0) ? tag[..separatorIndex] : tag;
+
+            return normalized.Trim();
         }
 
-        private static void UpdateTorrent(Torrent existingTorrent, QBitTorrentClient.Models.Torrent torrent)
+        private static TorrentSnapshot CreateSnapshot(Torrent torrent)
         {
-            existingTorrent.AddedOn = torrent.AddedOn ?? existingTorrent.AddedOn;
-            existingTorrent.AmountLeft = torrent.AmountLeft ?? existingTorrent.AmountLeft;
-            existingTorrent.AutomaticTorrentManagement = torrent.AutomaticTorrentManagement ?? existingTorrent.AutomaticTorrentManagement;
-            existingTorrent.Availability = torrent.Availability ?? existingTorrent.Availability;
-            existingTorrent.Category = torrent.Category ?? existingTorrent.Category;
-            existingTorrent.Completed = torrent.Completed ?? existingTorrent.Completed;
-            existingTorrent.CompletionOn = torrent.CompletionOn ?? existingTorrent.CompletionOn;
-            existingTorrent.ContentPath = torrent.ContentPath ?? existingTorrent.ContentPath;
-            existingTorrent.Downloaded = torrent.Downloaded ?? existingTorrent.Downloaded;
-            existingTorrent.DownloadedSession = torrent.DownloadedSession ?? existingTorrent.DownloadedSession;
-            existingTorrent.DownloadLimit = torrent.DownloadLimit ?? existingTorrent.DownloadLimit;
-            existingTorrent.DownloadSpeed = torrent.DownloadSpeed ?? existingTorrent.DownloadSpeed;
-            existingTorrent.EstimatedTimeOfArrival = torrent.EstimatedTimeOfArrival ?? existingTorrent.EstimatedTimeOfArrival;
-            existingTorrent.FirstLastPiecePriority = torrent.FirstLastPiecePriority ?? existingTorrent.FirstLastPiecePriority;
-            existingTorrent.ForceStart = torrent.ForceStart ?? existingTorrent.ForceStart;
-            existingTorrent.InfoHashV1 = torrent.InfoHashV1 ?? existingTorrent.InfoHashV1;
-            existingTorrent.InfoHashV2 = torrent.InfoHashV2 ?? existingTorrent.InfoHashV2;
-            existingTorrent.LastActivity = torrent.LastActivity ?? existingTorrent.LastActivity;
-            existingTorrent.MagnetUri = torrent.MagnetUri ?? existingTorrent.MagnetUri;
-            existingTorrent.MaxRatio = torrent.MaxRatio ?? existingTorrent.MaxRatio;
-            existingTorrent.MaxSeedingTime = torrent.MaxSeedingTime ?? existingTorrent.MaxSeedingTime;
-            existingTorrent.Name = torrent.Name ?? existingTorrent.Name;
-            existingTorrent.NumberComplete = torrent.NumberComplete ?? existingTorrent.NumberComplete;
-            existingTorrent.NumberIncomplete = torrent.NumberIncomplete ?? existingTorrent.NumberIncomplete;
-            existingTorrent.NumberLeeches = torrent.NumberLeeches ?? existingTorrent.NumberLeeches;
-            existingTorrent.NumberSeeds = torrent.NumberSeeds ?? existingTorrent.NumberSeeds;
-            existingTorrent.Priority = torrent.Priority ?? existingTorrent.Priority;
-            existingTorrent.Progress = torrent.Progress ?? existingTorrent.Progress;
-            existingTorrent.Ratio = torrent.Ratio ?? existingTorrent.Ratio;
-            existingTorrent.RatioLimit = torrent.RatioLimit ?? existingTorrent.RatioLimit;
-            existingTorrent.SavePath = torrent.SavePath ?? existingTorrent.SavePath;
-            existingTorrent.SeedingTime = torrent.SeedingTime ?? existingTorrent.SeedingTime;
-            existingTorrent.SeedingTimeLimit = torrent.SeedingTimeLimit ?? existingTorrent.SeedingTimeLimit;
-            existingTorrent.SeenComplete = torrent.SeenComplete ?? existingTorrent.SeenComplete;
-            existingTorrent.SequentialDownload = torrent.SequentialDownload ?? existingTorrent.SequentialDownload;
-            existingTorrent.Size = torrent.Size ?? existingTorrent.Size;
-            existingTorrent.State = torrent.State ?? existingTorrent.State;
-            existingTorrent.SuperSeeding = torrent.SuperSeeding ?? existingTorrent.SuperSeeding;
+            return new TorrentSnapshot(
+                string.IsNullOrEmpty(torrent.Category) ? null : torrent.Category,
+                torrent.Tags.ToList(),
+                torrent.Tracker ?? string.Empty,
+                torrent.State ?? string.Empty,
+                torrent.UploadSpeed);
+        }
+
+        private readonly struct TorrentSnapshot
+        {
+            public TorrentSnapshot(string? category, List<string> tags, string tracker, string state, long uploadSpeed)
+            {
+                Category = category;
+                Tags = tags;
+                Tracker = tracker;
+                State = state;
+                UploadSpeed = uploadSpeed;
+            }
+
+            public string? Category { get; }
+
+            public IReadOnlyList<string> Tags { get; }
+
+            public string Tracker { get; }
+
+            public string State { get; }
+
+            public long UploadSpeed { get; }
+        }
+
+        private static void UpdateTagStateForAddition(MainData torrentList, Torrent torrent, string hash)
+        {
+            if (torrent.Tags.Count == 0)
+            {
+                torrentList.TagState[FilterHelper.TAG_UNTAGGED].Add(hash);
+                return;
+            }
+
+            torrentList.TagState[FilterHelper.TAG_UNTAGGED].Remove(hash);
+            foreach (var tag in torrent.Tags)
+            {
+                if (string.IsNullOrEmpty(tag))
+                {
+                    continue;
+                }
+
+                GetOrCreateTagSet(torrentList, tag).Add(hash);
+            }
+        }
+
+        private static void UpdateTagStateForUpdate(MainData torrentList, string hash, IReadOnlyList<string> previousTags, IList<string> newTags)
+        {
+            UpdateTagStateForRemoval(torrentList, hash, previousTags);
+
+            if (newTags.Count == 0)
+            {
+                torrentList.TagState[FilterHelper.TAG_UNTAGGED].Add(hash);
+                return;
+            }
+
+            torrentList.TagState[FilterHelper.TAG_UNTAGGED].Remove(hash);
+            foreach (var tag in newTags)
+            {
+                if (string.IsNullOrEmpty(tag))
+                {
+                    continue;
+                }
+
+                GetOrCreateTagSet(torrentList, tag).Add(hash);
+            }
+        }
+
+        private static void UpdateTagStateForRemoval(MainData torrentList, string hash, IReadOnlyList<string> previousTags)
+        {
+            torrentList.TagState[FilterHelper.TAG_UNTAGGED].Remove(hash);
+
+            foreach (var tag in previousTags)
+            {
+                if (string.IsNullOrEmpty(tag))
+                {
+                    continue;
+                }
+
+                if (torrentList.TagState.TryGetValue(tag, out var set))
+                {
+                    set.Remove(hash);
+                }
+            }
+        }
+
+        private static void UpdateCategoryState(MainData torrentList, Torrent updatedTorrent, string hash, string? previousCategory)
+        {
+            var useSubcategories = torrentList.ServerState.UseSubcategories;
+
+            if (!string.IsNullOrEmpty(previousCategory))
+            {
+                foreach (var categoryKey in EnumerateCategoryKeys(previousCategory, useSubcategories))
+                {
+                    if (torrentList.CategoriesState.TryGetValue(categoryKey, out var set))
+                    {
+                        set.Remove(hash);
+                    }
+                }
+            }
+            else
+            {
+                torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].Remove(hash);
+            }
+
+            if (string.IsNullOrEmpty(updatedTorrent.Category))
+            {
+                torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].Add(hash);
+                return;
+            }
+
+            foreach (var categoryKey in EnumerateCategoryKeys(updatedTorrent.Category, useSubcategories))
+            {
+                GetOrCreateCategorySet(torrentList, categoryKey).Add(hash);
+            }
+        }
+
+        private static void UpdateCategoryStateForRemoval(MainData torrentList, string hash, string? previousCategory)
+        {
+            if (string.IsNullOrEmpty(previousCategory))
+            {
+                torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].Remove(hash);
+                return;
+            }
+
+            foreach (var categoryKey in EnumerateCategoryKeys(previousCategory, torrentList.ServerState.UseSubcategories))
+            {
+                if (torrentList.CategoriesState.TryGetValue(categoryKey, out var set))
+                {
+                    set.Remove(hash);
+                }
+            }
+        }
+
+        private static void UpdateStatusState(MainData torrentList, string hash, string previousState, long previousUploadSpeed, string newState, long newUploadSpeed)
+        {
+            foreach (var status in GetStatuses(torrentList.MajorVersion))
+            {
+                if (!torrentList.StatusState.TryGetValue(status.ToString(), out var statusSet))
+                {
+                    continue;
+                }
+
+                var wasMatch = FilterHelper.FilterStatus(previousState, previousUploadSpeed, status);
+                var isMatch = FilterHelper.FilterStatus(newState, newUploadSpeed, status);
+
+                if (wasMatch == isMatch)
+                {
+                    continue;
+                }
+
+                if (wasMatch)
+                {
+                    statusSet.Remove(hash);
+                }
+
+                if (isMatch)
+                {
+                    statusSet.Add(hash);
+                }
+            }
+        }
+
+        private static void UpdateTrackerState(MainData torrentList, Torrent updatedTorrent, string hash, string? previousTracker)
+        {
+            if (!string.IsNullOrEmpty(previousTracker))
+            {
+                if (torrentList.TrackersState.TryGetValue(previousTracker, out var oldSet))
+                {
+                    oldSet.Remove(hash);
+                }
+            }
+            else
+            {
+                torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Remove(hash);
+            }
+
+            var tracker = updatedTorrent.Tracker ?? string.Empty;
+            if (string.IsNullOrEmpty(tracker))
+            {
+                torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Add(hash);
+                return;
+            }
+
+            torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Remove(hash);
+            GetOrCreateTrackerSet(torrentList, tracker).Add(hash);
+        }
+
+        private static void UpdateTrackerStateForRemoval(MainData torrentList, string hash, string? previousTracker)
+        {
+            if (string.IsNullOrEmpty(previousTracker))
+            {
+                torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Remove(hash);
+                return;
+            }
+
+            if (torrentList.TrackersState.TryGetValue(previousTracker, out var trackerSet))
+            {
+                trackerSet.Remove(hash);
+            }
+        }
+
+        private static IEnumerable<string> EnumerateCategoryKeys(string category, bool useSubcategories)
+        {
+            if (string.IsNullOrEmpty(category))
+            {
+                yield break;
+            }
+
+            yield return category;
+
+            if (!useSubcategories)
+            {
+                yield break;
+            }
+
+            var current = category;
+            while (true)
+            {
+                var separatorIndex = current.LastIndexOf('/');
+                if (separatorIndex < 0)
+                {
+                    yield break;
+                }
+
+                current = current[..separatorIndex];
+                yield return current;
+            }
+        }
+
+        private static HashSet<string> GetOrCreateTagSet(MainData torrentList, string tag)
+        {
+            if (!torrentList.TagState.TryGetValue(tag, out var set))
+            {
+                set = new HashSet<string>(StringComparer.Ordinal);
+                torrentList.TagState[tag] = set;
+            }
+
+            return set;
+        }
+
+        private static HashSet<string> GetOrCreateCategorySet(MainData torrentList, string category)
+        {
+            if (!torrentList.CategoriesState.TryGetValue(category, out var set))
+            {
+                set = new HashSet<string>(StringComparer.Ordinal);
+                torrentList.CategoriesState[category] = set;
+            }
+
+            return set;
+        }
+
+        private static HashSet<string> GetOrCreateTrackerSet(MainData torrentList, string tracker)
+        {
+            if (!torrentList.TrackersState.TryGetValue(tracker, out var set))
+            {
+                set = new HashSet<string>(StringComparer.Ordinal);
+                torrentList.TrackersState[tracker] = set;
+            }
+
+            return set;
+        }
+
+        private static bool UpdateCategory(Category existingCategory, QBitTorrentClient.Models.Category category)
+        {
+            if (category.SavePath is not null && existingCategory.SavePath != category.SavePath)
+            {
+                existingCategory.SavePath = category.SavePath;
+                return true;
+            }
+
+            return false;
+        }
+
+        private readonly struct TorrentUpdateResult
+        {
+            public TorrentUpdateResult(bool dataChanged, bool filterChanged)
+            {
+                DataChanged = dataChanged;
+                FilterChanged = filterChanged;
+            }
+
+            public bool DataChanged { get; }
+
+            public bool FilterChanged { get; }
+        }
+
+        private static TorrentUpdateResult UpdateTorrent(Torrent existingTorrent, QBitTorrentClient.Models.Torrent torrent)
+        {
+            var dataChanged = false;
+            var filterChanged = false;
+
+            if (torrent.AddedOn.HasValue && existingTorrent.AddedOn != torrent.AddedOn.Value)
+            {
+                existingTorrent.AddedOn = torrent.AddedOn.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.AmountLeft.HasValue && existingTorrent.AmountLeft != torrent.AmountLeft.Value)
+            {
+                existingTorrent.AmountLeft = torrent.AmountLeft.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.AutomaticTorrentManagement.HasValue && existingTorrent.AutomaticTorrentManagement != torrent.AutomaticTorrentManagement.Value)
+            {
+                existingTorrent.AutomaticTorrentManagement = torrent.AutomaticTorrentManagement.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Availability.HasValue && existingTorrent.Availability != torrent.Availability.Value)
+            {
+                existingTorrent.Availability = torrent.Availability.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Category is not null && existingTorrent.Category != torrent.Category)
+            {
+                existingTorrent.Category = torrent.Category;
+                dataChanged = true;
+                filterChanged = true;
+            }
+
+            if (torrent.Completed.HasValue && existingTorrent.Completed != torrent.Completed.Value)
+            {
+                existingTorrent.Completed = torrent.Completed.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.CompletionOn.HasValue && existingTorrent.CompletionOn != torrent.CompletionOn.Value)
+            {
+                existingTorrent.CompletionOn = torrent.CompletionOn.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.ContentPath is not null && existingTorrent.ContentPath != torrent.ContentPath)
+            {
+                existingTorrent.ContentPath = torrent.ContentPath;
+                dataChanged = true;
+            }
+
+            if (torrent.Downloaded.HasValue && existingTorrent.Downloaded != torrent.Downloaded.Value)
+            {
+                existingTorrent.Downloaded = torrent.Downloaded.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.DownloadedSession.HasValue && existingTorrent.DownloadedSession != torrent.DownloadedSession.Value)
+            {
+                existingTorrent.DownloadedSession = torrent.DownloadedSession.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.DownloadLimit.HasValue && existingTorrent.DownloadLimit != torrent.DownloadLimit.Value)
+            {
+                existingTorrent.DownloadLimit = torrent.DownloadLimit.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.DownloadSpeed.HasValue && existingTorrent.DownloadSpeed != torrent.DownloadSpeed.Value)
+            {
+                existingTorrent.DownloadSpeed = torrent.DownloadSpeed.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.EstimatedTimeOfArrival.HasValue && existingTorrent.EstimatedTimeOfArrival != torrent.EstimatedTimeOfArrival.Value)
+            {
+                existingTorrent.EstimatedTimeOfArrival = torrent.EstimatedTimeOfArrival.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.FirstLastPiecePriority.HasValue && existingTorrent.FirstLastPiecePriority != torrent.FirstLastPiecePriority.Value)
+            {
+                existingTorrent.FirstLastPiecePriority = torrent.FirstLastPiecePriority.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.ForceStart.HasValue && existingTorrent.ForceStart != torrent.ForceStart.Value)
+            {
+                existingTorrent.ForceStart = torrent.ForceStart.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.InfoHashV1 is not null && existingTorrent.InfoHashV1 != torrent.InfoHashV1)
+            {
+                existingTorrent.InfoHashV1 = torrent.InfoHashV1;
+                dataChanged = true;
+            }
+
+            if (torrent.InfoHashV2 is not null && existingTorrent.InfoHashV2 != torrent.InfoHashV2)
+            {
+                existingTorrent.InfoHashV2 = torrent.InfoHashV2;
+                dataChanged = true;
+            }
+
+            if (torrent.LastActivity.HasValue && existingTorrent.LastActivity != torrent.LastActivity.Value)
+            {
+                existingTorrent.LastActivity = torrent.LastActivity.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.MagnetUri is not null && existingTorrent.MagnetUri != torrent.MagnetUri)
+            {
+                existingTorrent.MagnetUri = torrent.MagnetUri;
+                dataChanged = true;
+            }
+
+            if (torrent.MaxRatio.HasValue && existingTorrent.MaxRatio != torrent.MaxRatio.Value)
+            {
+                existingTorrent.MaxRatio = torrent.MaxRatio.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.MaxSeedingTime.HasValue && existingTorrent.MaxSeedingTime != torrent.MaxSeedingTime.Value)
+            {
+                existingTorrent.MaxSeedingTime = torrent.MaxSeedingTime.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Name is not null && existingTorrent.Name != torrent.Name)
+            {
+                existingTorrent.Name = torrent.Name;
+                dataChanged = true;
+                filterChanged = true;
+            }
+
+            if (torrent.NumberComplete.HasValue && existingTorrent.NumberComplete != torrent.NumberComplete.Value)
+            {
+                existingTorrent.NumberComplete = torrent.NumberComplete.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.NumberIncomplete.HasValue && existingTorrent.NumberIncomplete != torrent.NumberIncomplete.Value)
+            {
+                existingTorrent.NumberIncomplete = torrent.NumberIncomplete.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.NumberLeeches.HasValue && existingTorrent.NumberLeeches != torrent.NumberLeeches.Value)
+            {
+                existingTorrent.NumberLeeches = torrent.NumberLeeches.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.NumberSeeds.HasValue && existingTorrent.NumberSeeds != torrent.NumberSeeds.Value)
+            {
+                existingTorrent.NumberSeeds = torrent.NumberSeeds.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Priority.HasValue && existingTorrent.Priority != torrent.Priority.Value)
+            {
+                existingTorrent.Priority = torrent.Priority.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Progress.HasValue && existingTorrent.Progress != torrent.Progress.Value)
+            {
+                existingTorrent.Progress = torrent.Progress.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Ratio.HasValue && existingTorrent.Ratio != torrent.Ratio.Value)
+            {
+                existingTorrent.Ratio = torrent.Ratio.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.RatioLimit.HasValue && existingTorrent.RatioLimit != torrent.RatioLimit.Value)
+            {
+                existingTorrent.RatioLimit = torrent.RatioLimit.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.SavePath is not null && existingTorrent.SavePath != torrent.SavePath)
+            {
+                existingTorrent.SavePath = torrent.SavePath;
+                dataChanged = true;
+            }
+
+            if (torrent.SeedingTime.HasValue && existingTorrent.SeedingTime != torrent.SeedingTime.Value)
+            {
+                existingTorrent.SeedingTime = torrent.SeedingTime.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.SeedingTimeLimit.HasValue && existingTorrent.SeedingTimeLimit != torrent.SeedingTimeLimit.Value)
+            {
+                existingTorrent.SeedingTimeLimit = torrent.SeedingTimeLimit.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.SeenComplete.HasValue && existingTorrent.SeenComplete != torrent.SeenComplete.Value)
+            {
+                existingTorrent.SeenComplete = torrent.SeenComplete.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.SequentialDownload.HasValue && existingTorrent.SequentialDownload != torrent.SequentialDownload.Value)
+            {
+                existingTorrent.SequentialDownload = torrent.SequentialDownload.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Size.HasValue && existingTorrent.Size != torrent.Size.Value)
+            {
+                existingTorrent.Size = torrent.Size.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.State is not null && existingTorrent.State != torrent.State)
+            {
+                existingTorrent.State = torrent.State;
+                dataChanged = true;
+                filterChanged = true;
+            }
+
+            if (torrent.SuperSeeding.HasValue && existingTorrent.SuperSeeding != torrent.SuperSeeding.Value)
+            {
+                existingTorrent.SuperSeeding = torrent.SuperSeeding.Value;
+                dataChanged = true;
+            }
+
             if (torrent.Tags is not null)
             {
-                existingTorrent.Tags.Clear();
-                existingTorrent.Tags.AddRange(torrent.Tags);
+                var normalizedTags = torrent.Tags.Select(NormalizeTag)
+                                    .Where(static tag => !string.IsNullOrEmpty(tag))
+                                    .ToList();
+
+                if (!existingTorrent.Tags.SequenceEqual(normalizedTags))
+                {
+                    existingTorrent.Tags.Clear();
+                    existingTorrent.Tags.AddRange(normalizedTags);
+                    dataChanged = true;
+                    filterChanged = true;
+                }
             }
-            existingTorrent.TimeActive = torrent.TimeActive ?? existingTorrent.TimeActive;
-            existingTorrent.TotalSize = torrent.TotalSize ?? existingTorrent.TotalSize;
-            existingTorrent.Tracker = torrent.Tracker ?? existingTorrent.Tracker;
-            existingTorrent.UploadLimit = torrent.UploadLimit ?? existingTorrent.UploadLimit;
-            existingTorrent.Uploaded = torrent.Uploaded ?? existingTorrent.Uploaded;
-            existingTorrent.UploadedSession = torrent.UploadedSession ?? existingTorrent.UploadedSession;
-            existingTorrent.UploadSpeed = torrent.UploadSpeed ?? existingTorrent.UploadSpeed;
-            existingTorrent.Reannounce = torrent.Reannounce ?? existingTorrent.Reannounce;
-            existingTorrent.InactiveSeedingTimeLimit = torrent.InactiveSeedingTimeLimit ?? existingTorrent.InactiveSeedingTimeLimit;
-            existingTorrent.MaxInactiveSeedingTime = torrent.MaxInactiveSeedingTime ?? existingTorrent.MaxInactiveSeedingTime;
+
+            if (torrent.TimeActive.HasValue && existingTorrent.TimeActive != torrent.TimeActive.Value)
+            {
+                existingTorrent.TimeActive = torrent.TimeActive.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.TotalSize.HasValue && existingTorrent.TotalSize != torrent.TotalSize.Value)
+            {
+                existingTorrent.TotalSize = torrent.TotalSize.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Tracker is not null && existingTorrent.Tracker != torrent.Tracker)
+            {
+                existingTorrent.Tracker = torrent.Tracker;
+                dataChanged = true;
+                filterChanged = true;
+            }
+
+            if (torrent.UploadLimit.HasValue && existingTorrent.UploadLimit != torrent.UploadLimit.Value)
+            {
+                existingTorrent.UploadLimit = torrent.UploadLimit.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Uploaded.HasValue && existingTorrent.Uploaded != torrent.Uploaded.Value)
+            {
+                existingTorrent.Uploaded = torrent.Uploaded.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.UploadedSession.HasValue && existingTorrent.UploadedSession != torrent.UploadedSession.Value)
+            {
+                existingTorrent.UploadedSession = torrent.UploadedSession.Value;
+                dataChanged = true;
+            }
+
+            var previousUploadSpeed = existingTorrent.UploadSpeed;
+            if (torrent.UploadSpeed.HasValue && previousUploadSpeed != torrent.UploadSpeed.Value)
+            {
+                existingTorrent.UploadSpeed = torrent.UploadSpeed.Value;
+                dataChanged = true;
+                if ((previousUploadSpeed > 0) != (torrent.UploadSpeed.Value > 0))
+                {
+                    filterChanged = true;
+                }
+            }
+
+            if (torrent.Reannounce.HasValue && existingTorrent.Reannounce != torrent.Reannounce.Value)
+            {
+                existingTorrent.Reannounce = torrent.Reannounce.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.InactiveSeedingTimeLimit.HasValue && existingTorrent.InactiveSeedingTimeLimit != torrent.InactiveSeedingTimeLimit.Value)
+            {
+                existingTorrent.InactiveSeedingTimeLimit = torrent.InactiveSeedingTimeLimit.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.MaxInactiveSeedingTime.HasValue && existingTorrent.MaxInactiveSeedingTime != torrent.MaxInactiveSeedingTime.Value)
+            {
+                existingTorrent.MaxInactiveSeedingTime = torrent.MaxInactiveSeedingTime.Value;
+                dataChanged = true;
+            }
+
+            return new TorrentUpdateResult(dataChanged, filterChanged);
         }
 
         public Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files)
         {
-            var contents = new Dictionary<string, ContentItem>();
+            return BuildContentsTree(files);
+        }
+
+        private static Dictionary<string, ContentItem> BuildContentsTree(IReadOnlyList<QBitTorrentClient.Models.FileData> files)
+        {
+            var result = new Dictionary<string, ContentItem>();
             if (files.Count == 0)
             {
-                return contents;
+                return result;
             }
 
             var folderIndex = files.Min(f => f.Index) - 1;
+            var nodes = new Dictionary<string, ContentTreeNode>(files.Count * 2);
+            var root = new ContentTreeNode(null, null);
 
             foreach (var file in files)
             {
-                if (!file.Name.Contains(Extensions.DirectorySeparator))
+                var parent = root;
+                string? parentPath = parent.Item?.Name;
+
+                var segments = file.Name.Split(Extensions.DirectorySeparator);
+                var directoriesLength = segments.Length - 1;
+
+                for (var i = 0; i < directoriesLength; i++)
                 {
-                    contents.Add(file.Name, new ContentItem(file.Name, file.Name, file.Index, (Priority)(int)file.Priority, file.Progress, file.Size, file.Availability));
-                }
-                else
-                {
-                    var nameAndPath = file.Name.Split(Extensions.DirectorySeparator);
-                    var paths = nameAndPath[..^1];
-                    for (var i = 0; i < paths.Length; i++)
+                    var folderName = segments[i];
+                    if (folderName == ".unwanted")
                     {
-                        var directoryName = paths[i];
-                        var directoryPath = string.Join(Extensions.DirectorySeparator, paths[0..(i + 1)]);
-                        if (!contents.ContainsKey(directoryPath))
-                        {
-                            contents.Add(directoryPath, new ContentItem(directoryPath, directoryName, folderIndex--, Priority.Normal, 0, 0, 0, true, i));
-                        }
+                        continue;
                     }
 
-                    var displayName = nameAndPath[^1];
+                    var folderPath = string.IsNullOrEmpty(parentPath)
+                        ? folderName
+                        : string.Concat(parentPath, Extensions.DirectorySeparator, folderName);
 
-                    contents.Add(file.Name, new ContentItem(file.Name, displayName, file.Index, (Priority)(int)file.Priority, file.Progress, file.Size, file.Availability, false, paths.Length));
+                    if (!nodes.TryGetValue(folderPath, out var folderNode))
+                    {
+                        var level = (parent.Item?.Level ?? -1) + 1;
+                        var folderItem = new ContentItem(folderPath, folderName, folderIndex--, Priority.Normal, 0, 0, 0, true, level);
+                        folderNode = new ContentTreeNode(folderItem, parent);
+                        nodes[folderPath] = folderNode;
+                        parent.Children[folderPath] = folderNode;
+                    }
+
+                    parent = folderNode;
+                    parentPath = parent.Item!.Name;
                 }
+
+                var displayName = segments[^1];
+                var fileLevel = (parent.Item?.Level ?? -1) + 1;
+                var fileItem = new ContentItem(file.Name, displayName, file.Index, (Priority)(int)file.Priority, file.Progress, file.Size, file.Availability, false, fileLevel);
+                var fileNode = new ContentTreeNode(fileItem, parent);
+                nodes[file.Name] = fileNode;
+                parent.Children[fileItem.Name] = fileNode;
             }
 
-            var directories = contents.Where(c => c.Value.IsFolder).OrderByDescending(c => c.Value.Level);
+            var folders = nodes.Values
+                .Where(n => n.Item is not null && n.Item.IsFolder)
+                .OrderByDescending(n => n.Item!.Level)
+                .ToList();
 
-            foreach (var directory in directories)
+            foreach (var folder in folders)
             {
-                var key = directory.Key;
-                var level = directory.Value.Level;
-                var filesContents = contents.Where(c => c.Value.Name.StartsWith(key + Extensions.DirectorySeparator) && !c.Value.IsFolder).ToList();
-                var directoriesContents = contents.Where(c => c.Value.Name.StartsWith(key + Extensions.DirectorySeparator) && c.Value.IsFolder && c.Value.Level == level + 1).ToList();
-                var allContents = filesContents.Concat(directoriesContents);
-                var priorities = allContents.Select(d => d.Value.Priority).Distinct();
-                var downloadingContents = allContents.Where(c => c.Value.Priority != Priority.DoNotDownload && !c.Value.IsFolder).ToList();
-
-                long size = 0;
-                float availability = 0;
-                long downloaded = 0;
-                float progress = 0;
-                if (downloadingContents.Count != 0)
+                var folderItem = folder.Item!;
+                if (folder.Children.Count == 0)
                 {
-                    size = downloadingContents.Sum(c => c.Value.Size);
-                    availability = downloadingContents.Average(c => c.Value.Availability);
-                    downloaded = downloadingContents.Sum(c => c.Value.Downloaded);
-                    progress = (float)downloaded / size;
+                    folderItem.Size = 0;
+                    folderItem.Progress = 0;
+                    folderItem.Availability = 0;
+                    folderItem.Priority = Priority.Normal;
+                    continue;
                 }
 
-                if (!contents.TryGetValue(key, out var dir))
+                long sizeSum = 0;
+                double progressSum = 0;
+                double availabilitySum = 0;
+                var firstChild = true;
+                var aggregatedPriority = Priority.Normal;
+
+                foreach (var child in folder.Children.Values)
+                {
+                    var childItem = child.Item!;
+                    sizeSum += childItem.Size;
+
+                    if (firstChild)
+                    {
+                        aggregatedPriority = childItem.Priority;
+                        firstChild = false;
+                    }
+                    else if (aggregatedPriority != childItem.Priority)
+                    {
+                        aggregatedPriority = Priority.Mixed;
+                    }
+
+                    if (childItem.Priority != Priority.DoNotDownload)
+                    {
+                        progressSum += childItem.Progress * childItem.Size;
+                        availabilitySum += childItem.Availability * childItem.Size;
+                    }
+                }
+
+                folderItem.Size = sizeSum;
+                folderItem.Progress = sizeSum > 0 ? (float)(progressSum / sizeSum) : 0;
+                folderItem.Availability = sizeSum > 0 ? (float)(availabilitySum / sizeSum) : 0;
+                folderItem.Priority = firstChild ? Priority.Normal : aggregatedPriority;
+            }
+
+            foreach (var node in nodes.Values)
+            {
+                if (node.Item is null)
                 {
                     continue;
                 }
-                dir.Availability = availability;
-                dir.Size = size;
-                dir.Progress = progress;
-                if (priorities.Count() == 1)
+
+                result[node.Item.Name] = node.Item;
+            }
+
+            return result;
+        }
+
+        private static bool UpdateContentItem(ContentItem destination, ContentItem source)
+        {
+            const float floatTolerance = 0.0001f;
+            var changed = false;
+
+            if (destination.Priority != source.Priority)
+            {
+                destination.Priority = source.Priority;
+                changed = true;
+            }
+
+            if (System.Math.Abs(destination.Progress - source.Progress) > floatTolerance)
+            {
+                destination.Progress = source.Progress;
+                changed = true;
+            }
+
+            if (destination.Size != source.Size)
+            {
+                destination.Size = source.Size;
+                changed = true;
+            }
+
+            if (System.Math.Abs(destination.Availability - source.Availability) > floatTolerance)
+            {
+                destination.Availability = source.Availability;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private struct DirectoryAccumulator
+        {
+            public long TotalSize { get; private set; }
+
+            private long _activeSize;
+            private double _progressSum;
+            private double _availabilitySum;
+            private Priority? _priority;
+            private bool _mixedPriority;
+
+            public void Add(Priority priority, float progress, long size, float availability)
+            {
+                TotalSize += size;
+
+                if (priority != Priority.DoNotDownload)
                 {
-                    dir.Priority = priorities.First();
+                    _activeSize += size;
+                    _progressSum += progress * size;
+                    _availabilitySum += availability * size;
                 }
-                else
+
+                if (!_priority.HasValue)
                 {
-                    dir.Priority = Priority.Mixed;
+                    _priority = priority;
+                }
+                else if (_priority.Value != priority)
+                {
+                    _mixedPriority = true;
                 }
             }
 
-            return contents;
+            public Priority ResolvePriority()
+            {
+                if (_mixedPriority)
+                {
+                    return Priority.Mixed;
+                }
+
+                return _priority ?? Priority.Normal;
+            }
+
+            public float ResolveProgress()
+            {
+                if (_activeSize == 0 || TotalSize == 0)
+                {
+                    return 0f;
+                }
+
+                var value = _progressSum / _activeSize;
+                if (value < 0)
+                {
+                    return 0f;
+                }
+
+                if (value > 1)
+                {
+                    return 1f;
+                }
+
+                return (float)value;
+            }
+
+            public float ResolveAvailability()
+            {
+                if (_activeSize == 0 || TotalSize == 0)
+                {
+                    return 0f;
+                }
+
+                return (float)(_availabilitySum / _activeSize);
+            }
+        }
+
+        private sealed class ContentTreeNode
+        {
+            public ContentTreeNode(ContentItem? item, ContentTreeNode? parent)
+            {
+                Item = item;
+                Parent = parent;
+                Children = new Dictionary<string, ContentTreeNode>();
+            }
+
+            public ContentItem? Item { get; }
+
+            public ContentTreeNode? Parent { get; }
+
+            public Dictionary<string, ContentTreeNode> Children { get; }
         }
 
         public QBitTorrentClient.Models.UpdatePreferences MergePreferences(QBitTorrentClient.Models.UpdatePreferences? original, QBitTorrentClient.Models.UpdatePreferences changed)
@@ -1122,24 +1985,120 @@ namespace Lantean.QBTMud.Services
             return original;
         }
 
-        public void MergeContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files, Dictionary<string, ContentItem> contents)
+        public bool MergeContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files, Dictionary<string, ContentItem> contents)
         {
-            var contentsList = CreateContentsList(files);
-
-            foreach (var (key, value) in contentsList)
+            if (files.Count == 0)
             {
-                if (contents.TryGetValue(key, out var content))
+                if (contents.Count == 0)
                 {
-                    content.Availability = value.Availability;
-                    content.Priority = value.Priority;
-                    content.Progress = value.Progress;
-                    content.Size = value.Size;
+                    return false;
+                }
+
+                contents.Clear();
+                return true;
+            }
+
+            var hasChanges = false;
+            var seenPaths = new HashSet<string>(files.Count * 2);
+            var directoryAccumulators = new Dictionary<string, DirectoryAccumulator>();
+
+            var minExistingIndex = contents.Count == 0
+                ? int.MaxValue
+                : contents.Values.Min(c => c.Index);
+            var minFileIndex = files.Min(f => f.Index);
+            var nextFolderIndex = System.Math.Min(minExistingIndex, minFileIndex) - 1;
+
+            foreach (var file in files)
+            {
+                var priority = (Priority)(int)file.Priority;
+                var pathSegments = file.Name.Split(Extensions.DirectorySeparator);
+                var level = pathSegments.Length - 1;
+                var displayName = pathSegments[^1];
+                var filePath = file.Name;
+                seenPaths.Add(filePath);
+
+                if (contents.TryGetValue(filePath, out var existingFile))
+                {
+                    var updatedFile = new ContentItem(filePath, displayName, file.Index, priority, file.Progress, file.Size, file.Availability, false, level);
+                    if (UpdateContentItem(existingFile, updatedFile))
+                    {
+                        hasChanges = true;
+                    }
                 }
                 else
                 {
-                    contents[key] = value;
+                    var newFile = new ContentItem(filePath, displayName, file.Index, priority, file.Progress, file.Size, file.Availability, false, level);
+                    contents[filePath] = newFile;
+                    hasChanges = true;
+                }
+
+                string directoryPath = string.Empty;
+                for (var i = 0; i < level; i++)
+                {
+                    var segment = pathSegments[i];
+                    if (segment == ".unwanted")
+                    {
+                        continue;
+                    }
+
+                    directoryPath = string.IsNullOrEmpty(directoryPath)
+                        ? segment
+                        : string.Concat(directoryPath, Extensions.DirectorySeparator, segment);
+
+                    seenPaths.Add(directoryPath);
+
+                    if (!contents.TryGetValue(directoryPath, out var directoryItem))
+                    {
+                        var newDirectory = new ContentItem(directoryPath, segment, nextFolderIndex--, Priority.Normal, 0, 0, 0, true, i);
+                        contents[directoryPath] = newDirectory;
+                        hasChanges = true;
+                    }
+
+                    if (!directoryAccumulators.TryGetValue(directoryPath, out var accumulator))
+                    {
+                        accumulator = new DirectoryAccumulator();
+                    }
+
+                    accumulator.Add(priority, file.Progress, file.Size, file.Availability);
+                    directoryAccumulators[directoryPath] = accumulator;
                 }
             }
+
+            var keysToRemove = contents.Keys.Where(key => !seenPaths.Contains(key)).ToList();
+            if (keysToRemove.Count != 0)
+            {
+                hasChanges = true;
+                foreach (var key in keysToRemove)
+                {
+                    contents.Remove(key);
+                }
+            }
+
+            foreach (var (directoryPath, accumulator) in directoryAccumulators)
+            {
+                if (!contents.TryGetValue(directoryPath, out var directoryItem))
+                {
+                    continue;
+                }
+
+                var updatedDirectory = new ContentItem(
+                    directoryPath,
+                    directoryItem.DisplayName,
+                    directoryItem.Index,
+                    accumulator.ResolvePriority(),
+                    accumulator.ResolveProgress(),
+                    accumulator.TotalSize,
+                    accumulator.ResolveAvailability(),
+                    true,
+                    directoryItem.Level);
+
+                if (UpdateContentItem(directoryItem, updatedDirectory))
+                {
+                    hasChanges = true;
+                }
+            }
+
+            return hasChanges;
         }
 
         public RssList CreateRssList(IReadOnlyDictionary<string, QBitTorrentClient.Models.RssItem> rssItems)

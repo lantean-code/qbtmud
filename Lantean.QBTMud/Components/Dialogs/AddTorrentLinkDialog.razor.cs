@@ -18,7 +18,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
         [CascadingParameter]
-        IMudDialogInstance MudDialog { get; set; } = default!;
+        private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         public string? Url { get; set; }

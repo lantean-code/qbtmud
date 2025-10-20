@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Components
 
         protected TorrentTracker? SelectedItem { get; set; }
 
-        protected ContextMenu? ContextMenu { get; set; }
+        protected MudMenu? ContextMenu { get; set; }
 
         protected DynamicTable<TorrentTracker>? Table { get; set; }
 
@@ -148,7 +148,9 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ContextMenu.ToggleMenuAsync(eventArgs);
+            var normalizedEventArgs = eventArgs.NormalizeForContextMenu();
+
+            await ContextMenu.OpenMenuAsync(normalizedEventArgs);
         }
 
         protected void SelectedItemChanged(TorrentTracker torrentTracker)

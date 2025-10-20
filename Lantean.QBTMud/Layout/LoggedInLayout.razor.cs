@@ -52,22 +52,36 @@ namespace Lantean.QBTMud.Layout
 
         protected string? SearchText { get; set; }
 
-        protected IEnumerable<Torrent> Torrents => GetTorrents();
+        protected IReadOnlyList<Torrent> Torrents => GetTorrents();
 
         protected bool IsAuthenticated { get; set; }
 
         protected bool LostConnection { get; set; }
 
-        private List<Torrent> GetTorrents()
+        private IReadOnlyList<Torrent> _visibleTorrents = Array.Empty<Torrent>();
+
+        private bool _torrentsDirty = true;
+        private int _torrentsVersion;
+
+        private IReadOnlyList<Torrent> GetTorrents()
         {
+            if (!_torrentsDirty)
+            {
+                return _visibleTorrents;
+            }
+
             if (MainData is null)
             {
-                return [];
+                _visibleTorrents = Array.Empty<Torrent>();
+                _torrentsDirty = false;
+                return _visibleTorrents;
             }
 
             var filterState = new FilterState(Category, Status, Tag, Tracker, MainData.ServerState.UseSubcategories, SearchText);
+            _visibleTorrents = MainData.Torrents.Values.Filter(filterState).ToList();
+            _torrentsDirty = false;
 
-            return MainData.Torrents.Values.Filter(filterState).ToList();
+            return _visibleTorrents;
         }
 
         protected override async Task OnInitializedAsync()
@@ -84,6 +98,7 @@ namespace Lantean.QBTMud.Layout
             Version = await ApiClient.GetApplicationVersion();
             var data = await ApiClient.GetMainData(_requestId);
             MainData = DataManager.CreateMainData(data, Version);
+            MarkTorrentsDirty();
 
             _requestId = data.ResponseId;
             _refreshInterval = MainData.ServerState.RefreshInterval;
@@ -126,32 +141,51 @@ namespace Lantean.QBTMud.Layout
                             return;
                         }
 
+                        var shouldRender = false;
+
                         if (MainData is null || data.FullUpdate)
                         {
                             MainData = DataManager.CreateMainData(data, Version);
+                            MarkTorrentsDirty();
+                            shouldRender = true;
                         }
                         else
                         {
-                            DataManager.MergeMainData(data, MainData);
+                            var dataChanged = DataManager.MergeMainData(data, MainData, out var filterChanged);
+                            if (filterChanged)
+                            {
+                                MarkTorrentsDirty();
+                            }
+                            else if (dataChanged)
+                            {
+                                IncrementTorrentsVersion();
+                            }
+                            shouldRender = dataChanged;
                         }
 
-                        _refreshInterval = MainData.ServerState.RefreshInterval;
+                        if (MainData is not null)
+                        {
+                            _refreshInterval = MainData.ServerState.RefreshInterval;
+                        }
                         _requestId = data.ResponseId;
-                        await InvokeAsync(StateHasChanged);
+                        if (shouldRender)
+                        {
+                            await InvokeAsync(StateHasChanged);
+                        }
                     }
                 }
             }
         }
 
-        protected EventCallback<string> CategoryChanged => EventCallback.Factory.Create<string>(this, category => Category = category);
+        protected EventCallback<string> CategoryChanged => EventCallback.Factory.Create<string>(this, OnCategoryChanged);
 
-        protected EventCallback<Status> StatusChanged => EventCallback.Factory.Create<Status>(this, status => Status = status);
+        protected EventCallback<Status> StatusChanged => EventCallback.Factory.Create<Status>(this, OnStatusChanged);
 
-        protected EventCallback<string> TagChanged => EventCallback.Factory.Create<string>(this, tag => Tag = tag);
+        protected EventCallback<string> TagChanged => EventCallback.Factory.Create<string>(this, OnTagChanged);
 
-        protected EventCallback<string> TrackerChanged => EventCallback.Factory.Create<string>(this, tracker => Tracker = tracker);
+        protected EventCallback<string> TrackerChanged => EventCallback.Factory.Create<string>(this, OnTrackerChanged);
 
-        protected EventCallback<string> SearchTermChanged => EventCallback.Factory.Create<string>(this, term => SearchText = term);
+        protected EventCallback<string> SearchTermChanged => EventCallback.Factory.Create<string>(this, OnSearchTermChanged);
 
         protected EventCallback<string> SortColumnChanged => EventCallback.Factory.Create<string>(this, columnId => SortColumn = columnId);
 
@@ -159,12 +193,81 @@ namespace Lantean.QBTMud.Layout
 
         protected static (string, Color) GetConnectionIcon(string? status)
         {
-            if (status is null)
+            return status switch
             {
-                return (Icons.Material.Outlined.SignalWifiOff, Color.Warning);
+                "firewalled" => (Icons.Material.Outlined.SignalWifiStatusbarConnectedNoInternet4, Color.Warning),
+                "connected" => (Icons.Material.Outlined.SignalWifi4Bar, Color.Success),
+                _ => (Icons.Material.Outlined.SignalWifiOff, Color.Error),
+            };
+        }
+
+        private void OnCategoryChanged(string category)
+        {
+            if (Category == category)
+            {
+                return;
             }
 
-            return (Icons.Material.Outlined.SignalWifi4Bar, Color.Success);
+            Category = category;
+            MarkTorrentsDirty();
+        }
+
+        private void OnStatusChanged(Status status)
+        {
+            if (Status == status)
+            {
+                return;
+            }
+
+            Status = status;
+            MarkTorrentsDirty();
+        }
+
+        private void OnTagChanged(string tag)
+        {
+            if (Tag == tag)
+            {
+                return;
+            }
+
+            Tag = tag;
+            MarkTorrentsDirty();
+        }
+
+        private void OnTrackerChanged(string tracker)
+        {
+            if (Tracker == tracker)
+            {
+                return;
+            }
+
+            Tracker = tracker;
+            MarkTorrentsDirty();
+        }
+
+        private void OnSearchTermChanged(string term)
+        {
+            if (SearchText == term)
+            {
+                return;
+            }
+
+            SearchText = term;
+            MarkTorrentsDirty();
+        }
+
+        private void MarkTorrentsDirty()
+        {
+            _torrentsDirty = true;
+            IncrementTorrentsVersion();
+        }
+
+        private void IncrementTorrentsVersion()
+        {
+            unchecked
+            {
+                _torrentsVersion++;
+            }
         }
 
         protected virtual void Dispose(bool disposing)

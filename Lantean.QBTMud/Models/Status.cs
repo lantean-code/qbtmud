@@ -16,6 +16,5 @@
         StalledDownloading,
         Checking,
         Errored,
-        
     }
 }

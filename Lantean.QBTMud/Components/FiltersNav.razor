@@ -1,8 +1,8 @@
-﻿<ContextMenu @ref="StatusContextMenu" Dense="true" AdjustmentY="-60"> 
+﻿<MudMenu @ref="StatusContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable"> 
     @TorrentControls(_statusType)
-</ContextMenu>
+</MudMenu>
 
-<ContextMenu @ref="CategoryContextMenu" Dense="true" AdjustmentY="-60">
+<MudMenu @ref="CategoryContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddCategory">Add category</MudMenuItem>
     @if (IsCategoryTarget)
     {
@@ -12,9 +12,9 @@
     <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedCategories">Remove unused categories</MudMenuItem>
     <MudDivider />
     @TorrentControls(_categoryType)
-</ContextMenu>
+</MudMenu>
 
-<ContextMenu @ref="TagContextMenu" Dense="true" AdjustmentY="-60">
+<MudMenu @ref="TagContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddTag">Add tag</MudMenuItem>
     @if (IsTagTarget)
     {
@@ -23,13 +23,13 @@
     <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedTags">Remove unused tags</MudMenuItem>
     <MudDivider />
     @TorrentControls(_tagType)
-</ContextMenu>
+</MudMenu>
 
-<ContextMenu @ref="TrackerContextMenu" Dense="true" AdjustmentY="-60">
+<MudMenu @ref="TrackerContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedCategories">Remove tracker</MudMenuItem>
     <MudDivider />
     @TorrentControls(_trackerType)
-</ContextMenu>
+</MudMenu>
 
 <MudNavMenu Dense="true">
     <MudNavGroup Title="Status" @bind-Expanded="_statusExpanded">

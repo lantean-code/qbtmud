@@ -4,7 +4,7 @@
     {
         public bool IsWatchedFolder { get; set; }
 
-        public bool IsDefaltFolder { get; set; }
+        public bool IsDefaultFolder { get; set; }
 
         public string? SavePath { get; set; }
 
@@ -23,7 +23,7 @@
                 {
                     return new SaveLocation
                     {
-                        IsDefaltFolder = true
+                        IsDefaultFolder = true
                     };
                 }
             }
@@ -40,7 +40,7 @@
                 {
                     return new SaveLocation
                     {
-                        IsDefaltFolder = true
+                        IsDefaultFolder = true
                     };
                 }
                 else
@@ -61,7 +61,7 @@
             {
                 return 0;
             }
-            else if (IsDefaltFolder)
+            else if (IsDefaultFolder)
             {
                 return 1;
             }

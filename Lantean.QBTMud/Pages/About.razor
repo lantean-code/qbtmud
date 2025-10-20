@@ -1,18 +1,22 @@
 ﻿@page "/about"
 @layout OtherLayout
 
-<MudToolBar Gutters="false" Dense="true">
-    @if (!DrawerOpen)
-    {
-        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
-        <MudDivider Vertical="true" />
-    }
-    <MudText Class="px-5 no-wrap">About</MudText>
-</MudToolBar>
+<div class="content-panel">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudDivider Vertical="true" />
+            }
+            <MudText Class="px-5 no-wrap">About</MudText>
+        </MudToolBar>
+    </div>
 
-<MudTabs Elevation="2" ApplyEffectsToContainer="true">
-    <MudTabPanel Text="About">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3">
+    <div class="content-panel__body">
+        <MudTabs Elevation="2" ApplyEffectsToContainer="true">
+            <MudTabPanel Text="About">
+                <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 content-panel__container options-tab-contents">
             <MudGrid Class="mt-0 mb-4">
                 <MudItem xs="12" sm="3" md="2" lg="2" xl="1" Class="d-flex justify-center">
                     <MudImage Src="images/mascot.png" Alt="Mascot" Class="ma-6"
@@ -60,7 +64,7 @@
         </MudContainer>
     </MudTabPanel>
     <MudTabPanel Text="Authors">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 options-tab-contents">
             <MudText Typo="Typo.h5" Class="py-1">Current maintainer</MudText>
 
             <MudGrid Class="mt-0 mb-4">
@@ -108,7 +112,7 @@
         </MudContainer>
     </MudTabPanel>
     <MudTabPanel Text="Special Thanks">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 options-tab-contents">
             <MudText Typo="Typo.body1" Class="py-1">I would first like to thank sourceforge.net for hosting qBittorrent project and for their support.</MudText>
             <MudText Typo="Typo.body1" Class="py-1">I am pleased that people from all over the world are contributing to qBittorrent: Ishan Arora (India), Arnaud Demaizière (France) and Stephanos Antaris (Greece). Their help is greatly appreciated</MudText>
             <MudText Typo="Typo.body1" Class="py-1">I also want to thank Στέφανος Αντάρης (santaris@csd.auth.gr) and Mirco Chinelli (infinity89@fastwebmail.it) for working on Mac OS X packaging.</MudText>
@@ -118,7 +122,7 @@
         </MudContainer>
     </MudTabPanel>
     <MudTabPanel Text="Translators">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 options-tab-contents">
             <MudText Typo="Typo.body1" Class="py-1">
                 I would like to thank the people who volunteered to Circle qBittorrent.<br>
                 Most of them Circled via <MudLink Target="https://www.transifex.com/sledgehammer999/qbittorrent/" Href="https://www.transifex.com/sledgehammer999/qbittorrent/">Transifex</MudLink> and some of them are mentioned below:<br>
@@ -168,7 +172,7 @@
         </MudContainer>
     </MudTabPanel>
     <MudTabPanel Text="Licence">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 options-tab-contents">
             <MudText Typo="Typo.body1" Class="py-1">
                 The qBittorrent source code is licensed under the GNU General Public License, version 2 or (at your option) any later version (GPLv2+).
                 However, this binary distribution is licensed under GNU General Public License, version 3 or (at your option) any later version (GPLv3+),
@@ -1061,7 +1065,7 @@
         </MudContainer>
     </MudTabPanel>
     <MudTabPanel Text="Software Used">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 mb-3">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 mb-3 options-tab-contents">
             <MudText Typo="Typo.body1" Class="py-1">qBittorrent was built with the following libraries:</MudText>
 
             <MudGrid Class="mt-1 mb-4">
@@ -1105,3 +1109,5 @@
         </MudContainer>
     </MudTabPanel>
 </MudTabs>
+    </div>
+</div>

@@ -27,7 +27,7 @@ namespace Lantean.QBitTorrentClient.Converters
             {
                 writer.WriteNumberValue(0);
             }
-            else if (value.IsDefaltFolder)
+            else if (value.IsDefaultFolder)
             {
                 writer.WriteNumberValue(1);
             }

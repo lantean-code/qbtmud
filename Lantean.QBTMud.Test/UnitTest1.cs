@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient;
+﻿using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using System.Linq.Expressions;
 using System.Text.Json;

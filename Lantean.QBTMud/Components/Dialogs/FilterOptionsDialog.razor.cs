@@ -11,7 +11,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private static readonly IReadOnlyList<PropertyInfo> _properties = typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
         [CascadingParameter]
-        IMudDialogInstance MudDialog { get; set; } = default!;
+        private IMudDialogInstance MudDialog { get; set; } = default!;
 
         protected IReadOnlyList<PropertyInfo> Columns => _properties;
 

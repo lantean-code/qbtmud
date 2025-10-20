@@ -1,6 +1,5 @@
 ﻿using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
-using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
@@ -69,13 +68,13 @@ namespace Lantean.QBTMud.Components
 
         protected Dictionary<string, int> Statuses => GetStatuses();
 
-        protected ContextMenu? StatusContextMenu { get; set; }
+        protected MudMenu? StatusContextMenu { get; set; }
 
-        protected ContextMenu? CategoryContextMenu { get; set; }
+        protected MudMenu? CategoryContextMenu { get; set; }
 
-        protected ContextMenu? TagContextMenu { get; set; }
+        protected MudMenu? TagContextMenu { get; set; }
 
-        protected ContextMenu? TrackerContextMenu { get; set; }
+        protected MudMenu? TrackerContextMenu { get; set; }
 
         protected string? ContextMenuStatus { get; set; }
 
@@ -154,7 +153,9 @@ namespace Lantean.QBTMud.Components
 
             ContextMenuStatus = value;
 
-            return StatusContextMenu.OpenMenuAsync(args);
+            var normalizedArgs = args.NormalizeForContextMenu();
+
+            return StatusContextMenu.OpenMenuAsync(normalizedArgs);
         }
 
         protected async Task CategoryValueChanged(string value)
@@ -192,7 +193,9 @@ namespace Lantean.QBTMud.Components
             IsCategoryTarget = value != FilterHelper.CATEGORY_ALL && value != FilterHelper.CATEGORY_UNCATEGORIZED;
             ContextMenuCategory = value;
 
-            return CategoryContextMenu.OpenMenuAsync(args);
+            var normalizedArgs = args.NormalizeForContextMenu();
+
+            return CategoryContextMenu.OpenMenuAsync(normalizedArgs);
         }
 
         protected async Task TagValueChanged(string value)
@@ -230,7 +233,9 @@ namespace Lantean.QBTMud.Components
             IsTagTarget = value != FilterHelper.TAG_ALL && value != FilterHelper.TAG_UNTAGGED;
             ContextMenuTag = value;
 
-            return TagContextMenu.OpenMenuAsync(args);
+            var normalizedArgs = args.NormalizeForContextMenu();
+
+            return TagContextMenu.OpenMenuAsync(normalizedArgs);
         }
 
         protected async Task TrackerValueChanged(string value)
@@ -267,7 +272,9 @@ namespace Lantean.QBTMud.Components
 
             ContextMenuTracker = value;
 
-            return TrackerContextMenu.OpenMenuAsync(args);
+            var normalizedArgs = args.NormalizeForContextMenu();
+
+            return TrackerContextMenu.OpenMenuAsync(normalizedArgs);
         }
 
         protected async Task AddCategory()
