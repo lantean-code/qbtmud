@@ -194,9 +194,9 @@ code {
     height: 100%;
 }
 
-.content-panel__body > .mud-tabs { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.content-panel__body > .mud-tabs .mud-tabs-panels { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.content-panel__body > .mud-tabs .mud-tab-panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.content-panel__body > .mud-tabs { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding-top: 0; margin-top: 0; }
+.content-panel__body > .mud-tabs .mud-tabs-tabbar { margin-bottom: 0; }
+.content-panel__body > .mud-tabs .mud-tabs-panels { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding-top: 0; margin-top: -1px; border-top: none; }
 .content-panel__body > .mud-tabs .mud-tab-panel > .mud-tab-panel-content { flex: 1 1 auto; min-height: 0; overflow: auto; }
 
 .torrent-list .mud-table-container,
@@ -390,3 +390,17 @@ body {
     }
 }
 
+
+/* Tab bar gap fix */
+.content-panel__body > .mud-tabs .mud-tabs-tabbar {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom-width: 0;
+}
+
+.content-panel__body > .mud-tabs .mud-tabs-tabbar .mud-tabs-wrapper {
+    margin-bottom: -1px;
+}
+.content-panel__body > .mud-tabs .mud-tabs-tabbar .mud-tabs-slider {
+    bottom: 0;
+}
