@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Components
 
         private DynamicTable<ContentItem>? Table { get; set; }
 
-        private ContextMenu? ContextMenu { get; set; }
+        private MudMenu? ContextMenu { get; set; }
 
         public FilesTab()
         {

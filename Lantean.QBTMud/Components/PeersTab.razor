@@ -1,10 +1,10 @@
-﻿<ContextMenu @ref="ContextMenu" Dense="true">
+﻿<MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true">
     <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddPeer">Add peer</MudMenuItem>
     @if (ContextMenuItem is not null)
     {
         <MudMenuItem Icon="@Icons.Material.Filled.DisabledByDefault" IconColor="Color.Info" OnClick="BanPeerContextMenu">Ban peer</MudMenuItem>
     }
-</ContextMenu>
+</MudMenu>
 
 <MudToolBar Gutters="false" Dense="true">
     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddPeer">Add peer</MudIconButton>

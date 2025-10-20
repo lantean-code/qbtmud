@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Components
 
         protected Peer? SelectedItem { get; set; }
 
-        protected ContextMenu? ContextMenu { get; set; }
+        protected MudMenu? ContextMenu { get; set; }
 
         protected DynamicTable<Peer>? Table { get; set; }
 
@@ -153,7 +153,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ContextMenu.ToggleMenuAsync(eventArgs);
+            await ContextMenu.OpenMenuAsync(eventArgs);
         }
 
         protected void SelectedItemChanged(Peer peer)

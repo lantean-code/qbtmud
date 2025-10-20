@@ -69,13 +69,13 @@ namespace Lantean.QBTMud.Components
 
         protected Dictionary<string, int> Statuses => GetStatuses();
 
-        protected ContextMenu? StatusContextMenu { get; set; }
+        protected MudMenu? StatusContextMenu { get; set; }
 
-        protected ContextMenu? CategoryContextMenu { get; set; }
+        protected MudMenu? CategoryContextMenu { get; set; }
 
-        protected ContextMenu? TagContextMenu { get; set; }
+        protected MudMenu? TagContextMenu { get; set; }
 
-        protected ContextMenu? TrackerContextMenu { get; set; }
+        protected MudMenu? TrackerContextMenu { get; set; }
 
         protected string? ContextMenuStatus { get; set; }
 

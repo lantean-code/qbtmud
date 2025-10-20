@@ -1,4 +1,4 @@
-﻿<ContextMenu @ref="ContextMenu" Dense="true">
+﻿<MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true">
     <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddTracker">Add trackers</MudMenuItem>
     @if (ContextMenuItem is not null)
     {
@@ -6,7 +6,7 @@
         <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveTrackerContextMenu">Remove tracker</MudMenuItem>
         <MudMenuItem Icon="@Icons.Material.Filled.FolderCopy" IconColor="Color.Info" OnClick="CopyTrackerUrlContextMenu">Copy tracker url</MudMenuItem>
     }
-</ContextMenu>
+</MudMenu>
 
 <MudToolBar Gutters="false" Dense="true">
     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddTracker">Add trackers</MudIconButton>

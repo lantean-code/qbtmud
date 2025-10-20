@@ -68,7 +68,7 @@ namespace Lantean.QBTMud.Pages
 
         protected Torrent? ContextMenuItem { get; set; }
 
-        protected ContextMenu? ContextMenu { get; set; }
+        protected MudMenu? ContextMenu { get; set; }
 
         private object? _lastRenderedTorrents;
         private QBitTorrentClient.Models.Preferences? _lastPreferences;
@@ -272,7 +272,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            await ContextMenu.ToggleMenuAsync(eventArgs);
+            await ContextMenu.OpenMenuAsync(eventArgs);
         }
 
         protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions.Where(c => c.Id != "#" || Preferences?.QueueingEnabled == true);

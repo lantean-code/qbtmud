@@ -1,11 +1,11 @@
 ﻿@page "/"
 @layout ListLayout
 
-<ContextMenu @ref="ContextMenu" Dense="true" RelativeWidth="DropdownWidth.Ignore" AdjustmentX="-242" AdjustmentY="0">
+<MudMenu @ref="ContextMenu" Dense="true" RelativeWidth="DropdownWidth.Ignore" PositionAtCursor="true">
     <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" OnClick="ShowTorrentContextMenu">View torrent details</MudMenuItem>
     <MudDivider />
     <TorrentActions RenderType="RenderType.MenuItems" Hashes="GetContextMenuTargetHashes()" PrimaryHash="@(ContextMenuItem?.Hash)" Torrents="MainData.Torrents" Preferences="Preferences" />
-</ContextMenu>
+</MudMenu>
 
 <div style="overflow-x: auto; white-space: nowrap; width: 100%;">
 <MudToolBar Gutters="false" Dense="true">
