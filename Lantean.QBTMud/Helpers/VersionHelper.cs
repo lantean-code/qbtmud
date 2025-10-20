@@ -1,5 +1,4 @@
-﻿
-namespace Lantean.QBTMud.Helpers
+﻿namespace Lantean.QBTMud.Helpers
 {
     internal static class VersionHelper
     {

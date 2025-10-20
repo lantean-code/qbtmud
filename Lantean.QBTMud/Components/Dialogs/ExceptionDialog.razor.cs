@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class ExceptionDialog
     {
         [CascadingParameter]
-        IMudDialogInstance MudDialog { get; set; } = default!;
+        private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         public Exception? Exception { get; set; }

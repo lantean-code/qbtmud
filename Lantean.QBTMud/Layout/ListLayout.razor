@@ -1,11 +1,13 @@
 ﻿@inherits LayoutComponentBase
 @layout LoggedInLayout
 
-<MudDrawer Open="DrawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Overlay="false">
-    <FiltersNav CategoryChanged="CategoryChanged" StatusChanged="StatusChanged" TagChanged="TagChanged" TrackerChanged="TrackerChanged"  />
-</MudDrawer>
-<MudMainContent>
-    <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
-    @Body
-    </CascadingValue>
-</MudMainContent>
+<div class="app-shell__body">
+    <MudDrawer Open="DrawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Overlay="false" Class="app-shell__sidebar">
+        <FiltersNav CategoryChanged="CategoryChanged" StatusChanged="StatusChanged" TagChanged="TagChanged" TrackerChanged="TrackerChanged" />
+    </MudDrawer>
+    <MudMainContent Class="app-shell__main">
+        <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
+            @Body
+        </CascadingValue>
+    </MudMainContent>
+</div>

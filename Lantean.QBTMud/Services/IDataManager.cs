@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Services
 
         Torrent CreateTorrent(string hash, QBitTorrentClient.Models.Torrent torrent);
 
-        void MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList);
+        bool MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList, out bool filterChanged);
 
         PeerList CreatePeerList(QBitTorrentClient.Models.TorrentPeers torrentPeers);
 
@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Services
 
         Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files);
 
-        void MergeContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files, Dictionary<string, ContentItem> contents);
+        bool MergeContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files, Dictionary<string, ContentItem> contents);
 
         QBitTorrentClient.Models.UpdatePreferences MergePreferences(QBitTorrentClient.Models.UpdatePreferences? original, QBitTorrentClient.Models.UpdatePreferences changed);
 

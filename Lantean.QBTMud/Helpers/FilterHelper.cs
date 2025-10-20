@@ -128,6 +128,7 @@ namespace Lantean.QBTMud.Helpers
                     }
 
                     return true;
+
                 default:
                     if (string.IsNullOrEmpty(torrent.Category))
                     {

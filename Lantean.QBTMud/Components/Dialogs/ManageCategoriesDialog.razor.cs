@@ -14,7 +14,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IDialogService DialogService { get; set; } = default!;
 
         [CascadingParameter]
-        IMudDialogInstance MudDialog { get; set; } = default!;
+        private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         public IEnumerable<string> Hashes { get; set; } = [];

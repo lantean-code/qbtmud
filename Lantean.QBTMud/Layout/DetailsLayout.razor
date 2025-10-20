@@ -1,9 +1,11 @@
 ﻿@inherits LayoutComponentBase
 @layout LoggedInLayout
 
-<MudDrawer Open="DrawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Overlay="false">
-    <TorrentsListNav Torrents="Torrents" SelectedTorrent="@SelectedTorrent" SortDirection="SortDirection" SortColumn="@SortColumn" />
-</MudDrawer>
-<MudMainContent>
-    @Body
-</MudMainContent>
+<div class="app-shell__body">
+    <MudDrawer Open="DrawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2" Overlay="false" Class="app-shell__sidebar">
+        <TorrentsListNav Torrents="Torrents" SelectedTorrent="@SelectedTorrent" SortDirection="SortDirection" SortColumn="@SortColumn" />
+    </MudDrawer>
+    <MudMainContent Class="app-shell__main">
+        @Body
+    </MudMainContent>
+</div>

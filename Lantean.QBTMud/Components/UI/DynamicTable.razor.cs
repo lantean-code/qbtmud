@@ -81,6 +81,8 @@ namespace Lantean.QBTMud.Components.UI
 
         protected HashSet<string> SelectedColumns { get; set; } = [];
 
+        private static readonly IReadOnlyList<ColumnDefinition<T>> EmptyColumns = Array.Empty<ColumnDefinition<T>>();
+
         private Dictionary<string, int?> _columnWidths = [];
 
         private Dictionary<string, int> _columnOrder = [];
@@ -89,7 +91,15 @@ namespace Lantean.QBTMud.Components.UI
 
         private SortDirection _sortDirection;
 
+        private DateTimeOffset? _suppressRowClickUntil;
+
         private readonly Dictionary<string, TdExtended> _tds = [];
+
+        private IReadOnlyList<ColumnDefinition<T>> _visibleColumns = EmptyColumns;
+
+        private bool _columnsDirty = true;
+
+        private IEnumerable<ColumnDefinition<T>>? _lastColumnDefinitions;
 
         protected override async Task OnInitializedAsync()
         {
@@ -109,6 +119,13 @@ namespace Lantean.QBTMud.Components.UI
                 SelectedColumns = selectedColumns;
                 await SelectedColumnsChanged.InvokeAsync(SelectedColumns);
             }
+            else
+            {
+                SelectedColumns = selectedColumns;
+            }
+
+            _lastColumnDefinitions = ColumnDefinitions;
+            MarkColumnsDirty();
 
             string? sortColumn;
             SortDirection sortDirection;
@@ -137,10 +154,23 @@ namespace Lantean.QBTMud.Components.UI
                 await SortDirectionChanged.InvokeAsync(_sortDirection);
             }
 
+            MarkColumnsDirty();
+
             var storedColumnsWidths = await LocalStorage.GetItemAsync<Dictionary<string, int?>>(_columnWidthsStorageKey);
             if (storedColumnsWidths is not null)
             {
                 _columnWidths = storedColumnsWidths;
+            }
+            MarkColumnsDirty();
+        }
+
+        protected override void OnParametersSet()
+        {
+            base.OnParametersSet();
+            if (!ReferenceEquals(_lastColumnDefinitions, ColumnDefinitions))
+            {
+                _lastColumnDefinitions = ColumnDefinitions;
+                MarkColumnsDirty();
             }
         }
 
@@ -165,39 +195,74 @@ namespace Lantean.QBTMud.Components.UI
             return Items.OrderByDirection(_sortDirection, sortSelector);
         }
 
-        protected IEnumerable<ColumnDefinition<T>> GetColumns()
+        protected IReadOnlyList<ColumnDefinition<T>> GetColumns()
         {
-            var filteredColumns = ColumnDefinitions.Where(c => SelectedColumns.Contains(c.Id)).Where(ColumnFilter);
-            if (_columnOrder.Count == 0)
+            if (!_columnsDirty)
             {
-                foreach (var column in filteredColumns)
-                {
-                    if (_columnWidths.TryGetValue(column.Id, out var value))
-                    {
-                        column.Width = value;
-                    }
-
-                    yield return column;
-                }
-
-                yield break;
+                return _visibleColumns;
             }
 
-            var columnDictionary = filteredColumns.ToDictionary(c => c.Id);
-            foreach (var columnId in _columnOrder.OrderBy(c => c.Value).Select(c => c.Key))
+            _visibleColumns = BuildVisibleColumns();
+            _columnsDirty = false;
+
+            return _visibleColumns;
+        }
+
+        private IReadOnlyList<ColumnDefinition<T>> BuildVisibleColumns()
+        {
+            var filteredColumns = ColumnDefinitions
+                .Where(c => SelectedColumns.Contains(c.Id))
+                .Where(ColumnFilter)
+                .ToList();
+
+            if (filteredColumns.Count == 0)
             {
-                if (!columnDictionary.TryGetValue(columnId, out var column))
+                return EmptyColumns;
+            }
+
+            List<ColumnDefinition<T>> orderedColumns;
+            if (_columnOrder.Count == 0)
+            {
+                orderedColumns = filteredColumns;
+            }
+            else
+            {
+                var orderLookup = _columnOrder.OrderBy(entry => entry.Value).ToList();
+                var columnDictionary = filteredColumns.ToDictionary(c => c.Id);
+                orderedColumns = new List<ColumnDefinition<T>>(filteredColumns.Count);
+
+                foreach (var (columnId, _) in orderLookup)
                 {
-                    continue;
+                    if (!columnDictionary.TryGetValue(columnId, out var column))
+                    {
+                        continue;
+                    }
+
+                    orderedColumns.Add(column);
                 }
 
+                if (orderedColumns.Count != filteredColumns.Count)
+                {
+                    var existingIds = new HashSet<string>(orderedColumns.Select(c => c.Id));
+                    foreach (var column in filteredColumns)
+                    {
+                        if (existingIds.Add(column.Id))
+                        {
+                            orderedColumns.Add(column);
+                        }
+                    }
+                }
+            }
+
+            foreach (var column in orderedColumns)
+            {
                 if (_columnWidths.TryGetValue(column.Id, out var value))
                 {
                     column.Width = value;
                 }
-
-                yield return column;
             }
+
+            return orderedColumns;
         }
 
         private async Task SetSort(string columnId, SortDirection sortDirection)
@@ -223,6 +288,17 @@ namespace Lantean.QBTMud.Components.UI
 
         protected async Task OnRowClickInternal(TableRowClickEventArgs<T> eventArgs)
         {
+            if (_suppressRowClickUntil is not null)
+            {
+                if (DateTimeOffset.UtcNow <= _suppressRowClickUntil.Value)
+                {
+                    _suppressRowClickUntil = null;
+                    return;
+                }
+
+                _suppressRowClickUntil = null;
+            }
+
             if (eventArgs.Item is null)
             {
                 return;
@@ -298,6 +374,7 @@ namespace Lantean.QBTMud.Components.UI
 
         protected Task OnLongPressInternal(LongPressEventArgs eventArgs, string columnId, T item)
         {
+            _suppressRowClickUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
             var data = _tds[columnId];
             return OnTableDataLongPress.InvokeAsync(new TableDataLongPressEventArgs<T>(eventArgs, data, item));
         }
@@ -316,18 +393,21 @@ namespace Lantean.QBTMud.Components.UI
                 SelectedColumns = result.SelectedColumns;
                 await LocalStorage.SetItemAsync(_columnSelectionStorageKey, SelectedColumns);
                 await SelectedColumnsChanged.InvokeAsync(SelectedColumns);
+                MarkColumnsDirty();
             }
 
             if (!DictionaryEqual(_columnWidths, result.ColumnWidths))
             {
                 _columnWidths = result.ColumnWidths;
                 await LocalStorage.SetItemAsync(_columnWidthsStorageKey, _columnWidths);
+                MarkColumnsDirty();
             }
 
             if (!DictionaryEqual(_columnOrder, result.ColumnOrder))
             {
                 _columnOrder = result.ColumnOrder;
                 await LocalStorage.SetItemAsync(_columnOrderStorageKey, _columnOrder);
+                MarkColumnsDirty();
             }
         }
 
@@ -368,15 +448,32 @@ namespace Lantean.QBTMud.Components.UI
 
             if (column.Width.HasValue)
             {
-                className = $"overflow-cell {className}";
+                className = string.IsNullOrWhiteSpace(className)
+                    ? "overflow-cell"
+                    : $"overflow-cell {className}";
             }
 
             if (OnTableDataContextMenu.HasDelegate)
             {
-                className = $"no-default-context-menu {className}";
+                className = string.IsNullOrWhiteSpace(className)
+                    ? "no-default-context-menu"
+                    : $"no-default-context-menu {className}";
+            }
+
+            if (OnTableDataLongPress.HasDelegate)
+            {
+                className = string.IsNullOrWhiteSpace(className)
+                    ? "unselectable"
+                    : $"unselectable {className}";
             }
 
             return className;
+        }
+
+        private void MarkColumnsDirty()
+        {
+            _columnsDirty = true;
+            _visibleColumns = EmptyColumns;
         }
 
         private sealed record SortData

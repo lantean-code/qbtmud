@@ -1,6 +1,4 @@
-﻿using Lantean.QBitTorrentClient.Models;
-
-namespace Lantean.QBTMud.Models
+﻿namespace Lantean.QBTMud.Models
 {
     public record TorrentOptions
     {

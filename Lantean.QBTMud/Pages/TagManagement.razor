@@ -1,24 +1,30 @@
 ﻿@page "/tags"
 @layout OtherLayout
 
-<MudToolBar Gutters="false" Dense="true">
-    @if (!DrawerOpen)
-    {
-        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
-        <MudDivider Vertical="true" />
-    }
-    <MudText Class="px-5 no-wrap">Tags</MudText>
-    <MudDivider Vertical="true" />
-    <MudIconButton Icon="@Icons.Material.Filled.NewLabel" OnClick="AddTag" title="Add Tag" />
-</MudToolBar>
+<div class="content-panel">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudDivider Vertical="true" />
+            }
+            <MudText Class="px-5 no-wrap">Tags</MudText>
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Filled.NewLabel" OnClick="AddTag" title="Add Tag" />
+        </MudToolBar>
+    </div>
 
-<DynamicTable @ref="Table"
-              T="string"
-              ColumnDefinitions="Columns"
-              Items="Results"
-              MultiSelection="false"
-              SelectOnRowClick="false"
-              Class="details-list" />
+    <div class="content-panel__body">
+        <DynamicTable @ref="Table"
+                      T="string"
+                      ColumnDefinitions="Columns"
+                      Items="Results"
+                      MultiSelection="false"
+                      SelectOnRowClick="false"
+                      Class="details-list content-panel__table" />
+    </div>
+</div>
 
 @code {
     private RenderFragment<RowContext<string>> ActionsColumn

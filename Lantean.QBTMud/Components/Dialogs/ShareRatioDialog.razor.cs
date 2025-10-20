@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class ShareRatioDialog
     {
         [CascadingParameter]
-        IMudDialogInstance MudDialog { get; set; } = default!;
+        private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Parameter]
         public string? Label { get; set; }

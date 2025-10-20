@@ -35,10 +35,16 @@ namespace Lantean.QBTMud.Pages
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         [CascadingParameter]
-        public IEnumerable<Torrent>? Torrents { get; set; }
+        public IReadOnlyList<Torrent>? Torrents { get; set; }
 
         [CascadingParameter]
         public MainData MainData { get; set; } = default!;
+
+        [CascadingParameter(Name = "LostConnection")]
+        public bool LostConnection { get; set; }
+
+        [CascadingParameter(Name = "TorrentsVersion")]
+        public int TorrentsVersion { get; set; }
 
         [CascadingParameter(Name = "SearchTermChanged")]
         public EventCallback<string> SearchTermChanged { get; set; }
@@ -56,13 +62,23 @@ namespace Lantean.QBTMud.Pages
 
         protected HashSet<Torrent> SelectedItems { get; set; } = [];
 
-        protected bool ToolbarButtonsEnabled => SelectedItems.Count > 0;
+        protected bool ToolbarButtonsEnabled => _toolbarButtonsEnabled;
 
         protected DynamicTable<Torrent>? Table { get; set; }
 
         protected Torrent? ContextMenuItem { get; set; }
 
-        protected ContextMenu? ContextMenu { get; set; }
+        protected MudMenu? ContextMenu { get; set; }
+
+        private object? _lastRenderedTorrents;
+        private QBitTorrentClient.Models.Preferences? _lastPreferences;
+        private bool _lastLostConnection;
+        private bool _hasRendered;
+        private int _lastSelectionCount;
+        private int _lastTorrentsVersion = -1;
+        private bool _pendingSelectionChange;
+
+        private bool _toolbarButtonsEnabled;
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
@@ -73,9 +89,81 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
+        protected override bool ShouldRender()
+        {
+            if (!_hasRendered)
+            {
+                _hasRendered = true;
+                _lastRenderedTorrents = Torrents;
+                _lastPreferences = Preferences;
+                _lastLostConnection = LostConnection;
+                _lastTorrentsVersion = TorrentsVersion;
+                _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
+                return true;
+            }
+
+            if (_pendingSelectionChange)
+            {
+                _pendingSelectionChange = false;
+                _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
+                return true;
+            }
+
+            if (_lastTorrentsVersion != TorrentsVersion)
+            {
+                _lastTorrentsVersion = TorrentsVersion;
+                _lastRenderedTorrents = Torrents;
+                _lastPreferences = Preferences;
+                _lastLostConnection = LostConnection;
+                _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
+                return true;
+            }
+
+            if (!ReferenceEquals(_lastRenderedTorrents, Torrents))
+            {
+                _lastRenderedTorrents = Torrents;
+                _lastPreferences = Preferences;
+                _lastLostConnection = LostConnection;
+                _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
+                return true;
+            }
+
+            if (!ReferenceEquals(_lastPreferences, Preferences))
+            {
+                _lastPreferences = Preferences;
+                _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
+                return true;
+            }
+
+            if (_lastLostConnection != LostConnection)
+            {
+                _lastLostConnection = LostConnection;
+                _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
+                return true;
+            }
+
+            if (_lastSelectionCount != SelectedItems.Count)
+            {
+                _lastSelectionCount = SelectedItems.Count;
+                _toolbarButtonsEnabled = _lastSelectionCount > 0;
+                return true;
+            }
+
+            return false;
+        }
+
         protected void SelectedItemsChanged(HashSet<Torrent> selectedItems)
         {
             SelectedItems = selectedItems;
+            _toolbarButtonsEnabled = SelectedItems.Count > 0;
+            _pendingSelectionChange = true;
+            InvokeAsync(StateHasChanged);
         }
 
         protected async Task SortDirectionChangedHandler(SortDirection sortDirection)
@@ -185,7 +273,9 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            await ContextMenu.ToggleMenuAsync(eventArgs);
+            var normalizedEventArgs = eventArgs.NormalizeForContextMenu();
+
+            await ContextMenu.OpenMenuAsync(normalizedEventArgs);
         }
 
         protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions.Where(c => c.Id != "#" || Preferences?.QueueingEnabled == true);

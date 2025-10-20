@@ -24,13 +24,13 @@
         public bool? UseDownloadPath { get; set; }
 
         public string? Category { get; set; }
-        
+
         public IEnumerable<string>? Tags { get; set; }
 
         public string? RenameTorrent { get; set; }
 
         public long? UploadLimit { get; set; }
-        
+
         public long? DownloadLimit { get; set; }
 
         public float? RatioLimit { get; set; }
