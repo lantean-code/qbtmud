@@ -291,10 +291,11 @@ namespace Lantean.QBTMud.Services
                     }
                     else
                     {
+                        var previousSnapshot = CreateSnapshot(existingTorrent);
                         var updateResult = UpdateTorrent(existingTorrent, torrent);
                         if (updateResult.FilterChanged)
                         {
-                            UpdateTorrentStates(torrentList, hash);
+                            UpdateTorrentStates(torrentList, hash, previousSnapshot, existingTorrent);
                             filterChanged = true;
                         }
                         if (updateResult.DataChanged)
@@ -318,50 +319,32 @@ namespace Lantean.QBTMud.Services
 
         private static void AddTorrentToStates(MainData torrentList, string hash, int version)
         {
-            var torrent = torrentList.Torrents[hash];
+            if (!torrentList.Torrents.TryGetValue(hash, out var torrent))
+            {
+                return;
+            }
 
             torrentList.TagState[FilterHelper.TAG_ALL].Add(hash);
-            torrentList.TagState[FilterHelper.TAG_UNTAGGED].AddIfTrue(hash, FilterHelper.FilterTag(torrent, FilterHelper.TAG_UNTAGGED));
-            foreach (var tag in torrentList.Tags)
-            {
-                if (!torrentList.TagState.TryGetValue(tag, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.TagState.Add(tag, value);
-                }
-
-                value.AddIfTrue(hash, FilterHelper.FilterTag(torrent, tag));
-            }
+            UpdateTagStateForAddition(torrentList, torrent, hash);
 
             torrentList.CategoriesState[FilterHelper.CATEGORY_ALL].Add(hash);
-            torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].AddIfTrue(hash, FilterHelper.FilterCategory(torrent, FilterHelper.CATEGORY_UNCATEGORIZED, torrentList.ServerState.UseSubcategories));
-            foreach (var category in torrentList.Categories.Keys)
-            {
-                if (!torrentList.CategoriesState.TryGetValue(category, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.CategoriesState.Add(category, value);
-                }
-
-                value.AddIfTrue(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
-            }
+            UpdateCategoryState(torrentList, torrent, hash, previousCategory: null);
 
             foreach (var status in GetStatuses(version))
             {
-                torrentList.StatusState[status.ToString()].AddIfTrue(hash, FilterHelper.FilterStatus(torrent, status));
+                if (!torrentList.StatusState.TryGetValue(status.ToString(), out var statusSet))
+                {
+                    continue;
+                }
+
+                if (FilterHelper.FilterStatus(torrent, status))
+                {
+                    statusSet.Add(hash);
+                }
             }
 
             torrentList.TrackersState[FilterHelper.TRACKER_ALL].Add(hash);
-            torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].AddIfTrue(hash, FilterHelper.FilterTracker(torrent, FilterHelper.TRACKER_TRACKERLESS));
-            foreach (var tracker in torrentList.Trackers.Keys)
-            {
-                if (!torrentList.TrackersState.TryGetValue(tracker, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.TrackersState.Add(tracker, value);
-                }
-                value.AddIfTrue(hash, FilterHelper.FilterTracker(torrent, tracker));
-            }
+            UpdateTrackerState(torrentList, torrent, hash, previousTracker: null);
         }
 
         private static Status[] GetStatuses(int version)
@@ -383,77 +366,28 @@ namespace Lantean.QBTMud.Services
             return _statusArray;
         }
 
-        private static void UpdateTorrentStates(MainData torrentList, string hash)
+        private static void UpdateTorrentStates(MainData torrentList, string hash, TorrentSnapshot previousSnapshot, Torrent updatedTorrent)
         {
-            var torrent = torrentList.Torrents[hash];
-
-            torrentList.TagState[FilterHelper.TAG_UNTAGGED].AddIfTrueOrRemove(hash, FilterHelper.FilterTag(torrent, FilterHelper.TAG_UNTAGGED));
-            foreach (var tag in torrentList.Tags)
-            {
-                if (!torrentList.TagState.TryGetValue(tag, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.TagState.Add(tag, value);
-                }
-
-                value.AddIfTrueOrRemove(hash, FilterHelper.FilterTag(torrent, tag));
-            }
-
-            torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].AddIfTrueOrRemove(hash, FilterHelper.FilterCategory(torrent, FilterHelper.CATEGORY_UNCATEGORIZED, torrentList.ServerState.UseSubcategories));
-            foreach (var category in torrentList.Categories.Keys)
-            {
-                if (!torrentList.CategoriesState.TryGetValue(category, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.CategoriesState.Add(category, value);
-                }
-
-                value.AddIfTrueOrRemove(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
-            }
-
-            foreach (var status in GetStatuses(torrentList.MajorVersion))
-            {
-                torrentList.StatusState[status.ToString()].AddIfTrueOrRemove(hash, FilterHelper.FilterStatus(torrent, status));
-            }
-
-            torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].AddIfTrueOrRemove(hash, FilterHelper.FilterTracker(torrent, FilterHelper.TRACKER_TRACKERLESS));
-            foreach (var tracker in torrentList.Trackers.Keys)
-            {
-                if (!torrentList.TrackersState.TryGetValue(tracker, out HashSet<string>? value))
-                {
-                    value = [];
-                    torrentList.TrackersState.Add(tracker, value);
-                }
-
-                value.AddIfTrueOrRemove(hash, FilterHelper.FilterTracker(torrent, tracker));
-            }
+            UpdateTagStateForUpdate(torrentList, hash, previousSnapshot.Tags, updatedTorrent.Tags);
+            UpdateCategoryState(torrentList, updatedTorrent, hash, previousSnapshot.Category);
+            UpdateStatusState(torrentList, hash, previousSnapshot.State, previousSnapshot.UploadSpeed, updatedTorrent.State, updatedTorrent.UploadSpeed);
+            UpdateTrackerState(torrentList, updatedTorrent, hash, previousSnapshot.Tracker);
         }
 
         private static void RemoveTorrentFromStates(MainData torrentList, string hash)
         {
-            var torrent = torrentList.Torrents[hash];
+            if (!torrentList.Torrents.TryGetValue(hash, out var torrent))
+            {
+                return;
+            }
+
+            var snapshot = CreateSnapshot(torrent);
 
             torrentList.TagState[FilterHelper.TAG_ALL].Remove(hash);
-            torrentList.TagState[FilterHelper.TAG_UNTAGGED].RemoveIfTrue(hash, FilterHelper.FilterTag(torrent, FilterHelper.TAG_UNTAGGED));
-            foreach (var tag in torrentList.Tags)
-            {
-                if (!torrentList.TagState.TryGetValue(tag, out var tagState))
-                {
-                    continue;
-                }
-                tagState.RemoveIfTrue(hash, FilterHelper.FilterTag(torrent, tag));
-            }
+            UpdateTagStateForRemoval(torrentList, hash, snapshot.Tags);
 
             torrentList.CategoriesState[FilterHelper.CATEGORY_ALL].Remove(hash);
-            torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].RemoveIfTrue(hash, FilterHelper.FilterCategory(torrent, FilterHelper.CATEGORY_UNCATEGORIZED, torrentList.ServerState.UseSubcategories));
-            foreach (var category in torrentList.Categories.Keys)
-            {
-                if (!torrentList.CategoriesState.TryGetValue(category, out var categoryState))
-                {
-                    continue;
-                }
-                categoryState.RemoveIfTrue(hash, FilterHelper.FilterCategory(torrent, category, torrentList.ServerState.UseSubcategories));
-            }
+            UpdateCategoryStateForRemoval(torrentList, hash, snapshot.Category);
 
             foreach (var status in GetStatuses(torrentList.MajorVersion))
             {
@@ -461,19 +395,15 @@ namespace Lantean.QBTMud.Services
                 {
                     continue;
                 }
-                statusState.RemoveIfTrue(hash, FilterHelper.FilterStatus(torrent, status));
+
+                if (FilterHelper.FilterStatus(snapshot.State, snapshot.UploadSpeed, status))
+                {
+                    statusState.Remove(hash);
+                }
             }
 
             torrentList.TrackersState[FilterHelper.TRACKER_ALL].Remove(hash);
-            torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].RemoveIfTrue(hash, FilterHelper.FilterTracker(torrent, FilterHelper.TRACKER_TRACKERLESS));
-            foreach (var tracker in torrentList.Trackers.Keys)
-            {
-                if (!torrentList.TrackersState.TryGetValue(tracker, out var trackerState))
-                {
-                    continue;
-                }
-                trackerState.RemoveIfTrue(hash, FilterHelper.FilterTracker(torrent, tracker));
-            }
+            UpdateTrackerStateForRemoval(torrentList, hash, snapshot.Tracker);
         }
 
         private static bool UpdateServerState(ServerState existingServerState, QBitTorrentClient.Models.ServerState serverState)
@@ -779,6 +709,275 @@ namespace Lantean.QBTMud.Services
             var normalized = (separatorIndex >= 0) ? tag[..separatorIndex] : tag;
 
             return normalized.Trim();
+        }
+
+        private static TorrentSnapshot CreateSnapshot(Torrent torrent)
+        {
+            return new TorrentSnapshot(
+                string.IsNullOrEmpty(torrent.Category) ? null : torrent.Category,
+                torrent.Tags.ToList(),
+                torrent.Tracker ?? string.Empty,
+                torrent.State ?? string.Empty,
+                torrent.UploadSpeed);
+        }
+
+        private readonly struct TorrentSnapshot
+        {
+            public TorrentSnapshot(string? category, List<string> tags, string tracker, string state, long uploadSpeed)
+            {
+                Category = category;
+                Tags = tags;
+                Tracker = tracker;
+                State = state;
+                UploadSpeed = uploadSpeed;
+            }
+
+            public string? Category { get; }
+
+            public IReadOnlyList<string> Tags { get; }
+
+            public string Tracker { get; }
+
+            public string State { get; }
+
+            public long UploadSpeed { get; }
+        }
+
+        private static void UpdateTagStateForAddition(MainData torrentList, Torrent torrent, string hash)
+        {
+            if (torrent.Tags.Count == 0)
+            {
+                torrentList.TagState[FilterHelper.TAG_UNTAGGED].Add(hash);
+                return;
+            }
+
+            torrentList.TagState[FilterHelper.TAG_UNTAGGED].Remove(hash);
+            foreach (var tag in torrent.Tags)
+            {
+                if (string.IsNullOrEmpty(tag))
+                {
+                    continue;
+                }
+
+                GetOrCreateTagSet(torrentList, tag).Add(hash);
+            }
+        }
+
+        private static void UpdateTagStateForUpdate(MainData torrentList, string hash, IReadOnlyList<string> previousTags, IList<string> newTags)
+        {
+            UpdateTagStateForRemoval(torrentList, hash, previousTags);
+
+            if (newTags.Count == 0)
+            {
+                torrentList.TagState[FilterHelper.TAG_UNTAGGED].Add(hash);
+                return;
+            }
+
+            torrentList.TagState[FilterHelper.TAG_UNTAGGED].Remove(hash);
+            foreach (var tag in newTags)
+            {
+                if (string.IsNullOrEmpty(tag))
+                {
+                    continue;
+                }
+
+                GetOrCreateTagSet(torrentList, tag).Add(hash);
+            }
+        }
+
+        private static void UpdateTagStateForRemoval(MainData torrentList, string hash, IReadOnlyList<string> previousTags)
+        {
+            torrentList.TagState[FilterHelper.TAG_UNTAGGED].Remove(hash);
+
+            foreach (var tag in previousTags)
+            {
+                if (string.IsNullOrEmpty(tag))
+                {
+                    continue;
+                }
+
+                if (torrentList.TagState.TryGetValue(tag, out var set))
+                {
+                    set.Remove(hash);
+                }
+            }
+        }
+
+        private static void UpdateCategoryState(MainData torrentList, Torrent updatedTorrent, string hash, string? previousCategory)
+        {
+            var useSubcategories = torrentList.ServerState.UseSubcategories;
+
+            if (!string.IsNullOrEmpty(previousCategory))
+            {
+                foreach (var categoryKey in EnumerateCategoryKeys(previousCategory, useSubcategories))
+                {
+                    if (torrentList.CategoriesState.TryGetValue(categoryKey, out var set))
+                    {
+                        set.Remove(hash);
+                    }
+                }
+            }
+            else
+            {
+                torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].Remove(hash);
+            }
+
+            if (string.IsNullOrEmpty(updatedTorrent.Category))
+            {
+                torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].Add(hash);
+                return;
+            }
+
+            foreach (var categoryKey in EnumerateCategoryKeys(updatedTorrent.Category, useSubcategories))
+            {
+                GetOrCreateCategorySet(torrentList, categoryKey).Add(hash);
+            }
+        }
+
+        private static void UpdateCategoryStateForRemoval(MainData torrentList, string hash, string? previousCategory)
+        {
+            if (string.IsNullOrEmpty(previousCategory))
+            {
+                torrentList.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].Remove(hash);
+                return;
+            }
+
+            foreach (var categoryKey in EnumerateCategoryKeys(previousCategory, torrentList.ServerState.UseSubcategories))
+            {
+                if (torrentList.CategoriesState.TryGetValue(categoryKey, out var set))
+                {
+                    set.Remove(hash);
+                }
+            }
+        }
+
+        private static void UpdateStatusState(MainData torrentList, string hash, string previousState, long previousUploadSpeed, string newState, long newUploadSpeed)
+        {
+            foreach (var status in GetStatuses(torrentList.MajorVersion))
+            {
+                if (!torrentList.StatusState.TryGetValue(status.ToString(), out var statusSet))
+                {
+                    continue;
+                }
+
+                var wasMatch = FilterHelper.FilterStatus(previousState, previousUploadSpeed, status);
+                var isMatch = FilterHelper.FilterStatus(newState, newUploadSpeed, status);
+
+                if (wasMatch == isMatch)
+                {
+                    continue;
+                }
+
+                if (wasMatch)
+                {
+                    statusSet.Remove(hash);
+                }
+
+                if (isMatch)
+                {
+                    statusSet.Add(hash);
+                }
+            }
+        }
+
+        private static void UpdateTrackerState(MainData torrentList, Torrent updatedTorrent, string hash, string? previousTracker)
+        {
+            if (!string.IsNullOrEmpty(previousTracker))
+            {
+                if (torrentList.TrackersState.TryGetValue(previousTracker, out var oldSet))
+                {
+                    oldSet.Remove(hash);
+                }
+            }
+            else
+            {
+                torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Remove(hash);
+            }
+
+            var tracker = updatedTorrent.Tracker ?? string.Empty;
+            if (string.IsNullOrEmpty(tracker))
+            {
+                torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Add(hash);
+                return;
+            }
+
+            torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Remove(hash);
+            GetOrCreateTrackerSet(torrentList, tracker).Add(hash);
+        }
+
+        private static void UpdateTrackerStateForRemoval(MainData torrentList, string hash, string? previousTracker)
+        {
+            if (string.IsNullOrEmpty(previousTracker))
+            {
+                torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Remove(hash);
+                return;
+            }
+
+            if (torrentList.TrackersState.TryGetValue(previousTracker, out var trackerSet))
+            {
+                trackerSet.Remove(hash);
+            }
+        }
+
+        private static IEnumerable<string> EnumerateCategoryKeys(string category, bool useSubcategories)
+        {
+            if (string.IsNullOrEmpty(category))
+            {
+                yield break;
+            }
+
+            yield return category;
+
+            if (!useSubcategories)
+            {
+                yield break;
+            }
+
+            var current = category;
+            while (true)
+            {
+                var separatorIndex = current.LastIndexOf('/');
+                if (separatorIndex < 0)
+                {
+                    yield break;
+                }
+
+                current = current[..separatorIndex];
+                yield return current;
+            }
+        }
+
+        private static HashSet<string> GetOrCreateTagSet(MainData torrentList, string tag)
+        {
+            if (!torrentList.TagState.TryGetValue(tag, out var set))
+            {
+                set = new HashSet<string>(StringComparer.Ordinal);
+                torrentList.TagState[tag] = set;
+            }
+
+            return set;
+        }
+
+        private static HashSet<string> GetOrCreateCategorySet(MainData torrentList, string category)
+        {
+            if (!torrentList.CategoriesState.TryGetValue(category, out var set))
+            {
+                set = new HashSet<string>(StringComparer.Ordinal);
+                torrentList.CategoriesState[category] = set;
+            }
+
+            return set;
+        }
+
+        private static HashSet<string> GetOrCreateTrackerSet(MainData torrentList, string tracker)
+        {
+            if (!torrentList.TrackersState.TryGetValue(tracker, out var set))
+            {
+                set = new HashSet<string>(StringComparer.Ordinal);
+                torrentList.TrackersState[tracker] = set;
+            }
+
+            return set;
         }
 
         private static bool UpdateCategory(Category existingCategory, QBitTorrentClient.Models.Category category)
