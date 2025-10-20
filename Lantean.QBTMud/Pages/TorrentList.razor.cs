@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient;
+﻿using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -272,7 +272,9 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            await ContextMenu.OpenMenuAsync(eventArgs);
+            var normalizedEventArgs = eventArgs.NormalizeForContextMenu();
+
+            await ContextMenu.OpenMenuAsync(normalizedEventArgs);
         }
 
         protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions.Where(c => c.Id != "#" || Preferences?.QueueingEnabled == true);

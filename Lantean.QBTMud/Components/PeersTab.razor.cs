@@ -153,7 +153,9 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ContextMenu.OpenMenuAsync(eventArgs);
+            var normalizedEventArgs = eventArgs.NormalizeForContextMenu();
+
+            await ContextMenu.OpenMenuAsync(normalizedEventArgs);
         }
 
         protected void SelectedItemChanged(Peer peer)
