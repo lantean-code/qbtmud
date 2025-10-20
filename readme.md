@@ -68,10 +68,12 @@ cd qbtmud
 dotnet restore
 ```
 
-### 3. Build the Application
+### 3. Build and Publish the Application
 ```sh
-dotnet build --configuration Release
+dotnet publish --configuration Release
 ```
+
+This will output the Web UI files to `Lantean.QBTMud\bin\Release\net9.0\publish\wwwroot`.
 
 ### 4. Configure qBittorrent to Use qbtmud
 Follow the same steps as in the **Installation** section to set qbtmud as your WebUI.
