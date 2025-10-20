@@ -1,4 +1,4 @@
-#blazor-error-ui {
+﻿#blazor-error-ui {
     background: lightyellow;
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
@@ -65,15 +65,16 @@ code {
 }
 
 .mud-appbar.mud-appbar-fixed-bottom {
-    height: 35px;
+    height: var(--app-status-bar-height);
 }
 
 .mud-main-content {
-    padding-bottom: 35px;
+    padding: var(--mud-appbar-height) 0 var(--app-status-bar-height);
+    box-sizing: border-box;
 }
 
 .mud-drawer-fixed.mud-drawer-mini.mud-drawer-clipped-always, .mud-drawer-fixed.mud-drawer-persistent:not(.mud-drawer-clipped-never), .mud-drawer-fixed.mud-drawer-responsive.mud-drawer-clipped-always, .mud-drawer-fixed.mud-drawer-temporary.mud-drawer-clipped-always {
-    height: calc(100% - var(--mud-appbar-height) - 35px);
+    height: calc(100% - var(--mud-appbar-height) - var(--app-status-bar-height));
 }
 
 .w-100 {
@@ -154,25 +155,68 @@ code {
     margin-right: 5px;
 }
 
-.torrent-list .mud-table-container {
-    height: calc(100vh - 160px);
+/*. Layout helpers */
+.content-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
 }
 
-.file-list .mud-table-container {
-    height: calc(100vh - 245px);
+.content-panel__toolbar {
+    flex: 0 0 auto;
 }
 
-.details-list .mud-table-container {
-    height: calc(100vh - 200px);
+.content-panel__toolbar--scroll {
+    overflow-x: auto;
+    white-space: nowrap;
 }
 
-.details-tab-contents {
-    height: calc(100vh - 200px);
-    overflow: auto;
+.content-panel__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
+.content-panel__container {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.content-panel__table {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.content-panel__table .mud-table-container {
+    flex: 1 1 auto;
+    height: 100%;
+}
+
+.content-panel__body > .mud-tabs { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.content-panel__body > .mud-tabs .mud-tabs-panels { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.content-panel__body > .mud-tabs .mud-tab-panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.content-panel__body > .mud-tabs .mud-tab-panel > .mud-tab-panel-content { flex: 1 1 auto; min-height: 0; overflow: auto; }
+
+.torrent-list .mud-table-container,
+.file-list .mud-table-container,
+.details-list .mud-table-container,
 .search-list .mud-table-container {
-    height: calc(100vh - 260px);
+    height: 100%;
+}
+
+.details-tab-contents,
+.options-tab-contents,
+.rss-contents {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
 }
 
 tr.log-normal td {
@@ -220,10 +264,6 @@ td .folder-button {
     padding: 6px 16px 6px 16px !important;
 }
 
-.rss-contents {
-    height: calc(100vh - 149px);
-}
-
 @keyframes spin {
     0% {
         transform: rotate(0deg);
@@ -255,4 +295,74 @@ td .folder-button {
 
 .mud-popover .mud-divider:last-child {
     display: none;
+}
+:root {
+    --app-viewport-height: 100vh;
+    --app-status-bar-height: 35px;
+}
+
+@supports (height: 100dvh) {
+    :root {
+        --app-viewport-height: 100dvh;
+    }
+}
+
+html,
+body {
+    height: var(--app-viewport-height);
+    min-height: var(--app-viewport-height);
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+#app,
+.mud-layout {
+    height: 100%;
+    min-height: 100%;
+}
+
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.app-shell__body {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.app-shell__sidebar {
+    flex: 0 0 auto;
+}
+
+.app-shell__main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    padding: var(--mud-appbar-height) 0 var(--app-status-bar-height);
+    box-sizing: border-box;
+}
+
+.app-shell__status-bar.mud-appbar {
+    flex: 0 0 var(--app-status-bar-height);
+    height: var(--app-status-bar-height);
+    width: 100%;
+    background-color: var(--mud-palette-dark-lighten);
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.app-shell__status-bar .mud-toolbar {
+    width: 100%;
 }

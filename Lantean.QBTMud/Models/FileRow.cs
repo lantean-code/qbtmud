@@ -2,14 +2,14 @@
 {
     public class FileRow
     {
-        public string OriginalName { get; set; }
+        public required string OriginalName { get; set; }
         public string? NewName { get; set; }
         public bool IsFolder { get; set; }
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public int Level { get; set; }
         public bool Renamed { get; set; }
         public string? ErrorMessage { get; set; }
-        public string Path { get; set; }
+        public required string Path { get; set; }
 
         public override bool Equals(object? obj)
         {

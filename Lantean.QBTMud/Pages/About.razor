@@ -1,18 +1,22 @@
 ﻿@page "/about"
 @layout OtherLayout
 
-<MudToolBar Gutters="false" Dense="true">
-    @if (!DrawerOpen)
-    {
-        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
-        <MudDivider Vertical="true" />
-    }
-    <MudText Class="px-5 no-wrap">About</MudText>
-</MudToolBar>
+<div class="content-panel">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudDivider Vertical="true" />
+            }
+            <MudText Class="px-5 no-wrap">About</MudText>
+        </MudToolBar>
+    </div>
 
-<MudTabs Elevation="2" ApplyEffectsToContainer="true">
-    <MudTabPanel Text="About">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3">
+    <div class="content-panel__body">
+        <MudTabs Elevation="2" ApplyEffectsToContainer="true">
+            <MudTabPanel Text="About">
+                <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 content-panel__container">
             <MudGrid Class="mt-0 mb-4">
                 <MudItem xs="12" sm="3" md="2" lg="2" xl="1" Class="d-flex justify-center">
                     <MudImage Src="images/mascot.png" Alt="Mascot" Class="ma-6"
@@ -1105,3 +1109,5 @@
         </MudContainer>
     </MudTabPanel>
 </MudTabs>
+    </div>
+</div>

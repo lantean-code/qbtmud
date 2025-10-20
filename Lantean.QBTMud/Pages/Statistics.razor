@@ -1,62 +1,68 @@
 ﻿@page "/statistics"
 @layout OtherLayout
 
-<MudToolBar Gutters="false" Dense="true">
-    @if (!DrawerOpen)
-    {
-        <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
-        <MudDivider Vertical="true" />
-    }
-    <MudDivider Vertical="true" />
-    <MudText Class="pl-5 no-wrap">Statistics</MudText>
-</MudToolBar>
+<div class="content-panel">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudDivider Vertical="true" />
+            }
+            <MudDivider Vertical="true" />
+            <MudText Class="pl-5 no-wrap">Statistics</MudText>
+        </MudToolBar>
+    </div>
 
-<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="details-tab-contents">
-    <MudText Typo="Typo.subtitle2" Class="pt-6">User statistics</MudText>
-    <MudGrid>
-        <MudItem xs="12">
-            <MudField Label="All-time uploaded">@DisplayHelpers.Size(ServerState?.AllTimeUploaded)</MudField>
-        </MudItem>
-        <MudItem xs="12">
-            <MudField Label="All-time downloaded">@DisplayHelpers.Size(ServerState?.AllTimeDownloaded)</MudField>
-        </MudItem>
-        <MudItem xs="12">
-            <MudField Label="All-time share ratio">@DisplayHelpers.EmptyIfNull(ServerState?.GlobalRatio, format: "0.00")</MudField>
-        </MudItem>
-        <MudItem xs="12">
-            <MudField Label="Session waste">@DisplayHelpers.Size(ServerState?.TotalWastedSession)</MudField>
-        </MudItem>
-        <MudItem xs="12">
-            <MudField Label="Connected peers">@DisplayHelpers.EmptyIfNull(ServerState?.TotalPeerConnections)</MudField>
-        </MudItem>
-    </MudGrid>
+    <div class="content-panel__body">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="details-tab-contents content-panel__container">
+            <MudText Typo="Typo.subtitle2" Class="pt-6">User statistics</MudText>
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudField Label="All-time uploaded">@DisplayHelpers.Size(ServerState?.AllTimeUploaded)</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="All-time downloaded">@DisplayHelpers.Size(ServerState?.AllTimeDownloaded)</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="All-time share ratio">@DisplayHelpers.EmptyIfNull(ServerState?.GlobalRatio, format: "0.00")</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="Session waste">@DisplayHelpers.Size(ServerState?.TotalWastedSession)</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="Connected peers">@DisplayHelpers.EmptyIfNull(ServerState?.TotalPeerConnections)</MudField>
+                </MudItem>
+            </MudGrid>
 
-    <MudText Typo="Typo.subtitle2" Class="pt-6">Cache statistics</MudText>
-    <MudGrid>
-        <MudItem xs="12">
-            <MudField Label="Read cache hits">@DisplayHelpers.Percentage(ServerState?.ReadCacheHits)</MudField>
-        </MudItem>
-        <MudItem xs="12">
-            <MudField Label="Total buffer size">@DisplayHelpers.Size(ServerState?.TotalBuffersSize)</MudField>
-        </MudItem>
-    </MudGrid>
+            <MudText Typo="Typo.subtitle2" Class="pt-6">Cache statistics</MudText>
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudField Label="Read cache hits">@DisplayHelpers.Percentage(ServerState?.ReadCacheHits)</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="Total buffer size">@DisplayHelpers.Size(ServerState?.TotalBuffersSize)</MudField>
+                </MudItem>
+            </MudGrid>
 
-    <MudText Typo="Typo.subtitle2" Class="pt-6">Performance statistics</MudText>
-    <MudGrid>
-        <MudItem xs="12">
-            <MudField Label="Write cache overload">@DisplayHelpers.Percentage(ServerState?.WriteCacheOverload)</MudField>
-        </MudItem>
-        <MudItem xs="12">
-            <MudField Label="Read cache overload">@DisplayHelpers.Percentage(ServerState?.ReadCacheOverload)</MudField>
-        </MudItem>
-        <MudItem xs="12">
-            <MudField Label="Queued I/O jobs">@DisplayHelpers.EmptyIfNull(ServerState?.QueuedIOJobs)</MudField>
-        </MudItem>
-        <MudItem xs="12">
-            <MudField Label="Average time in queue">@DisplayHelpers.EmptyIfNull(ServerState?.AverageTimeQueue, suffix: "ms")</MudField>
-        </MudItem>
-        <MudItem xs="12">
-            <MudField Label="Total queued size">@DisplayHelpers.Size(ServerState?.TotalQueuedSize)</MudField>
-        </MudItem>
-    </MudGrid>
-</MudContainer>
+            <MudText Typo="Typo.subtitle2" Class="pt-6">Performance statistics</MudText>
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudField Label="Write cache overload">@DisplayHelpers.Percentage(ServerState?.WriteCacheOverload)</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="Read cache overload">@DisplayHelpers.Percentage(ServerState?.ReadCacheOverload)</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="Queued I/O jobs">@DisplayHelpers.EmptyIfNull(ServerState?.QueuedIOJobs)</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="Average time in queue">@DisplayHelpers.EmptyIfNull(ServerState?.AverageTimeQueue, suffix: "ms")</MudField>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudField Label="Total queued size">@DisplayHelpers.Size(ServerState?.TotalQueuedSize)</MudField>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </div>
+</div>

@@ -2,44 +2,47 @@
     <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu">Rename</MudMenuItem>
 </MudMenu>
 
-<div style="overflow-x: auto; white-space: nowrap; width: 100%;">
-<MudToolBar Gutters="false" Dense="true">
-    <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileToolbar" title="Rename" />
-    <MudDivider Vertical="true" />
-    <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
-    <MudDivider Vertical="true" />
-    <MudMenu Icon="@Icons.Material.Outlined.FileDownloadOff" Label="Do Not Download" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="Do Not Download">
-        <MudMenuItem OnClick="DoNotDownloadLessThan100PercentAvailability">Less Than 100% Availability</MudMenuItem>
-        <MudMenuItem OnClick="DoNotDownloadLessThan80PercentAvailability">Less than 80% Availability</MudMenuItem>
-        <MudMenuItem OnClick="DoNotDownloadCurrentlyFilteredFiles">Currently Filtered Files</MudMenuItem>
-    </MudMenu>
-    <MudMenu Icon="@Icons.Material.Outlined.FileDownload" Label="Normal Priority" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="Download">
-        <MudMenuItem OnClick="NormalPriorityLessThan100PercentAvailability">Less Than 100% Availability</MudMenuItem>
-        <MudMenuItem OnClick="NormalPriorityLessThan80PercentAvailability">Less than 80% Availability</MudMenuItem>
-        <MudMenuItem OnClick="NormalPriorityCurrentlyFilteredFiles">Currently Filtered Files</MudMenuItem>
-    </MudMenu>
-    <MudIconButton Icon="@Icons.Material.Outlined.FilterList" OnClick="ShowFilterDialog" title="Filter" />
-    <MudIconButton Icon="@Icons.Material.Outlined.FilterListOff" OnClick="RemoveFilter" title="Remove Filter" />
-    <MudSpacer />
-    <MudTextField T="string" Value="SearchText" ValueChanged="SearchTextChanged" Immediate="true" DebounceInterval="500" Placeholder="Filter file list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-</MudToolBar>
+<div class="content-panel">
+    <div class="content-panel__toolbar content-panel__toolbar--scroll">
+        <MudToolBar Gutters="false" Dense="true">
+            <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileToolbar" title="Rename" />
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
+            <MudDivider Vertical="true" />
+            <MudMenu Icon="@Icons.Material.Outlined.FileDownloadOff" Label="Do Not Download" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="Do Not Download">
+                <MudMenuItem OnClick="DoNotDownloadLessThan100PercentAvailability">Less Than 100% Availability</MudMenuItem>
+                <MudMenuItem OnClick="DoNotDownloadLessThan80PercentAvailability">Less than 80% Availability</MudMenuItem>
+                <MudMenuItem OnClick="DoNotDownloadCurrentlyFilteredFiles">Currently Filtered Files</MudMenuItem>
+            </MudMenu>
+            <MudMenu Icon="@Icons.Material.Outlined.FileDownload" Label="Normal Priority" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="Download">
+                <MudMenuItem OnClick="NormalPriorityLessThan100PercentAvailability">Less Than 100% Availability</MudMenuItem>
+                <MudMenuItem OnClick="NormalPriorityLessThan80PercentAvailability">Less than 80% Availability</MudMenuItem>
+                <MudMenuItem OnClick="NormalPriorityCurrentlyFilteredFiles">Currently Filtered Files</MudMenuItem>
+            </MudMenu>
+            <MudIconButton Icon="@Icons.Material.Outlined.FilterList" OnClick="ShowFilterDialog" title="Filter" />
+            <MudIconButton Icon="@Icons.Material.Outlined.FilterListOff" OnClick="RemoveFilter" title="Remove Filter" />
+            <MudSpacer />
+            <MudTextField T="string" Value="SearchText" ValueChanged="SearchTextChanged" Immediate="true" DebounceInterval="500" Placeholder="Filter file list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </MudToolBar>
+    </div>
+    <div class="content-panel__body">
+        <DynamicTable
+            @ref="Table"
+            T="ContentItem" 
+            ColumnDefinitions="Columns" 
+            Items="Files" 
+            MultiSelection="false"
+            SelectOnRowClick="true"
+            PreSorted="true"
+            SelectedItemChanged="SelectedItemChanged"
+            SortColumnChanged="SortColumnChanged"
+            SortDirectionChanged="SortDirectionChanged"
+            OnTableDataContextMenu="TableDataContextMenu"
+            OnTableDataLongPress="TableDataLongPress"
+            Class="file-list content-panel__table"
+        />
+    </div>
 </div>
-
-<DynamicTable
-    @ref="Table"
-    T="ContentItem" 
-    ColumnDefinitions="Columns" 
-    Items="Files" 
-    MultiSelection="false"
-    SelectOnRowClick="true"
-    PreSorted="true"
-    SelectedItemChanged="SelectedItemChanged"
-    SortColumnChanged="SortColumnChanged"
-    SortDirectionChanged="SortDirectionChanged"
-    OnTableDataContextMenu="TableDataContextMenu"
-    OnTableDataLongPress="TableDataLongPress"
-    Class="file-list"
-/>
 
 @code {
     private RenderFragment<RowContext<ContentItem>> NameColumn
