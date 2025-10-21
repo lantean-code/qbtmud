@@ -15,6 +15,7 @@ namespace Lantean.QBitTorrentClient.Models
             IReadOnlyList<string>? tags,
             IReadOnlyList<string>? tagsRemoved,
             IReadOnlyDictionary<string, IReadOnlyList<string>> trackers,
+            IReadOnlyList<string>? trackersRemoved,
             ServerState? serverState)
         {
             ResponseId = responseId;
@@ -26,6 +27,7 @@ namespace Lantean.QBitTorrentClient.Models
             Tags = tags;
             TagsRemoved = tagsRemoved;
             Trackers = trackers;
+            TrackersRemoved = trackersRemoved;
             ServerState = serverState;
         }
 

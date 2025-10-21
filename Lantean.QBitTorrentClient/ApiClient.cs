@@ -1,4 +1,9 @@
 ﻿using Lantean.QBitTorrentClient.Models;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -105,6 +110,8 @@ namespace Lantean.QBitTorrentClient
 
         public async Task SetApplicationPreferences(UpdatePreferences preferences)
         {
+            preferences.Validate();
+
             var json = JsonSerializer.Serialize(preferences, _options);
 
             var content = new FormUrlEncodedBuilder()
@@ -114,6 +121,49 @@ namespace Lantean.QBitTorrentClient
             var response = await _httpClient.PostAsync("app/setPreferences", content);
 
             await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
+        public async Task<IReadOnlyList<ApplicationCookie>> GetApplicationCookies()
+        {
+            var response = await _httpClient.GetAsync("app/cookies");
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+
+            return await GetJsonList<ApplicationCookie>(response.Content);
+        }
+
+        public async Task SetApplicationCookies(IEnumerable<ApplicationCookie> cookies)
+        {
+            var json = JsonSerializer.Serialize(cookies, _options);
+
+            var content = new FormUrlEncodedBuilder()
+                .Add("cookies", json)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("app/setCookies", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
+        public async Task<string> RotateApiKey()
+        {
+            var response = await _httpClient.PostAsync("app/rotateAPIKey", null);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+
+            var payload = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                return string.Empty;
+            }
+
+            var json = JsonSerializer.Deserialize<JsonElement>(payload, _options);
+            if (json.ValueKind == JsonValueKind.Object && json.TryGetProperty("apiKey", out var apiKeyElement))
+            {
+                return apiKeyElement.GetString() ?? string.Empty;
+            }
+
+            return string.Empty;
         }
 
         public async Task<string> GetDefaultSavePath()
@@ -144,6 +194,43 @@ namespace Lantean.QBitTorrentClient
         }
 
         #endregion Application
+
+        #region Client data
+
+        public async Task<IReadOnlyDictionary<string, JsonElement>> LoadClientData(IEnumerable<string>? keys = null)
+        {
+            HttpResponseMessage response;
+            if (keys is null)
+            {
+                response = await _httpClient.GetAsync("clientdata/load");
+            }
+            else
+            {
+                var query = new QueryBuilder()
+                    .Add("keys", JsonSerializer.Serialize(keys, _options));
+
+                response = await _httpClient.GetAsync("clientdata/load", query);
+            }
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+
+            return await GetJsonDictionary<string, JsonElement>(response.Content);
+        }
+
+        public async Task StoreClientData(IReadOnlyDictionary<string, JsonElement> data)
+        {
+            var json = JsonSerializer.Serialize(data, _options);
+
+            var content = new FormUrlEncodedBuilder()
+                .Add("data", json)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("clientdata/store", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
+        #endregion Client data
 
         #region Log
 
@@ -305,7 +392,7 @@ namespace Lantean.QBitTorrentClient
 
         #region Torrent management
 
-        public async Task<IReadOnlyList<Torrent>> GetTorrentList(string? filter = null, string? category = null, string? tag = null, string? sort = null, bool? reverse = null, int? limit = null, int? offset = null, bool? isPrivate = null, params string[] hashes)
+        public async Task<IReadOnlyList<Torrent>> GetTorrentList(string? filter = null, string? category = null, string? tag = null, string? sort = null, bool? reverse = null, int? limit = null, int? offset = null, bool? isPrivate = null, bool? includeFiles = null, params string[] hashes)
         {
             var query = new QueryBuilder();
             if (filter is not null)
@@ -344,6 +431,10 @@ namespace Lantean.QBitTorrentClient
             {
                 query.Add("private", isPrivate.Value ? "true" : "false");
             }
+            if (includeFiles is not null)
+            {
+                query.Add("includeFiles", includeFiles.Value ? "true" : "false");
+            }
 
             var response = await _httpClient.GetAsync("torrents/info", query);
 
@@ -379,6 +470,43 @@ namespace Lantean.QBitTorrentClient
             return await GetJsonList<WebSeed>(response.Content);
         }
 
+        public async Task AddTorrentWebSeeds(string hash, IEnumerable<string> urls)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("hash", hash)
+                .Add("urls", string.Join('|', urls))
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("torrents/addWebSeeds", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
+        public async Task EditTorrentWebSeed(string hash, string originalUrl, string newUrl)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("hash", hash)
+                .Add("origUrl", originalUrl)
+                .Add("newUrl", newUrl)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("torrents/editWebSeed", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
+        public async Task RemoveTorrentWebSeeds(string hash, IEnumerable<string> urls)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("hash", hash)
+                .Add("urls", string.Join('|', urls))
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("torrents/removeWebSeeds", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
         public async Task<IReadOnlyList<FileData>> GetTorrentContents(string hash, params int[] indexes)
         {
             var query = new QueryBuilder();
@@ -411,18 +539,6 @@ namespace Lantean.QBitTorrentClient
 
             return await GetJsonList<string>(response.Content);
         }
-
-        public async Task PauseTorrents(bool? all = null, params string[] hashes)
-        {
-            var content = new FormUrlEncodedBuilder()
-                .AddAllOrPipeSeparated("hashes", all, hashes)
-                .ToFormUrlEncodedContent();
-
-            var response = await _httpClient.PostAsync("torrents/pause", content);
-
-            await ThrowIfNotSuccessfulStatusCode(response);
-        }
-
         public async Task StopTorrents(bool? all = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
@@ -433,18 +549,6 @@ namespace Lantean.QBitTorrentClient
 
             await ThrowIfNotSuccessfulStatusCode(response);
         }
-
-        public async Task ResumeTorrents(bool? all = null, params string[] hashes)
-        {
-            var content = new FormUrlEncodedBuilder()
-                .AddAllOrPipeSeparated("hashes", all, hashes)
-                .ToFormUrlEncodedContent();
-
-            var response = await _httpClient.PostAsync("torrents/resume", content);
-
-            await ThrowIfNotSuccessfulStatusCode(response);
-        }
-
         public async Task StartTorrents(bool? all = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
@@ -479,10 +583,11 @@ namespace Lantean.QBitTorrentClient
             await ThrowIfNotSuccessfulStatusCode(response);
         }
 
-        public async Task ReannounceTorrents(bool? all = null, params string[] hashes)
+        public async Task ReannounceTorrents(bool? all = null, IEnumerable<string>? trackers = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
                 .AddAllOrPipeSeparated("hashes", all, hashes)
+                .AddIfNotNullOrEmpty("urls", trackers is null ? null : string.Join('|', trackers))
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/reannounce", content);
@@ -490,13 +595,15 @@ namespace Lantean.QBitTorrentClient
             await ThrowIfNotSuccessfulStatusCode(response);
         }
 
-        public async Task AddTorrent(AddTorrentParams addTorrentParams)
+        public async Task<AddTorrentResult> AddTorrent(AddTorrentParams addTorrentParams)
         {
             var content = new MultipartFormDataContent();
-            if (addTorrentParams.Urls is not null)
+
+            if (addTorrentParams.Urls?.Any() == true)
             {
                 content.AddString("urls", string.Join('\n', addTorrentParams.Urls));
             }
+
             if (addTorrentParams.Torrents is not null)
             {
                 foreach (var (name, stream) in addTorrentParams.Torrents)
@@ -504,6 +611,7 @@ namespace Lantean.QBitTorrentClient
                     content.Add(new StreamContent(stream), "torrents", name);
                 }
             }
+
             if (addTorrentParams.SkipChecking is not null)
             {
                 content.AddString("skip_checking", addTorrentParams.SkipChecking.Value);
@@ -520,12 +628,10 @@ namespace Lantean.QBitTorrentClient
             {
                 content.AddString("addToTopOfQueue", addTorrentParams.AddToTopOfQueue.Value);
             }
-            // v4
-            if (addTorrentParams.Paused is not null)
+            if (addTorrentParams.Forced is not null)
             {
-                content.AddString("paused", addTorrentParams.Paused.Value);
+                content.AddString("forced", addTorrentParams.Forced.Value);
             }
-            // v5
             if (addTorrentParams.Stopped is not null)
             {
                 content.AddString("stopped", addTorrentParams.Stopped.Value);
@@ -590,21 +696,61 @@ namespace Lantean.QBitTorrentClient
             {
                 content.AddString("contentLayout", addTorrentParams.ContentLayout.Value);
             }
-
-            if (addTorrentParams.Cookie is not null)
+            if (addTorrentParams.Downloader is not null)
             {
-                content.AddString("cookie", addTorrentParams.Cookie);
+                content.AddString("downloader", addTorrentParams.Downloader);
+            }
+            if (addTorrentParams.FilePriorities is not null)
+            {
+                var priorities = string.Join(',', addTorrentParams.FilePriorities.Select(priority => ((int)priority).ToString(CultureInfo.InvariantCulture)));
+                content.AddString("filePriorities", priorities);
+            }
+            if (!string.IsNullOrWhiteSpace(addTorrentParams.SslCertificate))
+            {
+                content.AddString("ssl_certificate", addTorrentParams.SslCertificate!);
+            }
+            if (!string.IsNullOrWhiteSpace(addTorrentParams.SslPrivateKey))
+            {
+                content.AddString("ssl_private_key", addTorrentParams.SslPrivateKey!);
+            }
+            if (!string.IsNullOrWhiteSpace(addTorrentParams.SslDhParams))
+            {
+                content.AddString("ssl_dh_params", addTorrentParams.SslDhParams!);
             }
 
             var response = await _httpClient.PostAsync("torrents/add", content);
 
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                var conflictMessage = await response.Content.ReadAsStringAsync();
+                if (string.IsNullOrWhiteSpace(conflictMessage))
+                {
+                    conflictMessage = "All torrents failed to add.";
+                }
+
+                throw new HttpRequestException(conflictMessage, null, response.StatusCode);
+            }
+
             await ThrowIfNotSuccessfulStatusCode(response);
+
+            var payload = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                return new AddTorrentResult(0, 0, 0, Array.Empty<string>());
+            }
+
+            return JsonSerializer.Deserialize<AddTorrentResult>(payload, _options) ?? new AddTorrentResult(0, 0, 0, Array.Empty<string>());
         }
 
-        public async Task AddTrackersToTorrent(string hash, IEnumerable<string> urls)
+        public async Task AddTrackersToTorrent(IEnumerable<string> urls, bool? all = null, params string[] hashes)
         {
+            if (all is not true && (hashes is null || hashes.Length == 0))
+            {
+                throw new ArgumentException("Specify at least one torrent hash or set all=true.", nameof(hashes));
+            }
+
             var content = new FormUrlEncodedBuilder()
-                .Add("hash", hash)
+                .AddAllOrPipeSeparated("hash", all, hashes ?? Array.Empty<string>())
                 .Add("urls", string.Join('\n', urls))
                 .ToFormUrlEncodedContent();
 
@@ -613,23 +759,42 @@ namespace Lantean.QBitTorrentClient
             await ThrowIfNotSuccessfulStatusCode(response);
         }
 
-        public async Task EditTracker(string hash, string originalUrl, string newUrl)
+        public async Task EditTracker(string hash, string url, string? newUrl = null, int? tier = null)
         {
+            if ((newUrl is null) && (tier is null))
+            {
+                throw new ArgumentException("Must specify at least one of newUrl or tier.");
+            }
+
             var content = new FormUrlEncodedBuilder()
                 .Add("hash", hash)
-                .Add("originalUrl", originalUrl)
-                .Add("newUrl", newUrl)
-                .ToFormUrlEncodedContent();
+                .Add("url", url);
 
-            var response = await _httpClient.PostAsync("torrents/editTracker", content);
+            if (!string.IsNullOrEmpty(newUrl))
+            {
+                content.Add("newUrl", newUrl!);
+            }
+            if (tier is not null)
+            {
+                content.Add("tier", tier.Value);
+            }
+
+            var form = content.ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("torrents/editTracker", form);
 
             await ThrowIfNotSuccessfulStatusCode(response);
         }
 
-        public async Task RemoveTrackers(string hash, IEnumerable<string> urls)
+        public async Task RemoveTrackers(IEnumerable<string> urls, bool? all = null, params string[] hashes)
         {
+            if (all is not true && (hashes is null || hashes.Length == 0))
+            {
+                throw new ArgumentException("Specify at least one torrent hash or set all=true.", nameof(hashes));
+            }
+
             var content = new FormUrlEncodedBuilder()
-                .Add("hash", hash)
+                .AddAllOrPipeSeparated("hash", all, hashes ?? Array.Empty<string>())
                 .AddPipeSeparated("urls", urls)
                 .ToFormUrlEncodedContent();
 
@@ -732,13 +897,14 @@ namespace Lantean.QBitTorrentClient
             await ThrowIfNotSuccessfulStatusCode(response);
         }
 
-        public async Task SetTorrentShareLimit(float ratioLimit, float seedingTimeLimit, float inactiveSeedingTimeLimit, bool? all = null, params string[] hashes)
+        public async Task SetTorrentShareLimit(float ratioLimit, float seedingTimeLimit, float inactiveSeedingTimeLimit, ShareLimitAction? shareLimitAction = null, bool? all = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
                 .AddAllOrPipeSeparated("hashes", all, hashes)
                 .Add("ratioLimit", ratioLimit)
                 .Add("seedingTimeLimit", seedingTimeLimit)
                 .Add("inactiveSeedingTimeLimit", inactiveSeedingTimeLimit)
+                .AddIfNotNullOrEmpty("shareLimitAction", shareLimitAction)
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/setShareLimits", content);
@@ -791,6 +957,18 @@ namespace Lantean.QBitTorrentClient
                 .ToFormUrlEncodedContent();
 
             var response = await _httpClient.PostAsync("torrents/rename", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
+        public async Task SetTorrentComment(IEnumerable<string> hashes, string comment)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("hashes", string.Join('|', hashes))
+                .Add("comment", comment)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("torrents/setComment", content);
 
             await ThrowIfNotSuccessfulStatusCode(response);
         }
@@ -995,7 +1173,179 @@ namespace Lantean.QBitTorrentClient
             return Task.FromResult($"{_httpClient.BaseAddress}torrents/export?hash={hash}");
         }
 
+        public async Task<TorrentMetadata?> FetchMetadata(string source, string? downloader = null)
+        {
+            var builder = new FormUrlEncodedBuilder()
+                .Add("source", source);
+
+            if (!string.IsNullOrWhiteSpace(downloader))
+            {
+                builder.Add("downloader", downloader!);
+            }
+
+            var response = await _httpClient.PostAsync("torrents/fetchMetadata", builder.ToFormUrlEncodedContent());
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+
+            var payload = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                return null;
+            }
+
+            return JsonSerializer.Deserialize<TorrentMetadata>(payload, _options);
+        }
+
+        public async Task<IReadOnlyList<TorrentMetadata>> ParseMetadata(IEnumerable<(string FileName, Stream Content)> torrents)
+        {
+            var content = new MultipartFormDataContent();
+            foreach (var (fileName, stream) in torrents)
+            {
+                content.Add(new StreamContent(stream), "torrents", fileName);
+            }
+
+            var response = await _httpClient.PostAsync("torrents/parseMetadata", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+
+            return await GetJsonList<TorrentMetadata>(response.Content);
+        }
+
+        public async Task<byte[]> SaveMetadata(string source)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("source", source)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("torrents/saveMetadata", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+
+            return await response.Content.ReadAsByteArrayAsync();
+        }
+
         #endregion Torrent management
+
+        #region Torrent creator
+
+        public async Task<string> AddTorrentCreationTask(TorrentCreationTaskRequest request)
+        {
+            if (request is null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.SourcePath))
+                throw new ArgumentException("SourcePath is required.", nameof(request));
+
+            var builder = new FormUrlEncodedBuilder()
+                .Add("sourcePath", request.SourcePath);
+
+            if (!string.IsNullOrWhiteSpace(request.TorrentFilePath))
+            {
+                builder.Add("torrentFilePath", request.TorrentFilePath!);
+            }
+            if (request.PieceSize.HasValue)
+            {
+                builder.Add("pieceSize", request.PieceSize.Value);
+            }
+            if (request.Private.HasValue)
+            {
+                builder.Add("private", request.Private.Value);
+            }
+            if (request.StartSeeding.HasValue)
+            {
+                builder.Add("startSeeding", request.StartSeeding.Value);
+            }
+            if (!string.IsNullOrWhiteSpace(request.Comment))
+            {
+                builder.Add("comment", request.Comment!);
+            }
+            if (!string.IsNullOrWhiteSpace(request.Source))
+            {
+                builder.Add("source", request.Source!);
+            }
+            if (request.Trackers is not null)
+            {
+                builder.Add("trackers", string.Join('|', request.Trackers));
+            }
+            if (request.UrlSeeds is not null)
+            {
+                builder.Add("urlSeeds", string.Join('|', request.UrlSeeds));
+            }
+            if (!string.IsNullOrWhiteSpace(request.Format))
+            {
+                builder.Add("format", request.Format!);
+            }
+            if (request.OptimizeAlignment.HasValue)
+            {
+                builder.Add("optimizeAlignment", request.OptimizeAlignment.Value);
+            }
+            if (request.PaddedFileSizeLimit.HasValue)
+            {
+                builder.Add("paddedFileSizeLimit", request.PaddedFileSizeLimit.Value);
+            }
+
+            var response = await _httpClient.PostAsync("torrentcreator/addTask", builder.ToFormUrlEncodedContent());
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+
+            var payload = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                return string.Empty;
+            }
+
+            var json = JsonSerializer.Deserialize<JsonElement>(payload, _options);
+            if (json.ValueKind == JsonValueKind.Object && json.TryGetProperty("taskID", out var idElement))
+            {
+                return idElement.GetString() ?? string.Empty;
+            }
+
+            return string.Empty;
+        }
+
+        public async Task<IReadOnlyList<TorrentCreationTaskStatus>> GetTorrentCreationTasks(string? taskId = null)
+        {
+            HttpResponseMessage response;
+            if (string.IsNullOrWhiteSpace(taskId))
+            {
+                response = await _httpClient.GetAsync("torrentcreator/status");
+            }
+            else
+            {
+                var query = new QueryBuilder()
+                    .Add("taskID", taskId);
+
+                response = await _httpClient.GetAsync("torrentcreator/status", query);
+            }
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+
+            return await GetJsonList<TorrentCreationTaskStatus>(response.Content);
+        }
+
+        public async Task<byte[]> GetTorrentCreationTaskFile(string taskId)
+        {
+            var query = new QueryBuilder()
+                .Add("taskID", taskId);
+
+            var response = await _httpClient.GetAsync("torrentcreator/torrentFile", query);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+
+            return await response.Content.ReadAsByteArrayAsync();
+        }
+
+        public async Task DeleteTorrentCreationTask(string taskId)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("taskID", taskId)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("torrentcreator/deleteTask", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
+        #endregion Torrent creator
 
         #region RSS
 

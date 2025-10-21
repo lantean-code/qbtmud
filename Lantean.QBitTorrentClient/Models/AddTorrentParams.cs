@@ -12,9 +12,8 @@
 
         public bool? AddToTopOfQueue { get; set; }
 
-        // v4
-        public bool? Paused { get; set; }
-        // v5
+        public bool? Forced { get; set; }
+
         public bool? Stopped { get; set; }
 
         public string? SavePath { get; set; }
@@ -47,7 +46,15 @@
 
         public TorrentContentLayout? ContentLayout { get; set; }
 
-        public string? Cookie { get; set; }
+        public IEnumerable<Priority>? FilePriorities { get; set; }
+
+        public string? Downloader { get; set; }
+
+        public string? SslCertificate { get; set; }
+
+        public string? SslPrivateKey { get; set; }
+
+        public string? SslDhParams { get; set; }
 
         public Dictionary<string, Stream>? Torrents { get; set; }
     }

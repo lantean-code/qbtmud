@@ -1,4 +1,8 @@
-﻿using Lantean.QBitTorrentClient.Models;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Lantean.QBitTorrentClient.Models;
 
 namespace Lantean.QBitTorrentClient
 {
@@ -28,6 +32,12 @@ namespace Lantean.QBitTorrentClient
 
         Task SetApplicationPreferences(UpdatePreferences preferences);
 
+        Task<IReadOnlyList<ApplicationCookie>> GetApplicationCookies();
+
+        Task SetApplicationCookies(IEnumerable<ApplicationCookie> cookies);
+
+        Task<string> RotateApiKey();
+
         Task<string> GetDefaultSavePath();
 
         Task<IReadOnlyList<NetworkInterface>> GetNetworkInterfaces();
@@ -35,6 +45,14 @@ namespace Lantean.QBitTorrentClient
         Task<IReadOnlyList<string>> GetNetworkInterfaceAddressList(string @interface);
 
         #endregion Application
+
+        #region Client data
+
+        Task<IReadOnlyDictionary<string, JsonElement>> LoadClientData(IEnumerable<string>? keys = null);
+
+        Task StoreClientData(IReadOnlyDictionary<string, JsonElement> data);
+
+        #endregion Client data
 
         #region Log
 
@@ -74,7 +92,7 @@ namespace Lantean.QBitTorrentClient
 
         #region Torrent management
 
-        Task<IReadOnlyList<Torrent>> GetTorrentList(string? filter = null, string? category = null, string? tag = null, string? sort = null, bool? reverse = null, int? limit = null, int? offset = null, bool? isPrivate = null, params string[] hashes);
+        Task<IReadOnlyList<Torrent>> GetTorrentList(string? filter = null, string? category = null, string? tag = null, string? sort = null, bool? reverse = null, int? limit = null, int? offset = null, bool? isPrivate = null, bool? includeFiles = null, params string[] hashes);
 
         Task<TorrentProperties> GetTorrentProperties(string hash);
 
@@ -82,15 +100,17 @@ namespace Lantean.QBitTorrentClient
 
         Task<IReadOnlyList<WebSeed>> GetTorrentWebSeeds(string hash);
 
+        Task AddTorrentWebSeeds(string hash, IEnumerable<string> urls);
+
+        Task EditTorrentWebSeed(string hash, string originalUrl, string newUrl);
+
+        Task RemoveTorrentWebSeeds(string hash, IEnumerable<string> urls);
+
         Task<IReadOnlyList<FileData>> GetTorrentContents(string hash, params int[] indexes);
 
         Task<IReadOnlyList<PieceState>> GetTorrentPieceStates(string hash);
 
         Task<IReadOnlyList<string>> GetTorrentPieceHashes(string hash);
-
-        Task PauseTorrents(bool? all = null, params string[] hashes);
-
-        Task ResumeTorrents(bool? all = null, params string[] hashes);
 
         Task StartTorrents(bool? all = null, params string[] hashes);
 
@@ -100,15 +120,15 @@ namespace Lantean.QBitTorrentClient
 
         Task RecheckTorrents(bool? all = null, params string[] hashes);
 
-        Task ReannounceTorrents(bool? all = null, params string[] hashes);
+        Task ReannounceTorrents(bool? all = null, IEnumerable<string>? trackers = null, params string[] hashes);
 
-        Task AddTorrent(AddTorrentParams addTorrentParams);
+        Task<AddTorrentResult> AddTorrent(AddTorrentParams addTorrentParams);
 
-        Task AddTrackersToTorrent(string hash, IEnumerable<string> urls);
+        Task AddTrackersToTorrent(IEnumerable<string> urls, bool? all = null, params string[] hashes);
 
-        Task EditTracker(string hash, string originalUrl, string newUrl);
+        Task EditTracker(string hash, string url, string? newUrl = null, int? tier = null);
 
-        Task RemoveTrackers(string hash, IEnumerable<string> urls);
+        Task RemoveTrackers(IEnumerable<string> urls, bool? all = null, params string[] hashes);
 
         Task AddPeers(IEnumerable<string> hashes, IEnumerable<PeerId> peers);
 
@@ -126,7 +146,7 @@ namespace Lantean.QBitTorrentClient
 
         Task SetTorrentDownloadLimit(long limit, bool? all = null, params string[] hashes);
 
-        Task SetTorrentShareLimit(float ratioLimit, float seedingTimeLimit, float inactiveSeedingTimeLimit, bool? all = null, params string[] hashes);
+        Task SetTorrentShareLimit(float ratioLimit, float seedingTimeLimit, float inactiveSeedingTimeLimit, ShareLimitAction? shareLimitAction = null, bool? all = null, params string[] hashes);
 
         Task<IReadOnlyDictionary<string, long>> GetTorrentUploadLimit(bool? all = null, params string[] hashes);
 
@@ -135,6 +155,8 @@ namespace Lantean.QBitTorrentClient
         Task SetTorrentLocation(string location, bool? all = null, params string[] hashes);
 
         Task SetTorrentName(string name, string hash);
+
+        Task SetTorrentComment(IEnumerable<string> hashes, string comment);
 
         Task SetTorrentCategory(string category, bool? all = null, params string[] hashes);
 
@@ -172,7 +194,25 @@ namespace Lantean.QBitTorrentClient
 
         Task<string> GetExportUrl(string hash);
 
+        Task<TorrentMetadata?> FetchMetadata(string source, string? downloader = null);
+
+        Task<IReadOnlyList<TorrentMetadata>> ParseMetadata(IEnumerable<(string FileName, Stream Content)> torrents);
+
+        Task<byte[]> SaveMetadata(string source);
+
         #endregion Torrent management
+
+        #region Torrent creator
+
+        Task<string> AddTorrentCreationTask(TorrentCreationTaskRequest request);
+
+        Task<IReadOnlyList<TorrentCreationTaskStatus>> GetTorrentCreationTasks(string? taskId = null);
+
+        Task<byte[]> GetTorrentCreationTaskFile(string taskId);
+
+        Task DeleteTorrentCreationTask(string taskId);
+
+        #endregion Torrent creator
 
         #region RSS
 

@@ -16,6 +16,7 @@ namespace Lantean.QBitTorrentClient.Models
             string? flags,
             string? flagsDescription,
             string? iPAddress,
+            string? i2pDestination,
             string? clientId,
             int? port,
             float? progress,
@@ -33,6 +34,7 @@ namespace Lantean.QBitTorrentClient.Models
             Flags = flags;
             FlagsDescription = flagsDescription;
             IPAddress = iPAddress;
+            I2pDestination = i2pDestination;
             ClientId = clientId;
             Port = port;
             Progress = progress;
@@ -70,6 +72,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("ip")]
         public string? IPAddress { get; }
+
+        [JsonPropertyName("i2p_dest")]
+        public string? I2pDestination { get; }
 
         [JsonPropertyName("peer_id_client")]
         public string? ClientId { get; }

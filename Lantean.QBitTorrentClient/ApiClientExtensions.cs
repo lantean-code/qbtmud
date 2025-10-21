@@ -1,24 +1,10 @@
-﻿using Lantean.QBitTorrentClient.Models;
+﻿using System.Linq;
+using Lantean.QBitTorrentClient.Models;
 
 namespace Lantean.QBitTorrentClient
 {
     public static class ApiClientExtensions
     {
-        public static Task PauseTorrent(this IApiClient apiClient, string hash)
-        {
-            return apiClient.PauseTorrents(null, hash);
-        }
-
-        public static Task PauseTorrents(this IApiClient apiClient, IEnumerable<string> hashes)
-        {
-            return apiClient.PauseTorrents(null, hashes.ToArray());
-        }
-
-        public static Task PauseAllTorrents(this IApiClient apiClient)
-        {
-            return apiClient.PauseTorrents(true);
-        }
-
         public static Task StopTorrent(this IApiClient apiClient, string hash)
         {
             return apiClient.StopTorrents(null, hash);
@@ -32,21 +18,6 @@ namespace Lantean.QBitTorrentClient
         public static Task StopAllTorrents(this IApiClient apiClient)
         {
             return apiClient.StopTorrents(true);
-        }
-
-        public static Task ResumeTorrent(this IApiClient apiClient, string hash)
-        {
-            return apiClient.ResumeTorrents(null, hash);
-        }
-
-        public static Task ResumeTorrents(this IApiClient apiClient, IEnumerable<string> hashes)
-        {
-            return apiClient.ResumeTorrents(null, hashes.ToArray());
-        }
-
-        public static Task ResumeAllTorrents(this IApiClient apiClient)
-        {
-            return apiClient.ResumeTorrents(true);
         }
 
         public static Task StartTorrent(this IApiClient apiClient, string hash)
@@ -158,7 +129,7 @@ namespace Lantean.QBitTorrentClient
 
         public static Task ReannounceTorrent(this IApiClient apiClient, string hash)
         {
-            return apiClient.ReannounceTorrents(null, hash);
+            return apiClient.ReannounceTorrents(null, null, hash);
         }
 
         public static async Task<IEnumerable<string>> RemoveUnusedCategories(this IApiClient apiClient)

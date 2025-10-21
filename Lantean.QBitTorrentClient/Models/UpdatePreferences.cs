@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 
 namespace Lantean.QBitTorrentClient.Models
 {
@@ -6,6 +7,9 @@ namespace Lantean.QBitTorrentClient.Models
     {
         [JsonPropertyName("add_to_top_of_queue")]
         public bool? AddToTopOfQueue { get; set; }
+
+        [JsonPropertyName("add_stopped_enabled")]
+        public bool? AddStoppedEnabled { get; set; }
 
         [JsonPropertyName("add_trackers")]
         public string? AddTrackers { get; set; }
@@ -27,6 +31,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("announce_ip")]
         public string? AnnounceIp { get; set; }
+
+        [JsonPropertyName("announce_port")]
+        public int? AnnouncePort { get; set; }
 
         [JsonPropertyName("announce_to_all_tiers")]
         public bool? AnnounceToAllTiers { get; set; }
@@ -241,6 +248,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("incomplete_files_ext")]
         public bool? IncompleteFilesExt { get; set; }
 
+        [JsonPropertyName("use_unwanted_folder")]
+        public bool? UseUnwantedFolder { get; set; }
+
         [JsonPropertyName("ip_filter_enabled")]
         public bool? IpFilterEnabled { get; set; }
 
@@ -261,6 +271,12 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("listen_port")]
         public int? ListenPort { get; set; }
+
+        [JsonPropertyName("ssl_enabled")]
+        public bool? SslEnabled { get; set; }
+
+        [JsonPropertyName("ssl_listen_port")]
+        public int? SslListenPort { get; set; }
 
         [JsonPropertyName("locale")]
         public string? Locale { get; set; }
@@ -466,6 +482,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("save_resume_data_interval")]
         public int? SaveResumeDataInterval { get; set; }
 
+        [JsonPropertyName("save_statistics_interval")]
+        public int? SaveStatisticsInterval { get; set; }
+
         [JsonPropertyName("scan_dirs")]
         public Dictionary<string, SaveLocation>? ScanDirs { get; set; }
 
@@ -517,9 +536,6 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("ssrf_mitigation")]
         public bool? SsrfMitigation { get; set; }
 
-        [JsonPropertyName("start_paused_enabled")]
-        public bool? StartPausedEnabled { get; set; }
-
         [JsonPropertyName("stop_tracker_timeout")]
         public int? StopTrackerTimeout { get; set; }
 
@@ -534,6 +550,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("torrent_content_layout")]
         public string? TorrentContentLayout { get; set; }
+
+        [JsonPropertyName("torrent_content_remove_option")]
+        public string? TorrentContentRemoveOption { get; set; }
 
         [JsonPropertyName("torrent_file_size_limit")]
         public int? TorrentFileSizeLimit { get; set; }
@@ -562,6 +581,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("use_https")]
         public bool? UseHttps { get; set; }
 
+        [JsonPropertyName("ignore_ssl_errors")]
+        public bool? IgnoreSslErrors { get; set; }
+
         [JsonPropertyName("use_subcategories")]
         public bool? UseSubcategories { get; set; }
 
@@ -573,6 +595,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("web_ui_address")]
         public string? WebUiAddress { get; set; }
+
+        [JsonPropertyName("web_ui_api_key")]
+        public string? WebUiApiKey { get; set; }
 
         [JsonPropertyName("web_ui_ban_duration")]
         public int? WebUiBanDuration { get; set; }
@@ -627,5 +652,23 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("web_ui_password")]
         public string? WebUiPassword { get; set; }
+
+        public void Validate()
+        {
+            if (MaxRatio.HasValue && MaxRatioEnabled.HasValue)
+            {
+                throw new InvalidOperationException("Specify either max_ratio or max_ratio_enabled, not both.");
+            }
+
+            if (MaxSeedingTime.HasValue && MaxSeedingTimeEnabled.HasValue)
+            {
+                throw new InvalidOperationException("Specify either max_seeding_time or max_seeding_time_enabled, not both.");
+            }
+
+            if (MaxInactiveSeedingTime.HasValue && MaxInactiveSeedingTimeEnabled.HasValue)
+            {
+                throw new InvalidOperationException("Specify either max_inactive_seeding_time or max_inactive_seeding_time_enabled, not both.");
+            }
+        }
     }
 }

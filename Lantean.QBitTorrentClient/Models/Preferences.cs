@@ -7,6 +7,7 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonConstructor]
         public Preferences(
             bool addToTopOfQueue,
+            bool addStoppedEnabled,
             string addTrackers,
             bool addTrackersEnabled,
             int altDlLimit,
@@ -14,6 +15,7 @@ namespace Lantean.QBitTorrentClient.Models
             bool alternativeWebuiEnabled,
             string alternativeWebuiPath,
             string announceIp,
+            int announcePort,
             bool announceToAllTiers,
             bool announceToAllTrackers,
             bool anonymousMode,
@@ -85,6 +87,7 @@ namespace Lantean.QBitTorrentClient.Models
             int i2pPort,
             bool idnSupportEnabled,
             bool incompleteFilesExt,
+            bool useUnwantedFolder,
             bool ipFilterEnabled,
             string ipFilterPath,
             bool ipFilterTrackers,
@@ -92,6 +95,8 @@ namespace Lantean.QBitTorrentClient.Models
             bool limitTcpOverhead,
             bool limitUtpRate,
             int listenPort,
+            bool sslEnabled,
+            int sslListenPort,
             string locale,
             bool lsd,
             bool mailNotificationAuthEnabled,
@@ -160,6 +165,7 @@ namespace Lantean.QBitTorrentClient.Models
             string savePath,
             bool savePathChangedTmmEnabled,
             int saveResumeDataInterval,
+            int saveStatisticsInterval,
             Dictionary<string, SaveLocation> scanDirs,
             int scheduleFromHour,
             int scheduleFromMin,
@@ -177,12 +183,12 @@ namespace Lantean.QBitTorrentClient.Models
             int socketReceiveBufferSize,
             int socketSendBufferSize,
             bool ssrfMitigation,
-            bool startPausedEnabled,
             int stopTrackerTimeout,
             string tempPath,
             bool tempPathEnabled,
             bool torrentChangedTmmEnabled,
             string torrentContentLayout,
+            string torrentContentRemoveOption,
             int torrentFileSizeLimit,
             string torrentStopCondition,
             int upLimit,
@@ -192,10 +198,12 @@ namespace Lantean.QBitTorrentClient.Models
             int upnpLeaseDuration,
             bool useCategoryPathsInManualMode,
             bool useHttps,
+            bool ignoreSslErrors,
             bool useSubcategories,
             int utpTcpMixedMode,
             bool validateHttpsTrackerCertificate,
             string webUiAddress,
+            string webUiApiKey,
             int webUiBanDuration,
             bool webUiClickjackingProtectionEnabled,
             bool webUiCsrfProtectionEnabled,
@@ -217,6 +225,7 @@ namespace Lantean.QBitTorrentClient.Models
         )
         {
             AddToTopOfQueue = addToTopOfQueue;
+            AddStoppedEnabled = addStoppedEnabled;
             AddTrackers = addTrackers;
             AddTrackersEnabled = addTrackersEnabled;
             AltDlLimit = altDlLimit;
@@ -224,6 +233,7 @@ namespace Lantean.QBitTorrentClient.Models
             AlternativeWebuiEnabled = alternativeWebuiEnabled;
             AlternativeWebuiPath = alternativeWebuiPath;
             AnnounceIp = announceIp;
+            AnnouncePort = announcePort;
             AnnounceToAllTiers = announceToAllTiers;
             AnnounceToAllTrackers = announceToAllTrackers;
             AnonymousMode = anonymousMode;
@@ -295,6 +305,7 @@ namespace Lantean.QBitTorrentClient.Models
             I2pPort = i2pPort;
             IdnSupportEnabled = idnSupportEnabled;
             IncompleteFilesExt = incompleteFilesExt;
+            UseUnwantedFolder = useUnwantedFolder;
             IpFilterEnabled = ipFilterEnabled;
             IpFilterPath = ipFilterPath;
             IpFilterTrackers = ipFilterTrackers;
@@ -302,6 +313,8 @@ namespace Lantean.QBitTorrentClient.Models
             LimitTcpOverhead = limitTcpOverhead;
             LimitUtpRate = limitUtpRate;
             ListenPort = listenPort;
+            SslEnabled = sslEnabled;
+            SslListenPort = sslListenPort;
             Locale = locale;
             Lsd = lsd;
             MailNotificationAuthEnabled = mailNotificationAuthEnabled;
@@ -370,6 +383,7 @@ namespace Lantean.QBitTorrentClient.Models
             SavePath = savePath;
             SavePathChangedTmmEnabled = savePathChangedTmmEnabled;
             SaveResumeDataInterval = saveResumeDataInterval;
+            SaveStatisticsInterval = saveStatisticsInterval;
             ScanDirs = scanDirs;
             ScheduleFromHour = scheduleFromHour;
             ScheduleFromMin = scheduleFromMin;
@@ -387,12 +401,12 @@ namespace Lantean.QBitTorrentClient.Models
             SocketReceiveBufferSize = socketReceiveBufferSize;
             SocketSendBufferSize = socketSendBufferSize;
             SsrfMitigation = ssrfMitigation;
-            StartPausedEnabled = startPausedEnabled;
             StopTrackerTimeout = stopTrackerTimeout;
             TempPath = tempPath;
             TempPathEnabled = tempPathEnabled;
             TorrentChangedTmmEnabled = torrentChangedTmmEnabled;
             TorrentContentLayout = torrentContentLayout;
+            TorrentContentRemoveOption = torrentContentRemoveOption;
             TorrentFileSizeLimit = torrentFileSizeLimit;
             TorrentStopCondition = torrentStopCondition;
             UpLimit = upLimit;
@@ -402,10 +416,12 @@ namespace Lantean.QBitTorrentClient.Models
             UpnpLeaseDuration = upnpLeaseDuration;
             UseCategoryPathsInManualMode = useCategoryPathsInManualMode;
             UseHttps = useHttps;
+            IgnoreSslErrors = ignoreSslErrors;
             UseSubcategories = useSubcategories;
             UtpTcpMixedMode = utpTcpMixedMode;
             ValidateHttpsTrackerCertificate = validateHttpsTrackerCertificate;
             WebUiAddress = webUiAddress;
+            WebUiApiKey = webUiApiKey;
             WebUiBanDuration = webUiBanDuration;
             WebUiClickjackingProtectionEnabled = webUiClickjackingProtectionEnabled;
             WebUiCsrfProtectionEnabled = webUiCsrfProtectionEnabled;
@@ -429,6 +445,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("add_to_top_of_queue")]
         public bool AddToTopOfQueue { get; }
 
+        [JsonPropertyName("add_stopped_enabled")]
+        public bool AddStoppedEnabled { get; }
+
         [JsonPropertyName("add_trackers")]
         public string AddTrackers { get; }
 
@@ -449,6 +468,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("announce_ip")]
         public string AnnounceIp { get; }
+
+        [JsonPropertyName("announce_port")]
+        public int AnnouncePort { get; }
 
         [JsonPropertyName("announce_to_all_tiers")]
         public bool AnnounceToAllTiers { get; }
@@ -663,6 +685,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("incomplete_files_ext")]
         public bool IncompleteFilesExt { get; }
 
+        [JsonPropertyName("use_unwanted_folder")]
+        public bool UseUnwantedFolder { get; }
+
         [JsonPropertyName("ip_filter_enabled")]
         public bool IpFilterEnabled { get; }
 
@@ -683,6 +708,12 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("listen_port")]
         public int ListenPort { get; }
+
+        [JsonPropertyName("ssl_enabled")]
+        public bool SslEnabled { get; }
+
+        [JsonPropertyName("ssl_listen_port")]
+        public int SslListenPort { get; }
 
         [JsonPropertyName("locale")]
         public string Locale { get; }
@@ -888,6 +919,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("save_resume_data_interval")]
         public int SaveResumeDataInterval { get; }
 
+        [JsonPropertyName("save_statistics_interval")]
+        public int SaveStatisticsInterval { get; }
+
         [JsonPropertyName("scan_dirs")]
         public Dictionary<string, SaveLocation> ScanDirs { get; }
 
@@ -939,9 +973,6 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("ssrf_mitigation")]
         public bool SsrfMitigation { get; }
 
-        [JsonPropertyName("start_paused_enabled")]
-        public bool StartPausedEnabled { get; }
-
         [JsonPropertyName("stop_tracker_timeout")]
         public int StopTrackerTimeout { get; }
 
@@ -956,6 +987,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("torrent_content_layout")]
         public string TorrentContentLayout { get; }
+
+        [JsonPropertyName("torrent_content_remove_option")]
+        public string TorrentContentRemoveOption { get; }
 
         [JsonPropertyName("torrent_file_size_limit")]
         public int TorrentFileSizeLimit { get; }
@@ -984,6 +1018,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("use_https")]
         public bool UseHttps { get; }
 
+        [JsonPropertyName("ignore_ssl_errors")]
+        public bool IgnoreSslErrors { get; }
+
         [JsonPropertyName("use_subcategories")]
         public bool UseSubcategories { get; }
 
@@ -995,6 +1032,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("web_ui_address")]
         public string WebUiAddress { get; }
+
+        [JsonPropertyName("web_ui_api_key")]
+        public string WebUiApiKey { get; }
 
         [JsonPropertyName("web_ui_ban_duration")]
         public int WebUiBanDuration { get; }
