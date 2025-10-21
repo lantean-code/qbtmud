@@ -171,7 +171,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.AddTrackersToTorrent(Hash, trackers);
+            await ApiClient.AddTrackersToTorrent(trackers, hashes: new[] { Hash });
         }
 
         protected Task EditTrackerToolbar()
@@ -211,7 +211,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveTrackers(Hash, [tracker.Url]);
+            await ApiClient.RemoveTrackers([tracker.Url], hashes: new[] { Hash });
         }
 
         protected Task CopyTrackerUrlToolbar()

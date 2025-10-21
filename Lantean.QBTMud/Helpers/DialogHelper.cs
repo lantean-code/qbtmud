@@ -3,6 +3,7 @@ using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
 using MudBlazor;
+using System.Linq;
 
 namespace Lantean.QBTMud.Helpers
 {
@@ -56,7 +57,7 @@ namespace Lantean.QBTMud.Helpers
             var addTorrentParams = CreateAddTorrentParams(options);
             addTorrentParams.Torrents = files;
 
-            await apiClient.AddTorrent(addTorrentParams);
+            _ = await apiClient.AddTorrent(addTorrentParams);
 
             foreach (var stream in streams)
             {
@@ -74,15 +75,10 @@ namespace Lantean.QBTMud.Helpers
             {
                 addTorrentParams.ContentLayout = Enum.Parse<QBitTorrentClient.Models.TorrentContentLayout>(options.ContentLayout);
             }
-            if (string.IsNullOrEmpty(options.Cookie))
-            {
-                addTorrentParams.Cookie = options.Cookie;
-            }
             addTorrentParams.DownloadLimit = options.DownloadLimit;
             addTorrentParams.DownloadPath = options.DownloadPath;
             addTorrentParams.FirstLastPiecePriority = options.DownloadFirstAndLastPiecesFirst;
             addTorrentParams.InactiveSeedingTimeLimit = options.InactiveSeedingTimeLimit;
-            addTorrentParams.Paused = !options.StartTorrent;
             addTorrentParams.RatioLimit = options.RatioLimit;
             addTorrentParams.RenameTorrent = options.RenameTorrent;
             addTorrentParams.SavePath = options.SavePath;
@@ -123,7 +119,7 @@ namespace Lantean.QBTMud.Helpers
             var addTorrentParams = CreateAddTorrentParams(options);
             addTorrentParams.Urls = options.Urls;
 
-            await apiClient.AddTorrent(addTorrentParams);
+            _ = await apiClient.AddTorrent(addTorrentParams);
         }
 
         public static async Task<bool> InvokeDeleteTorrentDialog(this IDialogService dialogService, IApiClient apiClient, params string[] hashes)
@@ -243,7 +239,7 @@ namespace Lantean.QBTMud.Helpers
 
             var shareRatio = (ShareRatio)dialogResult.Data;
 
-            await apiClient.SetTorrentShareLimit(shareRatio.RatioLimit, shareRatio.SeedingTimeLimit, shareRatio.InactiveSeedingTimeLimit, null, torrents.Select(t => t.Hash).ToArray());
+            await apiClient.SetTorrentShareLimit(shareRatio.RatioLimit, shareRatio.SeedingTimeLimit, shareRatio.InactiveSeedingTimeLimit, hashes: torrents.Select(t => t.Hash).ToArray());
         }
 
         public static async Task InvokeStringFieldDialog(this IDialogService dialogService, string title, string label, string? value, Func<string, Task> onSuccess)

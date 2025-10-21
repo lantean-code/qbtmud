@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             TorrentManagementMode = preferences.AutoTmmEnabled;
             SavePath = preferences.SavePath;
-            StartTorrent = !preferences.StartPausedEnabled;
+            StartTorrent = !preferences.AddStoppedEnabled;
             AddToTopOfQueue = preferences.AddToTopOfQueue;
             StopCondition = preferences.TorrentStopCondition;
             ContentLayout = preferences.TorrentContentLayout;

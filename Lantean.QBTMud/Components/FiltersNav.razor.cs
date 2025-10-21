@@ -5,6 +5,7 @@ using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using System.Linq;
 
 namespace Lantean.QBTMud.Components
 {
@@ -352,18 +353,18 @@ namespace Lantean.QBTMud.Components
             }
         }
 
-        protected async Task ResumeTorrents(string type)
+        protected async Task StartTorrents(string type)
         {
             var torrents = GetAffectedTorrentHashes(type);
 
-            await ApiClient.ResumeTorrents(torrents);
+            await ApiClient.StartTorrents(hashes: torrents.ToArray());
         }
 
-        protected async Task PauseTorrents(string type)
+        protected async Task StopTorrents(string type)
         {
             var torrents = GetAffectedTorrentHashes(type);
 
-            await ApiClient.PauseTorrents(torrents);
+            await ApiClient.StopTorrents(hashes: torrents.ToArray());
         }
 
         protected async Task RemoveTorrents(string type)

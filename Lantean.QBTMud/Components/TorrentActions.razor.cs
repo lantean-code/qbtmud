@@ -7,6 +7,7 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
+using System.Linq;
 
 namespace Lantean.QBTMud.Components
 {
@@ -77,8 +78,8 @@ namespace Lantean.QBTMud.Components
         {
             _actions =
             [
-                new("start", "Start", Icons.Material.Filled.PlayArrow, Color.Success, CreateCallback(Resume)),
-                new("pause", "Pause", MajorVersion < 5 ? Icons.Material.Filled.Pause : Icons.Material.Filled.Stop, Color.Warning, CreateCallback(Pause)),
+                new("start", "Start", Icons.Material.Filled.PlayArrow, Color.Success, CreateCallback(Start)),
+                new("stop", "Stop", Icons.Material.Filled.Stop, Color.Warning, CreateCallback(Stop)),
                 new("forceStart", "Force start", Icons.Material.Filled.Forward, Color.Warning, CreateCallback(ForceStart)),
                 new("delete", "Remove", Icons.Material.Filled.Delete, Color.Error, CreateCallback(Remove), separatorBefore: true),
                 new("setLocation", "Set location", Icons.Material.Filled.MyLocation, Color.Info, CreateCallback(SetLocation), separatorBefore: true),
@@ -146,32 +147,16 @@ namespace Lantean.QBTMud.Components
             OverlayVisible = value;
         }
 
-        protected async Task Pause()
+        protected async Task Stop()
         {
-            if (MajorVersion < 5)
-            {
-                await ApiClient.PauseTorrents(Hashes);
-                Snackbar.Add("Torrent paused.");
-            }
-            else
-            {
-                await ApiClient.StopTorrents(Hashes);
-                Snackbar.Add("Torrent stopped.");
-            }
+            await ApiClient.StopTorrents(hashes: Hashes.ToArray());
+            Snackbar.Add(MajorVersion < 5 ? "Torrent paused." : "Torrent stopped.");
         }
 
-        protected async Task Resume()
+        protected async Task Start()
         {
-            if (MajorVersion < 5)
-            {
-                await ApiClient.ResumeTorrents(Hashes);
-                Snackbar.Add("Torrent resumed.");
-            }
-            else
-            {
-                await ApiClient.StartTorrents(Hashes);
-                Snackbar.Add("Torrent started.");
-            }
+            await ApiClient.StartTorrents(hashes: Hashes.ToArray());
+            Snackbar.Add(MajorVersion < 5 ? "Torrent resumed." : "Torrent started.");
         }
 
         protected async Task ForceStart()

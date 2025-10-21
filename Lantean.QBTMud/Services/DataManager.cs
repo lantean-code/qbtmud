@@ -1738,7 +1738,7 @@ namespace Lantean.QBTMud.Services
                     SocketReceiveBufferSize = changed.SocketReceiveBufferSize,
                     SocketSendBufferSize = changed.SocketSendBufferSize,
                     SsrfMitigation = changed.SsrfMitigation,
-                    StartPausedEnabled = changed.StartPausedEnabled,
+                    AddStoppedEnabled = changed.AddStoppedEnabled,
                     StopTrackerTimeout = changed.StopTrackerTimeout,
                     TempPath = changed.TempPath,
                     TempPathEnabled = changed.TempPathEnabled,
@@ -1944,7 +1944,7 @@ namespace Lantean.QBTMud.Services
                 original.SocketReceiveBufferSize = changed.SocketReceiveBufferSize ?? original.SocketReceiveBufferSize;
                 original.SocketSendBufferSize = changed.SocketSendBufferSize ?? original.SocketSendBufferSize;
                 original.SsrfMitigation = changed.SsrfMitigation ?? original.SsrfMitigation;
-                original.StartPausedEnabled = changed.StartPausedEnabled ?? original.StartPausedEnabled;
+                original.AddStoppedEnabled = changed.AddStoppedEnabled ?? original.AddStoppedEnabled;
                 original.StopTrackerTimeout = changed.StopTrackerTimeout ?? original.StopTrackerTimeout;
                 original.TempPath = changed.TempPath ?? original.TempPath;
                 original.TempPathEnabled = changed.TempPathEnabled ?? original.TempPathEnabled;

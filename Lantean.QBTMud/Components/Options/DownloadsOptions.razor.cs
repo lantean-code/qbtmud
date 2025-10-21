@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Components.Options
     {
         protected string? TorrentContentLayout { get; set; }
         protected bool AddToTopOfQueue { get; set; }
-        protected bool StartPausedEnabled { get; set; }
+        protected bool AddStoppedEnabled { get; set; }
         protected string? TorrentStopCondition { get; set; }
         protected bool AutoDeleteMode { get; set; }
         protected bool PreallocateAll { get; set; }
@@ -51,7 +51,7 @@ namespace Lantean.QBTMud.Components.Options
             // when adding a torrent
             TorrentContentLayout = Preferences.TorrentContentLayout;
             AddToTopOfQueue = Preferences.AddToTopOfQueue;
-            StartPausedEnabled = Preferences.StartPausedEnabled;
+            AddStoppedEnabled = Preferences.AddStoppedEnabled;
             TorrentStopCondition = Preferences.TorrentStopCondition;
             AutoDeleteMode = Preferences.AutoDeleteMode == 1;
             PreallocateAll = Preferences.PreallocateAll;
@@ -116,10 +116,10 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task StartPausedEnabledChanged(bool value)
+        protected async Task AddStoppedEnabledChanged(bool value)
         {
-            StartPausedEnabled = value;
-            UpdatePreferences.StartPausedEnabled = value;
+            AddStoppedEnabled = value;
+            UpdatePreferences.AddStoppedEnabled = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 

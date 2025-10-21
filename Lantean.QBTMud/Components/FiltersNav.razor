@@ -65,8 +65,8 @@
     {
         return __builder =>
         {
-            <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="@(e => ResumeTorrents(type))">Resume torrents</MudMenuItem>
-            <MudMenuItem Icon="@Icons.Material.Filled.Pause" IconColor="Color.Warning" OnClick="@(e => PauseTorrents(type))">Pause torrents</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="@(e => StartTorrents(type))">Start torrents</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Pause" IconColor="Color.Warning" OnClick="@(e => StopTorrents(type))">Stop torrents</MudMenuItem>
             <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="@(e => RemoveTorrents(type))">Remove torrents</MudMenuItem>
         };
     }
