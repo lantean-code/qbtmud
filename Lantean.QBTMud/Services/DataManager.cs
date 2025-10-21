@@ -25,9 +25,8 @@ namespace Lantean.QBTMud.Services
             return peerList;
         }
 
-        public MainData CreateMainData(QBitTorrentClient.Models.MainData mainData, string version)
+        public MainData CreateMainData(QBitTorrentClient.Models.MainData mainData)
         {
-            var majorVersion = VersionHelper.GetMajorVersion(version);
             var torrents = new Dictionary<string, Torrent>(mainData.Torrents?.Count ?? 0);
             if (mainData.Torrents is not null)
             {
@@ -95,7 +94,7 @@ namespace Lantean.QBTMud.Services
                 categoriesState.Add(category, torrents.Values.Where(t => FilterHelper.FilterCategory(t, category, serverState.UseSubcategories)).ToHashesHashSet());
             }
 
-            var statuses = GetStatuses(majorVersion).ToArray();
+            var statuses = GetStatuses().ToArray();
             var statusState = new Dictionary<string, HashSet<string>>(statuses.Length + 2);
             foreach (var status in statuses)
             {
@@ -110,7 +109,7 @@ namespace Lantean.QBTMud.Services
                 trackersState.Add(tracker, torrents.Values.Where(t => FilterHelper.FilterTracker(t, tracker)).ToHashesHashSet());
             }
 
-            var torrentList = new MainData(torrents, tags, categories, trackers, serverState, tagState, categoriesState, statusState, trackersState, majorVersion);
+            var torrentList = new MainData(torrents, tags, categories, trackers, serverState, tagState, categoriesState, statusState, trackersState);
 
             return torrentList;
         }
@@ -284,7 +283,7 @@ namespace Lantean.QBTMud.Services
                     {
                         var newTorrent = CreateTorrent(hash, torrent);
                         torrentList.Torrents.Add(hash, newTorrent);
-                        AddTorrentToStates(torrentList, hash, torrentList.MajorVersion);
+                        AddTorrentToStates(torrentList, hash);
                         dataChanged = true;
                         filterChanged = true;
                     }
@@ -316,7 +315,7 @@ namespace Lantean.QBTMud.Services
             return dataChanged;
         }
 
-        private static void AddTorrentToStates(MainData torrentList, string hash, int version)
+        private static void AddTorrentToStates(MainData torrentList, string hash)
         {
             if (!torrentList.Torrents.TryGetValue(hash, out var torrent))
             {
@@ -329,7 +328,7 @@ namespace Lantean.QBTMud.Services
             torrentList.CategoriesState[FilterHelper.CATEGORY_ALL].Add(hash);
             UpdateCategoryState(torrentList, torrent, hash, previousCategory: null);
 
-            foreach (var status in GetStatuses(version))
+            foreach (var status in GetStatuses())
             {
                 if (!torrentList.StatusState.TryGetValue(status.ToString(), out var statusSet))
                 {
@@ -346,21 +345,16 @@ namespace Lantean.QBTMud.Services
             UpdateTrackerState(torrentList, torrent, hash, previousTracker: null);
         }
 
-        private static Status[] GetStatuses(int version)
+        private static Status[] GetStatuses()
         {
             if (_statusArray is not null)
             {
                 return _statusArray;
             }
 
-            if (version == 5)
-            {
-                _statusArray = Enum.GetValues<Status>().Where(s => s != Status.Paused).ToArray();
-            }
-            else
-            {
-                _statusArray = Enum.GetValues<Status>().Where(s => s != Status.Stopped).ToArray();
-            }
+            _statusArray = Enum.GetValues<Status>()
+                .Where(s => s != Status.Paused)
+                .ToArray();
 
             return _statusArray;
         }
@@ -388,7 +382,7 @@ namespace Lantean.QBTMud.Services
             torrentList.CategoriesState[FilterHelper.CATEGORY_ALL].Remove(hash);
             UpdateCategoryStateForRemoval(torrentList, hash, snapshot.Category);
 
-            foreach (var status in GetStatuses(torrentList.MajorVersion))
+            foreach (var status in GetStatuses())
             {
                 if (!torrentList.StatusState.TryGetValue(status.ToString(), out var statusState))
                 {
@@ -852,7 +846,7 @@ namespace Lantean.QBTMud.Services
 
         private static void UpdateStatusState(MainData torrentList, string hash, string previousState, long previousUploadSpeed, string newState, long newUploadSpeed)
         {
-            foreach (var status in GetStatuses(torrentList.MajorVersion))
+            foreach (var status in GetStatuses())
             {
                 if (!torrentList.StatusState.TryGetValue(status.ToString(), out var statusSet))
                 {

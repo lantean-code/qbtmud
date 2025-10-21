@@ -114,11 +114,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             SelectedRule.IgnoreDays = value;
         }
 
-        protected string? AddPaused { get; set; }
+        protected string? AddStopped { get; set; }
 
-        protected void AddPausedChanged(string value)
+        protected void AddStoppedChanged(string value)
         {
-            AddPaused = value;
+            AddStopped = value;
             switch (value)
             {
                 case "default":
@@ -273,15 +273,15 @@ namespace Lantean.QBTMud.Components.Dialogs
             switch (SelectedRule.TorrentParams.Stopped)
             {
                 case null:
-                    AddPaused = "default";
+                    AddStopped = "default";
                     break;
 
                 case true:
-                    AddPaused = "always";
+                    AddStopped = "always";
                     break;
 
                 case false:
-                    AddPaused = "never";
+                    AddStopped = "never";
                     break;
             }
 

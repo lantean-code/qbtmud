@@ -97,7 +97,7 @@ namespace Lantean.QBTMud.Layout
             Preferences = await ApiClient.GetApplicationPreferences();
             Version = await ApiClient.GetApplicationVersion();
             var data = await ApiClient.GetMainData(_requestId);
-            MainData = DataManager.CreateMainData(data, Version);
+            MainData = DataManager.CreateMainData(data);
             MarkTorrentsDirty();
 
             _requestId = data.ResponseId;
@@ -145,7 +145,7 @@ namespace Lantean.QBTMud.Layout
 
                         if (MainData is null || data.FullUpdate)
                         {
-                            MainData = DataManager.CreateMainData(data, Version);
+                            MainData = DataManager.CreateMainData(data);
                             MarkTorrentsDirty();
                             shouldRender = true;
                         }

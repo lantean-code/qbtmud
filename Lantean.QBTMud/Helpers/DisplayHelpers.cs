@@ -404,8 +404,6 @@ namespace Lantean.QBTMud.Helpers
                 Status.Downloading => (Icons.Material.Filled.Downloading, Color.Success),
                 Status.Seeding => (Icons.Material.Filled.Upload, Color.Info),
                 Status.Completed => (Icons.Material.Filled.Check, Color.Default),
-                Status.Resumed => (Icons.Material.Filled.PlayArrow, Color.Success),
-                Status.Paused => (Icons.Material.Filled.Pause, Color.Default),
                 Status.Stopped => (Icons.Material.Filled.Stop, Color.Default),
                 Status.Active => (Icons.Material.Filled.Sort, Color.Success),
                 Status.Inactive => (Icons.Material.Filled.Sort, Color.Error),

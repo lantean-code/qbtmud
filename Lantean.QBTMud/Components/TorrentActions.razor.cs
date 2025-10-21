@@ -38,9 +38,6 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
-        [CascadingParameter(Name = "Version")]
-        public string? Version { get; set; }
-
         [Parameter]
         [EditorRequired]
         public IEnumerable<string> Hashes { get; set; } = default!;
@@ -71,8 +68,6 @@ namespace Lantean.QBTMud.Components
         protected bool Disabled => !Hashes.Any();
 
         protected bool OverlayVisible { get; set; }
-
-        protected int MajorVersion => VersionHelper.GetMajorVersion(Version);
 
         protected override void OnInitialized()
         {
@@ -150,13 +145,13 @@ namespace Lantean.QBTMud.Components
         protected async Task Stop()
         {
             await ApiClient.StopTorrents(hashes: Hashes.ToArray());
-            Snackbar.Add(MajorVersion < 5 ? "Torrent paused." : "Torrent stopped.");
+            Snackbar.Add("Torrent stopped.");
         }
 
         protected async Task Start()
         {
             await ApiClient.StartTorrents(hashes: Hashes.ToArray());
-            Snackbar.Add(MajorVersion < 5 ? "Torrent resumed." : "Torrent started.");
+            Snackbar.Add("Torrent started.");
         }
 
         protected async Task ForceStart()
@@ -370,8 +365,8 @@ namespace Lantean.QBTMud.Components
             var allAreFirstLastPiecePrio = true;
             var thereAreFirstLastPiecePrio = false;
             var allAreDownloaded = true;
-            var allArePaused = true;
-            var thereArePaused = false;
+            var allAreStopped = true;
+            var thereAreStopped = false;
             var allAreForceStart = true;
             var thereAreForceStart = false;
             var allAreSuperSeeding = true;
@@ -409,27 +404,13 @@ namespace Lantean.QBTMud.Components
                     allAreSuperSeeding = false;
                 }
 
-                if (MajorVersion < 5)
+                if (torrent.State != "stoppedUP" && torrent.State != "stoppedDL")
                 {
-                    if (torrent.State != "pausedUP" && torrent.State != "pausedDL")
-                    {
-                        allArePaused = false;
-                    }
-                    else
-                    {
-                        thereArePaused = true;
-                    }
+                    allAreStopped = false;
                 }
                 else
                 {
-                    if (torrent.State != "stoppedUP" && torrent.State != "stoppedDL")
-                    {
-                        allArePaused = false;
-                    }
-                    else
-                    {
-                        thereArePaused = true;
-                    }
+                    thereAreStopped = true;
                 }
 
                 if (!torrent.ForceStart)
@@ -517,7 +498,7 @@ namespace Lantean.QBTMud.Components
                 actionStates["superSeeding"] = ActionState.Hidden;
             }
 
-            if (allArePaused)
+            if (allAreStopped)
             {
                 actionStates["pause"] = ActionState.Hidden;
             }
@@ -525,13 +506,11 @@ namespace Lantean.QBTMud.Components
             {
                 actionStates["forceStart"] = ActionState.Hidden;
             }
-            else if (!thereArePaused && !thereAreForceStart)
+            else if (!thereAreStopped && !thereAreForceStart)
             {
                 actionStates["start"] = ActionState.Hidden;
             }
 
-            if (MajorVersion >= 5)
-            {
                 if (actionStates.TryGetValue("start", out ActionState? startActionState))
                 {
                     startActionState.TextOverride = "Start";
@@ -549,7 +528,6 @@ namespace Lantean.QBTMud.Components
                 {
                     actionStates["pause"] = new ActionState { TextOverride = "Stop" };
                 }
-            }
 
             if (!allAreAutoTmm && thereAreAutoTmm)
             {

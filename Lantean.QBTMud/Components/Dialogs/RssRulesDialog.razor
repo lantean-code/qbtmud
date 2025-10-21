@@ -53,7 +53,7 @@
                         <MudNumericField T="int" Label="Ignore Subsequent Matches for (0 to Disable)" Value="IgnoreDays" ValueChanged="IgnoreDaysChanged" Disabled="@(SelectedRuleName is null)" Variant="Variant.Outlined" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudSelect T="string" Label="Add paused" Value="AddPaused" ValueChanged="AddPausedChanged" Disabled="@(SelectedRuleName is null)" Variant="Variant.Outlined">
+                        <MudSelect T="string" Label="Add stopped" Value="AddStopped" ValueChanged="AddStoppedChanged" Disabled="@(SelectedRuleName is null)" Variant="Variant.Outlined">
                             <MudSelectItem Value="@("default")">Use global settings</MudSelectItem>
                             <MudSelectItem Value="@("always")">Always</MudSelectItem>
                             <MudSelectItem Value="@("never")">Never</MudSelectItem>

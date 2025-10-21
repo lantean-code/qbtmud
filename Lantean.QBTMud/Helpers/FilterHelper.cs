@@ -200,15 +200,8 @@ namespace Lantean.QBTMud.Helpers
 
                     break;
 
-                case Status.Resumed:
-                    if (!state.Contains("resumed"))
-                    {
-                        return false;
-                    }
-                    break;
-
-                case Status.Paused:
-                    if (!state.Contains("paused") && !state.Contains("stopped"))
+                case Status.Stopped:
+                    if (state != "stoppedDL" && state != "stoppedUP")
                     {
                         return false;
                     }
