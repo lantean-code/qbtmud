@@ -30,7 +30,9 @@ namespace Lantean.QBitTorrentClient.Models
             long? uploadRateLimit,
             bool? useAltSpeedLimits,
             bool? useSubcategories,
-            float? writeCacheOverload) : base(connectionStatus, dHTNodes, downloadInfoData, downloadInfoSpeed, downloadRateLimit, uploadInfoData, uploadInfoSpeed, uploadRateLimit)
+            float? writeCacheOverload,
+            string? lastExternalAddressV4 = null,
+            string? lastExternalAddressV6 = null) : base(connectionStatus, dHTNodes, downloadInfoData, downloadInfoSpeed, downloadRateLimit, uploadInfoData, uploadInfoSpeed, uploadRateLimit)
         {
             AllTimeDownloaded = allTimeDownloaded;
             AllTimeUploaded = allTimeUploaded;
@@ -49,6 +51,8 @@ namespace Lantean.QBitTorrentClient.Models
             UseAltSpeedLimits = useAltSpeedLimits;
             UseSubcategories = useSubcategories;
             WriteCacheOverload = writeCacheOverload;
+            LastExternalAddressV4 = lastExternalAddressV4;
+            LastExternalAddressV6 = lastExternalAddressV6;
         }
 
         [JsonPropertyName("alltime_dl")]
@@ -101,5 +105,11 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("write_cache_overload")]
         public float? WriteCacheOverload { get; }
+
+        [JsonPropertyName("last_external_address_v4")]
+        public string? LastExternalAddressV4 { get; }
+
+        [JsonPropertyName("last_external_address_v6")]
+        public string? LastExternalAddressV6 { get; }
     }
 }

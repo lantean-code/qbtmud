@@ -201,6 +201,32 @@ namespace Lantean.QBTMud.Layout
             };
         }
 
+        private static string? BuildExternalIpLabel(ServerState? serverState)
+        {
+            if (serverState is null)
+            {
+                return null;
+            }
+
+            var v4 = serverState.LastExternalAddressV4;
+            var v6 = serverState.LastExternalAddressV6;
+            var hasV4 = !string.IsNullOrWhiteSpace(v4);
+            var hasV6 = !string.IsNullOrWhiteSpace(v6);
+
+            if (!hasV4 && !hasV6)
+            {
+                return "External IP: N/A";
+            }
+
+            if (hasV4 && hasV6)
+            {
+                return $"External IPs: {v4}, {v6}";
+            }
+
+            var address = hasV4 ? v4 : v6;
+            return $"External IP: {address}";
+        }
+
         private void OnCategoryChanged(string category)
         {
             if (Category == category)

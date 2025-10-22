@@ -653,6 +653,15 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("web_ui_password")]
         public string? WebUiPassword { get; set; }
 
+        [JsonPropertyName("confirm_torrent_deletion")]
+        public bool? ConfirmTorrentDeletion { get; set; }
+
+        [JsonPropertyName("confirm_torrent_recheck")]
+        public bool? ConfirmTorrentRecheck { get; set; }
+
+        [JsonPropertyName("status_bar_external_ip")]
+        public bool? StatusBarExternalIp { get; set; }
+
         public void Validate()
         {
             if (MaxRatio.HasValue && MaxRatioEnabled.HasValue)

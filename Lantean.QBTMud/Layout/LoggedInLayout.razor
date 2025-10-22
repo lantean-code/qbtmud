@@ -33,6 +33,14 @@
                                                                     }
                                                                     <MudSpacer />
                                                                     <MudText Class="mx-2 mb-1 d-none d-sm-flex">@DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk, "Free space: ")</MudText>
+                                                                    @{
+                                                                        var externalIpLabel = Preferences?.StatusBarExternalIp == true ? BuildExternalIpLabel(MainData?.ServerState) : null;
+                                                                    }
+                                                                    @if (!string.IsNullOrEmpty(externalIpLabel))
+                                                                    {
+                                                                        <MudDivider Vertical="true" Class="d-none d-sm-flex" />
+                                                                        <MudText Class="mx-2 mb-1 d-none d-sm-flex">@externalIpLabel</MudText>
+                                                                    }
                                                                     <MudDivider Vertical="true" Class="d-none d-sm-flex" />
                                                                     <MudText Class="mx-2 mb-1 d-none d-sm-flex">DHT @(MainData?.ServerState.DHTNodes ?? 0) nodes</MudText>
                                                                     <MudDivider Vertical="true" Class="d-none d-sm-flex" />

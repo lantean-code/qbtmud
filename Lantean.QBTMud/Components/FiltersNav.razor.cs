@@ -371,7 +371,7 @@ namespace Lantean.QBTMud.Components
         {
             var torrents = GetAffectedTorrentHashes(type);
 
-            await DialogService.InvokeDeleteTorrentDialog(ApiClient, [.. torrents]);
+            await DialogService.InvokeDeleteTorrentDialog(ApiClient, Preferences?.ConfirmTorrentDeletion == true, [.. torrents]);
         }
 
         private Dictionary<string, int> GetTags()

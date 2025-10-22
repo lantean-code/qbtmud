@@ -4,6 +4,10 @@ namespace Lantean.QBTMud.Components.Options
 {
     public partial class BehaviourOptions : Options
     {
+        protected bool ConfirmTorrentDeletion { get; set; }
+
+        protected bool StatusBarExternalIp { get; set; }
+
         protected bool FileLogEnabled { get; set; }
 
         protected string? FileLogPath { get; set; }
@@ -27,6 +31,8 @@ namespace Lantean.QBTMud.Components.Options
                 return false;
             }
 
+            ConfirmTorrentDeletion = Preferences.ConfirmTorrentDeletion;
+            StatusBarExternalIp = Preferences.StatusBarExternalIp;
             FileLogEnabled = Preferences.FileLogEnabled;
             FileLogPath = Preferences.FileLogPath;
             FileLogBackupEnabled = Preferences.FileLogBackupEnabled;
@@ -37,6 +43,20 @@ namespace Lantean.QBTMud.Components.Options
             PerformanceWarning = Preferences.PerformanceWarning;
 
             return true;
+        }
+
+        protected async Task ConfirmTorrentDeletionChanged(bool value)
+        {
+            ConfirmTorrentDeletion = value;
+            UpdatePreferences.ConfirmTorrentDeletion = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task StatusBarExternalIpChanged(bool value)
+        {
+            StatusBarExternalIp = value;
+            UpdatePreferences.StatusBarExternalIp = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task FileLogEnabledChanged(bool value)

@@ -7,7 +7,6 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-using System.Linq;
 
 namespace Lantean.QBTMud.Components
 {
@@ -162,7 +161,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task Remove()
         {
-            var deleted = await DialogService.InvokeDeleteTorrentDialog(ApiClient, Hashes.ToArray());
+            var deleted = await DialogService.InvokeDeleteTorrentDialog(ApiClient, Preferences?.ConfirmTorrentDeletion == true, Hashes.ToArray());
 
             if (deleted)
             {
@@ -258,7 +257,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task ForceRecheck()
         {
-            await ApiClient.RecheckTorrents(null, Hashes.ToArray());
+            await DialogService.ForceRecheckAsync(ApiClient, Hashes, Preferences?.ConfirmTorrentRecheck == true);
         }
 
         protected async Task ForceReannounce()

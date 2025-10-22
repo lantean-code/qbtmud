@@ -145,7 +145,9 @@ namespace Lantean.QBTMud.Services
                 serverState.UploadRateLimit.GetValueOrDefault(),
                 serverState.UseAltSpeedLimits.GetValueOrDefault(),
                 serverState.UseSubcategories.GetValueOrDefault(),
-                serverState.WriteCacheOverload.GetValueOrDefault());
+                serverState.WriteCacheOverload.GetValueOrDefault(),
+                serverState.LastExternalAddressV4 ?? string.Empty,
+                serverState.LastExternalAddressV6 ?? string.Empty);
         }
 
         public bool MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList, out bool filterChanged)
@@ -548,6 +550,18 @@ namespace Lantean.QBTMud.Services
             if (serverState.WriteCacheOverload.HasValue && existingServerState.WriteCacheOverload != serverState.WriteCacheOverload.Value)
             {
                 existingServerState.WriteCacheOverload = serverState.WriteCacheOverload.Value;
+                changed = true;
+            }
+
+            if (serverState.LastExternalAddressV4 is not null && existingServerState.LastExternalAddressV4 != serverState.LastExternalAddressV4)
+            {
+                existingServerState.LastExternalAddressV4 = serverState.LastExternalAddressV4;
+                changed = true;
+            }
+
+            if (serverState.LastExternalAddressV6 is not null && existingServerState.LastExternalAddressV6 != serverState.LastExternalAddressV6)
+            {
+                existingServerState.LastExternalAddressV6 = serverState.LastExternalAddressV6;
                 changed = true;
             }
 

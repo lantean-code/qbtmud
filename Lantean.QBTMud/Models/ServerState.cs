@@ -27,7 +27,17 @@
             long uploadRateLimit,
             bool useAltSpeedLimits,
             bool useSubcategories,
-            float writeCacheOverload) : base(connectionStatus, dHTNodes, downloadInfoData, downloadInfoSpeed, downloadRateLimit, uploadInfoData, uploadInfoSpeed, uploadRateLimit)
+            float writeCacheOverload,
+            string lastExternalAddressV4,
+            string lastExternalAddressV6) : base(
+                connectionStatus,
+                dHTNodes,
+                downloadInfoData,
+                downloadInfoSpeed,
+                downloadRateLimit,
+                uploadInfoData,
+                uploadInfoSpeed,
+                uploadRateLimit)
         {
             AllTimeDownloaded = allTimeDownloaded;
             AllTimeUploaded = allTimeUploaded;
@@ -46,6 +56,8 @@
             UseAltSpeedLimits = useAltSpeedLimits;
             UseSubcategories = useSubcategories;
             WriteCacheOverload = writeCacheOverload;
+            LastExternalAddressV4 = lastExternalAddressV4;
+            LastExternalAddressV6 = lastExternalAddressV6;
         }
 
         public ServerState()
@@ -85,5 +97,9 @@
         public bool UseSubcategories { get; set; }
 
         public float WriteCacheOverload { get; set; }
+
+        public string LastExternalAddressV4 { get; set; } = string.Empty;
+
+        public string LastExternalAddressV6 { get; set; } = string.Empty;
     }
 }

@@ -20,6 +20,24 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">Transfer List</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <FieldSwitch Label="Confirm when deleting torrents" Value="ConfirmTorrentDeletion" ValueChanged="ConfirmTorrentDeletionChanged" />
+            </MudItem>
+            <MudItem xs="12">
+                <FieldSwitch Label="Show external IP in status bar" Value="StatusBarExternalIp" ValueChanged="StatusBarExternalIpChanged" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
             <MudText Typo="Typo.subtitle2">Log File</MudText>
         </CardHeaderContent>
     </MudCardHeader>

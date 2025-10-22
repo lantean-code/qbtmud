@@ -16,6 +16,8 @@ namespace Lantean.QBTMud.Components.Options
         protected int SaveResumeDataInterval { get; private set; }
         protected int TorrentFileSizeLimit { get; private set; }
         protected bool RecheckCompletedTorrents { get; private set; }
+
+        protected bool ConfirmTorrentRecheck { get; private set; }
         protected string? AppInstanceName { get; private set; }
         protected int RefreshInterval { get; private set; }
         protected bool ResolvePeerCountries { get; private set; }
@@ -97,6 +99,7 @@ namespace Lantean.QBTMud.Components.Options
             SaveResumeDataInterval = Preferences.SaveResumeDataInterval;
             TorrentFileSizeLimit = Preferences.TorrentFileSizeLimit / 1024 / 1024;
             RecheckCompletedTorrents = Preferences.RecheckCompletedTorrents;
+            ConfirmTorrentRecheck = Preferences.ConfirmTorrentRecheck;
             AppInstanceName = Preferences.AppInstanceName;
             RefreshInterval = Preferences.RefreshInterval;
             ResolvePeerCountries = Preferences.ResolvePeerCountries;
@@ -206,6 +209,13 @@ namespace Lantean.QBTMud.Components.Options
         {
             RecheckCompletedTorrents = value;
             UpdatePreferences.RecheckCompletedTorrents = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        protected async Task ConfirmTorrentRecheckChanged(bool value)
+        {
+            ConfirmTorrentRecheck = value;
+            UpdatePreferences.ConfirmTorrentRecheck = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 

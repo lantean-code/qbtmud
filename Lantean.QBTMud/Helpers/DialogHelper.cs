@@ -122,7 +122,7 @@ namespace Lantean.QBTMud.Helpers
             _ = await apiClient.AddTorrent(addTorrentParams);
         }
 
-        public static async Task<bool> InvokeDeleteTorrentDialog(this IDialogService dialogService, IApiClient apiClient, params string[] hashes)
+        public static async Task<bool> InvokeDeleteTorrentDialog(this IDialogService dialogService, IApiClient apiClient, bool confirmTorrentDeletion, params string[] hashes)
         {
             if (hashes.Length == 0)
             {
@@ -134,6 +134,12 @@ namespace Lantean.QBTMud.Helpers
                 { nameof(DeleteDialog.Count), hashes.Length }
             };
 
+            if (!confirmTorrentDeletion)
+            {
+                await apiClient.DeleteTorrents(hashes: hashes, deleteFiles: false);
+                return true;
+            }
+
             var reference = await dialogService.ShowAsync<DeleteDialog>($"Remove torrent{(hashes.Length == 1 ? "" : "s")}?", parameters, ConfirmDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
@@ -144,6 +150,28 @@ namespace Lantean.QBTMud.Helpers
             await apiClient.DeleteTorrents(hashes, (bool)dialogResult.Data);
 
             return true;
+        }
+
+        public static async Task ForceRecheckAsync(this IDialogService dialogService, IApiClient apiClient, IEnumerable<string> hashes, bool confirmTorrentRecheck)
+        {
+            var hashArray = hashes?.ToArray() ?? [];
+            if (hashArray.Length == 0)
+            {
+                return;
+            }
+
+            if (confirmTorrentRecheck)
+            {
+                var content = $"Are you sure you want to recheck the selected torrent{(hashArray.Length == 1 ? "" : "s")}?";
+
+                var confirmed = await dialogService.ShowConfirmDialog("Force recheck", content);
+                if (!confirmed)
+                {
+                    return;
+                }
+            }
+
+            await apiClient.RecheckTorrents(null, hashArray);
         }
 
         public static async Task InvokeDownloadRateDialog(this IDialogService dialogService, IApiClient apiClient, long rate, IEnumerable<string> hashes)

@@ -221,7 +221,10 @@ namespace Lantean.QBitTorrentClient.Models
             bool webUiUpnp,
             bool webUiUseCustomHttpHeadersEnabled,
             string webUiUsername,
-            string webUiPassword
+            string webUiPassword,
+            bool confirmTorrentDeletion,
+            bool confirmTorrentRecheck,
+            bool statusBarExternalIp
         )
         {
             AddToTopOfQueue = addToTopOfQueue;
@@ -440,6 +443,9 @@ namespace Lantean.QBitTorrentClient.Models
             WebUiUseCustomHttpHeadersEnabled = webUiUseCustomHttpHeadersEnabled;
             WebUiUsername = webUiUsername;
             WebUiPassword = webUiPassword;
+            ConfirmTorrentDeletion = confirmTorrentDeletion;
+            ConfirmTorrentRecheck = confirmTorrentRecheck;
+            StatusBarExternalIp = statusBarExternalIp;
         }
 
         [JsonPropertyName("add_to_top_of_queue")]
@@ -1089,5 +1095,14 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("web_ui_password")]
         public string WebUiPassword { get; }
+
+        [JsonPropertyName("confirm_torrent_deletion")]
+        public bool ConfirmTorrentDeletion { get; }
+
+        [JsonPropertyName("confirm_torrent_recheck")]
+        public bool ConfirmTorrentRecheck { get; }
+
+        [JsonPropertyName("status_bar_external_ip")]
+        public bool StatusBarExternalIp { get; }
     }
 }
