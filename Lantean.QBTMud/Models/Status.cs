@@ -6,7 +6,6 @@
         Downloading,
         Seeding,
         Completed,
-        Paused,
         Stopped,
         Active,
         Inactive,

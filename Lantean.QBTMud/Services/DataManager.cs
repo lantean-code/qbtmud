@@ -352,9 +352,7 @@ namespace Lantean.QBTMud.Services
                 return _statusArray;
             }
 
-            _statusArray = Enum.GetValues<Status>()
-                .Where(s => s != Status.Paused)
-                .ToArray();
+            _statusArray = Enum.GetValues<Status>();
 
             return _statusArray;
         }
