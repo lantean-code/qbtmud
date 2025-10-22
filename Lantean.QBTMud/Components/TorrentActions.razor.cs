@@ -104,6 +104,8 @@ namespace Lantean.QBTMud.Components
                     new("copyHashv2", "Info hash v2", Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV2))),
                     new("copyMagnet", "Magnet link", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.MagnetUri))),
                     new("copyId", "Torrent ID", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Hash))),
+                    new("copyComment", "Comment", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Comment))),
+                    new("copyContentPath", "Content path", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.ContentPath))),
                 ]),
                 new("export", "Export", Icons.Material.Filled.SaveAlt, Color.Info, CreateCallback(Export)),
             ];
