@@ -1,4 +1,5 @@
-﻿@inherits SubmittableDialog
+@inherits SubmittableDialog
+@using Lantean.QBitTorrentClient.Models
 
 <MudDialog>
     <DialogContent>
@@ -33,6 +34,15 @@
             </MudItem>
             <MudItem xs="9">
                 <MudNumericField T="int" Value="InactiveMinutes" ValueChanged="InactiveMinutesChanged" Disabled="@(!(CustomEnabled && InactiveMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="minutes" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="ShareLimitAction" Label="Action when limit is reached" Value="SelectedShareLimitAction" ValueChanged="ShareLimitActionChanged" Disabled="@(!CustomEnabled)" Variant="Variant.Outlined">
+                    <MudSelectItem Value="ShareLimitAction.Default">Default</MudSelectItem>
+                    <MudSelectItem Value="ShareLimitAction.Stop">Stop torrent</MudSelectItem>
+                    <MudSelectItem Value="ShareLimitAction.Remove">Remove torrent</MudSelectItem>
+                    <MudSelectItem Value="ShareLimitAction.RemoveWithContent">Remove torrent and data</MudSelectItem>
+                    <MudSelectItem Value="ShareLimitAction.EnableSuperSeeding">Enable super seeding</MudSelectItem>
+                </MudSelect>
             </MudItem>
         </MudGrid>
     </DialogContent>

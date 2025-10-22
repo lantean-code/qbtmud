@@ -1,9 +1,10 @@
-﻿using Lantean.QBitTorrentClient;
+using System.Linq;
+using Lantean.QBitTorrentClient;
+using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
 using MudBlazor;
-using System.Linq;
 
 namespace Lantean.QBTMud.Helpers
 {
@@ -241,21 +242,30 @@ namespace Lantean.QBTMud.Helpers
 
         public static async Task InvokeShareRatioDialog(this IDialogService dialogService, IApiClient apiClient, IEnumerable<Torrent> torrents)
         {
-            var torrentShareRatios = torrents.Select(t => new ShareRatioMax
+            var torrentList = torrents.ToList();
+            if (torrentList.Count == 0)
+            {
+                return;
+            }
+
+            var shareRatioValues = torrentList.Select(t => new ShareRatioMax
             {
                 InactiveSeedingTimeLimit = t.InactiveSeedingTimeLimit,
-                MaxInactiveSeedingTime = t.InactiveSeedingTimeLimit,
+                MaxInactiveSeedingTime = t.MaxInactiveSeedingTime,
                 MaxRatio = t.MaxRatio,
                 MaxSeedingTime = t.MaxSeedingTime,
                 RatioLimit = t.RatioLimit,
                 SeedingTimeLimit = t.SeedingTimeLimit,
-            });
+                ShareLimitAction = t.ShareLimitAction,
+            }).ToList();
 
-            var torrentsHaveSameShareRatio = torrentShareRatios.Distinct().Count() == 1;
+            var referenceValue = shareRatioValues.First();
+            var torrentsHaveSameShareRatio = shareRatioValues.Distinct().Count() == 1;
 
             var parameters = new DialogParameters
             {
-                { nameof(ShareRatioDialog.Value), torrentsHaveSameShareRatio ? torrentShareRatios.FirstOrDefault() : null },
+                { nameof(ShareRatioDialog.Value), torrentsHaveSameShareRatio ? referenceValue : null },
+                { nameof(ShareRatioDialog.CurrentValue), referenceValue },
             };
             var result = await dialogService.ShowAsync<ShareRatioDialog>("Share ratio", parameters, FormDialogOptions);
 
@@ -267,7 +277,7 @@ namespace Lantean.QBTMud.Helpers
 
             var shareRatio = (ShareRatio)dialogResult.Data;
 
-            await apiClient.SetTorrentShareLimit(shareRatio.RatioLimit, shareRatio.SeedingTimeLimit, shareRatio.InactiveSeedingTimeLimit, hashes: torrents.Select(t => t.Hash).ToArray());
+            await apiClient.SetTorrentShareLimit(shareRatio.RatioLimit, shareRatio.SeedingTimeLimit, shareRatio.InactiveSeedingTimeLimit, shareRatio.ShareLimitAction ?? ShareLimitAction.Default, hashes: torrentList.Select(t => t.Hash).ToArray());
         }
 
         public static async Task InvokeStringFieldDialog(this IDialogService dialogService, string title, string label, string? value, Func<string, Task> onSuccess)
@@ -461,3 +471,5 @@ namespace Lantean.QBTMud.Helpers
         }
     }
 }
+
+

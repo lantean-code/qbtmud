@@ -1,5 +1,6 @@
-﻿using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
+using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 
 namespace Lantean.QBTMud.Services
 {
@@ -705,6 +706,7 @@ namespace Lantean.QBTMud.Services
                 torrent.DownloadPath ?? string.Empty,
                 torrent.RootPath ?? string.Empty,
                 torrent.IsPrivate.GetValueOrDefault(),
+                torrent.ShareLimitAction ?? ShareLimitAction.Default,
                 torrent.Comment ?? string.Empty);
         }
 
@@ -1352,6 +1354,11 @@ namespace Lantean.QBTMud.Services
             if (torrent.IsPrivate.HasValue && existingTorrent.IsPrivate != torrent.IsPrivate.Value)
             {
                 existingTorrent.IsPrivate = torrent.IsPrivate.Value;
+                dataChanged = true;
+            }
+            if (torrent.ShareLimitAction.HasValue && existingTorrent.ShareLimitAction != torrent.ShareLimitAction.Value)
+            {
+                existingTorrent.ShareLimitAction = torrent.ShareLimitAction.Value;
                 dataChanged = true;
             }
 

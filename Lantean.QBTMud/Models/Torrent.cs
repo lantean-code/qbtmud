@@ -1,4 +1,9 @@
-﻿namespace Lantean.QBTMud.Models
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Lantean.QBitTorrentClient.Models;
+
+namespace Lantean.QBTMud.Models
 {
     public class Torrent
     {
@@ -57,6 +62,7 @@
             string downloadPath,
             string rootPath,
             bool isPrivate,
+            ShareLimitAction shareLimitAction,
             string comment)
         {
             Hash = hash;
@@ -113,25 +119,27 @@
             DownloadPath = downloadPath;
             RootPath = rootPath;
             IsPrivate = isPrivate;
+            ShareLimitAction = shareLimitAction;
             Comment = comment;
         }
 
         protected Torrent()
         {
-            Hash = "";
-            Category = "";
-            ContentPath = "";
-            InfoHashV1 = "";
-            InfoHashV2 = "";
-            MagnetUri = "";
-            Name = "";
-            SavePath = "";
-            DownloadPath = "";
-            RootPath = "";
-            State = "";
-            Tags = [];
-            Tracker = "";
-            Comment = "";
+            Hash = string.Empty;
+            Category = string.Empty;
+            ContentPath = string.Empty;
+            InfoHashV1 = string.Empty;
+            InfoHashV2 = string.Empty;
+            MagnetUri = string.Empty;
+            Name = string.Empty;
+            SavePath = string.Empty;
+            DownloadPath = string.Empty;
+            RootPath = string.Empty;
+            State = string.Empty;
+            Tags = new List<string>();
+            Tracker = string.Empty;
+            ShareLimitAction = ShareLimitAction.Default;
+            Comment = string.Empty;
         }
 
         public string Hash { get; }
@@ -241,6 +249,8 @@
         public float MaxInactiveSeedingTime { get; set; }
 
         public bool IsPrivate { get; set; }
+
+        public ShareLimitAction ShareLimitAction { get; set; }
 
         public string Comment { get; set; }
 
