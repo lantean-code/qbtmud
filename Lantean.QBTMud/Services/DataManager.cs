@@ -1497,7 +1497,7 @@ namespace Lantean.QBTMud.Services
                 changed = true;
             }
 
-            if (System.Math.Abs(destination.Progress - source.Progress) > floatTolerance)
+            if (Math.Abs(destination.Progress - source.Progress) > floatTolerance)
             {
                 destination.Progress = source.Progress;
                 changed = true;
@@ -1509,7 +1509,7 @@ namespace Lantean.QBTMud.Services
                 changed = true;
             }
 
-            if (System.Math.Abs(destination.Availability - source.Availability) > floatTolerance)
+            if (Math.Abs(destination.Availability - source.Availability) > floatTolerance)
             {
                 destination.Availability = source.Availability;
                 changed = true;
@@ -2047,7 +2047,7 @@ namespace Lantean.QBTMud.Services
                 ? int.MaxValue
                 : contents.Values.Min(c => c.Index);
             var minFileIndex = files.Min(f => f.Index);
-            var nextFolderIndex = System.Math.Min(minExistingIndex, minFileIndex) - 1;
+            var nextFolderIndex = Math.Min(minExistingIndex, minFileIndex) - 1;
 
             foreach (var file in files)
             {
