@@ -295,6 +295,7 @@ namespace Lantean.QBTMud.Pages
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Up Speed", t => t.UploadSpeed, t => DisplayHelpers.Speed(t.UploadSpeed)),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("ETA", t => t.EstimatedTimeOfArrival, t => DisplayHelpers.Duration(t.EstimatedTimeOfArrival)),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Ratio", t => t.Ratio, t => t.Ratio.ToString("0.00")),
+            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Popularity", t => t.Popularity, t => t.Popularity.ToString("0.00")),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Category", t => t.Category),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Tags", t => t.Tags, t => string.Join(", ", t.Tags)),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Added On", t => t.AddedOn, t => DisplayHelpers.DateTime(t.AddedOn)),
@@ -310,11 +311,15 @@ namespace Lantean.QBTMud.Pages
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Time Active", t => t.TimeActive, t => DisplayHelpers.Duration(t.TimeActive), enabled: false),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Save path", t => t.SavePath, enabled: false),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Completed", t => t.Completed, t => DisplayHelpers.Size(t.Completed), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Ratio Limit", t => t.RatioLimit, t => t.Ratio.ToString("0.00"), enabled: false),
+            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Ratio Limit", t => t.RatioLimit, t => DisplayHelpers.RatioLimit(t.RatioLimit), enabled: false),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Last Seen Complete", t => t.SeenComplete, t => DisplayHelpers.DateTime(t.SeenComplete), enabled: false),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Last Activity", t => t.LastActivity, t => DisplayHelpers.DateTime(t.LastActivity), enabled: false),
             ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Availability", t => t.Availability, t => t.Availability.ToString("0.##"), enabled: false),
-            //ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Reannounce In", t => t.Reannounce, enabled: false),
+            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Incomplete Save Path", t => t.DownloadPath, t => DisplayHelpers.EmptyIfNull(t.DownloadPath), enabled: false),
+            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Info Hash v1", t => t.InfoHashV1, t => DisplayHelpers.EmptyIfNull(t.InfoHashV1), enabled: false),
+            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Info Hash v2", t => t.InfoHashV2, t => DisplayHelpers.EmptyIfNull(t.InfoHashV2), enabled: false),
+            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Reannounce In", t => t.Reannounce, t => DisplayHelpers.Duration(t.Reannounce), enabled: false),
+            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Private", t => t.IsPrivate, t => DisplayHelpers.Bool(t.IsPrivate), enabled: false),
         ];
 
         public async ValueTask DisposeAsync()

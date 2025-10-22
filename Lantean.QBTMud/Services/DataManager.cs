@@ -700,7 +700,12 @@ namespace Lantean.QBTMud.Services
                 torrent.UploadSpeed.GetValueOrDefault(),
                 torrent.Reannounce ?? 0,
                 torrent.InactiveSeedingTimeLimit.GetValueOrDefault(),
-                torrent.MaxInactiveSeedingTime.GetValueOrDefault());
+                torrent.MaxInactiveSeedingTime.GetValueOrDefault(),
+                torrent.Popularity.GetValueOrDefault(),
+                torrent.DownloadPath ?? string.Empty,
+                torrent.RootPath ?? string.Empty,
+                torrent.IsPrivate.GetValueOrDefault(),
+                torrent.Comment ?? string.Empty);
         }
 
         private static string NormalizeTag(string? tag)
@@ -1323,6 +1328,36 @@ namespace Lantean.QBTMud.Services
             if (torrent.MaxInactiveSeedingTime.HasValue && existingTorrent.MaxInactiveSeedingTime != torrent.MaxInactiveSeedingTime.Value)
             {
                 existingTorrent.MaxInactiveSeedingTime = torrent.MaxInactiveSeedingTime.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Popularity.HasValue && existingTorrent.Popularity != torrent.Popularity.Value)
+            {
+                existingTorrent.Popularity = torrent.Popularity.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.DownloadPath is not null && !string.Equals(existingTorrent.DownloadPath, torrent.DownloadPath, StringComparison.Ordinal))
+            {
+                existingTorrent.DownloadPath = torrent.DownloadPath;
+                dataChanged = true;
+            }
+
+            if (torrent.RootPath is not null && !string.Equals(existingTorrent.RootPath, torrent.RootPath, StringComparison.Ordinal))
+            {
+                existingTorrent.RootPath = torrent.RootPath;
+                dataChanged = true;
+            }
+
+            if (torrent.IsPrivate.HasValue && existingTorrent.IsPrivate != torrent.IsPrivate.Value)
+            {
+                existingTorrent.IsPrivate = torrent.IsPrivate.Value;
+                dataChanged = true;
+            }
+
+            if (torrent.Comment is not null && !string.Equals(existingTorrent.Comment, torrent.Comment, StringComparison.Ordinal))
+            {
+                existingTorrent.Comment = torrent.Comment;
                 dataChanged = true;
             }
 

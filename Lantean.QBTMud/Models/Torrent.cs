@@ -52,7 +52,12 @@
             long uploadSpeed,
             long reannounce,
             float inactiveSeedingTimeLimit,
-            float maxInactiveSeedingTime)
+            float maxInactiveSeedingTime,
+            float popularity,
+            string downloadPath,
+            string rootPath,
+            bool isPrivate,
+            string comment)
         {
             Hash = hash;
             AddedOn = addedOn;
@@ -104,6 +109,11 @@
             Reannounce = reannounce;
             InactiveSeedingTimeLimit = inactiveSeedingTimeLimit;
             MaxInactiveSeedingTime = maxInactiveSeedingTime;
+            Popularity = popularity;
+            DownloadPath = downloadPath;
+            RootPath = rootPath;
+            IsPrivate = isPrivate;
+            Comment = comment;
         }
 
         protected Torrent()
@@ -116,9 +126,12 @@
             MagnetUri = "";
             Name = "";
             SavePath = "";
+            DownloadPath = "";
+            RootPath = "";
             State = "";
             Tags = [];
             Tracker = "";
+            Comment = "";
         }
 
         public string Hash { get; }
@@ -183,7 +196,13 @@
 
         public float RatioLimit { get; set; }
 
+        public float Popularity { get; set; }
+
         public string SavePath { get; set; }
+
+        public string DownloadPath { get; set; }
+
+        public string RootPath { get; set; }
 
         public long SeedingTime { get; set; }
 
@@ -220,6 +239,10 @@
         public float InactiveSeedingTimeLimit { get; set; }
 
         public float MaxInactiveSeedingTime { get; set; }
+
+        public bool IsPrivate { get; set; }
+
+        public string Comment { get; set; }
 
         public override bool Equals(object? obj)
         {

@@ -1,5 +1,6 @@
 ﻿using ByteSizeLib;
 using Lantean.QBTMud.Models;
+using Lantean.QBitTorrentClient;
 using MudBlazor;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
@@ -414,6 +415,26 @@ namespace Lantean.QBTMud.Helpers
                 Status.Errored => (Icons.Material.Filled.Error, Color.Error),
                 _ => (Icons.Material.Filled.QuestionMark, Color.Inherit),
             };
+        }
+
+        public static string Bool(bool value, string trueText = "Yes", string falseText = "No")
+        {
+            return value ? trueText : falseText;
+        }
+
+        public static string RatioLimit(float value)
+        {
+            if (value == Limits.GlobalLimit)
+            {
+                return "Global";
+            }
+
+            if (value <= Limits.NoLimit)
+            {
+                return "∞";
+            }
+
+            return value.ToString("0.00");
         }
     }
 }
