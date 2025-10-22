@@ -1,4 +1,3 @@
-using System.Linq;
 using Lantean.QBitTorrentClient;
 using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 using Lantean.QBTMud.Components.Dialogs;
@@ -77,12 +76,18 @@ namespace Lantean.QBTMud.Helpers
                 addTorrentParams.ContentLayout = Enum.Parse<QBitTorrentClient.Models.TorrentContentLayout>(options.ContentLayout);
             }
             addTorrentParams.DownloadLimit = options.DownloadLimit;
-            addTorrentParams.DownloadPath = options.DownloadPath;
+            if (!string.IsNullOrWhiteSpace(options.DownloadPath))
+            {
+                addTorrentParams.DownloadPath = options.DownloadPath;
+            }
             addTorrentParams.FirstLastPiecePriority = options.DownloadFirstAndLastPiecesFirst;
             addTorrentParams.InactiveSeedingTimeLimit = options.InactiveSeedingTimeLimit;
             addTorrentParams.RatioLimit = options.RatioLimit;
             addTorrentParams.RenameTorrent = options.RenameTorrent;
-            addTorrentParams.SavePath = options.SavePath;
+            if (!options.TorrentManagementMode)
+            {
+                addTorrentParams.SavePath = options.SavePath;
+            }
             addTorrentParams.SeedingTimeLimit = options.SeedingTimeLimit;
             addTorrentParams.SequentialDownload = options.DownloadInSequentialOrder;
             if (!string.IsNullOrEmpty(options.ShareLimitAction))
@@ -97,7 +102,10 @@ namespace Lantean.QBTMud.Helpers
             addTorrentParams.Stopped = !options.StartTorrent;
             addTorrentParams.Tags = options.Tags;
             addTorrentParams.UploadLimit = options.UploadLimit;
-            addTorrentParams.UseDownloadPath = options.UseDownloadPath;
+            if (options.UseDownloadPath.HasValue)
+            {
+                addTorrentParams.UseDownloadPath = options.UseDownloadPath;
+            }
             return addTorrentParams;
         }
 
@@ -259,7 +267,7 @@ namespace Lantean.QBTMud.Helpers
                 ShareLimitAction = t.ShareLimitAction,
             }).ToList();
 
-            var referenceValue = shareRatioValues.First();
+            var referenceValue = shareRatioValues[0];
             var torrentsHaveSameShareRatio = shareRatioValues.Distinct().Count() == 1;
 
             var parameters = new DialogParameters

@@ -1,33 +1,50 @@
-﻿<MudGrid>
+﻿@using Lantean.QBitTorrentClient.Models
+
+<MudGrid>
     <MudItem xs="12">
         <MudSwitch Label="Additional Options" @bind-Value="Expanded" LabelPlacement="Placement.End" />
     </MudItem>
 </MudGrid>
 <MudCollapse Expanded="Expanded">
-    <MudGrid>
+    <MudGrid Class="mt-2">
         <MudItem xs="12">
-            <MudSelect Label="Torrent Management Mode" @bind-Value="TorrentManagementMode" Variant="Variant.Outlined">
-                <MudSelectItem Value="false">Manual</MudSelectItem>
-                <MudSelectItem Value="true">Automatic</MudSelectItem>
+            <MudSelect T="bool" Label="Torrent management mode" Value="@TorrentManagementMode" ValueChanged="@SetTorrentManagementMode" Variant="Variant.Outlined">
+                <MudSelectItem Value="@false">Manual</MudSelectItem>
+                <MudSelectItem Value="@true">Automatic</MudSelectItem>
             </MudSelect>
         </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string" Label="Save files to location" Value="@SavePath" ValueChanged="@SavePathChanged" Variant="Variant.Outlined" Disabled="@TorrentManagementMode" />
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <FieldSwitch Label="Use incomplete save path" Value="@UseDownloadPath" ValueChanged="@SetUseDownloadPath" Disabled="@TorrentManagementMode" />
+        </MudItem>
         <MudItem xs="12">
-            <MudTextField Label="Save files to location" @bind-Value="SavePath" Variant="Variant.Outlined"></MudTextField>
+            <MudTextField T="string" Label="Incomplete save path" Value="@DownloadPath" ValueChanged="@DownloadPathChanged" Variant="Variant.Outlined" Disabled="@DownloadPathDisabled" />
         </MudItem>
         @if (ShowCookieOption)
         {
             <MudItem xs="12">
-                <MudTextField Label="Cookie" @bind-Value="Cookie" Variant="Variant.Outlined"></MudTextField>
+                <MudTextField Label="Cookie" @bind-Value="Cookie" Variant="Variant.Outlined" />
             </MudItem>
         }
         <MudItem xs="12">
-            <MudTextField Label="Rename" @bind-Value="RenameTorrent" Variant="Variant.Outlined"></MudTextField>
+            <MudTextField Label="Rename" @bind-Value="RenameTorrent" Variant="Variant.Outlined" />
         </MudItem>
         <MudItem xs="12">
-            <MudSelect Label="Category" @bind-Value="Category" Variant="Variant.Outlined">
-                @foreach (var category in Categories)
+            <MudSelect T="string" Label="Category" Value="@Category" ValueChanged="@CategoryChanged" Variant="Variant.Outlined" Clearable="true">
+                <MudSelectItem Value="@string.Empty">None</MudSelectItem>
+                @foreach (var category in CategoryOptions)
                 {
-                    <MudSelectItem Value="category">@category</MudSelectItem>
+                    <MudSelectItem Value="@category.Name">@category.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <MudSelect T="string" Label="Tags" Variant="Variant.Outlined" MultiSelection="true" SelectedValues="@SelectedTags" SelectedValuesChanged="@SelectedTagsChanged" Disabled="@(AvailableTags.Count == 0)">
+                @foreach (var tag in AvailableTags)
+                {
+                    <MudSelectItem Value="@tag">@tag</MudSelectItem>
                 }
             </MudSelect>
         </MudItem>
@@ -38,7 +55,7 @@
             <FieldSwitch Label="Add to top of queue" @bind-Value="AddToTopOfQueue" />
         </MudItem>
         <MudItem xs="12">
-            <MudSelect Label="Stop condition" @bind-Value="StopCondition" Variant="Variant.Outlined">
+            <MudSelect T="string" Label="Stop condition" Value="@StopCondition" ValueChanged="@StopConditionChanged" Variant="Variant.Outlined">
                 <MudSelectItem Value="@("None")">None</MudSelectItem>
                 <MudSelectItem Value="@("MetadataReceived")">Metadata received</MudSelectItem>
                 <MudSelectItem Value="@("FilesChecked")">Files checked</MudSelectItem>
@@ -47,22 +64,58 @@
         <MudItem xs="12">
             <FieldSwitch Label="Skip hash check" @bind-Value="SkipHashCheck" />
         </MudItem>
-        <MudSelect Label="Content layout" @bind-Value="ContentLayout" Variant="Variant.Outlined">
-            <MudSelectItem Value="@("Original")">Original</MudSelectItem>
-            <MudSelectItem Value="@("Subfolder")">Create subfolder</MudSelectItem>
-            <MudSelectItem Value="@("NoSubfolder")">Don't create subfolder'</MudSelectItem>
-        </MudSelect>
         <MudItem xs="12">
-            <FieldSwitch Label="Download in sequentual order" @bind-Value="DownloadInSequentialOrder" />
+            <MudSelect T="string" Label="Content layout" Value="@ContentLayout" ValueChanged="@ContentLayoutChanged" Variant="Variant.Outlined">
+                <MudSelectItem Value="@("Original")">Original</MudSelectItem>
+                <MudSelectItem Value="@("Subfolder")">Create subfolder</MudSelectItem>
+                <MudSelectItem Value="@("NoSubfolder")">Don't create subfolder</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <FieldSwitch Label="Download in sequential order" @bind-Value="DownloadInSequentialOrder" />
         </MudItem>
         <MudItem xs="12">
             <FieldSwitch Label="Download first and last pieces first" @bind-Value="DownloadFirstAndLastPiecesFirst" />
         </MudItem>
-        <MudItem xs="12">
+        <MudItem xs="12" sm="6">
             <MudNumericField Label="Limit download rate" @bind-Value="DownloadLimit" Variant="Variant.Outlined" Min="0" />
         </MudItem>
-        <MudItem xs="12">
+        <MudItem xs="12" sm="6">
             <MudNumericField Label="Limit upload rate" @bind-Value="UploadLimit" Variant="Variant.Outlined" Min="0" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudSelect T="ShareLimitMode" Label="Share limit preset" Value="@SelectedShareLimitMode" ValueChanged="@ShareLimitModeChanged" Variant="Variant.Outlined">
+                <MudSelectItem Value="@ShareLimitMode.Global">Use global share limit</MudSelectItem>
+                <MudSelectItem Value="@ShareLimitMode.NoLimit">Set no share limit</MudSelectItem>
+                <MudSelectItem Value="@ShareLimitMode.Custom">Set custom share limit</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <FieldSwitch Label="Ratio" Value="@RatioLimitEnabled" ValueChanged="@RatioLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" />
+        </MudItem>
+        <MudItem xs="12" sm="8">
+            <MudNumericField T="float" Label="Ratio limit" Value="@RatioLimit" ValueChanged="@RatioLimitChanged" Disabled="@(!RatioLimitEnabled || !IsCustomShareLimit)" Min="0" Step="0.1f" Format="F2" Variant="Variant.Outlined" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <FieldSwitch Label="Total minutes" Value="@SeedingTimeLimitEnabled" ValueChanged="@SeedingTimeLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" />
+        </MudItem>
+        <MudItem xs="12" sm="8">
+            <MudNumericField T="int" Label="Total minutes" Value="@SeedingTimeLimit" ValueChanged="@SeedingTimeLimitChanged" Disabled="@(!SeedingTimeLimitEnabled || !IsCustomShareLimit)" Min="1" Variant="Variant.Outlined" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <FieldSwitch Label="Inactive minutes" Value="@InactiveSeedingTimeLimitEnabled" ValueChanged="@InactiveSeedingTimeLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" />
+        </MudItem>
+        <MudItem xs="12" sm="8">
+            <MudNumericField T="int" Label="Inactive minutes" Value="@InactiveSeedingTimeLimit" ValueChanged="@InactiveSeedingTimeLimitChanged" Disabled="@(!InactiveSeedingTimeLimitEnabled || !IsCustomShareLimit)" Min="1" Variant="Variant.Outlined" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudSelect T="ShareLimitAction" Label="Action when limit is reached" Value="@SelectedShareLimitAction" ValueChanged="@ShareLimitActionChanged" Disabled="@(!IsCustomShareLimit)" Variant="Variant.Outlined">
+                <MudSelectItem Value="@ShareLimitAction.Default">Default</MudSelectItem>
+                <MudSelectItem Value="@ShareLimitAction.Stop">Stop torrent</MudSelectItem>
+                <MudSelectItem Value="@ShareLimitAction.Remove">Remove torrent</MudSelectItem>
+                <MudSelectItem Value="@ShareLimitAction.RemoveWithContent">Remove torrent and data</MudSelectItem>
+                <MudSelectItem Value="@ShareLimitAction.EnableSuperSeeding">Enable super seeding</MudSelectItem>
+            </MudSelect>
         </MudItem>
     </MudGrid>
 </MudCollapse>

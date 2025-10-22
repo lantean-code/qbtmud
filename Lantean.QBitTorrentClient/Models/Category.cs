@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using Lantean.QBitTorrentClient.Converters;
+using System.Text.Json.Serialization;
 
 namespace Lantean.QBitTorrentClient.Models
 {
@@ -7,10 +8,12 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonConstructor]
         public Category(
             string name,
-            string? savePath)
+            string? savePath,
+            DownloadPathOption? downloadPath)
         {
             Name = name;
             SavePath = savePath;
+            DownloadPath = downloadPath;
         }
 
         [JsonPropertyName("name")]
@@ -18,5 +21,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("savePath")]
         public string? SavePath { get; }
+
+        [JsonPropertyName("download_path")]
+        [JsonConverter(typeof(DownloadPathOptionJsonConverter))]
+        public DownloadPathOption? DownloadPath { get; }
     }
 }
