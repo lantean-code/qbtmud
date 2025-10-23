@@ -10,7 +10,7 @@
 <div class="content-panel">
     <div class="content-panel__toolbar content-panel__toolbar--scroll">
         <MudToolBar Gutters="false" Dense="true">
-            <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="Add torrent link" />
+            <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="() => AddTorrentLink()" title="Add torrent link" />
             <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="Add torrent file" />
             <MudDivider Vertical="true" />
             <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrentsHashes()" Torrents="MainData.Torrents" Preferences="Preferences" />

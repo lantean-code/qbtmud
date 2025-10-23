@@ -88,6 +88,14 @@ namespace Lantean.QBTMud.Layout
         {
             if (!await ApiClient.CheckAuthState())
             {
+                if (NavigationManager.Uri.Contains('#'))
+                {
+                    var fragment = new Uri(NavigationManager.Uri).Fragment;
+
+                    NavigationManager.NavigateTo($"/login{fragment}");
+                    return;
+                }
+
                 NavigationManager.NavigateTo("/login");
                 return;
             }
