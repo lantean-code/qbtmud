@@ -26,6 +26,9 @@ namespace Lantean.QBTMud.Layout
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
+        [Inject]
+        protected IProtocolHandler ProtocolHandler { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -88,11 +91,11 @@ namespace Lantean.QBTMud.Layout
         {
             if (!await ApiClient.CheckAuthState())
             {
-                if (NavigationManager.Uri.Contains('#'))
+                if (NavigationManager.Uri.Contains('?'))
                 {
-                    var fragment = new Uri(NavigationManager.Uri).Fragment;
+                    var query = new Uri(NavigationManager.Uri).Query;
 
-                    NavigationManager.NavigateTo($"/login{fragment}");
+                    NavigationManager.NavigateTo($"/login{query}");
                     return;
                 }
 
@@ -125,6 +128,8 @@ namespace Lantean.QBTMud.Layout
 
             if (firstRender)
             {
+                await ProtocolHandler.RegisterProtocol();
+
                 using (var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_refreshInterval)))
                 {
                     while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync())

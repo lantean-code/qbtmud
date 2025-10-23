@@ -29,11 +29,11 @@ namespace Lantean.QBTMud.Pages
             {
                 await ApiClient.Login(username, password);
 
-                if (NavigationManager.Uri.Contains('#'))
+                if (NavigationManager.Uri.Contains('?'))
                 {
-                    var fragment = new Uri(NavigationManager.Uri).Fragment;
+                    var query = new Uri(NavigationManager.Uri).Query;
 
-                    NavigationManager.NavigateTo($"/{fragment}");
+                    NavigationManager.NavigateTo($"/{query}");
                 }
                 else
                     NavigationManager.NavigateTo("/");

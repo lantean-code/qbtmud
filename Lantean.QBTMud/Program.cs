@@ -3,6 +3,7 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Services;
 
@@ -45,6 +46,14 @@ namespace Lantean.QBTMud
             builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddSingleton<IClipboardService, ClipboardService>();
             builder.Services.AddTransient<IKeyboardService, KeyboardService>();
+
+            builder.Services.AddTransient<IProtocolHandler, MagnetProtocolHandler>(provider =>
+            {
+                IJSRuntime jSRuntime = provider.GetRequiredService<IJSRuntime>();
+                MagnetProtocolHandler handler = new(jSRuntime, builder.HostEnvironment.BaseAddress.TrimEnd('/') + "/?magnetLink=%s");
+
+                return handler;
+            });
 
 #if DEBUG
             builder.Logging.SetMinimumLevel(LogLevel.Information);

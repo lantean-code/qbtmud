@@ -87,12 +87,17 @@ namespace Lantean.QBTMud.Pages
                 await KeyboardService.RegisterKeypressEvent(_addTorrentFileKey, k => AddTorrentFile());
                 await KeyboardService.RegisterKeypressEvent(_addTorrentLinkKey, k => AddTorrentLink());
 
-                if (NavigationManager.Uri.Contains("#download="))
+                if (NavigationManager.Uri.Contains("?"))
                 {
-                    var encodedUrl = new Uri(NavigationManager.Uri).Fragment.Substring("#download=".Length);
-                    var decodedUrl = Uri.UnescapeDataString(encodedUrl);
+                    var query = new Uri(NavigationManager.Uri).Query;
 
-                    await AddTorrentLink(decodedUrl);
+                    if (query.Length > 1)
+                    {
+                        var encodedUrl = query.Substring(query.IndexOf('=') + 1);
+                        var decodedUrl = Uri.UnescapeDataString(encodedUrl);
+    
+                        await AddTorrentLink(decodedUrl);
+                    }
 
                     NavigationManager.NavigateTo("/");
                 }
