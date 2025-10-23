@@ -50,7 +50,7 @@ namespace Lantean.QBTMud.Components
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [Inject]
-        protected IDataManager DataManager { get; set; } = default!;
+        protected ITorrentDataManager DataManager { get; set; } = default!;
 
         protected HashSet<string> ExpandedNodes { get; set; } = [];
 

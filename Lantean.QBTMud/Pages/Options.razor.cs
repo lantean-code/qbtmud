@@ -24,7 +24,7 @@ namespace Lantean.QBTMud.Pages
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDataManager DataManager { get; set; } = default!;
+        protected IPreferencesDataManager PreferencesDataManager { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -61,7 +61,7 @@ namespace Lantean.QBTMud.Pages
 
         protected void PreferencesChanged(UpdatePreferences preferences)
         {
-            UpdatePreferences = DataManager.MergePreferences(UpdatePreferences, preferences);
+            UpdatePreferences = PreferencesDataManager.MergePreferences(UpdatePreferences, preferences);
         }
 
         protected async Task ValidateExit(LocationChangingContext context)

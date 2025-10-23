@@ -24,7 +24,7 @@ namespace Lantean.QBTMud.Pages
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected IDataManager DataManager { get; set; } = default!;
+        protected IRssDataManager RssDataManager { get; set; } = default!;
 
         [CascadingParameter]
         public MainData? MainData { get; set; }
@@ -115,7 +115,7 @@ namespace Lantean.QBTMud.Pages
         private async Task GetRssList()
         {
             var items = await ApiClient.GetAllRssItems(true);
-            RssList = DataManager.CreateRssList(items);
+            RssList = RssDataManager.CreateRssList(items);
         }
 
         protected async Task DownloadItem(string? url)

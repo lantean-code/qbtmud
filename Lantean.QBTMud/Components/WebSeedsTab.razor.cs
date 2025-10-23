@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Components
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDataManager DataManager { get; set; } = default!;
+        protected ITorrentDataManager DataManager { get; set; } = default!;
 
         protected IReadOnlyList<WebSeed>? WebSeeds { get; set; }
 

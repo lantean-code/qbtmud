@@ -4,23 +4,27 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-	  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-	  <CompressionEnabled>false</CompressionEnabled>
-	  <LangVersion>12</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <CompressionEnabled>false</CompressionEnabled>
+    <LangVersion>12</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-	  <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
-	  <PackageReference Include="ByteSize" Version="2.1.2" />
-	  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.10" />
-	  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.10" PrivateAssets="all" />
-	  <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.10" />
-	  <PackageReference Include="MudBlazor" Version="8.13.0" />
-	  <PackageReference Include="MudBlazor.ThemeManager" Version="3.0.0" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="ByteSize" Version="2.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.10" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.10" />
+    <PackageReference Include="MudBlazor" Version="8.13.0" />
+    <PackageReference Include="MudBlazor.ThemeManager" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Lantean.QBitTorrentClient\Lantean.QBitTorrentClient.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lantean.QBTMud.Test" />
   </ItemGroup>
 
 </Project>

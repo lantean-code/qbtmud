@@ -40,7 +40,7 @@ namespace Lantean.QBTMud.Components
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDataManager DataManager { get; set; } = default!;
+        protected IPeerDataManager PeerDataManager { get; set; } = default!;
 
         protected PeerList? PeerList { get; set; }
 
@@ -78,11 +78,11 @@ namespace Lantean.QBTMud.Components
             var peers = await ApiClient.GetTorrentPeersData(Hash, _requestId);
             if (PeerList is null || peers.FullUpdate)
             {
-                PeerList = DataManager.CreatePeerList(peers);
+                PeerList = PeerDataManager.CreatePeerList(peers);
             }
             else
             {
-                DataManager.MergeTorrentPeers(peers, PeerList);
+                PeerDataManager.MergeTorrentPeers(peers, PeerList);
             }
             _requestId = peers.RequestId;
 
@@ -200,11 +200,11 @@ namespace Lantean.QBTMud.Components
                             }
                             if (PeerList is null || peers.FullUpdate)
                             {
-                                PeerList = DataManager.CreatePeerList(peers);
+                                PeerList = PeerDataManager.CreatePeerList(peers);
                             }
                             else
                             {
-                                DataManager.MergeTorrentPeers(peers, PeerList);
+                                PeerDataManager.MergeTorrentPeers(peers, PeerList);
                             }
 
                             _requestId = peers.RequestId;

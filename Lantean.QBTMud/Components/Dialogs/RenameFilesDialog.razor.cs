@@ -24,7 +24,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDataManager DataManager { get; set; } = default!;
+        protected ITorrentDataManager DataManager { get; set; } = default!;
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;

@@ -1,4 +1,4 @@
-# Upgrade to qBittorrent WebUI v5 – UI Alignment Plan
+﻿# Upgrade to qBittorrent WebUI v5 – UI Alignment Plan
 
 ## Torrent List Filtering
 - **Regex toggle & field selector**: Introduce the regex checkbox and the "Filter by" (Name/Save path) select found in v5. Update `FilterState`/`LoggedInLayout` to carry both values, wire them to `TorrentList`’s toolbar, and validate invalid patterns gracefully.
@@ -18,8 +18,8 @@
 - ~~**Copy submenu**: Add "Copy comment" and "Copy content path" to the copy submenu in `TorrentActions`, keeping clipboard behaviour identical to v5.~~
 - ~~**Share ratio dialog**: Update `ShareRatioDialog`, `ShareRatio/ShareRatioMax`, and `DialogHelper.InvokeShareRatioDialog` to surface `ShareLimitAction`, fix the `MaxInactiveSeedingTime` mapping, and call `SetTorrentShareLimit` with the action.~~
 
-## Add-Torrent Flow
-- Mirror the v5 add-torrent pane: add controls for incomplete save path, tags, auto-start, queue position, share-limit action, etc., in `AddTorrentOptions.razor`, and wire the new fields into the submission object.
+## ~~Add-Torrent Flow~~
+- ~~Mirror the v5 add-torrent pane: add controls for incomplete save path, tags, auto-start, queue position, share-limit action, etc., in `AddTorrentOptions.razor`, and wire the new fields into the submission object.~~
 
 ## ~~Preferences & Local Settings~~
 - ~~Introduce new v5 toggles such as "Display full tracker URL" in `AdvancedOptions`, persist them via the preferences service, and respect the setting in the tracker column rendering.~~

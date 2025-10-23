@@ -29,7 +29,7 @@ namespace Lantean.QBTMud.Components
         public ISnackbar Snackbar { get; set; } = default!;
 
         [Inject]
-        public IDataManager DataManager { get; set; } = default!;
+        public ITorrentDataManager DataManager { get; set; } = default!;
 
         [Inject]
         public IJSRuntime JSRuntime { get; set; } = default!;

@@ -41,7 +41,11 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<ApiClient>();
             builder.Services.AddScoped<IApiClient, ApiClient>();
 
-            builder.Services.AddSingleton<IDataManager, DataManager>();
+            builder.Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
+            builder.Services.AddSingleton<IPeerDataManager, PeerDataManager>();
+            builder.Services.AddSingleton<IPreferencesDataManager, PreferencesDataManager>();
+            builder.Services.AddSingleton<IRssDataManager, RssDataManager>();
+
             builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddSingleton<IClipboardService, ClipboardService>();
             builder.Services.AddTransient<IKeyboardService, KeyboardService>();
