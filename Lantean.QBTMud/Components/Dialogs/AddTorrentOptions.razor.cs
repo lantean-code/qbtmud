@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Lantean.QBitTorrentClient;
+﻿using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
@@ -140,11 +135,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
         }
 
-        protected Task SetTorrentManagementMode(bool value)
+        protected void SetTorrentManagementMode(bool value)
         {
             if (TorrentManagementMode == value)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             TorrentManagementMode = value;
@@ -156,26 +151,22 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 RestoreManualPaths();
             }
-
-            return Task.CompletedTask;
         }
 
-        protected Task SavePathChanged(string value)
+        protected void SavePathChanged(string value)
         {
             SavePath = value;
             if (!TorrentManagementMode)
             {
                 _manualSavePath = value;
             }
-
-            return Task.CompletedTask;
         }
 
-        protected Task SetUseDownloadPath(bool value)
+        protected void SetUseDownloadPath(bool value)
         {
             if (TorrentManagementMode)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             _manualUseDownloadPath = value;
@@ -195,56 +186,44 @@ namespace Lantean.QBTMud.Components.Dialogs
                 _manualDownloadPath = DownloadPath;
                 DownloadPath = string.Empty;
             }
-
-            return Task.CompletedTask;
         }
 
-        protected Task DownloadPathChanged(string value)
+        protected void DownloadPathChanged(string value)
         {
             DownloadPath = value;
             if (!TorrentManagementMode && UseDownloadPath)
             {
                 _manualDownloadPath = value;
             }
-
-            return Task.CompletedTask;
         }
 
-        protected Task CategoryChanged(string? value)
+        protected void CategoryChanged(string? value)
         {
             Category = string.IsNullOrWhiteSpace(value) ? null : value;
             if (TorrentManagementMode)
             {
                 ApplyAutomaticPaths();
             }
-
-            return Task.CompletedTask;
         }
 
-        protected Task SelectedTagsChanged(IEnumerable<string> tags)
+        protected void SelectedTagsChanged(IEnumerable<string> tags)
         {
             SelectedTags = tags is null
                 ? new HashSet<string>(StringComparer.Ordinal)
                 : new HashSet<string>(tags, StringComparer.Ordinal);
-
-            return Task.CompletedTask;
         }
 
-        protected Task StopConditionChanged(string value)
+        protected void StopConditionChanged(string value)
         {
             StopCondition = value;
-
-            return Task.CompletedTask;
         }
 
-        protected Task ContentLayoutChanged(string value)
+        protected void ContentLayoutChanged(string value)
         {
             ContentLayout = value;
-
-            return Task.CompletedTask;
         }
 
-        protected Task ShareLimitModeChanged(ShareLimitMode mode)
+        protected void ShareLimitModeChanged(ShareLimitMode mode)
         {
             SelectedShareLimitMode = mode;
             if (mode != ShareLimitMode.Custom)
@@ -254,57 +233,41 @@ namespace Lantean.QBTMud.Components.Dialogs
                 InactiveSeedingTimeLimitEnabled = false;
                 SelectedShareLimitAction = ShareLimitAction.Default;
             }
-
-            return Task.CompletedTask;
         }
 
-        protected Task RatioLimitEnabledChanged(bool value)
+        protected void RatioLimitEnabledChanged(bool value)
         {
             RatioLimitEnabled = value;
-
-            return Task.CompletedTask;
         }
 
-        protected Task RatioLimitChanged(float value)
+        protected void RatioLimitChanged(float value)
         {
             RatioLimit = value;
-
-            return Task.CompletedTask;
         }
 
-        protected Task SeedingTimeLimitEnabledChanged(bool value)
+        protected void SeedingTimeLimitEnabledChanged(bool value)
         {
             SeedingTimeLimitEnabled = value;
-
-            return Task.CompletedTask;
         }
 
-        protected Task SeedingTimeLimitChanged(int value)
+        protected void SeedingTimeLimitChanged(int value)
         {
             SeedingTimeLimit = value;
-
-            return Task.CompletedTask;
         }
 
-        protected Task InactiveSeedingTimeLimitEnabledChanged(bool value)
+        protected void InactiveSeedingTimeLimitEnabledChanged(bool value)
         {
             InactiveSeedingTimeLimitEnabled = value;
-
-            return Task.CompletedTask;
         }
 
-        protected Task InactiveSeedingTimeLimitChanged(int value)
+        protected void InactiveSeedingTimeLimitChanged(int value)
         {
             InactiveSeedingTimeLimit = value;
-
-            return Task.CompletedTask;
         }
 
-        protected Task ShareLimitActionChanged(ShareLimitAction value)
+        protected void ShareLimitActionChanged(ShareLimitAction value)
         {
             SelectedShareLimitAction = value;
-
-            return Task.CompletedTask;
         }
 
         public TorrentOptions GetTorrentOptions()
@@ -337,12 +300,14 @@ namespace Lantean.QBTMud.Components.Dialogs
                     options.InactiveSeedingTimeLimit = Limits.GlobalLimit;
                     options.ShareLimitAction = ShareLimitAction.Default.ToString();
                     break;
+
                 case ShareLimitMode.NoLimit:
                     options.RatioLimit = Limits.NoLimit;
                     options.SeedingTimeLimit = Limits.NoLimit;
                     options.InactiveSeedingTimeLimit = Limits.NoLimit;
                     options.ShareLimitAction = ShareLimitAction.Default.ToString();
                     break;
+
                 case ShareLimitMode.Custom:
                     options.RatioLimit = RatioLimitEnabled ? RatioLimit : Limits.NoLimit;
                     options.SeedingTimeLimit = SeedingTimeLimitEnabled ? SeedingTimeLimit : Limits.NoLimit;
