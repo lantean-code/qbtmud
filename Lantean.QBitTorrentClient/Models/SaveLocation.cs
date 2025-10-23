@@ -12,47 +12,64 @@
         {
             if (value is int intValue)
             {
-                if (intValue == 0)
-                {
-                    return new SaveLocation
-                    {
-                        IsWatchedFolder = true
-                    };
-                }
-                else if (intValue == 1)
-                {
-                    return new SaveLocation
-                    {
-                        IsDefaultFolder = true
-                    };
-                }
+                return Create(intValue);
             }
             else if (value is string stringValue)
             {
-                if (stringValue == "0")
-                {
-                    return new SaveLocation
-                    {
-                        IsWatchedFolder = true
-                    };
-                }
-                else if (stringValue == "1")
-                {
-                    return new SaveLocation
-                    {
-                        IsDefaultFolder = true
-                    };
-                }
-                else
-                {
-                    return new SaveLocation
-                    {
-                        SavePath = stringValue
-                    };
-                }
+                return Create(stringValue);
             }
 
             throw new ArgumentOutOfRangeException(nameof(value));
+        }
+
+        public static SaveLocation Create(int value)
+        {
+            if (value == 0)
+            {
+                return new SaveLocation
+                {
+                    IsWatchedFolder = true
+                };
+            }
+            else if (value == 1)
+            {
+                return new SaveLocation
+                {
+                    IsDefaultFolder = true
+                };
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(value));
+        }
+
+        public static SaveLocation Create(string? value)
+        {
+            if (value is null)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value));
+            }
+
+            if (value == "0")
+            {
+                return new SaveLocation
+                {
+                    IsWatchedFolder = true
+                };
+            }
+            else if (value == "1")
+            {
+                return new SaveLocation
+                {
+                    IsDefaultFolder = true
+                };
+            }
+            else
+            {
+                return new SaveLocation
+                {
+                    SavePath = value
+                };
+            }
         }
 
         public object ToValue()

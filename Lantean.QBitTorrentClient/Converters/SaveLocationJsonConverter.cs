@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Lantean.QBitTorrentClient.Converters
 {
-    public class SaveLocationJsonConverter : JsonConverter<SaveLocation>
+    internal class SaveLocationJsonConverter : JsonConverter<SaveLocation>
     {
         public override SaveLocation Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {

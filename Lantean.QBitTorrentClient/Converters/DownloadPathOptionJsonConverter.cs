@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Lantean.QBitTorrentClient.Converters
 {
-    public sealed class DownloadPathOptionJsonConverter : JsonConverter<DownloadPathOption>
+    internal sealed class DownloadPathOptionJsonConverter : JsonConverter<DownloadPathOption>
     {
         public override DownloadPathOption? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {

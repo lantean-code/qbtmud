@@ -73,5 +73,10 @@ namespace Lantean.QBitTorrentClient
         {
             return ToQueryString();
         }
+
+        internal IList<KeyValuePair<string, string>> GetParameters()
+        {
+            return _parameters;
+        }
     }
 }

@@ -44,5 +44,10 @@
         {
             return new FormUrlEncodedContent(_parameters);
         }
+
+        internal IList<KeyValuePair<string, string>> GetParameters()
+        {
+            return _parameters;
+        }
     }
 }
