@@ -365,10 +365,14 @@ namespace Lantean.QBTMud.Services
             foreach (var status in GetStatuses())
             {
                 if (!torrentList.StatusState.TryGetValue(status.ToString(), out var statusState))
+                {
                     continue;
+                }
 
                 if (FilterHelper.FilterStatus(snapshot.State, snapshot.UploadSpeed, status))
+                {
                     statusState.Remove(hash);
+                }
             }
 
             torrentList.TrackersState[FilterHelper.TRACKER_ALL].Remove(hash);

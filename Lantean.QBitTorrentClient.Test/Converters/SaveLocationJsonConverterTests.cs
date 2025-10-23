@@ -17,7 +17,7 @@ namespace Lantean.QBitTorrentClient.Test.Converters
         // -------- Read --------
 
         [Fact]
-        public async Task GIVEN_String_WHEN_Read_THEN_ShouldReturnCustomPath()
+        public void GIVEN_String_WHEN_Read_THEN_ShouldReturnCustomPath()
         {
             var options = CreateOptions();
             var json = "\"/downloads\"";
@@ -28,12 +28,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             result.SavePath.Should().Be("/downloads");
             result.IsDefaultFolder.Should().BeFalse();
             result.IsWatchedFolder.Should().BeFalse();
-
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_NumberZero_WHEN_Read_THEN_ShouldReturnWatchedFolder()
+        public void GIVEN_NumberZero_WHEN_Read_THEN_ShouldReturnWatchedFolder()
         {
             var options = CreateOptions();
             var json = "0";
@@ -44,12 +42,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             result.IsWatchedFolder.Should().BeTrue();
             result.IsDefaultFolder.Should().BeFalse();
             result.SavePath.Should().BeNull();
-
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_NumberOne_WHEN_Read_THEN_ShouldReturnDefaultFolder()
+        public void GIVEN_NumberOne_WHEN_Read_THEN_ShouldReturnDefaultFolder()
         {
             var options = CreateOptions();
             var json = "1";
@@ -60,28 +56,24 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             result.IsDefaultFolder.Should().BeTrue();
             result.IsWatchedFolder.Should().BeFalse();
             result.SavePath.Should().BeNull();
-
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_UnsupportedToken_WHEN_Read_THEN_ShouldThrowJsonException()
+        public void GIVEN_UnsupportedToken_WHEN_Read_THEN_ShouldThrowJsonException()
         {
             var options = CreateOptions();
             var json = "true"; // bool token is not supported
 
-            var act = async () => JsonSerializer.Deserialize<SaveLocation>(json, options)!;
+            var act = () => JsonSerializer.Deserialize<SaveLocation>(json, options)!;
 
-            var ex = await act.Should().ThrowAsync<JsonException>();
+            var ex = act.Should().Throw<JsonException>();
             ex.Which.Message.Should().Contain("Unsupported token type");
-
-            await Task.CompletedTask;
         }
 
         // -------- Write --------
 
         [Fact]
-        public async Task GIVEN_WatchedFolder_WHEN_Write_THEN_ShouldEmitZero()
+        public void GIVEN_WatchedFolder_WHEN_Write_THEN_ShouldEmitZero()
         {
             var options = CreateOptions();
             var value = SaveLocation.Create(0);
@@ -89,11 +81,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = JsonSerializer.Serialize(value, options);
 
             json.Should().Be("0");
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_DefaultFolder_WHEN_Write_THEN_ShouldEmitOne()
+        public void GIVEN_DefaultFolder_WHEN_Write_THEN_ShouldEmitOne()
         {
             var options = CreateOptions();
             var value = SaveLocation.Create(1);
@@ -101,11 +92,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = JsonSerializer.Serialize(value, options);
 
             json.Should().Be("1");
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_CustomPath_WHEN_Write_THEN_ShouldEmitJsonString()
+        public void GIVEN_CustomPath_WHEN_Write_THEN_ShouldEmitJsonString()
         {
             var options = CreateOptions();
             var value = SaveLocation.Create("/data/films");
@@ -113,13 +103,12 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = JsonSerializer.Serialize(value, options);
 
             json.Should().Be("\"/data/films\"");
-            await Task.CompletedTask;
         }
 
         // -------- Round-trip sanity --------
 
         [Fact]
-        public async Task GIVEN_PathString_WHEN_RoundTrip_THEN_ShouldPreserveCustomPath()
+        public void GIVEN_PathString_WHEN_RoundTrip_THEN_ShouldPreserveCustomPath()
         {
             var options = CreateOptions();
             var original = SaveLocation.Create("/data");
@@ -130,12 +119,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             round.SavePath.Should().Be("/data");
             round.IsDefaultFolder.Should().BeFalse();
             round.IsWatchedFolder.Should().BeFalse();
-
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_Zero_WHEN_RoundTrip_THEN_ShouldStayWatchedFolder()
+        public void GIVEN_Zero_WHEN_RoundTrip_THEN_ShouldStayWatchedFolder()
         {
             var options = CreateOptions();
             var original = SaveLocation.Create(0);
@@ -146,12 +133,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             round.IsWatchedFolder.Should().BeTrue();
             round.IsDefaultFolder.Should().BeFalse();
             round.SavePath.Should().BeNull();
-
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_One_WHEN_RoundTrip_THEN_ShouldStayDefaultFolder()
+        public void GIVEN_One_WHEN_RoundTrip_THEN_ShouldStayDefaultFolder()
         {
             var options = CreateOptions();
             var original = SaveLocation.Create(1);
@@ -162,8 +147,6 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             round.IsDefaultFolder.Should().BeTrue();
             round.IsWatchedFolder.Should().BeFalse();
             round.SavePath.Should().BeNull();
-
-            await Task.CompletedTask;
         }
     }
 }

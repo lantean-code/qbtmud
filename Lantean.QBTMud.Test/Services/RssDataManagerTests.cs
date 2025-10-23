@@ -244,7 +244,9 @@ namespace Lantean.QBTMud.Test.Services
             // assert
             list.UnreadCount.Should().Be(0);
             foreach (var f in list.Feeds.Values)
+            {
                 f.UnreadCount.Should().Be(0);
+            }
         }
 
         [Fact]

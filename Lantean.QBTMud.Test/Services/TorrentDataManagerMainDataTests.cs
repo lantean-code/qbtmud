@@ -296,7 +296,10 @@ namespace Lantean.QBTMud.Test.Services
             existing.TagState[FilterHelper.TAG_ALL].Should().NotContain(hash);
             existing.CategoriesState[FilterHelper.CATEGORY_ALL].Should().NotContain(hash);
             foreach (var kv in existing.StatusState)
+            {
                 kv.Value.Should().NotContain(hash);
+            }
+
             existing.TrackersState[FilterHelper.TRACKER_ALL].Should().NotContain(hash);
         }
 

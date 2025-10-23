@@ -1226,10 +1226,10 @@ namespace Lantean.QBitTorrentClient
 
         public async Task<string> AddTorrentCreationTask(TorrentCreationTaskRequest request)
         {
-            if (request is null)
-                throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.SourcePath))
+            {
                 throw new ArgumentException("SourcePath is required.", nameof(request));
+            }
 
             var builder = new FormUrlEncodedBuilder()
                 .Add("sourcePath", request.SourcePath);

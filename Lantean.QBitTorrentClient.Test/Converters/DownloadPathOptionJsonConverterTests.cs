@@ -17,7 +17,7 @@ namespace Lantean.QBitTorrentClient.Test.Converters
         // -------- Read --------
 
         [Fact]
-        public async Task GIVEN_JsonNull_WHEN_Read_THEN_ShouldReturnNull()
+        public void GIVEN_JsonNull_WHEN_Read_THEN_ShouldReturnNull()
         {
             var options = CreateOptions();
             var json = "null";
@@ -25,11 +25,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var result = JsonSerializer.Deserialize<DownloadPathOption>(json, options);
 
             result.Should().BeNull();
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_JsonFalse_WHEN_Read_THEN_ShouldReturnDisabledWithNullPath()
+        public void GIVEN_JsonFalse_WHEN_Read_THEN_ShouldReturnDisabledWithNullPath()
         {
             var options = CreateOptions();
             var json = "false";
@@ -39,11 +38,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             result.Should().NotBeNull();
             result!.Enabled.Should().BeFalse();
             result.Path.Should().BeNull();
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_JsonTrue_WHEN_Read_THEN_ShouldReturnEnabledWithNullPath()
+        public void GIVEN_JsonTrue_WHEN_Read_THEN_ShouldReturnEnabledWithNullPath()
         {
             var options = CreateOptions();
             var json = "true";
@@ -53,11 +51,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             result.Should().NotBeNull();
             result!.Enabled.Should().BeTrue();
             result.Path.Should().BeNull();
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_JsonString_WHEN_Read_THEN_ShouldReturnEnabledWithThatPath()
+        public void GIVEN_JsonString_WHEN_Read_THEN_ShouldReturnEnabledWithThatPath()
         {
             var options = CreateOptions();
             var json = "\"/downloads\"";
@@ -67,25 +64,24 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             result.Should().NotBeNull();
             result!.Enabled.Should().BeTrue();
             result.Path.Should().Be("/downloads");
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_UnexpectedToken_WHEN_Read_THEN_ShouldThrowJsonException()
+        public void GIVEN_UnexpectedToken_WHEN_Read_THEN_ShouldThrowJsonException()
         {
             var options = CreateOptions();
             var json = "123"; // number token, not supported
 
-            var act = async () => JsonSerializer.Deserialize<DownloadPathOption>(json, options)!;
+            var act = () => JsonSerializer.Deserialize<DownloadPathOption>(json, options)!;
 
-            var ex = await act.Should().ThrowAsync<JsonException>();
+            var ex = act.Should().Throw<JsonException>();
             ex.Which.Message.Should().Contain("Unexpected token");
         }
 
         // -------- Write --------
 
         [Fact]
-        public async Task GIVEN_NullValue_WHEN_Write_THEN_ShouldEmitJsonNull()
+        public void GIVEN_NullValue_WHEN_Write_THEN_ShouldEmitJsonNull()
         {
             var options = CreateOptions();
             DownloadPathOption? value = null;
@@ -93,11 +89,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = JsonSerializer.Serialize(value, options);
 
             json.Should().Be("null");
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_Disabled_WHEN_Write_THEN_ShouldEmitFalse()
+        public void GIVEN_Disabled_WHEN_Write_THEN_ShouldEmitFalse()
         {
             var options = CreateOptions();
             var value = new DownloadPathOption(false, null);
@@ -105,11 +100,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = JsonSerializer.Serialize(value, options);
 
             json.Should().Be("false");
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_EnabledWithNullPath_WHEN_Write_THEN_ShouldEmitTrue()
+        public void GIVEN_EnabledWithNullPath_WHEN_Write_THEN_ShouldEmitTrue()
         {
             var options = CreateOptions();
             var value = new DownloadPathOption(true, null);
@@ -117,11 +111,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = JsonSerializer.Serialize(value, options);
 
             json.Should().Be("true");
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_EnabledWithWhitespacePath_WHEN_Write_THEN_ShouldEmitTrue()
+        public void GIVEN_EnabledWithWhitespacePath_WHEN_Write_THEN_ShouldEmitTrue()
         {
             var options = CreateOptions();
             var value = new DownloadPathOption(true, "   ");
@@ -129,11 +122,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = JsonSerializer.Serialize(value, options);
 
             json.Should().Be("true");
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_EnabledWithPath_WHEN_Write_THEN_ShouldEmitThatString()
+        public void GIVEN_EnabledWithPath_WHEN_Write_THEN_ShouldEmitThatString()
         {
             var options = CreateOptions();
             var value = new DownloadPathOption(true, "/dl/path");
@@ -141,13 +133,12 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = JsonSerializer.Serialize(value, options);
 
             json.Should().Be("\"/dl/path\"");
-            await Task.CompletedTask;
         }
 
         // -------- Round-trip sanity --------
 
         [Fact]
-        public async Task GIVEN_PathString_WHEN_RoundTrip_THEN_ShouldPreserveEnabledTrueAndPath()
+        public void GIVEN_PathString_WHEN_RoundTrip_THEN_ShouldPreserveEnabledTrueAndPath()
         {
             var options = CreateOptions();
             var original = new DownloadPathOption(true, "/data");
@@ -157,7 +148,6 @@ namespace Lantean.QBitTorrentClient.Test.Converters
 
             round.Enabled.Should().BeTrue();
             round.Path.Should().Be("/data");
-            await Task.CompletedTask;
         }
     }
 }

@@ -314,7 +314,7 @@ namespace Lantean.QBTMud.Test.Services
             changed.Should().BeTrue();
             contents.ContainsKey("x").Should().BeTrue();
             contents.ContainsKey("x/.unwanted/y.bin").Should().BeTrue();
-            contents.Keys.Any(k => k.Contains(".unwanted") && k.EndsWith("/")).Should().BeFalse(); // no explicit ".unwanted" directory key
+            contents.Keys.Any(k => k.Contains(".unwanted") && k.EndsWith('/')).Should().BeFalse(); // no explicit ".unwanted" directory key
         }
 
         [Fact]

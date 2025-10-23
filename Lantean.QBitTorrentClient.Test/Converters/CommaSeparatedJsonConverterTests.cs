@@ -14,7 +14,7 @@ namespace Lantean.QBitTorrentClient.Test.Converters
         }
 
         [Fact]
-        public async Task GIVEN_EmptyString_WHEN_Read_THEN_ShouldReturnEmptyReadOnlyList()
+        public void GIVEN_EmptyString_WHEN_Read_THEN_ShouldReturnEmptyReadOnlyList()
         {
             var options = CreateOptions();
             var json = "\"\"";
@@ -23,12 +23,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
 
             result.Should().NotBeNull();
             result!.Count.Should().Be(0);
-
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_CommaSeparatedWithSpacesAndEmpties_WHEN_Read_THEN_ShouldSplitTrimAndRemoveEmpties()
+        public void GIVEN_CommaSeparatedWithSpacesAndEmpties_WHEN_Read_THEN_ShouldSplitTrimAndRemoveEmpties()
         {
             var options = CreateOptions();
             // contains spaces and empty segments between commas
@@ -41,24 +39,22 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             result[0].Should().Be("alpha");
             result[1].Should().Be("beta");
             result[2].Should().Be("gamma");
-
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_NonStringToken_WHEN_Read_THEN_ShouldThrowJsonException()
+        public void GIVEN_NonStringToken_WHEN_Read_THEN_ShouldThrowJsonException()
         {
             var options = CreateOptions();
             var json = "123"; // number token, not a string
 
-            var act = async () => JsonSerializer.Deserialize<IReadOnlyList<string>>(json, options)!;
+            var act = () => JsonSerializer.Deserialize<IReadOnlyList<string>>(json, options)!;
 
-            var ex = await act.Should().ThrowAsync<JsonException>();
+            var ex =  act.Should().Throw<JsonException>();
             ex.Which.Message.Should().Be("Must be of type string.");
         }
 
         [Fact]
-        public async Task GIVEN_List_WHEN_Write_THEN_ShouldOutputSingleJsonStringCommaJoined()
+        public void GIVEN_List_WHEN_Write_THEN_ShouldOutputSingleJsonStringCommaJoined()
         {
             var options = CreateOptions();
             IReadOnlyList<string> value = new[] { "a", "b", "c" };
@@ -66,12 +62,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = JsonSerializer.Serialize(value, options);
 
             json.Should().Be("\"a,b,c\"");
-
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_EmptyList_WHEN_Write_THEN_ShouldOutputEmptyJsonString()
+        public void GIVEN_EmptyList_WHEN_Write_THEN_ShouldOutputEmptyJsonString()
         {
             var options = CreateOptions();
             IReadOnlyList<string> value = Array.Empty<string>();
@@ -79,12 +73,10 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = JsonSerializer.Serialize(value, options);
 
             json.Should().Be("\"\"");
-
-            await Task.CompletedTask;
         }
 
         [Fact]
-        public async Task GIVEN_ReadResult_WHEN_AttemptToMutate_THEN_ShouldThrowNotSupportedException()
+        public void GIVEN_ReadResult_WHEN_AttemptToMutate_THEN_ShouldThrowNotSupportedException()
         {
             var options = CreateOptions();
             var json = "\"x,y\"";
@@ -96,8 +88,6 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var act = () => asList.Add("z");
 
             act.Should().Throw<NotSupportedException>();
-
-            await Task.CompletedTask;
         }
     }
 }
