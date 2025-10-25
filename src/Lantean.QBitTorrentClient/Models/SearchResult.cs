@@ -12,7 +12,9 @@ namespace Lantean.QBitTorrentClient.Models
             string fileUrl,
             int leechers,
             int seeders,
-            string siteUrl)
+            string siteUrl,
+            string engineName,
+            long? publishedOn)
         {
             DescriptionLink = descriptionLink;
             FileName = fileName;
@@ -21,6 +23,8 @@ namespace Lantean.QBitTorrentClient.Models
             Leechers = leechers;
             Seeders = seeders;
             SiteUrl = siteUrl;
+            EngineName = engineName;
+            PublishedOn = publishedOn;
         }
 
         [JsonPropertyName("descrLink")]
@@ -43,5 +47,11 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("siteUrl")]
         public string SiteUrl { get; set; }
+
+        [JsonPropertyName("engineName")]
+        public string EngineName { get; set; }
+
+        [JsonPropertyName("pubDate")]
+        public long? PublishedOn { get; set; }
     }
 }

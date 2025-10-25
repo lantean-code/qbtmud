@@ -1,22 +1,53 @@
-﻿using Lantean.QBitTorrentClient;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
+using Blazored.LocalStorage;
+using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
+using MainUiData = Lantean.QBTMud.Models.MainData;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Pages
 {
     public partial class Search : IDisposable
     {
-        private IReadOnlyList<QBitTorrentClient.Models.SearchPlugin>? _plugins;
-        private int? _searchId;
-        private bool _disposedValue;
-        private readonly CancellationTokenSource _timerCancellationToken = new();
-        private readonly int _refreshInterval = 1500;
+        private const int ResultsBatchSize = 250;
+        private const int PollIntervalMilliseconds = 1500;
+        private const string SearchPreferencesStorageKey = "Search.Preferences";
 
-        private QBitTorrentClient.Models.SearchResults? _searchResults;
+        private static readonly IReadOnlyList<(SearchSizeUnit Unit, string Label)> SizeUnitOptions =
+        [
+            (SearchSizeUnit.Bytes, "Bytes"),
+            (SearchSizeUnit.Kibibytes, "KiB"),
+            (SearchSizeUnit.Mebibytes, "MiB"),
+            (SearchSizeUnit.Gibibytes, "GiB"),
+            (SearchSizeUnit.Tebibytes, "TiB"),
+            (SearchSizeUnit.Pebibytes, "PiB"),
+            (SearchSizeUnit.Exbibytes, "EiB"),
+        ];
+
+        private IReadOnlyList<SearchPlugin>? _plugins;
+        private readonly List<SearchJobViewModel> _jobs = new();
+        private CancellationTokenSource? _pollingCancellationToken;
+        private Task? _pollingTask;
+        private bool _disposedValue;
+        private int _activeTabIndex = -1;
+        private bool _searchUnavailable;
+        private string? _searchUnavailableReason;
+        private SearchResult? _contextMenuResult;
+        private SearchPreferences _preferences = new();
+        private bool _preferencesLoaded;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -27,8 +58,20 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
+        [Inject]
+        protected ILocalStorageService LocalStorage { get; set; } = default!;
+
+        [Inject]
+        protected IClipboardService ClipboardService { get; set; } = default!;
+
+        [Inject]
+        protected IJSRuntime JSRuntime { get; set; } = default!;
+
+        [Inject]
+        protected ISnackbar Snackbar { get; set; } = default!;
+
         [CascadingParameter]
-        public MainData? MainData { get; set; }
+        public MainUiData? MainData { get; set; }
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -36,55 +79,80 @@ namespace Lantean.QBTMud.Pages
         [Parameter]
         public string? Hash { get; set; }
 
-        protected SearchForm Model { get; set; } = new SearchForm();
+        protected SearchForm Model { get; set; } = new();
+
+        protected bool HasJobs => _jobs.Count > 0;
+
+        protected bool SearchFeatureAvailable => !_searchUnavailable;
+
+        protected bool HasEnabledPlugins => _plugins?.Any(p => p.Enabled) == true;
+
+        protected bool HasUsablePluginSelection => ComputeHasUsablePluginSelection();
+
+        protected bool CanStartNewSearch => SearchFeatureAvailable && HasUsablePluginSelection && !string.IsNullOrWhiteSpace(Model.SearchText);
+
+        protected bool ShowSearchUnavailableMessage => _searchUnavailable;
+
+        protected bool ShowNoPluginWarning => !_searchUnavailable && !HasEnabledPlugins;
+
+        protected string SearchUnavailableMessage => _searchUnavailableReason ?? "Search is disabled in the connected qBittorrent instance.";
+
+        protected IReadOnlyList<SearchJobViewModel> Jobs => _jobs;
+
+        protected SearchJobViewModel? ActiveJob => _activeTabIndex >= 0 && _activeTabIndex < _jobs.Count ? _jobs[_activeTabIndex] : null;
+
+        protected int ActiveTabIndex
+        {
+            get => _activeTabIndex;
+            set
+            {
+                if (_jobs.Count == 0)
+                {
+                    _activeTabIndex = -1;
+                    return;
+                }
+
+                var nextValue = Math.Clamp(value, 0, _jobs.Count - 1);
+                if (_activeTabIndex == nextValue)
+                {
+                    return;
+                }
+
+                _activeTabIndex = nextValue;
+                StateHasChanged();
+            }
+        }
 
         protected Dictionary<string, string> Plugins => _plugins is null ? [] : _plugins.ToDictionary(a => a.Name, a => a.FullName);
 
-        protected Dictionary<string, string> Categories => GetCategories(Model.SelectedPlugin);
+        protected Dictionary<string, string> Categories => GetCategories();
 
-        protected IEnumerable<QBitTorrentClient.Models.SearchResult>? Results => _searchResults?.Results;
+        protected IEnumerable<SearchResult> Results => GetFilteredResults(ActiveJob);
 
-        protected DynamicTable<QBitTorrentClient.Models.SearchResult>? Table { get; set; }
+        protected MudMenu? ResultContextMenu { get; set; }
+
+        protected DynamicTable<SearchResult>? Table { get; set; }
+
+        protected bool HasContextResult => _contextMenuResult is not null;
+
+        protected IReadOnlyList<(SearchSizeUnit Unit, string Label)> SizeUnitOptionsList => SizeUnitOptions;
+
+        protected bool ShowAdvancedFilters { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
-            _plugins = await ApiClient.GetSearchPlugins();
+            await LoadPreferencesAsync();
+            await LoadPluginsAsync();
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
+        protected override Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
+            if (firstRender && _jobs.Count > 0)
             {
-                using (var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_refreshInterval)))
-                {
-                    while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync())
-                    {
-                        if (_searchId is not null)
-                        {
-                            try
-                            {
-                                _searchResults = await ApiClient.GetSearchResults(_searchId.Value);
-
-                                if (_searchResults.Status == "Stopped")
-                                {
-                                    await ApiClient.DeleteSearch(_searchId.Value);
-                                    _searchId = null;
-                                }
-                            }
-                            catch (HttpRequestException)
-                            {
-                                if (MainData is not null)
-                                {
-                                    MainData.LostConnection = true;
-                                }
-                                _searchId = null;
-                            }
-
-                            await InvokeAsync(StateHasChanged);
-                        }
-                    }
-                }
+                EnsurePollingStarted();
             }
+
+            return Task.CompletedTask;
         }
 
         protected void NavigateBack()
@@ -92,61 +160,47 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateTo("/");
         }
 
-        private Dictionary<string, string> GetCategories(string plugin)
-        {
-            if (_plugins is null)
-            {
-                return [];
-            }
-
-            if (plugin == "all")
-            {
-                return _plugins.SelectMany(i => i.SupportedCategories).Distinct().ToDictionary(a => a.Id, a => a.Name);
-            }
-
-            var pluginItem = _plugins.FirstOrDefault(p => p.Name == plugin);
-            if (pluginItem is null)
-            {
-                return [];
-            }
-
-            return pluginItem.SupportedCategories.ToDictionary(a => a.Id, a => a.Name);
-        }
-
         protected async Task DoSearch(EditContext editContext)
         {
-            if (_searchId is null)
+            if (ActiveJob?.IsRunning == true)
             {
-                if (string.IsNullOrEmpty(Model.SearchText))
-                {
-                    return;
-                }
-
-                _searchResults = null;
-                _searchId = await ApiClient.StartSearch(Model.SearchText, [Model.SelectedPlugin], Model.SelectedCategory);
+                await StopJob(ActiveJob);
+                return;
             }
-            else
+
+            if (!SearchFeatureAvailable)
             {
-                try
+                Snackbar.Add(SearchUnavailableMessage, Severity.Warning);
+                return;
+            }
+
+            if (!HasUsablePluginSelection)
+            {
+                Snackbar.Add("Enable the selected plugin before searching.", Severity.Warning);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Model.SearchText))
+            {
+                Snackbar.Add("Enter search criteria to start a job.", Severity.Warning);
+                return;
+            }
+
+            var normalizedPattern = Model.SearchText.Trim();
+            var pluginSelection = GetPluginSelection();
+            var existingJob = FindMatchingJob(normalizedPattern, Model.SelectedCategory, pluginSelection);
+
+            try
+            {
+                await StartOrReplaceJob(normalizedPattern, pluginSelection, Model.SelectedCategory, existingJob);
+                if (ShowAdvancedFilters)
                 {
-                    var status = await ApiClient.GetSearchStatus(_searchId.Value);
-
-                    if (status is not null)
-                    {
-                        if (status.Status == "Running")
-                        {
-                            await ApiClient.StopSearch(_searchId.Value);
-                        }
-
-                        await ApiClient.DeleteSearch(_searchId.Value);
-
-                        _searchId = null;
-                    }
+                    ShowAdvancedFilters = false;
                 }
-                catch (HttpRequestException exception) when (exception.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    _searchId = null;
-                }
+            }
+            catch (HttpRequestException exception)
+            {
+                Snackbar.Add($"Failed to start search: {exception.Message}", Severity.Error);
             }
         }
 
@@ -158,20 +212,850 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            _plugins = await ApiClient.GetSearchPlugins();
+            await LoadPluginsAsync(showError: true);
+            await SavePreferencesAsync();
             await InvokeAsync(StateHasChanged);
         }
 
-        protected IEnumerable<ColumnDefinition<QBitTorrentClient.Models.SearchResult>> Columns => ColumnsDefinitions;
+        protected async Task StopJob(SearchJobViewModel job)
+        {
+            try
+            {
+                await ApiClient.StopSearch(job.Id);
+                job.UpdateStatus("Stopped", job.Total);
+                StateHasChanged();
+                StopPollingIfAllJobsCompleted();
+            }
+            catch (HttpRequestException exception)
+            {
+                Snackbar.Add($"Failed to stop \"{job.Pattern}\": {exception.Message}", Severity.Error);
+            }
+        }
 
-        public static List<ColumnDefinition<QBitTorrentClient.Models.SearchResult>> ColumnsDefinitions { get; } =
-        [
-            new ColumnDefinition<QBitTorrentClient.Models.SearchResult>("Name", l => l.FileName),
-            new ColumnDefinition<QBitTorrentClient.Models.SearchResult>("Size", l => @DisplayHelpers.Size(l.FileSize)),
-            new ColumnDefinition<QBitTorrentClient.Models.SearchResult>("Seeders", l => l.Seeders),
-            new ColumnDefinition<QBitTorrentClient.Models.SearchResult>("Leechers", l => l.Leechers),
-            new ColumnDefinition<QBitTorrentClient.Models.SearchResult>("Search engine", l => l.SiteUrl),
-        ];
+        protected async Task RefreshJob(SearchJobViewModel job)
+        {
+            job.ResetResults();
+            await FetchJobSnapshot(job);
+            StateHasChanged();
+            EnsurePollingStarted();
+        }
+
+        protected async Task CloseJob(SearchJobViewModel job)
+        {
+            await StopAndDeleteJob(job);
+            RemoveJob(job);
+            StopPollingIfAllJobsCompleted();
+        }
+
+        protected async Task CloseAllJobs()
+        {
+            var jobs = _jobs.ToList();
+            foreach (var job in jobs)
+            {
+                await CloseJob(job);
+            }
+
+            StopPollingIfAllJobsCompleted();
+        }
+
+        private IReadOnlyList<ColumnDefinition<SearchResult>>? _columns;
+
+        protected IEnumerable<ColumnDefinition<SearchResult>> Columns => _columns ??= BuildColumns();
+
+        private IReadOnlyList<ColumnDefinition<SearchResult>> BuildColumns()
+        {
+            return new List<ColumnDefinition<SearchResult>>
+            {
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Name", r => r.FileName ?? string.Empty, NameColumnTemplate, width: 320),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Size", r => r.FileSize, r => DisplayHelpers.Size(r.FileSize), width: 120),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Seeders", r => r.Seeders, width: 90),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Leechers", r => r.Leechers, width: 90),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Engine", r => r.EngineName ?? string.Empty, width: 150),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Site", r => r.SiteUrl ?? string.Empty, SiteColumnTemplate, width: 220),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Published", r => r.PublishedOn ?? 0, PublishedColumnTemplate, width: 150),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Actions", r => r.FileUrl ?? string.Empty, ActionColumnTemplate, width: 120, tdClass: "no-wrap")
+            };
+        }
+
+        private static RenderFragment<RowContext<SearchResult>> NameColumnTemplate => context => builder =>
+        {
+            var result = context.Data;
+            var fileName = string.IsNullOrWhiteSpace(result.FileName) ? "-" : result.FileName;
+            if (!string.IsNullOrWhiteSpace(result.DescriptionLink))
+            {
+                builder.OpenComponent<MudLink>(0);
+                builder.AddAttribute(1, nameof(MudLink.Href), result.DescriptionLink);
+                builder.AddAttribute(2, nameof(MudLink.Target), result.DescriptionLink);
+                builder.AddAttribute(3, nameof(MudLink.ChildContent), (RenderFragment)(childBuilder =>
+                {
+                    childBuilder.AddContent(0, fileName);
+                }));
+                builder.CloseComponent();
+            }
+            else
+            {
+                builder.AddContent(4, fileName);
+            }
+        };
+
+        private static RenderFragment<RowContext<SearchResult>> SiteColumnTemplate => context => builder =>
+        {
+            var url = context.Data.SiteUrl;
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                builder.AddContent(0, "-");
+                return;
+            }
+
+            builder.OpenComponent<MudLink>(0);
+            builder.AddAttribute(1, nameof(MudLink.Href), url);
+            builder.AddAttribute(2, nameof(MudLink.Target), url);
+            builder.AddAttribute(3, nameof(MudLink.ChildContent), (RenderFragment)(childBuilder =>
+            {
+                childBuilder.AddContent(0, url);
+            }));
+            builder.CloseComponent();
+        };
+
+        private static RenderFragment<RowContext<SearchResult>> PublishedColumnTemplate => context => builder =>
+        {
+            builder.AddContent(0, DisplayHelpers.DateTime(context.Data.PublishedOn));
+        };
+
+        private RenderFragment<RowContext<SearchResult>> ActionColumnTemplate => context => builder =>
+        {
+            var disabled = string.IsNullOrWhiteSpace(context.Data.FileUrl);
+            builder.OpenComponent<MudIconButton>(0);
+            builder.AddAttribute(1, nameof(MudIconButton.Icon), Icons.Material.Filled.Download);
+            builder.AddAttribute(2, nameof(MudIconButton.Color), Color.Primary);
+            builder.AddAttribute(3, nameof(MudIconButton.Disabled), disabled);
+            builder.AddAttribute(4, nameof(MudIconButton.Size), Size.Small);
+            builder.AddAttribute(5, nameof(MudIconButton.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, async _ => await DownloadResult(context.Data)));
+            builder.CloseComponent();
+        };
+        protected string GetJobStatusIcon(SearchJobViewModel job)
+        {
+            return job.Status switch
+            {
+                "Running" => Icons.Material.Filled.Sync,
+                "Completed" => Icons.Material.Filled.CheckCircle,
+                "Finished" => Icons.Material.Filled.CheckCircle,
+                "Stopped" => Icons.Material.Filled.Stop,
+                "Aborted" => Icons.Material.Filled.Error,
+                "Error" => Icons.Material.Filled.Error,
+                _ => Icons.Material.Filled.Task,
+            };
+        }
+
+        protected Color GetJobStatusColor(SearchJobViewModel job)
+        {
+            return job.Status switch
+            {
+                "Running" => Color.Info,
+                "Completed" => Color.Success,
+                "Finished" => Color.Success,
+                "Stopped" => Color.Warning,
+                "Aborted" => Color.Error,
+                "Error" => Color.Error,
+                _ => Color.Default,
+            };
+        }
+
+        protected string GetJobResultSummary(SearchJobViewModel job)
+        {
+            var options = BuildFilterOptions();
+            var visible = SearchFilterHelper.CountVisible(job.Results, options);
+            var total = job.Total > 0 ? job.Total : job.Results.Count;
+
+            if (total > 0)
+            {
+                return $"{visible}/{total}";
+            }
+
+            return $"{visible} results";
+        }
+
+        protected Task StopActiveJob()
+        {
+            return ActiveJob is null ? Task.CompletedTask : StopJob(ActiveJob);
+        }
+
+        protected Task RefreshActiveJob()
+        {
+            return ActiveJob is null ? Task.CompletedTask : RefreshJob(ActiveJob);
+        }
+
+        protected Task CloseActiveJob()
+        {
+            return ActiveJob is null ? Task.CompletedTask : CloseJob(ActiveJob);
+        }
+
+        protected void ToggleAdvancedFilters()
+        {
+            ShowAdvancedFilters = !ShowAdvancedFilters;
+        }
+
+        private async Task LoadPluginsAsync(bool showError = false)
+        {
+            try
+            {
+                _plugins = await ApiClient.GetSearchPlugins();
+                _searchUnavailable = false;
+                _searchUnavailableReason = null;
+                NormalizeSelectedPlugins();
+                EnsureValidCategory();
+            }
+            catch (HttpRequestException exception)
+            {
+                _plugins = Array.Empty<SearchPlugin>();
+                _searchUnavailable = true;
+                _searchUnavailableReason = "Search is disabled in the connected qBittorrent instance.";
+                NormalizeSelectedPlugins();
+                EnsureValidCategory();
+                if (showError)
+                {
+                    Snackbar.Add($"Unable to load search plugins: {exception.Message}", Severity.Warning);
+                }
+            }
+        }
+
+        private Dictionary<string, string> GetCategories()
+        {
+            if (_plugins is null || _plugins.Count == 0)
+            {
+                return new Dictionary<string, string>
+                {
+                    [SearchForm.AllCategoryId] = "All categories"
+                };
+            }
+
+            var comparer = StringComparer.OrdinalIgnoreCase;
+            IEnumerable<SearchPlugin> targetPlugins;
+
+            if (Model.SelectedPlugins.Count == 0 || Model.SelectedPlugins.Contains(SearchForm.AllPluginsToken, comparer))
+            {
+                targetPlugins = _plugins;
+            }
+            else if (Model.SelectedPlugins.Contains(SearchForm.EnabledPluginsToken, comparer))
+            {
+                targetPlugins = _plugins.Where(p => p.Enabled);
+            }
+            else
+            {
+                var selected = new HashSet<string>(Model.SelectedPlugins, comparer);
+                targetPlugins = _plugins.Where(p => selected.Contains(p.Name));
+            }
+
+            var categories = targetPlugins
+                .SelectMany(plugin => plugin.SupportedCategories)
+                .DistinctBy(category => category.Id)
+                .ToDictionary(category => category.Id, category => category.Name);
+
+            categories[SearchForm.AllCategoryId] = "All categories";
+
+            return categories;
+        }
+
+        private IReadOnlyCollection<string> GetPluginSelection()
+        {
+            var comparer = StringComparer.OrdinalIgnoreCase;
+
+            if (Model.SelectedPlugins.Count == 0)
+            {
+                return HasEnabledPlugins
+                    ? new[] { SearchForm.EnabledPluginsToken }
+                    : new[] { SearchForm.AllPluginsToken };
+            }
+
+            if (Model.SelectedPlugins.Contains(SearchForm.AllPluginsToken, comparer))
+            {
+                return new[] { SearchForm.AllPluginsToken };
+            }
+
+            if (Model.SelectedPlugins.Contains(SearchForm.EnabledPluginsToken, comparer))
+            {
+                return new[] { SearchForm.EnabledPluginsToken };
+            }
+
+            return Model.SelectedPlugins.OrderBy(value => value, comparer).ToArray();
+        }
+
+        private void TrackJob(SearchJobViewModel job, int? replaceIndex = null)
+        {
+            if (replaceIndex is int index && index >= 0 && index < _jobs.Count)
+            {
+                _jobs[index] = job;
+                ActiveTabIndex = index;
+            }
+            else
+            {
+                _jobs.Add(job);
+                ActiveTabIndex = _jobs.Count - 1;
+            }
+        }
+        private void RemoveJob(SearchJobViewModel job)
+        {
+            var index = _jobs.IndexOf(job);
+            if (index >= 0)
+            {
+                _jobs.RemoveAt(index);
+            }
+
+            if (_jobs.Count == 0)
+            {
+                _activeTabIndex = -1;
+            }
+            else if (_activeTabIndex >= _jobs.Count)
+            {
+                _activeTabIndex = _jobs.Count - 1;
+            }
+
+            StateHasChanged();
+            StopPollingIfAllJobsCompleted();
+        }
+
+        private void EnsurePollingStarted()
+        {
+            if (!_jobs.Any(job => job.IsRunning))
+            {
+                return;
+            }
+
+            if (_pollingTask is not null && !_pollingTask.IsCompleted)
+            {
+                return;
+            }
+
+            StopPolling();
+            _pollingCancellationToken = new CancellationTokenSource();
+            _pollingTask = Task.Run(() => PollSearchJobsAsync(_pollingCancellationToken.Token));
+        }
+
+        private void StopPollingIfAllJobsCompleted()
+        {
+            if (_jobs.Any(job => job.IsRunning))
+            {
+                return;
+            }
+
+            StopPolling();
+        }
+
+        private void StopPolling()
+        {
+            if (_pollingTask is null)
+            {
+                return;
+            }
+
+            try { _pollingCancellationToken?.Cancel(); } catch (ObjectDisposedException) { }
+            _pollingCancellationToken?.Dispose();
+            _pollingCancellationToken = null;
+            _pollingTask = null;
+        }
+
+        private async Task PollSearchJobsAsync(CancellationToken cancellationToken)
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(PollIntervalMilliseconds));
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await InvokeAsync(async () => await SynchronizeJobsAsync(cancellationToken));
+                    if (!await timer.WaitForNextTickAsync(cancellationToken))
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected during disposal.
+            }
+        }
+
+        private async Task SynchronizeJobsAsync(CancellationToken cancellationToken)
+        {
+            if (_jobs.Count == 0)
+            {
+                StopPolling();
+                return;
+            }
+
+            IReadOnlyList<SearchStatus> statuses;
+            try
+            {
+                statuses = await ApiClient.GetSearchesStatus();
+            }
+            catch (HttpRequestException exception)
+            {
+                HandleConnectionFailure(exception);
+                return;
+            }
+
+            var statusLookup = statuses.ToDictionary(s => s.Id);
+
+            foreach (var job in _jobs.ToList())
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                if (statusLookup.TryGetValue(job.Id, out var status))
+                {
+                    job.UpdateStatus(status.Status, status.Total);
+                }
+
+                if (!ShouldFetchResults(job))
+                {
+                    continue;
+                }
+
+                await FetchJobResultsAsync(job);
+            }
+
+            StateHasChanged();
+            StopPollingIfAllJobsCompleted();
+        }
+
+        private static bool ShouldFetchResults(SearchJobViewModel job)
+        {
+            if (job.IsRunning)
+            {
+                return true;
+            }
+
+            if (job.Total == 0)
+            {
+                return true;
+            }
+
+            return job.CurrentOffset < job.Total;
+        }
+
+        private async Task FetchJobSnapshot(SearchJobViewModel job)
+        {
+            await FetchJobResultsAsync(job);
+        }
+
+        private async Task FetchJobResultsAsync(SearchJobViewModel job)
+        {
+            try
+            {
+                var results = await ApiClient.GetSearchResults(job.Id, ResultsBatchSize, job.CurrentOffset);
+                if (results.Results.Count > 0)
+                {
+                    job.AppendResults(results.Results);
+                }
+
+                job.UpdateStatus(results.Status, results.Total);
+                if (!job.IsRunning)
+                {
+                    StopPollingIfAllJobsCompleted();
+                }
+            }
+            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+            {
+                job.UpdateStatus("Stopped", job.Total);
+                StopPollingIfAllJobsCompleted();
+            }
+            catch (HttpRequestException exception)
+            {
+                job.SetError("Failed to load results.");
+                Snackbar.Add($"Failed to load results for \"{job.Pattern}\": {exception.Message}", Severity.Error);
+                StopPollingIfAllJobsCompleted();
+            }
+        }
+
+        private SearchFilterOptions BuildFilterOptions()
+        {
+            return new SearchFilterOptions(
+                string.IsNullOrWhiteSpace(Model.FilterText) ? null : Model.FilterText.Trim(),
+                Model.SearchIn,
+                Model.MinimumSeeds,
+                Model.MaximumSeeds,
+                Model.MinimumSize,
+                Model.MinimumSizeUnit,
+                Model.MaximumSize,
+                Model.MaximumSizeUnit);
+        }
+
+        private IReadOnlyList<SearchResult> GetFilteredResults(SearchJobViewModel? job)
+        {
+            if (job is null || job.Results.Count == 0)
+            {
+                return Array.Empty<SearchResult>();
+            }
+
+            var options = BuildFilterOptions();
+            return SearchFilterHelper.ApplyFilters(job.Results, options);
+        }
+
+        private SearchJobViewModel? FindMatchingJob(string pattern, string category, IReadOnlyCollection<string> plugins)
+        {
+            return _jobs.FirstOrDefault(job => job.Matches(pattern, category, plugins));
+        }
+
+        private async Task StartOrReplaceJob(string pattern, IReadOnlyCollection<string> plugins, string category, SearchJobViewModel? existingJob)
+        {
+            int? replaceIndex = null;
+            if (existingJob is not null)
+            {
+                replaceIndex = _jobs.IndexOf(existingJob);
+                await StopAndDeleteJob(existingJob);
+            }
+
+            var searchId = await ApiClient.StartSearch(pattern, plugins, category);
+            var job = new SearchJobViewModel(searchId, pattern, plugins, category);
+
+            TrackJob(job, replaceIndex);
+            EnsurePollingStarted();
+            await FetchJobSnapshot(job);
+        }
+
+        private async Task StopAndDeleteJob(SearchJobViewModel job)
+        {
+            try
+            {
+                if (job.IsRunning)
+                {
+                    await ApiClient.StopSearch(job.Id);
+                }
+            }
+            catch (HttpRequestException)
+            {
+                // Ignore failures while stopping.
+            }
+
+            try
+            {
+                await ApiClient.DeleteSearch(job.Id);
+            }
+            catch (HttpRequestException)
+            {
+                // Ignore failures when the job is already deleted.
+            }
+        }
+
+        private async Task LoadPreferencesAsync()
+        {
+            try
+            {
+                var stored = await LocalStorage.GetItemAsync<SearchPreferences>(SearchPreferencesStorageKey);
+                _preferences = stored ?? new SearchPreferences();
+            }
+            catch
+            {
+                _preferences = new SearchPreferences();
+            }
+
+            NormalizePreferenceSets(_preferences);
+            ApplyPreferencesToModel(_preferences);
+            _preferencesLoaded = true;
+        }
+
+        private static void NormalizePreferenceSets(SearchPreferences preferences)
+        {
+            preferences.SelectedPlugins = new HashSet<string>(preferences.SelectedPlugins ?? [], StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(preferences.SelectedCategory))
+            {
+                preferences.SelectedCategory = SearchForm.AllCategoryId;
+            }
+        }
+
+        private void ApplyPreferencesToModel(SearchPreferences preferences)
+        {
+            Model.SelectedCategory = preferences.SelectedCategory;
+            Model.SelectedPlugins = new HashSet<string>(preferences.SelectedPlugins, StringComparer.OrdinalIgnoreCase);
+            Model.FilterText = preferences.FilterText;
+            Model.SearchIn = preferences.SearchIn;
+            Model.MinimumSeeds = preferences.MinimumSeeds;
+            Model.MaximumSeeds = preferences.MaximumSeeds;
+            Model.MinimumSize = preferences.MinimumSize;
+            Model.MaximumSize = preferences.MaximumSize;
+            Model.MinimumSizeUnit = preferences.MinimumSizeUnit;
+            Model.MaximumSizeUnit = preferences.MaximumSizeUnit;
+
+            NormalizeSelectedPlugins();
+            EnsureValidCategory();
+
+            ShowAdvancedFilters = !string.IsNullOrWhiteSpace(Model.FilterText)
+                || Model.SearchIn != SearchInScope.Everywhere
+                || Model.MinimumSeeds.HasValue
+                || Model.MaximumSeeds.HasValue
+                || Model.MinimumSize.HasValue
+                || Model.MaximumSize.HasValue;
+        }
+
+        private async Task SavePreferencesAsync()
+        {
+            if (!_preferencesLoaded)
+            {
+                return;
+            }
+
+            _preferences.SelectedCategory = Model.SelectedCategory;
+            _preferences.SelectedPlugins = new HashSet<string>(Model.SelectedPlugins, StringComparer.OrdinalIgnoreCase);
+            _preferences.FilterText = Model.FilterText;
+            _preferences.SearchIn = Model.SearchIn;
+            _preferences.MinimumSeeds = Model.MinimumSeeds;
+            _preferences.MaximumSeeds = Model.MaximumSeeds;
+            _preferences.MinimumSize = Model.MinimumSize;
+            _preferences.MaximumSize = Model.MaximumSize;
+            _preferences.MinimumSizeUnit = Model.MinimumSizeUnit;
+            _preferences.MaximumSizeUnit = Model.MaximumSizeUnit;
+
+            await LocalStorage.SetItemAsync(SearchPreferencesStorageKey, _preferences);
+        }
+
+        private async Task OnPluginsChanged(IEnumerable<string> values)
+        {
+            Model.SelectedPlugins = values?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            NormalizeSelectedPlugins();
+            EnsureValidCategory();
+            await SavePreferencesAsync();
+            StateHasChanged();
+        }
+
+        private async Task OnCategoryChanged(string value)
+        {
+            Model.SelectedCategory = value;
+            EnsureValidCategory();
+            await SavePreferencesAsync();
+        }
+
+        private async Task OnFilterTextChanged(string? value)
+        {
+            Model.FilterText = string.IsNullOrWhiteSpace(value) ? null : value;
+            await SavePreferencesAsync();
+            StateHasChanged();
+        }
+
+        private async Task OnSearchInChanged(SearchInScope scope)
+        {
+            Model.SearchIn = scope;
+            await SavePreferencesAsync();
+            StateHasChanged();
+        }
+
+        private async Task OnMinimumSeedsChanged(int? value)
+        {
+            Model.MinimumSeeds = value;
+            await SavePreferencesAsync();
+            StateHasChanged();
+        }
+
+        private async Task OnMaximumSeedsChanged(int? value)
+        {
+            Model.MaximumSeeds = value;
+            await SavePreferencesAsync();
+            StateHasChanged();
+        }
+
+        private async Task OnMinimumSizeChanged(double? value)
+        {
+            Model.MinimumSize = value;
+            await SavePreferencesAsync();
+            StateHasChanged();
+        }
+
+        private async Task OnMaximumSizeChanged(double? value)
+        {
+            Model.MaximumSize = value;
+            await SavePreferencesAsync();
+            StateHasChanged();
+        }
+
+        private async Task OnMinimumSizeUnitChanged(SearchSizeUnit unit)
+        {
+            Model.MinimumSizeUnit = unit;
+            await SavePreferencesAsync();
+            StateHasChanged();
+        }
+
+        private async Task OnMaximumSizeUnitChanged(SearchSizeUnit unit)
+        {
+            Model.MaximumSizeUnit = unit;
+            await SavePreferencesAsync();
+            StateHasChanged();
+        }
+
+        private void NormalizeSelectedPlugins()
+        {
+            var comparer = StringComparer.OrdinalIgnoreCase;
+            var selected = new HashSet<string>(Model.SelectedPlugins, comparer);
+
+            if (!selected.Any())
+            {
+                Model.SelectedPlugins = new HashSet<string>(new[] { HasEnabledPlugins ? SearchForm.EnabledPluginsToken : SearchForm.AllPluginsToken }, comparer);
+                return;
+            }
+
+            if (selected.Contains(SearchForm.AllPluginsToken, comparer))
+            {
+                Model.SelectedPlugins = new HashSet<string>(new[] { SearchForm.AllPluginsToken }, comparer);
+                return;
+            }
+
+            if (selected.Contains(SearchForm.EnabledPluginsToken, comparer))
+            {
+                Model.SelectedPlugins = new HashSet<string>(new[] { SearchForm.EnabledPluginsToken }, comparer);
+                return;
+            }
+
+            if (_plugins is not null)
+            {
+                var enabled = _plugins.Where(plugin => plugin.Enabled).Select(plugin => plugin.Name).ToHashSet(comparer);
+                selected.RemoveWhere(value => !enabled.Contains(value));
+            }
+
+            if (!selected.Any())
+            {
+                Model.SelectedPlugins = new HashSet<string>(new[] { HasEnabledPlugins ? SearchForm.EnabledPluginsToken : SearchForm.AllPluginsToken }, comparer);
+            }
+            else
+            {
+                Model.SelectedPlugins = selected;
+            }
+        }
+
+        private void EnsureValidCategory()
+        {
+            var categories = GetCategories();
+            if (!categories.ContainsKey(Model.SelectedCategory))
+            {
+                Model.SelectedCategory = SearchForm.AllCategoryId;
+            }
+        }
+
+        private bool ComputeHasUsablePluginSelection()
+        {
+            if (!HasEnabledPlugins)
+            {
+                return false;
+            }
+
+            var comparer = StringComparer.OrdinalIgnoreCase;
+
+            if (Model.SelectedPlugins.Count == 0 || Model.SelectedPlugins.Contains(SearchForm.AllPluginsToken, comparer) || Model.SelectedPlugins.Contains(SearchForm.EnabledPluginsToken, comparer))
+            {
+                return true;
+            }
+
+            if (_plugins is null)
+            {
+                return false;
+            }
+
+            var enabledPlugins = _plugins.Where(plugin => plugin.Enabled).Select(plugin => plugin.Name).ToHashSet(comparer);
+            return Model.SelectedPlugins.Any(enabledPlugins.Contains);
+        }
+
+        private async Task DownloadResult(SearchResult result)
+        {
+            if (string.IsNullOrWhiteSpace(result?.FileUrl))
+            {
+                return;
+            }
+
+            await DialogService.InvokeAddTorrentLinkDialog(ApiClient, result.FileUrl);
+        }
+
+        protected async Task HandleResultContextMenu(TableDataContextMenuEventArgs<SearchResult> eventArgs)
+        {
+            if (eventArgs.Item is null || ResultContextMenu is null)
+            {
+                return;
+            }
+
+            _contextMenuResult = eventArgs.Item;
+            var normalizedArgs = eventArgs.MouseEventArgs.NormalizeForContextMenu();
+            await ResultContextMenu.OpenMenuAsync(normalizedArgs);
+        }
+
+        protected async Task HandleResultLongPress(TableDataLongPressEventArgs<SearchResult> eventArgs)
+        {
+            if (eventArgs.Item is null || ResultContextMenu is null)
+            {
+                return;
+            }
+
+            _contextMenuResult = eventArgs.Item;
+            var normalizedArgs = eventArgs.LongPressEventArgs.ToMouseEventArgs();
+            await ResultContextMenu.OpenMenuAsync(normalizedArgs);
+        }
+
+        protected Task DownloadResultFromContext()
+        {
+            if (_contextMenuResult is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return DownloadResult(_contextMenuResult);
+        }
+
+        protected Task OpenDescriptionFromContext()
+        {
+            return OpenLinkInNewTab(_contextMenuResult?.DescriptionLink);
+        }
+
+        protected async Task CopyNameFromContext()
+        {
+            if (string.IsNullOrWhiteSpace(_contextMenuResult?.FileName))
+            {
+                return;
+            }
+
+            await ClipboardService.WriteToClipboard(_contextMenuResult.FileName);
+            Snackbar.Add("Name copied to clipboard.", Severity.Success);
+        }
+
+        protected async Task CopyDownloadLinkFromContext()
+        {
+            if (string.IsNullOrWhiteSpace(_contextMenuResult?.FileUrl))
+            {
+                return;
+            }
+
+            await ClipboardService.WriteToClipboard(_contextMenuResult.FileUrl);
+            Snackbar.Add("Download link copied to clipboard.", Severity.Success);
+        }
+
+        protected async Task CopyDescriptionLinkFromContext()
+        {
+            if (string.IsNullOrWhiteSpace(_contextMenuResult?.DescriptionLink))
+            {
+                return;
+            }
+
+            await ClipboardService.WriteToClipboard(_contextMenuResult.DescriptionLink);
+            Snackbar.Add("Description link copied to clipboard.", Severity.Success);
+        }
+
+        private Task OpenLinkInNewTab(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return Task.CompletedTask;
+            }
+
+            return JSRuntime.InvokeVoidAsync("open", url, url).AsTask();
+        }
+
+        private void HandleConnectionFailure(HttpRequestException exception)
+        {
+            if (MainData is not null)
+            {
+                MainData.LostConnection = true;
+            }
+
+            foreach (var job in _jobs)
+            {
+                job.SetError("Connection lost.");
+            }
+        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -179,8 +1063,7 @@ namespace Lantean.QBTMud.Pages
             {
                 if (disposing)
                 {
-                    _timerCancellationToken.Cancel();
-                    _timerCancellationToken.Dispose();
+                    StopPolling();
                 }
 
                 _disposedValue = true;
@@ -189,9 +1072,18 @@ namespace Lantean.QBTMud.Pages
 
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
     }
 }
+
+
+
+
+
+
+
+
+
+

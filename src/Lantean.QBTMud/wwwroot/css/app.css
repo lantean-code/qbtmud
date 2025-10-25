@@ -427,3 +427,21 @@ body {
 .content-panel__body > .mud-tabs .mud-tabs-tabbar .mud-tabs-slider {
     bottom: 0;
 }
+
+.content-panel__container > .mud-tabs {
+    flex: 0 0 auto;
+}
+
+.content-panel__container > .mud-tabs .mud-tabs-tabbar {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom-width: 0;
+}
+
+.content-panel__container > .mud-tabs .mud-tabs-tabbar .mud-tabs-wrapper {
+    margin-bottom: -1px;
+}
+
+.content-panel__container > .mud-tabs .mud-tabs-tabbar .mud-tabs-slider {
+    bottom: 0;
+}
