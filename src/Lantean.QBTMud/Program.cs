@@ -38,7 +38,6 @@ namespace Lantean.QBTMud
                 .RemoveAllLoggers()
                 .AddLogger<HttpLogger>(wrapHandlersPipeline: true);
 
-            builder.Services.AddScoped<ApiClient>();
             builder.Services.AddScoped<IApiClient, ApiClient>();
 
             builder.Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
