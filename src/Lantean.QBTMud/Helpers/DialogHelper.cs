@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient;
+﻿using Lantean.QBitTorrentClient;
 using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Filter;
@@ -476,6 +476,23 @@ namespace Lantean.QBTMud.Helpers
             };
 
             await dialogService.ShowAsync<SubMenuDialog>(parent.Text, parameters, FormDialogOptions);
+        }
+
+        public static async Task<bool> ShowSearchPluginsDialog(this IDialogService dialogService)
+        {
+            var reference = await dialogService.ShowAsync<SearchPluginsDialog>("Search plugins", FullScreenDialogOptions);
+            var dialogResult = await reference.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+            {
+                return false;
+            }
+
+            if (dialogResult.Data is bool changed)
+            {
+                return changed;
+            }
+
+            return false;
         }
     }
 }

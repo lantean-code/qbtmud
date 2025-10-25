@@ -150,6 +150,18 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
+        protected async Task ManagePlugins()
+        {
+            var updated = await DialogService.ShowSearchPluginsDialog();
+            if (!updated)
+            {
+                return;
+            }
+
+            _plugins = await ApiClient.GetSearchPlugins();
+            await InvokeAsync(StateHasChanged);
+        }
+
         protected IEnumerable<ColumnDefinition<QBitTorrentClient.Models.SearchResult>> Columns => ColumnsDefinitions;
 
         public static List<ColumnDefinition<QBitTorrentClient.Models.SearchResult>> ColumnsDefinitions { get; } =
