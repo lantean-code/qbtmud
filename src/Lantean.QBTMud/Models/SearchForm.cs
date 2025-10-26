@@ -1,19 +1,14 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Lantean.QBTMud.Models
 {
     public class SearchForm
     {
-        public const string AllPluginsToken = "all";
-        public const string EnabledPluginsToken = "enabled";
         public const string AllCategoryId = "all";
 
         public string? SearchText { get; set; }
 
-        public HashSet<string> SelectedPlugins { get; set; } = new(StringComparer.OrdinalIgnoreCase)
-        {
-            EnabledPluginsToken
-        };
+        public HashSet<string> SelectedPlugins { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
         public string SelectedCategory { get; set; } = AllCategoryId;
 

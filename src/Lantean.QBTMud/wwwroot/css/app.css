@@ -1,4 +1,4 @@
-#blazor-error-ui {
+﻿#blazor-error-ui {
     background: lightyellow;
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
@@ -88,6 +88,67 @@ code {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.table-header-cell {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+}
+
+.search-filters {
+    box-sizing: border-box;
+}
+
+.search-filters .mud-card-content {
+    padding: 1.25rem;
+}
+
+.search-form-toggle {
+    color: var(--mud-palette-text-primary);
+}
+
+.search-actions {
+    overflow: visible;
+}
+
+.search-actions__stack {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.search-actions__stack .mud-button {
+    min-width: 140px;
+}
+
+.search-actions__results {
+    white-space: nowrap;
+}
+
+.search-actions-mobile .mud-button {
+    font-size: 0.85rem;
+}
+
+.search-actions-mobile .mud-chip {
+    width: auto;
+}
+
+@media (max-width: 900px) {
+    .search-form-toggle,
+    .search-filters {
+        margin-left: 0.5rem !important;
+        margin-right: 0.5rem !important;
+    }
+
+    .search-filters .mud-card-content {
+        padding: 0.75rem;
+    }
+
+    .search-filters .mud-button {
+        width: 100%;
+        min-width: 0;
+    }
 }
 
 .background-blur {

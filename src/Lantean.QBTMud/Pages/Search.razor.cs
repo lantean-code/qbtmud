@@ -1,22 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using Blazored.LocalStorage;
+﻿using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
-using MainUiData = Lantean.QBTMud.Models.MainData;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
+using System.Net;
+using MainUiData = Lantean.QBTMud.Models.MainData;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -25,6 +20,7 @@ namespace Lantean.QBTMud.Pages
         private const int ResultsBatchSize = 250;
         private const int PollIntervalMilliseconds = 1500;
         private const string SearchPreferencesStorageKey = "Search.Preferences";
+        private const string SearchJobsStorageKey = "Search.Jobs";
 
         private static readonly IReadOnlyList<(SearchSizeUnit Unit, string Label)> SizeUnitOptions =
         [
@@ -48,6 +44,7 @@ namespace Lantean.QBTMud.Pages
         private SearchResult? _contextMenuResult;
         private SearchPreferences _preferences = new();
         private bool _preferencesLoaded;
+        private Dictionary<int, SearchJobMetadata> _jobMetadata = new();
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -76,6 +73,9 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
+        [CascadingParameter]
+        public Breakpoint CurrentBreakpoint { get; set; }
+
         [Parameter]
         public string? Hash { get; set; }
 
@@ -85,7 +85,9 @@ namespace Lantean.QBTMud.Pages
 
         protected bool SearchFeatureAvailable => !_searchUnavailable;
 
-        protected bool HasEnabledPlugins => _plugins?.Any(p => p.Enabled) == true;
+        protected IReadOnlyList<SearchPlugin> EnabledPlugins => _plugins?.Where(plugin => plugin.Enabled).ToList() ?? [];
+
+        protected bool HasEnabledPlugins => EnabledPlugins.Count > 0;
 
         protected bool HasUsablePluginSelection => ComputeHasUsablePluginSelection();
 
@@ -123,8 +125,6 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        protected Dictionary<string, string> Plugins => _plugins is null ? [] : _plugins.ToDictionary(a => a.Name, a => a.FullName);
-
         protected Dictionary<string, string> Categories => GetCategories();
 
         protected IEnumerable<SearchResult> Results => GetFilteredResults(ActiveJob);
@@ -139,10 +139,14 @@ namespace Lantean.QBTMud.Pages
 
         protected bool ShowAdvancedFilters { get; set; }
 
+        protected bool ShowSearchForm { get; set; } = true;
+
         protected override async Task OnInitializedAsync()
         {
             await LoadPreferencesAsync();
             await LoadPluginsAsync();
+            await LoadJobMetadataAsync();
+            await HydrateJobsFromStatusAsync();
         }
 
         protected override Task OnAfterRenderAsync(bool firstRender)
@@ -155,6 +159,49 @@ namespace Lantean.QBTMud.Pages
             return Task.CompletedTask;
         }
 
+        private async Task HydrateJobsFromStatusAsync()
+        {
+            if (_searchUnavailable)
+            {
+                await RemoveStaleMetadataAsync(Array.Empty<int>());
+                return;
+            }
+
+            IReadOnlyList<SearchStatus> statuses;
+            try
+            {
+                statuses = await ApiClient.GetSearchesStatus();
+            }
+            catch (HttpRequestException exception)
+            {
+                HandleConnectionFailure(exception);
+                return;
+            }
+
+            if (statuses.Count == 0)
+            {
+                await RemoveStaleMetadataAsync(Array.Empty<int>());
+                return;
+            }
+
+            foreach (var status in statuses)
+            {
+                if (_jobs.Any(job => job.Id == status.Id))
+                {
+                    continue;
+                }
+
+                var metadata = GetMetadataForJob(status.Id);
+                var job = new SearchJobViewModel(status.Id, metadata.Pattern, metadata.Plugins, metadata.Category);
+                job.UpdateStatus(status.Status, status.Total);
+                TrackJob(job);
+                await FetchJobSnapshot(job);
+            }
+
+            await RemoveStaleMetadataAsync(statuses.Select(s => s.Id).ToList());
+            EnsurePollingStarted();
+        }
+
         protected void NavigateBack()
         {
             NavigationManager.NavigateTo("/");
@@ -162,12 +209,6 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task DoSearch(EditContext editContext)
         {
-            if (ActiveJob?.IsRunning == true)
-            {
-                await StopJob(ActiveJob);
-                return;
-            }
-
             if (!SearchFeatureAvailable)
             {
                 Snackbar.Add(SearchUnavailableMessage, Severity.Warning);
@@ -190,12 +231,22 @@ namespace Lantean.QBTMud.Pages
             var pluginSelection = GetPluginSelection();
             var existingJob = FindMatchingJob(normalizedPattern, Model.SelectedCategory, pluginSelection);
 
+            if (existingJob is not null)
+            {
+                ActiveTabIndex = _jobs.IndexOf(existingJob);
+                return;
+            }
+
             try
             {
-                await StartOrReplaceJob(normalizedPattern, pluginSelection, Model.SelectedCategory, existingJob);
+                await StartOrReplaceJob(normalizedPattern, pluginSelection, Model.SelectedCategory, existingJob: null);
                 if (ShowAdvancedFilters)
                 {
                     ShowAdvancedFilters = false;
+                }
+                if (CurrentBreakpoint <= Breakpoint.Sm)
+                {
+                    ShowSearchForm = false;
                 }
             }
             catch (HttpRequestException exception)
@@ -333,7 +384,8 @@ namespace Lantean.QBTMud.Pages
             builder.AddAttribute(5, nameof(MudIconButton.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, async _ => await DownloadResult(context.Data)));
             builder.CloseComponent();
         };
-        protected string GetJobStatusIcon(SearchJobViewModel job)
+
+        protected static string GetJobStatusIcon(SearchJobViewModel job)
         {
             return job.Status switch
             {
@@ -347,7 +399,7 @@ namespace Lantean.QBTMud.Pages
             };
         }
 
-        protected Color GetJobStatusColor(SearchJobViewModel job)
+        protected static Color GetJobStatusColor(SearchJobViewModel job)
         {
             return job.Status switch
             {
@@ -395,6 +447,11 @@ namespace Lantean.QBTMud.Pages
             ShowAdvancedFilters = !ShowAdvancedFilters;
         }
 
+        protected void ToggleSearchForm()
+        {
+            ShowSearchForm = !ShowSearchForm;
+        }
+
         private async Task LoadPluginsAsync(bool showError = false)
         {
             try
@@ -402,15 +459,15 @@ namespace Lantean.QBTMud.Pages
                 _plugins = await ApiClient.GetSearchPlugins();
                 _searchUnavailable = false;
                 _searchUnavailableReason = null;
-                NormalizeSelectedPlugins();
+                EnsureSelectedPluginsValid();
                 EnsureValidCategory();
             }
             catch (HttpRequestException exception)
             {
-                _plugins = Array.Empty<SearchPlugin>();
+                _plugins = [];
                 _searchUnavailable = true;
                 _searchUnavailableReason = "Search is disabled in the connected qBittorrent instance.";
-                NormalizeSelectedPlugins();
+                EnsureSelectedPluginsValid();
                 EnsureValidCategory();
                 if (showError)
                 {
@@ -430,20 +487,20 @@ namespace Lantean.QBTMud.Pages
             }
 
             var comparer = StringComparer.OrdinalIgnoreCase;
+            var selected = new HashSet<string>(Model.SelectedPlugins, comparer);
             IEnumerable<SearchPlugin> targetPlugins;
 
-            if (Model.SelectedPlugins.Count == 0 || Model.SelectedPlugins.Contains(SearchForm.AllPluginsToken, comparer))
+            if (selected.Count == 0)
             {
-                targetPlugins = _plugins;
-            }
-            else if (Model.SelectedPlugins.Contains(SearchForm.EnabledPluginsToken, comparer))
-            {
-                targetPlugins = _plugins.Where(p => p.Enabled);
+                targetPlugins = HasEnabledPlugins ? EnabledPlugins : _plugins;
             }
             else
             {
-                var selected = new HashSet<string>(Model.SelectedPlugins, comparer);
-                targetPlugins = _plugins.Where(p => selected.Contains(p.Name));
+                targetPlugins = _plugins.Where(plugin => selected.Contains(plugin.Name)).ToList();
+                if (!targetPlugins.Any())
+                {
+                    targetPlugins = HasEnabledPlugins ? EnabledPlugins : _plugins;
+                }
             }
 
             var categories = targetPlugins
@@ -463,18 +520,8 @@ namespace Lantean.QBTMud.Pages
             if (Model.SelectedPlugins.Count == 0)
             {
                 return HasEnabledPlugins
-                    ? new[] { SearchForm.EnabledPluginsToken }
-                    : new[] { SearchForm.AllPluginsToken };
-            }
-
-            if (Model.SelectedPlugins.Contains(SearchForm.AllPluginsToken, comparer))
-            {
-                return new[] { SearchForm.AllPluginsToken };
-            }
-
-            if (Model.SelectedPlugins.Contains(SearchForm.EnabledPluginsToken, comparer))
-            {
-                return new[] { SearchForm.EnabledPluginsToken };
+                    ? EnabledPlugins.Select(plugin => plugin.Name).OrderBy(name => name, comparer).ToArray()
+                    : Array.Empty<string>();
             }
 
             return Model.SelectedPlugins.OrderBy(value => value, comparer).ToArray();
@@ -493,6 +540,7 @@ namespace Lantean.QBTMud.Pages
                 ActiveTabIndex = _jobs.Count - 1;
             }
         }
+
         private void RemoveJob(SearchJobViewModel job)
         {
             var index = _jobs.IndexOf(job);
@@ -710,6 +758,7 @@ namespace Lantean.QBTMud.Pages
             var job = new SearchJobViewModel(searchId, pattern, plugins, category);
 
             TrackJob(job, replaceIndex);
+            await PersistJobMetadataAsync(job);
             EnsurePollingStarted();
             await FetchJobSnapshot(job);
         }
@@ -736,6 +785,8 @@ namespace Lantean.QBTMud.Pages
             {
                 // Ignore failures when the job is already deleted.
             }
+
+            await RemoveJobMetadataAsync(job.Id);
         }
 
         private async Task LoadPreferencesAsync()
@@ -753,6 +804,19 @@ namespace Lantean.QBTMud.Pages
             NormalizePreferenceSets(_preferences);
             ApplyPreferencesToModel(_preferences);
             _preferencesLoaded = true;
+        }
+
+        private async Task LoadJobMetadataAsync()
+        {
+            try
+            {
+                var stored = await LocalStorage.GetItemAsync<List<SearchJobMetadata>>(SearchJobsStorageKey);
+                _jobMetadata = stored?.ToDictionary(job => job.Id) ?? new Dictionary<int, SearchJobMetadata>();
+            }
+            catch
+            {
+                _jobMetadata = new Dictionary<int, SearchJobMetadata>();
+            }
         }
 
         private static void NormalizePreferenceSets(SearchPreferences preferences)
@@ -777,7 +841,7 @@ namespace Lantean.QBTMud.Pages
             Model.MinimumSizeUnit = preferences.MinimumSizeUnit;
             Model.MaximumSizeUnit = preferences.MaximumSizeUnit;
 
-            NormalizeSelectedPlugins();
+            EnsureSelectedPluginsValid();
             EnsureValidCategory();
 
             ShowAdvancedFilters = !string.IsNullOrWhiteSpace(Model.FilterText)
@@ -809,13 +873,32 @@ namespace Lantean.QBTMud.Pages
             await LocalStorage.SetItemAsync(SearchPreferencesStorageKey, _preferences);
         }
 
+        private ValueTask SaveJobMetadataAsync()
+        {
+            return LocalStorage.SetItemAsync(SearchJobsStorageKey, _jobMetadata.Values.ToList());
+        }
+
         private async Task OnPluginsChanged(IEnumerable<string> values)
         {
-            Model.SelectedPlugins = values?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            NormalizeSelectedPlugins();
+            var comparer = StringComparer.OrdinalIgnoreCase;
+            Model.SelectedPlugins = values?.ToHashSet(comparer) ?? new HashSet<string>(comparer);
+            EnsureSelectedPluginsValid();
             EnsureValidCategory();
             await SavePreferencesAsync();
             StateHasChanged();
+        }
+
+        private string? PluginsSelectionText(List<string>? selectedPlugins)
+        {
+            if (selectedPlugins is null)
+            {
+                return null;
+            }
+            if (selectedPlugins.Count == EnabledPlugins.Count)
+            {
+                return "All enabled plugins";
+            }
+            return string.Join(", ", selectedPlugins);
         }
 
         private async Task OnCategoryChanged(string value)
@@ -881,42 +964,79 @@ namespace Lantean.QBTMud.Pages
             StateHasChanged();
         }
 
-        private void NormalizeSelectedPlugins()
+        private SearchJobMetadata GetMetadataForJob(int jobId)
+        {
+            if (_jobMetadata.TryGetValue(jobId, out var metadata))
+            {
+                return metadata;
+            }
+
+            return new SearchJobMetadata
+            {
+                Id = jobId,
+                Pattern = $"Job #{jobId}",
+                Category = SearchForm.AllCategoryId,
+                Plugins = new List<string>()
+            };
+        }
+
+        private async Task PersistJobMetadataAsync(SearchJobViewModel job)
+        {
+            _jobMetadata[job.Id] = new SearchJobMetadata
+            {
+                Id = job.Id,
+                Pattern = job.Pattern,
+                Category = job.Category,
+                Plugins = job.Plugins.ToList()
+            };
+
+            await SaveJobMetadataAsync();
+        }
+
+        private async Task RemoveJobMetadataAsync(int jobId)
+        {
+            if (_jobMetadata.Remove(jobId))
+            {
+                await SaveJobMetadataAsync();
+            }
+        }
+
+        private async Task RemoveStaleMetadataAsync(IReadOnlyCollection<int> activeJobIds)
+        {
+            var hasChanges = false;
+            foreach (var jobId in _jobMetadata.Keys.ToList())
+            {
+                if (!activeJobIds.Contains(jobId))
+                {
+                    _jobMetadata.Remove(jobId);
+                    hasChanges = true;
+                }
+            }
+
+            if (hasChanges)
+            {
+                await SaveJobMetadataAsync();
+            }
+        }
+
+        private void EnsureSelectedPluginsValid()
         {
             var comparer = StringComparer.OrdinalIgnoreCase;
-            var selected = new HashSet<string>(Model.SelectedPlugins, comparer);
+            var enabledNames = EnabledPlugins.Select(plugin => plugin.Name).ToHashSet(comparer);
 
-            if (!selected.Any())
+            Model.SelectedPlugins ??= new HashSet<string>(comparer);
+
+            if (enabledNames.Count == 0)
             {
-                Model.SelectedPlugins = new HashSet<string>(new[] { HasEnabledPlugins ? SearchForm.EnabledPluginsToken : SearchForm.AllPluginsToken }, comparer);
+                Model.SelectedPlugins.Clear();
                 return;
             }
 
-            if (selected.Contains(SearchForm.AllPluginsToken, comparer))
-            {
-                Model.SelectedPlugins = new HashSet<string>(new[] { SearchForm.AllPluginsToken }, comparer);
-                return;
-            }
+            Model.SelectedPlugins.RemoveWhere(name => !enabledNames.Contains(name));
 
-            if (selected.Contains(SearchForm.EnabledPluginsToken, comparer))
+            if (Model.SelectedPlugins.Count == 0)
             {
-                Model.SelectedPlugins = new HashSet<string>(new[] { SearchForm.EnabledPluginsToken }, comparer);
-                return;
-            }
-
-            if (_plugins is not null)
-            {
-                var enabled = _plugins.Where(plugin => plugin.Enabled).Select(plugin => plugin.Name).ToHashSet(comparer);
-                selected.RemoveWhere(value => !enabled.Contains(value));
-            }
-
-            if (!selected.Any())
-            {
-                Model.SelectedPlugins = new HashSet<string>(new[] { HasEnabledPlugins ? SearchForm.EnabledPluginsToken : SearchForm.AllPluginsToken }, comparer);
-            }
-            else
-            {
-                Model.SelectedPlugins = selected;
+                Model.SelectedPlugins = new HashSet<string>(enabledNames, comparer);
             }
         }
 
@@ -936,20 +1056,7 @@ namespace Lantean.QBTMud.Pages
                 return false;
             }
 
-            var comparer = StringComparer.OrdinalIgnoreCase;
-
-            if (Model.SelectedPlugins.Count == 0 || Model.SelectedPlugins.Contains(SearchForm.AllPluginsToken, comparer) || Model.SelectedPlugins.Contains(SearchForm.EnabledPluginsToken, comparer))
-            {
-                return true;
-            }
-
-            if (_plugins is null)
-            {
-                return false;
-            }
-
-            var enabledPlugins = _plugins.Where(plugin => plugin.Enabled).Select(plugin => plugin.Name).ToHashSet(comparer);
-            return Model.SelectedPlugins.Any(enabledPlugins.Contains);
+            return GetPluginSelection().Count > 0;
         }
 
         private async Task DownloadResult(SearchResult result)
@@ -1077,13 +1184,3 @@ namespace Lantean.QBTMud.Pages
         }
     }
 }
-
-
-
-
-
-
-
-
-
-

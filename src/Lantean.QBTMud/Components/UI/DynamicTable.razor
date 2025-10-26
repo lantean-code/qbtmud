@@ -38,7 +38,7 @@
     <HeaderContent>
         @foreach (var column in GetColumns())
         {
-            var className = column.IconOnly ? null : "overflow-cell";
+            var className = column.IconOnly ? null : "table-header-cell";
             var columnHeader = column.IconOnly ? "" : column.Header;
             <MudTh Class="@className" Style="@(GetColumnStyle(column))">
                 @if (column.SortSelector is not null)

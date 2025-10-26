@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Lantean.QBTMud.Models
 {
@@ -6,10 +6,7 @@ namespace Lantean.QBTMud.Models
     {
         public string SelectedCategory { get; set; } = SearchForm.AllCategoryId;
 
-        public HashSet<string> SelectedPlugins { get; set; } = new(StringComparer.OrdinalIgnoreCase)
-        {
-            SearchForm.EnabledPluginsToken
-        };
+        public HashSet<string> SelectedPlugins { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
         public SearchInScope SearchIn { get; set; } = SearchInScope.Everywhere;
 
