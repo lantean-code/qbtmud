@@ -5,9 +5,9 @@
 - **Filter helper parity**: Rework `FilterHelper.ContainsAllTerms/FilterTerms` to mirror `window.qBittorrent.Misc.containsAllTerms` (evaluate every term, respect `+`/`-` prefixes). Ensure filtering applies to the selected field, not just the torrent name.
 - **New status buckets**: Add `Running` and `Moving` to `Status` enum, update `FilterHelper.FilterStatus`, `DisplayHelpers`, and `FiltersNav` so counts/icons match upstream.
 
-## Tracker Filters
-- **Special buckets**: Extend `FilterHelper`/`DataManager` to create sets for "Announce error", "Error", "Warning", and "Trackerless" in addition to "All". Store the required flags on the UI `Torrent` model (`HasTrackerError`, `HasTrackerWarning`, `HasOtherAnnounceError`, `TrackersCount`, etc.).
-- **Tracker grouping & removal**: When grouping trackers by host in `FiltersNav`, retain original URL entries so removal can target the right string. Replace the placeholder "Remove tracker" action with a real implementation and disable it for synthetic buckets.
+## ~~Tracker Filters~~
+- ~~**Special buckets**: Extend `FilterHelper`/`DataManager` to create sets for "Announce error", "Error", "Warning", and "Trackerless" in addition to "All". Store the required flags on the UI `Torrent` model (`HasTrackerError`, `HasTrackerWarning`, `HasOtherAnnounceError`, `TrackersCount`, etc.).~~
+- ~~**Tracker grouping & removal**: When grouping trackers by host in `FiltersNav`, retain original URL entries so removal can target the right string. Replace the placeholder "Remove tracker" action with a real implementation and disable it for synthetic buckets.~~
 
 ## ~~Torrent Data Model & Columns~~
 - ~~**Model sync**: Bring `Lantean.QBTMud.Models.Torrent` into parity with v5 (`Popularity`, `DownloadPath`, `RootPath`, `InfoHashV1/2`, `IsPrivate`, share-limit action fields, tracker flags, etc.) and map them in `DataManager.CreateTorrent`.~~

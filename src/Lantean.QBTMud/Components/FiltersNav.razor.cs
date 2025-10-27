@@ -5,6 +5,8 @@ using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Lantean.QBTMud.Components
@@ -25,6 +27,7 @@ namespace Lantean.QBTMud.Components
         private bool _categoriesExpanded = true;
         private bool _tagsExpanded = true;
         private bool _trackersExpanded = true;
+        private readonly Dictionary<string, TrackerFilterItem> _trackerItems = new(StringComparer.Ordinal);
 
         protected string Status { get; set; } = Models.Status.All.ToString();
 
@@ -65,7 +68,7 @@ namespace Lantean.QBTMud.Components
 
         protected Dictionary<string, int> Categories => GetCategories();
 
-        protected Dictionary<string, int> Trackers => GetTrackers();
+        private IReadOnlyList<TrackerFilterItem> Trackers => GetTrackers();
 
         protected Dictionary<string, int> Statuses => GetStatuses();
 
@@ -88,6 +91,11 @@ namespace Lantean.QBTMud.Components
         protected string? ContextMenuTag { get; set; }
 
         protected string? ContextMenuTracker { get; set; }
+
+        private bool CanRemoveTracker => ContextMenuTracker is not null
+            && _trackerItems.TryGetValue(ContextMenuTracker, out var trackerItem)
+            && !trackerItem.IsSynthetic
+            && trackerItem.Urls.Count > 0;
 
         protected override async Task OnInitializedAsync()
         {
@@ -315,6 +323,32 @@ namespace Lantean.QBTMud.Components
             }
         }
 
+        private async Task RemoveTracker()
+        {
+            if (ContextMenuTracker is null)
+            {
+                return;
+            }
+
+            if (!_trackerItems.TryGetValue(ContextMenuTracker, out var trackerItem) || trackerItem.IsSynthetic)
+            {
+                return;
+            }
+
+            if (trackerItem.Urls.Count == 0)
+            {
+                return;
+            }
+
+            var hashes = GetAffectedTorrentHashes(_trackerType);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
+
+            await ApiClient.RemoveTrackers(trackerItem.Urls, hashes: hashes.ToArray());
+        }
+
         protected async Task AddTag()
         {
             if (ContextMenuTag is null)
@@ -394,17 +428,59 @@ namespace Lantean.QBTMud.Components
             return MainData.CategoriesState.ToDictionary(d => d.Key, d => d.Value.Count);
         }
 
-        private Dictionary<string, int> GetTrackers()
+        private IReadOnlyList<TrackerFilterItem> GetTrackers()
         {
             if (MainData is null)
             {
-                return [];
+                _trackerItems.Clear();
+                return Array.Empty<TrackerFilterItem>();
             }
 
-            return MainData.TrackersState
-                .GroupBy(d => GetHostName(d.Key))
-                .Select(l => new KeyValuePair<string, int>(GetHostName(l.First().Key), l.Sum(i => i.Value.Count)))
-                .ToDictionary(d => d.Key, d => d.Value);
+            var items = new List<TrackerFilterItem>();
+            _trackerItems.Clear();
+
+            AppendSpecialTrackerItem(FilterHelper.TRACKER_ALL, items);
+            AppendSpecialTrackerItem(FilterHelper.TRACKER_TRACKERLESS, items);
+            AppendSpecialTrackerItem(FilterHelper.TRACKER_ERROR, items);
+            AppendSpecialTrackerItem(FilterHelper.TRACKER_WARNING, items);
+            AppendSpecialTrackerItem(FilterHelper.TRACKER_ANNOUNCE_ERROR, items);
+
+            if (MainData.Trackers.Count > 0)
+            {
+                var hostGroups = new Dictionary<string, TrackerHostGroup>(StringComparer.OrdinalIgnoreCase);
+                foreach (var (url, hashes) in MainData.Trackers)
+                {
+                    var host = GetHostName(url);
+                    if (!hostGroups.TryGetValue(host, out var group))
+                    {
+                        group = new TrackerHostGroup(host);
+                        hostGroups[host] = group;
+                    }
+
+                    if (hashes is not null)
+                    {
+                        foreach (var hash in hashes)
+                        {
+                            if (MainData.Torrents.ContainsKey(hash))
+                            {
+                                group.Hashes.Add(hash);
+                            }
+                        }
+                    }
+
+                    group.Urls.Add(url);
+                }
+
+                foreach (var group in hostGroups.Values.OrderBy(g => g.Host, StringComparer.OrdinalIgnoreCase))
+                {
+                    var urls = group.Urls.Distinct(StringComparer.Ordinal).ToArray();
+                    var item = new TrackerFilterItem(group.Host, group.Host, group.Hashes.Count, false, urls);
+                    items.Add(item);
+                    _trackerItems[item.Key] = item;
+                }
+            }
+
+            return items;
         }
 
         private Dictionary<string, int> GetStatuses()
@@ -464,6 +540,37 @@ namespace Lantean.QBTMud.Components
                     return [];
             }
         }
+
+        private void AppendSpecialTrackerItem(string key, List<TrackerFilterItem> items)
+        {
+            if (MainData is null)
+            {
+                return;
+            }
+
+            var count = MainData.TrackersState.TryGetValue(key, out var set) ? set.Count : 0;
+            var item = new TrackerFilterItem(key, key, count, true, Array.Empty<string>());
+            items.Add(item);
+            _trackerItems[key] = item;
+        }
+
+        private sealed class TrackerHostGroup
+        {
+            public TrackerHostGroup(string host)
+            {
+                Host = host;
+                Hashes = new HashSet<string>(StringComparer.Ordinal);
+                Urls = new List<string>();
+            }
+
+            public string Host { get; }
+
+            public HashSet<string> Hashes { get; }
+
+            public List<string> Urls { get; }
+        }
+
+        private sealed record TrackerFilterItem(string Key, string DisplayName, int Count, bool IsSynthetic, IReadOnlyList<string> Urls);
 
         private static string GetHostName(string tracker)
         {

@@ -1,4 +1,4 @@
-using Lantean.QBTMud.Helpers;
+﻿using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 
@@ -84,12 +84,18 @@ namespace Lantean.QBTMud.Services
                 statusState.Add(status.ToString(), torrents.Values.Where(t => FilterHelper.FilterStatus(t, status)).ToHashesHashSet());
             }
 
-            var trackersState = new Dictionary<string, HashSet<string>>(trackers.Count + 2);
-            trackersState.Add(FilterHelper.TRACKER_ALL, torrents.Keys.ToHashSet());
-            trackersState.Add(FilterHelper.TRACKER_TRACKERLESS, torrents.Values.Where(t => FilterHelper.FilterTracker(t, FilterHelper.TRACKER_TRACKERLESS)).ToHashesHashSet());
-            foreach (var tracker in trackers.Keys)
+            var trackersState = new Dictionary<string, HashSet<string>>(trackers.Count + 5)
             {
-                trackersState.Add(tracker, torrents.Values.Where(t => FilterHelper.FilterTracker(t, tracker)).ToHashesHashSet());
+                { FilterHelper.TRACKER_ALL, torrents.Keys.ToHashSet() },
+                { FilterHelper.TRACKER_TRACKERLESS, torrents.Values.Where(t => FilterHelper.FilterTracker(t, FilterHelper.TRACKER_TRACKERLESS)).ToHashesHashSet() },
+                { FilterHelper.TRACKER_ERROR, torrents.Values.Where(t => FilterHelper.FilterTracker(t, FilterHelper.TRACKER_ERROR)).ToHashesHashSet() },
+                { FilterHelper.TRACKER_WARNING, torrents.Values.Where(t => FilterHelper.FilterTracker(t, FilterHelper.TRACKER_WARNING)).ToHashesHashSet() },
+                { FilterHelper.TRACKER_ANNOUNCE_ERROR, torrents.Values.Where(t => FilterHelper.FilterTracker(t, FilterHelper.TRACKER_ANNOUNCE_ERROR)).ToHashesHashSet() }
+            };
+
+            foreach (var (tracker, hashes) in trackers)
+            {
+                trackersState[tracker] = hashes.Where(torrents.ContainsKey).ToHashSet();
             }
 
             var torrentList = new MainData(torrents, tags, categories, trackers, serverState, tagState, categoriesState, statusState, trackersState);
@@ -331,7 +337,7 @@ namespace Lantean.QBTMud.Services
             }
 
             torrentList.TrackersState[FilterHelper.TRACKER_ALL].Add(hash);
-            UpdateTrackerState(torrentList, torrent, hash, previousTracker: null);
+            UpdateTrackerState(torrentList, torrent, hash, previousSnapshot: null);
         }
 
         private static Status[] GetStatuses()
@@ -351,7 +357,7 @@ namespace Lantean.QBTMud.Services
             UpdateTagStateForUpdate(torrentList, hash, previousSnapshot.Tags, updatedTorrent.Tags);
             UpdateCategoryState(torrentList, updatedTorrent, hash, previousSnapshot.Category);
             UpdateStatusState(torrentList, hash, previousSnapshot.State, previousSnapshot.UploadSpeed, updatedTorrent.State, updatedTorrent.UploadSpeed);
-            UpdateTrackerState(torrentList, updatedTorrent, hash, previousSnapshot.Tracker);
+            UpdateTrackerState(torrentList, updatedTorrent, hash, previousSnapshot);
         }
 
         private static void RemoveTorrentFromStates(MainData torrentList, string hash, TorrentSnapshot snapshot)
@@ -376,7 +382,7 @@ namespace Lantean.QBTMud.Services
             }
 
             torrentList.TrackersState[FilterHelper.TRACKER_ALL].Remove(hash);
-            UpdateTrackerStateForRemoval(torrentList, hash, snapshot.Tracker);
+            UpdateTrackerStateForRemoval(torrentList, hash, snapshot);
         }
 
         private static bool UpdateServerState(ServerState existingServerState, QBitTorrentClient.Models.ServerState serverState)
@@ -605,6 +611,10 @@ namespace Lantean.QBTMud.Services
                 torrent.TimeActive.GetValueOrDefault(),
                 torrent.TotalSize.GetValueOrDefault(),
                 torrent.Tracker!,
+                torrent.TrackersCount.GetValueOrDefault(),
+                torrent.HasTrackerError.GetValueOrDefault(),
+                torrent.HasTrackerWarning.GetValueOrDefault(),
+                torrent.HasOtherAnnounceError.GetValueOrDefault(),
                 torrent.UploadLimit.GetValueOrDefault(),
                 torrent.Uploaded.GetValueOrDefault(),
                 torrent.UploadedSession.GetValueOrDefault(),
@@ -640,18 +650,35 @@ namespace Lantean.QBTMud.Services
                 torrent.Tags.ToList(),
                 torrent.Tracker ?? string.Empty,
                 torrent.State ?? string.Empty,
-                torrent.UploadSpeed);
+                torrent.UploadSpeed,
+                torrent.TrackersCount,
+                torrent.HasTrackerError,
+                torrent.HasTrackerWarning,
+                torrent.HasOtherAnnounceError);
         }
 
         internal readonly struct TorrentSnapshot
         {
-            public TorrentSnapshot(string? category, List<string> tags, string tracker, string state, long uploadSpeed)
+            public TorrentSnapshot(
+                string? category,
+                List<string> tags,
+                string tracker,
+                string state,
+                long uploadSpeed,
+                int trackersCount,
+                bool hasTrackerError,
+                bool hasTrackerWarning,
+                bool hasOtherAnnounceError)
             {
                 Category = category;
                 Tags = tags;
                 Tracker = tracker;
                 State = state;
                 UploadSpeed = uploadSpeed;
+                TrackersCount = trackersCount;
+                HasTrackerError = hasTrackerError;
+                HasTrackerWarning = hasTrackerWarning;
+                HasOtherAnnounceError = hasOtherAnnounceError;
             }
 
             public string? Category { get; }
@@ -663,6 +690,14 @@ namespace Lantean.QBTMud.Services
             public string State { get; }
 
             public long UploadSpeed { get; }
+
+            public int TrackersCount { get; }
+
+            public bool HasTrackerError { get; }
+
+            public bool HasTrackerWarning { get; }
+
+            public bool HasOtherAnnounceError { get; }
         }
 
         internal static void UpdateTagStateForAddition(MainData torrentList, Torrent torrent, string hash)
@@ -802,42 +837,55 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        internal static void UpdateTrackerState(MainData torrentList, Torrent updatedTorrent, string hash, string? previousTracker)
+        internal static void UpdateTrackerState(MainData torrentList, Torrent updatedTorrent, string hash, TorrentSnapshot? previousSnapshot)
         {
-            if (!string.IsNullOrEmpty(previousTracker))
+            var previousTracker = previousSnapshot?.Tracker ?? string.Empty;
+            var currentTracker = updatedTorrent.Tracker ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(previousTracker) && !string.Equals(previousTracker, currentTracker, StringComparison.Ordinal))
             {
                 if (torrentList.TrackersState.TryGetValue(previousTracker, out var oldSet))
                 {
                     oldSet.Remove(hash);
                 }
             }
-            else
+
+            if (!string.IsNullOrEmpty(currentTracker))
             {
-                torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Remove(hash);
+                GetOrCreateTrackerSet(torrentList, currentTracker).Add(hash);
             }
 
-            var tracker = updatedTorrent.Tracker ?? string.Empty;
-            if (string.IsNullOrEmpty(tracker))
-            {
-                torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Add(hash);
-                return;
-            }
-
-            torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Remove(hash);
-            GetOrCreateTrackerSet(torrentList, tracker).Add(hash);
+            UpdateTrackerBucketState(torrentList, FilterHelper.TRACKER_TRACKERLESS, hash, updatedTorrent.TrackersCount == 0);
+            UpdateTrackerBucketState(torrentList, FilterHelper.TRACKER_ERROR, hash, updatedTorrent.HasTrackerError);
+            UpdateTrackerBucketState(torrentList, FilterHelper.TRACKER_WARNING, hash, updatedTorrent.HasTrackerWarning);
+            UpdateTrackerBucketState(torrentList, FilterHelper.TRACKER_ANNOUNCE_ERROR, hash, updatedTorrent.HasOtherAnnounceError);
         }
 
-        internal static void UpdateTrackerStateForRemoval(MainData torrentList, string hash, string? previousTracker)
+        internal static void UpdateTrackerStateForRemoval(MainData torrentList, string hash, TorrentSnapshot snapshot)
         {
-            if (string.IsNullOrEmpty(previousTracker))
-            {
-                torrentList.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Remove(hash);
-                return;
-            }
-
-            if (torrentList.TrackersState.TryGetValue(previousTracker, out var trackerSet))
+            if (!string.IsNullOrEmpty(snapshot.Tracker) && torrentList.TrackersState.TryGetValue(snapshot.Tracker, out var trackerSet))
             {
                 trackerSet.Remove(hash);
+            }
+
+            if (snapshot.TrackersCount == 0 && torrentList.TrackersState.TryGetValue(FilterHelper.TRACKER_TRACKERLESS, out var trackerlessSet))
+            {
+                trackerlessSet.Remove(hash);
+            }
+
+            if (snapshot.HasTrackerError && torrentList.TrackersState.TryGetValue(FilterHelper.TRACKER_ERROR, out var errorSet))
+            {
+                errorSet.Remove(hash);
+            }
+
+            if (snapshot.HasTrackerWarning && torrentList.TrackersState.TryGetValue(FilterHelper.TRACKER_WARNING, out var warningSet))
+            {
+                warningSet.Remove(hash);
+            }
+
+            if (snapshot.HasOtherAnnounceError && torrentList.TrackersState.TryGetValue(FilterHelper.TRACKER_ANNOUNCE_ERROR, out var announceErrorSet))
+            {
+                announceErrorSet.Remove(hash);
             }
         }
 
@@ -889,6 +937,20 @@ namespace Lantean.QBTMud.Services
             }
 
             return set;
+        }
+
+        private static void UpdateTrackerBucketState(MainData torrentList, string key, string hash, bool include)
+        {
+            if (include)
+            {
+                GetOrCreateTrackerSet(torrentList, key).Add(hash);
+                return;
+            }
+
+            if (torrentList.TrackersState.TryGetValue(key, out var set))
+            {
+                set.Remove(hash);
+            }
         }
 
         internal static HashSet<string> GetOrCreateTrackerSet(MainData torrentList, string tracker)
@@ -1192,6 +1254,35 @@ namespace Lantean.QBTMud.Services
             if (torrent.Tracker is not null && existingTorrent.Tracker != torrent.Tracker)
             {
                 existingTorrent.Tracker = torrent.Tracker;
+                dataChanged = true;
+                filterChanged = true;
+            }
+
+            
+            if (torrent.TrackersCount.HasValue && existingTorrent.TrackersCount != torrent.TrackersCount.Value)
+            {
+                existingTorrent.TrackersCount = torrent.TrackersCount.Value;
+                dataChanged = true;
+                filterChanged = true;
+            }
+
+            if (torrent.HasTrackerError.HasValue && existingTorrent.HasTrackerError != torrent.HasTrackerError.Value)
+            {
+                existingTorrent.HasTrackerError = torrent.HasTrackerError.Value;
+                dataChanged = true;
+                filterChanged = true;
+            }
+
+            if (torrent.HasTrackerWarning.HasValue && existingTorrent.HasTrackerWarning != torrent.HasTrackerWarning.Value)
+            {
+                existingTorrent.HasTrackerWarning = torrent.HasTrackerWarning.Value;
+                dataChanged = true;
+                filterChanged = true;
+            }
+
+            if (torrent.HasOtherAnnounceError.HasValue && existingTorrent.HasOtherAnnounceError != torrent.HasOtherAnnounceError.Value)
+            {
+                existingTorrent.HasOtherAnnounceError = torrent.HasOtherAnnounceError.Value;
                 dataChanged = true;
                 filterChanged = true;
             }

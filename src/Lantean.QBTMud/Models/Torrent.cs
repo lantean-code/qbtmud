@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lantean.QBitTorrentClient.Models;
@@ -51,6 +51,10 @@ namespace Lantean.QBTMud.Models
             int timeActive,
             long totalSize,
             string tracker,
+            int trackersCount,
+            bool hasTrackerError,
+            bool hasTrackerWarning,
+            bool hasOtherAnnounceError,
             long uploadLimit,
             long uploaded,
             long uploadedSession,
@@ -108,6 +112,10 @@ namespace Lantean.QBTMud.Models
             TimeActive = timeActive;
             TotalSize = totalSize;
             Tracker = tracker;
+            TrackersCount = trackersCount;
+            HasTrackerError = hasTrackerError;
+            HasTrackerWarning = hasTrackerWarning;
+            HasOtherAnnounceError = hasOtherAnnounceError;
             UploadLimit = uploadLimit;
             Uploaded = uploaded;
             UploadedSession = uploadedSession;
@@ -138,6 +146,10 @@ namespace Lantean.QBTMud.Models
             State = string.Empty;
             Tags = new List<string>();
             Tracker = string.Empty;
+            TrackersCount = 0;
+            HasTrackerError = false;
+            HasTrackerWarning = false;
+            HasOtherAnnounceError = false;
             ShareLimitAction = ShareLimitAction.Default;
             Comment = string.Empty;
         }
@@ -233,6 +245,14 @@ namespace Lantean.QBTMud.Models
         public long TotalSize { get; set; }
 
         public string Tracker { get; set; }
+
+        public int TrackersCount { get; set; }
+
+        public bool HasTrackerError { get; set; }
+
+        public bool HasTrackerWarning { get; set; }
+
+        public bool HasOtherAnnounceError { get; set; }
 
         public long UploadLimit { get; set; }
 

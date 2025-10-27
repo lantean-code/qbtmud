@@ -10,6 +10,9 @@ namespace Lantean.QBTMud.Helpers
         public const string CATEGORY_UNCATEGORIZED = "Uncategorized";
         public const string TRACKER_ALL = "All";
         public const string TRACKER_TRACKERLESS = "Trackerless";
+        public const string TRACKER_ERROR = "Error";
+        public const string TRACKER_WARNING = "Warning";
+        public const string TRACKER_ANNOUNCE_ERROR = "Announce error";
 
         public static IEnumerable<Torrent> Filter(this IEnumerable<Torrent> torrents, FilterState filterState)
         {
@@ -108,10 +111,42 @@ namespace Lantean.QBTMud.Helpers
 
             if (tracker == TRACKER_TRACKERLESS)
             {
-                return torrent.Tracker == "";
+                if (torrent.TrackersCount == 0)
+                {
+                    return true;
+                }
+
+                return string.IsNullOrEmpty(torrent.Tracker);
             }
 
-            return torrent.Tracker.Contains(tracker);
+            if (tracker == TRACKER_ERROR)
+            {
+                return torrent.HasTrackerError;
+            }
+
+            if (tracker == TRACKER_WARNING)
+            {
+                return torrent.HasTrackerWarning;
+            }
+
+            if (tracker == TRACKER_ANNOUNCE_ERROR)
+            {
+                return torrent.HasOtherAnnounceError;
+            }
+
+            if (string.IsNullOrEmpty(tracker))
+            {
+                return string.IsNullOrEmpty(torrent.Tracker);
+            }
+
+            var torrentTracker = torrent.Tracker ?? string.Empty;
+            if (IsTrackerUrl(tracker))
+            {
+                return string.Equals(NormalizeTrackerKey(torrentTracker), NormalizeTrackerKey(tracker), StringComparison.OrdinalIgnoreCase);
+            }
+
+            var torrentHost = GetTrackerHost(torrentTracker);
+            return string.Equals(torrentHost, tracker, StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool FilterCategory(Torrent torrent, string category, bool useSubcategories)
@@ -266,6 +301,46 @@ namespace Lantean.QBTMud.Helpers
             }
 
             return true;
+        }
+
+        private static string NormalizeTrackerKey(string tracker)
+        {
+            if (string.IsNullOrEmpty(tracker))
+            {
+                return string.Empty;
+            }
+
+            return tracker.TrimEnd('/');
+        }
+
+        private static string GetTrackerHost(string tracker)
+        {
+            if (Uri.TryCreate(tracker, UriKind.Absolute, out var trackerUri))
+            {
+                return trackerUri.Host;
+            }
+
+            if (string.IsNullOrEmpty(tracker))
+            {
+                return string.Empty;
+            }
+
+            if (Uri.TryCreate(string.Concat("http://", tracker), UriKind.Absolute, out var fallbackUri))
+            {
+                return fallbackUri.Host;
+            }
+
+            return tracker;
+        }
+
+        private static bool IsTrackerUrl(string tracker)
+        {
+            if (string.IsNullOrEmpty(tracker))
+            {
+                return false;
+            }
+
+            return tracker.Contains("://", StringComparison.Ordinal);
         }
 
         public static string GetStatusName(this string status)

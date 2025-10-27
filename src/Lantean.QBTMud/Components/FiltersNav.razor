@@ -26,7 +26,7 @@
 </MudMenu>
 
 <MudMenu @ref="TrackerContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedCategories">Remove tracker</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" Disabled="@(!CanRemoveTracker)" OnClick="RemoveTracker">Remove tracker</MudMenuItem>
     <MudDivider />
     @TorrentControls(_trackerType)
 </MudMenu>
@@ -52,9 +52,9 @@
         }
     </MudNavGroup>
     <MudNavGroup Title="Trackers" @bind-Expanded="_trackersExpanded">
-        @foreach (var (tracker, count) in Trackers)
+        @foreach (var tracker in Trackers)
         {
-            <CustomNavLink Class="filter-menu-item" Active="@(Tracker == tracker)" Icon="@Icons.Material.Filled.PinDrop" IconColor="Color.Info" OnClick="@(e => TrackerValueChanged(tracker))" OnContextMenu="@(e => TrackerOnContextMenu(e, tracker))" OnLongPress="@(e => TrackerOnLongPress(e, tracker))">@($"{tracker} ({count})")</CustomNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Tracker == tracker.Key)" Icon="@Icons.Material.Filled.PinDrop" IconColor="Color.Info" OnClick="@(e => TrackerValueChanged(tracker.Key))" OnContextMenu="@(e => TrackerOnContextMenu(e, tracker.Key))" OnLongPress="@(e => TrackerOnLongPress(e, tracker.Key))">@($"{tracker.DisplayName} ({tracker.Count})")</CustomNavLink>
         }
     </MudNavGroup>
 </MudNavMenu>
