@@ -6,6 +6,7 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
+using System.Text.RegularExpressions;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -47,7 +48,7 @@ namespace Lantean.QBTMud.Pages
         public int TorrentsVersion { get; set; }
 
         [CascadingParameter(Name = "SearchTermChanged")]
-        public EventCallback<string> SearchTermChanged { get; set; }
+        public EventCallback<FilterSearchState> SearchTermChanged { get; set; }
 
         [CascadingParameter(Name = "SortColumnChanged")]
         public EventCallback<string> SortColumnChanged { get; set; }
@@ -59,6 +60,14 @@ namespace Lantean.QBTMud.Pages
         public bool DrawerOpen { get; set; }
 
         protected string? SearchText { get; set; }
+
+        protected TorrentFilterField SearchField { get; set; } = TorrentFilterField.Name;
+
+        protected bool UseRegex { get; set; }
+
+        protected bool IsRegexValid { get; set; } = true;
+
+        protected string? SearchErrorText { get; set; }
 
         protected HashSet<Torrent> SelectedItems { get; set; } = [];
 
@@ -179,7 +188,19 @@ namespace Lantean.QBTMud.Pages
         protected async Task SearchTextChanged(string text)
         {
             SearchText = text;
-            await SearchTermChanged.InvokeAsync(SearchText);
+            ValidateRegex();
+            await PublishSearchStateAsync();
+        }
+
+        protected async Task OnSearchFieldChanged()
+        {
+            await PublishSearchStateAsync();
+        }
+
+        protected async Task OnUseRegexChanged()
+        {
+            ValidateRegex();
+            await PublishSearchStateAsync();
         }
 
         protected async Task AddTorrentFile()
@@ -218,6 +239,41 @@ namespace Lantean.QBTMud.Pages
         private IEnumerable<string> GetContextMenuTargetHashes()
         {
             return [(ContextMenuItem is null ? "fake" : ContextMenuItem.Hash)];
+        }
+
+        private async Task PublishSearchStateAsync()
+        {
+            var state = new FilterSearchState(SearchText, SearchField, UseRegex, IsRegexValid);
+            await SearchTermChanged.InvokeAsync(state);
+        }
+
+        private void ValidateRegex()
+        {
+            if (!UseRegex)
+            {
+                IsRegexValid = true;
+                SearchErrorText = null;
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(SearchText))
+            {
+                IsRegexValid = true;
+                SearchErrorText = null;
+                return;
+            }
+
+            try
+            {
+                _ = new Regex(SearchText, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                IsRegexValid = true;
+                SearchErrorText = null;
+            }
+            catch (ArgumentException)
+            {
+                IsRegexValid = false;
+                SearchErrorText = "Invalid regular expression";
+            }
         }
 
         public async Task ColumnOptions()

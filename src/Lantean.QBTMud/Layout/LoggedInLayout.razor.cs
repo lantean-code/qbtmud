@@ -52,6 +52,12 @@ namespace Lantean.QBTMud.Layout
 
         protected string? SearchText { get; set; }
 
+        protected TorrentFilterField SearchField { get; set; } = TorrentFilterField.Name;
+
+        protected bool UseRegexSearch { get; set; }
+
+        protected bool IsRegexValid { get; set; } = true;
+
         protected IReadOnlyList<Torrent> Torrents => GetTorrents();
 
         protected bool IsAuthenticated { get; set; }
@@ -77,7 +83,16 @@ namespace Lantean.QBTMud.Layout
                 return _visibleTorrents;
             }
 
-            var filterState = new FilterState(Category, Status, Tag, Tracker, MainData.ServerState.UseSubcategories, SearchText);
+            var filterState = new FilterState(
+                Category,
+                Status,
+                Tag,
+                Tracker,
+                MainData.ServerState.UseSubcategories,
+                SearchText,
+                SearchField,
+                UseRegexSearch,
+                IsRegexValid);
             _visibleTorrents = MainData.Torrents.Values.Filter(filterState).ToList();
             _torrentsDirty = false;
 
@@ -185,7 +200,7 @@ namespace Lantean.QBTMud.Layout
 
         protected EventCallback<string> TrackerChanged => EventCallback.Factory.Create<string>(this, OnTrackerChanged);
 
-        protected EventCallback<string> SearchTermChanged => EventCallback.Factory.Create<string>(this, OnSearchTermChanged);
+        protected EventCallback<FilterSearchState> SearchTermChanged => EventCallback.Factory.Create<FilterSearchState>(this, OnSearchTermChanged);
 
         protected EventCallback<string> SortColumnChanged => EventCallback.Factory.Create<string>(this, columnId => SortColumn = columnId);
 
@@ -271,14 +286,23 @@ namespace Lantean.QBTMud.Layout
             MarkTorrentsDirty();
         }
 
-        private void OnSearchTermChanged(string term)
+        private void OnSearchTermChanged(FilterSearchState state)
         {
-            if (SearchText == term)
+            var hasChanges =
+                SearchText != state.Text ||
+                SearchField != state.Field ||
+                UseRegexSearch != state.UseRegex ||
+                IsRegexValid != state.IsRegexValid;
+
+            if (!hasChanges)
             {
                 return;
             }
 
-            SearchText = term;
+            SearchText = state.Text;
+            SearchField = state.Field;
+            UseRegexSearch = state.UseRegex;
+            IsRegexValid = state.IsRegexValid;
             MarkTorrentsDirty();
         }
 

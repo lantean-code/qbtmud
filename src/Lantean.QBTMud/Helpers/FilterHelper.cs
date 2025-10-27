@@ -1,4 +1,6 @@
-﻿using Lantean.QBTMud.Models;
+﻿using System;
+using System.Text.RegularExpressions;
+using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Helpers
 {
@@ -20,7 +22,7 @@ namespace Lantean.QBTMud.Helpers
                 .Where(t => FilterTag(t, filterState.Tag))
                 .Where(t => FilterCategory(t, filterState.Category, filterState.UseSubcategories))
                 .Where(t => FilterTracker(t, filterState.Tracker))
-                .Where(t => FilterTerms(t.Name, filterState.Terms));
+                .Where(t => FilterTerms(t, filterState));
         }
 
         public static HashSet<string> ToHashesHashSet(this IEnumerable<Torrent> torrents)
@@ -60,46 +62,111 @@ namespace Lantean.QBTMud.Helpers
             }
         }
 
-        public static bool ContainsAllTerms(string text, IEnumerable<string> terms)
+        public static bool ContainsAllTerms(string text, IEnumerable<string> terms, bool useRegex)
         {
-            return terms.Any(t =>
-            {
-                var term = t;
-                var isTermRequired = term[0] == '+';
-                var isTermExcluded = term[0] == '-';
+            var target = text ?? string.Empty;
 
-                if (isTermRequired || isTermExcluded)
+            foreach (var rawTerm in terms)
+            {
+                if (string.IsNullOrEmpty(rawTerm))
                 {
+                    continue;
+                }
+
+                var term = rawTerm;
+                var isExclude = false;
+                if (term[0] == '+' || term[0] == '-')
+                {
+                    isExclude = term[0] == '-';
                     if (term.Length == 1)
                     {
-                        return true;
+                        continue;
                     }
+
                     term = term[1..];
                 }
 
-                var textContainsTerm = text.Contains(term, StringComparison.OrdinalIgnoreCase);
-                return isTermExcluded ? !textContainsTerm : textContainsTerm;
-            });
+                if (string.IsNullOrEmpty(term))
+                {
+                    continue;
+                }
+
+                if (isExclude)
+                {
+                    if (MatchesTerm(target, term, useRegex))
+                    {
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                if (!MatchesTerm(target, term, useRegex))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public static bool FilterTerms(string field, string? terms)
         {
-            if (terms is null || terms == "")
+            return FilterTerms(field, terms, useRegex: false, isRegexValid: true);
+        }
+
+        public static bool FilterTerms(string field, string? terms, bool useRegex, bool isRegexValid)
+        {
+            if (string.IsNullOrWhiteSpace(terms))
             {
                 return true;
             }
 
-            return ContainsAllTerms(field, terms.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            if (useRegex && !isRegexValid)
+            {
+                return true;
+            }
+
+            var value = field ?? string.Empty;
+            var tokens = terms.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            return ContainsAllTerms(value, tokens, useRegex);
+        }
+
+        public static bool FilterTerms(Torrent torrent, FilterState filterState)
+        {
+            return FilterTerms(GetFilterFieldValue(torrent, filterState.FilterField), filterState.Terms, filterState.UseRegex, filterState.IsRegexValid);
         }
 
         public static bool FilterTerms(Torrent torrent, string? terms)
         {
-            if (terms is null || terms == "")
+            return FilterTerms(torrent.Name, terms, useRegex: false, isRegexValid: true);
+        }
+
+        private static string GetFilterFieldValue(Torrent torrent, TorrentFilterField field)
+        {
+            return field switch
             {
-                return true;
+                TorrentFilterField.SavePath => torrent.SavePath ?? string.Empty,
+                _ => torrent.Name ?? string.Empty,
+            };
+        }
+
+        private static bool MatchesTerm(string text, string term, bool useRegex)
+        {
+            if (!useRegex)
+            {
+                return text.Contains(term, StringComparison.OrdinalIgnoreCase);
             }
 
-            return ContainsAllTerms(torrent.Name, terms.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            try
+            {
+                return Regex.IsMatch(text, term, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
         }
 
         public static bool FilterTracker(Torrent torrent, string tracker)

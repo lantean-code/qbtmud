@@ -70,6 +70,8 @@ namespace Lantean.QBTMud.Components
 
         private MudMenu? ContextMenu { get; set; }
 
+        private MudTextField<string>? SearchInput { get; set; }
+
         public FilesTab()
         {
             _columnRenderFragments.Add("Name", NameColumn);
@@ -235,7 +237,11 @@ namespace Lantean.QBTMud.Components
                     {
                         MarkFilesDirty();
                         PruneSelectionIfMissing();
-                        await InvokeAsync(StateHasChanged);
+                        await InvokeAsync(() =>
+                        {
+                            SyncSearchTextFromInput();
+                            StateHasChanged();
+                        });
                     }
                 }
             }
@@ -415,6 +421,11 @@ namespace Lantean.QBTMud.Components
 
         private ReadOnlyCollection<ContentItem> GetFiles()
         {
+            if (SyncSearchTextFromInput())
+            {
+                _filesDirty = true;
+            }
+
             if (!_filesDirty)
             {
                 return _visibleFiles;
@@ -520,6 +531,23 @@ namespace Lantean.QBTMud.Components
             }
 
             return visible;
+        }
+
+        private bool SyncSearchTextFromInput()
+        {
+            if (SearchInput is null)
+            {
+                return false;
+            }
+
+            var currentValue = SearchInput.Value;
+            if (string.Equals(SearchText, currentValue, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            SearchText = currentValue;
+            return true;
         }
 
         private void MarkFilesDirty()

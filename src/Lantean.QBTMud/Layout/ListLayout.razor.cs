@@ -21,6 +21,6 @@ namespace Lantean.QBTMud.Layout
         public EventCallback<string> TrackerChanged { get; set; }
 
         [CascadingParameter(Name = "SearchTermChanged")]
-        public EventCallback<string> SearchTermChanged { get; set; }
+        public EventCallback<FilterSearchState> SearchTermChanged { get; set; }
     }
 }
