@@ -1066,7 +1066,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            await DialogService.InvokeAddTorrentLinkDialog(ApiClient, result.FileUrl);
+            await DialogService.InvokeAddTorrentLinkDialog(ApiClient, Snackbar, result.FileUrl);
         }
 
         protected async Task HandleResultContextMenu(TableDataContextMenuEventArgs<SearchResult> eventArgs)

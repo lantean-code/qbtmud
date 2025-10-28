@@ -26,6 +26,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected IRssDataManager RssDataManager { get; set; } = default!;
 
+        [Inject]
+        public ISnackbar Snackbar { get; set; } = default!;
+
         [CascadingParameter]
         public MainData? MainData { get; set; }
 
@@ -120,7 +123,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task DownloadItem(string? url)
         {
-            await DialogService.InvokeAddTorrentLinkDialog(ApiClient, url);
+            await DialogService.InvokeAddTorrentLinkDialog(ApiClient, Snackbar, url);
         }
 
         protected void NavigateBack()

@@ -1,9 +1,11 @@
 ﻿using Lantean.QBitTorrentClient;
-using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
 using MudBlazor;
+using System.Formats.Asn1;
+using System.Text;
+using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 
 namespace Lantean.QBTMud.Helpers
 {
@@ -33,7 +35,7 @@ namespace Lantean.QBTMud.Helpers
             return category.Name;
         }
 
-        public static async Task InvokeAddTorrentFileDialog(this IDialogService dialogService, IApiClient apiClient)
+        public static async Task InvokeAddTorrentFileDialog(this IDialogService dialogService, IApiClient apiClient, ISnackbar? snackbar)
         {
             var result = await dialogService.ShowAsync<AddTorrentFileDialog>("Upload local torrent", FormDialogOptions);
             var dialogResult = await result.Result;
@@ -57,12 +59,72 @@ namespace Lantean.QBTMud.Helpers
             var addTorrentParams = CreateAddTorrentParams(options);
             addTorrentParams.Torrents = files;
 
-            _ = await apiClient.AddTorrent(addTorrentParams);
+            var addTorrentResult = await apiClient.AddTorrent(addTorrentParams);
 
             foreach (var stream in streams)
             {
                 await stream.DisposeAsync();
             }
+
+            if (snackbar is not null)
+            {
+                ShowAddTorrentSnackbarMessage(snackbar, addTorrentResult);
+            }
+        }
+
+        private static void ShowAddTorrentSnackbarMessage(ISnackbar snackbar, QBitTorrentClient.Models.AddTorrentResult result)
+        {
+            var sb = new StringBuilder();
+            if (result.SuccessCount > 0)
+            {
+                if (result.SupportsAsync)
+                {
+                    sb.Append($"Added {result.SuccessCount} torrent{(result.SuccessCount == 1 ? "" : "")}");
+                }
+                else
+                {
+                    sb.Append("Added torrent(s)");
+                }
+            }
+            if (result.FailureCount > 0)
+            {
+                if (sb.Length > 0)
+                {
+                    sb.Append(" and f");
+                }
+                else
+                {
+                    sb.Append('F');
+                }
+                if (result.SupportsAsync)
+                {
+                    sb.Append($"ailed to remove {result.FailureCount} torrent{(result.FailureCount == 1 ? "" : "")}");
+                }
+                else
+                {
+                    sb.Append("Failed to add torrent(s)");
+                }
+            }
+            else
+            {
+                sb.Append('.');
+            }
+
+            Severity severity;
+            if (result.SuccessCount > 0 && result.FailureCount > 0)
+            {
+                severity = Severity.Warning;
+            }
+            else if (result.FailureCount > 0)
+            {
+                severity = Severity.Error;
+            }
+            else
+            {
+                severity = Severity.Success;
+            }
+
+            snackbar.Add(sb.ToString(), severity);
         }
 
         private static QBitTorrentClient.Models.AddTorrentParams CreateAddTorrentParams(TorrentOptions options)
@@ -109,7 +171,7 @@ namespace Lantean.QBTMud.Helpers
             return addTorrentParams;
         }
 
-        public static async Task InvokeAddTorrentLinkDialog(this IDialogService dialogService, IApiClient apiClient, string? url = null)
+        public static async Task InvokeAddTorrentLinkDialog(this IDialogService dialogService, IApiClient apiClient, ISnackbar snackbar, string? url = null)
         {
             var parameters = new DialogParameters
             {
@@ -128,7 +190,12 @@ namespace Lantean.QBTMud.Helpers
             var addTorrentParams = CreateAddTorrentParams(options);
             addTorrentParams.Urls = options.Urls;
 
-            _ = await apiClient.AddTorrent(addTorrentParams);
+            var addTorrentResult = await apiClient.AddTorrent(addTorrentParams);
+
+            if (snackbar is not null)
+            {
+                ShowAddTorrentSnackbarMessage(snackbar, addTorrentResult);
+            }
         }
 
         public static async Task<bool> InvokeDeleteTorrentDialog(this IDialogService dialogService, IApiClient apiClient, bool confirmTorrentDeletion, params string[] hashes)
@@ -496,5 +563,3 @@ namespace Lantean.QBTMud.Helpers
         }
     }
 }
-
-

@@ -14,6 +14,34 @@
                     </ActivatorContent>
                 </MudFileUpload>
             </MudItem>
+            <MudItem xs="12">
+                @if (Files?.Any() == true)
+                {
+                    <MudCard Elevation="3" Class="mb-3">
+                        <MudCardHeader Class="pb-0">
+                            Selected Torrent Files (@Files.Count)
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudList T="string">
+                                @foreach (var file in Files)
+                                {
+                                    <MudListItem>
+                                        <div class="w-100 d-flex align-center">
+                                            <span>@file.Name</span>
+                                            <MudSpacer />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Color="Color.Error"
+                                                           Variant="Variant.Text"
+                                                           Size="Size.Small"
+                                                           OnClick="@(() => Remove(file))" />
+                                        </div>
+                                    </MudListItem>
+                                }
+                            </MudList>
+                        </MudCardContent>
+                    </MudCard>
+                }
+            </MudItem>
         </MudGrid>
         <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="true" />
     </DialogContent>

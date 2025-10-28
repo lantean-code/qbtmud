@@ -535,6 +535,7 @@ namespace Lantean.QBitTorrentClient
 
             return await GetJsonList<string>(response.Content);
         }
+
         public async Task StopTorrents(bool? all = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
@@ -545,6 +546,7 @@ namespace Lantean.QBitTorrentClient
 
             await ThrowIfNotSuccessfulStatusCode(response);
         }
+
         public async Task StartTorrents(bool? all = null, params string[] hashes)
         {
             var content = new FormUrlEncodedBuilder()
@@ -730,12 +732,33 @@ namespace Lantean.QBitTorrentClient
             await ThrowIfNotSuccessfulStatusCode(response);
 
             var payload = await response.Content.ReadAsStringAsync();
-            if (string.IsNullOrWhiteSpace(payload))
+
+            // 5.1.x and earlier return plain text responses
+            switch (payload)
             {
-                return new AddTorrentResult(0, 0, 0, Array.Empty<string>());
+                case "Fails.":
+                    return new AddTorrentResult(0, 1);
+
+                case "Ok.":
+                    return new AddTorrentResult(1, 0);
+
+                case null:
+                    return new AddTorrentResult(0, 0);
+
+                case "":
+                    return new AddTorrentResult(0, 0);
             }
 
-            return JsonSerializer.Deserialize<AddTorrentResult>(payload, _options) ?? new AddTorrentResult(0, 0, 0, Array.Empty<string>());
+            var result = JsonSerializer.Deserialize<AddTorrentResult>(payload, _options);
+            if (result is null)
+            {
+                var count = (addTorrentParams.Torrents?.Count ?? 0) + (addTorrentParams.Urls?.Count() ?? 0);
+                return new AddTorrentResult(0, count);
+            }
+            else
+            {
+                return result;
+            }
         }
 
         public async Task AddTrackersToTorrent(IEnumerable<string> urls, bool? all = null, params string[] hashes)

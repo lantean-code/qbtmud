@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Lantean.QBitTorrentClient.Models
 {
@@ -12,7 +10,16 @@ namespace Lantean.QBitTorrentClient.Models
             SuccessCount = successCount;
             FailureCount = failureCount;
             PendingCount = pendingCount;
-            AddedTorrentIds = addedTorrentIds ?? Array.Empty<string>();
+            AddedTorrentIds = addedTorrentIds ?? [];
+            SupportsAsync = true;
+        }
+
+        public AddTorrentResult(int successCount, int failureCount)
+        {
+            SuccessCount = successCount;
+            FailureCount = failureCount;
+            AddedTorrentIds = [];
+            SupportsAsync = false;
         }
 
         [JsonPropertyName("success_count")]
@@ -26,5 +33,8 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("added_torrent_ids")]
         public IReadOnlyList<string> AddedTorrentIds { get; }
+
+        [JsonIgnore]
+        public bool SupportsAsync { get; internal set; }
     }
 }
