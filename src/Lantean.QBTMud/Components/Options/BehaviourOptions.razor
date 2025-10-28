@@ -47,13 +47,13 @@
                 <FieldSwitch Label="Log file" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Save Path" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined" />
+                <MudTextField T="string" Label="Save Path" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="Backup the log after" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(!FileLogEnabled)" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
+                <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="Delete backups older than" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(!FileLogEnabled)" />
@@ -61,7 +61,7 @@
             <MudItem xs="9">
                 <MudGrid>
                     <MudItem xs="9">
-                        <MudNumericField T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="365" Variant="Variant.Outlined" />
+                        <MudNumericField T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="365" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
                     </MudItem>
                     <MudItem xs="3">
                         <MudSelect T="int" Value="FileLogAgeType" ValueChanged="FileLogAgeTypeChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined">

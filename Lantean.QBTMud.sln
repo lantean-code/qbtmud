@@ -13,6 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		readme.md = readme.md
+		AGENTS.md = AGENTS.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lantean.QBitTorrentClient.Test", "test\Lantean.QBitTorrentClient.Test\Lantean.QBitTorrentClient.Test.csproj", "{796E865C-7AA6-4BD9-B12F-394801199A75}"

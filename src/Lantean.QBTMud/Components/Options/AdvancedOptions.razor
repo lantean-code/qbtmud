@@ -15,7 +15,7 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Physical memory (RAM) usage limit (applied if libtorrent &gt;= 2.0)" Value="MemoryWorkingSetLimit" ValueChanged="MemoryWorkingSetLimitChanged" Min="0" HelperText="This option is less effective on Linux" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" />
+                <MudNumericField T="int" Label="Physical memory (RAM) usage limit (applied if libtorrent &gt;= 2.0)" Value="MemoryWorkingSetLimit" ValueChanged="MemoryWorkingSetLimitChanged" Min="0" HelperText="This option is less effective on Linux" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="string" Label="Network interface" Value="CurrentNetworkInterface" ValueChanged="CurrentNetworkInterfaceChanged" Variant="Variant.Outlined">
@@ -38,16 +38,16 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Save resume data interval" Value="SaveResumeDataInterval" ValueChanged="SaveResumeDataIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="min" />
+                <MudNumericField T="int" Label="Save resume data interval" Value="SaveResumeDataInterval" ValueChanged="SaveResumeDataIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="min" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label=".torrent file size limit" Value="TorrentFileSizeLimit" ValueChanged="TorrentFileSizeLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" />
+                <MudNumericField T="int" Label=".torrent file size limit" Value="TorrentFileSizeLimit" ValueChanged="TorrentFileSizeLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="Recheck torrents on completion" Value="RecheckCompletedTorrents" ValueChanged="RecheckCompletedTorrentsChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Refresh interval" Value="RefreshInterval" ValueChanged="RefreshIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="ms" />
+                <MudNumericField T="int" Label="Refresh interval" Value="RefreshInterval" ValueChanged="RefreshIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="ms" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="Resolve peer countries" Value="ResolvePeerCountries" ValueChanged="ResolvePeerCountriesChanged" />
@@ -59,7 +59,7 @@
                 <FieldSwitch Label="Enable embedded tracker" Value="EnableEmbeddedTracker" ValueChanged="EnableEmbeddedTrackerChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Embedded tracker port" Value="EmbeddedTrackerPort" ValueChanged="EmbeddedTrackerPortChanged" Min="@Options.MinPortValue" Max="@Options.MaxPortValue" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Embedded tracker port" Value="EmbeddedTrackerPort" ValueChanged="EmbeddedTrackerPortChanged" Min="@Options.MinPortValue" Max="@Options.MaxPortValue" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="Enable port forwarding for embedded tracker" Value="EmbeddedTrackerPortForwarding" ValueChanged="EmbeddedTrackerPortForwardingChanged" />
@@ -92,31 +92,31 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Bdecode depth limit" Value="BdecodeDepthLimit" ValueChanged="BdecodeDepthLimitChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Bdecode depth limit" Value="BdecodeDepthLimit" ValueChanged="BdecodeDepthLimitChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Bdecode token limit" Value="BdecodeTokenLimit" ValueChanged="BdecodeTokenLimitChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Bdecode token limit" Value="BdecodeTokenLimit" ValueChanged="BdecodeTokenLimitChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Asynchronous I/O threads" Value="AsyncIoThreads" ValueChanged="AsyncIoThreadsChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Asynchronous I/O threads" Value="AsyncIoThreads" ValueChanged="AsyncIoThreadsChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Hashing threads (requires libtorrent &gt;= 2.0)" Value="HashingThreads" ValueChanged="HashingThreadsChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Hashing threads (requires libtorrent &gt;= 2.0)" Value="HashingThreads" ValueChanged="HashingThreadsChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="File pool size" Value="FilePoolSize" ValueChanged="FilePoolSizeChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="File pool size" Value="FilePoolSize" ValueChanged="FilePoolSizeChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Outstanding memory when checking torrents" Value="CheckingMemoryUse" ValueChanged="CheckingMemoryUseChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" />
+                <MudNumericField T="int" Label="Outstanding memory when checking torrents" Value="CheckingMemoryUse" ValueChanged="CheckingMemoryUseChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Disk cache (requires libtorrent &lt; 2.0)" Value="DiskCache" ValueChanged="DiskCacheChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" />
+                <MudNumericField T="int" Label="Disk cache (requires libtorrent &lt; 2.0)" Value="DiskCache" ValueChanged="DiskCacheChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Disk cache expiry interval (requires libtorrent &lt; 2.0)" Value="DiskCacheTtl" ValueChanged="DiskCacheTtlChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="s" />
+                <MudNumericField T="int" Label="Disk cache expiry interval (requires libtorrent &lt; 2.0)" Value="DiskCacheTtl" ValueChanged="DiskCacheTtlChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="s" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Disk queue size" Value="DiskQueueSize" ValueChanged="DiskQueueSizeChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
+                <MudNumericField T="int" Label="Disk queue size" Value="DiskQueueSize" ValueChanged="DiskQueueSizeChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="int" Label="Disk IO type (libtorrent &gt;= 2.0; requires restart)" Value="DiskIoType" ValueChanged="DiskIoTypeChanged" Variant="Variant.Outlined">
@@ -148,37 +148,37 @@
                 <FieldSwitch Label="Send upload piece suggestions" Value="EnableUploadSuggestions" ValueChanged="EnableUploadSuggestionsChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Send buffer watermark" Value="SendBufferWatermark" ValueChanged="SendBufferWatermarkChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
+                <MudNumericField T="int" Label="Send buffer watermark" Value="SendBufferWatermark" ValueChanged="SendBufferWatermarkChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Send buffer low watermark" Value="SendBufferLowWatermark" ValueChanged="SendBufferLowWatermarkChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
+                <MudNumericField T="int" Label="Send buffer low watermark" Value="SendBufferLowWatermark" ValueChanged="SendBufferLowWatermarkChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Send buffer watermark factor" Value="SendBufferWatermarkFactor" ValueChanged="SendBufferWatermarkFactorChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" />
+                <MudNumericField T="int" Label="Send buffer watermark factor" Value="SendBufferWatermarkFactor" ValueChanged="SendBufferWatermarkFactorChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Outgoing connections per second" Value="ConnectionSpeed" ValueChanged="ConnectionSpeedChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Outgoing connections per second" Value="ConnectionSpeed" ValueChanged="ConnectionSpeedChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Socket send buffer size [0: system default]" Value="SocketSendBufferSize" ValueChanged="SocketSendBufferSizeChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
+                <MudNumericField T="int" Label="Socket send buffer size [0: system default]" Value="SocketSendBufferSize" ValueChanged="SocketSendBufferSizeChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Socket receive buffer size [0: system default]" Value="SocketReceiveBufferSize" ValueChanged="SocketReceiveBufferSizeChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" />
+                <MudNumericField T="int" Label="Socket receive buffer size [0: system default]" Value="SocketReceiveBufferSize" ValueChanged="SocketReceiveBufferSizeChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Socket backlog size" Value="SocketBacklogSize" ValueChanged="SocketBacklogSizeChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Socket backlog size" Value="SocketBacklogSize" ValueChanged="SocketBacklogSizeChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Outgoing ports (Min) [0: disabled]" Value="OutgoingPortsMin" ValueChanged="OutgoingPortsMinChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Outgoing ports (Min) [0: disabled]" Value="OutgoingPortsMin" ValueChanged="OutgoingPortsMinChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Outgoing ports (Max) [0: disabled]" Value="OutgoingPortsMax" ValueChanged="OutgoingPortsMaxChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Outgoing ports (Max) [0: disabled]" Value="OutgoingPortsMax" ValueChanged="OutgoingPortsMaxChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="UPnP lease duration [0: permanent lease]" Value="UpnpLeaseDuration" ValueChanged="UpnpLeaseDurationChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="UPnP lease duration [0: permanent lease]" Value="UpnpLeaseDuration" ValueChanged="UpnpLeaseDurationChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Type of service (ToS) for connections to peers" Value="PeerTos" ValueChanged="PeerTosChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Type of service (ToS) for connections to peers" Value="PeerTos" ValueChanged="PeerTosChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="int" Label="μTP-TCP mixed mode algorithm" Value="UtpTcpMixedMode" ValueChanged="UtpTcpMixedModeChanged" Variant="Variant.Outlined">
@@ -221,37 +221,37 @@
                 <FieldSwitch Label="Always announce to all tiers" Value="AnnounceToAllTiers" ValueChanged="AnnounceToAllTiersChanged" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="IP address reported to trackers (requires restart)" Value="AnnounceIp" ValueChanged="AnnounceIpChanged" Variant="Variant.Outlined" />
+                <MudTextField T="string" Label="IP address reported to trackers (requires restart)" Value="AnnounceIp" ValueChanged="AnnounceIpChanged" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Max concurrent HTTP announces" Value="MaxConcurrentHttpAnnounces" ValueChanged="MaxConcurrentHttpAnnouncesChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Max concurrent HTTP announces" Value="MaxConcurrentHttpAnnounces" ValueChanged="MaxConcurrentHttpAnnouncesChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Stop tracker timeout [0: disabled]" Value="StopTrackerTimeout" ValueChanged="StopTrackerTimeoutChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Stop tracker timeout [0: disabled]" Value="StopTrackerTimeout" ValueChanged="StopTrackerTimeoutChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Peer turnover disconnect percentage:" Value="PeerTurnover" ValueChanged="PeerTurnoverChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" />
+                <MudNumericField T="int" Label="Peer turnover disconnect percentage:" Value="PeerTurnover" ValueChanged="PeerTurnoverChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Peer turnover threshold percentage" Value="PeerTurnoverCutoff" ValueChanged="PeerTurnoverCutoffChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" />
+                <MudNumericField T="int" Label="Peer turnover threshold percentage" Value="PeerTurnoverCutoff" ValueChanged="PeerTurnoverCutoffChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Peer turnover disconnect interval" Value="PeerTurnoverInterval" ValueChanged="PeerTurnoverIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="s" />
+                <MudNumericField T="int" Label="Peer turnover disconnect interval" Value="PeerTurnoverInterval" ValueChanged="PeerTurnoverIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="s" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Maximum outstanding requests to a single peer" Value="RequestQueueSize" ValueChanged="RequestQueueSizeChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="Maximum outstanding requests to a single peer" Value="RequestQueueSize" ValueChanged="RequestQueueSizeChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="I2P inbound quantity (requires libtorrent &gt;= 2.0)" Value="I2pInboundQuantity" ValueChanged="I2pInboundQuantityChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="I2P inbound quantity (requires libtorrent &gt;= 2.0)" Value="I2pInboundQuantity" ValueChanged="I2pInboundQuantityChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="I2P outbound quantity (requires libtorrent &gt;= 2.0)" Value="I2pOutboundQuantity" ValueChanged="I2pOutboundQuantityChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="I2P outbound quantity (requires libtorrent &gt;= 2.0)" Value="I2pOutboundQuantity" ValueChanged="I2pOutboundQuantityChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="I2P inbound length (requires libtorrent &gt;= 2.0)" Value="I2pInboundLength" ValueChanged="I2pInboundLengthChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="I2P inbound length (requires libtorrent &gt;= 2.0)" Value="I2pInboundLength" ValueChanged="I2pInboundLengthChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="I2P outbound length (requires libtorrent &gt;= 2.0)" Value="I2pOutboundLength" ValueChanged="I2pOutboundLengthChanged" Min="0" Variant="Variant.Outlined" />
+                <MudNumericField T="int" Label="I2P outbound length (requires libtorrent &gt;= 2.0)" Value="I2pOutboundLength" ValueChanged="I2pOutboundLengthChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
