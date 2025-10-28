@@ -141,7 +141,7 @@ namespace Lantean.QBTMud.Components
             {
                 if (disposing && Files is not null)
                 {
-                    _timerCancellationToken.Cancel();
+                    await _timerCancellationToken.CancelAsync();
                     _timerCancellationToken.Dispose();
 
                     await Task.CompletedTask;

@@ -1,4 +1,4 @@
-﻿<MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
+<MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu">Rename</MudMenuItem>
 </MudMenu>
 
@@ -58,7 +58,7 @@
                         <MudIcon Icon="@Icons.Material.Filled.Folder" Class="pt-0" Style="margin-right: 4px; position: relative; top: 7px; margin-left: -15px" />
                     }
                     @context.Data.DisplayName
-                </div>;
+                </div>
             };
         }
     }
@@ -89,7 +89,7 @@
                 var color = value < 1 ? Color.Success : Color.Info;
                 <MudProgressLinear title="Progress" Color="@color" Value="@((value ?? 0) * 100)" Class="progress-expand" Size="Size.Large">
                     @DisplayHelpers.Percentage(value)
-                </MudProgressLinear>;
+                </MudProgressLinear>
             };
         }
     }
