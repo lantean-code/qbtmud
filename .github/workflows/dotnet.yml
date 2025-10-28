@@ -46,7 +46,7 @@ jobs:
 
       - name: Publish (only on master)
         if: github.ref == 'refs/heads/master'
-        run: dotnet publish Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output
+        run: dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output
 
       - name: Prepare Release ZIP
         if: github.ref == 'refs/heads/master'
