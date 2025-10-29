@@ -332,7 +332,17 @@
                             </ChildContent>
                         </MudTabPanel>
                     }
-                </MudTabs>
+                </MudTabs>  
+
+                <DynamicTable @ref="Table"
+                              T="Lantean.QBitTorrentClient.Models.SearchResult"
+                              ColumnDefinitions="Columns"
+                              Items="Results"
+                              MultiSelection="false"
+                              SelectOnRowClick="false"
+                              OnTableDataContextMenu="HandleResultContextMenu"
+                              OnTableDataLongPress="HandleResultLongPress"
+                              Class="search-list content-panel__table" />
             }
             else
             {
@@ -345,15 +355,7 @@
                 </MudPaper>
             }
 
-            <DynamicTable @ref="Table"
-                          T="Lantean.QBitTorrentClient.Models.SearchResult"
-                          ColumnDefinitions="Columns"
-                          Items="Results"
-                          MultiSelection="false"
-                          SelectOnRowClick="false"
-                          OnTableDataContextMenu="HandleResultContextMenu"
-                          OnTableDataLongPress="HandleResultLongPress"
-                          Class="search-list content-panel__table" />
+
         </MudContainer>
     </div>
 </div>

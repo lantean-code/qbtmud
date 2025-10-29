@@ -10,13 +10,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
 
-        protected IReadOnlyList<IBrowserFile> Files { get; set; } = [];
+        private List<IBrowserFile> Files { get; set; } = [];
 
         protected AddTorrentOptions TorrentOptions { get; set; } = default!;
 
         protected void UploadFiles(IReadOnlyList<IBrowserFile> files)
         {
-            Files = files;
+            Files = files.ToList();
         }
 
         protected void Cancel()
@@ -28,6 +28,11 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             var options = new AddTorrentFileOptions(Files, TorrentOptions.GetTorrentOptions());
             MudDialog.Close(DialogResult.Ok(options));
+        }
+
+        protected void Remove(IBrowserFile file)
+        {
+            Files.Remove(file);
         }
 
         protected override Task Submit(KeyboardEvent keyboardEvent)

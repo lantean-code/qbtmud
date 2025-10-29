@@ -32,6 +32,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
+        [Inject]
+        public ISnackbar Snackbar { get; set; } = default!;
+
         [CascadingParameter]
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
@@ -205,12 +208,12 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task AddTorrentFile()
         {
-            await DialogService.InvokeAddTorrentFileDialog(ApiClient);
+            await DialogService.InvokeAddTorrentFileDialog(ApiClient, Snackbar);
         }
 
         protected async Task AddTorrentLink()
         {
-            await DialogService.InvokeAddTorrentLinkDialog(ApiClient);
+            await DialogService.InvokeAddTorrentLinkDialog(ApiClient, Snackbar);
         }
 
         protected void RowClick(TableRowClickEventArgs<Torrent> eventArgs)
