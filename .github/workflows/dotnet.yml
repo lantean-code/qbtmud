@@ -101,14 +101,14 @@ jobs:
           fi
 
       - name: Ensure Release Tag Exists
-        if: steps.release_channel.outputs.channel != 'none' && steps.resolve_tag.outputs.exists != 'true'
+        if: steps.release_channel.outputs.channel == 'stable' && steps.resolve_tag.outputs.exists != 'true'
         shell: bash
         run: |
           echo "::error::Expected an existing git tag '${VERSION}' (or 'v${VERSION}') before creating a release."
           exit 1
 
       - name: Create GitHub Release
-        if: steps.release_channel.outputs.channel != 'none' && steps.resolve_tag.outputs.exists == 'true'
+        if: steps.release_channel.outputs.channel != 'none' && (steps.resolve_tag.outputs.exists == 'true' || steps.release_channel.outputs.channel != 'stable')
         id: create_release
         uses: actions/create-release@v1
         with:
@@ -120,7 +120,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Asset
-        if: steps.release_channel.outputs.channel != 'none' && steps.resolve_tag.outputs.exists == 'true'
+        if: steps.release_channel.outputs.channel != 'none' && (steps.resolve_tag.outputs.exists == 'true' || steps.release_channel.outputs.channel != 'stable')
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
