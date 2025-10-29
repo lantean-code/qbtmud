@@ -38,9 +38,6 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddMudServices();
             MudGlobal.InputDefaults.ShrinkLabel = true;
 
-            // bUnit provides this fake for you
-            _ = Services.GetRequiredService<FakeNavigationManager>();
-
             // Local storage (uses JSRuntime; Loose mode avoids brittle setup)
             Services.AddBlazoredLocalStorage();
 

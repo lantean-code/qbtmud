@@ -70,6 +70,7 @@ namespace Lantean.QBTMud.Test.Services
                 Category = "Movies/HD",
                 Tags = new[] { " tagA\tignored", "", "tagB" },
                 Tracker = "udp://tracker1",
+                TrackersCount = 1,
                 AddedOn = 111,
                 AmountLeft = 1,
                 AutomaticTorrentManagement = true,
@@ -224,7 +225,8 @@ namespace Lantean.QBTMud.Test.Services
                 UploadSpeed = 0,
                 Category = "Cat/Sub",
                 Tags = new[] { "x", "y" },
-                Tracker = "udp://t1"
+                Tracker = "udp://t1",
+                TrackersCount = 1
             };
             var client = new Client.MainData(
                 responseId: 1,
@@ -320,7 +322,8 @@ namespace Lantean.QBTMud.Test.Services
                 UploadSpeed = 0,
                 Category = "",
                 Tags = Array.Empty<string>(),
-                Tracker = ""
+                Tracker = "",
+                TrackersCount = 0
             };
 
             var delta = new Client.MainData(
@@ -374,7 +377,8 @@ namespace Lantean.QBTMud.Test.Services
                         UploadSpeed = 0,
                         Category = "",
                         Tags = Array.Empty<string>(),
-                        Tracker = ""
+                        Tracker = "",
+                        TrackersCount = 0
                     }
                 },
                 torrentsRemoved: null,
@@ -426,7 +430,8 @@ namespace Lantean.QBTMud.Test.Services
                         UploadSpeed = 10,
                         Category = "Cat/Sub",
                         Tags = new[] { " x\tid " },
-                        Tracker = "udp://zzz"
+                        Tracker = "udp://zzz",
+                        TrackersCount = 1
                     }
                 },
                 torrentsRemoved: null,
@@ -466,7 +471,7 @@ namespace Lantean.QBTMud.Test.Services
             var start = new Client.MainData(
                 responseId: 1,
                 fullUpdate: true,
-                torrents: new Dictionary<string, Client.Torrent> { [h] = new Client.Torrent { Name = "N", State = "downloading", UploadSpeed = 0, Category = "C", Tags = Array.Empty<string>(), Tracker = "t1" } },
+                torrents: new Dictionary<string, Client.Torrent> { [h] = new Client.Torrent { Name = "N", State = "downloading", UploadSpeed = 0, Category = "C", Tags = Array.Empty<string>(), Tracker = "t1", TrackersCount = 1 } },
                 torrentsRemoved: null,
                 categories: new Dictionary<string, Client.Category> { ["C"] = new Client.Category("C", "/a", null) },
                 categoriesRemoved: null,
