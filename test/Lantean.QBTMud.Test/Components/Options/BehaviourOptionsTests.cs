@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
@@ -12,16 +7,17 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
     public sealed class BehaviourOptionsTests : IDisposable
     {
-        private readonly ComponentTestContext _target;
+        private readonly ComponentTestContext _context;
 
         public BehaviourOptionsTests()
         {
-            _target = new ComponentTestContext();
+            _context = new ComponentTestContext();
         }
 
         [Fact]
@@ -45,16 +41,16 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             UpdatePreferences? lastChanged = null;
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
-            var cut = _target.RenderComponent<BehaviourOptions>(parameters =>
+            var target = _context.RenderComponent<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => lastChanged = value));
             });
 
-            var switches = cut.FindComponents<FieldSwitch>();
+            var switches = target.FindComponents<FieldSwitch>();
 
             switches.Single(s => s.Instance.Label == "Confirm when deleting torrents").Instance.Value.Should().BeTrue();
             switches.Single(s => s.Instance.Label == "Show external IP in status bar").Instance.Value.Should().BeFalse();
@@ -63,15 +59,15 @@ namespace Lantean.QBTMud.Test.Components.Options
             switches.Single(s => s.Instance.Label == "Delete backups older than").Instance.Value.Should().BeTrue();
             switches.Single(s => s.Instance.Label == "Log performance warnings").Instance.Value.Should().BeTrue();
 
-            var pathField = cut.FindComponent<MudTextField<string>>();
+            var pathField = target.FindComponent<MudTextField<string>>();
             pathField.Instance.Value.Should().Be("/logs");
             pathField.Instance.Disabled.Should().BeFalse();
 
-            var numericFields = cut.FindComponents<MudNumericField<int>>();
+            var numericFields = target.FindComponents<MudNumericField<int>>();
             numericFields[0].Instance.Value.Should().Be(4096);
             numericFields[1].Instance.Value.Should().Be(7);
 
-            var ageTypeSelect = cut.FindComponent<MudSelect<int>>();
+            var ageTypeSelect = target.FindComponent<MudSelect<int>>();
             ageTypeSelect.Instance.Value.Should().Be(2);
 
             lastChanged.Should().BeNull();
@@ -95,24 +91,24 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             UpdatePreferences? lastChanged = null;
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
-            var cut = _target.RenderComponent<BehaviourOptions>(parameters =>
+            var target = _context.RenderComponent<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => lastChanged = value));
             });
 
-            var pathField = cut.FindComponent<MudTextField<string>>();
+            var pathField = target.FindComponent<MudTextField<string>>();
             pathField.Instance.Disabled.Should().BeTrue();
 
-            var numericFields = cut.FindComponents<MudNumericField<int>>();
+            var numericFields = target.FindComponents<MudNumericField<int>>();
             numericFields[0].Instance.Disabled.Should().BeTrue();
             numericFields[1].Instance.Disabled.Should().BeTrue();
 
-            var fileLogSwitch = cut.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Log file");
-            await cut.InvokeAsync(() => fileLogSwitch.Find("input").Change(true));
+            var fileLogSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Log file");
+            await target.InvokeAsync(() => fileLogSwitch.Find("input").Change(true));
 
             updatePreferences.FileLogEnabled.Should().BeTrue();
             lastChanged.Should().Be(updatePreferences);
@@ -140,21 +136,21 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
-            var cut = _target.RenderComponent<BehaviourOptions>(parameters =>
+            var target = _context.RenderComponent<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var pathField = cut.FindComponent<MudTextField<string>>();
-            await cut.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("/var/app/logs"));
+            var pathField = target.FindComponent<MudTextField<string>>();
+            await target.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("/var/app/logs"));
 
-            var numericFields = cut.FindComponents<MudNumericField<int>>();
-            await cut.InvokeAsync(() => numericFields[0].Instance.ValueChanged.InvokeAsync(512));
-            await cut.InvokeAsync(() => numericFields[1].Instance.ValueChanged.InvokeAsync(9));
+            var numericFields = target.FindComponents<MudNumericField<int>>();
+            await target.InvokeAsync(() => numericFields[0].Instance.ValueChanged.InvokeAsync(512));
+            await target.InvokeAsync(() => numericFields[1].Instance.ValueChanged.InvokeAsync(9));
 
             updatePreferences.FileLogPath.Should().Be("/var/app/logs");
             updatePreferences.FileLogMaxSize.Should().Be(512);
@@ -182,29 +178,29 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
-            var cut = _target.RenderComponent<BehaviourOptions>(parameters =>
+            var target = _context.RenderComponent<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var switches = cut.FindComponents<FieldSwitch>();
+            var switches = target.FindComponents<FieldSwitch>();
 
             var confirmSwitch = switches.Single(s => s.Instance.Label == "Confirm when deleting torrents");
-            await cut.InvokeAsync(() => confirmSwitch.Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => confirmSwitch.Instance.ValueChanged.InvokeAsync(true));
 
             updatePreferences.ConfirmTorrentDeletion.Should().BeTrue();
 
             var externalSwitch = switches.Single(s => s.Instance.Label == "Show external IP in status bar");
-            await cut.InvokeAsync(() => externalSwitch.Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => externalSwitch.Instance.ValueChanged.InvokeAsync(false));
 
             updatePreferences.StatusBarExternalIp.Should().BeFalse();
 
             var performanceSwitch = switches.Single(s => s.Instance.Label == "Log performance warnings");
-            await cut.InvokeAsync(() => performanceSwitch.Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => performanceSwitch.Instance.ValueChanged.InvokeAsync(true));
 
             updatePreferences.PerformanceWarning.Should().BeTrue();
 
@@ -229,48 +225,48 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
-            var cut = _target.RenderComponent<BehaviourOptions>(parameters =>
+            var target = _context.RenderComponent<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var switches = cut.FindComponents<FieldSwitch>();
+            var switches = target.FindComponents<FieldSwitch>();
 
             var logSwitch = switches.Single(s => s.Instance.Label == "Log file");
-            await cut.InvokeAsync(() => logSwitch.Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => logSwitch.Instance.ValueChanged.InvokeAsync(true));
 
-            await cut.InvokeAsync(() =>
+            await target.InvokeAsync(() =>
                 switches.Single(s => s.Instance.Label == "Backup the log after").Instance.ValueChanged.InvokeAsync(true));
 
             updatePreferences.FileLogBackupEnabled.Should().BeTrue();
 
-            await cut.InvokeAsync(() =>
+            await target.InvokeAsync(() =>
                 switches.Single(s => s.Instance.Label == "Delete backups older than").Instance.ValueChanged.InvokeAsync(true));
 
             updatePreferences.FileLogDeleteOld.Should().BeTrue();
 
-            var ageSelect = cut.FindComponent<MudSelect<int>>();
-            await cut.InvokeAsync(() => ageSelect.Instance.ValueChanged.InvokeAsync(2));
+            var ageSelect = target.FindComponent<MudSelect<int>>();
+            await target.InvokeAsync(() => ageSelect.Instance.ValueChanged.InvokeAsync(2));
 
             updatePreferences.FileLogAgeType.Should().Be(2);
 
-            var maxSizeField = cut.FindComponents<MudNumericField<int>>().Single(n => n.Instance.Value == 2048);
-            await cut.InvokeAsync(() => maxSizeField.Instance.ValueChanged.InvokeAsync(4096));
+            var maxSizeField = target.FindComponents<MudNumericField<int>>().Single(n => n.Instance.Value == 2048);
+            await target.InvokeAsync(() => maxSizeField.Instance.ValueChanged.InvokeAsync(4096));
             updatePreferences.FileLogMaxSize.Should().Be(4096);
 
-            var pathField = cut.FindComponent<MudTextField<string>>();
+            var pathField = target.FindComponent<MudTextField<string>>();
             pathField.Instance.Disabled.Should().BeFalse();
-            var numericFields = cut.FindComponents<MudNumericField<int>>();
+            var numericFields = target.FindComponents<MudNumericField<int>>();
             foreach (var numeric in numericFields)
             {
                 numeric.Instance.Disabled.Should().BeFalse();
             }
 
-            await cut.InvokeAsync(() => logSwitch.Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => logSwitch.Instance.ValueChanged.InvokeAsync(false));
 
             updatePreferences.FileLogEnabled.Should().BeFalse();
 
@@ -291,7 +287,7 @@ namespace Lantean.QBTMud.Test.Components.Options
 
         public void Dispose()
         {
-            _target.Dispose();
+            _context.Dispose();
         }
     }
 }

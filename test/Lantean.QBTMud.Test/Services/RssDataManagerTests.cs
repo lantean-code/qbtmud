@@ -6,7 +6,12 @@ namespace Lantean.QBTMud.Test.Services
 {
     public class RssDataManagerTests
     {
-        private readonly RssDataManager _target = new RssDataManager();
+        private readonly RssDataManager _target;
+
+        public RssDataManagerTests()
+        {
+            _target = new RssDataManager();
+        }
 
         [Fact]
         public void GIVEN_MultipleFeedsWithAndWithoutArticles_WHEN_CreateRssList_THEN_MetaCountsAndFlatteningCorrect()
@@ -73,7 +78,7 @@ namespace Lantean.QBTMud.Test.Services
             var result = _target.CreateRssList(items);
 
             // assert: feeds exist
-            result.Feeds.Keys.Should().BeEquivalentTo(new[] { "feed-a", "feed-b", "feed-c" });
+            result.Feeds.Keys.Should().BeEquivalentTo("feed-a", "feed-b", "feed-c");
 
             // feed-a meta and counts
             var fa = result.Feeds["feed-a"];

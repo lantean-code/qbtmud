@@ -10,7 +10,12 @@ namespace Lantean.QBTMud.Test.Services
 {
     public class TorrentDataManagerContentsListTests
     {
-        private readonly TorrentDataManager _target = new TorrentDataManager();
+        private readonly TorrentDataManager _target;
+
+        public TorrentDataManagerContentsListTests()
+        {
+            _target = new TorrentDataManager();
+        }
 
         // ---------------------------
         // CreateContentsList tests
@@ -383,7 +388,7 @@ namespace Lantean.QBTMud.Test.Services
             changed.Should().BeTrue();
             contents.ContainsKey("new").Should().BeTrue();
 
-            var minExistingIndex = contents.Values.Where(c => !c.IsFolder).Select(c => c.Index).DefaultIfEmpty(int.MaxValue).Min();
+            //var minExistingIndex = contents.Values.Where(c => !c.IsFolder).Select(c => c.Index).DefaultIfEmpty(int.MaxValue).Min();
             var newFolder = contents["new"];
             newFolder.IsFolder.Should().BeTrue();
             // index is computed from nextFolderIndex = Min(minExistingIndex, minFileIndex) - 1

@@ -1,5 +1,4 @@
-using System;
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -9,37 +8,37 @@ namespace Lantean.QBTMud.Test.Components.UI
 {
     public sealed class FieldSwitchTests : IDisposable
     {
-        private readonly ComponentTestContext _target;
+        private readonly ComponentTestContext _context;
 
         public FieldSwitchTests()
         {
-            _target = new ComponentTestContext();
+            _context = new ComponentTestContext();
         }
 
         [Fact]
         public void GIVEN_LabelAndHelper_WHEN_Rendered_THEN_ShouldRenderFieldAndSwitch()
         {
-            var cut = _target.RenderComponent<FieldSwitch>(parameters =>
+            var target = _context.RenderComponent<FieldSwitch>(parameters =>
             {
                 parameters.Add(p => p.Label, "Label");
                 parameters.Add(p => p.HelperText, "HelperText");
                 parameters.Add(p => p.Value, false);
             });
 
-            cut.Markup.Should().Contain("Label");
-            cut.Markup.Should().Contain("HelperText");
+            target.Markup.Should().Contain("Label");
+            target.Markup.Should().Contain("HelperText");
         }
 
         [Fact]
         public void GIVEN_DisabledSwitch_WHEN_Rendered_THEN_ShouldDisableInput()
         {
-            var cut = _target.RenderComponent<FieldSwitch>(parameters =>
+            var target = _context.RenderComponent<FieldSwitch>(parameters =>
             {
                 parameters.Add(p => p.Disabled, true);
                 parameters.Add(p => p.Value, false);
             });
 
-            var input = cut.Find("input");
+            var input = target.Find("input");
             input.HasAttribute("disabled").Should().BeTrue();
         }
 
@@ -48,21 +47,21 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var callbackValue = false;
 
-            var cut = _target.RenderComponent<FieldSwitch>(parameters =>
+            var target = _context.RenderComponent<FieldSwitch>(parameters =>
             {
                 parameters.Add(p => p.Value, false);
                 parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<bool>(this, value => callbackValue = value));
             });
 
-            cut.Find("input").Change(true);
+            target.Find("input").Change(true);
 
             callbackValue.Should().BeTrue();
-            cut.Instance.Value.Should().BeTrue();
+            target.Instance.Value.Should().BeTrue();
         }
 
         public void Dispose()
         {
-            _target.Dispose();
+            _context.Dispose();
         }
     }
 }

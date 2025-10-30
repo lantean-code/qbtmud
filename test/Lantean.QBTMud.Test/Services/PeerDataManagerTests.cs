@@ -8,7 +8,12 @@ namespace Lantean.QBTMud.Test.Services
 {
     public class PeerDataManagerTests
     {
-        private readonly PeerDataManager _target = new PeerDataManager();
+        private readonly PeerDataManager _target;
+
+        public PeerDataManagerTests()
+        {
+            _target = new PeerDataManager();
+        }
 
         // ---------- CreatePeerList ----------
 

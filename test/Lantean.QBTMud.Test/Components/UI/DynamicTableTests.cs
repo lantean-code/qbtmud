@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
@@ -20,11 +15,11 @@ namespace Lantean.QBTMud.Test.Components.UI
 {
     public sealed class DynamicTableTests : IDisposable
     {
-        private readonly ComponentTestContext _target;
+        private readonly ComponentTestContext _context;
 
         public DynamicTableTests()
         {
-            _target = new ComponentTestContext();
+            _context = new ComponentTestContext();
         }
 
         [Fact]
@@ -34,9 +29,9 @@ namespace Lantean.QBTMud.Test.Components.UI
             var sortColumn = string.Empty;
             var sortDirection = SortDirection.None;
 
-            var localStorageMock = _target.AddSingletonMock<Blazored.LocalStorage.ILocalStorageService>(MockBehavior.Loose);
+            var localStorageMock = _context.AddSingletonMock<Blazored.LocalStorage.ILocalStorageService>(MockBehavior.Loose);
 
-            var cut = RenderDynamicTable(builder =>
+            var target = RenderDynamicTable(builder =>
             {
                 builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
                 builder.Add(p => p.Items, CreateItems());
@@ -45,12 +40,12 @@ namespace Lantean.QBTMud.Test.Components.UI
                 builder.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirection = value));
             });
 
-            cut.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                cut.FindAll("th").Count.Should().Be(3);
+                target.FindAll("th").Count.Should().Be(3);
             });
 
-            cut.FindAll("tbody tr").Count.Should().Be(2);
+            target.FindAll("tbody tr").Count.Should().Be(2);
 
             selectedColumns.Should().Contain("id");
             selectedColumns.Should().Contain("name");
@@ -64,39 +59,40 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public async Task GIVEN_MultiSelectionRows_WHEN_Clicked_THEN_ShouldRespectModifierKeys()
         {
+            var items = CreateItems();
             var selectedItemsChanged = new HashSet<SampleItem>();
-            var cut = RenderDynamicTable(builder =>
+            var target = RenderDynamicTable(builder =>
             {
                 builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
-                builder.Add(p => p.Items, CreateItems());
+                builder.Add(p => p.Items, items);
                 builder.Add(p => p.MultiSelection, true);
                 builder.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<SampleItem>>(this, _ => Task.CompletedTask));
                 builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsChanged = value));
             });
 
-            cut.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                cut.Find("tbody tr");
+                target.Find("tbody tr");
             });
 
-            var table = cut.FindComponent<MudTable<SampleItem>>();
-            var firstItem = CreateItems().First();
-            var secondItem = CreateItems().Last();
+            var table = target.FindComponent<MudTable<SampleItem>>();
+            var firstItem = items[0];
+            var secondItem = items[1];
 
-            var rows = cut.FindComponents<MudTr>();
+            var rows = target.FindComponents<MudTr>();
 
-            await cut.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(new TableRowClickEventArgs<SampleItem>(new MouseEventArgs(), rows[0].Instance, firstItem)));
-            cut.Instance.SelectedItems.Should().Contain(firstItem);
+            await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(new TableRowClickEventArgs<SampleItem>(new MouseEventArgs(), rows[0].Instance, firstItem)));
+            target.Instance.SelectedItems.Should().Contain(firstItem);
 
-            await cut.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(new TableRowClickEventArgs<SampleItem>(new MouseEventArgs { CtrlKey = true }, rows[1].Instance, secondItem)));
-            cut.Instance.SelectedItems.Should().Contain(firstItem);
-            cut.Instance.SelectedItems.Should().Contain(secondItem);
+            await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(new TableRowClickEventArgs<SampleItem>(new MouseEventArgs { CtrlKey = true }, rows[1].Instance, secondItem)));
+            target.Instance.SelectedItems.Should().Contain(firstItem);
+            target.Instance.SelectedItems.Should().Contain(secondItem);
 
-            await cut.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(new TableRowClickEventArgs<SampleItem>(new MouseEventArgs { AltKey = true }, rows[0].Instance, firstItem)));
-            cut.Instance.SelectedItems.Should().HaveCount(1);
-            cut.Instance.SelectedItems.Should().Contain(firstItem);
+            await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(new TableRowClickEventArgs<SampleItem>(new MouseEventArgs { AltKey = true }, rows[0].Instance, firstItem)));
+            target.Instance.SelectedItems.Should().HaveCount(1);
+            target.Instance.SelectedItems.Should().Contain(firstItem);
 
-            await cut.InvokeAsync(() => cut.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<SampleItem> { firstItem }));
+            await target.InvokeAsync(() => target.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<SampleItem> { firstItem }));
             selectedItemsChanged.Should().HaveCount(1);
             selectedItemsChanged.Should().Contain(firstItem);
         }
@@ -107,7 +103,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var contextInvoked = false;
             var longPressInvoked = false;
 
-            var cut = RenderDynamicTable(builder =>
+            var target = RenderDynamicTable(builder =>
             {
                 builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
                 builder.Add(p => p.Items, CreateItems());
@@ -123,12 +119,12 @@ namespace Lantean.QBTMud.Test.Components.UI
                 }));
             });
 
-            cut.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                cut.Find("tbody td");
+                target.Find("tbody td");
             });
 
-            var cell = cut.Find("tbody td");
+            var cell = target.Find("tbody td");
 
             await cell.TriggerEventAsync("oncontextmenu", new MouseEventArgs());
             await cell.TriggerEventAsync("onlongpress", new LongPressEventArgs());
@@ -160,18 +156,18 @@ namespace Lantean.QBTMud.Test.Components.UI
             localStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
             localStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
 
-            _target.Services.RemoveAll(typeof(IDialogService));
-            _target.Services.AddSingleton(dialogServiceMock.Object);
-            _target.Services.RemoveAll(typeof(Blazored.LocalStorage.ILocalStorageService));
-            _target.Services.AddSingleton(localStorageMock.Object);
+            _context.Services.RemoveAll(typeof(IDialogService));
+            _context.Services.AddSingleton(dialogServiceMock.Object);
+            _context.Services.RemoveAll(typeof(Blazored.LocalStorage.ILocalStorageService));
+            _context.Services.AddSingleton(localStorageMock.Object);
 
-            var cut = RenderDynamicTable(builder =>
+            var target = RenderDynamicTable(builder =>
             {
                 builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
                 builder.Add(p => p.Items, CreateItems());
             });
 
-            await cut.InvokeAsync(() => cut.Instance.ShowColumnOptionsDialog());
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
 
             dialogServiceMock.VerifyAll();
             localStorageMock.Verify(s => s.SetItemAsync(It.Is<string>(key => key.Contains("ColumnSelection")), It.Is<HashSet<string>>(value => value.Contains("name")), It.IsAny<CancellationToken>()), Times.Once);
@@ -182,19 +178,19 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_ColumnFilterRemovesAll_WHEN_Rendered_THEN_ShouldReturnEmptyColumns()
         {
-            var cut = RenderDynamicTable(builder =>
+            var target = RenderDynamicTable(builder =>
             {
                 builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
                 builder.Add(p => p.Items, CreateItems());
                 builder.Add(p => p.ColumnFilter, new Func<ColumnDefinition<SampleItem>, bool>(_ => false));
             });
 
-            cut.FindAll("th").Count.Should().Be(0);
+            target.FindAll("th").Count.Should().Be(0);
         }
 
         private IRenderedComponent<DynamicTable<SampleItem>> RenderDynamicTable(Action<ComponentParameterCollectionBuilder<DynamicTable<SampleItem>>> configure)
         {
-            return _target.RenderComponent<DynamicTable<SampleItem>>(configure);
+            return _context.RenderComponent<DynamicTable<SampleItem>>(configure);
         }
 
         private static IReadOnlyList<ColumnDefinition<SampleItem>> CreateColumnDefinitions()
@@ -211,16 +207,16 @@ namespace Lantean.QBTMud.Test.Components.UI
 
         private static IReadOnlyList<SampleItem> CreateItems()
         {
-            return new[]
-            {
+            return
+            [
                 new SampleItem(1, "Item1", 3),
                 new SampleItem(2, "Item2", 7)
-            };
+            ];
         }
 
         public void Dispose()
         {
-            _target.Dispose();
+            _context.Dispose();
         }
 
         private sealed record SampleItem(int Id, string Name, int Value);

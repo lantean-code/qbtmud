@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
@@ -15,47 +10,48 @@ using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;
+using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
     public sealed class RSSOptionsTests : IDisposable
     {
-        private readonly ComponentTestContext _target;
+        private readonly ComponentTestContext _context;
 
         public RSSOptionsTests()
         {
-            _target = new ComponentTestContext();
+            _context = new ComponentTestContext();
         }
 
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var cut = _target.RenderComponent<RSSOptions>(parameters =>
+            var target = _context.RenderComponent<RSSOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var switches = cut.FindComponents<FieldSwitch>();
+            var switches = target.FindComponents<FieldSwitch>();
             switches.Single(s => s.Instance.Label == "Enable fetching RSS feeds").Instance.Value.Should().BeTrue();
             switches.Single(s => s.Instance.Label == "Enable auto downloading of RSS torrents").Instance.Value.Should().BeTrue();
             switches.Single(s => s.Instance.Label == "Download REPACK/PROPER episodes").Instance.Value.Should().BeFalse();
 
-            var refreshField = cut.FindComponents<MudNumericField<int>>()
+            var refreshField = target.FindComponents<MudNumericField<int>>()
                 .Single(f => f.Instance.Label == "Feeds refresh interval");
             refreshField.Instance.Value.Should().Be(30);
 
-            var maxField = cut.FindComponents<MudNumericField<int>>()
+            var maxField = target.FindComponents<MudNumericField<int>>()
                 .Single(f => f.Instance.Label == "Maximum number of articles per feed");
             maxField.Instance.Value.Should().Be(200);
 
-            cut.FindComponents<MudTextField<string>>()
+            target.FindComponents<MudTextField<string>>()
                 .Single(tf => tf.Instance.Label == "Filters")
                 .Instance.Value.Should().Be("filter-one\nfilter-two");
 
@@ -65,45 +61,45 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_Settings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var cut = _target.RenderComponent<RSSOptions>(parameters =>
+            var target = _context.RenderComponent<RSSOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var switches = cut.FindComponents<FieldSwitch>();
+            var switches = target.FindComponents<FieldSwitch>();
             var processingSwitch = switches.Single(s => s.Instance.Label == "Enable fetching RSS feeds");
-            await cut.InvokeAsync(() => processingSwitch.Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => processingSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.RssProcessingEnabled.Should().BeFalse();
 
-            var refreshField = cut.FindComponents<MudNumericField<int>>()
+            var refreshField = target.FindComponents<MudNumericField<int>>()
                 .Single(f => f.Instance.Label == "Feeds refresh interval");
-            await cut.InvokeAsync(() => refreshField.Instance.ValueChanged.InvokeAsync(45));
+            await target.InvokeAsync(() => refreshField.Instance.ValueChanged.InvokeAsync(45));
             update.RssRefreshInterval.Should().Be(45);
 
-            var maxField = cut.FindComponents<MudNumericField<int>>()
+            var maxField = target.FindComponents<MudNumericField<int>>()
                 .Single(f => f.Instance.Label == "Maximum number of articles per feed");
-            await cut.InvokeAsync(() => maxField.Instance.ValueChanged.InvokeAsync(250));
+            await target.InvokeAsync(() => maxField.Instance.ValueChanged.InvokeAsync(250));
             update.RssMaxArticlesPerFeed.Should().Be(250);
 
             var autoSwitch = switches.Single(s => s.Instance.Label == "Enable auto downloading of RSS torrents");
-            await cut.InvokeAsync(() => autoSwitch.Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => autoSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.RssAutoDownloadingEnabled.Should().BeFalse();
 
             var repackSwitch = switches.Single(s => s.Instance.Label == "Download REPACK/PROPER episodes");
-            await cut.InvokeAsync(() => repackSwitch.Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => repackSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.RssDownloadRepackProperEpisodes.Should().BeTrue();
 
-            var filtersField = cut.FindComponents<MudTextField<string>>()
+            var filtersField = target.FindComponents<MudTextField<string>>()
                 .Single(tf => tf.Instance.Label == "Filters");
-            await cut.InvokeAsync(() => filtersField.Instance.ValueChanged.InvokeAsync("updated"));
+            await target.InvokeAsync(() => filtersField.Instance.ValueChanged.InvokeAsync("updated"));
             update.RssSmartEpisodeFilters.Should().Be("updated");
 
             events.Should().NotBeEmpty();
@@ -113,26 +109,26 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_EditRulesButton_WHEN_Clicked_THEN_ShouldOpenDialog()
         {
-            var dialogMock = _target.AddSingletonMock<IDialogService>();
+            var dialogMock = _context.AddSingletonMock<IDialogService>();
             dialogMock
                 .Setup(s => s.ShowAsync<RssRulesDialog>(It.IsAny<string>(), It.IsAny<DialogOptions>()))
                 .ReturnsAsync(Mock.Of<IDialogReference>());
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var cut = _target.RenderComponent<RSSOptions>(parameters =>
+            var target = _context.RenderComponent<RSSOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var button = cut.FindAll("button")
+            var button = target.FindAll("button")
                 .Single(b => b.TextContent.Contains("Edit auto downloading rules", StringComparison.Ordinal));
-            await cut.InvokeAsync(() => button.Click());
+            await target.InvokeAsync(() => button.Click());
 
             dialogMock.Verify(s => s.ShowAsync<RssRulesDialog>("Edit Rss Auto Downloading Rules", DialogHelper.FullScreenDialogOptions), Times.Once);
         }
@@ -140,22 +136,22 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_FetchDelay_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var cut = _target.RenderComponent<TestableRssOptions>(parameters =>
+            var target = _context.RenderComponent<TestableRssOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            await cut.InvokeAsync(() => cut.Instance.InvokeFetchDelayChanged(90));
+            await target.InvokeAsync(() => target.Instance.InvokeFetchDelayChanged(90));
 
-            cut.Instance.FetchDelay.Should().Be(90);
+            target.Instance.FetchDelay.Should().Be(90);
             update.RssFetchDelay.Should().Be(90);
             events.Should().ContainSingle().Which.Should().BeSameAs(update);
         }
@@ -179,7 +175,7 @@ namespace Lantean.QBTMud.Test.Components.Options
 
         public void Dispose()
         {
-            _target.Dispose();
+            _context.Dispose();
         }
 
         private sealed class TestableRssOptions : RSSOptions

@@ -6,7 +6,12 @@ namespace Lantean.QBTMud.Test.Services
 {
     public class PreferencesDataManagerTests
     {
-        private readonly PreferencesDataManager _target = new PreferencesDataManager();
+        private readonly PreferencesDataManager _target;
+
+        public PreferencesDataManagerTests()
+        {
+            _target = new PreferencesDataManager();
+        }
 
         // ---------- Builders ----------
 

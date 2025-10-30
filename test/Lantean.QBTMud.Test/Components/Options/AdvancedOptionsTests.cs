@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
@@ -13,23 +8,23 @@ using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;
-using Xunit;
+using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
     public sealed class AdvancedOptionsTests : IDisposable
     {
-        private readonly ComponentTestContext _target;
+        private readonly ComponentTestContext _context;
 
         public AdvancedOptionsTests()
         {
-            _target = new ComponentTestContext();
+            _context = new ComponentTestContext();
         }
 
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
-            var api = _target.AddSingletonMock<IApiClient>();
+            var api = _context.AddSingletonMock<IApiClient>();
             api.Setup(a => a.GetNetworkInterfaces())
                 .ReturnsAsync(new List<NetworkInterface>
                 {
@@ -42,36 +37,36 @@ namespace Lantean.QBTMud.Test.Components.Options
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
-            var cut = _target.RenderComponent<AdvancedOptions>(parameters =>
+            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var resumeSelect = FindSelect<string>(cut, "Resume data storage type (requires restart)");
+            var resumeSelect = FindSelect<string>(target, "Resume data storage type (requires restart)");
             resumeSelect.Instance.Value.Should().Be("SQLite");
 
-            FindNumeric(cut, "Physical memory (RAM) usage limit (applied if libtorrent >= 2.0)").Instance.Value.Should().Be(512);
-            FindSelect<string>(cut, "Network interface").Instance.Value.Should().Be("eth0");
-            FindSelect<string>(cut, "Optional IP address to bind to").Instance.Value.Should().Be("10.0.0.2");
-            FindNumeric(cut, "Save resume data interval").Instance.Value.Should().Be(15);
-            FindNumeric(cut, ".torrent file size limit").Instance.Value.Should().Be(150);
-            FindSwitch(cut, "Recheck torrents on completion").Instance.Value.Should().BeTrue();
-            FindNumeric(cut, "Refresh interval").Instance.Value.Should().Be(1500);
-            FindSwitch(cut, "Resolve peer countries").Instance.Value.Should().BeTrue();
-            FindSwitch(cut, "Enable embedded tracker").Instance.Value.Should().BeTrue();
-            FindNumeric(cut, "Embedded tracker port").Instance.Value.Should().Be(19000);
-            FindSwitch(cut, "Enable port forwarding for embedded tracker").Instance.Value.Should().BeTrue();
-            cut.Markup.Should().Contain("Ethernet");
+            FindNumeric(target, "Physical memory (RAM) usage limit (applied if libtorrent >= 2.0)").Instance.Value.Should().Be(512);
+            FindSelect<string>(target,"Network interface").Instance.Value.Should().Be("eth0");
+            FindSelect<string>(target, "Optional IP address to bind to").Instance.Value.Should().Be("10.0.0.2");
+            FindNumeric(target, "Save resume data interval").Instance.Value.Should().Be(15);
+            FindNumeric(target, ".torrent file size limit").Instance.Value.Should().Be(150);
+            FindSwitch(target, "Recheck torrents on completion").Instance.Value.Should().BeTrue();
+            FindNumeric(target, "Refresh interval").Instance.Value.Should().Be(1500);
+            FindSwitch(target, "Resolve peer countries").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "Enable embedded tracker").Instance.Value.Should().BeTrue();
+            FindNumeric(target, "Embedded tracker port").Instance.Value.Should().Be(19000);
+            FindSwitch(target, "Enable port forwarding for embedded tracker").Instance.Value.Should().BeTrue();
+            target.Markup.Should().Contain("Ethernet");
         }
 
         [Fact]
         public async Task GIVEN_NetworkInterface_WHEN_Changed_THEN_ShouldRefreshAddresses()
         {
-            var api = _target.AddSingletonMock<IApiClient>();
+            var api = _context.AddSingletonMock<IApiClient>();
             api.Setup(a => a.GetNetworkInterfaces())
                 .ReturnsAsync(new List<NetworkInterface>
                 {
@@ -87,32 +82,32 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
-            var cut = _target.RenderComponent<AdvancedOptions>(parameters =>
+            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var interfaceSelect = FindSelect<string>(cut, "Network interface");
-            await cut.InvokeAsync(() => interfaceSelect.Instance.ValueChanged.InvokeAsync("eth0"));
+            var interfaceSelect = FindSelect<string>(target, "Network interface");
+            await target.InvokeAsync(() => interfaceSelect.Instance.ValueChanged.InvokeAsync("eth0"));
 
             update.CurrentNetworkInterface.Should().Be("eth0");
-            raised.Last().Should().BeSameAs(update);
+            raised[^1].Should().BeSameAs(update);
 
-            var addressSelect = FindSelect<string>(cut, "Optional IP address to bind to");
-            await cut.InvokeAsync(() => addressSelect.Instance.ValueChanged.InvokeAsync("::"));
+            var addressSelect = FindSelect<string>(target, "Optional IP address to bind to");
+            await target.InvokeAsync(() => addressSelect.Instance.ValueChanged.InvokeAsync("::"));
             update.CurrentInterfaceAddress.Should().Be("::");
-            raised.Last().Should().BeSameAs(update);
+            raised[^1].Should().BeSameAs(update);
             api.Verify(a => a.GetNetworkInterfaceAddressList("eth0"), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_CoreAdvancedSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
-            var api = _target.AddSingletonMock<IApiClient>(MockBehavior.Loose);
+            var api = _context.AddSingletonMock<IApiClient>(MockBehavior.Loose);
             api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
             api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
@@ -120,24 +115,24 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
-            var cut = _target.RenderComponent<AdvancedOptions>(parameters =>
+            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await cut.InvokeAsync(() => FindSelect<string>(cut, "Resume data storage type (requires restart)").Instance.ValueChanged.InvokeAsync("Legacy"));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Physical memory (RAM) usage limit (applied if libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(768));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Save resume data interval").Instance.ValueChanged.InvokeAsync(20));
-            await cut.InvokeAsync(() => FindNumeric(cut, ".torrent file size limit").Instance.ValueChanged.InvokeAsync(175));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Recheck torrents on completion").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Confirm torrent recheck").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Refresh interval").Instance.ValueChanged.InvokeAsync(2000));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Resolve peer countries").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Reannounce to all trackers when IP or port changed").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSelect<string>(target, "Resume data storage type (requires restart)").Instance.ValueChanged.InvokeAsync("Legacy"));
+            await target.InvokeAsync(() => FindNumeric(target, "Physical memory (RAM) usage limit (applied if libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(768));
+            await target.InvokeAsync(() => FindNumeric(target, "Save resume data interval").Instance.ValueChanged.InvokeAsync(20));
+            await target.InvokeAsync(() => FindNumeric(target, ".torrent file size limit").Instance.ValueChanged.InvokeAsync(175));
+            await target.InvokeAsync(() => FindSwitch(target, "Recheck torrents on completion").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "Confirm torrent recheck").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindNumeric(target, "Refresh interval").Instance.ValueChanged.InvokeAsync(2000));
+            await target.InvokeAsync(() => FindSwitch(target, "Resolve peer countries").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "Reannounce to all trackers when IP or port changed").Instance.ValueChanged.InvokeAsync(false));
 
             update.ResumeDataStorageType.Should().Be("Legacy");
             update.MemoryWorkingSetLimit.Should().Be(768);
@@ -154,38 +149,38 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_DiskSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
-            var api = _target.AddSingletonMock<IApiClient>(MockBehavior.Loose);
+            var api = _context.AddSingletonMock<IApiClient>(MockBehavior.Loose);
             api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
             api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
             var raised = new List<UpdatePreferences>();
-            var cut = _target.RenderComponent<AdvancedOptions>(parameters =>
+            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await cut.InvokeAsync(() => FindNumeric(cut, "Bdecode depth limit").Instance.ValueChanged.InvokeAsync(120));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Bdecode token limit").Instance.ValueChanged.InvokeAsync(240));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Asynchronous I/O threads").Instance.ValueChanged.InvokeAsync(6));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Hashing threads (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(8));
-            await cut.InvokeAsync(() => FindNumeric(cut, "File pool size").Instance.ValueChanged.InvokeAsync(1024));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Outstanding memory when checking torrents").Instance.ValueChanged.InvokeAsync(256));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Disk cache (requires libtorrent < 2.0)").Instance.ValueChanged.InvokeAsync(384));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Disk cache expiry interval (requires libtorrent < 2.0)").Instance.ValueChanged.InvokeAsync(120));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Disk queue size").Instance.ValueChanged.InvokeAsync(10240));
-            await cut.InvokeAsync(() => FindSelect<int>(cut, "Disk IO type (libtorrent >= 2.0; requires restart)").Instance.ValueChanged.InvokeAsync(1));
-            await cut.InvokeAsync(() => FindSelect<int>(cut, "Disk IO read mode").Instance.ValueChanged.InvokeAsync(1));
-            await cut.InvokeAsync(() => FindSelect<int>(cut, "Disk IO write mode").Instance.ValueChanged.InvokeAsync(2));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Coalesce reads & writes (requires libtorrent < 2.0)").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Use piece extent affinity").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Send upload piece suggestions").Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => FindNumeric(target, "Bdecode depth limit").Instance.ValueChanged.InvokeAsync(120));
+            await target.InvokeAsync(() => FindNumeric(target, "Bdecode token limit").Instance.ValueChanged.InvokeAsync(240));
+            await target.InvokeAsync(() => FindNumeric(target, "Asynchronous I/O threads").Instance.ValueChanged.InvokeAsync(6));
+            await target.InvokeAsync(() => FindNumeric(target, "Hashing threads (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(8));
+            await target.InvokeAsync(() => FindNumeric(target, "File pool size").Instance.ValueChanged.InvokeAsync(1024));
+            await target.InvokeAsync(() => FindNumeric(target, "Outstanding memory when checking torrents").Instance.ValueChanged.InvokeAsync(256));
+            await target.InvokeAsync(() => FindNumeric(target, "Disk cache (requires libtorrent < 2.0)").Instance.ValueChanged.InvokeAsync(384));
+            await target.InvokeAsync(() => FindNumeric(target, "Disk cache expiry interval (requires libtorrent < 2.0)").Instance.ValueChanged.InvokeAsync(120));
+            await target.InvokeAsync(() => FindNumeric(target, "Disk queue size").Instance.ValueChanged.InvokeAsync(10240));
+            await target.InvokeAsync(() => FindSelect<int>(target, "Disk IO type (libtorrent >= 2.0; requires restart)").Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => FindSelect<int>(target, "Disk IO read mode").Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => FindSelect<int>(target, "Disk IO write mode").Instance.ValueChanged.InvokeAsync(2));
+            await target.InvokeAsync(() => FindSwitch(target, "Coalesce reads & writes (requires libtorrent < 2.0)").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "Use piece extent affinity").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "Send upload piece suggestions").Instance.ValueChanged.InvokeAsync(true));
 
             update.BdecodeDepthLimit.Should().Be(120);
             update.BdecodeTokenLimit.Should().Be(240);
@@ -208,7 +203,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_BufferAndConnectionSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
-            var api = _target.AddSingletonMock<IApiClient>(MockBehavior.Loose);
+            var api = _context.AddSingletonMock<IApiClient>(MockBehavior.Loose);
             api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
             api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
@@ -216,35 +211,35 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
-            var cut = _target.RenderComponent<AdvancedOptions>(parameters =>
+            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await cut.InvokeAsync(() => FindNumeric(cut, "Send buffer watermark").Instance.ValueChanged.InvokeAsync(256));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Send buffer low watermark").Instance.ValueChanged.InvokeAsync(32));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Send buffer watermark factor").Instance.ValueChanged.InvokeAsync(200));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Outgoing connections per second").Instance.ValueChanged.InvokeAsync(500));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Socket send buffer size [0: system default]").Instance.ValueChanged.InvokeAsync(256));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Socket receive buffer size [0: system default]").Instance.ValueChanged.InvokeAsync(256));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Socket backlog size").Instance.ValueChanged.InvokeAsync(100));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Outgoing ports (Min) [0: disabled]").Instance.ValueChanged.InvokeAsync(10000));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Outgoing ports (Max) [0: disabled]").Instance.ValueChanged.InvokeAsync(20000));
-            await cut.InvokeAsync(() => FindNumeric(cut, "UPnP lease duration [0: permanent lease]").Instance.ValueChanged.InvokeAsync(1200));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Type of service (ToS) for connections to peers").Instance.ValueChanged.InvokeAsync(16));
-            await cut.InvokeAsync(() => FindSelect<int>(cut, "μTP-TCP mixed mode algorithm").Instance.ValueChanged.InvokeAsync(1));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Support internationalized domain name (IDN)").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Allow multiple connections from the same IP address").Instance.ValueChanged.InvokeAsync(true));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Validate HTTPS tracker certificate").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Server-side request forgery (SSRF) mitigation").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Disallow connection to peers on privileged ports").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Enable embedded tracker").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Embedded tracker port").Instance.ValueChanged.InvokeAsync(20000));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Enable port forwarding for embedded tracker").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindNumeric(target, "Send buffer watermark").Instance.ValueChanged.InvokeAsync(256));
+            await target.InvokeAsync(() => FindNumeric(target, "Send buffer low watermark").Instance.ValueChanged.InvokeAsync(32));
+            await target.InvokeAsync(() => FindNumeric(target, "Send buffer watermark factor").Instance.ValueChanged.InvokeAsync(200));
+            await target.InvokeAsync(() => FindNumeric(target, "Outgoing connections per second").Instance.ValueChanged.InvokeAsync(500));
+            await target.InvokeAsync(() => FindNumeric(target, "Socket send buffer size [0: system default]").Instance.ValueChanged.InvokeAsync(256));
+            await target.InvokeAsync(() => FindNumeric(target, "Socket receive buffer size [0: system default]").Instance.ValueChanged.InvokeAsync(256));
+            await target.InvokeAsync(() => FindNumeric(target, "Socket backlog size").Instance.ValueChanged.InvokeAsync(100));
+            await target.InvokeAsync(() => FindNumeric(target, "Outgoing ports (Min) [0: disabled]").Instance.ValueChanged.InvokeAsync(10000));
+            await target.InvokeAsync(() => FindNumeric(target, "Outgoing ports (Max) [0: disabled]").Instance.ValueChanged.InvokeAsync(20000));
+            await target.InvokeAsync(() => FindNumeric(target, "UPnP lease duration [0: permanent lease]").Instance.ValueChanged.InvokeAsync(1200));
+            await target.InvokeAsync(() => FindNumeric(target, "Type of service (ToS) for connections to peers").Instance.ValueChanged.InvokeAsync(16));
+            await target.InvokeAsync(() => FindSelect<int>(target, "μTP-TCP mixed mode algorithm").Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => FindSwitch(target, "Support internationalized domain name (IDN)").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "Allow multiple connections from the same IP address").Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => FindSwitch(target, "Validate HTTPS tracker certificate").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "Server-side request forgery (SSRF) mitigation").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "Disallow connection to peers on privileged ports").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "Enable embedded tracker").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindNumeric(target, "Embedded tracker port").Instance.ValueChanged.InvokeAsync(20000));
+            await target.InvokeAsync(() => FindSwitch(target, "Enable port forwarding for embedded tracker").Instance.ValueChanged.InvokeAsync(false));
 
             update.SendBufferWatermark.Should().Be(256);
             update.SendBufferLowWatermark.Should().Be(32);
@@ -272,7 +267,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_TrackerSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
-            var api = _target.AddSingletonMock<IApiClient>(MockBehavior.Loose);
+            var api = _context.AddSingletonMock<IApiClient>(MockBehavior.Loose);
             api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
             api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
@@ -280,30 +275,30 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _target.RenderComponent<MudPopoverProvider>();
+            _context.RenderComponent<MudPopoverProvider>();
 
-            var cut = _target.RenderComponent<AdvancedOptions>(parameters =>
+            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await cut.InvokeAsync(() => FindSelect<int>(cut, "Upload slots behavior").Instance.ValueChanged.InvokeAsync(1));
-            await cut.InvokeAsync(() => FindSelect<int>(cut, "Upload choking algorithm").Instance.ValueChanged.InvokeAsync(2));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Always announce to all trackers in a tier").Instance.ValueChanged.InvokeAsync(false));
-            await cut.InvokeAsync(() => FindSwitch(cut, "Always announce to all tiers").Instance.ValueChanged.InvokeAsync(true));
-            await cut.InvokeAsync(() => FindTextField(cut, "IP address reported to trackers (requires restart)").Instance.ValueChanged.InvokeAsync("203.0.113.5"));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Max concurrent HTTP announces").Instance.ValueChanged.InvokeAsync(80));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Stop tracker timeout [0: disabled]").Instance.ValueChanged.InvokeAsync(45));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Peer turnover disconnect percentage:").Instance.ValueChanged.InvokeAsync(12));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Peer turnover threshold percentage").Instance.ValueChanged.InvokeAsync(25));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Peer turnover disconnect interval").Instance.ValueChanged.InvokeAsync(120));
-            await cut.InvokeAsync(() => FindNumeric(cut, "Maximum outstanding requests to a single peer").Instance.ValueChanged.InvokeAsync(200));
-            await cut.InvokeAsync(() => FindNumeric(cut, "I2P inbound quantity (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(6));
-            await cut.InvokeAsync(() => FindNumeric(cut, "I2P outbound quantity (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(4));
-            await cut.InvokeAsync(() => FindNumeric(cut, "I2P inbound length (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(3));
-            await cut.InvokeAsync(() => FindNumeric(cut, "I2P outbound length (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(2));
+            await target.InvokeAsync(() => FindSelect<int>(target, "Upload slots behavior").Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => FindSelect<int>(target, "Upload choking algorithm").Instance.ValueChanged.InvokeAsync(2));
+            await target.InvokeAsync(() => FindSwitch(target, "Always announce to all trackers in a tier").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "Always announce to all tiers").Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => FindTextField(target, "IP address reported to trackers (requires restart)").Instance.ValueChanged.InvokeAsync("203.0.113.5"));
+            await target.InvokeAsync(() => FindNumeric(target, "Max concurrent HTTP announces").Instance.ValueChanged.InvokeAsync(80));
+            await target.InvokeAsync(() => FindNumeric(target, "Stop tracker timeout [0: disabled]").Instance.ValueChanged.InvokeAsync(45));
+            await target.InvokeAsync(() => FindNumeric(target, "Peer turnover disconnect percentage:").Instance.ValueChanged.InvokeAsync(12));
+            await target.InvokeAsync(() => FindNumeric(target, "Peer turnover threshold percentage").Instance.ValueChanged.InvokeAsync(25));
+            await target.InvokeAsync(() => FindNumeric(target, "Peer turnover disconnect interval").Instance.ValueChanged.InvokeAsync(120));
+            await target.InvokeAsync(() => FindNumeric(target, "Maximum outstanding requests to a single peer").Instance.ValueChanged.InvokeAsync(200));
+            await target.InvokeAsync(() => FindNumeric(target, "I2P inbound quantity (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(6));
+            await target.InvokeAsync(() => FindNumeric(target, "I2P outbound quantity (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(4));
+            await target.InvokeAsync(() => FindNumeric(target, "I2P inbound length (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(3));
+            await target.InvokeAsync(() => FindNumeric(target, "I2P outbound length (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(2));
 
             update.UploadSlotsBehavior.Should().Be(1);
             update.UploadChokingAlgorithm.Should().Be(2);
@@ -323,24 +318,24 @@ namespace Lantean.QBTMud.Test.Components.Options
             raised.Should().NotBeEmpty();
         }
 
-        private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<AdvancedOptions> cut, string label)
+        private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<AdvancedOptions> target, string label)
         {
-            return cut.FindComponents<MudNumericField<int>>().First(field => field.Instance.Label == label);
+            return target.FindComponents<MudNumericField<int>>().First(field => field.Instance.Label == label);
         }
 
-        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<AdvancedOptions> cut, string label)
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<AdvancedOptions> target, string label)
         {
-            return cut.FindComponents<MudTextField<string>>().First(field => field.Instance.Label == label);
+            return target.FindComponents<MudTextField<string>>().First(field => field.Instance.Label == label);
         }
 
-        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<AdvancedOptions> cut, string label)
+        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<AdvancedOptions> target, string label)
         {
-            return cut.FindComponents<FieldSwitch>().First(field => field.Instance.Label == label);
+            return target.FindComponents<FieldSwitch>().First(field => field.Instance.Label == label);
         }
 
-        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<AdvancedOptions> cut, string label)
+        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<AdvancedOptions> target, string label)
         {
-            return cut.FindComponents<MudSelect<T>>().First(field => field.Instance.Label == label);
+            return target.FindComponents<MudSelect<T>>().First(field => field.Instance.Label == label);
         }
 
         private static Preferences DeserializePreferences()
@@ -420,7 +415,7 @@ namespace Lantean.QBTMud.Test.Components.Options
 
         public void Dispose()
         {
-            _target.Dispose();
+            _context.Dispose();
         }
     }
 }

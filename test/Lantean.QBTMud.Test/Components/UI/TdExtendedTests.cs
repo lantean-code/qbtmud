@@ -1,6 +1,4 @@
-using System;
-using System.Threading.Tasks;
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -11,11 +9,11 @@ namespace Lantean.QBTMud.Test.Components.UI
 {
     public sealed class TdExtendedTests : IDisposable
     {
-        private readonly ComponentTestContext _target;
+        private readonly ComponentTestContext _context;
 
         public TdExtendedTests()
         {
-            _target = new ComponentTestContext();
+            _context = new ComponentTestContext();
         }
 
         [Fact]
@@ -23,7 +21,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var invoked = false;
 
-            var cut = _target.RenderComponent<TdExtended>(parameters =>
+            var target = _context.RenderComponent<TdExtended>(parameters =>
             {
                 parameters.Add(p => p.OnLongPress, EventCallback.Factory.Create<LongPressEventArgs>(this, _ =>
                 {
@@ -33,7 +31,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "ChildContent"));
             });
 
-            await cut.Find("td").TriggerEventAsync("onlongpress", new LongPressEventArgs());
+            await target.Find("td").TriggerEventAsync("onlongpress", new LongPressEventArgs());
 
             invoked.Should().BeTrue();
         }
@@ -43,7 +41,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var invoked = false;
 
-            var cut = _target.RenderComponent<TdExtended>(parameters =>
+            var target = _context.RenderComponent<TdExtended>(parameters =>
             {
                 parameters.Add(p => p.OnContextMenu, EventCallback.Factory.Create<MouseEventArgs>(this, _ =>
                 {
@@ -53,14 +51,14 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "ChildContent"));
             });
 
-            await cut.Find("td").TriggerEventAsync("oncontextmenu", new MouseEventArgs());
+            await target.Find("td").TriggerEventAsync("oncontextmenu", new MouseEventArgs());
 
             invoked.Should().BeTrue();
         }
 
         public void Dispose()
         {
-            _target.Dispose();
+            _context.Dispose();
         }
     }
 }

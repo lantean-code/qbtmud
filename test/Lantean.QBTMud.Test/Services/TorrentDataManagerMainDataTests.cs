@@ -2,20 +2,25 @@
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
-using Client = Lantean.QBitTorrentClient.Models;
+using ClientModels = Lantean.QBitTorrentClient.Models;
 
 namespace Lantean.QBTMud.Test.Services
 {
     public class TorrentDataManagerMainDataTests
     {
-        private readonly TorrentDataManager _target = new TorrentDataManager();
+        private readonly TorrentDataManager _target;
+
+        public TorrentDataManagerMainDataTests()
+        {
+            _target = new TorrentDataManager();
+        }
 
         // -------------------- CreateMainData --------------------
 
         [Fact]
         public void GIVEN_EmptyInput_WHEN_CreateMainData_THEN_EmptyCollections_And_DefaultStates()
         {
-            var client = new Client.MainData(
+            var client = new ClientModels.MainData(
                 responseId: 1,
                 fullUpdate: true,
                 torrents: null,
@@ -62,7 +67,7 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_PopulatedInput_WHEN_CreateMainData_THEN_Maps_All_And_Builds_FilterStates()
         {
             var hash = "abc123";
-            var clientTorrent = new Client.Torrent
+            var clientTorrent = new ClientModels.Torrent
             {
                 Name = "Movie A",
                 State = "downloading",
@@ -118,16 +123,16 @@ namespace Lantean.QBTMud.Test.Services
                 DownloadPath = "/dl",
                 RootPath = "/root",
                 IsPrivate = false,
-                ShareLimitAction = Client.ShareLimitAction.Default,
+                ShareLimitAction = ClientModels.ShareLimitAction.Default,
                 Comment = "c"
             };
 
-            var torrents = new Dictionary<string, Client.Torrent> { [hash] = clientTorrent };
+            var torrents = new Dictionary<string, ClientModels.Torrent> { [hash] = clientTorrent };
 
-            var categories = new Dictionary<string, Client.Category>
+            var categories = new Dictionary<string, ClientModels.Category>
             {
-                ["Movies"] = new Client.Category("Movies", "/movies", downloadPath: null),
-                ["Movies/HD"] = new Client.Category("Movies/HD", "/movies/hd", downloadPath: null)
+                ["Movies"] = new ClientModels.Category("Movies", "/movies", downloadPath: null),
+                ["Movies/HD"] = new ClientModels.Category("Movies/HD", "/movies/hd", downloadPath: null)
             };
 
             var trackers = new Dictionary<string, IReadOnlyList<string>>
@@ -135,7 +140,7 @@ namespace Lantean.QBTMud.Test.Services
                 ["udp://tracker1"] = new List<string> { hash }
             };
 
-            var clientServer = new Client.ServerState(
+            var clientServer = new ClientModels.ServerState(
                 allTimeDownloaded: 10,
                 allTimeUploaded: 20,
                 averageTimeQueue: 30,
@@ -164,7 +169,7 @@ namespace Lantean.QBTMud.Test.Services
                 lastExternalAddressV4: "1.2.3.4",
                 lastExternalAddressV6: "2001::1");
 
-            var client = new Client.MainData(
+            var client = new ClientModels.MainData(
                 responseId: 2,
                 fullUpdate: true,
                 torrents: torrents,
@@ -218,7 +223,7 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_ExistingData_WHEN_Merge_Removals_THEN_ItemsAndStateAreRemoved_And_Flagged()
         {
             var hash = "h1";
-            var clientTorrent = new Client.Torrent
+            var clientTorrent = new ClientModels.Torrent
             {
                 Name = "T1",
                 State = "downloading",
@@ -228,21 +233,21 @@ namespace Lantean.QBTMud.Test.Services
                 Tracker = "udp://t1",
                 TrackersCount = 1
             };
-            var client = new Client.MainData(
+            var client = new ClientModels.MainData(
                 responseId: 1,
                 fullUpdate: true,
-                torrents: new Dictionary<string, Client.Torrent> { [hash] = clientTorrent },
+                torrents: new Dictionary<string, ClientModels.Torrent> { [hash] = clientTorrent },
                 torrentsRemoved: null,
-                categories: new Dictionary<string, Client.Category>
+                categories: new Dictionary<string, ClientModels.Category>
                 {
-                    ["Cat/Sub"] = new Client.Category("Cat/Sub", "/cat/sub", null)
+                    ["Cat/Sub"] = new ClientModels.Category("Cat/Sub", "/cat/sub", null)
                 },
                 categoriesRemoved: null,
                 tags: new[] { "x", "y" },
                 tagsRemoved: null,
                 trackers: new Dictionary<string, IReadOnlyList<string>> { ["udp://t1"] = new List<string> { hash } },
                 trackersRemoved: null,
-                serverState: new Client.ServerState(
+                serverState: new ClientModels.ServerState(
                     allTimeDownloaded: 0,
                     allTimeUploaded: 0,
                     averageTimeQueue: 0,
@@ -272,7 +277,7 @@ namespace Lantean.QBTMud.Test.Services
                     lastExternalAddressV6: "6"));
             var existing = _target.CreateMainData(client);
 
-            var delta = new Client.MainData(
+            var delta = new ClientModels.MainData(
                 responseId: 2,
                 fullUpdate: false,
                 torrents: null,
@@ -311,11 +316,11 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_EmptyExisting_WHEN_Merge_Additions_THEN_TorrentAndStatesAdded_And_Flagged()
         {
             var existing = _target.CreateMainData(
-                new Client.MainData(0, true, null, null, null, null, null, null,
+                new ClientModels.MainData(0, true, null, null, null, null, null, null,
                     new Dictionary<string, IReadOnlyList<string>>(), null, null));
 
             var hash = "z1";
-            var addTorrent = new Client.Torrent
+            var addTorrent = new ClientModels.Torrent
             {
                 Name = "Zed",
                 State = "downloading",
@@ -326,12 +331,12 @@ namespace Lantean.QBTMud.Test.Services
                 TrackersCount = 0
             };
 
-            var delta = new Client.MainData(
+            var delta = new ClientModels.MainData(
                 responseId: 1,
                 fullUpdate: false,
-                torrents: new Dictionary<string, Client.Torrent> { [hash] = addTorrent },
+                torrents: new Dictionary<string, ClientModels.Torrent> { [hash] = addTorrent },
                 torrentsRemoved: null,
-                categories: new Dictionary<string, Client.Category>(),
+                categories: new Dictionary<string, ClientModels.Category>(),
                 categoriesRemoved: null,
                 tags: Array.Empty<string>(),
                 tagsRemoved: null,
@@ -365,12 +370,12 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_ExistingTorrent_WHEN_UpdateCategoryTagsStateTrackerAndSpeed_THEN_FilterSetsAdjusted()
         {
             var hash = "h2";
-            var start = new Client.MainData(
+            var start = new ClientModels.MainData(
                 responseId: 1,
                 fullUpdate: true,
-                torrents: new Dictionary<string, Client.Torrent>
+                torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = new Client.Torrent
+                    [hash] = new ClientModels.Torrent
                     {
                         Name = "A",
                         State = "stalledDL",
@@ -382,13 +387,13 @@ namespace Lantean.QBTMud.Test.Services
                     }
                 },
                 torrentsRemoved: null,
-                categories: new Dictionary<string, Client.Category>(),
+                categories: new Dictionary<string, ClientModels.Category>(),
                 categoriesRemoved: null,
                 tags: Array.Empty<string>(),
                 tagsRemoved: null,
                 trackers: new Dictionary<string, IReadOnlyList<string>>(),
                 trackersRemoved: null,
-                serverState: new Client.ServerState(
+                serverState: new ClientModels.ServerState(
                     allTimeDownloaded: 0,
                     allTimeUploaded: 0,
                     averageTimeQueue: 0,
@@ -418,12 +423,12 @@ namespace Lantean.QBTMud.Test.Services
 
             list.ServerState.UseSubcategories = true;
 
-            var update = new Client.MainData(
+            var update = new ClientModels.MainData(
                 responseId: 2,
                 fullUpdate: false,
-                torrents: new Dictionary<string, Client.Torrent>
+                torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = new Client.Torrent
+                    [hash] = new ClientModels.Torrent
                     {
                         Name = "A",
                         State = "stalledDL",
@@ -435,7 +440,7 @@ namespace Lantean.QBTMud.Test.Services
                     }
                 },
                 torrentsRemoved: null,
-                categories: new Dictionary<string, Client.Category>(),
+                categories: new Dictionary<string, ClientModels.Category>(),
                 categoriesRemoved: null,
                 tags: new[] { " x\tgarbage " },
                 tagsRemoved: null,
@@ -468,12 +473,12 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_ExistingTrackersAndCategories_WHEN_SequenceChangesOrSavePathChanges_THEN_DataChangedTrue()
         {
             var h = "a";
-            var start = new Client.MainData(
+            var start = new ClientModels.MainData(
                 responseId: 1,
                 fullUpdate: true,
-                torrents: new Dictionary<string, Client.Torrent> { [h] = new Client.Torrent { Name = "N", State = "downloading", UploadSpeed = 0, Category = "C", Tags = Array.Empty<string>(), Tracker = "t1", TrackersCount = 1 } },
+                torrents: new Dictionary<string, ClientModels.Torrent> { [h] = new ClientModels.Torrent { Name = "N", State = "downloading", UploadSpeed = 0, Category = "C", Tags = Array.Empty<string>(), Tracker = "t1", TrackersCount = 1 } },
                 torrentsRemoved: null,
-                categories: new Dictionary<string, Client.Category> { ["C"] = new Client.Category("C", "/a", null) },
+                categories: new Dictionary<string, ClientModels.Category> { ["C"] = new ClientModels.Category("C", "/a", null) },
                 categoriesRemoved: null,
                 tags: Array.Empty<string>(),
                 tagsRemoved: null,
@@ -482,12 +487,12 @@ namespace Lantean.QBTMud.Test.Services
                 serverState: null);
             var list = _target.CreateMainData(start);
 
-            var delta = new Client.MainData(
+            var delta = new ClientModels.MainData(
                 responseId: 2,
                 fullUpdate: false,
                 torrents: null,
                 torrentsRemoved: null,
-                categories: new Dictionary<string, Client.Category> { ["C"] = new Client.Category("C", "/b", null) },
+                categories: new Dictionary<string, ClientModels.Category> { ["C"] = new ClientModels.Category("C", "/b", null) },
                 categoriesRemoved: null,
                 tags: null,
                 tagsRemoved: null,
@@ -500,7 +505,7 @@ namespace Lantean.QBTMud.Test.Services
             changed.Should().BeTrue();
             filterChanged.Should().BeFalse();
 
-            list.Trackers["t1"].Should().Equal(new[] { h, "other" });
+            list.Trackers["t1"].Should().Equal(h, "other");
             list.Categories["C"].SavePath.Should().Be("/b");
         }
 
@@ -510,9 +515,9 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_Existing_WHEN_ServerStateFieldsChange_THEN_DataChangedTrue_And_ValuesUpdated()
         {
             var existing = _target.CreateMainData(
-                new Client.MainData(0, true, null, null, null, null, null, null,
+                new ClientModels.MainData(0, true, null, null, null, null, null, null,
                     new Dictionary<string, IReadOnlyList<string>>(), null,
-                    new Client.ServerState(
+                    new ClientModels.ServerState(
                         allTimeDownloaded: 1, allTimeUploaded: 2, averageTimeQueue: 3,
                         connectionStatus: "connected", dHTNodes: 4, downloadInfoData: 5,
                         downloadInfoSpeed: 6, downloadRateLimit: 7, freeSpaceOnDisk: 8, globalRatio: 9.0f,
@@ -522,14 +527,14 @@ namespace Lantean.QBTMud.Test.Services
                         useAltSpeedLimits: false, useSubcategories: false, writeCacheOverload: 21.0f,
                         lastExternalAddressV4: "4", lastExternalAddressV6: "6")));
 
-            var delta = new Client.MainData(
+            var delta = new ClientModels.MainData(
                 responseId: 1,
                 fullUpdate: false,
                 torrents: null, torrentsRemoved: null,
                 categories: null, categoriesRemoved: null,
                 tags: null, tagsRemoved: null,
                 trackers: new Dictionary<string, IReadOnlyList<string>>(), trackersRemoved: null,
-                serverState: new Client.ServerState(
+                serverState: new ClientModels.ServerState(
                     allTimeDownloaded: 100, allTimeUploaded: 200, averageTimeQueue: 300,
                     connectionStatus: "stopped", dHTNodes: 40, downloadInfoData: 50,
                     downloadInfoSpeed: 60, downloadRateLimit: 70, freeSpaceOnDisk: 80, globalRatio: 1.5f,

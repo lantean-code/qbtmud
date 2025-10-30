@@ -1,6 +1,4 @@
-using System;
-using AwesomeAssertions;
-using Bunit;
+﻿using AwesomeAssertions;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 
@@ -8,27 +6,27 @@ namespace Lantean.QBTMud.Test.Components.UI
 {
     public sealed class NonRenderingTests : IDisposable
     {
-        private readonly ComponentTestContext _target;
+        private readonly ComponentTestContext _context;
 
         public NonRenderingTests()
         {
-            _target = new ComponentTestContext();
+            _context = new ComponentTestContext();
         }
 
         [Fact]
         public void GIVEN_ChildContent_WHEN_Rendered_THEN_ShouldRenderChildContent()
         {
-            var cut = _target.RenderComponent<NonRendering>(parameters =>
+            var target = _context.RenderComponent<NonRendering>(parameters =>
             {
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "ChildContent"));
             });
 
-            cut.Markup.Should().Be("ChildContent");
+            target.Markup.Should().Be("ChildContent");
         }
 
         public void Dispose()
         {
-            _target.Dispose();
+            _context.Dispose();
         }
     }
 }
