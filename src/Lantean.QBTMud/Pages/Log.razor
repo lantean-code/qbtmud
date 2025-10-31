@@ -1,6 +1,12 @@
 @page "/log"
 @layout OtherLayout
 
+<MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
+    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" Disabled="@(ContextMenuItem is null)" OnClick="CopyContextMenuItem">Copy entry</MudMenuItem>
+    <MudDivider />
+    <MudMenuItem Icon="@Icons.Material.Filled.Clear" IconColor="Color.Error" Disabled="@(!HasResults)" OnClick="ClearResults">Clear view</MudMenuItem>
+</MudMenu>
+
 <div class="content-panel">
     <div class="content-panel__toolbar">
         <MudToolBar Gutters="false" Dense="true">
@@ -44,6 +50,8 @@
                       MultiSelection="false"
                       SelectOnRowClick="false"
                       RowClassFunc="RowClass"
+                      OnTableDataContextMenu="TableDataContextMenu"
+                      OnTableDataLongPress="TableDataLongPress"
                       Class="search-list content-panel__table" />
     </div>
 </div>

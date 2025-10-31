@@ -3,9 +3,12 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using System;
 using System.Net;
 
 namespace Lantean.QBTMud.Pages
@@ -30,6 +33,12 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
+        [Inject]
+        protected IClipboardService ClipboardService { get; set; } = default!;
+
+        [Inject]
+        protected ISnackbar Snackbar { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -40,6 +49,12 @@ namespace Lantean.QBTMud.Pages
         protected MudSelect<string>? CategoryMudSelect { get; set; }
 
         protected DynamicTable<QBitTorrentClient.Models.Log>? Table { get; set; }
+
+        protected QBitTorrentClient.Models.Log? ContextMenuItem { get; set; }
+
+        protected MudMenu? ContextMenu { get; set; }
+
+        protected bool HasResults => Results is not null && Results.Count > 0;
 
         protected override async Task OnInitializedAsync()
         {
@@ -104,6 +119,55 @@ namespace Lantean.QBTMud.Pages
             return $"log-{log.Type.ToString().ToLower()}";
         }
 
+        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<QBitTorrentClient.Models.Log> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
+        }
+
+        protected Task TableDataLongPress(TableDataLongPressEventArgs<QBitTorrentClient.Models.Log> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
+        }
+
+        private async Task ShowContextMenu(QBitTorrentClient.Models.Log? item, EventArgs eventArgs)
+        {
+            ContextMenuItem = item;
+
+            if (ContextMenu is null)
+            {
+                return;
+            }
+
+            var normalizedEventArgs = eventArgs.NormalizeForContextMenu();
+
+            await ContextMenu.OpenMenuAsync(normalizedEventArgs);
+        }
+
+        protected async Task CopyContextMenuItem()
+        {
+            var message = ContextMenuItem?.Message;
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            await ClipboardService.WriteToClipboard(message);
+            Snackbar?.Add("Log entry copied to clipboard.", Severity.Info);
+        }
+
+        protected async Task ClearResults()
+        {
+            if (!HasResults)
+            {
+                return;
+            }
+
+            Results!.Clear();
+            ContextMenuItem = null;
+            Snackbar?.Add("Log view cleared.", Severity.Info);
+            await InvokeAsync(StateHasChanged);
+        }
+
         public async ValueTask DisposeAsync()
         {
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
@@ -117,7 +181,7 @@ namespace Lantean.QBTMud.Pages
             {
                 if (disposing)
                 {
-                    _timerCancellationToken.Cancel();
+                    await _timerCancellationToken.CancelAsync();
                     _timerCancellationToken.Dispose();
 
                     await Task.CompletedTask;
