@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -34,7 +34,7 @@ namespace Lantean.QBTMud.Components
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -106,7 +106,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var peers = await DialogService.ShowAddPeersDialog();
+            var peers = await DialogWorkflow.ShowAddPeersDialog();
             if (peers is null || peers.Count == 0)
             {
                 return;
@@ -240,7 +240,7 @@ namespace Lantean.QBTMud.Components
             {
                 if (disposing)
                 {
-                    _timerCancellationToken.Cancel();
+                    await _timerCancellationToken.CancelAsync();
                     _timerCancellationToken.Dispose();
 
                     await Task.CompletedTask;

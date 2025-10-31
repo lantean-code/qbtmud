@@ -1,13 +1,10 @@
-﻿using Blazored.LocalStorage;
+using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Lantean.QBTMud.Components
 {
@@ -41,7 +38,7 @@ namespace Lantean.QBTMud.Components
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -288,7 +285,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task AddCategory()
         {
-            await DialogService.InvokeAddCategoryDialog(ApiClient);
+            await DialogWorkflow.InvokeAddCategoryDialog();
         }
 
         protected async Task EditCategory()
@@ -298,7 +295,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await DialogService.InvokeEditCategoryDialog(ApiClient, ContextMenuCategory);
+            await DialogWorkflow.InvokeEditCategoryDialog(ContextMenuCategory);
         }
 
         protected async Task RemoveCategory()
@@ -356,7 +353,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var tags = await DialogService.ShowAddTagsDialog();
+            var tags = await DialogWorkflow.ShowAddTagsDialog();
             if (tags is null || tags.Count == 0)
             {
                 return;
@@ -405,7 +402,7 @@ namespace Lantean.QBTMud.Components
         {
             var torrents = GetAffectedTorrentHashes(type);
 
-            await DialogService.InvokeDeleteTorrentDialog(ApiClient, Preferences?.ConfirmTorrentDeletion == true, [.. torrents]);
+            await DialogWorkflow.InvokeDeleteTorrentDialog(Preferences?.ConfirmTorrentDeletion == true, [.. torrents]);
         }
 
         private Dictionary<string, int> GetTags()

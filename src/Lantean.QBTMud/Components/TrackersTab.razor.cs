@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
@@ -33,7 +33,7 @@ namespace Lantean.QBTMud.Components
         public int RefreshInterval { get; set; }
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
@@ -165,13 +165,13 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var trackers = await DialogService.ShowAddTrackersDialog();
+            var trackers = await DialogWorkflow.ShowAddTrackersDialog();
             if (trackers is null || trackers.Count == 0)
             {
                 return;
             }
 
-            await ApiClient.AddTrackersToTorrent(trackers, hashes: new[] { Hash });
+            await ApiClient.AddTrackersToTorrent(trackers, hashes: Hash);
         }
 
         protected Task EditTrackerToolbar()
@@ -191,7 +191,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await DialogService.InvokeStringFieldDialog("Edit Tracker", "Tracker URL", tracker.Url, async (value) => await ApiClient.EditTracker(Hash, tracker.Url, value));
+            await DialogWorkflow.InvokeStringFieldDialog("Edit Tracker", "Tracker URL", tracker.Url, async value => await ApiClient.EditTracker(Hash, tracker.Url, value));
         }
 
         protected Task RemoveTrackerToolbar()
@@ -211,7 +211,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveTrackers([tracker.Url], hashes: new[] { Hash });
+            await ApiClient.RemoveTrackers([tracker.Url], hashes: Hash);
         }
 
         protected Task CopyTrackerUrlToolbar()
@@ -286,7 +286,7 @@ namespace Lantean.QBTMud.Components
             {
                 if (disposing)
                 {
-                    _timerCancellationToken.Cancel();
+                    await _timerCancellationToken.CancelAsync();
                     _timerCancellationToken.Dispose();
 
                     await Task.CompletedTask;

@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -11,7 +11,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -102,7 +102,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected async Task AddTag()
         {
-            var addedTags = await DialogService.ShowAddTagsDialog();
+            var addedTags = await DialogWorkflow.ShowAddTagsDialog();
 
             if (addedTags is null || addedTags.Count == 0)
             {

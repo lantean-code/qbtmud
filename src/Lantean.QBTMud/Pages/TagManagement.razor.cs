@@ -1,4 +1,4 @@
-﻿using Blazored.LocalStorage;
+using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Pages
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -55,7 +55,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task AddTag()
         {
-            var tag = await DialogService.ShowStringFieldDialog("Add Tag", "Tag", null);
+            var tag = await DialogWorkflow.ShowStringFieldDialog("Add Tag", "Tag", null);
 
             if (tag is null)
             {

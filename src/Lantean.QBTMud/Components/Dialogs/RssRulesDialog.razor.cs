@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -14,6 +14,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [Inject]
         protected IDialogService DialogService { get; set; } = default!;
+
+        [Inject]
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -194,7 +197,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected async Task AddRule()
         {
-            var ruleName = await DialogService.ShowStringFieldDialog("Add Rule", "Name", null);
+            var ruleName = await DialogWorkflow.ShowStringFieldDialog("Add Rule", "Name", null);
             if (ruleName is null)
             {
                 return;

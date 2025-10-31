@@ -1,10 +1,9 @@
-﻿using Blazored.LocalStorage;
+using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -16,7 +15,7 @@ namespace Lantean.QBTMud.Pages
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -55,7 +54,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task AddCategory()
         {
-            await DialogService.InvokeAddCategoryDialog(ApiClient);
+            await DialogWorkflow.InvokeAddCategoryDialog();
         }
 
         protected async Task EditCategory(string? name)
@@ -64,7 +63,7 @@ namespace Lantean.QBTMud.Pages
             {
                 return;
             }
-            await DialogService.InvokeEditCategoryDialog(ApiClient, name);
+            await DialogWorkflow.InvokeEditCategoryDialog(name);
         }
 
         protected IEnumerable<ColumnDefinition<Category>> Columns => GetColumnDefinitions();

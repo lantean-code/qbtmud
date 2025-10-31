@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -21,7 +21,7 @@ namespace Lantean.QBTMud.Pages
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -208,12 +208,12 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task AddTorrentFile()
         {
-            await DialogService.InvokeAddTorrentFileDialog(ApiClient, Snackbar);
+            await DialogWorkflow.InvokeAddTorrentFileDialog();
         }
 
         protected async Task AddTorrentLink()
         {
-            await DialogService.InvokeAddTorrentLinkDialog(ApiClient, Snackbar);
+            await DialogWorkflow.InvokeAddTorrentLinkDialog();
         }
 
         protected void RowClick(TableRowClickEventArgs<Torrent> eventArgs)

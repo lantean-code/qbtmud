@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Helpers;
@@ -12,7 +12,7 @@ namespace Lantean.QBTMud.Pages
     public partial class Options
     {
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
@@ -71,7 +71,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            var exit = await DialogService.ShowConfirmDialog(
+            var exit = await DialogWorkflow.ShowConfirmDialog(
                 "Unsaved Changed",
                 "Are you sure you want to leave without saving your changes?");
 

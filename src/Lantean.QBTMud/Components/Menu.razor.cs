@@ -1,8 +1,7 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Helpers;
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
 
 namespace Lantean.QBTMud.Components
 {
@@ -16,7 +15,7 @@ namespace Lantean.QBTMud.Components
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -45,7 +44,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task Logout()
         {
-            await DialogService.ShowConfirmDialog("Logout?", "Are you sure you want to logout?", async () =>
+            await DialogWorkflow.ShowConfirmDialog("Logout?", "Are you sure you want to logout?", async () =>
             {
                 await ApiClient.Logout();
 
@@ -55,7 +54,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task Exit()
         {
-            await DialogService.ShowConfirmDialog("Quit?", "Are you sure you want to exit qBittorrent?", ApiClient.Shutdown);
+            await DialogWorkflow.ShowConfirmDialog("Quit?", "Are you sure you want to exit qBittorrent?", ApiClient.Shutdown);
         }
     }
 }

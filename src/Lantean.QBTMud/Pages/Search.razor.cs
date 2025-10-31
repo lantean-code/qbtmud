@@ -1,4 +1,4 @@
-﻿using Blazored.LocalStorage;
+using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
@@ -50,7 +50,7 @@ namespace Lantean.QBTMud.Pages
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -257,7 +257,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task ManagePlugins()
         {
-            var updated = await DialogService.ShowSearchPluginsDialog();
+            var updated = await DialogWorkflow.ShowSearchPluginsDialog();
             if (!updated)
             {
                 return;
@@ -1066,7 +1066,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            await DialogService.InvokeAddTorrentLinkDialog(ApiClient, Snackbar, result.FileUrl);
+            await DialogWorkflow.InvokeAddTorrentLinkDialog(result.FileUrl);
         }
 
         protected async Task HandleResultContextMenu(TableDataContextMenuEventArgs<SearchResult> eventArgs)

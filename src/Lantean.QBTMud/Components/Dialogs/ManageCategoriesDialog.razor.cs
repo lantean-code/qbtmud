@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -11,7 +11,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -106,7 +106,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected async Task AddCategory()
         {
-            var addedCategoy = await DialogService.InvokeAddCategoryDialog(ApiClient);
+            var addedCategoy = await DialogWorkflow.InvokeAddCategoryDialog();
             if (addedCategoy is null)
             {
                 return;

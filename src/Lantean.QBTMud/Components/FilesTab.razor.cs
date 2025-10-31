@@ -1,6 +1,5 @@
-﻿using Blazored.LocalStorage;
+using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
-using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Helpers;
@@ -44,7 +43,7 @@ namespace Lantean.QBTMud.Components
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
@@ -90,20 +89,16 @@ namespace Lantean.QBTMud.Components
 
         protected async Task ShowFilterDialog()
         {
-            var parameters = new DialogParameters
+            var filterDefinitions = await DialogWorkflow.ShowFilterOptionsDialog(_filterDefinitions);
+            if (filterDefinitions is null)
             {
-                { nameof(FilterOptionsDialog<ContentItem>.FilterDefinitions), _filterDefinitions },
-            };
-
-            var result = await DialogService.ShowAsync<FilterOptionsDialog<ContentItem>>("Filters", parameters, DialogHelper.FormDialogOptions);
-
-            var dialogResult = await result.Result;
-            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
-            {
+                _filterDefinitions = null;
+                Filters = null;
+                MarkFilesDirty();
                 return;
             }
 
-            _filterDefinitions = (List<PropertyFilterDefinition<ContentItem>>?)dialogResult.Data;
+            _filterDefinitions = filterDefinitions;
             if (_filterDefinitions is null)
             {
                 Filters = null;
@@ -335,11 +330,11 @@ namespace Lantean.QBTMud.Components
             {
                 var contentItem = contentItems[0];
                 var name = contentItem.GetFileName();
-                await DialogService.InvokeStringFieldDialog("Rename", "New name", name, async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
+                await DialogWorkflow.InvokeStringFieldDialog("Rename", "New name", name, async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
             }
             else
             {
-                await DialogService.InvokeRenameFilesDialog(Hash);
+                await DialogWorkflow.InvokeRenameFilesDialog(Hash);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
@@ -24,6 +24,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         public IDialogService DialogService { get; set; } = default!;
+
+        [Inject]
+        public IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         public ISnackbar Snackbar { get; set; } = default!;
@@ -163,7 +166,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task Remove()
         {
-            var deleted = await DialogService.InvokeDeleteTorrentDialog(ApiClient, Preferences?.ConfirmTorrentDeletion == true, Hashes.ToArray());
+            var deleted = await DialogWorkflow.InvokeDeleteTorrentDialog(Preferences?.ConfirmTorrentDeletion == true, Hashes.ToArray());
 
             if (deleted)
             {
@@ -179,7 +182,7 @@ namespace Lantean.QBTMud.Components
                 savePath = torrent.SavePath;
             }
 
-            await DialogService.InvokeStringFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
+            await DialogWorkflow.InvokeStringFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
         }
 
         protected async Task Rename()
@@ -190,12 +193,12 @@ namespace Lantean.QBTMud.Components
             {
                 name = torrent.Name;
             }
-            await DialogService.InvokeStringFieldDialog("Rename", "Name", name, v => ApiClient.SetTorrentName(v, hash));
+            await DialogWorkflow.InvokeStringFieldDialog("Rename", "Name", name, v => ApiClient.SetTorrentName(v, hash));
         }
 
         protected async Task RenameFiles()
         {
-            await DialogService.InvokeRenameFilesDialog(Hashes.First());
+            await DialogWorkflow.InvokeRenameFilesDialog(Hashes.First());
         }
 
         protected async Task SetCategory(string category)
@@ -220,7 +223,7 @@ namespace Lantean.QBTMud.Components
                 downloadLimit = torrent.DownloadLimit;
             }
 
-            await DialogService.InvokeDownloadRateDialog(ApiClient, downloadLimit, Hashes);
+            await DialogWorkflow.InvokeDownloadRateDialog(downloadLimit, Hashes);
         }
 
         protected async Task LimitUploadRate()
@@ -232,7 +235,7 @@ namespace Lantean.QBTMud.Components
                 uploadLimit = torrent.UploadLimit;
             }
 
-            await DialogService.InvokeUploadRateDialog(ApiClient, uploadLimit, Hashes);
+            await DialogWorkflow.InvokeUploadRateDialog(uploadLimit, Hashes);
         }
 
         protected async Task LimitShareRatio()
@@ -246,7 +249,7 @@ namespace Lantean.QBTMud.Components
                 }
             }
 
-            await DialogService.InvokeShareRatioDialog(ApiClient, torrents);
+            await DialogWorkflow.InvokeShareRatioDialog(torrents);
         }
 
         protected async Task ToggleSuperSeeding()
@@ -259,7 +262,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task ForceRecheck()
         {
-            await DialogService.ForceRecheckAsync(ApiClient, Hashes, Preferences?.ConfirmTorrentRecheck == true);
+            await DialogWorkflow.ForceRecheckAsync(Hashes, Preferences?.ConfirmTorrentRecheck == true);
         }
 
         protected async Task ForceReannounce()
@@ -318,7 +321,7 @@ namespace Lantean.QBTMud.Components
                 { nameof(ManageTagsDialog.Hashes), Hashes }
             };
 
-            await DialogService.ShowAsync<ManageTagsDialog>("Manage Torrent Tags", parameters, DialogHelper.FormDialogOptions);
+            await DialogService.ShowAsync<ManageTagsDialog>("Manage Torrent Tags", parameters, global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
         }
 
         protected async Task ShowCategories()
@@ -328,7 +331,7 @@ namespace Lantean.QBTMud.Components
                 { nameof(ManageCategoriesDialog.Hashes), Hashes }
             };
 
-            await DialogService.ShowAsync<ManageCategoriesDialog>("Manage Torrent Categories", parameters, DialogHelper.FormDialogOptions);
+            await DialogService.ShowAsync<ManageCategoriesDialog>("Manage Torrent Categories", parameters, global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
         }
 
         protected async Task DownloadSequential()
@@ -343,7 +346,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task SubMenuTouch(UIAction action)
         {
-            await DialogService.ShowSubMenu(Hashes, action, Torrents, Preferences);
+            await DialogWorkflow.ShowSubMenu(Hashes, action, Torrents, Preferences);
         }
 
         private IEnumerable<Torrent> GetTorrents()
@@ -512,23 +515,23 @@ namespace Lantean.QBTMud.Components
                 actionStates["start"] = ActionState.Hidden;
             }
 
-                if (actionStates.TryGetValue("start", out ActionState? startActionState))
-                {
-                    startActionState.TextOverride = "Start";
-                }
-                else
-                {
-                    actionStates["start"] = new ActionState { TextOverride = "Start" };
-                }
+            if (actionStates.TryGetValue("start", out ActionState? startActionState))
+            {
+                startActionState.TextOverride = "Start";
+            }
+            else
+            {
+                actionStates["start"] = new ActionState { TextOverride = "Start" };
+            }
 
-                if (actionStates.TryGetValue("pause", out ActionState? stopActionState))
-                {
-                    stopActionState.TextOverride = "Stop";
-                }
-                else
-                {
-                    actionStates["pause"] = new ActionState { TextOverride = "Stop" };
-                }
+            if (actionStates.TryGetValue("pause", out ActionState? stopActionState))
+            {
+                stopActionState.TextOverride = "Stop";
+            }
+            else
+            {
+                actionStates["pause"] = new ActionState { TextOverride = "Stop" };
+            }
 
             if (!allAreAutoTmm && thereAreAutoTmm)
             {

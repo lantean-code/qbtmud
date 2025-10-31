@@ -1,5 +1,4 @@
-﻿using Lantean.QBTMud.Components.Dialogs;
-using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Components.Dialogs;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -23,7 +22,7 @@ namespace Lantean.QBTMud.Components
                 { nameof(ExceptionDialog.Exception), exception }
             };
 
-            await DialogService.ShowAsync<ExceptionDialog>("Error Details", parameters, DialogHelper.FormDialogOptions);
+            await DialogService.ShowAsync<ExceptionDialog>("Error Details", parameters, global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
         }
 
         protected async Task ClearErrors()

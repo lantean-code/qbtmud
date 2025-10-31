@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -18,7 +18,7 @@ namespace Lantean.QBTMud.Pages
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IDialogService DialogService { get; set; } = default!;
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -123,7 +123,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task DownloadItem(string? url)
         {
-            await DialogService.InvokeAddTorrentLinkDialog(ApiClient, Snackbar, url);
+            await DialogWorkflow.InvokeAddTorrentLinkDialog(url);
         }
 
         protected void NavigateBack()
@@ -133,7 +133,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task NewSubscription()
         {
-            var url = await DialogService.ShowStringFieldDialog("RSS Feed URL", "Feed URL", null);
+            var url = await DialogWorkflow.ShowStringFieldDialog("RSS Feed URL", "Feed URL", null);
             if (url is not null)
             {
                 await ApiClient.AddRssFeed(url);
@@ -190,7 +190,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task EditDownloadRules()
         {
-            await DialogService.InvokeRssRulesDialog();
+            await DialogWorkflow.InvokeRssRulesDialog();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -1,5 +1,6 @@
-﻿using Blazored.LocalStorage;
+using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -39,6 +40,7 @@ namespace Lantean.QBTMud
                 .AddLogger<HttpLogger>(wrapHandlersPipeline: true);
 
             builder.Services.AddScoped<IApiClient, ApiClient>();
+            builder.Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
 
             builder.Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
             builder.Services.AddSingleton<IPeerDataManager, PeerDataManager>();

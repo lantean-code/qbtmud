@@ -1,8 +1,7 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
-using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
@@ -109,10 +108,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_EditRulesButton_WHEN_Clicked_THEN_ShouldOpenDialog()
         {
-            var dialogMock = _context.AddSingletonMock<IDialogService>();
-            dialogMock
-                .Setup(s => s.ShowAsync<RssRulesDialog>(It.IsAny<string>(), It.IsAny<DialogOptions>()))
-                .ReturnsAsync(Mock.Of<IDialogReference>());
+            var workflowMock = _context.AddSingletonMock<IDialogWorkflow>();
+            workflowMock
+                .Setup(w => w.InvokeRssRulesDialog())
+                .Returns(Task.CompletedTask);
 
             _context.RenderComponent<MudPopoverProvider>();
 
@@ -130,7 +129,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 .Single(b => b.TextContent.Contains("Edit auto downloading rules", StringComparison.Ordinal));
             await target.InvokeAsync(() => button.Click());
 
-            dialogMock.Verify(s => s.ShowAsync<RssRulesDialog>("Edit Rss Auto Downloading Rules", DialogHelper.FullScreenDialogOptions), Times.Once);
+            workflowMock.Verify(w => w.InvokeRssRulesDialog(), Times.Once);
         }
 
         [Fact]

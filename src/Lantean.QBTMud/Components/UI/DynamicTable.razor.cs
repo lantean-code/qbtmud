@@ -1,4 +1,4 @@
-﻿using Blazored.LocalStorage;
+using Blazored.LocalStorage;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
@@ -19,7 +19,7 @@ namespace Lantean.QBTMud.Components.UI
         public ILocalStorageService LocalStorage { get; set; } = default!;
 
         [Inject]
-        public IDialogService DialogService { get; set; } = default!;
+        public IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -381,7 +381,7 @@ namespace Lantean.QBTMud.Components.UI
 
         public async Task ShowColumnOptionsDialog()
         {
-            var result = await DialogService.ShowColumnsOptionsDialog(ColumnDefinitions.Where(ColumnFilter).ToList(), SelectedColumns, _columnWidths, _columnOrder);
+            var result = await DialogWorkflow.ShowColumnsOptionsDialog(ColumnDefinitions.Where(ColumnFilter).ToList(), SelectedColumns, _columnWidths, _columnOrder);
 
             if (result == default)
             {

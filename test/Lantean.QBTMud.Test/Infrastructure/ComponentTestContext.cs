@@ -1,14 +1,15 @@
-﻿using System.Net;
 using Blazored.LocalStorage;
 using Bunit;
 using Bunit.TestDoubles;
 using Lantean.QBitTorrentClient;
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using MudBlazor;
 using MudBlazor.Services;
+using System.Net;
 
 namespace Lantean.QBTMud.Test.Infrastructure
 {
@@ -62,6 +63,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
             // App services
             Services.AddScoped<ApiClient>();
             Services.AddScoped<IApiClient, ApiClient>();
+            Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
 
             Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
             Services.AddSingleton<IPeerDataManager, PeerDataManager>();
