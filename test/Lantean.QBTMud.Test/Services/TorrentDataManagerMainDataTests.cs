@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;

@@ -1,5 +1,3 @@
-﻿using System.Collections.Generic;
-
 namespace Lantean.QBTMud.Models
 {
     public class SearchForm

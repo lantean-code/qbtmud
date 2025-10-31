@@ -1,7 +1,7 @@
-using System.Reflection;
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using System.Reflection;
 
 namespace Lantean.QBTMud.Test.Services
 {

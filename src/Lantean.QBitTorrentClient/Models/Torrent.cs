@@ -1,6 +1,4 @@
-﻿using Lantean.QBitTorrentClient.Converters;
-using System;
-using System.Collections.Generic;
+using Lantean.QBitTorrentClient.Converters;
 using System.Text.Json.Serialization;
 
 namespace Lantean.QBitTorrentClient.Models

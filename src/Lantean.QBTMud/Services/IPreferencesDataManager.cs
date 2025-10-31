@@ -1,4 +1,4 @@
-﻿namespace Lantean.QBTMud.Services
+namespace Lantean.QBTMud.Services
 {
     public interface IPreferencesDataManager
     {

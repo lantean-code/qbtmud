@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using QbtPeer = Lantean.QBitTorrentClient.Models.Peer;

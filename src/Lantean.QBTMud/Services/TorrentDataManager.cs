@@ -1,4 +1,4 @@
-﻿using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 
@@ -1258,7 +1258,6 @@ namespace Lantean.QBTMud.Services
                 filterChanged = true;
             }
 
-            
             if (torrent.TrackersCount.HasValue && existingTorrent.TrackersCount != torrent.TrackersCount.Value)
             {
                 existingTorrent.TrackersCount = torrent.TrackersCount.Value;

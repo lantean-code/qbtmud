@@ -1,4 +1,4 @@
-﻿namespace Lantean.QBTMud.Components.Options
+namespace Lantean.QBTMud.Components.Options
 {
     public partial class BitTorrentOptions : Options
     {

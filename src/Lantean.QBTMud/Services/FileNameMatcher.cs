@@ -1,4 +1,4 @@
-﻿using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Models;
 using System.Text;
 using System.Text.RegularExpressions;
 

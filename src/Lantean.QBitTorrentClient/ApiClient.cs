@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient.Models;
+using Lantean.QBitTorrentClient.Models;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;

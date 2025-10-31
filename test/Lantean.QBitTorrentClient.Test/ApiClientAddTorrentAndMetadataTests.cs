@@ -1,7 +1,7 @@
-﻿using System.Net;
-using System.Text;
 using AwesomeAssertions;
 using Lantean.QBitTorrentClient.Models;
+using System.Net;
+using System.Text;
 
 namespace Lantean.QBitTorrentClient.Test
 {

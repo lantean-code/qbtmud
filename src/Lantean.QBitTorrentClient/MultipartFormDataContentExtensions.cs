@@ -1,4 +1,4 @@
-﻿namespace Lantean.QBitTorrentClient
+namespace Lantean.QBitTorrentClient
 {
     public static class MultipartFormDataContentExtensions
     {

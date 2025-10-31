@@ -1,4 +1,4 @@
-﻿namespace Lantean.QBTMud
+namespace Lantean.QBTMud
 {
     public class LongPressEventArgs : EventArgs
     {

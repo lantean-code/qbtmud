@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace Lantean.QBTMud.Models
 {

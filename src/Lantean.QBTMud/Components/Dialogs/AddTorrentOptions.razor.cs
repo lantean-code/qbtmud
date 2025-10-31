@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;

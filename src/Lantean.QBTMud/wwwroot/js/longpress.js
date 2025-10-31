@@ -1,4 +1,4 @@
-﻿///*!
+///*!
 // * long-press-event - v2.4.6
 // * Pure JavaScript long-press-event
 // * https://github.com/john-doherty/long-press-event

@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Microsoft.AspNetCore.Components;
 
 namespace Lantean.QBTMud.Pages

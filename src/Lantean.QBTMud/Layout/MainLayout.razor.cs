@@ -1,4 +1,4 @@
-﻿using Blazored.LocalStorage;
+using Blazored.LocalStorage;
 using Lantean.QBTMud.Components;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;

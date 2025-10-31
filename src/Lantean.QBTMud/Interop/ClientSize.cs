@@ -1,4 +1,4 @@
-﻿namespace Lantean.QBTMud.Interop
+namespace Lantean.QBTMud.Interop
 {
     public class ClientSize
     {

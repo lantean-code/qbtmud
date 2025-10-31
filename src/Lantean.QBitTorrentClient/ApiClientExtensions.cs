@@ -1,4 +1,3 @@
-﻿using System.Linq;
 using Lantean.QBitTorrentClient.Models;
 
 namespace Lantean.QBitTorrentClient

@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;

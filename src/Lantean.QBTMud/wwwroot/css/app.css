@@ -1,4 +1,4 @@
-﻿#blazor-error-ui {
+#blazor-error-ui {
     background: lightyellow;
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
@@ -100,9 +100,9 @@ code {
     box-sizing: border-box;
 }
 
-.search-filters .mud-card-content {
-    padding: 1.25rem;
-}
+    .search-filters .mud-card-content {
+        padding: 1.25rem;
+    }
 
 .search-form-toggle {
     color: var(--mud-palette-text-primary);
@@ -118,9 +118,9 @@ code {
     gap: 0.5rem;
 }
 
-.search-actions__stack .mud-button {
-    min-width: 140px;
-}
+    .search-actions__stack .mud-button {
+        min-width: 140px;
+    }
 
 .search-actions__results {
     white-space: nowrap;
@@ -141,14 +141,14 @@ code {
         margin-right: 0.5rem !important;
     }
 
-    .search-filters .mud-card-content {
-        padding: 0.75rem;
-    }
+        .search-filters .mud-card-content {
+            padding: 0.75rem;
+        }
 
-    .search-filters .mud-button {
-        width: 100%;
-        min-width: 0;
-    }
+        .search-filters .mud-button {
+            width: 100%;
+            min-width: 0;
+        }
 }
 
 .background-blur {
@@ -250,10 +250,10 @@ code {
     min-height: 0;
 }
 
-.content-panel__table .mud-table-container {
-    flex: 1 1 auto;
-    height: 100%;
-}
+    .content-panel__table .mud-table-container {
+        flex: 1 1 auto;
+        height: 100%;
+    }
 
 .content-panel__body > .mud-tabs {
     flex: 1 1 auto;
@@ -375,6 +375,7 @@ td .folder-button {
 .mud-popover .mud-divider:last-child {
     display: none;
 }
+
 :root {
     --app-viewport-height: 100vh;
     --app-status-bar-height: 35px;
@@ -474,7 +475,6 @@ body {
     }
 }
 
-
 /* Tab bar gap fix */
 .content-panel__body > .mud-tabs .mud-tabs-tabbar {
     margin-bottom: 0;
@@ -482,27 +482,28 @@ body {
     border-bottom-width: 0;
 }
 
-.content-panel__body > .mud-tabs .mud-tabs-tabbar .mud-tabs-wrapper {
-    margin-bottom: -1px;
-}
-.content-panel__body > .mud-tabs .mud-tabs-tabbar .mud-tabs-slider {
-    bottom: 0;
-}
+    .content-panel__body > .mud-tabs .mud-tabs-tabbar .mud-tabs-wrapper {
+        margin-bottom: -1px;
+    }
+
+    .content-panel__body > .mud-tabs .mud-tabs-tabbar .mud-tabs-slider {
+        bottom: 0;
+    }
 
 .content-panel__container > .mud-tabs {
     flex: 0 0 auto;
 }
 
-.content-panel__container > .mud-tabs .mud-tabs-tabbar {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom-width: 0;
-}
+    .content-panel__container > .mud-tabs .mud-tabs-tabbar {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom-width: 0;
+    }
 
-.content-panel__container > .mud-tabs .mud-tabs-tabbar .mud-tabs-wrapper {
-    margin-bottom: -1px;
-}
+        .content-panel__container > .mud-tabs .mud-tabs-tabbar .mud-tabs-wrapper {
+            margin-bottom: -1px;
+        }
 
-.content-panel__container > .mud-tabs .mud-tabs-tabbar .mud-tabs-slider {
-    bottom: 0;
-}
+        .content-panel__container > .mud-tabs .mud-tabs-tabbar .mud-tabs-slider {
+            bottom: 0;
+        }

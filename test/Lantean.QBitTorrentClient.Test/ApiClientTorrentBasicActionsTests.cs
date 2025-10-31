@@ -1,5 +1,5 @@
-﻿using System.Net;
 using AwesomeAssertions;
+using System.Net;
 
 namespace Lantean.QBitTorrentClient.Test
 {

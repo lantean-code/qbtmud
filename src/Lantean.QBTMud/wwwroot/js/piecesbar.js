@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Bittorrent Client using Qt and libtorrent.
  * Copyright (C) 2022  Jesse Smick <jesse.smick@gmail.com>
  *

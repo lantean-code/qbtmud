@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Components.UI

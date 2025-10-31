@@ -1,6 +1,6 @@
-﻿using System.Net;
-using System.Text.Json;
 using AwesomeAssertions;
+using System.Net;
+using System.Text.Json;
 
 namespace Lantean.QBitTorrentClient.Test
 {

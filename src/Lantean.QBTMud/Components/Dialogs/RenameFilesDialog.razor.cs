@@ -1,4 +1,4 @@
-﻿using Blazored.LocalStorage;
+using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;

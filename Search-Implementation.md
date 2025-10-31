@@ -1,4 +1,4 @@
-﻿# Search Feature Parity Plan
+# Search Feature Parity Plan
 
 ## Objectives
 - Bring the `qbt-mud` search experience to functional parity with the qBittorrent v5 WebUI, including multi-job handling, advanced result filtering, and plugin management.

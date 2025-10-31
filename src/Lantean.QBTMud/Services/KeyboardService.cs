@@ -1,4 +1,4 @@
-﻿using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Models;
 using Microsoft.JSInterop;
 using System.Collections.Concurrent;
 

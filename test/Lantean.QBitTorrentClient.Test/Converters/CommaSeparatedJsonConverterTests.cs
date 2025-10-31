@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
 using AwesomeAssertions;
 using Lantean.QBitTorrentClient.Converters;
+using System.Text.Json;
 
 namespace Lantean.QBitTorrentClient.Test.Converters
 {
@@ -49,7 +49,7 @@ namespace Lantean.QBitTorrentClient.Test.Converters
 
             var act = () => JsonSerializer.Deserialize<IReadOnlyList<string>>(json, options)!;
 
-            var ex =  act.Should().Throw<JsonException>();
+            var ex = act.Should().Throw<JsonException>();
             ex.Which.Message.Should().Be("Must be of type string.");
         }
 

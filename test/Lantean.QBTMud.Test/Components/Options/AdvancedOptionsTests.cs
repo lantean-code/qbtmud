@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
@@ -50,7 +50,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             resumeSelect.Instance.Value.Should().Be("SQLite");
 
             FindNumeric(target, "Physical memory (RAM) usage limit (applied if libtorrent >= 2.0)").Instance.Value.Should().Be(512);
-            FindSelect<string>(target,"Network interface").Instance.Value.Should().Be("eth0");
+            FindSelect<string>(target, "Network interface").Instance.Value.Should().Be("eth0");
             FindSelect<string>(target, "Optional IP address to bind to").Instance.Value.Should().Be("10.0.0.2");
             FindNumeric(target, "Save resume data interval").Instance.Value.Should().Be(15);
             FindNumeric(target, ".torrent file size limit").Instance.Value.Should().Be(150);

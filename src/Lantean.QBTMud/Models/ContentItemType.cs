@@ -1,4 +1,4 @@
-﻿namespace Lantean.QBTMud.Models
+namespace Lantean.QBTMud.Models
 {
     public enum ContentItemType
     {

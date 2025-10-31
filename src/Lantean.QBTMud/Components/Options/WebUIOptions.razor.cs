@@ -1,4 +1,4 @@
-﻿using Lantean.QBTMud.Interop;
+using Lantean.QBTMud.Interop;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 

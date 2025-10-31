@@ -1,4 +1,4 @@
-﻿if (window.qbt === undefined) {
+if (window.qbt === undefined) {
     window.qbt = {};
 }
 

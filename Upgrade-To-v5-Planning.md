@@ -1,4 +1,4 @@
-﻿# Upgrade to qBittorrent WebUI v5 – UI Alignment Plan
+# Upgrade to qBittorrent WebUI v5 – UI Alignment Plan
 
 ## ~~Torrent List Filtering~~
 - ~~**Regex toggle & field selector**: Introduce the regex checkbox and the "Filter by" (Name/Save path) select found in v5. Update `FilterState`/`LoggedInLayout` to carry both values, wire them to `TorrentList`’s toolbar, and validate invalid patterns gracefully.~~

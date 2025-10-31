@@ -1,6 +1,5 @@
-﻿using System;
-using System.Text.RegularExpressions;
 using Lantean.QBTMud.Models;
+using System.Text.RegularExpressions;
 
 namespace Lantean.QBTMud.Helpers
 {

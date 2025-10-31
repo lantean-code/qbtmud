@@ -1,4 +1,4 @@
-﻿namespace Lantean.QBitTorrentClient
+namespace Lantean.QBitTorrentClient
 {
     internal static class HttpClientExtensions
     {

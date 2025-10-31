@@ -1,4 +1,4 @@
-﻿namespace Lantean.QBitTorrentClient.Models
+namespace Lantean.QBitTorrentClient.Models
 {
     public readonly struct PeerId(string host, int port)
     {

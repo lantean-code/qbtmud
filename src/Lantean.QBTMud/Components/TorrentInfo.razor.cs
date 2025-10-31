@@ -1,4 +1,4 @@
-﻿using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 
 namespace Lantean.QBTMud.Components

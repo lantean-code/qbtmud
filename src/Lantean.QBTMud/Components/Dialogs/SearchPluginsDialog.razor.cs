@@ -1,5 +1,3 @@
-﻿using System.Linq;
-using System.Net.Http;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Microsoft.AspNetCore.Components;

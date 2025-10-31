@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
 using AwesomeAssertions;
 using Lantean.QBitTorrentClient.Converters;
+using System.Text.Json;
 
 namespace Lantean.QBitTorrentClient.Test.Converters
 {

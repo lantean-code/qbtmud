@@ -1,4 +1,4 @@
-﻿export function beforeWebStart(options, extensions) {
+export function beforeWebStart(options, extensions) {
     beforeStart(options, extensions);
 }
 

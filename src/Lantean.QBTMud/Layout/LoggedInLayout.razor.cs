@@ -1,4 +1,4 @@
-﻿using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;

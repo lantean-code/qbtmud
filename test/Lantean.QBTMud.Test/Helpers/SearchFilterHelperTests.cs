@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
 using AwesomeAssertions;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
-using Xunit;
 
 namespace Lantean.QBTMud.Test.Helpers
 {

@@ -1,4 +1,4 @@
-﻿# bUnit Coverage Expansion Plan
+# bUnit Coverage Expansion Plan
 
 ## Objectives
 - Establish a modern component testing stack for `Lantean.QBTMud` using bUnit + xUnit so critical UI flows can be validated without manual regression.

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Http.Logging;
+using Microsoft.Extensions.Http.Logging;
 
 namespace Lantean.QBTMud.Services
 {

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.WebAssembly.Http;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
 namespace Lantean.QBTMud.Services
 {

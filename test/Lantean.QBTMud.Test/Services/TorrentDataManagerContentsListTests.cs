@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -130,7 +130,6 @@ namespace Lantean.QBTMud.Test.Services
             ab.Index.Should().BeLessThan(10);
             ab.Index.Should().BeLessThan(a.Index);
         }
-
 
         [Fact]
         public void GIVEN_AllChildrenDoNotDownload_WHEN_CreateContentsList_THEN_FolderProgressAndAvailabilityAreZero_AndPriorityDND()

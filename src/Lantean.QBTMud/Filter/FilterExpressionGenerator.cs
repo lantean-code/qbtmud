@@ -1,4 +1,4 @@
-﻿using MudBlazor;
+using MudBlazor;
 using System.Linq.Expressions;
 
 namespace Lantean.QBTMud.Filter
