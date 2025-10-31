@@ -1,9 +1,11 @@
+using Blazored.LocalStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Layout
@@ -11,6 +13,7 @@ namespace Lantean.QBTMud.Layout
     public partial class LoggedInLayout : IDisposable
     {
         private readonly bool _refreshEnabled = true;
+        private const string PendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
 
         private int _requestId = 0;
         private bool _disposedValue;
@@ -29,6 +32,12 @@ namespace Lantean.QBTMud.Layout
 
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
+
+        [Inject]
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -72,6 +81,20 @@ namespace Lantean.QBTMud.Layout
 
         private bool _torrentsDirty = true;
         private int _torrentsVersion;
+        private string? _lastProcessedDownloadToken;
+        private string? _pendingDownloadLink;
+        private bool _navigationHandlerAttached;
+
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+
+            if (!_navigationHandlerAttached)
+            {
+                NavigationManager.LocationChanged += NavigationManagerOnLocationChanged;
+                _navigationHandlerAttached = true;
+            }
+        }
 
         private IReadOnlyList<Torrent> GetTorrents()
         {
@@ -105,8 +128,13 @@ namespace Lantean.QBTMud.Layout
 
         protected override async Task OnInitializedAsync()
         {
+            await RestorePendingDownloadAsync();
+            CaptureDownloadFromUri(NavigationManager.Uri);
+            await PersistPendingDownloadAsync();
+
             if (!await ApiClient.CheckAuthState())
             {
+                await PersistPendingDownloadAsync();
                 NavigationManager.NavigateTo("/login");
                 return;
             }
@@ -125,6 +153,8 @@ namespace Lantean.QBTMud.Layout
             IsAuthenticated = true;
 
             Menu?.ShowMenu(Preferences);
+
+            await TryProcessPendingDownloadAsync();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -193,6 +223,181 @@ namespace Lantean.QBTMud.Layout
                         }
                     }
                 }
+            }
+        }
+
+        private void NavigationManagerOnLocationChanged(object? sender, LocationChangedEventArgs e)
+        {
+            CaptureDownloadFromUri(e.Location);
+            _ = PersistPendingDownloadAsync();
+
+            if (IsAuthenticated)
+            {
+                _ = TryProcessPendingDownloadAsync();
+            }
+        }
+
+        private void CaptureDownloadFromUri(string? uri)
+        {
+            if (string.IsNullOrWhiteSpace(uri))
+            {
+                return;
+            }
+
+            var downloadValue = ExtractDownloadParameter(uri);
+            if (string.IsNullOrWhiteSpace(downloadValue))
+            {
+                return;
+            }
+
+            var decoded = Uri.UnescapeDataString(downloadValue);
+
+            if (string.Equals(_lastProcessedDownloadToken, decoded, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _pendingDownloadLink = decoded;
+        }
+
+        private static string? ExtractDownloadParameter(string uri)
+        {
+            if (!Uri.TryCreate(uri, UriKind.Absolute, out var absoluteUri))
+            {
+                return null;
+            }
+
+            var fragmentValue = ExtractDownloadParameterFromComponent(absoluteUri.Fragment);
+            if (!string.IsNullOrWhiteSpace(fragmentValue))
+            {
+                return fragmentValue;
+            }
+
+            var queryValue = ExtractDownloadParameterFromComponent(absoluteUri.Query);
+            if (!string.IsNullOrWhiteSpace(queryValue))
+            {
+                return queryValue;
+            }
+
+            return null;
+        }
+
+        private static string? ExtractDownloadParameterFromComponent(string component)
+        {
+            if (string.IsNullOrEmpty(component))
+            {
+                return null;
+            }
+
+            var trimmed = component.StartsWith("#", StringComparison.Ordinal) || component.StartsWith("?", StringComparison.Ordinal)
+                ? component[1..]
+                : component;
+
+            if (string.IsNullOrEmpty(trimmed))
+            {
+                return null;
+            }
+
+            var segments = trimmed.Split('&', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var segment in segments)
+            {
+                var separatorIndex = segment.IndexOf('=');
+                string key;
+                string value;
+                if (separatorIndex >= 0)
+                {
+                    key = segment[..separatorIndex];
+                    value = separatorIndex < segment.Length - 1 ? segment[(separatorIndex + 1)..] : string.Empty;
+                }
+                else
+                {
+                    key = segment;
+                    value = string.Empty;
+                }
+
+                if (string.Equals(key, "download", StringComparison.OrdinalIgnoreCase))
+                {
+                    return value;
+                }
+            }
+
+            return null;
+        }
+
+        private async Task RestorePendingDownloadAsync()
+        {
+            if (_pendingDownloadLink is not null)
+            {
+                return;
+            }
+
+            if (LocalStorage is null)
+            {
+                return;
+            }
+
+            var stored = await LocalStorage.GetItemAsync<string>(PendingDownloadStorageKey);
+            if (string.IsNullOrWhiteSpace(stored))
+            {
+                return;
+            }
+
+            _pendingDownloadLink = stored;
+        }
+
+        private async Task PersistPendingDownloadAsync()
+        {
+            if (LocalStorage is null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_pendingDownloadLink))
+            {
+                await LocalStorage.RemoveItemAsync(PendingDownloadStorageKey);
+                return;
+            }
+
+            await LocalStorage.SetItemAsync(PendingDownloadStorageKey, _pendingDownloadLink);
+        }
+
+        private async Task TryProcessPendingDownloadAsync()
+        {
+            if (!IsAuthenticated || string.IsNullOrWhiteSpace(_pendingDownloadLink))
+            {
+                return;
+            }
+
+            var magnet = _pendingDownloadLink;
+
+            if (string.Equals(_lastProcessedDownloadToken, magnet, StringComparison.Ordinal))
+            {
+                await ClearPendingDownloadAsync();
+                NavigationManager.NavigateTo("/", true);
+                return;
+            }
+
+            try
+            {
+                await InvokeAsync(() => DialogWorkflow.InvokeAddTorrentLinkDialog(magnet));
+                _lastProcessedDownloadToken = magnet;
+                await ClearPendingDownloadAsync();
+                NavigationManager.NavigateTo("/", true);
+            }
+            catch
+            {
+                _pendingDownloadLink = magnet;
+                await PersistPendingDownloadAsync();
+                throw;
+            }
+        }
+
+        private async Task ClearPendingDownloadAsync()
+        {
+            _pendingDownloadLink = null;
+            if (LocalStorage is not null)
+            {
+                await LocalStorage.RemoveItemAsync(PendingDownloadStorageKey);
             }
         }
 
@@ -364,6 +569,12 @@ namespace Lantean.QBTMud.Layout
                 {
                     _timerCancellationToken.Cancel();
                     _timerCancellationToken.Dispose();
+
+                    if (_navigationHandlerAttached)
+                    {
+                        NavigationManager.LocationChanged -= NavigationManagerOnLocationChanged;
+                        _navigationHandlerAttached = false;
+                    }
                 }
 
                 _disposedValue = true;

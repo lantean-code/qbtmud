@@ -34,6 +34,11 @@ namespace Lantean.QBTMud.Interop
             await runtime.InvokeVoidAsync("qbt.open", url, target);
         }
 
+        public static async Task<MagnetRegistrationResult> RegisterMagnetHandler(this IJSRuntime runtime, string templateUrl)
+        {
+            return await runtime.InvokeAsync<MagnetRegistrationResult>("qbt.registerMagnetHandler", templateUrl);
+        }
+
         public static async Task RenderPiecesBar(this IJSRuntime runtime, string id, string hash, int[] pieces, string? downloadingColor = null, string? haveColor = null, string? borderColor = null)
         {
             await runtime.InvokeVoidAsync("qbt.renderPiecesBar", id, hash, pieces, downloadingColor, haveColor, borderColor);

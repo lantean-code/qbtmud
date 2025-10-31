@@ -47,6 +47,27 @@ window.qbt.open = (url, target) => {
     window.open(url, target);
 }
 
+window.qbt.registerMagnetHandler = (templateUrl) => {
+    if (typeof navigator.registerProtocolHandler !== "function") {
+        if (window.location.protocol !== "https:") {
+            return { status: "insecure" };
+        }
+
+        return { status: "unsupported" };
+    }
+
+    try {
+        navigator.registerProtocolHandler("magnet", templateUrl, "qBittorrent WebUI magnet handler");
+        return { status: "success" };
+    } catch (error) {
+        if (window.location.protocol !== "https:") {
+            return { status: "insecure" };
+        }
+
+        return { status: "error", message: error?.message ?? null };
+    }
+};
+
 window.qbt.renderPiecesBar = (id, hash, pieces, downloadingColor, haveColor, borderColor) => {
     const parentElement = document.getElementById(id);
     if (window.qbt.hash !== hash) {
