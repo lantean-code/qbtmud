@@ -4,9 +4,12 @@ using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using System;
 using System.Net;
 
 namespace Lantean.QBTMud.Pages
@@ -31,6 +34,12 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
+        [Inject]
+        protected IClipboardService ClipboardService { get; set; } = default!;
+
+        [Inject]
+        protected ISnackbar Snackbar { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -41,6 +50,12 @@ namespace Lantean.QBTMud.Pages
         protected MudSelect<string>? CategoryMudSelect { get; set; }
 
         protected DynamicTable<PeerLog>? Table { get; set; }
+
+        protected PeerLog? ContextMenuItem { get; set; }
+
+        protected MudMenu? ContextMenu { get; set; }
+
+        protected bool HasResults => Results is not null && Results.Count > 0;
 
         protected override async Task OnInitializedAsync()
         {
@@ -98,6 +113,55 @@ namespace Lantean.QBTMud.Pages
         protected static string RowClass(PeerLog log, int index)
         {
             return $"log-{(log.Blocked ? "critical" : "normal")}";
+        }
+
+        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<PeerLog> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
+        }
+
+        protected Task TableDataLongPress(TableDataLongPressEventArgs<PeerLog> eventArgs)
+        {
+            return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
+        }
+
+        private async Task ShowContextMenu(PeerLog? item, EventArgs eventArgs)
+        {
+            ContextMenuItem = item;
+
+            if (ContextMenu is null)
+            {
+                return;
+            }
+
+            var normalizedEventArgs = eventArgs.NormalizeForContextMenu();
+
+            await ContextMenu.OpenMenuAsync(normalizedEventArgs);
+        }
+
+        protected async Task CopyContextMenuItem()
+        {
+            var address = ContextMenuItem?.IPAddress;
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                return;
+            }
+
+            await ClipboardService.WriteToClipboard(address);
+            Snackbar?.Add("Address copied to clipboard.", Severity.Info);
+        }
+
+        protected async Task ClearResults()
+        {
+            if (!HasResults)
+            {
+                return;
+            }
+
+            Results!.Clear();
+            ContextMenuItem = null;
+            Snackbar?.Add("Blocked IP list cleared.", Severity.Info);
+            await InvokeAsync(StateHasChanged);
         }
 
         public async ValueTask DisposeAsync()
