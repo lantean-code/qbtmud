@@ -128,6 +128,10 @@
                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense>
                                         <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="Download">Download</MudMenuItem>
                                         <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="Download">Open torrent URL</MudMenuItem>
+                                        @if (!string.IsNullOrWhiteSpace(Article.Link))
+                                        {
+                                            <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link">Open news URL</MudMenuItem>
+                                        }
                                     </MudMenu>
                                 </CardHeaderActions>
                             </MudCardHeader>
