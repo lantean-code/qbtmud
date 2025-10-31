@@ -4,12 +4,15 @@ using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System.Net.Http;
 
 namespace Lantean.QBTMud.Components
 {
     public partial class ApplicationActions
     {
         private List<UIAction>? _actions;
+        private bool _startAllInProgress;
+        private bool _stopAllInProgress;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -20,12 +23,18 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
+        [Inject]
+        protected ISnackbar Snackbar { get; set; } = default!;
+
         [Parameter]
         public bool IsMenu { get; set; }
 
         [Parameter]
         [EditorRequired]
         public Preferences? Preferences { get; set; }
+
+        [CascadingParameter]
+        public Lantean.QBTMud.Models.MainData? MainData { get; set; }
 
         protected IEnumerable<UIAction> Actions => GetActions();
 
@@ -89,6 +98,64 @@ namespace Lantean.QBTMud.Components
         protected async Task Exit()
         {
             await DialogWorkflow.ShowConfirmDialog("Quit?", "Are you sure you want to exit qBittorrent?", ApiClient.Shutdown);
+        }
+
+        protected async Task StartAllTorrents()
+        {
+            if (_startAllInProgress)
+            {
+                return;
+            }
+
+            if (MainData?.LostConnection == true)
+            {
+                Snackbar?.Add("qBittorrent client is not reachable.", Severity.Warning);
+                return;
+            }
+
+            _startAllInProgress = true;
+            try
+            {
+                await ApiClient.StartAllTorrents();
+                Snackbar?.Add("All torrents started.", Severity.Success);
+            }
+            catch (HttpRequestException exception)
+            {
+                Snackbar?.Add($"Unable to start torrents: {exception.Message}", Severity.Error);
+            }
+            finally
+            {
+                _startAllInProgress = false;
+            }
+        }
+
+        protected async Task StopAllTorrents()
+        {
+            if (_stopAllInProgress)
+            {
+                return;
+            }
+
+            if (MainData?.LostConnection == true)
+            {
+                Snackbar?.Add("qBittorrent client is not reachable.", Severity.Warning);
+                return;
+            }
+
+            _stopAllInProgress = true;
+            try
+            {
+                await ApiClient.StopAllTorrents();
+                Snackbar?.Add("All torrents stopped.", Severity.Info);
+            }
+            catch (HttpRequestException exception)
+            {
+                Snackbar?.Add($"Unable to stop torrents: {exception.Message}", Severity.Error);
+            }
+            finally
+            {
+                _stopAllInProgress = false;
+            }
         }
     }
 }

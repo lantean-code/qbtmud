@@ -48,9 +48,15 @@
                                                                         var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);
                                                                     }
                                                                     <MudIcon Class="mx-1 mb-1" Icon="@icon" Color="@colour" Title="@MainData?.ServerState.ConnectionStatus" />
-                                                                    <MudDivider Vertical="true" Class="" />
-                                                                    <MudIcon Class="mx-1 mb-1" Icon="@Icons.Material.Outlined.Speed" Color="@((MainData?.ServerState.UseAltSpeedLimits ?? false) ? Color.Error : Color.Success)" />
-                                                                    <MudDivider Vertical="true" Class="" />
+                                                                    <MudDivider Vertical="true" />
+                                                                    <MudTooltip Text="Toggle alternative speed limits">
+                                                                        <MudIconButton Class="mx-1 mb-1"
+                                                                                       Icon="@Icons.Material.Outlined.Speed"
+                                                                                       Color="@((MainData?.ServerState.UseAltSpeedLimits ?? false) ? Color.Error : Color.Success)"
+                                                                                       OnClick="ToggleAlternativeSpeedLimits"
+                                                                                       Disabled="_toggleAltSpeedLimitsInProgress" />
+                                                                    </MudTooltip>
+                                                                    <MudDivider Vertical="true" />
                                                                     <MudIcon Class="ml-1 mb-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Success" />
                                                                     <MudText Class="mr-1 mb-1">
                                                                         @DisplayHelpers.Size(MainData?.ServerState.DownloadInfoSpeed, null, "/s")

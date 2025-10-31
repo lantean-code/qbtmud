@@ -16,6 +16,7 @@ namespace Lantean.QBTMud.Layout
         private bool _disposedValue;
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private int _refreshInterval = 1500;
+        private bool _toggleAltSpeedLimitsInProgress;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -25,6 +26,9 @@ namespace Lantean.QBTMud.Layout
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [Inject]
+        protected ISnackbar Snackbar { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -304,6 +308,38 @@ namespace Lantean.QBTMud.Layout
             UseRegexSearch = state.UseRegex;
             IsRegexValid = state.IsRegexValid;
             MarkTorrentsDirty();
+        }
+
+        protected async Task ToggleAlternativeSpeedLimits()
+        {
+            if (_toggleAltSpeedLimitsInProgress)
+            {
+                return;
+            }
+
+            _toggleAltSpeedLimitsInProgress = true;
+            try
+            {
+                await ApiClient.ToggleAlternativeSpeedLimits();
+                var isEnabled = await ApiClient.GetAlternativeSpeedLimitsState();
+
+                if (MainData is not null)
+                {
+                    MainData.ServerState.UseAltSpeedLimits = isEnabled;
+                }
+
+                Snackbar?.Add(isEnabled ? "Alternative speed limits enabled." : "Alternative speed limits disabled.", Severity.Info);
+            }
+            catch (HttpRequestException exception)
+            {
+                Snackbar?.Add($"Unable to toggle alternative speed limits: {exception.Message}", Severity.Error);
+            }
+            finally
+            {
+                _toggleAltSpeedLimitsInProgress = false;
+            }
+
+            await InvokeAsync(StateHasChanged);
         }
 
         private void MarkTorrentsDirty()
