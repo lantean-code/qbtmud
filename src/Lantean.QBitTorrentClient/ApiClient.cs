@@ -1416,6 +1416,18 @@ namespace Lantean.QBitTorrentClient
             await ThrowIfNotSuccessfulStatusCode(response);
         }
 
+        public async Task SetRssFeedUrl(string path, string url)
+        {
+            var content = new FormUrlEncodedBuilder()
+                .Add("path", path)
+                .Add("url", url)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("rss/setFeedURL", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+        }
+
         public async Task<IReadOnlyDictionary<string, RssItem>> GetAllRssItems(bool? withData = null)
         {
             var content = new QueryBuilder()

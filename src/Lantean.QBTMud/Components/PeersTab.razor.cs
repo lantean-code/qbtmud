@@ -42,6 +42,12 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected IPeerDataManager PeerDataManager { get; set; } = default!;
 
+        [Inject]
+        protected IClipboardService ClipboardService { get; set; } = default!;
+
+        [Inject]
+        protected ISnackbar Snackbar { get; set; } = default!;
+
         protected PeerList? PeerList { get; set; }
 
         protected IEnumerable<Peer> Peers => PeerList?.Peers.Select(p => p.Value) ?? [];
@@ -125,6 +131,11 @@ namespace Lantean.QBTMud.Components
             return BanPeer(ContextMenuItem);
         }
 
+        protected async Task CopyPeerContextMenu()
+        {
+            await CopyPeer(ContextMenuItem);
+        }
+
         private async Task BanPeer(Peer? peer)
         {
             if (Hash is null || peer is null)
@@ -142,6 +153,17 @@ namespace Lantean.QBTMud.Components
         protected Task TableDataLongPress(TableDataLongPressEventArgs<Peer> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
+        }
+
+        private async Task CopyPeer(Peer? peer)
+        {
+            if (peer is null)
+            {
+                return;
+            }
+
+            await ClipboardService.WriteToClipboard($"{peer.IPAddress}:{peer.Port}");
+            Snackbar.Add("Peer copied to clipboard.", Severity.Info);
         }
 
         protected async Task ShowContextMenu(Peer? peer, EventArgs eventArgs)

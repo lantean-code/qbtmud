@@ -7,10 +7,19 @@ namespace Lantean.QBTMud.Services
         public RssList CreateRssList(IReadOnlyDictionary<string, QBitTorrentClient.Models.RssItem> rssItems)
         {
             var articles = new List<RssArticle>();
-            var feeds = new Dictionary<string, RssFeed>();
+            var feeds = new Dictionary<string, RssFeed>(StringComparer.Ordinal);
             foreach (var (key, rssItem) in rssItems)
             {
-                feeds.Add(key, new RssFeed(rssItem.HasError, rssItem.IsLoading, rssItem.LastBuildDate, rssItem.Title, rssItem.Uid, rssItem.Url));
+                feeds.Add(
+                    key,
+                    new RssFeed(
+                        rssItem.HasError,
+                        rssItem.IsLoading,
+                        rssItem.LastBuildDate,
+                        rssItem.Title,
+                        rssItem.Uid,
+                        rssItem.Url,
+                        key));
                 if (rssItem.Articles is null)
                 {
                     continue;

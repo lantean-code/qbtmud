@@ -130,6 +130,35 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_PathAndUrl_WHEN_SetRssFeedUrl_THEN_ShouldPOSTBoth()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.RequestUri!.ToString().Should().Be("http://localhost/rss/setFeedURL");
+                var decoded = Uri.UnescapeDataString(await req.Content!.ReadAsStringAsync(ct));
+                decoded.Should().Be("path=/feeds/tv&url=http://example.com");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
+
+            await _target.SetRssFeedUrl("/feeds/tv", "http://example.com");
+        }
+
+        [Fact]
+        public async Task GIVEN_NonSuccess_WHEN_SetRssFeedUrl_THEN_ShouldThrow()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("bad")
+            });
+
+            var act = async () => await _target.SetRssFeedUrl("/feeds/tv", "http://example.com");
+
+            var ex = await act.Should().ThrowAsync<HttpRequestException>();
+            ex.Which.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            ex.Which.Message.Should().Be("bad");
+        }
+
+        [Fact]
         public async Task GIVEN_NoFlag_WHEN_GetAllRssItems_THEN_ShouldGETWithoutQueryAndReturnDict()
         {
             _handler.Responder = (req, _) =>

@@ -5,7 +5,7 @@ namespace Lantean.QBTMud.Helpers
 {
     public interface IDialogWorkflow
     {
-        Task<string?> InvokeAddCategoryDialog();
+        Task<string?> InvokeAddCategoryDialog(string? initialCategory = null, string? initialSavePath = null);
 
         Task InvokeAddTorrentFileDialog();
 

@@ -221,6 +221,8 @@ namespace Lantean.QBitTorrentClient
 
         Task MoveRssItem(string itemPath, string destPath);
 
+        Task SetRssFeedUrl(string path, string url);
+
         Task<IReadOnlyDictionary<string, RssItem>> GetAllRssItems(bool? withData = null);
 
         Task MarkRssItemAsRead(string itemPath, string? articleId = null);

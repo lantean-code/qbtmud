@@ -7,6 +7,7 @@
     @if (IsCategoryTarget)
     {
         <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="EditCategory">Edit category</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="AddSubcategory">Add subcategory</MudMenuItem>
         <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveCategory">Remove category</MudMenuItem>
     }
     <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedCategories">Remove unused categories</MudMenuItem>

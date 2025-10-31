@@ -2,6 +2,7 @@
     <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddPeer">Add peer</MudMenuItem>
     @if (ContextMenuItem is not null)
     {
+        <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="CopyPeerContextMenu">Copy IP:port</MudMenuItem>
         <MudMenuItem Icon="@Icons.Material.Filled.DisabledByDefault" IconColor="Color.Info" OnClick="BanPeerContextMenu">Ban peer</MudMenuItem>
     }
 </MudMenu>

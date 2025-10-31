@@ -5,6 +5,7 @@ using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using System;
 
 namespace Lantean.QBTMud.Components
 {
@@ -286,6 +287,26 @@ namespace Lantean.QBTMud.Components
         protected async Task AddCategory()
         {
             await DialogWorkflow.InvokeAddCategoryDialog();
+        }
+
+        protected async Task AddSubcategory()
+        {
+            if (ContextMenuCategory is null || ContextMenuCategory == FilterHelper.CATEGORY_ALL || ContextMenuCategory == FilterHelper.CATEGORY_UNCATEGORIZED)
+            {
+                return;
+            }
+
+            var prefix = ContextMenuCategory.EndsWith("\\", StringComparison.Ordinal)
+                ? ContextMenuCategory
+                : $"{ContextMenuCategory}\\";
+
+            string? initialSavePath = null;
+            if (MainData?.Categories.TryGetValue(ContextMenuCategory, out var category) == true)
+            {
+                initialSavePath = category.SavePath;
+            }
+
+            await DialogWorkflow.InvokeAddCategoryDialog(prefix, initialSavePath);
         }
 
         protected async Task EditCategory()

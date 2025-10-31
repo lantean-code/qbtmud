@@ -310,6 +310,30 @@ code {
     overflow: auto;
 }
 
+.rss-feed-list {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.rss-feed-list-container {
+    height: 100%;
+}
+
+.rss-feed-list-container:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 2px;
+}
+
+.rss-feed-list__item {
+    cursor: pointer;
+}
+
+.rss-feed-list__item-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
 tr.log-normal td {
     color: var(--mud-palette-text-primary) !important;
 }

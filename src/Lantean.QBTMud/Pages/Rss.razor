@@ -11,9 +11,9 @@
             }
             <MudText Class="px-5 no-wrap">RSS</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" title="New subscription" />
-            <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(SelectedFeed is null)" title="Mark items read" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="UpdateAll" title="Update all" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" Disabled="@IsClientDisconnected" title="New subscription" />
+            <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="Mark items read" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="RefreshAllFeeds" Disabled="@IsClientDisconnected" title="Update all" />
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="Edit auto downloading rules" />
         </MudToolBar>
@@ -21,15 +21,85 @@
 
     <div class="content-panel__body">
         <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="content-panel__container">
+            <MudMenu @ref="FeedContextMenu"
+                     Dense="true"
+                     PositionAtCursor="true"
+                     RelativeWidth="DropdownWidth.Ignore"
+                     ListClass="unselectable"
+                     PopoverClass="unselectable">
+                @if (ContextCanUpdate)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="UpdateContextUpdate">Update</MudMenuItem>
+                }
+                @if (ContextCanMarkRead)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.MarkEmailRead" IconColor="Color.Info" OnClick="UpdateContextMarkRead">Mark items read</MudMenuItem>
+                }
+                @if (ContextCanRename)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" IconColor="Color.Info" OnClick="UpdateContextRename">Rename…</MudMenuItem>
+                }
+                @if (ContextCanEditUrl)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="UpdateContextEditUrl">Edit feed URL…</MudMenuItem>
+                }
+                @if (ContextCanDelete)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="UpdateContextDelete">Delete</MudMenuItem>
+                }
+                @if (ContextCanAddSubscription || ContextCanAddFolder || ContextCanUpdateAll)
+                {
+                    <MudDivider />
+                }
+                @if (ContextCanAddSubscription)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Outlined.Subscriptions" IconColor="Color.Info" OnClick="UpdateContextAddSubscription">New subscription…</MudMenuItem>
+                }
+                @if (ContextCanAddFolder)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="UpdateContextAddFolder">New folder…</MudMenuItem>
+                }
+                @if (ContextCanUpdateAll)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Outlined.Update" IconColor="Color.Info" OnClick="RefreshAllFeeds">Update all</MudMenuItem>
+                }
+                @if (ContextCanCopyUrl)
+                {
+                    <MudDivider />
+                    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="UpdateContextCopyUrl">Copy feed URL</MudMenuItem>
+                }
+            </MudMenu>
+
             <MudGrid Class="rss-contents">
-                <MudItem xs="4" Style="height: 100%">
-                    <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedFeed" SelectedValueChanged="SelectedFeedChanged" Dense>
-                        <MudListItem Icon="@Icons.Material.Filled.MarkEmailUnread" Text="@($"Unread ({UnreadCount})")" Value="@("unread")" />
-                        @foreach (var (key, feed) in Feeds)
-                        {
-                            <MudListItem Icon="@(feed.IsLoading ? Icons.Material.Filled.Sync : Icons.Material.Filled.Wifi)" Class="@(feed.IsLoading ? "spin-animation" : "")" Text="@($"{feed.Title} ({feed.UnreadCount})")" Value="@key" />
-                        }
-                    </MudList>
+                <MudItem xs="4" Style="height: 100%;">
+                    <div class="rss-feed-list-container"
+                         tabindex="0"
+                         @oncontextmenu="ShowFeedContextMenuFromContainer"
+                         @oncontextmenu:preventDefault="true">
+                        <MudList T="RssTreeNode"
+                                 Dense="true"
+                                 Class="rss-feed-list"
+                                 SelectionMode="SelectionMode.SingleSelection"
+                                 SelectedValue="_selectedNode"
+                                 SelectedValueChanged="SelectNode">
+                            @foreach (var item in TreeItems)
+                            {
+                                var node = item.Node;
+                                <MudListItem @key="GetNodeKey(node)"
+                                             Value="node"
+                                             Class="@($"rss-feed-list__item {GetNodeCssClass(node)}")"
+                                             Style="@($"padding-left: {item.Depth * 20 + 12}px")">
+                                    <div class="rss-feed-list__item-content"
+                                         @oncontextmenu="@(e => ShowFeedContextMenu(e, node))"
+                                         @oncontextmenu:preventDefault="true"
+                                         @oncontextmenu:stopPropagation="true">
+                                        <MudIcon Icon="@GetNodeIcon(node)" Color="@GetNodeIconColor(node)" Class="mr-2" />
+                                        <MudText Typo="Typo.body2">@GetNodeDisplay(node)</MudText>
+                                    </div>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </div>
                 </MudItem>
                 <MudItem xs="4" Style="height: 100%; overflow: auto">
                     @if (Articles.Count > 0)

@@ -60,9 +60,20 @@ namespace Lantean.QBTMud.Services
             _snackbar = snackbar;
         }
 
-        public async Task<string?> InvokeAddCategoryDialog()
+        public async Task<string?> InvokeAddCategoryDialog(string? initialCategory = null, string? initialSavePath = null)
         {
-            var reference = await _dialogService.ShowAsync<CategoryPropertiesDialog>("Add Category", NonBlurFormDialogOptions);
+            var parameters = new DialogParameters();
+            if (initialCategory is not null)
+            {
+                parameters.Add(nameof(CategoryPropertiesDialog.Category), initialCategory);
+            }
+
+            if (initialSavePath is not null)
+            {
+                parameters.Add(nameof(CategoryPropertiesDialog.SavePath), initialSavePath);
+            }
+
+            var reference = await _dialogService.ShowAsync<CategoryPropertiesDialog>("Add Category", parameters, NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {

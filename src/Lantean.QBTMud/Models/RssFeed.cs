@@ -8,7 +8,8 @@ namespace Lantean.QBTMud.Models
             string? lastBuildDate,
             string? title,
             string uid,
-            string url)
+            string url,
+            string path)
         {
             HasError = hasError;
             IsLoading = isLoading;
@@ -16,6 +17,7 @@ namespace Lantean.QBTMud.Models
             Title = title;
             Uid = uid;
             Url = url;
+            Path = path;
         }
 
         public bool HasError { get; }
@@ -29,6 +31,8 @@ namespace Lantean.QBTMud.Models
         public string Uid { get; }
 
         public string Url { get; }
+
+        public string Path { get; }
 
         public int ArticleCount { get; internal set; }
 
