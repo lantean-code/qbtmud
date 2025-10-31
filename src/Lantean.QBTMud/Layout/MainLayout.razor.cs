@@ -26,6 +26,8 @@ namespace Lantean.QBTMud.Layout
 
         protected MudThemeProvider MudThemeProvider { get; set; } = default!;
 
+        private int _lastErrorCount;
+
         private Menu Menu { get; set; } = default!;
 
         protected MudTheme Theme { get; set; }
@@ -44,13 +46,20 @@ namespace Lantean.QBTMud.Layout
 
         protected override void OnParametersSet()
         {
-            if (ErrorBoundary?.Errors.Count > 0)
+            var currentErrorCount = ErrorBoundary?.Errors.Count ?? 0;
+
+            if (currentErrorCount != _lastErrorCount)
             {
-                ErrorDrawerOpen = true;
-            }
-            else
-            {
-                ErrorDrawerOpen = false;
+                if (currentErrorCount > _lastErrorCount && currentErrorCount > 0)
+                {
+                    ErrorDrawerOpen = true;
+                }
+                else if (currentErrorCount == 0)
+                {
+                    ErrorDrawerOpen = false;
+                }
+
+                _lastErrorCount = currentErrorCount;
             }
         }
 
@@ -91,6 +100,7 @@ namespace Lantean.QBTMud.Layout
         protected void Cleared()
         {
             ErrorDrawerOpen = false;
+            _lastErrorCount = 0;
         }
 
         protected async Task DarkModeChanged(bool value)

@@ -39,6 +39,10 @@
         @foreach (var column in GetColumns())
         {
             var className = column.IconOnly ? null : "table-header-cell";
+            if (!column.IconOnly && column.SortSelector is not null)
+            {
+                className = $"{className} table-header-cell--sortable";
+            }
             var columnHeader = column.IconOnly ? "" : column.Header;
             <MudTh Class="@className" Style="@(GetColumnStyle(column))">
                 @if (column.SortSelector is not null)
