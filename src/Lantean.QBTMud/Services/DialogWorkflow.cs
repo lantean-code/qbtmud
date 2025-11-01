@@ -109,11 +109,17 @@ namespace Lantean.QBTMud.Services
             var addTorrentParams = CreateAddTorrentParams(options);
             addTorrentParams.Torrents = files;
 
-            var addTorrentResult = await _apiClient.AddTorrent(addTorrentParams);
-
-            foreach (var stream in streams)
+            QBitTorrentClient.Models.AddTorrentResult addTorrentResult;
+            try
             {
-                await stream.DisposeAsync();
+                addTorrentResult = await _apiClient.AddTorrent(addTorrentParams);
+            }
+            finally
+            {
+                foreach (var stream in streams)
+                {
+                    await stream.DisposeAsync();
+                }
             }
 
             ShowAddTorrentSnackbarMessage(addTorrentResult);
