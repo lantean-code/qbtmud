@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Lantean.QBTMud.Models
@@ -19,6 +20,19 @@ namespace Lantean.QBTMud.Models
             AltKey = altKey;
             MetaKey = metaKey;
             Code = code;
+        }
+
+        internal string GetCanonicalKey()
+        {
+            var key = Key ?? string.Empty;
+
+            return string.Concat(
+                key,
+                CtrlKey ? '1' : '0',
+                ShiftKey ? '1' : '0',
+                AltKey ? '1' : '0',
+                MetaKey ? '1' : '0',
+                Repeat ? '1' : '0');
         }
 
         /// <summary>
@@ -71,14 +85,47 @@ namespace Lantean.QBTMud.Models
                    CtrlKey == @event.CtrlKey &&
                    ShiftKey == @event.ShiftKey &&
                    AltKey == @event.AltKey &&
-                   MetaKey == @event.MetaKey;
+                   MetaKey == @event.MetaKey &&
+                   Code == @event.Code;
         }
 
         public override string? ToString()
         {
-            var modifiers = (CtrlKey ? "Ctrl" : "") + (ShiftKey ? "Shift" : "") + (AltKey ? "Alt" : "") + (MetaKey ? "Meta" : "");
+            var segments = new List<string>(5);
+            if (CtrlKey)
+            {
+                segments.Add("Ctrl");
+            }
+            if (ShiftKey)
+            {
+                segments.Add("Shift");
+            }
+            if (AltKey)
+            {
+                segments.Add("Alt");
+            }
+            if (MetaKey)
+            {
+                segments.Add("Meta");
+            }
 
-            return modifiers + (modifiers.Length == 0 ? "" : "+") + (Key == "+" ? "'+'" : "+") + (Repeat ? "-repeated" : "");
+            var keyDisplay = Key switch
+            {
+                null or "" => "Unidentified",
+                "+" => "'+'",
+                " " => "Space",
+                _ => Key,
+            };
+
+            segments.Add(keyDisplay);
+
+            var output = string.Join("+", segments);
+            if (Repeat)
+            {
+                output += " (repeat)";
+            }
+
+            return output;
         }
 
         public override int GetHashCode()

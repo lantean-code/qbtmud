@@ -10,7 +10,7 @@ namespace Lantean.QBTMud.Services
 
         private DotNetObjectReference<KeyboardService>? _dotNetObjectReference;
         private bool _disposedValue;
-        private readonly ConcurrentDictionary<string, Func<KeyboardEvent, Task>> _keyboardHandlers = new();
+        private readonly ConcurrentDictionary<string, KeyboardHandlerRegistration> _keyboardHandlers = new();
 
         public KeyboardService(IJSRuntime jSRuntime)
         {
@@ -20,7 +20,8 @@ namespace Lantean.QBTMud.Services
         public async Task RegisterKeypressEvent(KeyboardEvent criteria, Func<KeyboardEvent, Task> onKeyPress)
         {
             await _jSRuntime.InvokeVoidAsync("qbt.registerKeypressEvent", criteria, GetObjectReference());
-            _keyboardHandlers.TryAdd(criteria, onKeyPress);
+            var handlerKey = GetHandlerKey(criteria);
+            _keyboardHandlers.AddOrUpdate(handlerKey, _ => new KeyboardHandlerRegistration(criteria, onKeyPress), (_, _) => new KeyboardHandlerRegistration(criteria, onKeyPress));
         }
 
         private DotNetObjectReference<KeyboardService> GetObjectReference()
@@ -33,18 +34,20 @@ namespace Lantean.QBTMud.Services
         [JSInvokable]
         public async Task HandleKeyPressEvent(KeyboardEvent keyboardEvent)
         {
-            if (!_keyboardHandlers.TryGetValue(keyboardEvent, out var handler))
+            var handlerKey = GetHandlerKey(keyboardEvent);
+            if (!_keyboardHandlers.TryGetValue(handlerKey, out var registration))
             {
                 return;
             }
 
-            await handler(keyboardEvent);
+            await registration.Handler(keyboardEvent);
         }
 
         public async Task UnregisterKeypressEvent(KeyboardEvent criteria)
         {
             await _jSRuntime.InvokeVoidAsync("qbt.unregisterKeypressEvent", criteria, GetObjectReference());
-            _keyboardHandlers.Remove(criteria, out var _);
+            var handlerKey = GetHandlerKey(criteria);
+            _keyboardHandlers.TryRemove(handlerKey, out _);
         }
 
         public async Task Focus()
@@ -64,9 +67,9 @@ namespace Lantean.QBTMud.Services
                 if (disposing)
                 {
                     await UnFocus();
-                    foreach (var key in _keyboardHandlers.Keys)
+                    foreach (var registration in _keyboardHandlers.Values)
                     {
-                        await _jSRuntime.InvokeVoidAsync("qbt.unregisterKeypressEvent", key, GetObjectReference());
+                        await _jSRuntime.InvokeVoidAsync("qbt.unregisterKeypressEvent", registration.Criteria, GetObjectReference());
                     }
 
                     _keyboardHandlers.Clear();
@@ -82,5 +85,12 @@ namespace Lantean.QBTMud.Services
             await DisposeAsync(disposing: true);
             GC.SuppressFinalize(this);
         }
+
+        private static string GetHandlerKey(KeyboardEvent keyboardEvent)
+        {
+            return keyboardEvent.GetCanonicalKey();
+        }
+
+        private sealed record KeyboardHandlerRegistration(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler);
     }
 }
