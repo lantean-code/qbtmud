@@ -2,8 +2,8 @@ using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.JSInterop;
-using Moq;
 using Microsoft.JSInterop.Infrastructure;
+using Moq;
 
 namespace Lantean.QBTMud.Test.Services
 {

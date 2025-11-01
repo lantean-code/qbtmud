@@ -9,8 +9,8 @@ using Microsoft.AspNetCore.Components.Forms;
 using Moq;
 using MudBlazor;
 using MudCategory = Lantean.QBTMud.Models.Category;
-using QbtCategory = Lantean.QBitTorrentClient.Models.Category;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
+using QbtCategory = Lantean.QBitTorrentClient.Models.Category;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -19,7 +19,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly Mock<IDialogService> _dialogService;
         private readonly Mock<IApiClient> _apiClient;
         private readonly Mock<ISnackbar> _snackbar;
-        
+
         private readonly DialogWorkflow _target;
 
         public DialogWorkflowTests()
@@ -204,7 +204,7 @@ namespace Lantean.QBTMud.Test.Services
             capturedParameters[nameof(AddTorrentLinkDialog.Url)].Should().BeNull();
 
             captured.Should().NotBeNull();
-            captured!.Urls!.Should().BeEquivalentTo(new[] { "http://one", "http://two" });
+            captured!.Urls!.Should().BeEquivalentTo("http://one", "http://two");
             captured.Torrents.Should().BeNull();
             captured.AutoTorrentManagement.Should().BeTrue();
             captured.SavePath.Should().BeNull();
@@ -510,6 +510,9 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_NoTorrents_WHEN_InvokeShareRatioDialog_THEN_ShouldReturnImmediately()
         {
             await _target.InvokeShareRatioDialog(Enumerable.Empty<MudTorrent>());
+
+            _dialogService.Invocations.Should().BeEmpty();
+            _apiClient.Invocations.Should().BeEmpty();
         }
 
         [Fact]
