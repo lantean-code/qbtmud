@@ -4,6 +4,7 @@ using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using MudBlazor;
+using System.Collections.Generic;
 using System.Text;
 using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 
@@ -510,43 +511,42 @@ namespace Lantean.QBTMud.Services
 
         private void ShowAddTorrentSnackbarMessage(QBitTorrentClient.Models.AddTorrentResult result)
         {
-            var sb = new StringBuilder();
+            var fragments = new List<string>(3);
             if (result.SuccessCount > 0)
             {
                 if (result.SupportsAsync)
                 {
-                    sb.Append($"Added {result.SuccessCount} torrent{(result.SuccessCount == 1 ? string.Empty : string.Empty)}");
+                    fragments.Add($"Added {result.SuccessCount} torrent{(result.SuccessCount == 1 ? string.Empty : "s")}");
                 }
                 else
                 {
-                    sb.Append("Added torrent(s)");
+                    fragments.Add("Added torrent(s)");
                 }
             }
 
             if (result.FailureCount > 0)
             {
-                if (sb.Length > 0)
-                {
-                    sb.Append(" and f");
-                }
-                else
-                {
-                    sb.Append('F');
-                }
-
                 if (result.SupportsAsync)
                 {
-                    sb.Append($"ailed to remove {result.FailureCount} torrent{(result.FailureCount == 1 ? string.Empty : string.Empty)}");
+                    fragments.Add($"Failed to add {result.FailureCount} torrent{(result.FailureCount == 1 ? string.Empty : "s")}");
                 }
                 else
                 {
-                    sb.Append("Failed to add torrent(s)");
+                    fragments.Add("Failed to add torrent(s)");
                 }
             }
-            else
+
+            if (result.SupportsAsync && result.PendingCount > 0)
             {
-                sb.Append('.');
+                fragments.Add($"Pending {result.PendingCount} torrent{(result.PendingCount == 1 ? string.Empty : "s")}");
             }
+
+            if (fragments.Count == 0)
+            {
+                fragments.Add("No torrents processed");
+            }
+
+            var message = string.Join(" and ", fragments) + '.';
 
             var severity = Severity.Success;
             if (result.SuccessCount > 0 && result.FailureCount > 0)
@@ -557,8 +557,12 @@ namespace Lantean.QBTMud.Services
             {
                 severity = Severity.Error;
             }
+            else if (result.PendingCount > 0)
+            {
+                severity = Severity.Info;
+            }
 
-            _snackbar.Add(sb.ToString(), severity);
+            _snackbar.Add(message, severity);
         }
 
         private static QBitTorrentClient.Models.AddTorrentParams CreateAddTorrentParams(TorrentOptions options)
