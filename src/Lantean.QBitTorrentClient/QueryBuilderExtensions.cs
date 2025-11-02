@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Linq;
+
 namespace Lantean.QBitTorrentClient
 {
     public static class QueryBuilderExtensions
@@ -9,12 +12,12 @@ namespace Lantean.QBitTorrentClient
 
         public static QueryBuilder Add(this QueryBuilder builder, string key, int value)
         {
-            return builder.Add(key, value.ToString());
+            return builder.Add(key, value.ToString(CultureInfo.InvariantCulture));
         }
 
         public static QueryBuilder Add(this QueryBuilder builder, string key, long value)
         {
-            return builder.Add(key, value.ToString());
+            return builder.Add(key, value.ToString(CultureInfo.InvariantCulture));
         }
 
         public static QueryBuilder Add(this QueryBuilder builder, string key, DateTimeOffset value, bool useSeconds = true)
@@ -29,12 +32,17 @@ namespace Lantean.QBitTorrentClient
 
         public static QueryBuilder AddPipeSeparated<T>(this QueryBuilder builder, string key, IEnumerable<T> values)
         {
-            return builder.Add(key, string.Join('|', values));
+            return builder.Add(key, JoinWithInvariant(values, '|'));
         }
 
         public static QueryBuilder AddCommaSeparated<T>(this QueryBuilder builder, string key, IEnumerable<T> values)
         {
-            return builder.Add(key, string.Join(',', values));
+            return builder.Add(key, JoinWithInvariant(values, ','));
+        }
+
+        private static string JoinWithInvariant<T>(IEnumerable<T> values, char separator)
+        {
+            return string.Join(separator, values.Select(value => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty));
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace Lantean.QBitTorrentClient
@@ -36,7 +37,8 @@ namespace Lantean.QBitTorrentClient
         {
             if (value.HasValue)
             {
-                _parameters.Add(new KeyValuePair<string, string>(key, value.ToString()!));
+                var stringValue = Convert.ToString(value.Value, CultureInfo.InvariantCulture) ?? string.Empty;
+                _parameters.Add(new KeyValuePair<string, string>(key, stringValue));
             }
 
             return this;

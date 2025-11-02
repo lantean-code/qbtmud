@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq;
 
 namespace Lantean.QBitTorrentClient
 {
@@ -11,12 +12,12 @@ namespace Lantean.QBitTorrentClient
 
         public static FormUrlEncodedBuilder Add(this FormUrlEncodedBuilder builder, string key, int value)
         {
-            return builder.Add(key, value.ToString());
+            return builder.Add(key, value.ToString(CultureInfo.InvariantCulture));
         }
 
         public static FormUrlEncodedBuilder Add(this FormUrlEncodedBuilder builder, string key, long value)
         {
-            return builder.Add(key, value.ToString());
+            return builder.Add(key, value.ToString(CultureInfo.InvariantCulture));
         }
 
         public static FormUrlEncodedBuilder Add(this FormUrlEncodedBuilder builder, string key, DateTimeOffset value, bool useSeconds = true)
@@ -26,27 +27,37 @@ namespace Lantean.QBitTorrentClient
 
         public static FormUrlEncodedBuilder Add(this FormUrlEncodedBuilder builder, string key, float value)
         {
-            return builder.Add(key, value.ToString());
+            return builder.Add(key, value.ToString(CultureInfo.InvariantCulture));
         }
 
         public static FormUrlEncodedBuilder Add<T>(this FormUrlEncodedBuilder builder, string key, T value) where T : struct, IConvertible
         {
-            return builder.Add(key, value.ToInt32(CultureInfo.InvariantCulture).ToString());
+            return builder.Add(key, value.ToInt32(CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture));
         }
 
         public static FormUrlEncodedBuilder AddAllOrPipeSeparated(this FormUrlEncodedBuilder builder, string key, bool? all = null, params string[] values)
         {
-            return builder.Add(key, all.GetValueOrDefault() ? "all" : string.Join('|', values));
+            if (all.GetValueOrDefault())
+            {
+                return builder.Add(key, "all");
+            }
+
+            return builder.Add(key, JoinWithInvariant(values, '|'));
         }
 
         public static FormUrlEncodedBuilder AddPipeSeparated<T>(this FormUrlEncodedBuilder builder, string key, IEnumerable<T> values)
         {
-            return builder.Add(key, string.Join('|', values));
+            return builder.Add(key, JoinWithInvariant(values, '|'));
         }
 
         public static FormUrlEncodedBuilder AddCommaSeparated<T>(this FormUrlEncodedBuilder builder, string key, IEnumerable<T> values)
         {
-            return builder.Add(key, string.Join(',', values));
+            return builder.Add(key, JoinWithInvariant(values, ','));
+        }
+
+        private static string JoinWithInvariant<T>(IEnumerable<T> values, char separator)
+        {
+            return string.Join(separator, values.Select(value => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty));
         }
     }
 }

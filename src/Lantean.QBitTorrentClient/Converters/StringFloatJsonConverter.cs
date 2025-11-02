@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -9,7 +10,7 @@ namespace Lantean.QBitTorrentClient.Converters
         {
             if (reader.TokenType == JsonTokenType.String)
             {
-                if (float.TryParse(reader.GetString(), out var value))
+                if (float.TryParse(reader.GetString(), NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var value))
                 {
                     return value;
                 }
@@ -32,7 +33,7 @@ namespace Lantean.QBitTorrentClient.Converters
 
         public override void Write(Utf8JsonWriter writer, float value, JsonSerializerOptions options)
         {
-            writer.WriteStringValue(value.ToString());
+            writer.WriteStringValue(value.ToString(CultureInfo.InvariantCulture));
         }
     }
 }
