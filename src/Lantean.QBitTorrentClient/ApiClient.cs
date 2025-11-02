@@ -182,7 +182,10 @@ namespace Lantean.QBitTorrentClient
 
         public async Task<IReadOnlyList<string>> GetNetworkInterfaceAddressList(string @interface)
         {
-            var response = await _httpClient.GetAsync($"app/networkInterfaceAddressList?iface={@interface}");
+            var query = new QueryBuilder()
+                .Add("iface", @interface);
+
+            var response = await _httpClient.GetAsync("app/networkInterfaceAddressList", query);
 
             await ThrowIfNotSuccessfulStatusCode(response);
 
