@@ -7,6 +7,8 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Lantean.QBTMud.Layout
 {
@@ -18,8 +20,10 @@ namespace Lantean.QBTMud.Layout
         private int _requestId = 0;
         private bool _disposedValue;
         private readonly CancellationTokenSource _timerCancellationToken = new();
+        private CancellationTokenSource? _refreshDelayCancellation;
         private int _refreshInterval = 1500;
         private bool _toggleAltSpeedLimitsInProgress;
+        private Task? _refreshLoopTask;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -164,66 +168,145 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            if (firstRender)
+            if (firstRender && _refreshLoopTask is null)
             {
-                using (var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_refreshInterval)))
+                StartRefreshLoop();
+            }
+        }
+
+        private async Task RefreshLoopAsync(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                if (!await WaitForNextIntervalAsync(cancellationToken))
                 {
-                    while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync())
+                    return;
+                }
+
+                if (!IsAuthenticated)
+                {
+                    return;
+                }
+
+                QBitTorrentClient.Models.MainData data;
+                try
+                {
+                    data = await ApiClient.GetMainData(_requestId);
+                }
+                catch (HttpRequestException)
+                {
+                    if (MainData is not null)
                     {
-                        if (!IsAuthenticated)
-                        {
-                            return;
-                        }
-                        QBitTorrentClient.Models.MainData data;
-                        try
-                        {
-                            data = await ApiClient.GetMainData(_requestId);
-                        }
-                        catch (HttpRequestException)
-                        {
-                            if (MainData is not null)
-                            {
-                                MainData.LostConnection = true;
-                            }
-                            _timerCancellationToken.CancelIfNotDisposed();
-                            await InvokeAsync(StateHasChanged);
-                            return;
-                        }
-
-                        var shouldRender = false;
-
-                        if (MainData is null || data.FullUpdate)
-                        {
-                            MainData = DataManager.CreateMainData(data);
-                            MarkTorrentsDirty();
-                            shouldRender = true;
-                        }
-                        else
-                        {
-                            var dataChanged = DataManager.MergeMainData(data, MainData, out var filterChanged);
-                            if (filterChanged)
-                            {
-                                MarkTorrentsDirty();
-                            }
-                            else if (dataChanged)
-                            {
-                                IncrementTorrentsVersion();
-                            }
-                            shouldRender = dataChanged;
-                        }
-
-                        if (MainData is not null)
-                        {
-                            _refreshInterval = MainData.ServerState.RefreshInterval;
-                        }
-                        _requestId = data.ResponseId;
-                        if (shouldRender)
-                        {
-                            await InvokeAsync(StateHasChanged);
-                        }
+                        MainData.LostConnection = true;
                     }
+                    _timerCancellationToken.CancelIfNotDisposed();
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+
+                var shouldRender = false;
+
+                if (MainData is null || data.FullUpdate)
+                {
+                    MainData = DataManager.CreateMainData(data);
+                    MarkTorrentsDirty();
+                    shouldRender = true;
+                }
+                else
+                {
+                    var dataChanged = DataManager.MergeMainData(data, MainData, out var filterChanged);
+                    if (filterChanged)
+                    {
+                        MarkTorrentsDirty();
+                    }
+                    else if (dataChanged)
+                    {
+                        IncrementTorrentsVersion();
+                    }
+                    shouldRender = dataChanged;
+                }
+
+                if (MainData is not null)
+                {
+                    var newInterval = MainData.ServerState.RefreshInterval;
+                    UpdateRefreshInterval(newInterval);
+                }
+
+                _requestId = data.ResponseId;
+
+                if (shouldRender)
+                {
+                    await InvokeAsync(StateHasChanged);
                 }
             }
+        }
+
+        private async Task<bool> WaitForNextIntervalAsync(CancellationToken cancellationToken)
+        {
+            var delayCancellation = new CancellationTokenSource();
+            _refreshDelayCancellation = delayCancellation;
+
+            using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, delayCancellation.Token);
+            try
+            {
+                await Task.Delay(_refreshInterval, linkedCancellation.Token);
+                return !cancellationToken.IsCancellationRequested;
+            }
+            catch (TaskCanceledException)
+            {
+                return !cancellationToken.IsCancellationRequested;
+            }
+            finally
+            {
+                if (ReferenceEquals(_refreshDelayCancellation, delayCancellation))
+                {
+                    _refreshDelayCancellation = null;
+                }
+
+                delayCancellation.Dispose();
+            }
+        }
+
+        private void UpdateRefreshInterval(int newInterval)
+        {
+            if (newInterval <= 0 || newInterval == _refreshInterval)
+            {
+                return;
+            }
+
+            _refreshInterval = newInterval;
+            CancelRefreshDelay();
+        }
+
+        private void CancelRefreshDelay()
+        {
+            var delayCancellation = _refreshDelayCancellation;
+            if (delayCancellation is null)
+            {
+                return;
+            }
+
+            try
+            {
+                delayCancellation.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Already disposed.
+            }
+        }
+
+        private void StartRefreshLoop()
+        {
+            var refreshLoop = RefreshLoopAsync(_timerCancellationToken.Token);
+            _refreshLoopTask = refreshLoop;
+            _ = refreshLoop.ContinueWith(
+                t =>
+                {
+                    // Observe exceptions to prevent UnobservedTaskException.
+                    _ = t.Exception;
+                },
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
         }
 
         private void NavigationManagerOnLocationChanged(object? sender, LocationChangedEventArgs e)
@@ -567,6 +650,7 @@ namespace Lantean.QBTMud.Layout
             {
                 if (disposing)
                 {
+                    CancelRefreshDelay();
                     _timerCancellationToken.Cancel();
                     _timerCancellationToken.Dispose();
 
