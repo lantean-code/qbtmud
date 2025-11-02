@@ -13,12 +13,20 @@ window.qbt.triggerFileDownload = (url, fileName) => {
 window.qbt.getBoundingClientRect = (selector) => {
     const element = getElementBySelector(selector);
 
+    if (!element) {
+        return null;
+    }
+
     const rect = element.getBoundingClientRect();
     return rect;
 }
 
 window.qbt.getInnerDimensions = (selector) => {
     const element = getElementBySelector(selector);
+
+    if (!element) {
+        return null;
+    }
 
     const computedStyle = getComputedStyle(element);
 
@@ -70,6 +78,9 @@ window.qbt.registerMagnetHandler = (templateUrl) => {
 
 window.qbt.renderPiecesBar = (id, hash, pieces, downloadingColor, haveColor, borderColor) => {
     const parentElement = document.getElementById(id);
+    if (!parentElement) {
+        return;
+    }
     if (window.qbt.hash !== hash) {
         if (parentElement) {
             while (parentElement.lastElementChild) {
@@ -93,7 +104,7 @@ window.qbt.renderPiecesBar = (id, hash, pieces, downloadingColor, haveColor, bor
         window.qbt.piecesBar.clear();
     }
 
-    if (parentElement && !parentElement.hasChildNodes()) {
+    if (!parentElement.hasChildNodes()) {
         const el = window.qbt.piecesBar.createElement();
         parentElement.appendChild(el);
     }
