@@ -1227,8 +1227,8 @@ namespace Lantean.QBTMud.Services
             if (torrent.Tags is not null)
             {
                 var normalizedTags = torrent.Tags.Select(NormalizeTag)
-                                    .Where(static tag => !string.IsNullOrEmpty(tag))
-                                    .ToList();
+                    .Where(static tag => !string.IsNullOrEmpty(tag))
+                    .ToList();
 
                 if (!existingTorrent.Tags.SequenceEqual(normalizedTags))
                 {
