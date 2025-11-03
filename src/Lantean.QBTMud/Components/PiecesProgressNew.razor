@@ -1,0 +1,57 @@
+@using Lantean.QBitTorrentClient.Models
+@using MudBlazor
+
+<MudPaper Class="pieces-progress-new" Elevation="1">
+    <MudStack Spacing="1">
+        <MudTooltip Text="@LinearTooltip" Placement="Placement.Top">
+            <div class="pieces-progress-new__linear" role="button" tabindex="0" aria-expanded="@_showHeatmap.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" @onclick="ToggleHeatmap" @onkeydown="HandleLinearKeyDown">
+                <div class="pieces-progress-new__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
+                <div class="pieces-progress-new__linear-overlay">
+                    <MudText Typo="Typo.body2">@LinearSummary</MudText>
+                    <MudIcon Icon="@ToggleIcon" Class="pieces-progress-new__icon" />
+                </div>
+            </div>
+        </MudTooltip>
+
+        <MudCollapse Expanded="@_showHeatmap">
+            <MudPaper Class="pieces-progress-new__heatmap" Elevation="0">
+                @if (HeatmapRows.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="pieces-progress-new__empty">@HeatmapEmptyText</MudText>
+                }
+                else
+                {
+                    <div class="pieces-progress-new__grid" role="grid" aria-label="@HeatmapAriaLabel">
+                        @for (var rowIndex = 0; rowIndex < HeatmapRows.Count; rowIndex++)
+                        {
+                            var row = HeatmapRows[rowIndex];
+                            @for (var cellIndex = 0; cellIndex < row.Count; cellIndex++)
+                            {
+                                var cell = row[cellIndex];
+                                if (cell.IsPlaceholder)
+                                {
+                                    <div class="pieces-progress-new__cell pieces-progress-new__cell--empty" role="presentation"></div>
+                                }
+                                else
+                                {
+                                    <MudTooltip Text="@cell.Tooltip" Placement="Placement.Top">
+                                        <div class="pieces-progress-new__cell @cell.CssClass" role="gridcell" aria-label="@cell.Tooltip"></div>
+                                    </MudTooltip>
+                                }
+                            }
+                        }
+                    </div>
+                    <div class="pieces-progress-new__legend">
+                        @foreach (var legend in LegendItems)
+                        {
+                            <div class="pieces-progress-new__legend-item">
+                                <div class="pieces-progress-new__legend-swatch @legend.CssClass"></div>
+                                <MudText Typo="Typo.caption">@legend.Label</MudText>
+                            </div>
+                        }
+                    </div>
+                }
+            </MudPaper>
+        </MudCollapse>
+    </MudStack>
+</MudPaper>
