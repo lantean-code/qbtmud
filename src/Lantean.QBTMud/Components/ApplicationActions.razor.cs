@@ -220,7 +220,7 @@ namespace Lantean.QBTMud.Components
                 return "#download=%s";
             }
 
-            var trimmedBase = baseUri.EndsWith("/", StringComparison.Ordinal)
+            var trimmedBase = baseUri.EndsWith('/')
                 ? baseUri[..^1]
                 : baseUri;
 

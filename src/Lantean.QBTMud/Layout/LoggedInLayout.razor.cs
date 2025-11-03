@@ -7,8 +7,6 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Lantean.QBTMud.Layout
 {
@@ -161,7 +159,7 @@ namespace Lantean.QBTMud.Layout
             await TryProcessPendingDownloadAsync();
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
+        protected override void OnAfterRender(bool firstRender)
         {
             if (!_refreshEnabled)
             {
