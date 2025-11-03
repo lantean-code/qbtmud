@@ -46,20 +46,20 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var resumeSelect = FindSelect<string>(target, "Resume data storage type (requires restart)");
+            var resumeSelect = FindSelect<string>(target, "ResumeDataStorageType");
             resumeSelect.Instance.Value.Should().Be("SQLite");
 
-            FindNumeric(target, "Physical memory (RAM) usage limit (applied if libtorrent >= 2.0)").Instance.Value.Should().Be(512);
-            FindSelect<string>(target, "Network interface").Instance.Value.Should().Be("eth0");
-            FindSelect<string>(target, "Optional IP address to bind to").Instance.Value.Should().Be("10.0.0.2");
-            FindNumeric(target, "Save resume data interval").Instance.Value.Should().Be(15);
-            FindNumeric(target, ".torrent file size limit").Instance.Value.Should().Be(150);
-            FindSwitch(target, "Recheck torrents on completion").Instance.Value.Should().BeTrue();
-            FindNumeric(target, "Refresh interval").Instance.Value.Should().Be(1500);
-            FindSwitch(target, "Resolve peer countries").Instance.Value.Should().BeTrue();
-            FindSwitch(target, "Enable embedded tracker").Instance.Value.Should().BeTrue();
-            FindNumeric(target, "Embedded tracker port").Instance.Value.Should().Be(19000);
-            FindSwitch(target, "Enable port forwarding for embedded tracker").Instance.Value.Should().BeTrue();
+            FindNumeric(target, "MemoryWorkingSetLimit").Instance.Value.Should().Be(512);
+            FindSelect<string>(target, "CurrentNetworkInterface").Instance.Value.Should().Be("eth0");
+            FindSelect<string>(target, "CurrentInterfaceAddress").Instance.Value.Should().Be("10.0.0.2");
+            FindNumeric(target, "SaveResumeDataInterval").Instance.Value.Should().Be(15);
+            FindNumeric(target, "TorrentFileSizeLimit").Instance.Value.Should().Be(150);
+            FindSwitch(target, "RecheckCompletedTorrents").Instance.Value.Should().BeTrue();
+            FindNumeric(target, "RefreshInterval").Instance.Value.Should().Be(1500);
+            FindSwitch(target, "ResolvePeerCountries").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "EnableEmbeddedTracker").Instance.Value.Should().BeTrue();
+            FindNumeric(target, "EmbeddedTrackerPort").Instance.Value.Should().Be(19000);
+            FindSwitch(target, "EmbeddedTrackerPortForwarding").Instance.Value.Should().BeTrue();
             target.Markup.Should().Contain("Ethernet");
         }
 
@@ -91,13 +91,13 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var interfaceSelect = FindSelect<string>(target, "Network interface");
+            var interfaceSelect = FindSelect<string>(target, "CurrentNetworkInterface");
             await target.InvokeAsync(() => interfaceSelect.Instance.ValueChanged.InvokeAsync("eth0"));
 
             update.CurrentNetworkInterface.Should().Be("eth0");
             raised[^1].Should().BeSameAs(update);
 
-            var addressSelect = FindSelect<string>(target, "Optional IP address to bind to");
+            var addressSelect = FindSelect<string>(target, "CurrentInterfaceAddress");
             await target.InvokeAsync(() => addressSelect.Instance.ValueChanged.InvokeAsync("::"));
             update.CurrentInterfaceAddress.Should().Be("::");
             raised[^1].Should().BeSameAs(update);
@@ -124,15 +124,15 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await target.InvokeAsync(() => FindSelect<string>(target, "Resume data storage type (requires restart)").Instance.ValueChanged.InvokeAsync("Legacy"));
-            await target.InvokeAsync(() => FindNumeric(target, "Physical memory (RAM) usage limit (applied if libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(768));
-            await target.InvokeAsync(() => FindNumeric(target, "Save resume data interval").Instance.ValueChanged.InvokeAsync(20));
-            await target.InvokeAsync(() => FindNumeric(target, ".torrent file size limit").Instance.ValueChanged.InvokeAsync(175));
-            await target.InvokeAsync(() => FindSwitch(target, "Recheck torrents on completion").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindSwitch(target, "Confirm torrent recheck").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindNumeric(target, "Refresh interval").Instance.ValueChanged.InvokeAsync(2000));
-            await target.InvokeAsync(() => FindSwitch(target, "Resolve peer countries").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindSwitch(target, "Reannounce to all trackers when IP or port changed").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSelect<string>(target, "ResumeDataStorageType").Instance.ValueChanged.InvokeAsync("Legacy"));
+            await target.InvokeAsync(() => FindNumeric(target, "MemoryWorkingSetLimit").Instance.ValueChanged.InvokeAsync(768));
+            await target.InvokeAsync(() => FindNumeric(target, "SaveResumeDataInterval").Instance.ValueChanged.InvokeAsync(20));
+            await target.InvokeAsync(() => FindNumeric(target, "TorrentFileSizeLimit").Instance.ValueChanged.InvokeAsync(175));
+            await target.InvokeAsync(() => FindSwitch(target, "RecheckCompletedTorrents").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "ConfirmTorrentRecheck").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindNumeric(target, "RefreshInterval").Instance.ValueChanged.InvokeAsync(2000));
+            await target.InvokeAsync(() => FindSwitch(target, "ResolvePeerCountries").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "ReannounceWhenAddressChanged").Instance.ValueChanged.InvokeAsync(false));
 
             update.ResumeDataStorageType.Should().Be("Legacy");
             update.MemoryWorkingSetLimit.Should().Be(768);
@@ -166,21 +166,21 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await target.InvokeAsync(() => FindNumeric(target, "Bdecode depth limit").Instance.ValueChanged.InvokeAsync(120));
-            await target.InvokeAsync(() => FindNumeric(target, "Bdecode token limit").Instance.ValueChanged.InvokeAsync(240));
-            await target.InvokeAsync(() => FindNumeric(target, "Asynchronous I/O threads").Instance.ValueChanged.InvokeAsync(6));
-            await target.InvokeAsync(() => FindNumeric(target, "Hashing threads (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(8));
-            await target.InvokeAsync(() => FindNumeric(target, "File pool size").Instance.ValueChanged.InvokeAsync(1024));
-            await target.InvokeAsync(() => FindNumeric(target, "Outstanding memory when checking torrents").Instance.ValueChanged.InvokeAsync(256));
-            await target.InvokeAsync(() => FindNumeric(target, "Disk cache (requires libtorrent < 2.0)").Instance.ValueChanged.InvokeAsync(384));
-            await target.InvokeAsync(() => FindNumeric(target, "Disk cache expiry interval (requires libtorrent < 2.0)").Instance.ValueChanged.InvokeAsync(120));
-            await target.InvokeAsync(() => FindNumeric(target, "Disk queue size").Instance.ValueChanged.InvokeAsync(10240));
-            await target.InvokeAsync(() => FindSelect<int>(target, "Disk IO type (libtorrent >= 2.0; requires restart)").Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => FindSelect<int>(target, "Disk IO read mode").Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => FindSelect<int>(target, "Disk IO write mode").Instance.ValueChanged.InvokeAsync(2));
-            await target.InvokeAsync(() => FindSwitch(target, "Coalesce reads & writes (requires libtorrent < 2.0)").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindSwitch(target, "Use piece extent affinity").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindSwitch(target, "Send upload piece suggestions").Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => FindNumeric(target, "BdecodeDepthLimit").Instance.ValueChanged.InvokeAsync(120));
+            await target.InvokeAsync(() => FindNumeric(target, "BdecodeTokenLimit").Instance.ValueChanged.InvokeAsync(240));
+            await target.InvokeAsync(() => FindNumeric(target, "AsyncIoThreads").Instance.ValueChanged.InvokeAsync(6));
+            await target.InvokeAsync(() => FindNumeric(target, "HashingThreads").Instance.ValueChanged.InvokeAsync(8));
+            await target.InvokeAsync(() => FindNumeric(target, "FilePoolSize").Instance.ValueChanged.InvokeAsync(1024));
+            await target.InvokeAsync(() => FindNumeric(target, "CheckingMemoryUse").Instance.ValueChanged.InvokeAsync(256));
+            await target.InvokeAsync(() => FindNumeric(target, "DiskCache").Instance.ValueChanged.InvokeAsync(384));
+            await target.InvokeAsync(() => FindNumeric(target, "DiskCacheTtl").Instance.ValueChanged.InvokeAsync(120));
+            await target.InvokeAsync(() => FindNumeric(target, "DiskQueueSize").Instance.ValueChanged.InvokeAsync(10240));
+            await target.InvokeAsync(() => FindSelect<int>(target, "DiskIoType").Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => FindSelect<int>(target, "DiskIoReadMode").Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => FindSelect<int>(target, "DiskIoWriteMode").Instance.ValueChanged.InvokeAsync(2));
+            await target.InvokeAsync(() => FindSwitch(target, "EnableCoalesceReadWrite").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "EnablePieceExtentAffinity").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "EnableUploadSuggestions").Instance.ValueChanged.InvokeAsync(true));
 
             update.BdecodeDepthLimit.Should().Be(120);
             update.BdecodeTokenLimit.Should().Be(240);
@@ -220,26 +220,26 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await target.InvokeAsync(() => FindNumeric(target, "Send buffer watermark").Instance.ValueChanged.InvokeAsync(256));
-            await target.InvokeAsync(() => FindNumeric(target, "Send buffer low watermark").Instance.ValueChanged.InvokeAsync(32));
-            await target.InvokeAsync(() => FindNumeric(target, "Send buffer watermark factor").Instance.ValueChanged.InvokeAsync(200));
-            await target.InvokeAsync(() => FindNumeric(target, "Outgoing connections per second").Instance.ValueChanged.InvokeAsync(500));
-            await target.InvokeAsync(() => FindNumeric(target, "Socket send buffer size [0: system default]").Instance.ValueChanged.InvokeAsync(256));
-            await target.InvokeAsync(() => FindNumeric(target, "Socket receive buffer size [0: system default]").Instance.ValueChanged.InvokeAsync(256));
-            await target.InvokeAsync(() => FindNumeric(target, "Socket backlog size").Instance.ValueChanged.InvokeAsync(100));
-            await target.InvokeAsync(() => FindNumeric(target, "Outgoing ports (Min) [0: disabled]").Instance.ValueChanged.InvokeAsync(10000));
-            await target.InvokeAsync(() => FindNumeric(target, "Outgoing ports (Max) [0: disabled]").Instance.ValueChanged.InvokeAsync(20000));
-            await target.InvokeAsync(() => FindNumeric(target, "UPnP lease duration [0: permanent lease]").Instance.ValueChanged.InvokeAsync(1200));
-            await target.InvokeAsync(() => FindNumeric(target, "Type of service (ToS) for connections to peers").Instance.ValueChanged.InvokeAsync(16));
-            await target.InvokeAsync(() => FindSelect<int>(target, "μTP-TCP mixed mode algorithm").Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => FindSwitch(target, "Support internationalized domain name (IDN)").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindSwitch(target, "Allow multiple connections from the same IP address").Instance.ValueChanged.InvokeAsync(true));
-            await target.InvokeAsync(() => FindSwitch(target, "Validate HTTPS tracker certificate").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindSwitch(target, "Server-side request forgery (SSRF) mitigation").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindSwitch(target, "Disallow connection to peers on privileged ports").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindSwitch(target, "Enable embedded tracker").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindNumeric(target, "Embedded tracker port").Instance.ValueChanged.InvokeAsync(20000));
-            await target.InvokeAsync(() => FindSwitch(target, "Enable port forwarding for embedded tracker").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindNumeric(target, "SendBufferWatermark").Instance.ValueChanged.InvokeAsync(256));
+            await target.InvokeAsync(() => FindNumeric(target, "SendBufferLowWatermark").Instance.ValueChanged.InvokeAsync(32));
+            await target.InvokeAsync(() => FindNumeric(target, "SendBufferWatermarkFactor").Instance.ValueChanged.InvokeAsync(200));
+            await target.InvokeAsync(() => FindNumeric(target, "ConnectionSpeed").Instance.ValueChanged.InvokeAsync(500));
+            await target.InvokeAsync(() => FindNumeric(target, "SocketSendBufferSize").Instance.ValueChanged.InvokeAsync(256));
+            await target.InvokeAsync(() => FindNumeric(target, "SocketReceiveBufferSize").Instance.ValueChanged.InvokeAsync(256));
+            await target.InvokeAsync(() => FindNumeric(target, "SocketBacklogSize").Instance.ValueChanged.InvokeAsync(100));
+            await target.InvokeAsync(() => FindNumeric(target, "OutgoingPortsMin").Instance.ValueChanged.InvokeAsync(10000));
+            await target.InvokeAsync(() => FindNumeric(target, "OutgoingPortsMax").Instance.ValueChanged.InvokeAsync(20000));
+            await target.InvokeAsync(() => FindNumeric(target, "UpnpLeaseDuration").Instance.ValueChanged.InvokeAsync(1200));
+            await target.InvokeAsync(() => FindNumeric(target, "PeerTos").Instance.ValueChanged.InvokeAsync(16));
+            await target.InvokeAsync(() => FindSelect<int>(target, "UtpTcpMixedMode").Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => FindSwitch(target, "IdnSupportEnabled").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "EnableMultiConnectionsFromSameIp").Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => FindSwitch(target, "ValidateHttpsTrackerCertificate").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "SsrfMitigation").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "BlockPeersOnPrivilegedPorts").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "EnableEmbeddedTracker").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindNumeric(target, "EmbeddedTrackerPort").Instance.ValueChanged.InvokeAsync(20000));
+            await target.InvokeAsync(() => FindSwitch(target, "EmbeddedTrackerPortForwarding").Instance.ValueChanged.InvokeAsync(false));
 
             update.SendBufferWatermark.Should().Be(256);
             update.SendBufferLowWatermark.Should().Be(32);
@@ -284,21 +284,21 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await target.InvokeAsync(() => FindSelect<int>(target, "Upload slots behavior").Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => FindSelect<int>(target, "Upload choking algorithm").Instance.ValueChanged.InvokeAsync(2));
-            await target.InvokeAsync(() => FindSwitch(target, "Always announce to all trackers in a tier").Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => FindSwitch(target, "Always announce to all tiers").Instance.ValueChanged.InvokeAsync(true));
-            await target.InvokeAsync(() => FindTextField(target, "IP address reported to trackers (requires restart)").Instance.ValueChanged.InvokeAsync("203.0.113.5"));
-            await target.InvokeAsync(() => FindNumeric(target, "Max concurrent HTTP announces").Instance.ValueChanged.InvokeAsync(80));
-            await target.InvokeAsync(() => FindNumeric(target, "Stop tracker timeout [0: disabled]").Instance.ValueChanged.InvokeAsync(45));
-            await target.InvokeAsync(() => FindNumeric(target, "Peer turnover disconnect percentage:").Instance.ValueChanged.InvokeAsync(12));
-            await target.InvokeAsync(() => FindNumeric(target, "Peer turnover threshold percentage").Instance.ValueChanged.InvokeAsync(25));
-            await target.InvokeAsync(() => FindNumeric(target, "Peer turnover disconnect interval").Instance.ValueChanged.InvokeAsync(120));
-            await target.InvokeAsync(() => FindNumeric(target, "Maximum outstanding requests to a single peer").Instance.ValueChanged.InvokeAsync(200));
-            await target.InvokeAsync(() => FindNumeric(target, "I2P inbound quantity (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(6));
-            await target.InvokeAsync(() => FindNumeric(target, "I2P outbound quantity (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(4));
-            await target.InvokeAsync(() => FindNumeric(target, "I2P inbound length (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(3));
-            await target.InvokeAsync(() => FindNumeric(target, "I2P outbound length (requires libtorrent >= 2.0)").Instance.ValueChanged.InvokeAsync(2));
+            await target.InvokeAsync(() => FindSelect<int>(target, "UploadSlotsBehavior").Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => FindSelect<int>(target, "UploadChokingAlgorithm").Instance.ValueChanged.InvokeAsync(2));
+            await target.InvokeAsync(() => FindSwitch(target, "AnnounceToAllTrackers").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "AnnounceToAllTiers").Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => FindTextField(target, "AnnounceIp").Instance.ValueChanged.InvokeAsync("203.0.113.5"));
+            await target.InvokeAsync(() => FindNumeric(target, "MaxConcurrentHttpAnnounces").Instance.ValueChanged.InvokeAsync(80));
+            await target.InvokeAsync(() => FindNumeric(target, "StopTrackerTimeout").Instance.ValueChanged.InvokeAsync(45));
+            await target.InvokeAsync(() => FindNumeric(target, "PeerTurnover").Instance.ValueChanged.InvokeAsync(12));
+            await target.InvokeAsync(() => FindNumeric(target, "PeerTurnoverCutoff").Instance.ValueChanged.InvokeAsync(25));
+            await target.InvokeAsync(() => FindNumeric(target, "PeerTurnoverInterval").Instance.ValueChanged.InvokeAsync(120));
+            await target.InvokeAsync(() => FindNumeric(target, "RequestQueueSize").Instance.ValueChanged.InvokeAsync(200));
+            await target.InvokeAsync(() => FindNumeric(target, "I2pInboundQuantity").Instance.ValueChanged.InvokeAsync(6));
+            await target.InvokeAsync(() => FindNumeric(target, "I2pOutboundQuantity").Instance.ValueChanged.InvokeAsync(4));
+            await target.InvokeAsync(() => FindNumeric(target, "I2pInboundLength").Instance.ValueChanged.InvokeAsync(3));
+            await target.InvokeAsync(() => FindNumeric(target, "I2pOutboundLength").Instance.ValueChanged.InvokeAsync(2));
 
             update.UploadSlotsBehavior.Should().Be(1);
             update.UploadChokingAlgorithm.Should().Be(2);
@@ -318,24 +318,24 @@ namespace Lantean.QBTMud.Test.Components.Options
             raised.Should().NotBeEmpty();
         }
 
-        private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<AdvancedOptions> target, string label)
+        private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<AdvancedOptions> target, string testId)
         {
-            return target.FindComponents<MudNumericField<int>>().First(field => field.Instance.Label == label);
+            return target.FindComponents<MudNumericField<int>>().Single(field => field.FindAll($"[data-test-id='{testId}']").Count > 0);
         }
 
-        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<AdvancedOptions> target, string label)
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<AdvancedOptions> target, string testId)
         {
-            return target.FindComponents<MudTextField<string>>().First(field => field.Instance.Label == label);
+            return target.FindComponents<MudTextField<string>>().Single(field => field.FindAll($"[data-test-id='{testId}']").Count > 0);
         }
 
-        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<AdvancedOptions> target, string label)
+        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<AdvancedOptions> target, string testId)
         {
-            return target.FindComponents<FieldSwitch>().First(field => field.Instance.Label == label);
+            return target.FindComponents<FieldSwitch>().Single(field => field.FindAll($"[data-test-id='{testId}']").Count > 0);
         }
 
-        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<AdvancedOptions> target, string label)
+        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<AdvancedOptions> target, string testId)
         {
-            return target.FindComponents<MudSelect<T>>().First(field => field.Instance.Label == label);
+            return target.FindComponents<MudSelect<T>>().Single(field => field.FindAll($"[data-test-id='{testId}']").Count > 0);
         }
 
         private static Preferences DeserializePreferences()

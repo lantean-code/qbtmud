@@ -37,22 +37,14 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var switches = target.FindComponents<FieldSwitch>();
-            switches.Single(s => s.Instance.Label == "Enable fetching RSS feeds").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Enable auto downloading of RSS torrents").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Download REPACK/PROPER episodes").Instance.Value.Should().BeFalse();
+            FindSwitch(target, "RssProcessingEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "RssAutoDownloadingEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "RssDownloadRepackProperEpisodes").Instance.Value.Should().BeFalse();
 
-            var refreshField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Feeds refresh interval");
-            refreshField.Instance.Value.Should().Be(30);
+            FindNumeric(target, "RssRefreshInterval").Instance.Value.Should().Be(30);
+            FindNumeric(target, "RssMaxArticlesPerFeed").Instance.Value.Should().Be(200);
 
-            var maxField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Maximum number of articles per feed");
-            maxField.Instance.Value.Should().Be(200);
-
-            target.FindComponents<MudTextField<string>>()
-                .Single(tf => tf.Instance.Label == "Filters")
-                .Instance.Value.Should().Be("filter-one\nfilter-two");
+            FindTextField(target, "RssSmartEpisodeFilters").Instance.Value.Should().Be("filter-one\nfilter-two");
 
             update.RssProcessingEnabled.Should().BeNull();
         }
@@ -73,31 +65,27 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var switches = target.FindComponents<FieldSwitch>();
-            var processingSwitch = switches.Single(s => s.Instance.Label == "Enable fetching RSS feeds");
+            var processingSwitch = FindSwitch(target, "RssProcessingEnabled");
             await target.InvokeAsync(() => processingSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.RssProcessingEnabled.Should().BeFalse();
 
-            var refreshField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Feeds refresh interval");
+            var refreshField = FindNumeric(target, "RssRefreshInterval");
             await target.InvokeAsync(() => refreshField.Instance.ValueChanged.InvokeAsync(45));
             update.RssRefreshInterval.Should().Be(45);
 
-            var maxField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Maximum number of articles per feed");
+            var maxField = FindNumeric(target, "RssMaxArticlesPerFeed");
             await target.InvokeAsync(() => maxField.Instance.ValueChanged.InvokeAsync(250));
             update.RssMaxArticlesPerFeed.Should().Be(250);
 
-            var autoSwitch = switches.Single(s => s.Instance.Label == "Enable auto downloading of RSS torrents");
+            var autoSwitch = FindSwitch(target, "RssAutoDownloadingEnabled");
             await target.InvokeAsync(() => autoSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.RssAutoDownloadingEnabled.Should().BeFalse();
 
-            var repackSwitch = switches.Single(s => s.Instance.Label == "Download REPACK/PROPER episodes");
+            var repackSwitch = FindSwitch(target, "RssDownloadRepackProperEpisodes");
             await target.InvokeAsync(() => repackSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.RssDownloadRepackProperEpisodes.Should().BeTrue();
 
-            var filtersField = target.FindComponents<MudTextField<string>>()
-                .Single(tf => tf.Instance.Label == "Filters");
+            var filtersField = FindTextField(target, "RssSmartEpisodeFilters");
             await target.InvokeAsync(() => filtersField.Instance.ValueChanged.InvokeAsync("updated"));
             update.RssSmartEpisodeFilters.Should().Be("updated");
 
@@ -175,6 +163,28 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void Dispose()
         {
             _context.Dispose();
+        }
+
+        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<RSSOptions> target, string testId)
+            where TComponent : IComponent
+        {
+            return target.FindComponents<TComponent>()
+                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
+        }
+
+        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<RSSOptions> target, string testId)
+        {
+            return FindComponentByTestId<FieldSwitch>(target, testId);
+        }
+
+        private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<RSSOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudNumericField<int>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<RSSOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudTextField<string>>(target, testId);
         }
 
         private sealed class TestableRssOptions : RSSOptions

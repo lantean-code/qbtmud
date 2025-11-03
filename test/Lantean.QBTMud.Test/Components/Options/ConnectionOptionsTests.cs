@@ -7,6 +7,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System.Linq;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
@@ -35,47 +36,23 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            target.FindComponent<MudSelect<int>>().Instance.Value.Should().Be(2);
-            target.FindComponent<MudNumericField<int>>().Instance.Value.Should().Be(8999);
+            FindSelect<int>(target, "BittorrentProtocol").Instance.Value.Should().Be(2);
+            FindNumericInt(target, "ListenPort").Instance.Value.Should().Be(8999);
 
-            var switches = target.FindComponents<FieldSwitch>();
-            var switchLabels = switches.Select(s => s.Instance.Label).ToList();
+            FindSwitch(target, "Upnp").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "MaxConnecEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "MaxConnecPerTorrentEnabled").Instance.Value.Should().BeFalse();
+            FindSwitch(target, "MaxUploadsEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "I2pEnabled").Instance.Value.Should().BeTrue();
 
-            switchLabels.Should().Contain("Use UPnp / NAT-PMP port forwarding from my router");
-            switches[switchLabels.IndexOf("Use UPnp / NAT-PMP port forwarding from my router")].Instance.Value.Should().BeTrue();
+            FindTextField(target, "I2pAddress").Instance.Disabled.Should().BeFalse();
 
-            switchLabels.Should().Contain("Global maximum number of connections");
-            switches[switchLabels.IndexOf("Global maximum number of connections")].Instance.Value.Should().BeTrue();
+            FindSwitch(target, "ProxyPeerConnections").Instance.Disabled.Should().BeTrue();
+            FindTextField(target, "ProxyIp").Instance.Disabled.Should().BeFalse();
+            FindTextField(target, "ProxyUsername").Instance.Disabled.Should().BeFalse();
 
-            switchLabels.Should().Contain("Maximum number of connections per torrent");
-            switches[switchLabels.IndexOf("Maximum number of connections per torrent")].Instance.Value.Should().BeFalse();
-
-            switchLabels.Should().Contain("Global maximum number of upload slots");
-            switches[switchLabels.IndexOf("Global maximum number of upload slots")].Instance.Value.Should().BeTrue();
-
-            switchLabels.Should().Contain("I2P (Experimental)");
-            switches[switchLabels.IndexOf("I2P (Experimental)")].Instance.Value.Should().BeTrue();
-
-            target.FindComponents<MudTextField<string>>()
-                .First(tf => tf.Instance.Label == "Host" && tf.Instance.Value == "i2p.local")
-                .Instance.Disabled.Should().BeFalse();
-
-            switchLabels.Should().Contain("Use proxy for peer connections");
-            switches[switchLabels.IndexOf("Use proxy for peer connections")].Instance.Disabled.Should().BeTrue();
-
-            target.FindComponents<MudTextField<string>>()
-                .First(tf => tf.Instance.Value == "127.0.0.1")
-                .Instance.Disabled.Should().BeFalse();
-
-            target.FindComponents<MudTextField<string>>()
-                .First(tf => tf.Instance.Value == "user")
-                .Instance.Disabled.Should().BeFalse();
-
-            switches.First(s => s.Instance.Label == "IP Filter").Instance.Value.Should().BeTrue();
-
-            target.FindComponents<MudTextField<string>>()
-                .First(tf => tf.Instance.Label == "Filter path (.dat, .p2p, .p2b)")
-                .Instance.Disabled.Should().BeFalse();
+            FindSwitch(target, "IpFilterEnabled").Instance.Value.Should().BeTrue();
+            FindTextField(target, "IpFilterPath").Instance.Disabled.Should().BeFalse();
         }
 
         [Fact]
@@ -94,17 +71,16 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var listenField = target.FindComponent<MudNumericField<int>>();
+            var listenField = FindNumericInt(target, "ListenPort");
             await target.InvokeAsync(() => listenField.Instance.ValueChanged.InvokeAsync(7000));
 
-            var upnpSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Use UPnp / NAT-PMP port forwarding from my router");
+            var upnpSwitch = FindSwitch(target, "Upnp");
             await target.InvokeAsync(() => upnpSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var maxConnField = target.FindComponents<MudNumericField<int>>()
-                .First(n => n.Instance.Label == "Connections" && n.Instance.Value == 600);
+            var maxConnField = FindNumericInt(target, "MaxConnec");
             await target.InvokeAsync(() => maxConnField.Instance.ValueChanged.InvokeAsync(450));
 
-            var proxyTypeSelect = target.FindComponents<MudSelect<string>>().First(s => s.Instance.Label == "Type");
+            var proxyTypeSelect = FindSelect<string>(target, "ProxyType");
             await target.InvokeAsync(() => proxyTypeSelect.Instance.ValueChanged.InvokeAsync("None"));
 
             update.ListenPort.Should().Be(7000);
@@ -142,21 +118,20 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var i2pHostField = target.FindComponents<MudTextField<string>>()
-                .First(tf => tf.Instance.Label == "Host" && tf.Instance.Value == string.Empty);
+            var i2pHostField = FindTextField(target, "I2pAddress");
             i2pHostField.Instance.Disabled.Should().BeTrue();
 
-            var i2pPortField = target.FindComponents<MudNumericField<int>>()
-                .First(n => n.Instance.Label == "Slots" && n.Instance.Value == 0 && n.Instance.Disabled);
+            var i2pPortField = FindNumericInt(target, "I2pPort");
+            i2pPortField.Instance.Disabled.Should().BeTrue();
 
-            var i2pSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "I2P (Experimental)");
+            var i2pSwitch = FindSwitch(target, "I2pEnabled");
             await target.InvokeAsync(() => i2pSwitch.Instance.ValueChanged.InvokeAsync(true));
 
             update.I2pEnabled.Should().BeTrue();
 
             i2pHostField.Instance.Disabled.Should().BeFalse();
-            i2pPortField = target.FindComponents<MudNumericField<int>>()
-                .First(n => n.Instance.Label == "Slots" && !n.Instance.Disabled);
+            i2pPortField = FindNumericInt(target, "I2pPort");
+            i2pPortField.Instance.Disabled.Should().BeFalse();
 
             await target.InvokeAsync(() => i2pHostField.Instance.ValueChanged.InvokeAsync("i2p.example"));
             update.I2pAddress.Should().Be("i2p.example");
@@ -164,7 +139,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => i2pPortField.Instance.ValueChanged.InvokeAsync(7654));
             update.I2pPort.Should().Be(7654);
 
-            var mixedSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Mixed mode");
+            var mixedSwitch = FindSwitch(target, "I2pMixedMode");
             await target.InvokeAsync(() => mixedSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.I2pMixedMode.Should().BeTrue();
 
@@ -188,56 +163,52 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var typeSelect = target.FindComponents<MudSelect<string>>().First(s => s.Instance.Label == "Type");
+            var typeSelect = FindSelect<string>(target, "ProxyType");
             await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync("None"));
 
             update.ProxyType.Should().Be("None");
 
-            var proxyHostField = target.FindComponents<MudTextField<string>>()
-                .First(tf => tf.Instance.Value == "127.0.0.1");
+            var proxyHostField = FindTextField(target, "ProxyIp");
             proxyHostField.Instance.Disabled.Should().BeTrue();
 
-            var proxyPeerSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Use proxy for peer connections");
+            var proxyPeerSwitch = FindSwitch(target, "ProxyPeerConnections");
             proxyPeerSwitch.Instance.Disabled.Should().BeTrue();
 
             await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync("SOCKS5"));
             proxyHostField.Instance.Disabled.Should().BeFalse();
 
-            var authSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Authentication");
+            var authSwitch = FindSwitch(target, "ProxyAuthEnabled");
             await target.InvokeAsync(() => authSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.ProxyAuthEnabled.Should().BeFalse();
 
             await target.InvokeAsync(() => proxyHostField.Instance.ValueChanged.InvokeAsync("10.0.0.5"));
             update.ProxyIp.Should().Be("10.0.0.5");
 
-            var proxyPortField = target.FindComponents<MudNumericField<int>>()
-                .First(n => n.Instance.Label == "Port" && !n.Instance.Disabled);
+            var proxyPortField = FindNumericInt(target, "ProxyPort");
             await target.InvokeAsync(() => proxyPortField.Instance.ValueChanged.InvokeAsync(8888));
             update.ProxyPort.Should().Be(8888);
 
-            var proxyUserField = target.FindComponents<MudTextField<string>>()
-                .First(tf => tf.Instance.Label == "Username");
+            var proxyUserField = FindTextField(target, "ProxyUsername");
             await target.InvokeAsync(() => proxyUserField.Instance.ValueChanged.InvokeAsync("proxyuser"));
             update.ProxyUsername.Should().Be("proxyuser");
 
-            var proxyPasswordField = target.FindComponents<MudTextField<string>>()
-                .First(tf => tf.Instance.Label == "Password");
+            var proxyPasswordField = FindTextField(target, "ProxyPassword");
             await target.InvokeAsync(() => proxyPasswordField.Instance.ValueChanged.InvokeAsync("proxypass"));
             update.ProxyPassword.Should().Be("proxypass");
 
-            var hostLookupSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Perform hostname lookup via proxy");
+            var hostLookupSwitch = FindSwitch(target, "ProxyHostnameLookup");
             await target.InvokeAsync(() => hostLookupSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.ProxyHostnameLookup.Should().BeFalse();
 
-            var proxyBittorrentSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Use proxy for BitTorrent purposes");
+            var proxyBittorrentSwitch = FindSwitch(target, "ProxyBittorrent");
             await target.InvokeAsync(() => proxyBittorrentSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.ProxyBittorrent.Should().BeFalse();
 
-            var proxyRssSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Use proxy for RSS purposes");
+            var proxyRssSwitch = FindSwitch(target, "ProxyRss");
             await target.InvokeAsync(() => proxyRssSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.ProxyRss.Should().BeFalse();
 
-            var proxyMiscSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Use proxy for general purposes");
+            var proxyMiscSwitch = FindSwitch(target, "ProxyMisc");
             await target.InvokeAsync(() => proxyMiscSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.ProxyMisc.Should().BeFalse();
 
@@ -268,34 +239,21 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var switches = target.FindComponents<FieldSwitch>();
-            var maxConnectionsSwitch = switches.Single(s => s.Instance.Label == "Global maximum number of connections");
+            var maxConnectionsSwitch = FindSwitch(target, "MaxConnecEnabled");
             await target.InvokeAsync(() => maxConnectionsSwitch.Instance.ValueChanged.InvokeAsync(false));
+            FindNumericInt(target, "MaxConnec").Instance.Disabled.Should().BeTrue();
 
-            var maxConnectionsField = target.FindComponents<MudNumericField<int>>()
-                .First(n => n.Instance.Value == 800);
-            maxConnectionsField.Instance.Disabled.Should().BeTrue();
-
-            var perTorrentSwitch = switches.Single(s => s.Instance.Label == "Maximum number of connections per torrent");
+            var perTorrentSwitch = FindSwitch(target, "MaxConnecPerTorrentEnabled");
             await target.InvokeAsync(() => perTorrentSwitch.Instance.ValueChanged.InvokeAsync(false));
+            FindNumericInt(target, "MaxConnecPerTorrent").Instance.Disabled.Should().BeTrue();
 
-            var perTorrentField = target.FindComponents<MudNumericField<int>>()
-                .First(n => n.Instance.Value == 300);
-            perTorrentField.Instance.Disabled.Should().BeTrue();
-
-            var maxUploadsSwitch = switches.Single(s => s.Instance.Label == "Global maximum number of upload slots");
+            var maxUploadsSwitch = FindSwitch(target, "MaxUploadsEnabled");
             await target.InvokeAsync(() => maxUploadsSwitch.Instance.ValueChanged.InvokeAsync(false));
+            FindNumericInt(target, "MaxUploads").Instance.Disabled.Should().BeTrue();
 
-            var maxUploadsField = target.FindComponents<MudNumericField<int>>()
-                .First(n => n.Instance.Value == 50);
-            maxUploadsField.Instance.Disabled.Should().BeTrue();
-
-            var uploadsPerTorrentSwitch = switches.Single(s => s.Instance.Label == "Maximum number of upload slots per torrent");
+            var uploadsPerTorrentSwitch = FindSwitch(target, "MaxUploadsPerTorrentEnabled");
             await target.InvokeAsync(() => uploadsPerTorrentSwitch.Instance.ValueChanged.InvokeAsync(false));
-
-            var uploadsPerTorrentField = target.FindComponents<MudNumericField<int>>()
-                .First(n => n.Instance.Value == 12);
-            uploadsPerTorrentField.Instance.Disabled.Should().BeTrue();
+            FindNumericInt(target, "MaxUploadsPerTorrent").Instance.Disabled.Should().BeTrue();
         }
 
         [Fact]
@@ -314,25 +272,23 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var protocolSelect = target.FindComponent<MudSelect<int>>();
+            var protocolSelect = FindSelect<int>(target, "BittorrentProtocol");
             await target.InvokeAsync(() => protocolSelect.Instance.ValueChanged.InvokeAsync(1));
             update.BittorrentProtocol.Should().Be(1);
 
-            var ipFilterSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "IP Filter");
+            var ipFilterSwitch = FindSwitch(target, "IpFilterEnabled");
             await target.InvokeAsync(() => ipFilterSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.IpFilterEnabled.Should().BeFalse();
 
-            var filterPathField = target.FindComponents<MudTextField<string>>()
-                .First(tf => tf.Instance.Label == "Filter path (.dat, .p2p, .p2b)");
+            var filterPathField = FindTextField(target, "IpFilterPath");
             await target.InvokeAsync(() => filterPathField.Instance.ValueChanged.InvokeAsync("/new/filter.dat"));
             update.IpFilterPath.Should().Be("/new/filter.dat");
 
-            var trackersSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Apply to trackers");
+            var trackersSwitch = FindSwitch(target, "IpFilterTrackers");
             await target.InvokeAsync(() => trackersSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.IpFilterTrackers.Should().BeFalse();
 
-            var bannedField = target.FindComponents<MudTextField<string>>()
-                .First(tf => tf.Instance.Label == "Manually banned IP addresses");
+            var bannedField = FindTextField(target, "BannedIPs");
             await target.InvokeAsync(() => bannedField.Instance.ValueChanged.InvokeAsync("10.0.0.2"));
             update.BannedIPs.Should().Be("10.0.0.2");
 
@@ -355,11 +311,38 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var numericField = target.FindComponent<MudNumericField<int>>();
+            var numericField = FindNumericInt(target, "ListenPort");
             await target.InvokeAsync(() => numericField.Instance.OnAdornmentClick.InvokeAsync());
 
             update.ListenPort.Should().BeGreaterThanOrEqualTo(1024);
             update.ListenPort.Should().BeLessThanOrEqualTo(65535);
+        }
+
+        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<ConnectionOptions> target, string testId)
+            where TComponent : IComponent
+        {
+            return target.FindComponents<TComponent>()
+                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
+        }
+
+        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<ConnectionOptions> target, string testId)
+        {
+            return FindComponentByTestId<FieldSwitch>(target, testId);
+        }
+
+        private static IRenderedComponent<MudNumericField<int>> FindNumericInt(IRenderedComponent<ConnectionOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudNumericField<int>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<ConnectionOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudSelect<T>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<ConnectionOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudTextField<string>>(target, testId);
         }
 
         private static Preferences DeserializePreferences()

@@ -7,6 +7,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System.Linq;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
@@ -35,26 +36,26 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Host").Instance.Value.Should().Be("example.com");
-            target.FindComponents<MudNumericField<int>>().First(f => f.Instance.Label == "Port").Instance.Value.Should().Be(9090);
+            FindTextField(target, "WebUiAddress").Instance.Value.Should().Be("example.com");
+            FindNumeric(target, "WebUiPort").Instance.Value.Should().Be(9090);
 
-            target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Use HTTPS instead of HTTP").Instance.Value.Should().BeTrue();
-            target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Certificate").Instance.Disabled.Should().BeFalse();
+            FindSwitch(target, "UseHttps").Instance.Value.Should().BeTrue();
+            FindTextField(target, "WebUiHttpsCertPath").Instance.Disabled.Should().BeFalse();
 
-            target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Bypass authentication for clients in whitelisted IP subnets").Instance.Value.Should().BeTrue();
-            target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Value == "10.0.0.0/8").Instance.Disabled.Should().BeFalse();
+            FindSwitch(target, "BypassAuthSubnetWhitelistEnabled").Instance.Value.Should().BeTrue();
+            FindTextField(target, "BypassAuthSubnetWhitelist").Instance.Disabled.Should().BeFalse();
 
-            target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Enable Host header validation").Instance.Value.Should().BeTrue();
-            target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Value == "domain1\n.domain2").Instance.Disabled.Should().BeFalse();
+            FindSwitch(target, "WebUiHostHeaderValidationEnabled").Instance.Value.Should().BeTrue();
+            FindTextField(target, "WebUiDomainList").Instance.Disabled.Should().BeFalse();
 
-            target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Add custom HTTP headers").Instance.Value.Should().BeTrue();
-            target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Value == "X-Test: 1").Instance.Disabled.Should().BeFalse();
+            FindSwitch(target, "WebUiUseCustomHttpHeadersEnabled").Instance.Value.Should().BeTrue();
+            FindTextField(target, "WebUiCustomHttpHeaders").Instance.Disabled.Should().BeFalse();
 
-            target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Enable reverse proxy support").Instance.Value.Should().BeTrue();
-            target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Value == "proxy1").Instance.Disabled.Should().BeFalse();
+            FindSwitch(target, "WebUiReverseProxyEnabled").Instance.Value.Should().BeTrue();
+            FindTextField(target, "WebUiReverseProxiesList").Instance.Disabled.Should().BeFalse();
 
-            target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Update my dynamic domain name").Instance.Value.Should().BeTrue();
-            target.FindComponents<MudSelect<int>>()[0].Instance.Value.Should().Be(0);
+            FindSwitch(target, "DyndnsEnabled").Instance.Value.Should().BeTrue();
+            FindSelect<int>(target, "DyndnsService").Instance.Value.Should().Be(0);
         }
 
         [Fact]
@@ -73,23 +74,16 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var hostField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Host");
-            await target.InvokeAsync(() => hostField.Instance.ValueChanged.InvokeAsync("localhost"));
+            await target.InvokeAsync(() => FindTextField(target, "WebUiAddress").Instance.ValueChanged.InvokeAsync("localhost"));
+            await target.InvokeAsync(() => FindNumeric(target, "WebUiPort").Instance.ValueChanged.InvokeAsync(8081));
+            await target.InvokeAsync(() => FindSwitch(target, "WebUiUpnp").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "UseHttps").Instance.ValueChanged.InvokeAsync(false));
 
-            var portField = target.FindComponents<MudNumericField<int>>().First(f => f.Instance.Label == "Port");
-            await target.InvokeAsync(() => portField.Instance.ValueChanged.InvokeAsync(8081));
-
-            var upnpSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Use UPnP / NAT-PMP to forward the port from my router");
-            await target.InvokeAsync(() => upnpSwitch.Instance.ValueChanged.InvokeAsync(false));
-
-            var httpsSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Use HTTPS instead of HTTP");
-            await target.InvokeAsync(() => httpsSwitch.Instance.ValueChanged.InvokeAsync(false));
-
-            var certField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Certificate");
+            var certField = FindTextField(target, "WebUiHttpsCertPath");
             certField.Instance.Disabled.Should().BeTrue();
             await target.InvokeAsync(() => certField.Instance.ValueChanged.InvokeAsync("/newcert.pem"));
 
-            var keyField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Key");
+            var keyField = FindTextField(target, "WebUiHttpsKeyPath");
             await target.InvokeAsync(() => keyField.Instance.ValueChanged.InvokeAsync("/newkey.pem"));
 
             update.WebUiAddress.Should().Be("localhost");
@@ -119,29 +113,29 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var usernameField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Username" && tf.Instance.Value == "admin");
+            var usernameField = FindTextField(target, "WebUiUsername");
             await target.InvokeAsync(() => usernameField.Instance.ValueChanged.InvokeAsync("root"));
 
-            var passwordField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Password" && tf.Instance.Value == "secret!");
+            var passwordField = FindTextField(target, "WebUiPassword");
             await target.InvokeAsync(() => passwordField.Instance.ValueChanged.InvokeAsync("newpass"));
 
-            var localBypass = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Bypass authentication for clients on localhost");
+            var localBypass = FindSwitch(target, "BypassLocalAuth");
             await target.InvokeAsync(() => localBypass.Instance.ValueChanged.InvokeAsync(false));
 
-            var subnetBypass = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Bypass authentication for clients in whitelisted IP subnets");
+            var subnetBypass = FindSwitch(target, "BypassAuthSubnetWhitelistEnabled");
             await target.InvokeAsync(() => subnetBypass.Instance.ValueChanged.InvokeAsync(false));
 
-            var subnetField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Value == "10.0.0.0/8");
+            var subnetField = FindTextField(target, "BypassAuthSubnetWhitelist");
             subnetField.Instance.Disabled.Should().BeTrue();
             await target.InvokeAsync(() => subnetField.Instance.ValueChanged.InvokeAsync("192.168.0.0/16"));
 
-            var failCountField = target.FindComponents<MudNumericField<int>>().First(f => f.Instance.Label == "Ban client after consecutive failures");
+            var failCountField = FindNumeric(target, "WebUiMaxAuthFailCount");
             await target.InvokeAsync(() => failCountField.Instance.ValueChanged.InvokeAsync(7));
 
-            var banDurationField = target.FindComponents<MudNumericField<int>>().First(f => f.Instance.Label == "ban for");
+            var banDurationField = FindNumeric(target, "WebUiBanDuration");
             await target.InvokeAsync(() => banDurationField.Instance.ValueChanged.InvokeAsync(120));
 
-            var sessionField = target.FindComponents<MudNumericField<int>>().First(f => f.Instance.Label == "Session timeout");
+            var sessionField = FindNumeric(target, "WebUiSessionTimeout");
             await target.InvokeAsync(() => sessionField.Instance.ValueChanged.InvokeAsync(7200));
 
             update.WebUiUsername.Should().Be("root");
@@ -172,39 +166,39 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var altSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Use alternative Web UI");
+            var altSwitch = FindSwitch(target, "AlternativeWebuiEnabled");
             await target.InvokeAsync(() => altSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var altPathField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Files location");
+            var altPathField = FindTextField(target, "AlternativeWebuiPath");
             await target.InvokeAsync(() => altPathField.Instance.ValueChanged.InvokeAsync("/alt/ui"));
 
-            var clickSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Enable clickjacking protection");
+            var clickSwitch = FindSwitch(target, "WebUiClickjackingProtectionEnabled");
             await target.InvokeAsync(() => clickSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var csrfSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Enable Cross-Site Request Forgery (CSRF) protection");
+            var csrfSwitch = FindSwitch(target, "WebUiCsrfProtectionEnabled");
             await target.InvokeAsync(() => csrfSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var secureSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Enable cookie Secure flag (requires HTTPS)");
+            var secureSwitch = FindSwitch(target, "WebUiSecureCookieEnabled");
             await target.InvokeAsync(() => secureSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var hostSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Enable Host header validation");
+            var hostSwitch = FindSwitch(target, "WebUiHostHeaderValidationEnabled");
             await target.InvokeAsync(() => hostSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var domainField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Value == "domain1\n.domain2");
+            var domainField = FindTextField(target, "WebUiDomainList");
             domainField.Instance.Disabled.Should().BeTrue();
             await target.InvokeAsync(() => domainField.Instance.ValueChanged.InvokeAsync("example.org"));
 
-            var headerSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Add custom HTTP headers");
+            var headerSwitch = FindSwitch(target, "WebUiUseCustomHttpHeadersEnabled");
             await target.InvokeAsync(() => headerSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var headersField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Value == "X-Test: 1");
+            var headersField = FindTextField(target, "WebUiCustomHttpHeaders");
             headersField.Instance.Disabled.Should().BeTrue();
             await target.InvokeAsync(() => headersField.Instance.ValueChanged.InvokeAsync("X-New: 2"));
 
-            var reverseSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Enable reverse proxy support");
+            var reverseSwitch = FindSwitch(target, "WebUiReverseProxyEnabled");
             await target.InvokeAsync(() => reverseSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var reverseField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Value == "proxy1");
+            var reverseField = FindTextField(target, "WebUiReverseProxiesList");
             reverseField.Instance.Disabled.Should().BeTrue();
             await target.InvokeAsync(() => reverseField.Instance.ValueChanged.InvokeAsync("proxy2"));
 
@@ -239,22 +233,22 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var enableSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Update my dynamic domain name");
+            var enableSwitch = FindSwitch(target, "DyndnsEnabled");
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var serviceSelect = target.FindComponents<MudSelect<int>>()[0];
+            var serviceSelect = FindSelect<int>(target, "DyndnsService");
             serviceSelect.Instance.Disabled.Should().BeTrue();
             await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(1));
 
-            var domainField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Domain name");
+            var domainField = FindTextField(target, "DyndnsDomain");
             domainField.Instance.Disabled.Should().BeTrue();
             await target.InvokeAsync(() => domainField.Instance.ValueChanged.InvokeAsync("newdomain"));
 
-            var userField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Username" && tf.Instance.Value == "user");
+            var userField = FindTextField(target, "DyndnsUsername");
             userField.Instance.Disabled.Should().BeTrue();
             await target.InvokeAsync(() => userField.Instance.ValueChanged.InvokeAsync("newuser"));
 
-            var passField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Label == "Password" && tf.Instance.Value == "pass");
+            var passField = FindTextField(target, "DyndnsPassword");
             passField.Instance.Disabled.Should().BeTrue();
             await target.InvokeAsync(() => passField.Instance.ValueChanged.InvokeAsync("newpass"));
 
@@ -287,14 +281,14 @@ namespace Lantean.QBTMud.Test.Components.Options
             calls.Should().HaveCount(1);
             calls[0].Arguments[0].Should().Be("https://www.dyndns.com/account/services/hosts/add.html");
 
-            var enableSwitch = target.FindComponents<FieldSwitch>().First(s => s.Instance.Label == "Update my dynamic domain name");
+            var enableSwitch = FindSwitch(target, "DyndnsEnabled");
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => target.FindAll("button").First(b => b.TextContent.Contains("Register", StringComparison.Ordinal)).Click());
             calls = _context.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
             calls.Should().HaveCount(1);
 
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(true));
-            var serviceSelect = target.FindComponents<MudSelect<int>>()[0];
+            var serviceSelect = FindSelect<int>(target, "DyndnsService");
             await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(1));
             await target.InvokeAsync(() => target.FindAll("button").First(b => b.TextContent.Contains("Register", StringComparison.Ordinal)).Click());
 
@@ -348,6 +342,33 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void Dispose()
         {
             _context.Dispose();
+        }
+
+        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<WebUIOptions> target, string testId)
+            where TComponent : IComponent
+        {
+            return target.FindComponents<TComponent>()
+                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<WebUIOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudTextField<string>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<WebUIOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudNumericField<int>>(target, testId);
+        }
+
+        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<WebUIOptions> target, string testId)
+        {
+            return FindComponentByTestId<FieldSwitch>(target, testId);
+        }
+
+        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<WebUIOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudSelect<T>>(target, testId);
         }
     }
 }

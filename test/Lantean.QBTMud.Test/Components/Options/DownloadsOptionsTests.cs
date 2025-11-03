@@ -7,6 +7,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System.Linq;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
@@ -35,15 +36,15 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            target.FindComponents<MudSelect<string>>().Single(s => s.Instance.Label == "Torrent content layout").Instance.Value.Should().Be("Original");
-            target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Add to top of queue").Instance.Value.Should().BeTrue();
-            target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Delete .torrent files afterwards").Instance.Value.Should().BeTrue();
-            target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Pre-allocate disk space for all files").Instance.Value.Should().BeTrue();
-            target.FindComponents<MudSelect<bool>>().Single(s => s.Instance.Label == "Default Torrent Management Mode").Instance.Value.Should().BeTrue();
-            target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Value == "/temp").Instance.Disabled.Should().BeFalse();
-            target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Value == "/export").Instance.Disabled.Should().BeFalse();
-            target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Email notification upon download completion").Instance.Value.Should().BeTrue();
-            target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Label == "Username").Instance.Disabled.Should().BeFalse();
+            FindSelect<string>(target, "TorrentContentLayout").Instance.Value.Should().Be("Original");
+            FindSwitch(target, "AddToTopOfQueue").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "AutoDeleteMode").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "PreallocateAll").Instance.Value.Should().BeTrue();
+            FindSelect<bool>(target, "AutoTmmEnabled").Instance.Value.Should().BeTrue();
+            FindTextField(target, "TempPath").Instance.Disabled.Should().BeFalse();
+            FindTextField(target, "ExportDir").Instance.Disabled.Should().BeFalse();
+            FindSwitch(target, "MailNotificationEnabled").Instance.Value.Should().BeTrue();
+            FindTextField(target, "MailNotificationUsername").Instance.Disabled.Should().BeFalse();
             target.FindAll("tbody tr").Count.Should().Be(2);
             update.ScanDirs.Should().BeNull();
         }
@@ -64,19 +65,19 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var addToTopSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Add to top of queue");
+            var addToTopSwitch = FindSwitch(target, "AddToTopOfQueue");
             await target.InvokeAsync(() => addToTopSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var layoutSelect = target.FindComponents<MudSelect<string>>().Single(s => s.Instance.Label == "Torrent content layout");
+            var layoutSelect = FindSelect<string>(target, "TorrentContentLayout");
             await target.InvokeAsync(() => layoutSelect.Instance.ValueChanged.InvokeAsync("NoSubfolder"));
 
-            var tempSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Keep incomplete torrents in");
+            var tempSwitch = FindSwitch(target, "TempPathEnabled");
             await target.InvokeAsync(() => tempSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var tempPathField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Value == "/temp");
+            var tempPathField = FindTextField(target, "TempPath");
             await target.InvokeAsync(() => tempPathField.Instance.ValueChanged.InvokeAsync("/tmp-new"));
 
-            var subcategoriesSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Use Subcategories");
+            var subcategoriesSwitch = FindSwitch(target, "UseSubcategories");
             await target.InvokeAsync(() => subcategoriesSwitch.Instance.ValueChanged.InvokeAsync(false));
 
             update.AddToTopOfQueue.Should().BeFalse();
@@ -104,23 +105,23 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var addStoppedSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Do not start the download automatically");
+            var addStoppedSwitch = FindSwitch(target, "AddStoppedEnabled");
             await target.InvokeAsync(() => addStoppedSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.AddStoppedEnabled.Should().BeTrue();
 
-            var stopConditionSelect = target.FindComponents<MudSelect<string>>().Single(s => s.Instance.Label == "Torrent stop condition");
+            var stopConditionSelect = FindSelect<string>(target, "TorrentStopCondition");
             await target.InvokeAsync(() => stopConditionSelect.Instance.ValueChanged.InvokeAsync("FilesChecked"));
             update.TorrentStopCondition.Should().Be("FilesChecked");
 
-            var autoDeleteSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Delete .torrent files afterwards");
+            var autoDeleteSwitch = FindSwitch(target, "AutoDeleteMode");
             await target.InvokeAsync(() => autoDeleteSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.AutoDeleteMode.Should().Be(0);
 
-            var preallocateSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Pre-allocate disk space for all files");
+            var preallocateSwitch = FindSwitch(target, "PreallocateAll");
             await target.InvokeAsync(() => preallocateSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.PreallocateAll.Should().BeFalse();
 
-            var extensionSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Append .!qB extension to incomplete files");
+            var extensionSwitch = FindSwitch(target, "IncompleteFilesExt");
             await target.InvokeAsync(() => extensionSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.IncompleteFilesExt.Should().BeTrue();
         }
@@ -140,39 +141,39 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var autoModeSelect = target.FindComponents<MudSelect<bool>>().Single(s => s.Instance.Label == "Default Torrent Management Mode");
+            var autoModeSelect = FindSelect<bool>(target, "AutoTmmEnabled");
             await target.InvokeAsync(() => autoModeSelect.Instance.ValueChanged.InvokeAsync(false));
             update.AutoTmmEnabled.Should().BeFalse();
 
-            var categorySelect = target.FindComponents<MudSelect<bool>>().Single(s => s.Instance.Label == "When Torrent Category changed");
+            var categorySelect = FindSelect<bool>(target, "TorrentChangedTmmEnabled");
             await target.InvokeAsync(() => categorySelect.Instance.ValueChanged.InvokeAsync(false));
             update.TorrentChangedTmmEnabled.Should().BeFalse();
 
-            var defaultSaveSelect = target.FindComponents<MudSelect<bool>>().Single(s => s.Instance.Label == "When Default Save Path changed");
+            var defaultSaveSelect = FindSelect<bool>(target, "SavePathChangedTmmEnabled");
             await target.InvokeAsync(() => defaultSaveSelect.Instance.ValueChanged.InvokeAsync(true));
             update.SavePathChangedTmmEnabled.Should().BeTrue();
 
-            var categoryPathSelect = target.FindComponents<MudSelect<bool>>().Single(s => s.Instance.Label == "When Category Save Path changed");
+            var categoryPathSelect = FindSelect<bool>(target, "CategoryChangedTmmEnabled");
             await target.InvokeAsync(() => categoryPathSelect.Instance.ValueChanged.InvokeAsync(false));
             update.CategoryChangedTmmEnabled.Should().BeFalse();
 
-            var savePathField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Value == "/downloads");
+            var savePathField = FindTextField(target, "SavePath");
             await target.InvokeAsync(() => savePathField.Instance.ValueChanged.InvokeAsync("/downloads/alt"));
             update.SavePath.Should().Be("/downloads/alt");
 
-            var exportSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Copy .torrent files to");
+            var exportSwitch = FindSwitch(target, "ExportDirEnabled");
             await target.InvokeAsync(() => exportSwitch.Instance.ValueChanged.InvokeAsync(false));
             exportSwitch.Instance.Value.Should().BeFalse();
 
-            var exportPathField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Value == "/export");
+            var exportPathField = FindTextField(target, "ExportDir");
             await target.InvokeAsync(() => exportPathField.Instance.ValueChanged.InvokeAsync("/archive"));
             update.ExportDir.Should().Be("/archive");
 
-            var exportFinSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Copy .torrent files for finished downloads to");
+            var exportFinSwitch = FindSwitch(target, "ExportDirFinEnabled");
             await target.InvokeAsync(() => exportFinSwitch.Instance.ValueChanged.InvokeAsync(false));
             exportFinSwitch.Instance.Value.Should().BeFalse();
 
-            var exportFinField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Value == "/export_fin");
+            var exportFinField = FindTextField(target, "ExportDirFin");
             await target.InvokeAsync(() => exportFinField.Instance.ValueChanged.InvokeAsync("/archive_fin"));
             update.ExportDirFin.Should().Be("/archive_fin");
         }
@@ -192,10 +193,10 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var exclusionsField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Label == "Excluded files names");
+            var exclusionsField = FindTextField(target, "ExcludedFileNames");
             exclusionsField.Instance.Disabled.Should().BeFalse();
 
-            var exclusionsSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Excluded file names");
+            var exclusionsSwitch = FindSwitch(target, "ExcludedFileNamesEnabled");
             await target.InvokeAsync(() => exclusionsSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.ExcludedFileNamesEnabled.Should().BeFalse();
             exclusionsField.Instance.Disabled.Should().BeTrue();
@@ -224,11 +225,11 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var enabledSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Email notification upon download completion");
+            var enabledSwitch = FindSwitch(target, "MailNotificationEnabled");
             await target.InvokeAsync(() => enabledSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.MailNotificationEnabled.Should().BeFalse();
 
-            var senderField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Label == "From");
+            var senderField = FindTextField(target, "MailNotificationSender");
             senderField.Instance.Disabled.Should().BeTrue();
 
             await target.InvokeAsync(() => enabledSwitch.Instance.ValueChanged.InvokeAsync(true));
@@ -237,33 +238,33 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => senderField.Instance.ValueChanged.InvokeAsync("from@example.com"));
             update.MailNotificationSender.Should().Be("from@example.com");
 
-            var emailField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Label == "To");
+            var emailField = FindTextField(target, "MailNotificationEmail");
             await target.InvokeAsync(() => emailField.Instance.ValueChanged.InvokeAsync("to@example.com"));
             update.MailNotificationEmail.Should().Be("to@example.com");
 
-            var smtpField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Label == "SMTP server");
+            var smtpField = FindTextField(target, "MailNotificationSmtp");
             await target.InvokeAsync(() => smtpField.Instance.ValueChanged.InvokeAsync("smtp.mail.local"));
             update.MailNotificationSmtp.Should().Be("smtp.mail.local");
 
-            var sslSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "This server requires a secure connection (SSL)");
+            var sslSwitch = FindSwitch(target, "MailNotificationSslEnabled");
             await target.InvokeAsync(() => sslSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.MailNotificationSslEnabled.Should().BeFalse();
 
             await target.InvokeAsync(() => sslSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.MailNotificationSslEnabled.Should().BeTrue();
 
-            var authSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Authentication");
+            var authSwitch = FindSwitch(target, "MailNotificationAuthEnabled");
             await target.InvokeAsync(() => authSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.MailNotificationAuthEnabled.Should().BeFalse();
 
             await target.InvokeAsync(() => authSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.MailNotificationAuthEnabled.Should().BeTrue();
 
-            var usernameField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Label == "Username");
+            var usernameField = FindTextField(target, "MailNotificationUsername");
             await target.InvokeAsync(() => usernameField.Instance.ValueChanged.InvokeAsync("mailer"));
             update.MailNotificationUsername.Should().Be("mailer");
 
-            var passwordField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Label == "Password");
+            var passwordField = FindTextField(target, "MailNotificationPassword");
             await target.InvokeAsync(() => passwordField.Instance.ValueChanged.InvokeAsync("secret"));
             update.MailNotificationPassword.Should().Be("secret");
 
@@ -289,26 +290,26 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var addSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Run external program on torrent added");
+            var addSwitch = FindSwitch(target, "AutorunOnTorrentAddedEnabled");
             await target.InvokeAsync(() => addSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.AutorunOnTorrentAddedEnabled.Should().BeFalse();
 
             await target.InvokeAsync(() => addSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.AutorunOnTorrentAddedEnabled.Should().BeTrue();
 
-            var addProgramField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Label == "External program" && tf.Instance.Value == "/bin/add.sh");
+            var addProgramField = FindTextField(target, "AutorunOnTorrentAddedProgram");
             await target.InvokeAsync(() => addProgramField.Instance.ValueChanged.InvokeAsync("/opt/add.sh"));
             await target.InvokeAsync(() => addProgramField.Instance.ValueChanged.InvokeAsync("/opt/add.sh"));
             update.AutorunOnTorrentAddedProgram.Should().Be("/opt/add.sh");
 
-            var finishSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Run external program on torrent finished");
+            var finishSwitch = FindSwitch(target, "AutorunEnabled");
             await target.InvokeAsync(() => finishSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.AutorunEnabled.Should().BeFalse();
 
             await target.InvokeAsync(() => finishSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.AutorunEnabled.Should().BeTrue();
 
-            var finishProgramField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Label == "External program" && tf.Instance.Value == "/bin/finish.sh");
+            var finishProgramField = FindTextField(target, "AutorunProgram");
             await target.InvokeAsync(() => finishProgramField.Instance.ValueChanged.InvokeAsync("/opt/finish.sh"));
             update.AutorunProgram.Should().Be("/opt/finish.sh");
 
@@ -331,27 +332,68 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var addedRowSelect = target.FindComponents<MudSelect<string>>()[^1];
+            var addedRowSelect = FindAddedScanDirType(target, 0);
             await target.InvokeAsync(() => addedRowSelect.Instance.ValueChanged.InvokeAsync("0"));
 
-            var watchField = target.FindComponents<MudTextField<string>>().Single(tf => tf.Instance.Value == "/watch");
-            await target.InvokeAsync(() => watchField.Instance.ValueChanged.InvokeAsync("/watch-renamed"));
+            var existingKeyField = FindExistingScanDirKey(target, 0);
+            await target.InvokeAsync(() => existingKeyField.Instance.ValueChanged.InvokeAsync("/watch-renamed"));
 
             update.ScanDirs.Should().NotBeNull();
             update.ScanDirs!.ContainsKey("/watch-renamed").Should().BeTrue();
             update.ScanDirs.ContainsKey("/watch").Should().BeFalse();
 
-            var newKeyField = target.FindComponents<MudTextField<string>>().First(tf => tf.Instance.Value == string.Empty);
+            var newKeyField = FindAddedScanDirKey(target, 0);
             await target.InvokeAsync(() => newKeyField.Instance.ValueChanged.InvokeAsync("/new"));
 
             update.ScanDirs.ContainsKey("/new").Should().BeTrue();
 
-            var removeButton = target.FindComponents<MudIconButton>()
-                .First(btn => btn.Instance.Icon == Icons.Material.Outlined.Remove);
+            var removeButton = FindExistingScanDirRemoveButton(target, 0);
             await target.InvokeAsync(() => removeButton.Instance.OnClick.InvokeAsync());
 
             update.ScanDirs.ContainsKey("/watch-renamed").Should().BeFalse();
             raised.Should().HaveCountGreaterThanOrEqualTo(2);
+        }
+
+        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<DownloadsOptions> target, string testId)
+            where TComponent : IComponent
+        {
+            return target.FindComponents<TComponent>()
+                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
+        }
+
+        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<DownloadsOptions> target, string testId)
+        {
+            return FindComponentByTestId<FieldSwitch>(target, testId);
+        }
+
+        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<DownloadsOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudSelect<T>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<DownloadsOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudTextField<string>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindExistingScanDirKey(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindTextField(target, $"ScanDirsExisting[{index}].Key");
+        }
+
+        private static IRenderedComponent<MudSelect<string>> FindAddedScanDirType(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindSelect<string>(target, $"AddedScanDirs[{index}].Type");
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindAddedScanDirKey(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindTextField(target, $"AddedScanDirs[{index}].Key");
+        }
+
+        private static IRenderedComponent<MudIconButton> FindExistingScanDirRemoveButton(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindComponentByTestId<MudIconButton>(target, $"ScanDirsExisting[{index}].Remove");
         }
 
         private static Preferences DeserializePreferences()

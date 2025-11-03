@@ -9,10 +9,10 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Upload" Value="UpLimit" ValueChanged="UpLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="UpLimitValidation" Immediate="true" DebounceInterval="300" />
+                <MudNumericField T="int" Label="Upload" Value="UpLimit" ValueChanged="UpLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="UpLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="UpLimit" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Download" Value="DlLimit" ValueChanged="DlLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="DlLimitValidation" Immediate="true" DebounceInterval="300" />
+                <MudNumericField T="int" Label="Download" Value="DlLimit" ValueChanged="DlLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="DlLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="DlLimit" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -27,22 +27,22 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Upload" Value="AltUpLimit" ValueChanged="AltUpLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltUpLimitValidation" Immediate="true" DebounceInterval="300" />
+                <MudNumericField T="int" Label="Upload" Value="AltUpLimit" ValueChanged="AltUpLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltUpLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="AltUpLimit" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Download" Value="AltDlLimit" ValueChanged="AltDlLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltDlLimitValidation" Immediate="true" DebounceInterval="300" />
+                <MudNumericField T="int" Label="Download" Value="AltDlLimit" ValueChanged="AltDlLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB/s" HelperText="0 means unlimited" Validation="AltDlLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="AltDlLimit" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Schedule the use of alternative rate limits" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" />
+                <FieldSwitch Label="Schedule the use of alternative rate limits" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" data-test-id="SchedulerEnabled" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTimePicker Label="From" Editable="true" Time="ScheduleFrom" TimeChanged="ScheduleFromChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" />
+                <MudTimePicker Label="From" Editable="true" Time="ScheduleFrom" TimeChanged="ScheduleFromChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" data-test-id="ScheduleFrom" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTimePicker Label="To" Editable="true" Time="ScheduleTo" TimeChanged="ScheduleToChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" />
+                <MudTimePicker Label="To" Editable="true" Time="ScheduleTo" TimeChanged="ScheduleToChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" data-test-id="ScheduleTo" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Value="SchedulerDays" ValueChanged="SchedulerDaysChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined">
+                <MudSelect T="int" Value="SchedulerDays" ValueChanged="SchedulerDaysChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" data-test-id="SchedulerDays">
                     <MudSelectItem Value="0">Every day</MudSelectItem>
                     <MudSelectItem Value="1">Weekdays</MudSelectItem>
                     <MudSelectItem Value="2">Weekends</MudSelectItem>
@@ -68,13 +68,13 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Apply rate limit to µTP protocol" Value="LimitUtpRate" ValueChanged="LimitUtpRateChanged" />
+                <FieldSwitch Label="Apply rate limit to µTP protocol" Value="LimitUtpRate" ValueChanged="LimitUtpRateChanged" data-test-id="LimitUtpRate" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Apply rate limit to transport overhead" Value="LimitTcpOverhead" ValueChanged="LimitTcpOverheadChanged" />
+                <FieldSwitch Label="Apply rate limit to transport overhead" Value="LimitTcpOverhead" ValueChanged="LimitTcpOverheadChanged" data-test-id="LimitTcpOverhead" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Apply rate limit to peers on LAN" Value="LimitLanPeers" ValueChanged="LimitLanPeersChanged" />
+                <FieldSwitch Label="Apply rate limit to peers on LAN" Value="LimitLanPeers" ValueChanged="LimitLanPeersChanged" data-test-id="LimitLanPeers" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

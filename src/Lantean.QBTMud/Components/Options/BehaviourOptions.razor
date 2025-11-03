@@ -9,7 +9,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="string" Label="User Interface Language" Value="@("en-US")" Variant="Variant.Outlined">
+                <MudSelect T="string" Label="User Interface Language" Value="@("en-US")" Variant="Variant.Outlined" data-test-id="UserInterfaceLanguage">
                     <MudSelectItem Value="@("en-US")">English</MudSelectItem>
                 </MudSelect>
             </MudItem>
@@ -26,10 +26,10 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Confirm when deleting torrents" Value="ConfirmTorrentDeletion" ValueChanged="ConfirmTorrentDeletionChanged" />
+                <FieldSwitch Label="Confirm when deleting torrents" Value="ConfirmTorrentDeletion" ValueChanged="ConfirmTorrentDeletionChanged" data-test-id="ConfirmTorrentDeletion" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Show external IP in status bar" Value="StatusBarExternalIp" ValueChanged="StatusBarExternalIpChanged" />
+                <FieldSwitch Label="Show external IP in status bar" Value="StatusBarExternalIp" ValueChanged="StatusBarExternalIpChanged" data-test-id="StatusBarExternalIp" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -44,27 +44,27 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Log file" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" />
+                <FieldSwitch Label="Log file" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" data-test-id="FileLogEnabled" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Save Path" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
+                <MudTextField T="string" Label="Save Path" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="FileLogPath" />
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="Backup the log after" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(!FileLogEnabled)" />
+                <FieldSwitch Label="Backup the log after" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(!FileLogEnabled)" data-test-id="FileLogBackupEnabled" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" />
+                <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="FileLogMaxSize" />
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="Delete backups older than" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(!FileLogEnabled)" />
+                <FieldSwitch Label="Delete backups older than" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(!FileLogEnabled)" data-test-id="FileLogDeleteOld" />
             </MudItem>
             <MudItem xs="9">
                 <MudGrid>
                     <MudItem xs="9">
-                        <MudNumericField T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="365" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" />
+                        <MudNumericField T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(!FileLogEnabled)" Min="1" Max="365" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="FileLogAge" />
                     </MudItem>
                     <MudItem xs="3">
-                        <MudSelect T="int" Value="FileLogAgeType" ValueChanged="FileLogAgeTypeChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined">
+                        <MudSelect T="int" Value="FileLogAgeType" ValueChanged="FileLogAgeTypeChanged" Disabled="@(!FileLogEnabled)" Variant="Variant.Outlined" data-test-id="FileLogAgeType">
                             <MudSelectItem Value="0">days</MudSelectItem>
                             <MudSelectItem Value="1">months</MudSelectItem>
                             <MudSelectItem Value="2">years</MudSelectItem>
@@ -85,7 +85,7 @@
     <MudCardContent>
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Log performance warnings" Value="PerformanceWarning" ValueChanged="PerformanceWarningChanged" />
+                <FieldSwitch Label="Log performance warnings" Value="PerformanceWarning" ValueChanged="PerformanceWarningChanged" data-test-id="PerformanceWarning" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

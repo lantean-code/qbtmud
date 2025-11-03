@@ -7,6 +7,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System.Linq;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
@@ -50,25 +51,21 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => lastChanged = value));
             });
 
-            var switches = target.FindComponents<FieldSwitch>();
+            FindSwitch(target, "ConfirmTorrentDeletion").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "StatusBarExternalIp").Instance.Value.Should().BeFalse();
+            FindSwitch(target, "FileLogEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "FileLogBackupEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "FileLogDeleteOld").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "PerformanceWarning").Instance.Value.Should().BeTrue();
 
-            switches.Single(s => s.Instance.Label == "Confirm when deleting torrents").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Show external IP in status bar").Instance.Value.Should().BeFalse();
-            switches.Single(s => s.Instance.Label == "Log file").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Backup the log after").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Delete backups older than").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Log performance warnings").Instance.Value.Should().BeTrue();
-
-            var pathField = target.FindComponent<MudTextField<string>>();
+            var pathField = FindTextField(target, "FileLogPath");
             pathField.Instance.Value.Should().Be("/logs");
             pathField.Instance.Disabled.Should().BeFalse();
 
-            var numericFields = target.FindComponents<MudNumericField<int>>();
-            numericFields[0].Instance.Value.Should().Be(4096);
-            numericFields[1].Instance.Value.Should().Be(7);
+            FindNumeric(target, "FileLogMaxSize").Instance.Value.Should().Be(4096);
+            FindNumeric(target, "FileLogAge").Instance.Value.Should().Be(7);
 
-            var ageTypeSelect = target.FindComponent<MudSelect<int>>();
-            ageTypeSelect.Instance.Value.Should().Be(2);
+            FindSelect<int>(target, "FileLogAgeType").Instance.Value.Should().Be(2);
 
             lastChanged.Should().BeNull();
         }
@@ -100,22 +97,23 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => lastChanged = value));
             });
 
-            var pathField = target.FindComponent<MudTextField<string>>();
+            var pathField = FindTextField(target, "FileLogPath");
             pathField.Instance.Disabled.Should().BeTrue();
 
-            var numericFields = target.FindComponents<MudNumericField<int>>();
-            numericFields[0].Instance.Disabled.Should().BeTrue();
-            numericFields[1].Instance.Disabled.Should().BeTrue();
+            var maxSizeField = FindNumeric(target, "FileLogMaxSize");
+            var ageField = FindNumeric(target, "FileLogAge");
+            maxSizeField.Instance.Disabled.Should().BeTrue();
+            ageField.Instance.Disabled.Should().BeTrue();
 
-            var fileLogSwitch = target.FindComponents<FieldSwitch>().Single(s => s.Instance.Label == "Log file");
-            await target.InvokeAsync(() => fileLogSwitch.Find("input").Change(true));
+            var fileLogSwitch = FindSwitch(target, "FileLogEnabled");
+            await target.InvokeAsync(() => fileLogSwitch.Instance.ValueChanged.InvokeAsync(true));
 
             updatePreferences.FileLogEnabled.Should().BeTrue();
             lastChanged.Should().Be(updatePreferences);
 
             pathField.Instance.Disabled.Should().BeFalse();
-            numericFields[0].Instance.Disabled.Should().BeFalse();
-            numericFields[1].Instance.Disabled.Should().BeFalse();
+            maxSizeField.Instance.Disabled.Should().BeFalse();
+            ageField.Instance.Disabled.Should().BeFalse();
         }
 
         [Fact]
@@ -145,12 +143,13 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var pathField = target.FindComponent<MudTextField<string>>();
+            var pathField = FindTextField(target, "FileLogPath");
             await target.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("/var/app/logs"));
 
-            var numericFields = target.FindComponents<MudNumericField<int>>();
-            await target.InvokeAsync(() => numericFields[0].Instance.ValueChanged.InvokeAsync(512));
-            await target.InvokeAsync(() => numericFields[1].Instance.ValueChanged.InvokeAsync(9));
+            var maxSizeField = FindNumeric(target, "FileLogMaxSize");
+            var ageField = FindNumeric(target, "FileLogAge");
+            await target.InvokeAsync(() => maxSizeField.Instance.ValueChanged.InvokeAsync(512));
+            await target.InvokeAsync(() => ageField.Instance.ValueChanged.InvokeAsync(9));
 
             updatePreferences.FileLogPath.Should().Be("/var/app/logs");
             updatePreferences.FileLogMaxSize.Should().Be(512);
@@ -187,19 +186,17 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var switches = target.FindComponents<FieldSwitch>();
-
-            var confirmSwitch = switches.Single(s => s.Instance.Label == "Confirm when deleting torrents");
+            var confirmSwitch = FindSwitch(target, "ConfirmTorrentDeletion");
             await target.InvokeAsync(() => confirmSwitch.Instance.ValueChanged.InvokeAsync(true));
 
             updatePreferences.ConfirmTorrentDeletion.Should().BeTrue();
 
-            var externalSwitch = switches.Single(s => s.Instance.Label == "Show external IP in status bar");
+            var externalSwitch = FindSwitch(target, "StatusBarExternalIp");
             await target.InvokeAsync(() => externalSwitch.Instance.ValueChanged.InvokeAsync(false));
 
             updatePreferences.StatusBarExternalIp.Should().BeFalse();
 
-            var performanceSwitch = switches.Single(s => s.Instance.Label == "Log performance warnings");
+            var performanceSwitch = FindSwitch(target, "PerformanceWarning");
             await target.InvokeAsync(() => performanceSwitch.Instance.ValueChanged.InvokeAsync(true));
 
             updatePreferences.PerformanceWarning.Should().BeTrue();
@@ -234,33 +231,32 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            var switches = target.FindComponents<FieldSwitch>();
-
-            var logSwitch = switches.Single(s => s.Instance.Label == "Log file");
+            var logSwitch = FindSwitch(target, "FileLogEnabled");
             await target.InvokeAsync(() => logSwitch.Instance.ValueChanged.InvokeAsync(true));
 
             await target.InvokeAsync(() =>
-                switches.Single(s => s.Instance.Label == "Backup the log after").Instance.ValueChanged.InvokeAsync(true));
+                FindSwitch(target, "FileLogBackupEnabled").Instance.ValueChanged.InvokeAsync(true));
 
             updatePreferences.FileLogBackupEnabled.Should().BeTrue();
 
             await target.InvokeAsync(() =>
-                switches.Single(s => s.Instance.Label == "Delete backups older than").Instance.ValueChanged.InvokeAsync(true));
+                FindSwitch(target, "FileLogDeleteOld").Instance.ValueChanged.InvokeAsync(true));
 
             updatePreferences.FileLogDeleteOld.Should().BeTrue();
 
-            var ageSelect = target.FindComponent<MudSelect<int>>();
+            var ageSelect = FindSelect<int>(target, "FileLogAgeType");
             await target.InvokeAsync(() => ageSelect.Instance.ValueChanged.InvokeAsync(2));
 
             updatePreferences.FileLogAgeType.Should().Be(2);
 
-            var maxSizeField = target.FindComponents<MudNumericField<int>>().Single(n => n.Instance.Value == 2048);
+            var maxSizeField = FindNumeric(target, "FileLogMaxSize");
             await target.InvokeAsync(() => maxSizeField.Instance.ValueChanged.InvokeAsync(4096));
             updatePreferences.FileLogMaxSize.Should().Be(4096);
 
-            var pathField = target.FindComponent<MudTextField<string>>();
+            var pathField = FindTextField(target, "FileLogPath");
             pathField.Instance.Disabled.Should().BeFalse();
-            var numericFields = target.FindComponents<MudNumericField<int>>();
+            var ageField = FindNumeric(target, "FileLogAge");
+            var numericFields = new[] { maxSizeField, ageField };
             foreach (var numeric in numericFields)
             {
                 numeric.Instance.Disabled.Should().BeFalse();
@@ -283,6 +279,33 @@ namespace Lantean.QBTMud.Test.Components.Options
         private static Preferences DeserializePreferences(string json)
         {
             return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+        }
+
+        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<BehaviourOptions> target, string testId)
+            where TComponent : IComponent
+        {
+            return target.FindComponents<TComponent>()
+                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
+        }
+
+        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<BehaviourOptions> target, string testId)
+        {
+            return FindComponentByTestId<FieldSwitch>(target, testId);
+        }
+
+        private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<BehaviourOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudNumericField<int>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<BehaviourOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudTextField<string>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<BehaviourOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudSelect<T>>(target, testId);
         }
 
         public void Dispose()

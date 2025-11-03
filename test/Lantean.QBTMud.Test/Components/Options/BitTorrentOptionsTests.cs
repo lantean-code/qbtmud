@@ -35,69 +35,39 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var switches = target.FindComponents<FieldSwitch>();
-            switches.Single(s => s.Instance.Label == "Enable DHT (decentralized network) to find more peers").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Enable Peer Exchange (PeX) to find more peers").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Enable Local Peer Discovery to find more peers").Instance.Value.Should().BeFalse();
-            switches.Single(s => s.Instance.Label == "Enable anonymous mode").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Queueing enabled").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Do not count slow torrents in these limits").Instance.Disabled.Should().BeFalse();
-            switches.Single(s => s.Instance.Label == "When ratio reaches").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "When total seeding time reaches").Instance.Value.Should().BeFalse();
-            switches.Single(s => s.Instance.Label == "When inactive seeding time reaches").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Automatically add these trackers to new downloads").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "Dht").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "Pex").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "Lsd").Instance.Value.Should().BeFalse();
+            FindSwitch(target, "AnonymousMode").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "QueueingEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "DontCountSlowTorrents").Instance.Disabled.Should().BeFalse();
+            FindSwitch(target, "MaxRatioEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "MaxSeedingTimeEnabled").Instance.Value.Should().BeFalse();
+            FindSwitch(target, "MaxInactiveSeedingTimeEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "AddTrackersEnabled").Instance.Value.Should().BeTrue();
 
-            var encryptionSelect = target.FindComponents<MudSelect<int>>()
-                .Single(s => s.Instance.Label == "Encryption mode");
+            var encryptionSelect = FindSelect<int>(target, "Encryption");
             encryptionSelect.Instance.Value.Should().Be(1);
 
-            var seedingActionSelect = target.FindComponents<MudSelect<int>>()
-                .Single(s => string.IsNullOrEmpty(s.Instance.Label));
+            var seedingActionSelect = FindSelect<int>(target, "MaxRatioAct");
             seedingActionSelect.Instance.Value.Should().Be(2);
             seedingActionSelect.Instance.Disabled.Should().BeFalse();
 
-            target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Max active checking torrents")
-                .Instance.Value.Should().Be(3);
+            FindNumericInt(target, "MaxActiveCheckingTorrents").Instance.Value.Should().Be(3);
+            FindNumericInt(target, "MaxActiveDownloads").Instance.Disabled.Should().BeFalse();
+            FindNumericInt(target, "MaxActiveUploads").Instance.Value.Should().Be(6);
+            FindNumericInt(target, "MaxActiveTorrents").Instance.Value.Should().Be(7);
+            FindNumericInt(target, "SlowTorrentDlRateThreshold").Instance.Value.Should().Be(12);
+            FindNumericInt(target, "SlowTorrentUlRateThreshold").Instance.Value.Should().Be(13);
+            FindNumericInt(target, "SlowTorrentInactiveTimer").Instance.Value.Should().Be(14);
 
-            target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Maximum active downloads")
-                .Instance.Disabled.Should().BeFalse();
+            FindNumericFloat(target, "MaxRatio").Instance.Value.Should().Be(3.5f);
+            FindNumericFloat(target, "MaxRatio").Instance.Disabled.Should().BeFalse();
 
-            target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Maximum active uploads")
-                .Instance.Value.Should().Be(6);
+            FindNumericInt(target, "MaxSeedingTime").Instance.Disabled.Should().BeTrue();
+            FindNumericInt(target, "MaxInactiveSeedingTime").Instance.Disabled.Should().BeFalse();
 
-            target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Maximum active torrents")
-                .Instance.Value.Should().Be(7);
-
-            target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Download rate threshold")
-                .Instance.Value.Should().Be(12);
-
-            target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Upload rate threshold")
-                .Instance.Value.Should().Be(13);
-
-            target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Torrent inactivity timer")
-                .Instance.Value.Should().Be(14);
-
-            target.FindComponent<MudNumericField<float>>().Instance.Value.Should().Be(3.5f);
-            target.FindComponent<MudNumericField<float>>().Instance.Disabled.Should().BeFalse();
-
-            var minuteFields = target.FindComponents<MudNumericField<int>>()
-                .Where(f => f.Instance.Label == "minutes")
-                .ToList();
-            minuteFields.Should().HaveCount(2);
-            var disabledMinuteField = minuteFields.Single(f => f.Instance.Disabled);
-            disabledMinuteField.Instance.Disabled.Should().BeTrue();
-            minuteFields.Single(f => !f.Instance.Disabled).Instance.Disabled.Should().BeFalse();
-
-            target.FindComponents<MudTextField<string>>()
-                .Single(tf => tf.Instance.Label == "Trackers")
-                .Instance.Value.Should().Be("udp://tracker.example:80");
+            FindTextField(target, "AddTrackers").Instance.Value.Should().Be("udp://tracker.example:80");
 
             update.Dht.Should().BeNull();
             update.MaxActiveCheckingTorrents.Should().BeNull();
@@ -119,27 +89,25 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var switches = target.FindComponents<FieldSwitch>();
-
-            await target.InvokeAsync(() => switches.Single(s => s.Instance.Label == "Enable DHT (decentralized network) to find more peers").Instance.ValueChanged.InvokeAsync(false));
+            var dhtSwitch = FindSwitch(target, "Dht");
+            await target.InvokeAsync(() => dhtSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.Dht.Should().BeFalse();
 
-            await target.InvokeAsync(() => switches.Single(s => s.Instance.Label == "Enable Peer Exchange (PeX) to find more peers").Instance.ValueChanged.InvokeAsync(false));
+            var pexSwitch = FindSwitch(target, "Pex");
+            await target.InvokeAsync(() => pexSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.Pex.Should().BeFalse();
 
-            await target.InvokeAsync(() => switches.Single(s => s.Instance.Label == "Enable Local Peer Discovery to find more peers").Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => FindSwitch(target, "Lsd").Instance.ValueChanged.InvokeAsync(true));
             update.Lsd.Should().BeTrue();
 
-            var encryptionSelect = target.FindComponents<MudSelect<int>>()
-                .Single(s => s.Instance.Label == "Encryption mode");
+            var encryptionSelect = FindSelect<int>(target, "Encryption");
             await target.InvokeAsync(() => encryptionSelect.Instance.ValueChanged.InvokeAsync(2));
             update.Encryption.Should().Be(2);
 
-            await target.InvokeAsync(() => switches.Single(s => s.Instance.Label == "Enable anonymous mode").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "AnonymousMode").Instance.ValueChanged.InvokeAsync(false));
             update.AnonymousMode.Should().BeFalse();
 
-            var checkingField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Max active checking torrents");
+            var checkingField = FindNumericInt(target, "MaxActiveCheckingTorrents");
             await target.InvokeAsync(() => checkingField.Instance.ValueChanged.InvokeAsync(4));
             update.MaxActiveCheckingTorrents.Should().Be(4);
 
@@ -163,17 +131,12 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var queueSwitch = target.FindComponents<FieldSwitch>()
-                .Single(s => s.Instance.Label == "Queueing enabled");
+            var queueSwitch = FindSwitch(target, "QueueingEnabled");
 
-            var downloadsField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Maximum active downloads");
-            var uploadsField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Maximum active uploads");
-            var torrentsField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Maximum active torrents");
-            var slowSwitch = target.FindComponents<FieldSwitch>()
-                .Single(s => s.Instance.Label == "Do not count slow torrents in these limits");
+            var downloadsField = FindNumericInt(target, "MaxActiveDownloads");
+            var uploadsField = FindNumericInt(target, "MaxActiveUploads");
+            var torrentsField = FindNumericInt(target, "MaxActiveTorrents");
+            var slowSwitch = FindSwitch(target, "DontCountSlowTorrents");
 
             await target.InvokeAsync(() => queueSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.QueueingEnabled.Should().BeFalse();
@@ -201,18 +164,15 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => slowSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.DontCountSlowTorrents.Should().BeFalse();
 
-            var dlThresholdField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Download rate threshold");
+            var dlThresholdField = FindNumericInt(target, "SlowTorrentDlRateThreshold");
             await target.InvokeAsync(() => dlThresholdField.Instance.ValueChanged.InvokeAsync(25));
             update.SlowTorrentDlRateThreshold.Should().Be(25);
 
-            var ulThresholdField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Upload rate threshold");
+            var ulThresholdField = FindNumericInt(target, "SlowTorrentUlRateThreshold");
             await target.InvokeAsync(() => ulThresholdField.Instance.ValueChanged.InvokeAsync(35));
             update.SlowTorrentUlRateThreshold.Should().Be(35);
 
-            var inactiveField = target.FindComponents<MudNumericField<int>>()
-                .Single(f => f.Instance.Label == "Torrent inactivity timer");
+            var inactiveField = FindNumericInt(target, "SlowTorrentInactiveTimer");
             await target.InvokeAsync(() => inactiveField.Instance.ValueChanged.InvokeAsync(45));
             update.SlowTorrentInactiveTimer.Should().Be(45);
 
@@ -236,13 +196,11 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var switches = target.FindComponents<FieldSwitch>();
+            var ratioSwitch = FindSwitch(target, "MaxRatioEnabled");
+            var seedingSwitch = FindSwitch(target, "MaxSeedingTimeEnabled");
+            var inactiveSwitch = FindSwitch(target, "MaxInactiveSeedingTimeEnabled");
 
-            var ratioSwitch = switches.Single(s => s.Instance.Label == "When ratio reaches");
-            var seedingSwitch = switches.Single(s => s.Instance.Label == "When total seeding time reaches");
-            var inactiveSwitch = switches.Single(s => s.Instance.Label == "When inactive seeding time reaches");
-
-            var ratioField = target.FindComponent<MudNumericField<float>>();
+            var ratioField = FindNumericFloat(target, "MaxRatio");
             await target.InvokeAsync(() => ratioSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.MaxRatioEnabled.Should().BeFalse();
             ratioField.Instance.Disabled.Should().BeTrue();
@@ -254,12 +212,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => ratioField.Instance.ValueChanged.InvokeAsync(4.2f));
             update.MaxRatio.Should().Be(4.2f);
 
-            var minuteFields = target.FindComponents<MudNumericField<int>>()
-                .Where(f => f.Instance.Label == "minutes")
-                .ToList();
-            minuteFields.Should().HaveCount(2);
-            var seedingField = minuteFields.Single(f => f.Instance.Disabled);
-            var inactiveField = minuteFields.Single(f => !f.Instance.Disabled);
+            var seedingField = FindNumericInt(target, "MaxSeedingTime");
+            var inactiveField = FindNumericInt(target, "MaxInactiveSeedingTime");
             await target.InvokeAsync(() => seedingSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.MaxSeedingTimeEnabled.Should().BeTrue();
             seedingField.Instance.Disabled.Should().BeFalse();
@@ -278,8 +232,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => inactiveField.Instance.ValueChanged.InvokeAsync(90));
             update.MaxInactiveSeedingTime.Should().Be(90);
 
-            var actionSelect = target.FindComponents<MudSelect<int>>()
-                .Single(s => string.IsNullOrEmpty(s.Instance.Label));
+            var actionSelect = FindSelect<int>(target, "MaxRatioAct");
             await target.InvokeAsync(() => actionSelect.Instance.ValueChanged.InvokeAsync(3));
             update.MaxRatioAct.Should().Be(3);
             actionSelect.Instance.Disabled.Should().BeFalse();
@@ -315,13 +268,11 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var trackerSwitch = target.FindComponents<FieldSwitch>()
-                .Single(s => s.Instance.Label == "Automatically add these trackers to new downloads");
+            var trackerSwitch = FindSwitch(target, "AddTrackersEnabled");
             await target.InvokeAsync(() => trackerSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.AddTrackersEnabled.Should().BeFalse();
 
-            var trackerField = target.FindComponents<MudTextField<string>>()
-                .Single(tf => tf.Instance.Label == "Trackers");
+            var trackerField = FindTextField(target, "AddTrackers");
             await target.InvokeAsync(() => trackerField.Instance.ValueChanged.InvokeAsync("udp://tracker.new:8080"));
             update.AddTrackers.Should().Be("udp://tracker.new:8080");
 
@@ -365,6 +316,38 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void Dispose()
         {
             _context.Dispose();
+        }
+
+        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<BitTorrentOptions> target, string testId)
+            where TComponent : IComponent
+        {
+            return target.FindComponents<TComponent>()
+                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
+        }
+
+        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<BitTorrentOptions> target, string testId)
+        {
+            return FindComponentByTestId<FieldSwitch>(target, testId);
+        }
+
+        private static IRenderedComponent<MudNumericField<int>> FindNumericInt(IRenderedComponent<BitTorrentOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudNumericField<int>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudNumericField<float>> FindNumericFloat(IRenderedComponent<BitTorrentOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudNumericField<float>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<BitTorrentOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudSelect<T>>(target, testId);
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<BitTorrentOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudTextField<string>>(target, testId);
         }
     }
 }

@@ -7,6 +7,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System.Linq;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
@@ -35,23 +36,20 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var numericFields = target.FindComponents<MudNumericField<int>>();
-            numericFields[0].Instance.Value.Should().Be(50);
-            numericFields[1].Instance.Value.Should().Be(120);
-            numericFields[2].Instance.Value.Should().Be(10);
-            numericFields[3].Instance.Value.Should().Be(30);
+            FindNumeric(target, "UpLimit").Instance.Value.Should().Be(50);
+            FindNumeric(target, "DlLimit").Instance.Value.Should().Be(120);
+            FindNumeric(target, "AltUpLimit").Instance.Value.Should().Be(10);
+            FindNumeric(target, "AltDlLimit").Instance.Value.Should().Be(30);
 
-            var switches = target.FindComponents<FieldSwitch>();
-            switches.Single(s => s.Instance.Label == "Schedule the use of alternative rate limits").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Apply rate limit to µTP protocol").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Apply rate limit to transport overhead").Instance.Value.Should().BeFalse();
-            switches.Single(s => s.Instance.Label == "Apply rate limit to peers on LAN").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "SchedulerEnabled").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "LimitUtpRate").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "LimitTcpOverhead").Instance.Value.Should().BeFalse();
+            FindSwitch(target, "LimitLanPeers").Instance.Value.Should().BeTrue();
 
-            var timePickers = target.FindComponents<MudTimePicker>();
-            timePickers[0].Instance.Time.Should().Be(TimeSpan.FromHours(1));
-            timePickers[1].Instance.Time.Should().Be(TimeSpan.FromHours(5));
+            FindTimePicker(target, "ScheduleFrom").Instance.Time.Should().Be(TimeSpan.FromHours(1));
+            FindTimePicker(target, "ScheduleTo").Instance.Time.Should().Be(TimeSpan.FromHours(5));
 
-            target.FindComponent<MudSelect<int>>().Instance.Value.Should().Be(1);
+            FindSelect<int>(target, "SchedulerDays").Instance.Value.Should().Be(1);
 
             update.UpLimit.Should().BeNull();
             update.SchedulerEnabled.Should().BeNull();
@@ -73,20 +71,18 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var numericFields = target.FindComponents<MudNumericField<int>>();
-            await target.InvokeAsync(() => numericFields[0].Instance.ValueChanged.InvokeAsync(75));
-            await target.InvokeAsync(() => numericFields[1].Instance.ValueChanged.InvokeAsync(140));
-            await target.InvokeAsync(() => numericFields[2].Instance.ValueChanged.InvokeAsync(20));
-            await target.InvokeAsync(() => numericFields[3].Instance.ValueChanged.InvokeAsync(45));
+            await target.InvokeAsync(() => FindNumeric(target, "UpLimit").Instance.ValueChanged.InvokeAsync(75));
+            await target.InvokeAsync(() => FindNumeric(target, "DlLimit").Instance.ValueChanged.InvokeAsync(140));
+            await target.InvokeAsync(() => FindNumeric(target, "AltUpLimit").Instance.ValueChanged.InvokeAsync(20));
+            await target.InvokeAsync(() => FindNumeric(target, "AltDlLimit").Instance.ValueChanged.InvokeAsync(45));
 
-            var schedulerSwitch = target.FindComponents<FieldSwitch>()
-                .Single(s => s.Instance.Label == "Schedule the use of alternative rate limits");
+            var schedulerSwitch = FindSwitch(target, "SchedulerEnabled");
             await target.InvokeAsync(() => schedulerSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var scheduleFrom = target.FindComponents<MudTimePicker>()[0];
+            var scheduleFrom = FindTimePicker(target, "ScheduleFrom");
             await target.InvokeAsync(() => scheduleFrom.Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(2.5)));
 
-            var daysSelect = target.FindComponent<MudSelect<int>>();
+            var daysSelect = FindSelect<int>(target, "SchedulerDays");
             await target.InvokeAsync(() => daysSelect.Instance.ValueChanged.InvokeAsync(3));
 
             update.UpLimit.Should().Be(75 * 1024);
@@ -117,13 +113,13 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var timePickers = target.FindComponents<MudTimePicker>();
-
-            await target.InvokeAsync(() => timePickers[0].Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(4)));
+            var scheduleFrom = FindTimePicker(target, "ScheduleFrom");
+            await target.InvokeAsync(() => scheduleFrom.Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(4)));
             update.ScheduleFromHour.Should().Be(4);
             update.ScheduleFromMin.Should().BeNull();
 
-            await target.InvokeAsync(() => timePickers[1].Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(7.5)));
+            var scheduleTo = FindTimePicker(target, "ScheduleTo");
+            await target.InvokeAsync(() => scheduleTo.Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(7.5)));
             update.ScheduleToHour.Should().Be(7);
             update.ScheduleToMin.Should().Be(30);
         }
@@ -144,17 +140,15 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var switches = target.FindComponents<FieldSwitch>();
-
-            var utpSwitch = switches.Single(s => s.Instance.Label == "Apply rate limit to µTP protocol");
+            var utpSwitch = FindSwitch(target, "LimitUtpRate");
             await target.InvokeAsync(() => utpSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.LimitUtpRate.Should().BeFalse();
 
-            var overheadSwitch = switches.Single(s => s.Instance.Label == "Apply rate limit to transport overhead");
+            var overheadSwitch = FindSwitch(target, "LimitTcpOverhead");
             await target.InvokeAsync(() => overheadSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.LimitTcpOverhead.Should().BeTrue();
 
-            var lanSwitch = switches.Single(s => s.Instance.Label == "Apply rate limit to peers on LAN");
+            var lanSwitch = FindSwitch(target, "LimitLanPeers");
             await target.InvokeAsync(() => lanSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.LimitLanPeers.Should().BeFalse();
 
@@ -178,10 +172,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var timePickers = target.FindComponents<MudTimePicker>();
-
-            await target.InvokeAsync(() => timePickers[0].Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(1)));
-            await target.InvokeAsync(() => timePickers[1].Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(5)));
+            await target.InvokeAsync(() => FindTimePicker(target, "ScheduleFrom").Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(1)));
+            await target.InvokeAsync(() => FindTimePicker(target, "ScheduleTo").Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(5)));
 
             events.Should().BeEmpty();
             update.ScheduleFromHour.Should().BeNull();
@@ -204,10 +196,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var timePickers = target.FindComponents<MudTimePicker>();
-
-            await target.InvokeAsync(() => timePickers[0].Instance.TimeChanged.InvokeAsync(null));
-            await target.InvokeAsync(() => timePickers[1].Instance.TimeChanged.InvokeAsync(null));
+            await target.InvokeAsync(() => FindTimePicker(target, "ScheduleFrom").Instance.TimeChanged.InvokeAsync(null));
+            await target.InvokeAsync(() => FindTimePicker(target, "ScheduleTo").Instance.TimeChanged.InvokeAsync(null));
 
             update.ScheduleFromHour.Should().BeNull();
             update.ScheduleFromMin.Should().BeNull();
@@ -243,6 +233,33 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void Dispose()
         {
             _context.Dispose();
+        }
+
+        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<SpeedOptions> target, string testId)
+            where TComponent : IComponent
+        {
+            return target.FindComponents<TComponent>()
+                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
+        }
+
+        private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<SpeedOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudNumericField<int>>(target, testId);
+        }
+
+        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<SpeedOptions> target, string testId)
+        {
+            return FindComponentByTestId<FieldSwitch>(target, testId);
+        }
+
+        private static IRenderedComponent<MudTimePicker> FindTimePicker(IRenderedComponent<SpeedOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudTimePicker>(target, testId);
+        }
+
+        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<SpeedOptions> target, string testId)
+        {
+            return FindComponentByTestId<MudSelect<T>>(target, testId);
         }
     }
 }
