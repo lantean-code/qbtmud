@@ -6,6 +6,7 @@ using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 
@@ -27,13 +28,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await RenderDialogAsync(value: baseline);
 
-            var radioGroup = dialog.Component.FindComponent<MudRadioGroup<int>>();
+            var radioGroup = FindComponentByTestId<MudRadioGroup<int>>(dialog.Component, "ShareRatioType");
             radioGroup.Instance.Value.Should().Be(Limits.GlobalLimit);
 
             var switches = dialog.Component.FindComponents<FieldSwitch>();
             switches.Should().AllSatisfy(s => s.Instance.Value.Should().BeFalse());
 
-            var actionSelect = dialog.Component.FindComponent<MudSelect<ShareLimitAction>>();
+            var actionSelect = FindComponentByTestId<MudSelect<ShareLimitAction>>(dialog.Component, "SelectedShareLimitAction");
             actionSelect.Instance.Value.Should().Be(ShareLimitAction.Remove);
         }
 
@@ -44,12 +45,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await RenderDialogAsync(value: baseline);
 
-            dialog.Component.FindComponent<MudRadioGroup<int>>().Instance.Value.Should().Be(Limits.NoLimit);
+            FindComponentByTestId<MudRadioGroup<int>>(dialog.Component, "ShareRatioType").Instance.Value.Should().Be(Limits.NoLimit);
 
             var switches = dialog.Component.FindComponents<FieldSwitch>();
             switches.Should().AllSatisfy(s => s.Instance.Value.Should().BeFalse());
 
-            dialog.Component.FindComponent<MudSelect<ShareLimitAction>>().Instance.Value.Should().Be(ShareLimitAction.Stop);
+            FindComponentByTestId<MudSelect<ShareLimitAction>>(dialog.Component, "SelectedShareLimitAction").Instance.Value.Should().Be(ShareLimitAction.Stop);
         }
 
         [Fact]
@@ -59,17 +60,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await RenderDialogAsync(current: baseline);
 
-            dialog.Component.FindComponent<MudRadioGroup<int>>().Instance.Value.Should().Be(0);
+            FindComponentByTestId<MudRadioGroup<int>>(dialog.Component, "ShareRatioType").Instance.Value.Should().Be(0);
 
-            var switches = dialog.Component.FindComponents<FieldSwitch>();
-            switches.Single(s => s.Instance.Label == "Ratio").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Total minutes").Instance.Value.Should().BeTrue();
-            switches.Single(s => s.Instance.Label == "Inactive minutes").Instance.Value.Should().BeTrue();
+            FindComponentByTestId<FieldSwitch>(dialog.Component, "RatioEnabled").Instance.Value.Should().BeTrue();
+            FindComponentByTestId<FieldSwitch>(dialog.Component, "TotalMinutesEnabled").Instance.Value.Should().BeTrue();
+            FindComponentByTestId<FieldSwitch>(dialog.Component, "InactiveMinutesEnabled").Instance.Value.Should().BeTrue();
 
-            dialog.Component.FindComponents<MudNumericField<float>>().Single().Instance.Value.Should().Be(3.5f);
-            dialog.Component.FindComponents<MudNumericField<int>>().Single(f => f.Instance.Label == "Total minutes").Instance.Value.Should().Be(120);
-            dialog.Component.FindComponents<MudNumericField<int>>().Single(f => f.Instance.Label == "Inactive minutes").Instance.Value.Should().Be(45);
-            dialog.Component.FindComponent<MudSelect<ShareLimitAction>>().Instance.Value.Should().Be(ShareLimitAction.Remove);
+            FindComponentByTestId<MudNumericField<float>>(dialog.Component, "Ratio").Instance.Value.Should().Be(3.5f);
+            FindComponentByTestId<MudNumericField<int>>(dialog.Component, "TotalMinutes").Instance.Value.Should().Be(120);
+            FindComponentByTestId<MudNumericField<int>>(dialog.Component, "InactiveMinutes").Instance.Value.Should().Be(45);
+            FindComponentByTestId<MudSelect<ShareLimitAction>>(dialog.Component, "SelectedShareLimitAction").Instance.Value.Should().Be(ShareLimitAction.Remove);
         }
 
         [Fact]
@@ -78,11 +78,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var baseline = CreateShareRatioMax(3.5f, 120, 45, ShareLimitAction.Remove);
             var dialog = await RenderDialogAsync(current: baseline);
 
-            var radioGroup = dialog.Component.FindComponent<MudRadioGroup<int>>();
+            var radioGroup = FindComponentByTestId<MudRadioGroup<int>>(dialog.Component, "ShareRatioType");
             await dialog.Component.InvokeAsync(() => radioGroup.Instance.ValueChanged.InvokeAsync(Limits.GlobalLimit));
 
             dialog.Component.FindComponents<FieldSwitch>().Should().AllSatisfy(s => s.Instance.Value.Should().BeFalse());
-            dialog.Component.FindComponent<MudSelect<ShareLimitAction>>().Instance.Value.Should().Be(ShareLimitAction.Default);
+            FindComponentByTestId<MudSelect<ShareLimitAction>>(dialog.Component, "SelectedShareLimitAction").Instance.Value.Should().Be(ShareLimitAction.Default);
         }
 
         [Fact]
@@ -90,28 +90,27 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await RenderDialogAsync(value: CreateShareRatioMax(1f, 5, 3, ShareLimitAction.Default));
 
-            var radioGroup = dialog.Component.FindComponent<MudRadioGroup<int>>();
+            var radioGroup = FindComponentByTestId<MudRadioGroup<int>>(dialog.Component, "ShareRatioType");
             await dialog.Component.InvokeAsync(() => radioGroup.Instance.ValueChanged.InvokeAsync(0));
 
-            var switches = dialog.Component.FindComponents<FieldSwitch>();
-            var ratioSwitch = switches.Single(s => s.Instance.Label == "Ratio");
-            var totalSwitch = switches.Single(s => s.Instance.Label == "Total minutes");
-            var inactiveSwitch = switches.Single(s => s.Instance.Label == "Inactive minutes");
+            var ratioSwitch = FindComponentByTestId<FieldSwitch>(dialog.Component, "RatioEnabled");
+            var totalSwitch = FindComponentByTestId<FieldSwitch>(dialog.Component, "TotalMinutesEnabled");
+            var inactiveSwitch = FindComponentByTestId<FieldSwitch>(dialog.Component, "InactiveMinutesEnabled");
 
             await dialog.Component.InvokeAsync(() => ratioSwitch.Instance.ValueChanged.InvokeAsync(true));
             await dialog.Component.InvokeAsync(() => totalSwitch.Instance.ValueChanged.InvokeAsync(true));
             await dialog.Component.InvokeAsync(() => inactiveSwitch.Instance.ValueChanged.InvokeAsync(true));
 
-            var ratioField = dialog.Component.FindComponents<MudNumericField<float>>().Single();
+            var ratioField = FindComponentByTestId<MudNumericField<float>>(dialog.Component, "Ratio");
             await dialog.Component.InvokeAsync(() => ratioField.Instance.ValueChanged.InvokeAsync(4.2f));
 
-            var totalField = dialog.Component.FindComponents<MudNumericField<int>>().Single(f => f.Instance.Label == "Total minutes");
+            var totalField = FindComponentByTestId<MudNumericField<int>>(dialog.Component, "TotalMinutes");
             await dialog.Component.InvokeAsync(() => totalField.Instance.ValueChanged.InvokeAsync(180));
 
-            var inactiveField = dialog.Component.FindComponents<MudNumericField<int>>().Single(f => f.Instance.Label == "Inactive minutes");
+            var inactiveField = FindComponentByTestId<MudNumericField<int>>(dialog.Component, "InactiveMinutes");
             await dialog.Component.InvokeAsync(() => inactiveField.Instance.ValueChanged.InvokeAsync(60));
 
-            var actionSelect = dialog.Component.FindComponent<MudSelect<ShareLimitAction>>();
+            var actionSelect = FindComponentByTestId<MudSelect<ShareLimitAction>>(dialog.Component, "SelectedShareLimitAction");
             await dialog.Component.InvokeAsync(() => actionSelect.Instance.ValueChanged.InvokeAsync(ShareLimitAction.Remove));
 
             var saveButton = dialog.Dialog.FindAll("button").Single(b => b.TextContent.Trim() == "Save");
@@ -149,7 +148,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var reference = await dialogService.ShowAsync<ShareRatioDialog>("Share ratio", parameters, options);
 
             var dialog = provider.FindComponent<MudDialog>();
-            var component = dialog.FindComponent<ShareRatioDialog>();
+            var component = provider.FindComponent<ShareRatioDialog>();
 
             return new DialogRenderContext(provider, dialog, component, reference);
         }
@@ -166,6 +165,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 MaxSeedingTime = maxValuesNoLimit ? Limits.NoLimit : seedingTime + 1,
                 MaxInactiveSeedingTime = maxValuesNoLimit ? Limits.NoLimit : inactive + 1,
             };
+        }
+
+        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<ShareRatioDialog> component, string testId)
+            where TComponent : IComponent
+        {
+            return component.FindComponents<TComponent>()
+                .Single(c => c.FindAll($"[data-test-id='{testId}']").Count > 0);
         }
 
         private sealed record DialogRenderContext(

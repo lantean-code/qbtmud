@@ -150,7 +150,7 @@ namespace Lantean.QBTMud.Test.Services
             fileTwo.VerifyAll();
 
             var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("Added torrent(s) and fFailed to add torrent(s)");
+            snackbarCall.Arguments[0].Should().Be("Added torrent(s) and failed to add torrent(s).");
             snackbarCall.Arguments[1].Should().Be(Severity.Warning);
         }
 
@@ -253,7 +253,7 @@ namespace Lantean.QBTMud.Test.Services
             await _target.InvokeAddTorrentLinkDialog();
 
             var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("Failed to remove 1 torrent");
+            snackbarCall.Arguments[0].Should().Be("Failed to add 1 torrent.");
             snackbarCall.Arguments[1].Should().Be(Severity.Error);
         }
 

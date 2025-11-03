@@ -28,6 +28,9 @@ namespace Lantean.QBTMud.Components.UI
         [Parameter]
         public string? HelperText { get; set; }
 
+        [Parameter(CaptureUnmatchedValues = true)]
+        public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
         protected async Task ValueChangedCallback(bool value)
         {
             Value = value;

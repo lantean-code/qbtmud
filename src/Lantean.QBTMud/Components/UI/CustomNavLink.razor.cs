@@ -49,6 +49,9 @@ namespace Lantean.QBTMud.Components.UI
         [Parameter]
         public RenderFragment? ContextMenu { get; set; }
 
+        [Parameter(CaptureUnmatchedValues = true)]
+        public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
         protected string Classname =>
              new CssBuilder("mud-nav-item")
                  .AddClass($"mud-ripple", !DisableRipple && !Disabled)

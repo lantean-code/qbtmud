@@ -4,8 +4,6 @@ using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using MudBlazor;
-using System.Collections.Generic;
-using System.Text;
 using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 
 namespace Lantean.QBTMud.Services
@@ -526,14 +524,22 @@ namespace Lantean.QBTMud.Services
 
             if (result.FailureCount > 0)
             {
+                string failureMessage;
                 if (result.SupportsAsync)
                 {
-                    fragments.Add($"Failed to add {result.FailureCount} torrent{(result.FailureCount == 1 ? string.Empty : "s")}");
+                    failureMessage = $"failed to add {result.FailureCount} torrent{(result.FailureCount == 1 ? string.Empty : "s")}";
                 }
                 else
                 {
-                    fragments.Add("Failed to add torrent(s)");
+                    failureMessage = "failed to add torrent(s)";
                 }
+
+                if (fragments.Count == 0)
+                {
+                    failureMessage = char.ToUpperInvariant(failureMessage[0]) + failureMessage[1..];
+                }
+
+                fragments.Add(failureMessage);
             }
 
             if (result.SupportsAsync && result.PendingCount > 0)
