@@ -26,6 +26,17 @@ namespace Lantean.QBitTorrentClient.Test.Converters
         }
 
         [Fact]
+        public void GIVEN_NullToken_WHEN_Read_THEN_ShouldReturnNull()
+        {
+            var options = CreateOptions();
+            var json = "null";
+
+            var result = JsonSerializer.Deserialize<IReadOnlyList<string>?>(json, options);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
         public void GIVEN_CommaSeparatedWithSpacesAndEmpties_WHEN_Read_THEN_ShouldSplitTrimAndRemoveEmpties()
         {
             var options = CreateOptions();
