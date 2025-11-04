@@ -208,9 +208,14 @@ namespace Lantean.QBTMud.Services
             {
                 foreach (var hash in mainData.TorrentsRemoved)
                 {
+                    if (!torrentList.Torrents.TryGetValue(hash, out var torrent))
+                    {
+                        continue;
+                    }
+
                     if (torrentList.Torrents.Remove(hash))
                     {
-                        RemoveTorrentFromStates(torrentList, hash);
+                        RemoveTorrentFromStates(torrentList, torrent, hash);
                         dataChanged = true;
                         filterChanged = true;
                     }
@@ -373,13 +378,8 @@ namespace Lantean.QBTMud.Services
             UpdateTrackerState(torrentList, updatedTorrent, hash, previousSnapshot.Tracker);
         }
 
-        private static void RemoveTorrentFromStates(MainData torrentList, string hash)
+        private static void RemoveTorrentFromStates(MainData torrentList, Torrent torrent, string hash)
         {
-            if (!torrentList.Torrents.TryGetValue(hash, out var torrent))
-            {
-                return;
-            }
-
             var snapshot = CreateSnapshot(torrent);
 
             torrentList.TagState[FilterHelper.TAG_ALL].Remove(hash);
