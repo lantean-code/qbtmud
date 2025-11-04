@@ -9,13 +9,13 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Enable fetching RSS feeds" Value="RssProcessingEnabled" ValueChanged="RssProcessingEnabledChanged" data-test-id="RssProcessingEnabled" />
+                <FieldSwitch Label="Enable fetching RSS feeds" Value="RssProcessingEnabled" ValueChanged="RssProcessingEnabledChanged" data-test-id="@TestIdHelper.For("RssProcessingEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Feeds refresh interval" Value="RssRefreshInterval" ValueChanged="RssRefreshIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="min" Immediate="true" DebounceInterval="300" data-test-id="RssRefreshInterval" />
+                <MudNumericField T="int" Label="Feeds refresh interval" Value="RssRefreshInterval" ValueChanged="RssRefreshIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="min" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RssRefreshInterval")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Maximum number of articles per feed" Value="RssMaxArticlesPerFeed" ValueChanged="RssMaxArticlesPerFeedChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="RssMaxArticlesPerFeed" />
+                <MudNumericField T="int" Label="Maximum number of articles per feed" Value="RssMaxArticlesPerFeed" ValueChanged="RssMaxArticlesPerFeedChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RssMaxArticlesPerFeed")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -30,7 +30,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Enable auto downloading of RSS torrents" Value="RssAutoDownloadingEnabled" ValueChanged="RssAutoDownloadingEnabledChanged" data-test-id="RssAutoDownloadingEnabled" />
+                <FieldSwitch Label="Enable auto downloading of RSS torrents" Value="RssAutoDownloadingEnabled" ValueChanged="RssAutoDownloadingEnabledChanged" data-test-id="@TestIdHelper.For("RssAutoDownloadingEnabled")" />
             </MudItem>
             <MudItem xs="12">
                 <MudButton OnClick="OpenRssRulesDialog" Variant="Variant.Filled">Edit auto downloading rules</MudButton>
@@ -48,10 +48,10 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Download REPACK/PROPER episodes" Value="RssDownloadRepackProperEpisodes" ValueChanged="RssDownloadRepackProperEpisodesChanged" data-test-id="RssDownloadRepackProperEpisodes" />
+                <FieldSwitch Label="Download REPACK/PROPER episodes" Value="RssDownloadRepackProperEpisodes" ValueChanged="RssDownloadRepackProperEpisodesChanged" data-test-id="@TestIdHelper.For("RssDownloadRepackProperEpisodes")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Filters" Value="RssSmartEpisodeFilters" ValueChanged="RssSmartEpisodeFiltersChanged" Lines="5" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="RssSmartEpisodeFilters" />
+                <MudTextField T="string" Label="Filters" Value="RssSmartEpisodeFilters" ValueChanged="RssSmartEpisodeFiltersChanged" Lines="5" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RssSmartEpisodeFilters")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

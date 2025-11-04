@@ -5,7 +5,7 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudRadioGroup T="int" Value="ShareRatioType" ValueChanged="ShareRatioTypeChanged" data-test-id="ShareRatioType">
+                <MudRadioGroup T="int" Value="ShareRatioType" ValueChanged="ShareRatioTypeChanged" data-test-id="@TestIdHelper.For("ShareRatioType")">
                     <MudItem xs="12">
                         <MudRadio T="int" Value="-2">Use global share limit</MudRadio>
                     </MudItem>
@@ -18,25 +18,25 @@
                 </MudRadioGroup>
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="Ratio" Value="RatioEnabled" ValueChanged="RatioEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="RatioEnabled" />
+                <FieldSwitch Label="Ratio" Value="RatioEnabled" ValueChanged="RatioEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("RatioEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="float" Value="Ratio" ValueChanged="RatioChanged" Disabled="@(!(CustomEnabled && RatioEnabled))" Min="0" Max="1024000" Step="0.1F" Format="F2" Variant="Variant.Outlined" data-test-id="Ratio" />
+                <MudNumericField T="float" Value="Ratio" ValueChanged="RatioChanged" Disabled="@(!(CustomEnabled && RatioEnabled))" Min="0" Max="1024000" Step="0.1F" Format="F2" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("Ratio")" />
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="Total minutes" Value="TotalMinutesEnabled" ValueChanged="TotalMinutesEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="TotalMinutesEnabled" />
+                <FieldSwitch Label="Total minutes" Value="TotalMinutesEnabled" ValueChanged="TotalMinutesEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("TotalMinutesEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Value="TotalMinutes" ValueChanged="TotalMinutesChanged" Disabled="@(!(CustomEnabled && TotalMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="minutes" data-test-id="TotalMinutes" />
+                <MudNumericField T="int" Value="TotalMinutes" ValueChanged="TotalMinutesChanged" Disabled="@(!(CustomEnabled && TotalMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="minutes" data-test-id="@TestIdHelper.For("TotalMinutes")" />
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="Inactive minutes" Value="InactiveMinutesEnabled" ValueChanged="InactiveMinutesEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="InactiveMinutesEnabled" />
+                <FieldSwitch Label="Inactive minutes" Value="InactiveMinutesEnabled" ValueChanged="InactiveMinutesEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("InactiveMinutesEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Value="InactiveMinutes" ValueChanged="InactiveMinutesChanged" Disabled="@(!(CustomEnabled && InactiveMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="minutes" data-test-id="InactiveMinutes" />
+                <MudNumericField T="int" Value="InactiveMinutes" ValueChanged="InactiveMinutesChanged" Disabled="@(!(CustomEnabled && InactiveMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="minutes" data-test-id="@TestIdHelper.For("InactiveMinutes")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="ShareLimitAction" Label="Action when limit is reached" Value="SelectedShareLimitAction" ValueChanged="ShareLimitActionChanged" Disabled="@(!CustomEnabled)" Variant="Variant.Outlined" data-test-id="SelectedShareLimitAction">
+                <MudSelect T="ShareLimitAction" Label="Action when limit is reached" Value="SelectedShareLimitAction" ValueChanged="ShareLimitActionChanged" Disabled="@(!CustomEnabled)" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("SelectedShareLimitAction")">
                     <MudSelectItem Value="ShareLimitAction.Default">Default</MudSelectItem>
                     <MudSelectItem Value="ShareLimitAction.Stop">Stop torrent</MudSelectItem>
                     <MudSelectItem Value="ShareLimitAction.Remove">Remove torrent</MudSelectItem>

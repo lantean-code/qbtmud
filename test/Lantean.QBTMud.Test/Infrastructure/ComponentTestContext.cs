@@ -22,6 +22,8 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
         public ComponentTestContext()
         {
+            TestIdHelper.EnableTestIds();
+
             _httpHandler = new TestHttpMessageHandler();
             _localStorage = new TestLocalStorageService();
             _clipboard = new TestClipboardService();

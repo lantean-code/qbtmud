@@ -4,7 +4,7 @@
     <MudCardContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="int" Label="Peer connection protocol" Value="BittorrentProtocol" ValueChanged="BittorrentProtocolChanged" Variant="Variant.Outlined" data-test-id="BittorrentProtocol">
+                <MudSelect T="int" Label="Peer connection protocol" Value="BittorrentProtocol" ValueChanged="BittorrentProtocolChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("BittorrentProtocol")">
                     <MudSelectItem T="int" Value="0">TCP and μTP</MudSelectItem>
                     <MudSelectItem T="int" Value="1">TCP</MudSelectItem>
                     <MudSelectItem T="int" Value="2">μTP</MudSelectItem>
@@ -23,10 +23,10 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Port used for incoming connections" Value="ListenPort" ValueChanged="ListenPortChanged" Min="@MinNonNegativePortValue" Max="@MaxPortValue" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@CustomIcons.Random" OnAdornmentClick="GenerateRandomPort" HelperText="Set to 0 to let your system pick an unused port" Validation="PortNonNegativeValidation" Immediate="true" DebounceInterval="300" data-test-id="ListenPort" />
+                <MudNumericField T="int" Label="Port used for incoming connections" Value="ListenPort" ValueChanged="ListenPortChanged" Min="@MinNonNegativePortValue" Max="@MaxPortValue" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@CustomIcons.Random" OnAdornmentClick="GenerateRandomPort" HelperText="Set to 0 to let your system pick an unused port" Validation="PortNonNegativeValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ListenPort")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Use UPnp / NAT-PMP port forwarding from my router" Value="Upnp" ValueChanged="UpnpChanged" data-test-id="Upnp" />
+                <FieldSwitch Label="Use UPnp / NAT-PMP port forwarding from my router" Value="Upnp" ValueChanged="UpnpChanged" data-test-id="@TestIdHelper.For("Upnp")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -41,28 +41,28 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12" md="6">
-                <FieldSwitch Label="Global maximum number of connections" Value="MaxConnecEnabled" ValueChanged="MaxConnecEnabledChanged" data-test-id="MaxConnecEnabled" />
+                <FieldSwitch Label="Global maximum number of connections" Value="MaxConnecEnabled" ValueChanged="MaxConnecEnabledChanged" data-test-id="@TestIdHelper.For("MaxConnecEnabled")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudNumericField T="int" Label="Connections" Value="MaxConnec" ValueChanged="MaxConnecChanged" Min="0" Disabled="@(!MaxConnecEnabled)" Variant="Variant.Outlined" Validation="MaxConnectValidation" Immediate="true" DebounceInterval="300" data-test-id="MaxConnec" />
+                <MudNumericField T="int" Label="Connections" Value="MaxConnec" ValueChanged="MaxConnecChanged" Min="0" Disabled="@(!MaxConnecEnabled)" Variant="Variant.Outlined" Validation="MaxConnectValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxConnec")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <FieldSwitch Label="Maximum number of connections per torrent" Value="MaxConnecPerTorrentEnabled" ValueChanged="MaxConnecPerTorrentEnabledChanged" data-test-id="MaxConnecPerTorrentEnabled" />
+                <FieldSwitch Label="Maximum number of connections per torrent" Value="MaxConnecPerTorrentEnabled" ValueChanged="MaxConnecPerTorrentEnabledChanged" data-test-id="@TestIdHelper.For("MaxConnecPerTorrentEnabled")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudNumericField T="int" Label="Connections" Value="MaxConnecPerTorrent" ValueChanged="MaxConnecPerTorrentChanged" Min="0" Disabled="@(!MaxConnecPerTorrentEnabled)" Variant="Variant.Outlined" Validation="MaxConnecPerTorrentValidation" Immediate="true" DebounceInterval="300" data-test-id="MaxConnecPerTorrent" />
+                <MudNumericField T="int" Label="Connections" Value="MaxConnecPerTorrent" ValueChanged="MaxConnecPerTorrentChanged" Min="0" Disabled="@(!MaxConnecPerTorrentEnabled)" Variant="Variant.Outlined" Validation="MaxConnecPerTorrentValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxConnecPerTorrent")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <FieldSwitch Label="Global maximum number of upload slots" Value="MaxUploadsEnabled" ValueChanged="MaxUploadsEnabledChanged" data-test-id="MaxUploadsEnabled" />
+                <FieldSwitch Label="Global maximum number of upload slots" Value="MaxUploadsEnabled" ValueChanged="MaxUploadsEnabledChanged" data-test-id="@TestIdHelper.For("MaxUploadsEnabled")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudNumericField T="int" Label="Slots" Value="MaxUploads" ValueChanged="MaxUploadsChanged" Min="0" Disabled="@(!MaxUploadsEnabled)" Variant="Variant.Outlined" Validation="MaxUploadsValidation" Immediate="true" DebounceInterval="300" data-test-id="MaxUploads" />
+                <MudNumericField T="int" Label="Slots" Value="MaxUploads" ValueChanged="MaxUploadsChanged" Min="0" Disabled="@(!MaxUploadsEnabled)" Variant="Variant.Outlined" Validation="MaxUploadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxUploads")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <FieldSwitch Label="Maximum number of upload slots per torrent" Value="MaxUploadsPerTorrentEnabled" ValueChanged="MaxUploadsPerTorrentEnabledChanged" data-test-id="MaxUploadsPerTorrentEnabled" />
+                <FieldSwitch Label="Maximum number of upload slots per torrent" Value="MaxUploadsPerTorrentEnabled" ValueChanged="MaxUploadsPerTorrentEnabledChanged" data-test-id="@TestIdHelper.For("MaxUploadsPerTorrentEnabled")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudNumericField T="int" Label="Slots" Value="MaxUploadsPerTorrent" ValueChanged="MaxUploadsPerTorrentChanged" Min="0" Disabled="@(!MaxUploadsPerTorrentEnabled)" Variant="Variant.Outlined" Validation="MaxUploadsPerTorrentValidation" Immediate="true" DebounceInterval="300" data-test-id="MaxUploadsPerTorrent" />
+                <MudNumericField T="int" Label="Slots" Value="MaxUploadsPerTorrent" ValueChanged="MaxUploadsPerTorrentChanged" Min="0" Disabled="@(!MaxUploadsPerTorrentEnabled)" Variant="Variant.Outlined" Validation="MaxUploadsPerTorrentValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxUploadsPerTorrent")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -75,13 +75,13 @@
                 <FieldSwitch Label="I2P (Experimental)" Value="I2pEnabled" ValueChanged="I2pEnabledChanged" data-test-id="I2pEnabled" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTextField T="string" Label="Host" Value="I2pAddress" ValueChanged="I2pAddressChanged" Disabled="@(!I2pEnabled)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="I2pAddress" />
+                <MudTextField T="string" Label="Host" Value="I2pAddress" ValueChanged="I2pAddressChanged" Disabled="@(!I2pEnabled)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pAddress")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudNumericField T="int" Label="Slots" Value="I2pPort" ValueChanged="I2pPortChanged" Min="0" Max="65535" Disabled="@(!I2pEnabled)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="I2pPort" />
+                <MudNumericField T="int" Label="Slots" Value="I2pPort" ValueChanged="I2pPortChanged" Min="0" Max="65535" Disabled="@(!I2pEnabled)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pPort")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Mixed mode" Value="I2pMixedMode" ValueChanged="I2pMixedModeChanged" Disabled="@(!I2pEnabled)" HelperText="If &quot;mixed mode&quot; is enabled, I2P torrents are allowed to also get peers from other sources than the tracker, and connect to regular IPs, not providing any anonymization. This may be useful if the user is not interested in the anonymization of I2P, but still wants to be able to connect to I2P peers." data-test-id="I2pMixedMode" />
+                <FieldSwitch Label="Mixed mode" Value="I2pMixedMode" ValueChanged="I2pMixedModeChanged" Disabled="@(!I2pEnabled)" HelperText="If &quot;mixed mode&quot; is enabled, I2P torrents are allowed to also get peers from other sources than the tracker, and connect to regular IPs, not providing any anonymization. This may be useful if the user is not interested in the anonymization of I2P, but still wants to be able to connect to I2P peers." data-test-id="@TestIdHelper.For("I2pMixedMode")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -96,7 +96,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12" md="4">
-                <MudSelect T="string" Label="Type" Value="ProxyType" ValueChanged="ProxyTypeChanged" Variant="Variant.Outlined" data-test-id="ProxyType">
+                <MudSelect T="string" Label="Type" Value="ProxyType" ValueChanged="ProxyTypeChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("ProxyType")">
                     <MudSelectItem T="string" Value="@("None")">None</MudSelectItem>
                     <MudSelectItem T="string" Value="@("SOCKS4")">SOCKS4</MudSelectItem>
                     <MudSelectItem T="string" Value="@("SOCKS5")">SOCKS5</MudSelectItem>
@@ -104,35 +104,35 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" md="4">
-                <MudTextField T="string" Label="Host" Value="ProxyIp" ValueChanged="ProxyIpChanged" Disabled="ProxyDisabled" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="ProxyIp" />
+                <MudTextField T="string" Label="Host" Value="ProxyIp" ValueChanged="ProxyIpChanged" Disabled="ProxyDisabled" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ProxyIp")" />
             </MudItem>
             <MudItem xs="12" md="4">
-                <MudNumericField T="int" Label="Port" Value="ProxyPort" ValueChanged="ProxyPortChanged" Min="1" Max="@ConnectionOptions.MaxPortValue" Disabled="ProxyDisabled" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="ProxyPort" />
+                <MudNumericField T="int" Label="Port" Value="ProxyPort" ValueChanged="ProxyPortChanged" Min="1" Max="@ConnectionOptions.MaxPortValue" Disabled="ProxyDisabled" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ProxyPort")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Perform hostname lookup via proxy" Value="ProxyHostnameLookup" ValueChanged="ProxyHostnameLookupChanged" HelperText="If checked, hostname lookups are done via the proxy." data-test-id="ProxyHostnameLookup" />
+                <FieldSwitch Label="Perform hostname lookup via proxy" Value="ProxyHostnameLookup" ValueChanged="ProxyHostnameLookupChanged" HelperText="If checked, hostname lookups are done via the proxy." data-test-id="@TestIdHelper.For("ProxyHostnameLookup")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Authentication" Value="ProxyAuthEnabled" ValueChanged="ProxyAuthEnabledChanged" Disabled="@(ProxyDisabled || ProxySocks4)" data-test-id="ProxyAuthEnabled" />
+                <FieldSwitch Label="Authentication" Value="ProxyAuthEnabled" ValueChanged="ProxyAuthEnabledChanged" Disabled="@(ProxyDisabled || ProxySocks4)" data-test-id="@TestIdHelper.For("ProxyAuthEnabled")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTextField T="string" Label="Username" Value="ProxyUsername" ValueChanged="ProxyUsernameChanged" Disabled="@(ProxyDisabled || ProxySocks4)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="ProxyUsername" />
+                <MudTextField T="string" Label="Username" Value="ProxyUsername" ValueChanged="ProxyUsernameChanged" Disabled="@(ProxyDisabled || ProxySocks4)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ProxyUsername")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTextField T="string" Label="Password" Value="ProxyPassword" ValueChanged="ProxyPasswordChanged" Disabled="@(ProxyDisabled || ProxySocks4)" Variant="Variant.Outlined " HelperText="Info: The password is saved unencrypted" Immediate="true" DebounceInterval="300" data-test-id="ProxyPassword" />
+                <MudTextField T="string" Label="Password" Value="ProxyPassword" ValueChanged="ProxyPasswordChanged" Disabled="@(ProxyDisabled || ProxySocks4)" Variant="Variant.Outlined " HelperText="Info: The password is saved unencrypted" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ProxyPassword")" />
             </MudItem>
 
             <MudItem xs="12">
-                <FieldSwitch Label="Use proxy for BitTorrent purposes" Value="ProxyBittorrent" ValueChanged="ProxyBittorrentChanged" Disabled="ProxyDisabled" data-test-id="ProxyBittorrent" />
+                <FieldSwitch Label="Use proxy for BitTorrent purposes" Value="ProxyBittorrent" ValueChanged="ProxyBittorrentChanged" Disabled="ProxyDisabled" data-test-id="@TestIdHelper.For("ProxyBittorrent")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Use proxy for peer connections" Value="ProxyPeerConnections" ValueChanged="ProxyPeerConnectionsChanged" Disabled="@(ProxyDisabled || ProxyAuthEnabled)" data-test-id="ProxyPeerConnections" />
+                <FieldSwitch Label="Use proxy for peer connections" Value="ProxyPeerConnections" ValueChanged="ProxyPeerConnectionsChanged" Disabled="@(ProxyDisabled || ProxyAuthEnabled)" data-test-id="@TestIdHelper.For("ProxyPeerConnections")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Use proxy for RSS purposes" Value="ProxyRss" ValueChanged="ProxyRssChanged" Disabled="@(ProxyDisabled || ProxySocks4)" data-test-id="ProxyRss" />
+                <FieldSwitch Label="Use proxy for RSS purposes" Value="ProxyRss" ValueChanged="ProxyRssChanged" Disabled="@(ProxyDisabled || ProxySocks4)" data-test-id="@TestIdHelper.For("ProxyRss")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Use proxy for general purposes" Value="ProxyMisc" ValueChanged="ProxyMiscChanged" Disabled="@(ProxyDisabled || ProxySocks4)" data-test-id="ProxyMisc" />
+                <FieldSwitch Label="Use proxy for general purposes" Value="ProxyMisc" ValueChanged="ProxyMiscChanged" Disabled="@(ProxyDisabled || ProxySocks4)" data-test-id="@TestIdHelper.For("ProxyMisc")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -147,16 +147,16 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="IP Filter" Value="IpFilterEnabled" ValueChanged="IpFilterEnabledChanged" data-test-id="IpFilterEnabled" />
+                <FieldSwitch Label="IP Filter" Value="IpFilterEnabled" ValueChanged="IpFilterEnabledChanged" data-test-id="@TestIdHelper.For("IpFilterEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Filter path (.dat, .p2p, .p2b)" Value="IpFilterPath" ValueChanged="IpFilterPathChanged" Disabled="@(!IpFilterEnabled)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="IpFilterPath" />
+                <MudTextField T="string" Label="Filter path (.dat, .p2p, .p2b)" Value="IpFilterPath" ValueChanged="IpFilterPathChanged" Disabled="@(!IpFilterEnabled)" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("IpFilterPath")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Apply to trackers" Value="IpFilterTrackers" ValueChanged="IpFilterTrackersChanged" data-test-id="IpFilterTrackers" />
+                <FieldSwitch Label="Apply to trackers" Value="IpFilterTrackers" ValueChanged="IpFilterTrackersChanged" data-test-id="@TestIdHelper.For("IpFilterTrackers")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Manually banned IP addresses" Value="BannedIPs" ValueChanged="BannedIPsChanged" Lines="5" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="BannedIPs" />
+                <MudTextField T="string" Label="Manually banned IP addresses" Value="BannedIPs" ValueChanged="BannedIPsChanged" Lines="5" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("BannedIPs")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
