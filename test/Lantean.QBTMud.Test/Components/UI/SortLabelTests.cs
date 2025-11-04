@@ -8,19 +8,12 @@ using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components.UI
 {
-    public sealed class SortLabelTests : IDisposable
+    public sealed class SortLabelTests : RazorComponentTestBase<SortLabel>
     {
-        private readonly ComponentTestContext _context;
-
-        public SortLabelTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public void GIVEN_DefaultSettings_WHEN_Rendered_THEN_ShouldDisplayLabelAndIcon()
         {
-            var target = _context.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.RenderComponent<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
             });
@@ -37,7 +30,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_AppendIconTrue_WHEN_Rendered_THEN_ShouldDisplayIconAfterContent()
         {
-            var target = _context.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.RenderComponent<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.AppendIcon, true);
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
@@ -53,7 +46,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var sortDirection = SortDirection.None;
 
-            var target = _context.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.RenderComponent<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.AllowUnsorted, true);
                 parameters.Add(p => p.SortDirection, sortDirection);
@@ -85,7 +78,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var sortDirection = SortDirection.Ascending;
 
-            var target = _context.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.RenderComponent<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.Enabled, false);
                 parameters.Add(p => p.SortDirection, sortDirection);
@@ -100,7 +93,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_SortDirectionAscending_WHEN_Rendered_THEN_ShouldUseAscendingIconClass()
         {
-            var target = _context.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.RenderComponent<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.SortDirection, SortDirection.Ascending);
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
@@ -113,7 +106,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_SortDirectionDescending_WHEN_Rendered_THEN_ShouldUseDescendingIconClass()
         {
-            var target = _context.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.RenderComponent<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.SortDirection, SortDirection.Descending);
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
@@ -121,11 +114,6 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             var icon = target.Find(".mud-icon-root");
             icon.ClassList.Should().Contain("mud-direction-desc");
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
     }
 }

@@ -5,19 +5,12 @@ using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components.UI
 {
-    public sealed class TickSwitchTests : IDisposable
+    public sealed class TickSwitchTests : RazorComponentTestBase
     {
-        private readonly ComponentTestContext _context;
-
-        public TickSwitchTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public void GIVEN_ValueTrue_WHEN_Rendered_THEN_ShouldUseSuccessIcon()
         {
-            var target = _context.RenderComponent<TickSwitch<bool>>(parameters =>
+            var target = TestContext.RenderComponent<TickSwitch<bool>>(parameters =>
             {
                 parameters.Add(p => p.Value, true);
             });
@@ -29,18 +22,13 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_ValueFalse_WHEN_Rendered_THEN_ShouldUseErrorIcon()
         {
-            var target = _context.RenderComponent<TickSwitch<bool>>(parameters =>
+            var target = TestContext.RenderComponent<TickSwitch<bool>>(parameters =>
             {
                 parameters.Add(p => p.Value, false);
             });
 
             target.Instance.ThumbIcon.Should().Be(Icons.Material.Filled.Close);
             target.Instance.ThumbIconColor.Should().Be(Color.Error);
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
     }
 }

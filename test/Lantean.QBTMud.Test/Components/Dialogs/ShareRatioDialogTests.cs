@@ -6,21 +6,13 @@ using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Test.Infrastructure;
-using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
-    public sealed class ShareRatioDialogTests : IDisposable
+    public sealed class ShareRatioDialogTests : RazorComponentTestBase<ShareRatioDialog>
     {
-        private readonly ComponentTestContext _context;
-
-        public ShareRatioDialogTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public async Task GIVEN_GlobalPreset_WHEN_Rendered_THEN_ShouldShowGlobalOptions()
         {
@@ -130,8 +122,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private async Task<DialogRenderContext> RenderDialogAsync(ShareRatioMax? value = null, ShareRatioMax? current = null, bool disabled = false)
         {
-            var provider = _context.RenderComponent<MudDialogProvider>();
-            var dialogService = _context.Services.GetRequiredService<IDialogService>();
+            var provider = TestContext.RenderComponent<MudDialogProvider>();
+            var dialogService = TestContext.Services.GetRequiredService<IDialogService>();
 
             var parameters = new DialogParameters
             {
@@ -167,22 +159,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             };
         }
 
-        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<ShareRatioDialog> component, string testId)
-            where TComponent : IComponent
-        {
-            return component.FindComponents<TComponent>()
-                .Single(c => c.FindAll($"[data-test-id='{testId}']").Count > 0);
-        }
-
         private sealed record DialogRenderContext(
             IRenderedComponent<MudDialogProvider> Provider,
             IRenderedComponent<MudDialog> Dialog,
             IRenderedComponent<ShareRatioDialog> Component,
             IDialogReference Reference);
-
-        public void Dispose()
-        {
-            _context.Dispose();
-        }
     }
 }

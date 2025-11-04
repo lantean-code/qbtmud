@@ -11,15 +11,8 @@ using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
-    public sealed class BehaviourOptionsTests : IDisposable
+    public sealed class BehaviourOptionsTests : RazorComponentTestBase<BehaviourOptions>
     {
-        private readonly ComponentTestContext _context;
-
-        public BehaviourOptionsTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldDisplayPreferenceStates()
         {
@@ -41,9 +34,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             UpdatePreferences? lastChanged = null;
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<BehaviourOptions>(parameters =>
+            var target = TestContext.RenderComponent<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
@@ -87,9 +80,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             UpdatePreferences? lastChanged = null;
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<BehaviourOptions>(parameters =>
+            var target = TestContext.RenderComponent<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
@@ -133,9 +126,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<BehaviourOptions>(parameters =>
+            var target = TestContext.RenderComponent<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
@@ -176,9 +169,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<BehaviourOptions>(parameters =>
+            var target = TestContext.RenderComponent<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
@@ -221,9 +214,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<BehaviourOptions>(parameters =>
+            var target = TestContext.RenderComponent<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
@@ -280,13 +273,6 @@ namespace Lantean.QBTMud.Test.Components.Options
             return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
         }
 
-        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<BehaviourOptions> target, string testId)
-            where TComponent : IComponent
-        {
-            return target.FindComponents<TComponent>()
-                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
-        }
-
         private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<BehaviourOptions> target, string testId)
         {
             return FindComponentByTestId<FieldSwitch>(target, testId);
@@ -305,11 +291,6 @@ namespace Lantean.QBTMud.Test.Components.Options
         private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<BehaviourOptions> target, string testId)
         {
             return FindComponentByTestId<MudSelect<T>>(target, testId);
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
     }
 }

@@ -12,19 +12,12 @@ using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
-    public sealed class AdvancedOptionsTests : IDisposable
+    public sealed class AdvancedOptionsTests : RazorComponentTestBase<AdvancedOptions>
     {
-        private readonly ComponentTestContext _context;
-
-        public AdvancedOptionsTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
-            var api = _context.AddSingletonMock<IApiClient>();
+            var api = TestContext.AddSingletonMock<IApiClient>();
             api.Setup(a => a.GetNetworkInterfaces())
                 .ReturnsAsync(new List<NetworkInterface>
                 {
@@ -37,9 +30,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
+            var target = TestContext.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -66,7 +59,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_NetworkInterface_WHEN_Changed_THEN_ShouldRefreshAddresses()
         {
-            var api = _context.AddSingletonMock<IApiClient>();
+            var api = TestContext.AddSingletonMock<IApiClient>();
             api.Setup(a => a.GetNetworkInterfaces())
                 .ReturnsAsync(new List<NetworkInterface>
                 {
@@ -82,9 +75,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
+            var target = TestContext.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -107,7 +100,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_CoreAdvancedSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
-            var api = _context.AddSingletonMock<IApiClient>(MockBehavior.Loose);
+            var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
             api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
             api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
@@ -115,9 +108,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
+            var target = TestContext.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -149,17 +142,17 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_DiskSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
-            var api = _context.AddSingletonMock<IApiClient>(MockBehavior.Loose);
+            var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
             api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
             api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var raised = new List<UpdatePreferences>();
-            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
+            var target = TestContext.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -203,7 +196,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_BufferAndConnectionSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
-            var api = _context.AddSingletonMock<IApiClient>(MockBehavior.Loose);
+            var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
             api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
             api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
@@ -211,9 +204,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
+            var target = TestContext.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -267,7 +260,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_TrackerSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
-            var api = _context.AddSingletonMock<IApiClient>(MockBehavior.Loose);
+            var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
             api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
             api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
@@ -275,9 +268,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<AdvancedOptions>(parameters =>
+            var target = TestContext.RenderComponent<AdvancedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -320,22 +313,22 @@ namespace Lantean.QBTMud.Test.Components.Options
 
         private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<AdvancedOptions> target, string testId)
         {
-            return target.FindComponents<MudNumericField<int>>().Single(field => field.FindAll($"[data-test-id='{testId}']").Count > 0);
+            return FindComponentByTestId<MudNumericField<int>>(target, testId);
         }
 
         private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<AdvancedOptions> target, string testId)
         {
-            return target.FindComponents<MudTextField<string>>().Single(field => field.FindAll($"[data-test-id='{testId}']").Count > 0);
+            return FindComponentByTestId<MudTextField<string>>(target, testId);
         }
 
         private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<AdvancedOptions> target, string testId)
         {
-            return target.FindComponents<FieldSwitch>().Single(field => field.FindAll($"[data-test-id='{testId}']").Count > 0);
+            return FindComponentByTestId<FieldSwitch>(target, testId);
         }
 
         private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<AdvancedOptions> target, string testId)
         {
-            return target.FindComponents<MudSelect<T>>().Single(field => field.FindAll($"[data-test-id='{testId}']").Count > 0);
+            return FindComponentByTestId<MudSelect<T>>(target, testId);
         }
 
         private static Preferences DeserializePreferences()
@@ -411,11 +404,6 @@ namespace Lantean.QBTMud.Test.Components.Options
             """;
 
             return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
     }
 }

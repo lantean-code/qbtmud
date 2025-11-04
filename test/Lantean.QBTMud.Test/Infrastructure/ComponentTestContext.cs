@@ -1,5 +1,4 @@
 using Bunit;
-using Bunit.TestDoubles;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
@@ -39,7 +38,10 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddOptions();
 
             // Core UI services
-            Services.AddMudServices();
+            Services.AddMudServices(options =>
+            {
+                options.PopoverOptions.CheckForPopoverProvider = false;
+            });
             MudGlobal.InputDefaults.ShrinkLabel = true;
 
             // Deterministic infrastructure shims
@@ -75,14 +77,6 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddSingleton<IRssDataManager, RssDataManager>();
 
             Services.AddTransient<IKeyboardService, KeyboardService>();
-        }
-
-        public FakeNavigationManager Nav
-        {
-            get
-            {
-                return Services.GetRequiredService<FakeNavigationManager>();
-            }
         }
 
         public TestLocalStorageService LocalStorage => _localStorage;

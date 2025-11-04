@@ -13,15 +13,8 @@ using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components.UI
 {
-    public sealed class DynamicTableTests : IDisposable
+    public sealed class DynamicTableTests : RazorComponentTestBase
     {
-        private readonly ComponentTestContext _context;
-
-        public DynamicTableTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public void GIVEN_DefaultDefinitions_WHEN_Rendered_THEN_ShouldRenderColumnsAndRows()
         {
@@ -29,7 +22,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var sortColumn = string.Empty;
             var sortDirection = SortDirection.None;
 
-            var localStorageMock = _context.AddSingletonMock<Blazored.LocalStorage.ILocalStorageService>(MockBehavior.Loose);
+            var localStorageMock = TestContext.AddSingletonMock<Blazored.LocalStorage.ILocalStorageService>(MockBehavior.Loose);
 
             var target = RenderDynamicTable(builder =>
             {
@@ -98,7 +91,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
-        public async Task GIVEN_ContextActions_WHEN_Triggered_THEN_ShouldInvokeHandlers()
+        public async Task GIVENTestContextActions_WHEN_Triggered_THEN_ShouldInvokeHandlers()
         {
             var contextInvoked = false;
             var longPressInvoked = false;
@@ -156,10 +149,10 @@ namespace Lantean.QBTMud.Test.Components.UI
             localStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
             localStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
 
-            _context.Services.RemoveAll(typeof(IDialogService));
-            _context.Services.AddSingleton(dialogServiceMock.Object);
-            _context.Services.RemoveAll(typeof(Blazored.LocalStorage.ILocalStorageService));
-            _context.Services.AddSingleton(localStorageMock.Object);
+            TestContext.Services.RemoveAll(typeof(IDialogService));
+            TestContext.Services.AddSingleton(dialogServiceMock.Object);
+            TestContext.Services.RemoveAll(typeof(Blazored.LocalStorage.ILocalStorageService));
+            TestContext.Services.AddSingleton(localStorageMock.Object);
 
             var target = RenderDynamicTable(builder =>
             {
@@ -190,7 +183,7 @@ namespace Lantean.QBTMud.Test.Components.UI
 
         private IRenderedComponent<DynamicTable<SampleItem>> RenderDynamicTable(Action<ComponentParameterCollectionBuilder<DynamicTable<SampleItem>>> configure)
         {
-            return _context.RenderComponent<DynamicTable<SampleItem>>(configure);
+            return TestContext.RenderComponent<DynamicTable<SampleItem>>(configure);
         }
 
         private static IReadOnlyList<ColumnDefinition<SampleItem>> CreateColumnDefinitions()
@@ -212,11 +205,6 @@ namespace Lantean.QBTMud.Test.Components.UI
                 new SampleItem(1, "Item1", 3),
                 new SampleItem(2, "Item2", 7)
             ];
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
 
         private sealed record SampleItem(int Id, string Name, int Value);

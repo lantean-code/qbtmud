@@ -11,24 +11,17 @@ using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
-    public sealed class WebUIOptionsTests : IDisposable
+    public sealed class WebUIOptionsTests : RazorComponentTestBase<WebUIOptions>
     {
-        private readonly ComponentTestContext _context;
-
-        public WebUIOptionsTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
             var preferences = DeserializePreferences();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
             var update = new UpdatePreferences();
 
-            var target = _context.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -64,9 +57,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -103,9 +96,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -156,9 +149,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -223,9 +216,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
-            var target = _context.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -263,11 +256,11 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_RegisterButton_WHEN_Clicked_THEN_ShouldInvokeJs()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
-            var target = _context.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -276,14 +269,14 @@ namespace Lantean.QBTMud.Test.Components.Options
 
             await target.InvokeAsync(() => target.FindAll("button").First(b => b.TextContent.Contains("Register", StringComparison.Ordinal)).Click());
 
-            var calls = _context.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
+            var calls = TestContext.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
             calls.Should().HaveCount(1);
             calls[0].Arguments[0].Should().Be("https://www.dyndns.com/account/services/hosts/add.html");
 
             var enableSwitch = FindSwitch(target, "DyndnsEnabled");
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => target.FindAll("button").First(b => b.TextContent.Contains("Register", StringComparison.Ordinal)).Click());
-            calls = _context.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
+            calls = TestContext.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
             calls.Should().HaveCount(1);
 
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(true));
@@ -291,7 +284,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(1));
             await target.InvokeAsync(() => target.FindAll("button").First(b => b.TextContent.Contains("Register", StringComparison.Ordinal)).Click());
 
-            calls = _context.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
+            calls = TestContext.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
             calls.Should().HaveCount(2);
             calls[1].Arguments[0].Should().Be("http://www.no-ip.com/services/managed_dns/free_dynamic_dns.html");
         }
@@ -336,18 +329,6 @@ namespace Lantean.QBTMud.Test.Components.Options
             """;
 
             return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
-        }
-
-        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<WebUIOptions> target, string testId)
-            where TComponent : IComponent
-        {
-            return target.FindComponents<TComponent>()
-                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
         }
 
         private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<WebUIOptions> target, string testId)

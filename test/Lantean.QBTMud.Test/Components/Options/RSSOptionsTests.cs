@@ -13,24 +13,17 @@ using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
-    public sealed class RSSOptionsTests : IDisposable
+    public sealed class RSSOptionsTests : RazorComponentTestBase<RSSOptions>
     {
-        private readonly ComponentTestContext _context;
-
-        public RSSOptionsTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = _context.RenderComponent<RSSOptions>(parameters =>
+            var target = TestContext.RenderComponent<RSSOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -52,13 +45,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_Settings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = _context.RenderComponent<RSSOptions>(parameters =>
+            var target = TestContext.RenderComponent<RSSOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -96,17 +89,17 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_EditRulesButton_WHEN_Clicked_THEN_ShouldOpenDialog()
         {
-            var workflowMock = _context.AddSingletonMock<IDialogWorkflow>();
+            var workflowMock = TestContext.AddSingletonMock<IDialogWorkflow>();
             workflowMock
                 .Setup(w => w.InvokeRssRulesDialog())
                 .Returns(Task.CompletedTask);
 
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = _context.RenderComponent<RSSOptions>(parameters =>
+            var target = TestContext.RenderComponent<RSSOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -123,13 +116,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_FetchDelay_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = _context.RenderComponent<TestableRssOptions>(parameters =>
+            var target = TestContext.RenderComponent<TestableRssOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -158,18 +151,6 @@ namespace Lantean.QBTMud.Test.Components.Options
             """;
 
             return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
-        }
-
-        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<RSSOptions> target, string testId)
-            where TComponent : IComponent
-        {
-            return target.FindComponents<TComponent>()
-                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
         }
 
         private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<RSSOptions> target, string testId)

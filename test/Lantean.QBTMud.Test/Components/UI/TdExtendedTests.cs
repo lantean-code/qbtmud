@@ -7,21 +7,14 @@ using Microsoft.AspNetCore.Components.Web;
 
 namespace Lantean.QBTMud.Test.Components.UI
 {
-    public sealed class TdExtendedTests : IDisposable
+    public sealed class TdExtendedTests : RazorComponentTestBase<TdExtended>
     {
-        private readonly ComponentTestContext _context;
-
-        public TdExtendedTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public async Task GIVEN_LongPressHandler_WHEN_LongPressRaised_THEN_ShouldInvokeCallback()
         {
             var invoked = false;
 
-            var target = _context.RenderComponent<TdExtended>(parameters =>
+            var target = TestContext.RenderComponent<TdExtended>(parameters =>
             {
                 parameters.Add(p => p.OnLongPress, EventCallback.Factory.Create<LongPressEventArgs>(this, _ =>
                 {
@@ -37,11 +30,11 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
-        public async Task GIVEN_ContextMenuHandler_WHEN_ContextMenuRaised_THEN_ShouldInvokeCallback()
+        public async Task GIVENTestContextMenuHandler_WHENTestContextMenuRaised_THEN_ShouldInvokeCallback()
         {
             var invoked = false;
 
-            var target = _context.RenderComponent<TdExtended>(parameters =>
+            var target = TestContext.RenderComponent<TdExtended>(parameters =>
             {
                 parameters.Add(p => p.OnContextMenu, EventCallback.Factory.Create<MouseEventArgs>(this, _ =>
                 {
@@ -54,11 +47,6 @@ namespace Lantean.QBTMud.Test.Components.UI
             await target.Find("td").TriggerEventAsync("oncontextmenu", new MouseEventArgs());
 
             invoked.Should().BeTrue();
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
     }
 }

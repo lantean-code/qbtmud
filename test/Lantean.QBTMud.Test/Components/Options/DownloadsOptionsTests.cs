@@ -11,24 +11,17 @@ using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
-    public sealed class DownloadsOptionsTests : IDisposable
+    public sealed class DownloadsOptionsTests : RazorComponentTestBase<DownloadsOptions>
     {
-        private readonly ComponentTestContext _context;
-
-        public DownloadsOptionsTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = _context.RenderComponent<DownloadsOptions>(parameters =>
+            var target = TestContext.RenderComponent<DownloadsOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -51,13 +44,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_TogglesAndInputs_WHEN_Changed_THEN_ShouldUpdatePreferencesAndNotify()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            var target = _context.RenderComponent<DownloadsOptions>(parameters =>
+            var target = TestContext.RenderComponent<DownloadsOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -92,12 +85,12 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_AddTorrentSettings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = _context.RenderComponent<DownloadsOptions>(parameters =>
+            var target = TestContext.RenderComponent<DownloadsOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -128,12 +121,12 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_ManagementOptions_WHEN_Toggled_THEN_ShouldUpdatePreferences()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = _context.RenderComponent<DownloadsOptions>(parameters =>
+            var target = TestContext.RenderComponent<DownloadsOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -180,12 +173,12 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_ExcludedFiles_WHEN_Toggled_THEN_ShouldUpdatePreferencesAndInputs()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = _context.RenderComponent<DownloadsOptions>(parameters =>
+            var target = TestContext.RenderComponent<DownloadsOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -211,13 +204,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_MailNotifications_WHEN_Adjusted_THEN_ShouldUpdatePreferences()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            var target = _context.RenderComponent<DownloadsOptions>(parameters =>
+            var target = TestContext.RenderComponent<DownloadsOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -276,13 +269,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_AutorunSettings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            var target = _context.RenderComponent<DownloadsOptions>(parameters =>
+            var target = TestContext.RenderComponent<DownloadsOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -318,13 +311,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_ScanDirectories_WHEN_Modified_THEN_ShouldUpdateScanDirs()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            var target = _context.RenderComponent<DownloadsOptions>(parameters =>
+            var target = TestContext.RenderComponent<DownloadsOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -351,13 +344,6 @@ namespace Lantean.QBTMud.Test.Components.Options
 
             update.ScanDirs.ContainsKey("/watch-renamed").Should().BeFalse();
             raised.Should().HaveCountGreaterThanOrEqualTo(2);
-        }
-
-        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<DownloadsOptions> target, string testId)
-            where TComponent : IComponent
-        {
-            return target.FindComponents<TComponent>()
-                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
         }
 
         private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<DownloadsOptions> target, string testId)
@@ -435,11 +421,6 @@ namespace Lantean.QBTMud.Test.Components.Options
             """;
 
             return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
     }
 }

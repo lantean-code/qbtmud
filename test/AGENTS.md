@@ -38,6 +38,18 @@
 
 - Do not make assumptions. If any referenced code or behavior is unclear, ask for clarification before writing tests.
 
+## Blazor Components
+
+- Use `bUnit` for testing Blazor components.
+- Follow the same naming and structuring conventions as above.
+- Use `TestContext` for component rendering and dependency injection.
+- Mock services using `Mock.Of<T>()` and register them in the `TestContext.Services`.
+- Use `IRenderedComponent<T>` to interact with and assert against rendered components.
+- Ensure component tests also achieve 100% line coverage.
+- Raise any uncertainties for clarification before proceeding with component tests.
+- Additions to the component under test to use a data attribute (data-test-id) is permitted to aid in element selection during testing.
+- `RazorComponentTestBase<T>` can be used as a base class for component tests to encapsulate common setup logic with helper methods for selecting components using `data-test-id`.
+
 ## Pre-Flight Checklist (must confirm all before generating tests)
 
 - [ ] I am using xUnit, Moq, and AwesomeAssertions.

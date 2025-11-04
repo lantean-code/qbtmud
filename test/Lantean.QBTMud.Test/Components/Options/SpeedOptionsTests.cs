@@ -11,24 +11,17 @@ using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
-    public sealed class SpeedOptionsTests : IDisposable
+    public sealed class SpeedOptionsTests : RazorComponentTestBase<SpeedOptions>
     {
-        private readonly ComponentTestContext _context;
-
-        public SpeedOptionsTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldDisplayRatesAndScheduler()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = _context.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -57,13 +50,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_UserAdjustments_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = _context.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -100,12 +93,12 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_TimePickers_WHEN_Adjusted_THEN_ShouldUpdateToFields()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = _context.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -126,13 +119,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_RateLimitSwitches_WHEN_Toggled_THEN_ShouldUpdatePreferences()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = _context.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -158,13 +151,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_UnchangedScheduleTimes_WHEN_Reapplied_THEN_ShouldNotNotify()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = _context.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -182,13 +175,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_NullScheduleTimes_WHEN_Cleared_THEN_ShouldIgnoreChanges()
         {
-            _context.RenderComponent<MudPopoverProvider>();
+            TestContext.RenderComponent<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = _context.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -227,18 +220,6 @@ namespace Lantean.QBTMud.Test.Components.Options
             """;
 
             return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
-        }
-
-        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<SpeedOptions> target, string testId)
-            where TComponent : IComponent
-        {
-            return target.FindComponents<TComponent>()
-                .Single(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
         }
 
         private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<SpeedOptions> target, string testId)

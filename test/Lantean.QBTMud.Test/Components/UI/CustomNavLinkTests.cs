@@ -8,19 +8,12 @@ using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components.UI
 {
-    public sealed class CustomNavLinkTests : IDisposable
+    public sealed class CustomNavLinkTests : RazorComponentTestBase<CustomNavLink>
     {
-        private readonly ComponentTestContext _context;
-
-        public CustomNavLinkTests()
-        {
-            _context = new ComponentTestContext();
-        }
-
         [Fact]
         public void GIVEN_ActiveIconLink_WHEN_Rendered_THEN_ShouldRenderIconAndClasses()
         {
-            var target = _context.RenderComponent<CustomNavLink>(parameters =>
+            var target = TestContext.RenderComponent<CustomNavLink>(parameters =>
             {
                 parameters.Add(p => p.Active, true);
                 parameters.Add(p => p.Class, "Class");
@@ -55,7 +48,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var clicked = false;
 
-            var target = _context.RenderComponent<CustomNavLink>(parameters =>
+            var target = TestContext.RenderComponent<CustomNavLink>(parameters =>
             {
                 parameters.Add(p => p.Disabled, true);
                 parameters.Add(p => p.DisableRipple, true);
@@ -79,7 +72,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var clicked = false;
 
-            var target = _context.RenderComponent<CustomNavLink>(parameters =>
+            var target = TestContext.RenderComponent<CustomNavLink>(parameters =>
             {
                 parameters.Add(p => p.OnClick, EventCallback.Factory.Create<MouseEventArgs>(this, _ => clicked = true));
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "ChildContent"));
@@ -93,7 +86,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_CustomIconColor_WHEN_Rendered_THEN_ShouldOmitDefaultIconClass()
         {
-            var target = _context.RenderComponent<CustomNavLink>(parameters =>
+            var target = TestContext.RenderComponent<CustomNavLink>(parameters =>
             {
                 parameters.Add(p => p.Icon, "Icon");
                 parameters.Add(p => p.IconColor, Color.Primary);
@@ -111,7 +104,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var pressed = false;
 
-            var target = _context.RenderComponent<CustomNavLink>(parameters =>
+            var target = TestContext.RenderComponent<CustomNavLink>(parameters =>
             {
                 parameters.Add(p => p.OnLongPress, EventCallback.Factory.Create<LongPressEventArgs>(this, _ =>
                 {
@@ -127,11 +120,11 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
-        public async Task GIVEN_ContextMenuHandler_WHEN_ContextMenuRaised_THEN_ShouldInvokeCallback()
+        public async Task GIVENTestContextMenuHandler_WHENTestContextMenuRaised_THEN_ShouldInvokeCallback()
         {
             var invoked = false;
 
-            var target = _context.RenderComponent<CustomNavLink>(parameters =>
+            var target = TestContext.RenderComponent<CustomNavLink>(parameters =>
             {
                 parameters.Add(p => p.OnContextMenu, EventCallback.Factory.Create<MouseEventArgs>(this, _ =>
                 {
@@ -144,11 +137,6 @@ namespace Lantean.QBTMud.Test.Components.UI
             await target.Find(".mud-nav-link").TriggerEventAsync("oncontextmenu", new MouseEventArgs());
 
             invoked.Should().BeTrue();
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
     }
 }

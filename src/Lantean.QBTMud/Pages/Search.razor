@@ -39,7 +39,7 @@
                     @(ShowSearchForm ? "Hide" : "Show")
                 </MudButton>
             </MudStack>
-            <MudCollapse Expanded="ShowSearchForm">
+            <MudCollapse Expanded="ShowSearchForm" data-test-id="search-form-collapse">
                 <MudCard Elevation="1" Class="ml-4 mr-4 mb-2 search-filters">
                     <MudCardContent>
                         <EditForm Model="Model" OnValidSubmit="DoSearch">
@@ -49,14 +49,16 @@
                                                   Label="Criteria"
                                                   Variant="Variant.Outlined"
                                                   Immediate="true"
-                                                  @bind-Value="Model.SearchText" />
+                                                  @bind-Value="Model.SearchText"
+                                                  data-test-id="Criteria" />
                                 </MudItem>
                                 <MudItem xs="12" md="3">
                                     <MudSelect T="string"
                                                Label="Categories"
                                                Variant="Variant.Outlined"
                                                Value="@Model.SelectedCategory"
-                                               ValueChanged="OnCategoryChanged">
+                                               ValueChanged="OnCategoryChanged"
+                                               data-test-id="category-select">
                                         @foreach (var category in Categories)
                                         {
                                             <MudSelectItem Value="@category.Key">@category.Value</MudSelectItem>
@@ -72,7 +74,8 @@
                                                SelectAllText="Select all enabled"
                                                SelectedValues="@Model.SelectedPlugins"
                                                SelectedValuesChanged="OnPluginsChanged"
-                                               MultiSelectionTextFunc="PluginsSelectionText">
+                                               MultiSelectionTextFunc="PluginsSelectionText"
+                                               data-test-id="plugin-select">
                                         @foreach (var plugin in EnabledPlugins)
                                         {
                                             <MudSelectItem Value="@plugin.Name">@plugin.FullName</MudSelectItem>
@@ -86,7 +89,8 @@
                                                    Disabled="@( !CanStartNewSearch )"
                                                    Color="Color.Primary"
                                                    EndIcon="@Icons.Material.Filled.Search"
-                                                   Variant="Variant.Filled">
+                                                   Variant="Variant.Filled"
+                                                   data-test-id="start-search-button">
                                             Start search
                                         </MudButton>
                                         <MudButton FullWidth="true"
@@ -99,13 +103,14 @@
                                         <MudButton FullWidth="true"
                                                    Variant="Variant.Text"
                                                    StartIcon="@(ShowAdvancedFilters ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
-                                                   OnClick="ToggleAdvancedFilters">
+                                                   OnClick="ToggleAdvancedFilters"
+                                                   data-test-id="toggle-advanced-filters">
                                             @(ShowAdvancedFilters ? "Hide filters" : "Show filters")
                                         </MudButton>
                                     </MudStack>
                                 </MudItem>
                             </MudGrid>
-                            <MudCollapse Expanded="ShowAdvancedFilters">
+                            <MudCollapse Expanded="ShowAdvancedFilters" data-test-id="advanced-filters-collapse">
                                 <MudGrid Class="mt-2">
                                     <MudItem xs="12" md="4">
                                         <MudTextField T="string"
@@ -120,7 +125,8 @@
                                                    Label="Search in"
                                                    Variant="Variant.Outlined"
                                                    Value="@Model.SearchIn"
-                                                   ValueChanged="OnSearchInChanged">
+                                                   ValueChanged="OnSearchInChanged"
+                                                   data-test-id="search-in-select">
                                             <MudSelectItem Value="@SearchInScope.Everywhere">Everywhere</MudSelectItem>
                                             <MudSelectItem Value="@SearchInScope.Names">Names only</MudSelectItem>
                                         </MudSelect>
@@ -196,13 +202,13 @@
 
             @if (ShowSearchUnavailableMessage)
             {
-                <MudAlert Severity="Severity.Error" Elevation="0" Class="ml-4 mr-4 mb-2">
+                <MudAlert Severity="Severity.Error" Elevation="0" Class="ml-4 mr-4 mb-2" data-test-id="search-unavailable-alert">
                     @SearchUnavailableMessage
                 </MudAlert>
             }
             else if (ShowNoPluginWarning)
             {
-                <MudAlert Severity="Severity.Warning" Elevation="0" Class="ml-4 mr-4 mb-2">
+                <MudAlert Severity="Severity.Warning" Elevation="0" Class="ml-4 mr-4 mb-2" data-test-id="no-plugin-alert">
                     Enable at least one search plugin to run searches.
                 </MudAlert>
             }
@@ -241,8 +247,8 @@
                         <MudSpacer />
                         @if (ActiveJob is not null)
                         {
-                            <MudChip T="string" Color="@GetJobStatusColor(ActiveJob)" Variant="Variant.Filled" Size="Size.Small">@ActiveJob.Status</MudChip>
-                            <MudText Typo="Typo.caption" Class="ml-2 search-actions__results">Results: @GetJobResultSummary(ActiveJob)</MudText>
+                            <MudChip T="string" Color="@GetJobStatusColor(ActiveJob)" Variant="Variant.Filled" Size="Size.Small" data-test-id="job-status-chip">@ActiveJob.Status</MudChip>
+                            <MudText Typo="Typo.caption" Class="ml-2 search-actions__results" data-test-id="job-summary">Results: @GetJobResultSummary(ActiveJob)</MudText>
                         }
                     </MudStack>
                 </MudPaper>
@@ -290,8 +296,8 @@
                         @if (ActiveJob is not null)
                         {
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mt-1">
-                                <MudChip T="string" Color="@GetJobStatusColor(ActiveJob)" Variant="Variant.Filled" Size="Size.Small">@ActiveJob.Status</MudChip>
-                                <MudText Typo="Typo.caption">Results: @GetJobResultSummary(ActiveJob)</MudText>
+                            <MudChip T="string" Color="@GetJobStatusColor(ActiveJob)" Variant="Variant.Filled" Size="Size.Small" data-test-id="job-status-chip">@ActiveJob.Status</MudChip>
+                            <MudText Typo="Typo.caption" data-test-id="job-summary">Results: @GetJobResultSummary(ActiveJob)</MudText>
                             </MudStack>
                         }
                     </MudStack>
@@ -303,7 +309,8 @@
                 <MudTabs Class="ml-4 mr-4 mb-4"
                          Border="true"
                          ApplyEffectsToContainer="true"
-                         @bind-ActivePanelIndex="ActiveTabIndex">
+                         @bind-ActivePanelIndex="ActiveTabIndex"
+                         data-test-id="jobs-tabs">
                     @for (var index = 0; index < Jobs.Count; index++)
                     {
                         var job = Jobs[index];
@@ -312,7 +319,7 @@
                                 <div class="d-flex align-center">
                                     <MudIcon Icon="@GetJobStatusIcon(job)" Color="@GetJobStatusColor(job)" Size="Size.Small" Class="mr-1" />
                                     <MudText Typo="Typo.body2">@job.Pattern</MudText>
-                                    <MudText Typo="Typo.caption" Class="ml-2">@GetJobResultSummary(job)</MudText>
+                                    <MudText Typo="Typo.caption" Class="ml-2" data-test-id="job-summary">@GetJobResultSummary(job)</MudText>
                                     <MudIconButton Icon="@Icons.Material.Filled.Close"
                                                    Size="Size.Small"
                                                    Color="Color.Inherit"
@@ -346,7 +353,7 @@
             }
             else
             {
-                <MudPaper Elevation="0" Class="ml-4 mr-4 mb-4 pa-6 d-flex justify-center">
+                <MudPaper Elevation="0" Class="ml-4 mr-4 mb-4 pa-6 d-flex justify-center" data-test-id="search-empty-state">
                     <MudStack Spacing="1" Class="text-center">
                         <MudIcon Icon="@Icons.Material.Filled.ManageSearch" Color="Color.Info" Size="Size.Large" />
                         <MudText Typo="Typo.subtitle1">No searches yet</MudText>
