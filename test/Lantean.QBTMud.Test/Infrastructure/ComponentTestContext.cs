@@ -1,4 +1,3 @@
-using Blazored.LocalStorage;
 using Bunit;
 using Bunit.TestDoubles;
 using Lantean.QBitTorrentClient;
@@ -19,10 +18,14 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
         private static readonly Uri _baseAddress = new Uri("http://localhost:8080");
         private readonly TestHttpMessageHandler _httpHandler;
+        private readonly TestLocalStorageService _localStorage;
+        private readonly TestClipboardService _clipboard;
 
         public ComponentTestContext()
         {
             _httpHandler = new TestHttpMessageHandler();
+            _localStorage = new TestLocalStorageService();
+            _clipboard = new TestClipboardService();
 
             // Keep JS interop permissive while bootstrapping tests.
             JSInterop.Mode = JSRuntimeMode.Loose;
@@ -39,8 +42,9 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddMudServices();
             MudGlobal.InputDefaults.ShrinkLabel = true;
 
-            // Local storage (uses JSRuntime; Loose mode avoids brittle setup)
-            Services.AddBlazoredLocalStorage();
+            // Deterministic infrastructure shims
+            Services.AddSingleton<Blazored.LocalStorage.ILocalStorageService>(_localStorage);
+            Services.AddSingleton<IClipboardService>(_clipboard);
 
             // Message handlers used by your HttpClient pipeline
             Services.AddTransient<CookieHandler>();
@@ -70,7 +74,6 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddSingleton<IPreferencesDataManager, PreferencesDataManager>();
             Services.AddSingleton<IRssDataManager, RssDataManager>();
 
-            Services.AddSingleton<IClipboardService, ClipboardService>();
             Services.AddTransient<IKeyboardService, KeyboardService>();
         }
 
@@ -82,6 +85,10 @@ namespace Lantean.QBTMud.Test.Infrastructure
             }
         }
 
+        public TestLocalStorageService LocalStorage => _localStorage;
+
+        public TestClipboardService Clipboard => _clipboard;
+
         /// <summary>
         /// Replace IApiClient with a Moq mock (Strict by default). Returns the mock so you can set expectations.
         /// </summary>
@@ -89,6 +96,14 @@ namespace Lantean.QBTMud.Test.Infrastructure
         {
             RemoveServiceDescriptor<IApiClient>();
             var mock = new Mock<IApiClient>(behavior);
+            Services.AddSingleton(mock.Object);
+            return mock;
+        }
+
+        public Mock<ISnackbar> UseSnackbarMock(MockBehavior behavior = MockBehavior.Strict)
+        {
+            RemoveServiceDescriptor<ISnackbar>();
+            var mock = new Mock<ISnackbar>(behavior);
             Services.AddSingleton(mock.Object);
             return mock;
         }
