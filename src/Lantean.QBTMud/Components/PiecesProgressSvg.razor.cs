@@ -59,6 +59,24 @@ namespace Lantean.QBTMud.Components
 
         protected int ColumnsForCurrentBreakpoint => DetermineColumnCount();
 
+        private MudColor LinesColor => IsDarkMode ? Theme.PaletteDark.LinesDefault : Theme.PaletteLight.LinesDefault;
+
+        private string StrokeColor => LinesColor.ToString(MudColorOutputFormats.RGBA);
+
+        private string PendingFillColor => "transparent";
+
+        private string PendingStrokeColor => LinesColor.SetAlpha(IsDarkMode ? 0.35 : 0.25).ToString(MudColorOutputFormats.RGBA);
+
+        private string DimmedDownloadedColor => DimColor(IsDarkMode ? Theme.PaletteDark.Success : Theme.PaletteLight.Success);
+
+        private string DimmedDownloadingColor => DimColor(IsDarkMode ? Theme.PaletteDark.Info : Theme.PaletteLight.Info);
+
+        private string DimColor(MudColor color)
+        {
+            var alpha = IsDarkMode ? 0.45f : 0.55f;
+            return color.SetAlpha(alpha).ToString(MudColorOutputFormats.RGBA);
+        }
+
         protected override void OnParametersSet()
         {
             base.OnParametersSet();
@@ -70,6 +88,7 @@ namespace Lantean.QBTMud.Components
         protected void ToggleSvg()
         {
             _showSvg = !_showSvg;
+            BuildProgressSummary();
         }
 
         protected void HandleLinearKeyDown(KeyboardEventArgs args)
@@ -221,9 +240,63 @@ namespace Lantean.QBTMud.Components
                 return $"background-color: {PendingColor};";
             }
 
+            var segments = BuildSegments();
             var builder = new System.Text.StringBuilder();
             builder.Append("background-color: ").Append(PendingColor).Append(';');
             builder.Append("background-image: linear-gradient(to right");
+
+            for (var index = 0; index < segments.Count; index++)
+            {
+                var (color, start, end) = segments[index];
+                if (index == 0)
+                {
+                    builder.Append(", ")
+                        .Append(color)
+                        .Append(" 0%");
+                }
+                else
+                {
+                    builder.Append(", ")
+                        .Append(color)
+                        .Append(' ')
+                        .Append(start.ToString("0.#####", CultureInfo.InvariantCulture))
+                        .Append('%');
+                }
+
+                builder.Append(", ")
+                    .Append(color)
+                    .Append(' ')
+                    .Append(end.ToString("0.#####", CultureInfo.InvariantCulture))
+                    .Append('%');
+
+                if (index + 1 < segments.Count)
+                {
+                    var nextColor = segments[index + 1].Color;
+                    builder.Append(", ")
+                        .Append(nextColor)
+                        .Append(' ')
+                        .Append(end.ToString("0.#####", CultureInfo.InvariantCulture))
+                        .Append('%');
+                }
+            }
+
+            builder.Append(");");
+
+            if (_showSvg)
+            {
+                builder.Append(" filter: saturate(0.6) brightness(0.9);");
+            }
+
+            return builder.ToString();
+        }
+
+        private List<Segment> BuildSegments()
+        {
+            var segments = new List<Segment>();
+            if (Pieces.Count == 0)
+            {
+                return segments;
+            }
 
             var totalPieces = Pieces.Count;
             var segmentStart = 0;
@@ -232,36 +305,28 @@ namespace Lantean.QBTMud.Components
             {
                 if (Pieces[index] != currentState)
                 {
-                    AppendGradientSegment(builder, currentState, segmentStart, index, totalPieces);
+                    segments.Add(CreateSegment(currentState, segmentStart, index, totalPieces));
                     segmentStart = index;
                     currentState = Pieces[index];
                 }
             }
 
-            AppendGradientSegment(builder, currentState, segmentStart, totalPieces, totalPieces);
-            builder.Append(");");
-            return builder.ToString();
+            segments.Add(CreateSegment(currentState, segmentStart, totalPieces, totalPieces));
+            return segments;
         }
 
-        private void AppendGradientSegment(System.Text.StringBuilder builder, PieceState state, int startIndex, int endIndex, int totalPieces)
+        private Segment CreateSegment(PieceState state, int startIndex, int endIndex, int totalPieces)
         {
             var color = state switch
             {
-                PieceState.Downloaded => DownloadedColor,
-                PieceState.Downloading => DownloadingColor,
+                PieceState.Downloaded => _showSvg ? DimmedDownloadedColor : DownloadedColor,
+                PieceState.Downloading => _showSvg ? DimmedDownloadingColor : DownloadingColor,
                 _ => PendingColor
             };
+
             var startPercent = Percentage(startIndex, totalPieces);
             var endPercent = Percentage(endIndex, totalPieces);
-            builder.Append(", ")
-                .Append(color)
-                .Append(' ')
-                .Append(startPercent.ToString("0.###", CultureInfo.InvariantCulture))
-                .Append("%, ")
-                .Append(color)
-                .Append(' ')
-                .Append(endPercent.ToString("0.###", CultureInfo.InvariantCulture))
-                .Append('%');
+            return new Segment(color, startPercent, endPercent);
         }
 
         private static string DescribePieceState(PieceState state)
@@ -315,5 +380,7 @@ namespace Lantean.QBTMud.Components
         }
 
         protected sealed record PieceCell(double X, double Y, double Width, double Height, string CssClass, string Tooltip);
+
+        private sealed record Segment(string Color, double Start, double End);
     }
 }

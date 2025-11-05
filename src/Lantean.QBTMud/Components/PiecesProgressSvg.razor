@@ -33,9 +33,10 @@
                          preserveAspectRatio="xMidYMid meet">
                         <defs>
                             <style>
+                                .pieces-progress-svg__rect { stroke: @StrokeColor; stroke-width: 0.03; }
                                 .pieces-progress-svg__rect--downloaded { fill: @DownloadedColor; }
                                 .pieces-progress-svg__rect--downloading { fill: @DownloadingColor; }
-                                .pieces-progress-svg__rect--pending { fill: @PendingColor; opacity: 0.45; }
+                                .pieces-progress-svg__rect--pending { fill: @PendingFillColor; stroke: @PendingStrokeColor; stroke-width: 0.06; stroke-dasharray: 0.4 0.9; stroke-linecap: round; }
                             </style>
                         </defs>
                         @foreach (var cell in Cells)
