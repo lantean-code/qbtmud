@@ -57,7 +57,6 @@ namespace Lantean.QBTMud
             builder.Logging.SetMinimumLevel(LogLevel.Error);
 #endif
 
-            MudGlobal.InputDefaults.ShrinkLabel = true;
             await builder.Build().RunAsync();
         }
     }

@@ -5,8 +5,8 @@
         <table width="100%">
             <tbody>
                 <tr>
-                    <td style="width: 70%"><MudTextField T="string" Label="IP" Value="@IP" ValueChanged="SetIP" Required Variant="Variant.Outlined" /></td>
-                    <td style="width: 30%"><MudNumericField T="int?" Label="Port" Value="@Port" ValueChanged="SetPort" Required Variant="Variant.Outlined" /></td>
+                    <td style="width: 70%"><MudTextField T="string" Label="IP" Value="@IP" ValueChanged="SetIP" Required Variant="Variant.Outlined" ShrinkLabel="true" /></td>
+                    <td style="width: 30%"><MudNumericField T="int?" Label="Port" Value="@Port" ValueChanged="SetPort" Required Variant="Variant.Outlined" ShrinkLabel="true" /></td>
                     <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddTracker" /></td>
                 </tr>
                 @foreach (var peer in Peers)

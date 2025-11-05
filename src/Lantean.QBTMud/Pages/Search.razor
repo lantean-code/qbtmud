@@ -48,6 +48,7 @@
                                     <MudTextField T="string"
                                                   Label="Criteria"
                                                   Variant="Variant.Outlined"
+                                                  ShrinkLabel="true"
                                                   Immediate="true"
                                                   @bind-Value="Model.SearchText"
                                                   data-test-id="@TestIdHelper.For("Criteria")" />
@@ -56,6 +57,7 @@
                                     <MudSelect T="string"
                                                Label="Categories"
                                                Variant="Variant.Outlined"
+                                               ShrinkLabel="true"
                                                Value="@Model.SelectedCategory"
                                                ValueChanged="OnCategoryChanged"
                                                data-test-id="@TestIdHelper.For("category-select")">
@@ -69,6 +71,7 @@
                                     <MudSelect T="string"
                                                Label="Plugins"
                                                Variant="Variant.Outlined"
+                                               ShrinkLabel="true"
                                                MultiSelection="true"
                                                SelectAll="true"
                                                SelectAllText="Select all enabled"
@@ -116,6 +119,7 @@
                                         <MudTextField T="string"
                                                       Label="Filter results"
                                                       Variant="Variant.Outlined"
+                                                      ShrinkLabel="true"
                                                       Value="@Model.FilterText"
                                                       ValueChanged="OnFilterTextChanged"
                                                       Immediate="true" />
@@ -124,6 +128,7 @@
                                         <MudSelect T="SearchInScope"
                                                    Label="Search in"
                                                    Variant="Variant.Outlined"
+                                                   ShrinkLabel="true"
                                                    Value="@Model.SearchIn"
                                                    ValueChanged="OnSearchInChanged"
                                                    data-test-id="@TestIdHelper.For("search-in-select")">
@@ -135,6 +140,7 @@
                                         <MudNumericField T="int?"
                                                          Label="Min seeders"
                                                          Variant="Variant.Outlined"
+                                                         ShrinkLabel="true"
                                                          Min="0"
                                                          Value="@Model.MinimumSeeds"
                                                          ValueChanged="OnMinimumSeedsChanged"
@@ -144,6 +150,7 @@
                                         <MudNumericField T="int?"
                                                          Label="Max seeders"
                                                          Variant="Variant.Outlined"
+                                                         ShrinkLabel="true"
                                                          Min="0"
                                                          Value="@Model.MaximumSeeds"
                                                          ValueChanged="OnMaximumSeedsChanged"
@@ -155,6 +162,7 @@
                                         <MudNumericField T="double?"
                                                          Label="Min size"
                                                          Variant="Variant.Outlined"
+                                                         ShrinkLabel="true"
                                                          Min="0"
                                                          Value="@Model.MinimumSize"
                                                          ValueChanged="OnMinimumSizeChanged"
@@ -164,6 +172,7 @@
                                         <MudSelect T="SearchSizeUnit"
                                                    Label="Unit"
                                                    Variant="Variant.Outlined"
+                                                   ShrinkLabel="true"
                                                    Value="@Model.MinimumSizeUnit"
                                                    ValueChanged="OnMinimumSizeUnitChanged">
                                             @foreach (var option in SizeUnitOptionsList)
@@ -176,6 +185,7 @@
                                         <MudNumericField T="double?"
                                                          Label="Max size"
                                                          Variant="Variant.Outlined"
+                                                         ShrinkLabel="true"
                                                          Min="0"
                                                          Value="@Model.MaximumSize"
                                                          ValueChanged="OnMaximumSizeChanged"
@@ -185,6 +195,7 @@
                                         <MudSelect T="SearchSizeUnit"
                                                    Label="Unit"
                                                    Variant="Variant.Outlined"
+                                                   ShrinkLabel="true"
                                                    Value="@Model.MaximumSizeUnit"
                                                    ValueChanged="OnMaximumSizeUnitChanged">
                                             @foreach (var option in SizeUnitOptionsList)

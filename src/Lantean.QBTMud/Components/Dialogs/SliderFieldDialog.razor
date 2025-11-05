@@ -5,7 +5,7 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@Label" Value="@GetDisplayValue()" ValueChanged="ValueChanged" Disabled="Disabled" Variant="Variant.Outlined" Adornment="@Adornment" AdornmentText="@AdornmentText" />
+                <MudTextField T="string" Label="@Label" Value="@GetDisplayValue()" ValueChanged="ValueChanged" Disabled="Disabled" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="@Adornment" AdornmentText="@AdornmentText" />
             </MudItem>
             <MudItem xs="12">
                 <MudSlider T="T" ValueLabel="true" Value="@Value" ValueChanged="ValueChanged" Min="@Min" Max="@Max" Disabled="Disabled">

@@ -9,16 +9,16 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="string" Label="Resume data storage type (requires restart)" Value="ResumeDataStorageType" ValueChanged="ResumeDataStorageTypeChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("ResumeDataStorageType")">
+                <MudSelect T="string" Label="Resume data storage type (requires restart)" Value="ResumeDataStorageType" ValueChanged="ResumeDataStorageTypeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ResumeDataStorageType")">
                     <MudSelectItem T="string" Value="@("Legacy")">Fastresume files</MudSelectItem>
                     <MudSelectItem T="string" Value="@("SQLite")">SQLite database (experimental)</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Physical memory (RAM) usage limit (applied if libtorrent &gt;= 2.0)" Value="MemoryWorkingSetLimit" ValueChanged="MemoryWorkingSetLimitChanged" Min="0" HelperText="This option is less effective on Linux" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MemoryWorkingSetLimit")" />
+                <MudNumericField T="int" Label="Physical memory (RAM) usage limit (applied if libtorrent &gt;= 2.0)" Value="MemoryWorkingSetLimit" ValueChanged="MemoryWorkingSetLimitChanged" Min="0" HelperText="This option is less effective on Linux" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MemoryWorkingSetLimit")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="string" Label="Network interface" Value="CurrentNetworkInterface" ValueChanged="CurrentNetworkInterfaceChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("CurrentNetworkInterface")">
+                <MudSelect T="string" Label="Network interface" Value="CurrentNetworkInterface" ValueChanged="CurrentNetworkInterfaceChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CurrentNetworkInterface")">
                     <MudSelectItem T="string" Value="@("")">Any interface</MudSelectItem>
                     @foreach (var networkInterface in NetworkInterfaces)
                     {
@@ -27,7 +27,7 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="string" Label="Optional IP address to bind to" Value="CurrentInterfaceAddress" ValueChanged="CurrentInterfaceAddressChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("CurrentInterfaceAddress")">
+                <MudSelect T="string" Label="Optional IP address to bind to" Value="CurrentInterfaceAddress" ValueChanged="CurrentInterfaceAddressChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CurrentInterfaceAddress")">
                     <MudSelectItem T="string" Value="@("")">All addresses</MudSelectItem>
                     <MudSelectItem T="string" Value="@("0.0.0.0")">All IPv4 addresses</MudSelectItem>
                     <MudSelectItem T="string" Value="@("::")">All IPv6 addresses</MudSelectItem>
@@ -38,16 +38,16 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Save resume data interval" Value="SaveResumeDataInterval" ValueChanged="SaveResumeDataIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="min" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SaveResumeDataInterval")" />
+                <MudNumericField T="int" Label="Save resume data interval" Value="SaveResumeDataInterval" ValueChanged="SaveResumeDataIntervalChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="min" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SaveResumeDataInterval")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label=".torrent file size limit" Value="TorrentFileSizeLimit" ValueChanged="TorrentFileSizeLimitChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("TorrentFileSizeLimit")" />
+                <MudNumericField T="int" Label=".torrent file size limit" Value="TorrentFileSizeLimit" ValueChanged="TorrentFileSizeLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("TorrentFileSizeLimit")" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="Recheck torrents on completion" Value="RecheckCompletedTorrents" ValueChanged="RecheckCompletedTorrentsChanged" data-test-id="@TestIdHelper.For("RecheckCompletedTorrents")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Refresh interval" Value="RefreshInterval" ValueChanged="RefreshIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="ms" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RefreshInterval")" />
+                <MudNumericField T="int" Label="Refresh interval" Value="RefreshInterval" ValueChanged="RefreshIntervalChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="ms" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RefreshInterval")" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="Resolve peer countries" Value="ResolvePeerCountries" ValueChanged="ResolvePeerCountriesChanged" data-test-id="@TestIdHelper.For("ResolvePeerCountries")" />
@@ -59,7 +59,7 @@
                 <FieldSwitch Label="Enable embedded tracker" Value="EnableEmbeddedTracker" ValueChanged="EnableEmbeddedTrackerChanged" data-test-id="@TestIdHelper.For("EnableEmbeddedTracker")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Embedded tracker port" Value="EmbeddedTrackerPort" ValueChanged="EmbeddedTrackerPortChanged" Min="@Options.MinPortValue" Max="@Options.MaxPortValue" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("EmbeddedTrackerPort")" />
+                <MudNumericField T="int" Label="Embedded tracker port" Value="EmbeddedTrackerPort" ValueChanged="EmbeddedTrackerPortChanged" Min="@Options.MinPortValue" Max="@Options.MaxPortValue" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("EmbeddedTrackerPort")" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="Enable port forwarding for embedded tracker" Value="EmbeddedTrackerPortForwarding" ValueChanged="EmbeddedTrackerPortForwardingChanged" data-test-id="@TestIdHelper.For("EmbeddedTrackerPortForwarding")" />
@@ -92,47 +92,47 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Bdecode depth limit" Value="BdecodeDepthLimit" ValueChanged="BdecodeDepthLimitChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("BdecodeDepthLimit")" />
+                <MudNumericField T="int" Label="Bdecode depth limit" Value="BdecodeDepthLimit" ValueChanged="BdecodeDepthLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("BdecodeDepthLimit")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Bdecode token limit" Value="BdecodeTokenLimit" ValueChanged="BdecodeTokenLimitChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("BdecodeTokenLimit")" />
+                <MudNumericField T="int" Label="Bdecode token limit" Value="BdecodeTokenLimit" ValueChanged="BdecodeTokenLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("BdecodeTokenLimit")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Asynchronous I/O threads" Value="AsyncIoThreads" ValueChanged="AsyncIoThreadsChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AsyncIoThreads")" />
+                <MudNumericField T="int" Label="Asynchronous I/O threads" Value="AsyncIoThreads" ValueChanged="AsyncIoThreadsChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AsyncIoThreads")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Hashing threads (requires libtorrent &gt;= 2.0)" Value="HashingThreads" ValueChanged="HashingThreadsChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("HashingThreads")" />
+                <MudNumericField T="int" Label="Hashing threads (requires libtorrent &gt;= 2.0)" Value="HashingThreads" ValueChanged="HashingThreadsChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("HashingThreads")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="File pool size" Value="FilePoolSize" ValueChanged="FilePoolSizeChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("FilePoolSize")" />
+                <MudNumericField T="int" Label="File pool size" Value="FilePoolSize" ValueChanged="FilePoolSizeChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("FilePoolSize")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Outstanding memory when checking torrents" Value="CheckingMemoryUse" ValueChanged="CheckingMemoryUseChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("CheckingMemoryUse")" />
+                <MudNumericField T="int" Label="Outstanding memory when checking torrents" Value="CheckingMemoryUse" ValueChanged="CheckingMemoryUseChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("CheckingMemoryUse")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Disk cache (requires libtorrent &lt; 2.0)" Value="DiskCache" ValueChanged="DiskCacheChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DiskCache")" />
+                <MudNumericField T="int" Label="Disk cache (requires libtorrent &lt; 2.0)" Value="DiskCache" ValueChanged="DiskCacheChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="MiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DiskCache")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Disk cache expiry interval (requires libtorrent &lt; 2.0)" Value="DiskCacheTtl" ValueChanged="DiskCacheTtlChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="s" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DiskCacheTtl")" />
+                <MudNumericField T="int" Label="Disk cache expiry interval (requires libtorrent &lt; 2.0)" Value="DiskCacheTtl" ValueChanged="DiskCacheTtlChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="s" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DiskCacheTtl")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Disk queue size" Value="DiskQueueSize" ValueChanged="DiskQueueSizeChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DiskQueueSize")" />
+                <MudNumericField T="int" Label="Disk queue size" Value="DiskQueueSize" ValueChanged="DiskQueueSizeChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DiskQueueSize")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="Disk IO type (libtorrent &gt;= 2.0; requires restart)" Value="DiskIoType" ValueChanged="DiskIoTypeChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("DiskIoType")">
+                <MudSelect T="int" Label="Disk IO type (libtorrent &gt;= 2.0; requires restart)" Value="DiskIoType" ValueChanged="DiskIoTypeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DiskIoType")">
                     <MudSelectItem T="int" Value="0">Default</MudSelectItem>
                     <MudSelectItem T="int" Value="1">Memory mapped files</MudSelectItem>
                     <MudSelectItem T="int" Value="2">POSIX-compliant</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="Disk IO read mode" Value="DiskIoReadMode" ValueChanged="DiskIoReadModeChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("DiskIoReadMode")">
+                <MudSelect T="int" Label="Disk IO read mode" Value="DiskIoReadMode" ValueChanged="DiskIoReadModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DiskIoReadMode")">
                     <MudSelectItem T="int" Value="0">Disable OS cache</MudSelectItem>
                     <MudSelectItem T="int" Value="1">Enable OS cache</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="Disk IO write mode" Value="DiskIoWriteMode" ValueChanged="DiskIoWriteModeChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("DiskIoWriteMode")">
+                <MudSelect T="int" Label="Disk IO write mode" Value="DiskIoWriteMode" ValueChanged="DiskIoWriteModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DiskIoWriteMode")">
                     <MudSelectItem T="int" Value="0">Disable OS cache</MudSelectItem>
                     <MudSelectItem T="int" Value="1">Enable OS cache</MudSelectItem>
                     <MudSelectItem T="int" Value="2">Write-through (requires libtorrent &gt;= 2.0.6)</MudSelectItem>
@@ -148,40 +148,40 @@
                 <FieldSwitch Label="Send upload piece suggestions" Value="EnableUploadSuggestions" ValueChanged="EnableUploadSuggestionsChanged" data-test-id="@TestIdHelper.For("EnableUploadSuggestions")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Send buffer watermark" Value="SendBufferWatermark" ValueChanged="SendBufferWatermarkChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SendBufferWatermark")" />
+                <MudNumericField T="int" Label="Send buffer watermark" Value="SendBufferWatermark" ValueChanged="SendBufferWatermarkChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SendBufferWatermark")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Send buffer low watermark" Value="SendBufferLowWatermark" ValueChanged="SendBufferLowWatermarkChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SendBufferLowWatermark")" />
+                <MudNumericField T="int" Label="Send buffer low watermark" Value="SendBufferLowWatermark" ValueChanged="SendBufferLowWatermarkChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SendBufferLowWatermark")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Send buffer watermark factor" Value="SendBufferWatermarkFactor" ValueChanged="SendBufferWatermarkFactorChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SendBufferWatermarkFactor")" />
+                <MudNumericField T="int" Label="Send buffer watermark factor" Value="SendBufferWatermarkFactor" ValueChanged="SendBufferWatermarkFactorChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="%" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SendBufferWatermarkFactor")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Outgoing connections per second" Value="ConnectionSpeed" ValueChanged="ConnectionSpeedChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ConnectionSpeed")" />
+                <MudNumericField T="int" Label="Outgoing connections per second" Value="ConnectionSpeed" ValueChanged="ConnectionSpeedChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ConnectionSpeed")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Socket send buffer size [0: system default]" Value="SocketSendBufferSize" ValueChanged="SocketSendBufferSizeChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SocketSendBufferSize")" />
+                <MudNumericField T="int" Label="Socket send buffer size [0: system default]" Value="SocketSendBufferSize" ValueChanged="SocketSendBufferSizeChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SocketSendBufferSize")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Socket receive buffer size [0: system default]" Value="SocketReceiveBufferSize" ValueChanged="SocketReceiveBufferSizeChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SocketReceiveBufferSize")" />
+                <MudNumericField T="int" Label="Socket receive buffer size [0: system default]" Value="SocketReceiveBufferSize" ValueChanged="SocketReceiveBufferSizeChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="KiB" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SocketReceiveBufferSize")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Socket backlog size" Value="SocketBacklogSize" ValueChanged="SocketBacklogSizeChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SocketBacklogSize")" />
+                <MudNumericField T="int" Label="Socket backlog size" Value="SocketBacklogSize" ValueChanged="SocketBacklogSizeChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SocketBacklogSize")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Outgoing ports (Min) [0: disabled]" Value="OutgoingPortsMin" ValueChanged="OutgoingPortsMinChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("OutgoingPortsMin")" />
+                <MudNumericField T="int" Label="Outgoing ports (Min) [0: disabled]" Value="OutgoingPortsMin" ValueChanged="OutgoingPortsMinChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("OutgoingPortsMin")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Outgoing ports (Max) [0: disabled]" Value="OutgoingPortsMax" ValueChanged="OutgoingPortsMaxChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("OutgoingPortsMax")" />
+                <MudNumericField T="int" Label="Outgoing ports (Max) [0: disabled]" Value="OutgoingPortsMax" ValueChanged="OutgoingPortsMaxChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("OutgoingPortsMax")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="UPnP lease duration [0: permanent lease]" Value="UpnpLeaseDuration" ValueChanged="UpnpLeaseDurationChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("UpnpLeaseDuration")" />
+                <MudNumericField T="int" Label="UPnP lease duration [0: permanent lease]" Value="UpnpLeaseDuration" ValueChanged="UpnpLeaseDurationChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("UpnpLeaseDuration")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Type of service (ToS) for connections to peers" Value="PeerTos" ValueChanged="PeerTosChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("PeerTos")" />
+                <MudNumericField T="int" Label="Type of service (ToS) for connections to peers" Value="PeerTos" ValueChanged="PeerTosChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("PeerTos")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="μTP-TCP mixed mode algorithm" Value="UtpTcpMixedMode" ValueChanged="UtpTcpMixedModeChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("UtpTcpMixedMode")">
+                <MudSelect T="int" Label="μTP-TCP mixed mode algorithm" Value="UtpTcpMixedMode" ValueChanged="UtpTcpMixedModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UtpTcpMixedMode")">
                     <MudSelectItem T="int" Value="0">Prefer TCP</MudSelectItem>
                     <MudSelectItem T="int" Value="1">Peer proportional (throttles TCP)</MudSelectItem>
                 </MudSelect>
@@ -202,13 +202,13 @@
                 <FieldSwitch Label="Disallow connection to peers on privileged ports" Value="BlockPeersOnPrivilegedPorts" ValueChanged="BlockPeersOnPrivilegedPortsChanged" data-test-id="@TestIdHelper.For("BlockPeersOnPrivilegedPorts")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="Upload slots behavior" Value="UploadSlotsBehavior" ValueChanged="UploadSlotsBehaviorChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("UploadSlotsBehavior")">
+                <MudSelect T="int" Label="Upload slots behavior" Value="UploadSlotsBehavior" ValueChanged="UploadSlotsBehaviorChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UploadSlotsBehavior")">
                     <MudSelectItem T="int" Value="0">Fixed slots</MudSelectItem>
                     <MudSelectItem T="int" Value="1">Upload rate based</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="Upload choking algorithm" Value="UploadChokingAlgorithm" ValueChanged="UploadChokingAlgorithmChanged" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("UploadChokingAlgorithm")">
+                <MudSelect T="int" Label="Upload choking algorithm" Value="UploadChokingAlgorithm" ValueChanged="UploadChokingAlgorithmChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UploadChokingAlgorithm")">
                     <MudSelectItem T="int" Value="0">Round-robin</MudSelectItem>
                     <MudSelectItem T="int" Value="1">Fastest upload</MudSelectItem>
                     <MudSelectItem T="int" Value="2">Anti-leech</MudSelectItem>
@@ -221,37 +221,37 @@
                 <FieldSwitch Label="Always announce to all tiers" Value="AnnounceToAllTiers" ValueChanged="AnnounceToAllTiersChanged" data-test-id="@TestIdHelper.For("AnnounceToAllTiers")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="IP address reported to trackers (requires restart)" Value="AnnounceIp" ValueChanged="AnnounceIpChanged" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AnnounceIp")" />
+                <MudTextField T="string" Label="IP address reported to trackers (requires restart)" Value="AnnounceIp" ValueChanged="AnnounceIpChanged" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AnnounceIp")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Max concurrent HTTP announces" Value="MaxConcurrentHttpAnnounces" ValueChanged="MaxConcurrentHttpAnnouncesChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxConcurrentHttpAnnounces")" />
+                <MudNumericField T="int" Label="Max concurrent HTTP announces" Value="MaxConcurrentHttpAnnounces" ValueChanged="MaxConcurrentHttpAnnouncesChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxConcurrentHttpAnnounces")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Stop tracker timeout [0: disabled]" Value="StopTrackerTimeout" ValueChanged="StopTrackerTimeoutChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("StopTrackerTimeout")" />
+                <MudNumericField T="int" Label="Stop tracker timeout [0: disabled]" Value="StopTrackerTimeout" ValueChanged="StopTrackerTimeoutChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("StopTrackerTimeout")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Peer turnover disconnect percentage:" Value="PeerTurnover" ValueChanged="PeerTurnoverChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("PeerTurnover")" />
+                <MudNumericField T="int" Label="Peer turnover disconnect percentage:" Value="PeerTurnover" ValueChanged="PeerTurnoverChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="%" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("PeerTurnover")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Peer turnover threshold percentage" Value="PeerTurnoverCutoff" ValueChanged="PeerTurnoverCutoffChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="%" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("PeerTurnoverCutoff")" />
+                <MudNumericField T="int" Label="Peer turnover threshold percentage" Value="PeerTurnoverCutoff" ValueChanged="PeerTurnoverCutoffChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="%" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("PeerTurnoverCutoff")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Peer turnover disconnect interval" Value="PeerTurnoverInterval" ValueChanged="PeerTurnoverIntervalChanged" Min="0" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="s" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("PeerTurnoverInterval")" />
+                <MudNumericField T="int" Label="Peer turnover disconnect interval" Value="PeerTurnoverInterval" ValueChanged="PeerTurnoverIntervalChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="s" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("PeerTurnoverInterval")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Maximum outstanding requests to a single peer" Value="RequestQueueSize" ValueChanged="RequestQueueSizeChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RequestQueueSize")" />
+                <MudNumericField T="int" Label="Maximum outstanding requests to a single peer" Value="RequestQueueSize" ValueChanged="RequestQueueSizeChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RequestQueueSize")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="I2P inbound quantity (requires libtorrent &gt;= 2.0)" Value="I2pInboundQuantity" ValueChanged="I2pInboundQuantityChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pInboundQuantity")" />
+                <MudNumericField T="int" Label="I2P inbound quantity (requires libtorrent &gt;= 2.0)" Value="I2pInboundQuantity" ValueChanged="I2pInboundQuantityChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pInboundQuantity")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="I2P outbound quantity (requires libtorrent &gt;= 2.0)" Value="I2pOutboundQuantity" ValueChanged="I2pOutboundQuantityChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pOutboundQuantity")" />
+                <MudNumericField T="int" Label="I2P outbound quantity (requires libtorrent &gt;= 2.0)" Value="I2pOutboundQuantity" ValueChanged="I2pOutboundQuantityChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pOutboundQuantity")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="I2P inbound length (requires libtorrent &gt;= 2.0)" Value="I2pInboundLength" ValueChanged="I2pInboundLengthChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pInboundLength")" />
+                <MudNumericField T="int" Label="I2P inbound length (requires libtorrent &gt;= 2.0)" Value="I2pInboundLength" ValueChanged="I2pInboundLengthChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pInboundLength")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="I2P outbound length (requires libtorrent &gt;= 2.0)" Value="I2pOutboundLength" ValueChanged="I2pOutboundLengthChanged" Min="0" Variant="Variant.Outlined" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pOutboundLength")" />
+                <MudNumericField T="int" Label="I2P outbound length (requires libtorrent &gt;= 2.0)" Value="I2pOutboundLength" ValueChanged="I2pOutboundLengthChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pOutboundLength")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

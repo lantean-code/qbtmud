@@ -25,10 +25,10 @@
                 <EditForm Model="Model" OnSubmit="Submit">
                     <MudGrid>
                         <MudItem md="7">
-                            <MudTextField T="string" Label="Criteria" @bind-Value="Model.Criteria" Variant="Variant.Outlined" />
+                            <MudTextField T="string" Label="Criteria" @bind-Value="Model.Criteria" Variant="Variant.Outlined" ShrinkLabel="true" />
                         </MudItem>
                         <MudItem md="3">
-                            <MudSelect @ref="CategoryMudSelect" T="string" Label="Categories" SelectedValues="Model.SelectedTypes" SelectedValuesChanged="SelectedValuesChanged" Variant="Variant.Outlined" MultiSelection="true" MultiSelectionTextFunc="GenerateSelectedText" SelectAll="true">
+                            <MudSelect @ref="CategoryMudSelect" T="string" Label="Categories" SelectedValues="Model.SelectedTypes" SelectedValuesChanged="SelectedValuesChanged" Variant="Variant.Outlined" ShrinkLabel="true" MultiSelection="true" MultiSelectionTextFunc="GenerateSelectedText" SelectAll="true">
                                 <MudSelectItem Value="@("Normal")">Normal</MudSelectItem>
                                 <MudSelectItem Value="@("Info")">Info</MudSelectItem>
                                 <MudSelectItem Value="@("Warning")">Warning</MudSelectItem>

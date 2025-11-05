@@ -44,7 +44,6 @@ namespace Lantean.QBTMud.Test.Infrastructure
             {
                 options.PopoverOptions.CheckForPopoverProvider = false;
             });
-            MudGlobal.InputDefaults.ShrinkLabel = true;
 
             // Deterministic infrastructure shims
             Services.AddSingleton<Blazored.LocalStorage.ILocalStorageService>(_localStorage);

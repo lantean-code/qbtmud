@@ -5,7 +5,7 @@
         <table width="100%">
             <tbody>
                 <tr>
-                    <td style="width: 100%"><MudTextField T="string" Label="Tracker" Value="@Tracker" ValueChanged="SetTracker" Required Variant="Variant.Outlined" /></td>
+                    <td style="width: 100%"><MudTextField T="string" Label="Tracker" Value="@Tracker" ValueChanged="SetTracker" Required Variant="Variant.Outlined" ShrinkLabel="true" /></td>
                     <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddTracker" /></td>
                 </tr>
                 @foreach (var tracker in Trackers)
