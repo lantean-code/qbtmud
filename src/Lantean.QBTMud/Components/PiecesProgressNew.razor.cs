@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using Lantean.QBitTorrentClient.Models;
 using Microsoft.AspNetCore.Components;
@@ -11,9 +13,17 @@ namespace Lantean.QBTMud.Components
 {
     public partial class PiecesProgressNew : ComponentBase
     {
-        private const int HeatmapColumns = 32;
+        private const int MinimumHeatmapColumns = 64;
+        private const int MaximumHeatmapColumns = 128;
+        private const int HeatmapColumnIncrement = 8;
+        private const int MaxDetailedPieces = MaximumHeatmapColumns * MaximumHeatmapColumns;
+        private static readonly HeatmapSegment[] EmptyHeatmapSegments = Array.Empty<HeatmapSegment>();
 
         private bool _showHeatmap;
+        private bool _hasViewModelInitialized;
+        private bool _shouldRender;
+        private int _heatmapColumns = MinimumHeatmapColumns;
+        private int _piecesPerCell = 1;
         private string _linearBarStyle = string.Empty;
         private string _linearSummary = "Pieces data unavailable";
         private string _linearTooltip = "Pieces data unavailable";
@@ -22,6 +32,14 @@ namespace Lantean.QBTMud.Components
         private string _heatmapAriaLabel = string.Empty;
         private IReadOnlyList<IReadOnlyList<HeatmapCellViewModel>> _heatmapRows = Array.Empty<IReadOnlyList<HeatmapCellViewModel>>();
         private IReadOnlyList<LegendItem> _legendItems = Array.Empty<LegendItem>();
+        private PieceState[] _renderedPieces = Array.Empty<PieceState>();
+        private PieceState[] _pendingPieces = Array.Empty<PieceState>();
+        private bool _cachedIsDarkMode;
+        private bool _pendingIsDarkMode;
+        private string _cachedThemeSignature = string.Empty;
+        private string _pendingThemeSignature = string.Empty;
+        private string _cachedHash = string.Empty;
+        private string _pendingHash = string.Empty;
 
         [Parameter]
         [EditorRequired]
@@ -53,18 +71,65 @@ namespace Lantean.QBTMud.Components
 
         protected IReadOnlyList<LegendItem> LegendItems => _legendItems;
 
+        protected int HeatmapColumnCount => _heatmapColumns;
+
         protected string ToggleIcon => _showHeatmap ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore;
 
         protected override void OnParametersSet()
         {
             base.OnParametersSet();
+
+            var themeSignature = CreateThemeSignature();
+            var hash = Hash ?? string.Empty;
+            var piecesChanged = !_renderedPieces.SequenceEqual(Pieces);
+            var hashChanged = !string.Equals(hash, _cachedHash, StringComparison.Ordinal);
+            var themeChanged = !string.Equals(themeSignature, _cachedThemeSignature, StringComparison.Ordinal);
+            var darkModeChanged = _cachedIsDarkMode != IsDarkMode;
+
+            _shouldRender = !_hasViewModelInitialized || piecesChanged || hashChanged || themeChanged || darkModeChanged;
+
+            if (!_shouldRender)
+            {
+                return;
+            }
+
+            _piecesPerCell = DeterminePiecesPerCell(Pieces.Count);
+            _heatmapColumns = CalculateHeatmapColumns(Pieces.Count, _piecesPerCell);
+
             BuildLinearViewModel();
             BuildHeatmapViewModel();
             BuildLegend();
+
+            _pendingPieces = Pieces.ToArray();
+            _pendingThemeSignature = themeSignature;
+            _pendingIsDarkMode = IsDarkMode;
+            _pendingHash = hash;
+        }
+
+        protected override bool ShouldRender()
+        {
+            return _shouldRender;
+        }
+
+        protected override void OnAfterRender(bool firstRender)
+        {
+            base.OnAfterRender(firstRender);
+
+            if (_shouldRender)
+            {
+                _renderedPieces = _pendingPieces;
+                _cachedThemeSignature = _pendingThemeSignature;
+                _cachedIsDarkMode = _pendingIsDarkMode;
+                _cachedHash = _pendingHash;
+            }
+
+            _hasViewModelInitialized = true;
+            _shouldRender = false;
         }
 
         protected void ToggleHeatmap()
         {
+            _shouldRender = true;
             _showHeatmap = !_showHeatmap;
         }
 
@@ -72,6 +137,7 @@ namespace Lantean.QBTMud.Components
         {
             if (args.Key is "Enter" or " " or "Space" or "Spacebar")
             {
+                _shouldRender = true;
                 _showHeatmap = !_showHeatmap;
             }
         }
@@ -141,23 +207,29 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var rows = new List<IReadOnlyList<HeatmapCellViewModel>>();
-            for (var index = 0; index < Pieces.Count; index += HeatmapColumns)
+            var piecesPerCell = Math.Max(1, _piecesPerCell);
+            var totalCells = (int)Math.Ceiling((double)Pieces.Count / piecesPerCell);
+            var rowsRequired = (int)Math.Ceiling((double)totalCells / _heatmapColumns);
+
+            var rows = new List<IReadOnlyList<HeatmapCellViewModel>>(rowsRequired);
+            for (var rowIndex = 0; rowIndex < rowsRequired; rowIndex++)
             {
-                var row = new List<HeatmapCellViewModel>(HeatmapColumns);
-                for (var offset = 0; offset < HeatmapColumns; offset++)
+                var row = new List<HeatmapCellViewModel>(_heatmapColumns);
+                for (var columnIndex = 0; columnIndex < _heatmapColumns; columnIndex++)
                 {
-                    var pieceIndex = index + offset;
-                    if (pieceIndex < Pieces.Count)
+                    var cellIndex = (rowIndex * _heatmapColumns) + columnIndex;
+                    var pieceStartIndex = cellIndex * piecesPerCell;
+                    if (pieceStartIndex >= Pieces.Count)
                     {
-                        var state = Pieces[pieceIndex];
-                        var tooltip = BuildHeatmapTooltip(pieceIndex, state);
-                        row.Add(new HeatmapCellViewModel(GetHeatmapCssClass(state), tooltip, false));
+                        row.Add(HeatmapCellViewModel.Placeholder);
+                        continue;
                     }
-                    else
-                    {
-                        row.Add(new HeatmapCellViewModel("pieces-progress-new__cell--empty", string.Empty, true));
-                    }
+
+                    var cellPieces = CollectCellPieces(pieceStartIndex, piecesPerCell);
+                    var tooltip = BuildHeatmapTooltip(pieceStartIndex, cellPieces);
+                    var segments = BuildHeatmapSegments(cellPieces);
+                    var layoutClass = DetermineLayoutClass(segments.Count);
+                    row.Add(new HeatmapCellViewModel(layoutClass, segments, tooltip, false));
                 }
 
                 rows.Add(row);
@@ -166,6 +238,19 @@ namespace Lantean.QBTMud.Components
             _heatmapRows = rows;
             _heatmapEmptyText = string.Empty;
             _heatmapAriaLabel = $"Pieces heatmap for torrent {Hash}.";
+        }
+
+        private IReadOnlyList<PieceState> CollectCellPieces(int startIndex, int piecesPerCell)
+        {
+            var remaining = Pieces.Count - startIndex;
+            var count = Math.Min(piecesPerCell, remaining);
+            var cellPieces = new List<PieceState>(count);
+            for (var offset = 0; offset < count; offset++)
+            {
+                cellPieces.Add(Pieces[startIndex + offset]);
+            }
+
+            return cellPieces;
         }
 
         private void BuildLegend()
@@ -228,18 +313,144 @@ namespace Lantean.QBTMud.Components
                 .Append('%');
         }
 
-        private static string BuildHeatmapTooltip(int index, PieceState state)
+        private IReadOnlyList<HeatmapSegment> BuildHeatmapSegments(IReadOnlyList<PieceState> states)
         {
-            var stateDescription = state switch
+            if (states.Count == 0)
+            {
+                return EmptyHeatmapSegments;
+            }
+
+            if (states.Count == 1)
+            {
+                return new HeatmapSegment[]
+                {
+                    new HeatmapSegment("pieces-progress-new__cell-segment--whole", GetHeatmapCssClass(states[0]))
+                };
+            }
+
+            if (states.Count == 2)
+            {
+                return new HeatmapSegment[]
+                {
+                    new HeatmapSegment("pieces-progress-new__cell-segment--left", GetHeatmapCssClass(states[0])),
+                    new HeatmapSegment("pieces-progress-new__cell-segment--right", GetHeatmapCssClass(states[1]))
+                };
+            }
+
+            var positions = new[]
+            {
+                "pieces-progress-new__cell-segment--top-left",
+                "pieces-progress-new__cell-segment--top-right",
+                "pieces-progress-new__cell-segment--bottom-left",
+                "pieces-progress-new__cell-segment--bottom-right"
+            };
+
+            var segments = new HeatmapSegment[positions.Length];
+            for (var index = 0; index < positions.Length; index++)
+            {
+                var state = index < states.Count ? states[index] : states[^1];
+                segments[index] = new HeatmapSegment(positions[index], GetHeatmapCssClass(state));
+            }
+
+            return segments;
+        }
+
+        private static string DetermineLayoutClass(int segmentCount)
+        {
+            return segmentCount switch
+            {
+                <= 1 => "pieces-progress-new__cell-inner--single",
+                2 => "pieces-progress-new__cell-inner--dual",
+                _ => string.Empty
+            };
+        }
+
+        private static string BuildHeatmapTooltip(int startIndex, IReadOnlyList<PieceState> states)
+        {
+            if (states.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            if (states.Count == 1)
+            {
+                return CreateInvariant(
+                    "Piece #{0}: {1}",
+                    startIndex + 1,
+                    DescribePieceState(states[0]));
+            }
+
+            var builder = new StringBuilder();
+            for (var index = 0; index < states.Count; index++)
+            {
+                if (index > 0)
+                {
+                    builder.Append('\n');
+                }
+
+                builder.Append(CreateInvariant(
+                    "Piece #{0}: {1}",
+                    startIndex + index + 1,
+                    DescribePieceState(states[index])));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string DescribePieceState(PieceState state)
+        {
+            return state switch
             {
                 PieceState.Downloaded => "Downloaded",
                 PieceState.Downloading => "Downloading",
                 _ => "Not downloaded"
             };
-            return CreateInvariant(
-                "Piece #{0}: {1}",
-                index + 1,
-                stateDescription);
+        }
+
+        private static int DeterminePiecesPerCell(int pieceCount)
+        {
+            if (pieceCount <= MaxDetailedPieces)
+            {
+                return 1;
+            }
+
+            if (pieceCount <= MaxDetailedPieces * 4)
+            {
+                return 4;
+            }
+
+            // For extremely large torrents we currently cap grouping at quarters per cell.
+            return 4;
+        }
+
+        private static int CalculateHeatmapColumns(int pieceCount, int piecesPerCell)
+        {
+            if (pieceCount <= 0)
+            {
+                return MinimumHeatmapColumns;
+            }
+
+            var effectivePieces = (int)Math.Ceiling((double)pieceCount / Math.Max(1, piecesPerCell));
+            var target = (int)Math.Ceiling(Math.Sqrt(effectivePieces));
+            target = Math.Max(target * 2, MinimumHeatmapColumns);
+            var rounded = RoundUpToMultiple(target, HeatmapColumnIncrement);
+            return Math.Clamp(rounded, MinimumHeatmapColumns, MaximumHeatmapColumns);
+        }
+
+        private static int RoundUpToMultiple(int value, int multiple)
+        {
+            if (multiple <= 0)
+            {
+                return value;
+            }
+
+            var remainder = value % multiple;
+            if (remainder == 0)
+            {
+                return value;
+            }
+
+            return value + multiple - remainder;
         }
 
         private static string GetHeatmapCssClass(PieceState state)
@@ -258,6 +469,16 @@ namespace Lantean.QBTMud.Components
 
         private string PendingColor => ToCssColor(IsDarkMode ? Theme.PaletteDark.Surface : Theme.PaletteLight.Surface);
 
+        private string CreateThemeSignature()
+        {
+            return string.Concat(
+                DownloadedColor,
+                "|",
+                DownloadingColor,
+                "|",
+                PendingColor);
+        }
+
         private static string ToCssColor(MudColor color)
         {
             return color.ToString(MudColorOutputFormats.RGBA);
@@ -273,7 +494,14 @@ namespace Lantean.QBTMud.Components
             return (double)value / total * 100.0;
         }
 
-        protected sealed record HeatmapCellViewModel(string CssClass, string Tooltip, bool IsPlaceholder);
+        protected sealed record HeatmapCellViewModel(string LayoutClass, IReadOnlyList<HeatmapSegment> Segments, string Tooltip, bool IsPlaceholder)
+        {
+            public static HeatmapCellViewModel Placeholder { get; } = new HeatmapCellViewModel("pieces-progress-new__cell-inner--single", EmptyHeatmapSegments, string.Empty, true);
+
+            public bool HasSegments => Segments.Count > 0;
+        }
+
+        protected sealed record HeatmapSegment(string PositionClass, string ColorClass);
 
         protected sealed record LegendItem(string CssClass, string Label);
 

@@ -21,7 +21,7 @@
                 }
                 else
                 {
-                    <div class="pieces-progress-new__grid" role="grid" aria-label="@HeatmapAriaLabel">
+                    <div class="pieces-progress-new__grid" role="grid" aria-label="@HeatmapAriaLabel" style="--pieces-progress-columns: @HeatmapColumnCount;">
                         @for (var rowIndex = 0; rowIndex < HeatmapRows.Count; rowIndex++)
                         {
                             var row = HeatmapRows[rowIndex];
@@ -30,12 +30,21 @@
                                 var cell = row[cellIndex];
                                 if (cell.IsPlaceholder)
                                 {
-                                    <div class="pieces-progress-new__cell pieces-progress-new__cell--empty" role="presentation"></div>
+                                    <div class="pieces-progress-new__cell pieces-progress-new__cell--empty" role="presentation">
+                                        <div class="pieces-progress-new__cell-inner pieces-progress-new__cell-inner--single"></div>
+                                    </div>
                                 }
                                 else
                                 {
                                     <MudTooltip Text="@cell.Tooltip" Placement="Placement.Top">
-                                        <div class="pieces-progress-new__cell @cell.CssClass" role="gridcell" aria-label="@cell.Tooltip"></div>
+                                        <div class="pieces-progress-new__cell" role="gridcell" aria-label="@cell.Tooltip">
+                                            <div class="pieces-progress-new__cell-inner @cell.LayoutClass">
+                                                @foreach (var segment in cell.Segments)
+                                                {
+                                                    <div class="pieces-progress-new__cell-segment @segment.PositionClass @segment.ColorClass"></div>
+                                                }
+                                            </div>
+                                        </div>
                                     </MudTooltip>
                                 }
                             }
