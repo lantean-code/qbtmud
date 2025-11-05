@@ -1,22 +1,19 @@
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
 using Lantean.QBitTorrentClient.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Utilities;
+using System.Globalization;
+using System.Text;
 
 namespace Lantean.QBTMud.Components
 {
     public partial class PiecesProgressNew : ComponentBase
     {
-        private const int MinimumHeatmapColumns = 64;
-        private const int MaximumHeatmapColumns = 128;
+        private const int MinimumHeatmapColumns = 32;
+        private const int MaximumHeatmapColumns = 96;
         private const int HeatmapColumnIncrement = 8;
-        private const int MaxDetailedPieces = MaximumHeatmapColumns * MaximumHeatmapColumns;
+        private const int MaxHeatmapCellsTarget = 2048;
         private static readonly HeatmapSegment[] EmptyHeatmapSegments = Array.Empty<HeatmapSegment>();
 
         private bool _showHeatmap;
@@ -163,9 +160,11 @@ namespace Lantean.QBTMud.Components
                     case PieceState.Downloaded:
                         downloadedCount++;
                         break;
+
                     case PieceState.Downloading:
                         downloadingCount++;
                         break;
+
                     default:
                         pendingCount++;
                         break;
@@ -409,17 +408,21 @@ namespace Lantean.QBTMud.Components
 
         private static int DeterminePiecesPerCell(int pieceCount)
         {
-            if (pieceCount <= MaxDetailedPieces)
+            if (pieceCount <= 0)
             {
                 return 1;
             }
 
-            if (pieceCount <= MaxDetailedPieces * 4)
+            if (pieceCount < MaxHeatmapCellsTarget)
             {
-                return 4;
+                return 1;
             }
 
-            // For extremely large torrents we currently cap grouping at quarters per cell.
+            if (pieceCount < MaxHeatmapCellsTarget * 2)
+            {
+                return 2;
+            }
+
             return 4;
         }
 
@@ -432,7 +435,7 @@ namespace Lantean.QBTMud.Components
 
             var effectivePieces = (int)Math.Ceiling((double)pieceCount / Math.Max(1, piecesPerCell));
             var target = (int)Math.Ceiling(Math.Sqrt(effectivePieces));
-            target = Math.Max(target * 2, MinimumHeatmapColumns);
+            target = Math.Max(target, MinimumHeatmapColumns);
             var rounded = RoundUpToMultiple(target, HeatmapColumnIncrement);
             return Math.Clamp(rounded, MinimumHeatmapColumns, MaximumHeatmapColumns);
         }

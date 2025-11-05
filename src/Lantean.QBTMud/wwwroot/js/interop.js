@@ -112,6 +112,58 @@ window.qbt.renderPiecesBar = (id, hash, pieces, downloadingColor, haveColor, bor
     window.qbt.piecesBar.setPieces(pieces);
 }
 
+window.qbt.renderPiecesCanvas = (canvasId, width, height, columns, cellSize, pieces, downloadedColor, downloadingColor, pendingColor) => {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        return;
+    }
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(1, Math.round(width));
+    const h = Math.max(1, Math.round(height));
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(dpr, dpr);
+
+    const gap = Math.max(0, Math.floor(Math.max(1, cellSize) * 0.08));
+    const drawSize = Math.max(1, cellSize - gap);
+    const offset = gap > 0 ? gap / 2 : 0;
+
+    for (let index = 0; index < pieces.length; index++) {
+        const state = pieces[index];
+        let fillStyle;
+        switch (state) {
+            case 2:
+                fillStyle = downloadedColor;
+                break;
+            case 1:
+                fillStyle = downloadingColor;
+                break;
+            default:
+                fillStyle = pendingColor;
+                break;
+        }
+
+        const column = index % columns;
+        const row = Math.floor(index / columns);
+        const x = (column * cellSize) + offset;
+        const y = (row * cellSize) + offset;
+
+        ctx.fillStyle = fillStyle;
+        ctx.fillRect(x, y, drawSize, drawSize);
+    }
+}
+
 window.qbt.copyTextToClipboard = (text) => {
     if (!navigator.clipboard) {
         return fallbackCopyTextToClipboard(text);

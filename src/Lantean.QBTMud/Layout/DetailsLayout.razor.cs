@@ -9,6 +9,9 @@ namespace Lantean.QBTMud.Layout
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
+        [CascadingParameter(Name = "DrawerOpenChanged")]
+        public EventCallback<bool> DrawerOpenChanged { get; set; }
+
         [CascadingParameter]
         public IEnumerable<Torrent>? Torrents { get; set; }
 
@@ -30,6 +33,15 @@ namespace Lantean.QBTMud.Layout
             if (routeView.RouteData.RouteValues.TryGetValue("hash", out var hash))
             {
                 SelectedTorrent = hash?.ToString();
+            }
+        }
+
+        protected async Task OnDrawerOpenChanged(bool value)
+        {
+            DrawerOpen = value;
+            if (DrawerOpenChanged.HasDelegate)
+            {
+                await DrawerOpenChanged.InvokeAsync(value);
             }
         }
     }

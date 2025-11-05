@@ -2,7 +2,7 @@
     --pieces-progress-linear-height: 44px;
     --pieces-progress-linear-padding-y: var(--mud-spacing-1);
     --pieces-progress-heatmap-gap: clamp(3px, 0.35vw, 5px);
-    --pieces-progress-cell-padding: clamp(0.4px, 0.12vw, 1.5px);
+    --pieces-progress-cell-padding: clamp(0.4px, 0.12vw, 1px);
     padding: var(--mud-spacing-3);
     border-radius: 16px;
     background-color: transparent;
@@ -22,13 +22,13 @@
     transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.pieces-progress-new__linear:focus-visible {
-    box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.35);
-}
+    .pieces-progress-new__linear:focus-visible {
+        box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.35);
+    }
 
-.pieces-progress-new__linear:hover {
-    transform: translateY(-1px);
-}
+    .pieces-progress-new__linear:hover {
+        transform: translateY(-1px);
+    }
 
 .pieces-progress-new__linear-bar {
     position: absolute;
@@ -72,28 +72,27 @@
 .pieces-progress-new__grid {
     display: grid;
     grid-template-columns: repeat(var(--pieces-progress-columns, 64), minmax(0, 1fr));
-    gap: var(--pieces-progress-heatmap-gap);
+    gap: var(--pieces-progress-heatmap-gap, 3px);
     width: 100%;
 }
 
 .pieces-progress-new__cell {
     width: 100%;
     aspect-ratio: 1 / 1;
-    padding: var(--pieces-progress-cell-padding);
     box-sizing: border-box;
     transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
 }
 
-.pieces-progress-new__cell:not(.pieces-progress-new__cell--empty):hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
-}
+    .pieces-progress-new__cell:not(.pieces-progress-new__cell--empty):hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+    }
 
 .pieces-progress-new__cell-inner {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(2, 1fr);
-    gap: var(--pieces-progress-cell-padding);
+    gap: var(--pieces-progress-cell-padding, 1px);
     width: 100%;
     height: 100%;
     border-radius: 4px;
@@ -195,6 +194,11 @@
 
 .pieces-progress-new__legend-swatch--pending {
     background-color: var(--mud-palette-lines-default);
+}
+
+.pieces-progress-new__legend-text {
+    padding-left: var(--mud-spacing-2);
+    padding-right: var(--mud-spacing-3);
 }
 
 .pieces-progress-new__empty {

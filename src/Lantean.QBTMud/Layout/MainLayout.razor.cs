@@ -38,9 +38,11 @@ namespace Lantean.QBTMud.Layout
             Theme.Typography.Default.FontFamily = ["Nunito Sans"];
         }
 
+        protected EventCallback<bool> DrawerOpenChangedCallback => EventCallback.Factory.Create<bool>(this, SetDrawerOpenAsync);
+
         protected async Task ToggleDrawer()
         {
-            DrawerOpen = !DrawerOpen;
+            await SetDrawerOpenAsync(!DrawerOpen);
             await LocalStorage.SetItemAsync(_drawerOpenStorageKey, DrawerOpen);
         }
 
@@ -113,9 +115,25 @@ namespace Lantean.QBTMud.Layout
         {
             if (value <= Breakpoint.Sm && DrawerOpen)
             {
-                DrawerOpen = false;
+                _ = SetDrawerOpenAsync(false);
+            }
+
+            if (ErrorDrawerOpen && (ErrorBoundary?.Errors.Count ?? 0) == 0)
+            {
+                ErrorDrawerOpen = false;
                 StateHasChanged();
             }
+        }
+
+        private Task SetDrawerOpenAsync(bool value)
+        {
+            if (DrawerOpen == value)
+            {
+                return Task.CompletedTask;
+            }
+
+            DrawerOpen = value;
+            return InvokeAsync(StateHasChanged);
         }
     }
 }

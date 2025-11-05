@@ -2,6 +2,7 @@
 
 <MudBreakpointProvider OnBreakpointChanged="BreakpointChanged">
     <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
+        <CascadingValue Value="DrawerOpenChangedCallback" Name="DrawerOpenChanged">
         <EnhancedErrorBoundary @ref="ErrorBoundary" OnClear="Cleared">
             <MudThemeProvider @ref="MudThemeProvider" @bind-IsDarkMode="IsDarkMode" Theme="Theme" />
             <MudDialogProvider CloseOnEscapeKey="true" />
@@ -36,5 +37,6 @@
                 </CascadingValue>
             </MudLayout>
         </EnhancedErrorBoundary>
+        </CascadingValue>
     </CascadingValue>
 </MudBreakpointProvider>

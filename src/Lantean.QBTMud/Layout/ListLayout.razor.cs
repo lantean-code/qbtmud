@@ -8,6 +8,9 @@ namespace Lantean.QBTMud.Layout
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
+        [CascadingParameter(Name = "DrawerOpenChanged")]
+        public EventCallback<bool> DrawerOpenChanged { get; set; }
+
         [CascadingParameter(Name = "StatusChanged")]
         public EventCallback<Status> StatusChanged { get; set; }
 
@@ -22,5 +25,14 @@ namespace Lantean.QBTMud.Layout
 
         [CascadingParameter(Name = "SearchTermChanged")]
         public EventCallback<FilterSearchState> SearchTermChanged { get; set; }
+
+        protected async Task OnDrawerOpenChanged(bool value)
+        {
+            DrawerOpen = value;
+            if (DrawerOpenChanged.HasDelegate)
+            {
+                await DrawerOpenChanged.InvokeAsync(value);
+            }
+        }
     }
 }
