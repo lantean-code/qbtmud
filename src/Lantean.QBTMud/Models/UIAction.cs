@@ -7,7 +7,7 @@ namespace Lantean.QBTMud.Models
     {
         private readonly Color _color;
 
-        public UIAction(string name, string text, string? icon, Color color, string href, bool separatorBefore = false)
+        public UIAction(string name, string text, string? icon, Color color, string href, bool separatorBefore = false, bool autoClose = true)
         {
             Name = name;
             Text = text;
@@ -15,10 +15,11 @@ namespace Lantean.QBTMud.Models
             _color = color;
             Href = href;
             SeparatorBefore = separatorBefore;
+            AutoClose = autoClose;
             Children = [];
         }
 
-        public UIAction(string name, string text, string? icon, Color color, EventCallback callback, bool separatorBefore = false)
+        public UIAction(string name, string text, string? icon, Color color, EventCallback callback, bool separatorBefore = false, bool autoClose = true)
         {
             Name = name;
             Text = text;
@@ -26,10 +27,11 @@ namespace Lantean.QBTMud.Models
             _color = color;
             Callback = callback;
             SeparatorBefore = separatorBefore;
+            AutoClose = autoClose;
             Children = [];
         }
 
-        public UIAction(string name, string text, string? icon, Color color, IEnumerable<UIAction> children, bool useTextButton = false, bool separatorBefore = false)
+        public UIAction(string name, string text, string? icon, Color color, IEnumerable<UIAction> children, bool useTextButton = false, bool separatorBefore = false, bool autoClose = true)
         {
             Name = name;
             Text = text;
@@ -39,6 +41,7 @@ namespace Lantean.QBTMud.Models
             Children = children;
             UseTextButton = useTextButton;
             SeparatorBefore = separatorBefore;
+            AutoClose = autoClose;
         }
 
         public string Name { get; }
@@ -55,7 +58,9 @@ namespace Lantean.QBTMud.Models
 
         public bool SeparatorBefore { get; set; }
 
-        public IEnumerable<UIAction> Children { get; }
+        public bool AutoClose { get; set; } = true;
+
+        public IEnumerable<UIAction> Children { get; internal set; }
 
         public bool UseTextButton { get; }
 

@@ -47,7 +47,7 @@ namespace Lantean.QBTMud.Helpers
 
         Task<string?> ShowStringFieldDialog(string title, string label, string? value);
 
-        Task ShowSubMenu(IEnumerable<string> hashes, UIAction parent, Dictionary<string, Torrent> torrents, Lantean.QBitTorrentClient.Models.Preferences? preferences);
+        Task ShowSubMenu(IEnumerable<string> hashes, UIAction parent, Dictionary<string, Torrent> torrents, QBitTorrentClient.Models.Preferences? preferences, HashSet<string> tags, Dictionary<string, Category> categories);
 
         Task<bool> ShowSearchPluginsDialog();
     }

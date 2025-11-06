@@ -482,7 +482,7 @@ namespace Lantean.QBTMud.Services
             return (string)dialogResult.Data;
         }
 
-        public async Task ShowSubMenu(IEnumerable<string> hashes, UIAction parent, Dictionary<string, Torrent> torrents, QBitTorrentClient.Models.Preferences? preferences)
+        public async Task ShowSubMenu(IEnumerable<string> hashes, UIAction parent, Dictionary<string, Torrent> torrents, QBitTorrentClient.Models.Preferences? preferences, HashSet<string> tags, Dictionary<string, Category> categories)
         {
             var parameters = new DialogParameters
             {
@@ -490,6 +490,8 @@ namespace Lantean.QBTMud.Services
                 { nameof(SubMenuDialog.Hashes), hashes },
                 { nameof(SubMenuDialog.Torrents), torrents },
                 { nameof(SubMenuDialog.Preferences), preferences },
+                { nameof(SubMenuDialog.Tags), tags },
+                { nameof(SubMenuDialog.Categories), categories },
             };
 
             await _dialogService.ShowAsync<SubMenuDialog>(parent.Text, parameters, FormDialogOptions);

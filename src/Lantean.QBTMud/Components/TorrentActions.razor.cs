@@ -59,6 +59,12 @@ namespace Lantean.QBTMud.Components
         [Parameter, EditorRequired]
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
+        [Parameter, EditorRequired]
+        public HashSet<string> Tags { get; set; } = default!;
+
+        [Parameter, EditorRequired]
+        public Dictionary<string, Category> Categories { get; set; } = default!;
+
         [Parameter]
         public IMudDialogInstance? MudDialog { get; set; }
 
@@ -84,13 +90,13 @@ namespace Lantean.QBTMud.Components
                 new("renameFiles", "Rename files", Icons.Material.Filled.DriveFileRenameOutline, Color.Warning, CreateCallback(RenameFiles)),
                 new("category", "Category", Icons.Material.Filled.List, Color.Info, CreateCallback(ShowCategories)),
                 new("tags", "Tags", Icons.Material.Filled.Label, Color.Info, CreateCallback(ShowTags)),
-                new("autoTorrentManagement", "Automatic Torrent Management", Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleAutoTMM)),
+                new("autoTorrentManagement", "Automatic Torrent Management", Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleAutoTMM), autoClose: false),
                 new("downloadLimit", "Limit download rate", Icons.Material.Filled.KeyboardDoubleArrowDown, Color.Success, CreateCallback(LimitDownloadRate), separatorBefore: true),
                 new("uploadLimit", "Limit upload rate", Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Warning, CreateCallback(LimitUploadRate)),
                 new("shareRatio", "Limit share ratio", Icons.Material.Filled.Percent, Color.Info, CreateCallback(LimitShareRatio)),
-                new("superSeeding", "Super seeding mode", Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleSuperSeeding)),
-                new("sequentialDownload", "Download in sequential order", Icons.Material.Filled.Check, Color.Info, CreateCallback(DownloadSequential), separatorBefore: true),
-                new("firstLastPiecePrio", "Download first and last pieces first", Icons.Material.Filled.Check, Color.Info, CreateCallback(DownloadFirstLast)),
+                new("superSeeding", "Super seeding mode", Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleSuperSeeding), autoClose: false),
+                new("sequentialDownload", "Download in sequential order", Icons.Material.Filled.Check, Color.Info, CreateCallback(DownloadSequential), separatorBefore: true, autoClose: false),
+                new("firstLastPiecePrio", "Download first and last pieces first", Icons.Material.Filled.Check, Color.Info, CreateCallback(DownloadFirstLast), autoClose : false),
                 new("forceRecheck", "Force recheck", Icons.Material.Filled.Loop, Color.Info, CreateCallback(ForceRecheck), separatorBefore: true),
                 new("forceReannounce", "Force reannounce", Icons.Material.Filled.BroadcastOnHome, Color.Info, CreateCallback(ForceReannounce)),
                 new("queue", "Queue", Icons.Material.Filled.Queue, Color.Transparent,
@@ -114,22 +120,31 @@ namespace Lantean.QBTMud.Components
             ];
         }
 
+        protected override void OnParametersSet()
+        {
+            foreach (var hash in Hashes)
+            {
+                if (Torrents.TryGetValue(hash, out var torrent))
+                {
+                    TagState[hash] = torrent.Tags.ToHashSet();
+                    if (!string.IsNullOrEmpty(torrent.Category))
+                    {
+                        CategoryState[hash] = torrent.Category;
+                    }
+                    else
+                    {
+                        CategoryState.Remove(hash);
+                    }
+                }
+            }
+        }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
                 await KeyboardService.RegisterKeypressEvent("Delete", k => Remove());
             }
-        }
-
-        public int CalculateMenuHeight()
-        {
-            var visibleActions = GetActions();
-
-            var actionCount = visibleActions.Count();
-            var separatorCount = visibleActions.Count(c => c.SeparatorBefore);
-
-            return actionCount * 36 + separatorCount * 1;
         }
 
         protected async Task OverlayVisibleChanged(bool value)
@@ -346,7 +361,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task SubMenuTouch(UIAction action)
         {
-            await DialogWorkflow.ShowSubMenu(Hashes, action, Torrents, Preferences);
+            await DialogWorkflow.ShowSubMenu(Hashes, action, Torrents, Preferences, Tags, Categories);
         }
 
         private IEnumerable<Torrent> GetTorrents()
@@ -547,7 +562,122 @@ namespace Lantean.QBTMud.Components
                 actionStates["queue"] = ActionState.Hidden;
             }
 
-            return Filter(actionStates);
+            if (Categories.Count == 0)
+            {
+                actionStates["category"] = ActionState.Hidden;
+            }
+
+            if (Tags.Count == 0)
+            {
+                actionStates["tags"] = ActionState.Hidden;
+            }
+
+            var filteredActions = Filter(actionStates);
+
+            foreach (var action in filteredActions)
+            {
+                if (action.Name == "tags")
+                {
+                    var hasAppliedTags = ApplyTags(firstTorrent, action);
+                    if (!hasAppliedTags)
+                    {
+                        continue;
+                    }
+                }
+                if (action.Name == "category")
+                {
+                    if (!Hashes.Any())
+                    {
+                        continue;
+                    }
+                    if (firstTorrent is null)
+                    {
+                        continue;
+                    }
+                    action.Children = Categories.Values.Select(category => new UIAction(
+                        name: $"category-{category.Name}",
+                        text: category.Name,
+                        icon: Icons.Material.Filled.Check,
+                        color: IsCategoryApplied(category.Name, firstTorrent.Hash) ? Color.Info : Color.Transparent,
+                        callback: CreateCallback(() => ToggleCategory(category.Name, firstTorrent)),
+                        autoClose: false
+                    ));
+                }
+                yield return action;
+                
+            }
+        }
+
+        private bool ApplyTags(Torrent? firstTorrent, UIAction action)
+        {
+            if (!Hashes.Any())
+            {
+                return false;
+            }
+            if (firstTorrent is null)
+            {
+                return false;
+            }
+            if (Tags.Count == 0)
+            {
+                return false;
+            }
+            action.Children = Tags.Select(tag => new UIAction(
+                name: $"tag-{tag}",
+                text: tag,
+                icon: Icons.Material.Filled.Check,
+                color: IsTagApplied(tag, firstTorrent.Hash) ? Color.Info : Color.Transparent,
+                callback: CreateCallback(() => ToggleTag(tag, firstTorrent)),
+                autoClose: false
+            ));
+            return true;
+        }
+
+        private Dictionary<string, HashSet<string>> TagState { get; set; } = [];
+
+        private Dictionary<string, string?> CategoryState { get; set; } = [];
+
+        private bool IsTagApplied(string tag, string hash)
+        {
+            TagState.TryGetValue(hash, out var tags);
+
+            return tags?.Contains(tag) == true;
+        }
+
+        private bool IsCategoryApplied(string category, string hash)
+        {
+            CategoryState.TryGetValue(hash, out var cat);
+            return cat == category;
+        }
+
+        private async Task ToggleTag(string tag, Torrent torrent)
+        {
+            if (torrent.Tags.Contains(tag))
+            {
+                await ApiClient.RemoveTorrentTag(tag, torrent.Hash);
+
+                TagState[torrent.Hash].Remove(tag);
+            }
+            else
+            {
+                await ApiClient.AddTorrentTag(tag, torrent.Hash);
+
+                TagState[torrent.Hash].Add(tag);
+            }
+        }
+
+        private async Task ToggleCategory(string category, Torrent torrent)
+        {
+            if (torrent.Category == category)
+            {
+                await ApiClient.SetTorrentCategory(string.Empty, null, torrent.Hash);
+                CategoryState.Remove(torrent.Hash);
+            }
+            else
+            {
+                await ApiClient.SetTorrentCategory(category, null, torrent.Hash);
+                CategoryState[torrent.Hash] = category;
+            }
         }
 
         private IEnumerable<UIAction> Filter(Dictionary<string, ActionState> actionStates)

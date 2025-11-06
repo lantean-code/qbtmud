@@ -21,6 +21,12 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Parameter]
         public IEnumerable<string> Hashes { get; set; } = [];
 
+        [Parameter]
+        public HashSet<string> Tags { get; set; } = default!;
+
+        [Parameter]
+        public Dictionary<string, Category> Categories { get; set; } = default!;
+
         protected Task CloseDialog()
         {
             MudDialog.Close();

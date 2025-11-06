@@ -907,7 +907,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference.Object);
 
-            await _target.ShowSubMenu(hashes, parent, torrents, null);
+            await _target.ShowSubMenu(hashes, parent, torrents, null, [], []);
 
             captured.Should().NotBeNull();
             captured!.Any(p => p.Key == nameof(SubMenuDialog.ParentAction)).Should().BeTrue();

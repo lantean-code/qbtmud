@@ -5,7 +5,7 @@
 <MudMenu @ref="ContextMenu" Dense="true" RelativeWidth="DropdownWidth.Ignore" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
     <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" OnClick="ShowTorrentContextMenu">View torrent details</MudMenuItem>
     <MudDivider />
-    <TorrentActions RenderType="RenderType.MenuItems" Hashes="GetContextMenuTargetHashes()" PrimaryHash="@(ContextMenuItem?.Hash)" Torrents="MainData.Torrents" Preferences="Preferences" />
+    <TorrentActions RenderType="RenderType.MenuItems" Hashes="GetContextMenuTargetHashes()" PrimaryHash="@(ContextMenuItem?.Hash)" Torrents="MainData.Torrents" Preferences="Preferences" Tags="@MainData.Tags" Categories="@MainData.Categories" />
 </MudMenu>
 
 <div class="content-panel">
@@ -14,7 +14,7 @@
             <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="Add torrent link" />
             <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="Add torrent file" />
             <MudDivider Vertical="true" />
-            <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrentsHashes()" Torrents="MainData.Torrents" Preferences="Preferences" />
+            <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrentsHashes()" Torrents="MainData.Torrents" Preferences="Preferences" Tags="@MainData.Tags" Categories="@MainData.Categories" />
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" Disabled="@(!ToolbarButtonsEnabled)" OnClick="ShowTorrentToolbar" title="View torrent details" />
             <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
