@@ -15,7 +15,9 @@
             <MudMenuItem Icon="@action.Icon" IconColor="@action.Color" OnClick="action.Callback">@action.Text</MudMenuItem>
         }
     }
+
     <MudDivider />
+
     <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow"
                  IconColor="Color.Success"
                  Disabled="@(_startAllInProgress || MainData?.LostConnection == true)"
@@ -28,10 +30,29 @@
                  OnClick="StopAllTorrents">
         Stop all torrents
     </MudMenuItem>
-    <MudMenuItem Icon="@Icons.Material.Filled.Undo" OnClick="ResetWebUI">Reset Web UI</MudMenuItem>
+
     <MudDivider />
-    <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="Logout">Logout</MudMenuItem>
-    <MudMenuItem Icon="@Icons.Material.Filled.ExitToApp" OnClick="Exit">Exit qBittorrent</MudMenuItem>
+
+    <MudMenuItem Icon="@CustomIcons.Magnet"
+                 Disabled="@(_registerMagnetHandlerInProgress)"
+                 OnClick="RegisterMagnetHandler">
+        Register Magnet Handler
+    </MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.Undo"
+                 OnClick="ResetWebUI">
+        Reset Web UI
+    </MudMenuItem>
+
+    <MudDivider />
+
+    <MudMenuItem Icon="@Icons.Material.Filled.Logout"
+                 OnClick="Logout">
+        Logout
+    </MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.ExitToApp"
+                 OnClick="Exit">
+        Exit qBittorrent
+    </MudMenuItem>
 }
 else
 {

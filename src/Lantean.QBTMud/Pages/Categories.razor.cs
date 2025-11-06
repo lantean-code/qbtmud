@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace Lantean.QBTMud.Pages
 {
-    public partial class CategoryManagement
+    public partial class Categories
     {
         private readonly Dictionary<string, RenderFragment<RowContext<Category>>> _columnRenderFragments = [];
 
@@ -33,7 +33,7 @@ namespace Lantean.QBTMud.Pages
 
         protected DynamicTable<Category>? Table { get; set; }
 
-        public CategoryManagement()
+        public Categories()
         {
             _columnRenderFragments.Add("Actions", ActionsColumn);
         }

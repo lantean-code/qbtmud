@@ -70,7 +70,7 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("tags")]
         [JsonConverter(typeof(CommaSeparatedJsonConverter))]
-        public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
+        public IReadOnlyList<string>? Tags { get; init; }
 
         [JsonPropertyName("super_seeding")]
         public bool? SuperSeeding { get; init; }

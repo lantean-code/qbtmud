@@ -8,7 +8,7 @@ using MudBlazor;
 
 namespace Lantean.QBTMud.Pages
 {
-    public partial class TagManagement
+    public partial class Tags
     {
         private readonly Dictionary<string, RenderFragment<RowContext<string>>> _columnRenderFragments = [];
 
@@ -34,7 +34,7 @@ namespace Lantean.QBTMud.Pages
 
         protected DynamicTable<string>? Table { get; set; }
 
-        public TagManagement()
+        public Tags()
         {
             _columnRenderFragments.Add("Actions", ActionsColumn);
         }

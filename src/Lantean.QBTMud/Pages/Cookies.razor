@@ -10,81 +10,67 @@
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
-            <MudText Class="pl-5 no-wrap">Cookie Manager</MudText>
+            <MudText Class="px-5 no-wrap">Cookie Manager</MudText>
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddCookie" title="Add Cookie" Disabled="IsBusy" />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Reload" title="Refresh" Disabled="IsBusy" />
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Filled.DeleteSweep" OnClick="ClearAll" Disabled="@(IsBusy || !HasCookies)" title="Clear" />
+            <MudIconButton Icon="@Icons.Material.Filled.Save" OnClick="Save" Disabled="@(IsBusy || !HasCookies)" title="Save" />
         </MudToolBar>
     </div>
     <div class="content-panel__body">
-        <MudPaper Elevation="1" Class="ml-4 mr-4 mb-4 p-4">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="2">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddCookie" Disabled="@IsBusy" StartIcon="@Icons.Material.Filled.Add">
-                        Add cookie
-                    </MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="Reload" Disabled="@IsBusy" StartIcon="@Icons.Material.Filled.Refresh">
-                        Reload
-                    </MudButton>
-                </MudStack>
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="ClearAll" Disabled="@(IsBusy || !HasCookies)" StartIcon="@Icons.Material.Filled.DeleteSweep">
-                        Clear
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Save" Disabled="@(IsBusy || !HasCookies)" StartIcon="@Icons.Material.Filled.Save">
-                        Save
-                    </MudButton>
-                </MudStack>
-            </MudStack>
-
-            <MudTable T="CookieEntry" Items="CookieEntries" Dense="true" Hover="true" Bordered="true">
-                <HeaderContent>
-                    <MudTh>Domain</MudTh>
-                    <MudTh>Path</MudTh>
-                    <MudTh>Name</MudTh>
-                    <MudTh>Value</MudTh>
-                    <MudTh>Expiration</MudTh>
-                    <MudTh></MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>
-                        <MudTextField @bind-Value="context.Domain"
-                                      Placeholder="example.com"
-                                      Immediate="true"
-                                      Disabled="@IsBusy" />
-                    </MudTd>
-                    <MudTd>
-                        <MudTextField @bind-Value="context.Path"
-                                      Placeholder="/"
-                                      Immediate="true"
-                                      Disabled="@IsBusy" />
-                    </MudTd>
-                    <MudTd>
-                        <MudTextField @bind-Value="context.Name"
-                                      Required="true"
-                                      Immediate="true"
-                                      Disabled="@IsBusy" />
-                    </MudTd>
-                    <MudTd>
-                        <MudTextField @bind-Value="context.Value"
-                                      Immediate="true"
-                                      Disabled="@IsBusy" />
-                    </MudTd>
-                    <MudTd>
-                        <MudTextField @bind-Value="context.ExpirationInput"
-                                      InputType="InputType.DateTimeLocal"
-                                      Immediate="true"
-                                      Disabled="@IsBusy" />
-                    </MudTd>
-                    <MudTd Class="text-right">
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                       Color="Color.Error"
-                                       Disabled="@IsBusy"
-                                       OnClick="@(() => RemoveCookie(context))"
-                                       title="Remove" />
-                    </MudTd>
-                </RowTemplate>
-                <NoRecordsContent>
-                    <MudText Class="px-2 py-4">No cookies defined.</MudText>
-                </NoRecordsContent>
-            </MudTable>
-        </MudPaper>
+        <MudTable T="CookieEntry" Items="CookieEntries" Dense="true" Hover="true" Bordered="true">
+            <HeaderContent>
+                <MudTh>Domain</MudTh>
+                <MudTh>Path</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Value</MudTh>
+                <MudTh>Expiration</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    <MudTextField @bind-Value="context.Domain"
+                                  Placeholder="example.com"
+                                  Immediate="true"
+                                  Disabled="@IsBusy" />
+                </MudTd>
+                <MudTd>
+                    <MudTextField @bind-Value="context.Path"
+                                  Placeholder="/"
+                                  Immediate="true"
+                                  Disabled="@IsBusy" />
+                </MudTd>
+                <MudTd>
+                    <MudTextField @bind-Value="context.Name"
+                                  Required="true"
+                                  Immediate="true"
+                                  Disabled="@IsBusy" />
+                </MudTd>
+                <MudTd>
+                    <MudTextField @bind-Value="context.Value"
+                                  Immediate="true"
+                                  Disabled="@IsBusy" />
+                </MudTd>
+                <MudTd>
+                    <MudTextField @bind-Value="context.ExpirationInput"
+                                  InputType="InputType.DateTimeLocal"
+                                  Validation="ExpirationValidator"
+                                  Immediate="true"
+                                  Disabled="@IsBusy" />
+                </MudTd>
+                <MudTd Class="text-right">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Disabled="@IsBusy"
+                                   OnClick="@(() => RemoveCookie(context))"
+                                   title="Remove" />
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="px-2 py-4">No cookies defined.</MudText>
+            </NoRecordsContent>
+        </MudTable>
     </div>
 </div>

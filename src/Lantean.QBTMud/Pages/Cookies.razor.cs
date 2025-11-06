@@ -169,6 +169,21 @@ namespace Lantean.QBTMud.Pages
             };
         }
 
+        private static Func<string, IEnumerable<string>> ExpirationValidator = value =>
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return [];
+            }
+
+            if (!DateTime.TryParseExact(value, ExpirationFormats, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var _))
+            {
+                throw new FormatException("Expiration date must be a valid date and time.");
+            }
+
+            return [];
+        };
+
         private static ApplicationCookie TransformToApplicationCookie(CookieEntry entry)
         {
             long? expirationSeconds = null;

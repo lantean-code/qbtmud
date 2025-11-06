@@ -66,10 +66,9 @@ namespace Lantean.QBTMud.Components
                 new("rss", "RSS", Icons.Material.Filled.RssFeed, Color.Default, "/rss"),
                 new("log", "Execution Log", Icons.Material.Filled.List, Color.Default, "/log"),
                 new("blocks", "Blocked IPs", Icons.Material.Filled.DisabledByDefault, Color.Default, "/blocks"),
+                new("tags", "Tag Manager", Icons.Material.Filled.Label, Color.Default, "/tags", separatorBefore: true),
+                new("categories", "Category Manager", Icons.Material.Filled.List, Color.Default, "/categories"),
                 new("cookies", "Cookie Manager", Icons.Material.Filled.Cookie, Color.Default, "/cookies"),
-                new("registerMagnetHandler", "Register magnet handler", CustomIcons.Magnet, Color.Default, EventCallback.Factory.Create(this, RegisterMagnetHandler)),
-                new("tags", "Tag Management", Icons.Material.Filled.Label, Color.Default, "/tags", separatorBefore: true),
-                new("categories", "Category Management", Icons.Material.Filled.List, Color.Default, "/categories"),
                 new("settings", "Settings", Icons.Material.Filled.Settings, Color.Default, "/settings", separatorBefore: true),
                 new("about", "About", Icons.Material.Filled.Info, Color.Default, "/about"),
             ];

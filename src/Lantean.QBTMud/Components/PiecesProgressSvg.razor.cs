@@ -230,6 +230,11 @@ namespace Lantean.QBTMud.Components
                 return 64;
             }
 
+            if (CurrentBreakpoint <= Breakpoint.Lg)
+            {
+                return 96;
+            }
+
             return 128;
         }
 
