@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
   pull_request:
     branches:
       - '**'
@@ -32,8 +33,32 @@ jobs:
         id: gitversion
         run: |
           VERSION=$(dotnet gitversion /output json /showvariable FullSemVer)
+          SAFE_VERSION=$(echo "$VERSION" | sed -E 's/[^A-Za-z0-9._+-]+/-/g')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION_SAFE=$SAFE_VERSION" >> $GITHUB_ENV
         shell: bash
+
+      - name: Set Release Channel
+        id: release_channel
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF}" = "refs/heads/master" ]; then
+            echo "channel=stable" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "label=Release" >> $GITHUB_OUTPUT
+          elif [ "${GITHUB_REF}" = "refs/heads/develop" ]; then
+            echo "channel=beta" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "label=Beta" >> $GITHUB_OUTPUT
+          elif [[ "${GITHUB_REF}" == refs/heads/feature/* ]]; then
+            echo "channel=alpha" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "label=Alpha" >> $GITHUB_OUTPUT
+          else
+            echo "channel=none" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "label=" >> $GITHUB_OUTPUT
+          fi
 
       - name: Restore dependencies
         run: dotnet restore
@@ -41,49 +66,79 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
-      - name: Run Tests
-        run: dotnet test --no-build --configuration Release
+      - name: Run Tests with Coverage
+        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory TestResults
 
-      - name: Publish (only on master)
-        if: github.ref == 'refs/heads/master'
-        run: dotnet publish Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Generate Coverage Report
+        run: reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"HtmlInline_AzurePipelines;Cobertura"
+
+      - name: Upload Coverage Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-report
+
+      - name: Publish
+        if: steps.release_channel.outputs.channel != 'none'
+        run: dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output
 
       - name: Prepare Release ZIP
-        if: github.ref == 'refs/heads/master'
+        if: steps.release_channel.outputs.channel != 'none'
         run: |
           cd output
           mv wwwroot public
-          zip -r "../qbt-mud-v${{ env.VERSION }}.zip" public
+          zip -r "../qbt-mud-v${{ env.VERSION_SAFE }}.zip" public
         shell: bash
 
-      - name: Check if Tag Exists
-        id: check_tag
+      - name: Resolve Release Tag
+        if: steps.release_channel.outputs.channel != 'none'
+        id: resolve_tag
+        shell: bash
         run: |
-          if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
-            echo "TAG_EXISTS=true" >> $GITHUB_ENV
+          if git rev-parse "${VERSION}" >/dev/null 2>&1; then
+            echo "tag=${VERSION}" >> $GITHUB_OUTPUT
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Using existing tag '${VERSION}'"
+          elif git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Using existing tag 'v${VERSION}'"
           else
-            echo "TAG_EXISTS=false" >> $GITHUB_ENV
+            echo "tag=${VERSION}" >> $GITHUB_OUTPUT
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "::warning::No matching git tag found for '${VERSION}' or 'v${VERSION}'."
           fi
 
+      - name: Ensure Release Tag Exists
+        if: steps.release_channel.outputs.channel == 'stable' && steps.resolve_tag.outputs.exists != 'true'
+        shell: bash
+        run: |
+          echo "::error::Expected an existing git tag '${VERSION}' (or 'v${VERSION}') before creating a release."
+          exit 1
+
       - name: Create GitHub Release
-        if: github.ref == 'refs/heads/master' && env.TAG_EXISTS == 'false'
+        if: steps.release_channel.outputs.channel != 'none' && (steps.resolve_tag.outputs.exists == 'true' || steps.release_channel.outputs.channel != 'stable')
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: v${{ env.VERSION }}
-          release_name: Release v${{ env.VERSION }}
-          draft: false
-          prerelease: false
+          tag_name: ${{ steps.resolve_tag.outputs.tag }}
+          release_name: ${{ steps.release_channel.outputs.label }} ${{ steps.resolve_tag.outputs.tag }}
+          draft: ${{ steps.release_channel.outputs.channel != 'alpha' }}
+          prerelease: ${{ steps.release_channel.outputs.prerelease }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Asset
-        if: github.ref == 'refs/heads/master' && env.TAG_EXISTS == 'false'
+        if: steps.release_channel.outputs.channel != 'none' && (steps.resolve_tag.outputs.exists == 'true' || steps.release_channel.outputs.channel != 'stable')
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: qbt-mud-v${{ env.VERSION }}.zip
-          asset_name: qbt-mud-v${{ env.VERSION }}.zip
+          asset_path: qbt-mud-v${{ env.VERSION_SAFE }}.zip
+          asset_name: qbt-mud-v${{ env.VERSION_SAFE }}.zip
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
