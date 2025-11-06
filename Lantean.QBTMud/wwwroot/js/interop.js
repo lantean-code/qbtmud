@@ -210,3 +210,12 @@ function getElementBySelector(selector) {
 
     return element;
 }
+
+window.qbt.registerProtocolHandler = (scheme, url) => {
+    try {
+        navigator.registerProtocolHandler(scheme, url);
+        // console.log(`Registered protocol handler <${url}> for <${scheme}>`);
+    } catch (error) {
+        console.error("Failed to register protocol handler:", error);
+    }
+}

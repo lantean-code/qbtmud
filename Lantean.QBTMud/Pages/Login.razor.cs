@@ -29,7 +29,14 @@ namespace Lantean.QBTMud.Pages
             {
                 await ApiClient.Login(username, password);
 
-                NavigationManager.NavigateTo("/");
+                if (NavigationManager.Uri.Contains('?'))
+                {
+                    var query = new Uri(NavigationManager.Uri).Query;
+
+                    NavigationManager.NavigateTo($"/{query}");
+                }
+                else
+                    NavigationManager.NavigateTo("/");
             }
             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.BadRequest)
             {

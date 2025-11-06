@@ -86,6 +86,21 @@ namespace Lantean.QBTMud.Pages
             {
                 await KeyboardService.RegisterKeypressEvent(_addTorrentFileKey, k => AddTorrentFile());
                 await KeyboardService.RegisterKeypressEvent(_addTorrentLinkKey, k => AddTorrentLink());
+
+                if (NavigationManager.Uri.Contains("?"))
+                {
+                    var query = new Uri(NavigationManager.Uri).Query;
+
+                    if (query.Length > 1)
+                    {
+                        var encodedUrl = query.Substring(query.IndexOf('=') + 1);
+                        var decodedUrl = Uri.UnescapeDataString(encodedUrl);
+    
+                        await AddTorrentLink(decodedUrl);
+                    }
+
+                    NavigationManager.NavigateTo("/");
+                }
             }
         }
 
@@ -187,9 +202,9 @@ namespace Lantean.QBTMud.Pages
             await DialogService.InvokeAddTorrentFileDialog(ApiClient);
         }
 
-        protected async Task AddTorrentLink()
+        protected async Task AddTorrentLink(string? url=null)
         {
-            await DialogService.InvokeAddTorrentLinkDialog(ApiClient);
+            await DialogService.InvokeAddTorrentLinkDialog(ApiClient, url);
         }
 
         protected void RowClick(TableRowClickEventArgs<Torrent> eventArgs)
