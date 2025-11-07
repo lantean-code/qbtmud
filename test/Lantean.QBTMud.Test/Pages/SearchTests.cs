@@ -32,10 +32,10 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
             apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Instance.Value.Should().BeNull();
@@ -70,10 +70,10 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
             apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             target.WaitForState(() =>
             {
@@ -117,10 +117,10 @@ namespace Lantean.QBTMud.Test.Pages
                 new SearchResult("http://desc", "Ubuntu 24.04", 1_500_000_000, "http://files/ubuntu", 10, 200, "http://site", "movies", 1_700_000_000)
             }, "Stopped", 2));
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             target.WaitForState(() =>
             {
@@ -148,13 +148,13 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
             apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             target.WaitForAssertion(() =>
             {
@@ -187,11 +187,11 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { disabledPlugin, enabledPlugin });
             apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             target.WaitForAssertion(() =>
             {
@@ -209,10 +209,10 @@ namespace Lantean.QBTMud.Test.Pages
             var apiMock = TestContext.UseApiClientMock();
             apiMock.Setup(client => client.GetSearchPlugins()).ThrowsAsync(new HttpRequestException("Search disabled", null, HttpStatusCode.Forbidden));
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             target.WaitForAssertion(() =>
             {
@@ -232,10 +232,10 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { disabledPlugin });
             apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("ubuntu");
@@ -269,10 +269,10 @@ namespace Lantean.QBTMud.Test.Pages
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>();
             dialogMock.Setup(flow => flow.ShowSearchPluginsDialog()).ReturnsAsync(true);
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
             var manageButton = target.FindAll("button").First(element => element.TextContent.Contains("Manage plugins", StringComparison.Ordinal));
             manageButton.Click();
 
@@ -309,9 +309,9 @@ namespace Lantean.QBTMud.Test.Pages
                 It.IsAny<Action<SnackbarOptions>>(),
                 It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
             var manageButton = target.FindAll("button").First(element => element.TextContent.Contains("Manage plugins", StringComparison.Ordinal));
             manageButton.Click();
 
@@ -334,10 +334,10 @@ namespace Lantean.QBTMud.Test.Pages
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>();
             dialogMock.Setup(flow => flow.ShowSearchPluginsDialog()).ReturnsAsync(false);
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
             var manageButton = target.FindAll("button").First(element => element.TextContent.Contains("Manage plugins", StringComparison.Ordinal));
             manageButton.Click();
 
@@ -359,9 +359,9 @@ namespace Lantean.QBTMud.Test.Pages
                 It.IsAny<Action<SnackbarOptions>>(),
                 It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             var form = target.Find("form");
             form.Submit();
@@ -386,10 +386,10 @@ namespace Lantean.QBTMud.Test.Pages
                 It.IsAny<Action<SnackbarOptions>>(),
                 It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
@@ -417,10 +417,10 @@ namespace Lantean.QBTMud.Test.Pages
                 It.IsAny<Action<SnackbarOptions>>(),
                 It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             var form = target.Find("form");
             form.Submit();
@@ -466,10 +466,10 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.DeleteSearch(jobId)).Returns(Task.CompletedTask);
             apiMock.Setup(client => client.StopSearch(jobId)).Returns(Task.CompletedTask);
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
@@ -524,10 +524,10 @@ namespace Lantean.QBTMud.Test.Pages
                 new SearchResult("http://desc", "Ubuntu 24.04", 1_500_000_000, "http://files/ubuntu", 10, 200, "http://site", "movies", 1_700_000_000)
             }, "Completed", 1));
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
@@ -574,10 +574,10 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.StopSearch(jobId)).Returns(Task.CompletedTask);
             apiMock.Setup(client => client.DeleteSearch(jobId)).Returns(Task.CompletedTask);
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             await target.InvokeAsync(() =>
             {
@@ -644,9 +644,9 @@ namespace Lantean.QBTMud.Test.Pages
                 It.IsAny<Action<SnackbarOptions>>(),
                 It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
@@ -697,9 +697,9 @@ namespace Lantean.QBTMud.Test.Pages
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
             snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
@@ -767,9 +767,9 @@ namespace Lantean.QBTMud.Test.Pages
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>());
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<Search>(parameters => parameters.AddCascadingValue(mainData));
+            var target = TestContext.Render<Search>(parameters => parameters.AddCascadingValue(mainData));
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
@@ -832,10 +832,10 @@ namespace Lantean.QBTMud.Test.Pages
                 new SearchResult("http://desc/fedora", "Fedora 39", 1_600_000_000, "http://files/fedora", 8, 150, "http://site/fedora", "movies", 1_700_000_000)
             }, "Completed", 2));
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             target.WaitForAssertion(() =>
             {
@@ -885,10 +885,10 @@ namespace Lantean.QBTMud.Test.Pages
                 new SearchResult("http://desc/largesize", "Large Size Result", failingLarge, "http://files/largesize", 20, 70, "http://site/largesize", "movies", 1_700_000_000)
             }, "Completed", 3));
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             target.WaitForAssertion(() =>
             {
@@ -930,10 +930,10 @@ namespace Lantean.QBTMud.Test.Pages
                 new SearchResult(string.Empty, "Item Two", 500_000_000, string.Empty, 5, 50, string.Empty, "movies", null)
             }, "Completed", 2));
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             target.WaitForAssertion(() =>
             {
@@ -1098,10 +1098,10 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
             apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<Search>();
+            var target = TestContext.Render<Search>();
 
             target.WaitForAssertion(() =>
             {
@@ -1129,10 +1129,10 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.StartSearch("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsAsync(401);
             apiMock.Setup(client => client.GetSearchResults(401, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), "Running", 0));
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<SearchTestHost>(parameters =>
+            var target = TestContext.Render<SearchTestHost>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue(Breakpoint.Sm);
@@ -1178,10 +1178,10 @@ namespace Lantean.QBTMud.Test.Pages
                 It.IsAny<Action<SnackbarOptions>>(),
                 It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<SearchTestHost>();
+            var target = TestContext.Render<SearchTestHost>();
 
             target.Instance.ShowAdvancedFiltersValue.Should().BeTrue();
 
@@ -1222,10 +1222,10 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
             apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<SearchTestHost>();
+            var target = TestContext.Render<SearchTestHost>();
 
             target.Instance.ShowAdvancedFiltersValue.Should().BeTrue();
 
@@ -1393,10 +1393,10 @@ namespace Lantean.QBTMud.Test.Pages
             var apiMock = TestContext.UseApiClientMock();
             apiMock.Setup(client => client.GetSearchPlugins()).ThrowsAsync(new HttpRequestException("disabled"));
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            _ = TestContext.RenderComponent<Search>();
+            _ = TestContext.Render<Search>();
 
             var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(JobsStorageKey);
             stored.Should().NotBeNull();
@@ -1452,10 +1452,10 @@ namespace Lantean.QBTMud.Test.Pages
             snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
             snackbarMock.Setup(snackbar => snackbar.Add("Failed to stop \"Context\": stop failed", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<SearchTestHost>();
+            var target = TestContext.Render<SearchTestHost>();
             var job = target.Instance.ExposedJobs.Single();
 
             await target.InvokeAsync(() => target.Instance.InvokeStopJob(job));
@@ -1565,10 +1565,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             configureMock?.Invoke(apiMock);
 
-            TestContext.RenderComponent<MudPopoverProvider>();
-            TestContext.RenderComponent<MudSnackbarProvider>();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
 
-            var target = TestContext.RenderComponent<SearchTestHost>();
+            var target = TestContext.Render<SearchTestHost>();
 
             target.WaitForAssertion(() =>
             {

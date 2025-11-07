@@ -34,9 +34,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             UpdatePreferences? lastChanged = null;
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<BehaviourOptions>(parameters =>
+            var target = TestContext.Render<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
@@ -80,9 +80,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             UpdatePreferences? lastChanged = null;
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<BehaviourOptions>(parameters =>
+            var target = TestContext.Render<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
@@ -126,9 +126,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<BehaviourOptions>(parameters =>
+            var target = TestContext.Render<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
@@ -169,9 +169,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<BehaviourOptions>(parameters =>
+            var target = TestContext.Render<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);
@@ -214,9 +214,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var updatePreferences = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<BehaviourOptions>(parameters =>
+            var target = TestContext.Render<BehaviourOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, updatePreferences);

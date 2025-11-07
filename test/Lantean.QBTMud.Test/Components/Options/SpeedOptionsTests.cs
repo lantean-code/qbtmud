@@ -16,12 +16,12 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldDisplayRatesAndScheduler()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.Render<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -50,13 +50,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_UserAdjustments_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.Render<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -93,12 +93,12 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_TimePickers_WHEN_Adjusted_THEN_ShouldUpdateToFields()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.Render<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -119,13 +119,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_RateLimitSwitches_WHEN_Toggled_THEN_ShouldUpdatePreferences()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.Render<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -151,13 +151,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_UnchangedScheduleTimes_WHEN_Reapplied_THEN_ShouldNotNotify()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.Render<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -175,13 +175,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_NullScheduleTimes_WHEN_Cleared_THEN_ShouldIgnoreChanges()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = TestContext.RenderComponent<SpeedOptions>(parameters =>
+            var target = TestContext.Render<SpeedOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);

@@ -13,7 +13,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_DefaultSettings_WHEN_Rendered_THEN_ShouldDisplayLabelAndIcon()
         {
-            var target = TestContext.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.Render<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
             });
@@ -30,7 +30,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_AppendIconTrue_WHEN_Rendered_THEN_ShouldDisplayIconAfterContent()
         {
-            var target = TestContext.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.Render<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.AppendIcon, true);
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
@@ -46,7 +46,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var sortDirection = SortDirection.None;
 
-            var target = TestContext.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.Render<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.AllowUnsorted, true);
                 parameters.Add(p => p.SortDirection, sortDirection);
@@ -56,7 +56,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             await target.Find("span").TriggerEventAsync("onclick", new MouseEventArgs());
             sortDirection.Should().Be(SortDirection.Ascending);
 
-            target.SetParametersAndRender(parameterBuilder =>
+            target.Render(parameterBuilder =>
             {
                 parameterBuilder.Add(p => p.SortDirection, sortDirection);
             });
@@ -64,7 +64,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             await target.Find("span").TriggerEventAsync("onclick", new MouseEventArgs());
             sortDirection.Should().Be(SortDirection.Descending);
 
-            target.SetParametersAndRender(parameterBuilder =>
+            target.Render(parameterBuilder =>
             {
                 parameterBuilder.Add(p => p.SortDirection, sortDirection);
             });
@@ -78,7 +78,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var sortDirection = SortDirection.Ascending;
 
-            var target = TestContext.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.Render<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.Enabled, false);
                 parameters.Add(p => p.SortDirection, sortDirection);
@@ -93,7 +93,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_SortDirectionAscending_WHEN_Rendered_THEN_ShouldUseAscendingIconClass()
         {
-            var target = TestContext.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.Render<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.SortDirection, SortDirection.Ascending);
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
@@ -106,7 +106,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_SortDirectionDescending_WHEN_Rendered_THEN_ShouldUseDescendingIconClass()
         {
-            var target = TestContext.RenderComponent<SortLabel>(parameters =>
+            var target = TestContext.Render<SortLabel>(parameters =>
             {
                 parameters.Add(p => p.SortDirection, SortDirection.Descending);
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));

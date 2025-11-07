@@ -18,10 +18,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             var preferences = DeserializePreferences();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
             var update = new UpdatePreferences();
 
-            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.Render<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -57,9 +57,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.Render<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -96,9 +96,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.Render<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -149,9 +149,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.Render<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -216,9 +216,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.Render<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -256,11 +256,11 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_RegisterButton_WHEN_Clicked_THEN_ShouldInvokeJs()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
-            var target = TestContext.RenderComponent<WebUIOptions>(parameters =>
+            var target = TestContext.Render<WebUIOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);

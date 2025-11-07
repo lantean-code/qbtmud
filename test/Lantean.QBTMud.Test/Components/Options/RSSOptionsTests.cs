@@ -18,12 +18,12 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = TestContext.RenderComponent<RSSOptions>(parameters =>
+            var target = TestContext.Render<RSSOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -45,13 +45,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_Settings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = TestContext.RenderComponent<RSSOptions>(parameters =>
+            var target = TestContext.Render<RSSOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -94,12 +94,12 @@ namespace Lantean.QBTMud.Test.Components.Options
                 .Setup(w => w.InvokeRssRulesDialog())
                 .Returns(Task.CompletedTask);
 
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = TestContext.RenderComponent<RSSOptions>(parameters =>
+            var target = TestContext.Render<RSSOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -116,13 +116,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_FetchDelay_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = TestContext.RenderComponent<TestableRssOptions>(parameters =>
+            var target = TestContext.Render<TestableRssOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);

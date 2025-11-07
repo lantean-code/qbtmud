@@ -16,12 +16,12 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = TestContext.RenderComponent<ConnectionOptions>(parameters =>
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -50,13 +50,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_SwitchesAndInputs_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = TestContext.RenderComponent<ConnectionOptions>(parameters =>
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -87,7 +87,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_I2PSettings_WHEN_EnabledAndValuesChanged_THEN_ShouldUpdatePreferences()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializeCustomPreferences("""
             {
@@ -103,7 +103,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = TestContext.RenderComponent<ConnectionOptions>(parameters =>
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -142,13 +142,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_ProxySettings_WHEN_TypeAuthAndFlagsChanged_THEN_ShouldRespectRules()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = TestContext.RenderComponent<ConnectionOptions>(parameters =>
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -211,7 +211,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_ConnectionLimitSwitches_WHEN_Disabled_THEN_ShouldDisableInputs()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializeCustomPreferences("""
             {
@@ -224,7 +224,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             }
             """);
 
-            var target = TestContext.RenderComponent<ConnectionOptions>(parameters =>
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
@@ -251,13 +251,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_ProtocolAndIpFilter_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
-            var target = TestContext.RenderComponent<ConnectionOptions>(parameters =>
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);
@@ -291,12 +291,12 @@ namespace Lantean.QBTMud.Test.Components.Options
         [Fact]
         public async Task GIVEN_GenericPopoverTrigger_WHEN_Clicked_THEN_ShouldUpdatePort()
         {
-            TestContext.RenderComponent<MudPopoverProvider>();
+            TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
 
-            var target = TestContext.RenderComponent<ConnectionOptions>(parameters =>
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
                 parameters.Add(p => p.UpdatePreferences, update);

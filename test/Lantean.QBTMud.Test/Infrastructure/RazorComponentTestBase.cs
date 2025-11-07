@@ -5,19 +5,19 @@ namespace Lantean.QBTMud.Test.Infrastructure
 {
     public abstract class RazorComponentTestBase<T> : RazorComponentTestBase where T : IComponent
     {
-        protected static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<T> target, string testId) where TComponent : IComponent
+        protected static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<IComponent> target, string testId) where TComponent : IComponent
         {
-            return target.FindComponents<TComponent>().First(field => field.FindAll($"[data-test-id='{testId}']").Count > 0);
+            return target.FindComponents<TComponent>().First(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
         }
     }
 
-    public abstract class RazorComponentTestBase : IDisposable
+    public abstract class RazorComponentTestBase : IAsyncDisposable
     {
         private bool _disposedValue;
 
         internal ComponentTestContext TestContext { get; private set; } = new ComponentTestContext();
 
-        protected virtual void Dispose(bool disposing)
+        protected virtual ValueTask Dispose(bool disposing)
         {
             if (!_disposedValue)
             {
@@ -28,12 +28,14 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
                 _disposedValue = true;
             }
+
+            return ValueTask.CompletedTask;
         }
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(disposing: true);
+            await Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
     }

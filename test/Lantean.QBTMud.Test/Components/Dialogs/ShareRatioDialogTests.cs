@@ -122,7 +122,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private async Task<DialogRenderContext> RenderDialogAsync(ShareRatioMax? value = null, ShareRatioMax? current = null, bool disabled = false)
         {
-            var provider = TestContext.RenderComponent<MudDialogProvider>();
+            var provider = TestContext.Render<MudDialogProvider>();
             var dialogService = TestContext.Services.GetRequiredService<IDialogService>();
 
             var parameters = new DialogParameters

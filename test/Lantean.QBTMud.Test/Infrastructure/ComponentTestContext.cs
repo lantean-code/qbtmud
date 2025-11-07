@@ -1,3 +1,4 @@
+using Blazored.LocalStorage;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
@@ -11,7 +12,7 @@ using System.Net;
 
 namespace Lantean.QBTMud.Test.Infrastructure
 {
-    internal sealed class ComponentTestContext : TestContext
+    internal sealed class ComponentTestContext : BunitContext
     {
         private const string ApiClientName = "API";
 
@@ -46,7 +47,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
             });
 
             // Deterministic infrastructure shims
-            Services.AddSingleton<Blazored.LocalStorage.ILocalStorageService>(_localStorage);
+            Services.AddSingleton<ILocalStorageService>(_localStorage);
             Services.AddSingleton<IClipboardService>(_clipboard);
 
             // Message handlers used by your HttpClient pipeline

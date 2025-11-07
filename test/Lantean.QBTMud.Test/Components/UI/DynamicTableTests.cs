@@ -183,7 +183,7 @@ namespace Lantean.QBTMud.Test.Components.UI
 
         private IRenderedComponent<DynamicTable<SampleItem>> RenderDynamicTable(Action<ComponentParameterCollectionBuilder<DynamicTable<SampleItem>>> configure)
         {
-            return TestContext.RenderComponent<DynamicTable<SampleItem>>(configure);
+            return TestContext.Render<DynamicTable<SampleItem>>(configure);
         }
 
         private static IReadOnlyList<ColumnDefinition<SampleItem>> CreateColumnDefinitions()

@@ -14,7 +14,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var invoked = false;
 
-            var target = TestContext.RenderComponent<TdExtended>(parameters =>
+            var target = TestContext.Render<TdExtended>(parameters =>
             {
                 parameters.Add(p => p.OnLongPress, EventCallback.Factory.Create<LongPressEventArgs>(this, _ =>
                 {
@@ -34,7 +34,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var invoked = false;
 
-            var target = TestContext.RenderComponent<TdExtended>(parameters =>
+            var target = TestContext.Render<TdExtended>(parameters =>
             {
                 parameters.Add(p => p.OnContextMenu, EventCallback.Factory.Create<MouseEventArgs>(this, _ =>
                 {

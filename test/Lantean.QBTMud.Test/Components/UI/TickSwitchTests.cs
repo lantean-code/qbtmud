@@ -10,7 +10,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_ValueTrue_WHEN_Rendered_THEN_ShouldUseSuccessIcon()
         {
-            var target = TestContext.RenderComponent<TickSwitch<bool>>(parameters =>
+            var target = TestContext.Render<TickSwitch<bool>>(parameters =>
             {
                 parameters.Add(p => p.Value, true);
             });
@@ -22,7 +22,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_ValueFalse_WHEN_Rendered_THEN_ShouldUseErrorIcon()
         {
-            var target = TestContext.RenderComponent<TickSwitch<bool>>(parameters =>
+            var target = TestContext.Render<TickSwitch<bool>>(parameters =>
             {
                 parameters.Add(p => p.Value, false);
             });

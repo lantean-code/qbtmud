@@ -11,7 +11,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_LabelAndHelper_WHEN_Rendered_THEN_ShouldRenderFieldAndSwitch()
         {
-            var target = TestContext.RenderComponent<FieldSwitch>(parameters =>
+            var target = TestContext.Render<FieldSwitch>(parameters =>
             {
                 parameters.Add(p => p.Label, "Label");
                 parameters.Add(p => p.HelperText, "HelperText");
@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_DisabledSwitch_WHEN_Rendered_THEN_ShouldDisableInput()
         {
-            var target = TestContext.RenderComponent<FieldSwitch>(parameters =>
+            var target = TestContext.Render<FieldSwitch>(parameters =>
             {
                 parameters.Add(p => p.Disabled, true);
                 parameters.Add(p => p.Value, false);
@@ -40,7 +40,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var callbackValue = false;
 
-            var target = TestContext.RenderComponent<FieldSwitch>(parameters =>
+            var target = TestContext.Render<FieldSwitch>(parameters =>
             {
                 parameters.Add(p => p.Value, false);
                 parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<bool>(this, value => callbackValue = value));

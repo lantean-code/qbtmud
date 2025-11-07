@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         [Fact]
         public void GIVEN_ChildContent_WHEN_Rendered_THEN_ShouldRenderChildContent()
         {
-            var target = TestContext.RenderComponent<NonRendering>(parameters =>
+            var target = TestContext.Render<NonRendering>(parameters =>
             {
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "ChildContent"));
             });
