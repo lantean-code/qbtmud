@@ -12,7 +12,7 @@
     {
         foreach (var torrent in OrderedTorrents)
         {
-            <MudNavLink Href="@("/details/" + torrent.Hash)">@torrent.Name</MudNavLink>
+            <MudNavLink Href="@("./details/" + torrent.Hash)">@torrent.Name</MudNavLink>
         }
     }
 </MudNavMenu>

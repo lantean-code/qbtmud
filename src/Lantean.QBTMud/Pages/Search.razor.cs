@@ -204,7 +204,7 @@ namespace Lantean.QBTMud.Pages
 
         protected void NavigateBack()
         {
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateToHome();
         }
 
         protected async Task DoSearch(EditContext editContext)

@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Components
 
         protected void NavigateBack()
         {
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateToHome();
         }
     }
 }

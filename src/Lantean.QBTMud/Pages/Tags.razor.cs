@@ -41,7 +41,7 @@ namespace Lantean.QBTMud.Pages
 
         protected void NavigateBack()
         {
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateToHome();
         }
 
         protected async Task DeleteTag(string? tag)

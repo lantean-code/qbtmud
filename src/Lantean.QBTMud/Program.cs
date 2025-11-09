@@ -34,7 +34,7 @@ namespace Lantean.QBTMud
                 .AddScoped(sp => sp
                     .GetRequiredService<IHttpClientFactory>()
                     .CreateClient("API"))
-                .AddHttpClient("API", client => client.BaseAddress = new Uri(baseAddress, "/api/v2/"))
+                .AddHttpClient("API", client => client.BaseAddress = new Uri(baseAddress, "api/v2/"))
                 .AddHttpMessageHandler<CookieHandler>()
                 .RemoveAllLoggers()
                 .AddLogger<HttpLogger>(wrapHandlersPipeline: true);

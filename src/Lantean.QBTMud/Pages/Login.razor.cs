@@ -29,7 +29,7 @@ namespace Lantean.QBTMud.Pages
             {
                 await ApiClient.Login(username, password);
 
-                NavigationManager.NavigateTo("/");
+                NavigationManager.NavigateToHome();
             }
             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.BadRequest)
             {

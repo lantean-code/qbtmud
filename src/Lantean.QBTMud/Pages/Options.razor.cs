@@ -83,7 +83,7 @@ namespace Lantean.QBTMud.Pages
 
         protected void NavigateBack()
         {
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateToHome();
         }
 
         protected async Task Undo()
@@ -137,6 +137,8 @@ namespace Lantean.QBTMud.Pages
 
             Preferences = await ApiClient.GetApplicationPreferences();
             UpdatePreferences = null;
+
+            NavigationManager.NavigateToHome(forceLoad: true);
         }
     }
 }

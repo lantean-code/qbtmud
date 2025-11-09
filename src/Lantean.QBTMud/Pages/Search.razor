@@ -10,7 +10,11 @@
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
-            <MudText Class="pl-5 no-wrap">Search</MudText>
+            <MudText Class="px-5 no-wrap">Search</MudText>
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                           title="Manage Plugins"
+                           OnClick="ManagePlugins" />
         </MudToolBar>
     </div>
     <div class="content-panel__body">
@@ -95,13 +99,6 @@
                                                    Variant="Variant.Filled"
                                                    data-test-id="@TestIdHelper.For("start-search-button")">
                                             Start search
-                                        </MudButton>
-                                        <MudButton FullWidth="true"
-                                                   Color="Color.Secondary"
-                                                   Variant="Variant.Outlined"
-                                                   StartIcon="@Icons.Material.Filled.Settings"
-                                                   OnClick="ManagePlugins">
-                                            Manage plugins
                                         </MudButton>
                                         <MudButton FullWidth="true"
                                                    Variant="Variant.Text"

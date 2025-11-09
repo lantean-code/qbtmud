@@ -1,4 +1,5 @@
 using Lantean.QBTMud.Models;
+using Microsoft.AspNetCore.Components;
 using System.ComponentModel;
 using System.Reflection;
 
@@ -82,6 +83,11 @@ namespace Lantean.QBTMud
             }
 
             return value.ToString();
+        }
+
+        public static void NavigateToHome(this NavigationManager navigationManager, bool forceLoad = false)
+        {
+            navigationManager.NavigateTo("./", forceLoad);
         }
     }
 }

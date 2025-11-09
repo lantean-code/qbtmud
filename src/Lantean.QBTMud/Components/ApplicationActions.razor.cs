@@ -61,22 +61,22 @@ namespace Lantean.QBTMud.Components
         {
             _actions =
             [
-                new("statistics", "Statistics", Icons.Material.Filled.PieChart, Color.Default, "/statistics"),
-                new("search", "Search", Icons.Material.Filled.Search, Color.Default, "/search"),
-                new("rss", "RSS", Icons.Material.Filled.RssFeed, Color.Default, "/rss"),
-                new("log", "Execution Log", Icons.Material.Filled.List, Color.Default, "/log"),
-                new("blocks", "Blocked IPs", Icons.Material.Filled.DisabledByDefault, Color.Default, "/blocks"),
-                new("tags", "Tag Manager", Icons.Material.Filled.Label, Color.Default, "/tags", separatorBefore: true),
-                new("categories", "Category Manager", Icons.Material.Filled.List, Color.Default, "/categories"),
-                new("cookies", "Cookie Manager", Icons.Material.Filled.Cookie, Color.Default, "/cookies"),
-                new("settings", "Settings", Icons.Material.Filled.Settings, Color.Default, "/settings", separatorBefore: true),
-                new("about", "About", Icons.Material.Filled.Info, Color.Default, "/about"),
+                new("statistics", "Statistics", Icons.Material.Filled.PieChart, Color.Default, "./statistics"),
+                new("search", "Search", Icons.Material.Filled.Search, Color.Default, "./search"),
+                new("rss", "RSS", Icons.Material.Filled.RssFeed, Color.Default, "./rss"),
+                new("log", "Execution Log", Icons.Material.Filled.List, Color.Default, "./log"),
+                new("blocks", "Blocked IPs", Icons.Material.Filled.DisabledByDefault, Color.Default, "./blocks"),
+                new("tags", "Tag Manager", Icons.Material.Filled.Label, Color.Default, "./tags", separatorBefore: true),
+                new("categories", "Category Manager", Icons.Material.Filled.List, Color.Default, "./categories"),
+                new("cookies", "Cookie Manager", Icons.Material.Filled.Cookie, Color.Default, "./cookies"),
+                new("settings", "Settings", Icons.Material.Filled.Settings, Color.Default, "./settings", separatorBefore: true),
+                new("about", "About", Icons.Material.Filled.Info, Color.Default, "./about"),
             ];
         }
 
         protected void NavigateBack()
         {
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateToHome();
         }
 
         protected async Task ResetWebUI()
@@ -88,7 +88,7 @@ namespace Lantean.QBTMud.Components
 
             await ApiClient.SetApplicationPreferences(preferences);
 
-            NavigationManager.NavigateTo("/", true);
+            NavigationManager.NavigateTo("./", true);
         }
 
         protected async Task Logout()
@@ -97,7 +97,7 @@ namespace Lantean.QBTMud.Components
             {
                 await ApiClient.Logout();
 
-                NavigationManager.NavigateTo("/", true);
+                NavigationManager.NavigateTo("./", true);
             });
         }
 

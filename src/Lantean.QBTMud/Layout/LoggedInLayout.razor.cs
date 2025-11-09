@@ -137,7 +137,7 @@ namespace Lantean.QBTMud.Layout
             if (!await ApiClient.CheckAuthState())
             {
                 await PersistPendingDownloadAsync();
-                NavigationManager.NavigateTo("/login");
+                NavigationManager.NavigateTo("login");
                 return;
             }
 
@@ -454,7 +454,7 @@ namespace Lantean.QBTMud.Layout
             if (string.Equals(_lastProcessedDownloadToken, magnet, StringComparison.Ordinal))
             {
                 await ClearPendingDownloadAsync();
-                NavigationManager.NavigateTo("/", true);
+                NavigationManager.NavigateTo("./", true);
                 return;
             }
 
@@ -463,7 +463,7 @@ namespace Lantean.QBTMud.Layout
                 await InvokeAsync(() => DialogWorkflow.InvokeAddTorrentLinkDialog(magnet));
                 _lastProcessedDownloadToken = magnet;
                 await ClearPendingDownloadAsync();
-                NavigationManager.NavigateTo("/", true);
+                NavigationManager.NavigateTo("./", true);
             }
             catch
             {

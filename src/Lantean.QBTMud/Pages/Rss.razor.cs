@@ -471,7 +471,7 @@ namespace Lantean.QBTMud.Pages
 
         protected void NavigateBack()
         {
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateToHome();
         }
 
         private async Task AddSubscriptionAtNode(RssTreeNode? node)

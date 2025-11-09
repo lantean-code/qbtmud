@@ -39,7 +39,7 @@ namespace Lantean.QBTMud.Components
 
             await ApiClient.SetApplicationPreferences(preferences);
 
-            NavigationManager.NavigateTo("/", true);
+            NavigationManager.NavigateTo("./", true);
         }
 
         protected async Task Logout()
@@ -48,7 +48,7 @@ namespace Lantean.QBTMud.Components
             {
                 await ApiClient.Logout();
 
-                NavigationManager.NavigateTo("/login", true);
+                NavigationManager.NavigateTo("./login", true);
             });
         }
 

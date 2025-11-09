@@ -185,7 +185,7 @@ namespace Lantean.QBTMud.Components
 
             if (deleted)
             {
-                NavigationManager.NavigateTo("/");
+                NavigationManager.NavigateToHome();
             }
         }
 

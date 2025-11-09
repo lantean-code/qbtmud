@@ -225,7 +225,7 @@ namespace Lantean.QBTMud.Pages
                 {
                     return;
                 }
-                NavigationManager.NavigateTo($"/details/{torrent.Hash}");
+                NavigationManager.NavigateTo($"./details/{torrent.Hash}");
             }
         }
 
@@ -307,7 +307,7 @@ namespace Lantean.QBTMud.Pages
             {
                 return;
             }
-            NavigationManager.NavigateTo($"/details/{torrent.Hash}");
+            NavigationManager.NavigateTo($"./details/{torrent.Hash}");
         }
 
         protected Task TableDataContextMenu(TableDataContextMenuEventArgs<Torrent> eventArgs)

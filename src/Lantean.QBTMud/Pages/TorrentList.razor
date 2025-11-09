@@ -19,7 +19,7 @@
             <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" Disabled="@(!ToolbarButtonsEnabled)" OnClick="ShowTorrentToolbar" title="View torrent details" />
             <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
             <MudSpacer />
-            <MudSelect T="TorrentFilterField" @bind-Value="SearchField" @bind-Value:after="OnSearchFieldChanged" Dense="true" Class="mt-0 mr-2 filter-field-select" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Variant="Variant.Outlined" ShrinkLabel="true">
+            <MudSelect T="TorrentFilterField" @bind-Value="SearchField" @bind-Value:after="OnSearchFieldChanged" Dense="true" Class="mt-0 mr-2 filter-field-select" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                 <MudSelectItem Value="TorrentFilterField.Name">Name</MudSelectItem>
                 <MudSelectItem Value="TorrentFilterField.SavePath">Save path</MudSelectItem>
             </MudSelect>
