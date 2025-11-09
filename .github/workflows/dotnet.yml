@@ -23,6 +23,10 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Install WASM workload
+        run: dotnet workload install wasm-tools --skip-manifest-update
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v3.0.0
