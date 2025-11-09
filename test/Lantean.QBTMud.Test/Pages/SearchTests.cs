@@ -273,7 +273,8 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Render<MudSnackbarProvider>();
 
             var target = TestContext.Render<Search>();
-            var manageButton = target.FindAll("button").First(element => element.TextContent.Contains("Manage plugins", StringComparison.Ordinal));
+            var iconButton = FindComponentByTestId<MudIconButton>(target, "ManagePluginsButton");
+            var manageButton = iconButton.FindAll("button").First();
             manageButton.Click();
 
             target.WaitForAssertion(() =>
@@ -312,7 +313,8 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Render<MudPopoverProvider>();
 
             var target = TestContext.Render<Search>();
-            var manageButton = target.FindAll("button").First(element => element.TextContent.Contains("Manage plugins", StringComparison.Ordinal));
+            var iconButton = FindComponentByTestId<MudIconButton>(target, "ManagePluginsButton");
+            var manageButton = iconButton.FindAll("button").First();
             manageButton.Click();
 
             target.WaitForAssertion(() =>
@@ -338,7 +340,8 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Render<MudSnackbarProvider>();
 
             var target = TestContext.Render<Search>();
-            var manageButton = target.FindAll("button").First(element => element.TextContent.Contains("Manage plugins", StringComparison.Ordinal));
+            var iconButton = FindComponentByTestId<MudIconButton>(target, "ManagePluginsButton");
+            var manageButton = iconButton.FindAll("button").First();
             manageButton.Click();
 
             apiMock.Verify(client => client.GetSearchPlugins(), Times.Once());
