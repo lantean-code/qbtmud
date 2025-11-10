@@ -72,7 +72,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="I2P (Experimental)" Value="I2pEnabled" ValueChanged="I2pEnabledChanged" data-test-id="I2pEnabled" />
+                <FieldSwitch Label="I2P (Experimental)" Value="I2pEnabled" ValueChanged="I2pEnabledChanged" data-test-id="@TestIdHelper.For("I2pEnabled")" />
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudTextField T="string" Label="Host" Value="I2pAddress" ValueChanged="I2pAddressChanged" Disabled="@(!I2pEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pAddress")" />
