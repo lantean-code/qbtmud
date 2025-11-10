@@ -85,3 +85,7 @@ tab_width = 4
 indent_size = 4
 end_of_line = crlf
 charset = utf-8
+
+# Any path pattern you like
+[test/**.cs]
+dotnet_diagnostic.S6966.severity = none

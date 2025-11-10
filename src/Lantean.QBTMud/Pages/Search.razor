@@ -16,6 +16,31 @@
                            title="Manage Plugins"
                            OnClick="ManagePlugins"
                            data-test-id="@TestIdHelper.For("ManagePluginsButton")" />
+            <MudDivider Vertical="true" />
+            <MudIconButton Color="Color.Error"
+                           Icon="@Icons.Material.Filled.Stop"
+                           title="Stop"
+                           Disabled="@(ActiveJob?.IsRunning != true)"
+                           OnClick="StopActiveJob"
+                           data-test-id="@TestIdHelper.For("StopActiveJobButton")" />
+            <MudIconButton Color="Color.Primary"
+                           Icon="@Icons.Material.Filled.Refresh"
+                           title="Refresh"
+                           Disabled="@(ActiveJob is null)"
+                           OnClick="RefreshActiveJob"
+                           data-test-id="@TestIdHelper.For("RefreshActiveJobButton")" />
+            <MudIconButton Color="Color.Secondary"
+                           Icon="@Icons.Material.Filled.Close"
+                           title="Close"
+                           Disabled="@(ActiveJob is null)"
+                           OnClick="CloseActiveJob"
+                           data-test-id="@TestIdHelper.For("CloseActiveJobButton")" />
+            <MudIconButton Color="Color.Default"
+                           Icon="@Icons.Material.Filled.Cancel"
+                           title="Close all"
+                           Disabled="@(Jobs.Count == 0)"
+                           OnClick="CloseAllJobs"
+                           data-test-id="@TestIdHelper.For("CloseAllJobsButton")" />
         </MudToolBar>
     </div>
     <div class="content-panel__body">
@@ -44,7 +69,7 @@
                     @(ShowSearchForm ? "Hide" : "Show")
                 </MudButton>
             </MudStack>
-            <MudCollapse Expanded="ShowSearchForm" data-test-id="@TestIdHelper.For("search-form-collapse")">
+            <MudCollapse Expanded="ShowSearchForm" data-test-id="@TestIdHelper.For("SearchFormCollapse")">
                 <MudCard Elevation="1" Class="ml-4 mr-4 mb-2 search-filters">
                     <MudCardContent>
                         <EditForm Model="Model" OnValidSubmit="DoSearch">
@@ -65,7 +90,7 @@
                                                ShrinkLabel="true"
                                                Value="@Model.SelectedCategory"
                                                ValueChanged="OnCategoryChanged"
-                                               data-test-id="@TestIdHelper.For("category-select")">
+                                               data-test-id="@TestIdHelper.For("CategorySelect")">
                                         @foreach (var category in Categories)
                                         {
                                             <MudSelectItem Value="@category.Key">@category.Value</MudSelectItem>
@@ -83,7 +108,7 @@
                                                SelectedValues="@Model.SelectedPlugins"
                                                SelectedValuesChanged="OnPluginsChanged"
                                                MultiSelectionTextFunc="PluginsSelectionText"
-                                               data-test-id="@TestIdHelper.For("plugin-select")">
+                                               data-test-id="@TestIdHelper.For("PluginSelect")">
                                         @foreach (var plugin in EnabledPlugins)
                                         {
                                             <MudSelectItem Value="@plugin.Name">@plugin.FullName</MudSelectItem>
@@ -98,20 +123,20 @@
                                                    Color="Color.Primary"
                                                    EndIcon="@Icons.Material.Filled.Search"
                                                    Variant="Variant.Filled"
-                                                   data-test-id="@TestIdHelper.For("start-search-button")">
+                                                   data-test-id="@TestIdHelper.For("StartSearchButton")">
                                             Start search
                                         </MudButton>
                                         <MudButton FullWidth="true"
                                                    Variant="Variant.Text"
                                                    StartIcon="@(ShowAdvancedFilters ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
                                                    OnClick="ToggleAdvancedFilters"
-                                                   data-test-id="@TestIdHelper.For("toggle-advanced-filters")">
+                                                   data-test-id="@TestIdHelper.For("ToggleAdvancedFilters")">
                                             @(ShowAdvancedFilters ? "Hide filters" : "Show filters")
                                         </MudButton>
                                     </MudStack>
                                 </MudItem>
                             </MudGrid>
-                            <MudCollapse Expanded="ShowAdvancedFilters" data-test-id="advanced-filters-collapse">
+                            <MudCollapse Expanded="ShowAdvancedFilters" data-test-id="@TestIdHelper.For("AdvancedFiltersCollapse")">
                                 <MudGrid Class="mt-2">
                                     <MudItem xs="12" md="4">
                                         <MudTextField T="string"
@@ -129,7 +154,7 @@
                                                    ShrinkLabel="true"
                                                    Value="@Model.SearchIn"
                                                    ValueChanged="OnSearchInChanged"
-                                                   data-test-id="@TestIdHelper.For("search-in-select")">
+                                                   data-test-id="@TestIdHelper.For("SearchInScopeSelect")">
                                             <MudSelectItem Value="@SearchInScope.Everywhere">Everywhere</MudSelectItem>
                                             <MudSelectItem Value="@SearchInScope.Names">Names only</MudSelectItem>
                                         </MudSelect>
@@ -211,13 +236,13 @@
 
             @if (ShowSearchUnavailableMessage)
             {
-                <MudAlert Severity="Severity.Error" Elevation="0" Class="ml-4 mr-4 mb-2" data-test-id="search-unavailable-alert">
+                <MudAlert Severity="Severity.Error" Elevation="0" Class="ml-4 mr-4 mb-2" data-test-id="@TestIdHelper.For("SearchUnavailableAlert")">
                     @SearchUnavailableMessage
                 </MudAlert>
             }
             else if (ShowNoPluginWarning)
             {
-                <MudAlert Severity="Severity.Warning" Elevation="0" Class="ml-4 mr-4 mb-2" data-test-id="no-plugin-alert">
+                <MudAlert Severity="Severity.Warning" Elevation="0" Class="ml-4 mr-4 mb-2" data-test-id="@TestIdHelper.For("NoPluginAlert")">
                     Enable at least one search plugin to run searches.
                 </MudAlert>
             }
@@ -225,39 +250,10 @@
             <MudHidden Breakpoint="Breakpoint.MdAndDown">
                 <MudPaper Elevation="0" Class="ml-4 mr-4 mb-2 pa-3 search-actions">
                     <MudStack Row="true" Spacing="1" Class="search-actions__stack">
-                        <MudButton Color="Color.Error"
-                                   Variant="Variant.Text"
-                                   StartIcon="@Icons.Material.Filled.Stop"
-                                   Disabled="@(ActiveJob?.IsRunning != true)"
-                                   OnClick="StopActiveJob">
-                            Stop
-                        </MudButton>
-                        <MudButton Color="Color.Primary"
-                                   Variant="Variant.Text"
-                                   StartIcon="@Icons.Material.Filled.Refresh"
-                                   Disabled="@(ActiveJob is null)"
-                                   OnClick="RefreshActiveJob">
-                            Refresh
-                        </MudButton>
-                        <MudButton Color="Color.Secondary"
-                                   Variant="Variant.Text"
-                                   StartIcon="@Icons.Material.Filled.Close"
-                                   Disabled="@(ActiveJob is null)"
-                                   OnClick="CloseActiveJob">
-                            Close
-                        </MudButton>
-                        <MudButton Color="Color.Default"
-                                   Variant="Variant.Text"
-                                   StartIcon="@Icons.Material.Filled.Cancel"
-                                   Disabled="@(Jobs.Count == 0)"
-                                   OnClick="CloseAllJobs">
-                            Close all
-                        </MudButton>
-                        <MudSpacer />
                         @if (ActiveJob is not null)
                         {
-                            <MudChip T="string" Color="@GetJobStatusColor(ActiveJob)" Variant="Variant.Filled" Size="Size.Small" data-test-id="@TestIdHelper.For("job-status-chip")">@ActiveJob.Status</MudChip>
-                            <MudText Typo="Typo.caption" Class="ml-2 search-actions__results" data-test-id="@TestIdHelper.For("job-summary")">Results: @GetJobResultSummary(ActiveJob)</MudText>
+                            <MudChip T="string" Color="@GetJobStatusColor(ActiveJob)" Variant="Variant.Filled" Size="Size.Small" data-test-id="@TestIdHelper.For("JobStatusChip")">@ActiveJob.Status</MudChip>
+                            <MudText Typo="Typo.caption" Class="ml-2 search-actions__results" data-test-id="@TestIdHelper.For("JobSummary")">Results: @GetJobResultSummary(ActiveJob)</MudText>
                         }
                     </MudStack>
                 </MudPaper>
@@ -266,47 +262,11 @@
             <MudHidden Breakpoint="Breakpoint.LgAndUp">
                 <MudPaper Elevation="0" Class="ml-4 mr-4 mb-2 pa-3 search-actions-mobile">
                     <MudStack Spacing="1">
-                        <MudStack Row="true" Spacing="1">
-                            <MudButton Color="Color.Error"
-                                       Variant="Variant.Outlined"
-                                       FullWidth="true"
-                                       StartIcon="@Icons.Material.Filled.Stop"
-                                       Disabled="@(ActiveJob?.IsRunning != true)"
-                                       OnClick="StopActiveJob">
-                                Stop
-                            </MudButton>
-                            <MudButton Color="Color.Primary"
-                                       Variant="Variant.Outlined"
-                                       FullWidth="true"
-                                       StartIcon="@Icons.Material.Filled.Refresh"
-                                       Disabled="@(ActiveJob is null)"
-                                       OnClick="RefreshActiveJob">
-                                Refresh
-                            </MudButton>
-                        </MudStack>
-                        <MudStack Row="true" Spacing="1">
-                            <MudButton Color="Color.Secondary"
-                                       Variant="Variant.Outlined"
-                                       FullWidth="true"
-                                       StartIcon="@Icons.Material.Filled.Close"
-                                       Disabled="@(ActiveJob is null)"
-                                       OnClick="CloseActiveJob">
-                                Close
-                            </MudButton>
-                            <MudButton Color="Color.Default"
-                                       Variant="Variant.Outlined"
-                                       FullWidth="true"
-                                       StartIcon="@Icons.Material.Filled.Cancel"
-                                       Disabled="@(Jobs.Count == 0)"
-                                       OnClick="CloseAllJobs">
-                                Close all
-                            </MudButton>
-                        </MudStack>
                         @if (ActiveJob is not null)
                         {
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mt-1">
-                            <MudChip T="string" Color="@GetJobStatusColor(ActiveJob)" Variant="Variant.Filled" Size="Size.Small" data-test-id="@TestIdHelper.For("job-status-chip")">@ActiveJob.Status</MudChip>
-                            <MudText Typo="Typo.caption" data-test-id="@TestIdHelper.For("job-summary")">Results: @GetJobResultSummary(ActiveJob)</MudText>
+                                <MudChip T="string" Color="@GetJobStatusColor(ActiveJob)" Variant="Variant.Filled" Size="Size.Small" data-test-id="@TestIdHelper.For("JobStatusChip")">@ActiveJob.Status</MudChip>
+                                <MudText Typo="Typo.caption" data-test-id="@TestIdHelper.For("JobSummary")">Results: @GetJobResultSummary(ActiveJob)</MudText>
                             </MudStack>
                         }
                     </MudStack>
@@ -319,7 +279,7 @@
                          Border="true"
                          ApplyEffectsToContainer="true"
                          @bind-ActivePanelIndex="ActiveTabIndex"
-                         data-test-id="@TestIdHelper.For("jobs-tabs")">
+                         data-test-id="@TestIdHelper.For("JobTabs")">
                     @for (var index = 0; index < Jobs.Count; index++)
                     {
                         var job = Jobs[index];
@@ -328,7 +288,7 @@
                                 <div class="d-flex align-center">
                                     <MudIcon Icon="@GetJobStatusIcon(job)" Color="@GetJobStatusColor(job)" Size="Size.Small" Class="mr-1" />
                                     <MudText Typo="Typo.body2">@job.Pattern</MudText>
-                                    <MudText Typo="Typo.caption" Class="ml-2" data-test-id="job-summary">@GetJobResultSummary(job)</MudText>
+                                    <MudText Typo="Typo.caption" Class="ml-2" data-test-id="@TestIdHelper.For("JobSummary")" > @GetJobResultSummary(job)</MudText>
                                     <MudIconButton Icon="@Icons.Material.Filled.Close"
                                                    Size="Size.Small"
                                                    Color="Color.Inherit"
@@ -362,7 +322,7 @@
             }
             else
             {
-                <MudPaper Elevation="0" Class="ml-4 mr-4 mb-4 pa-6 d-flex justify-center" data-test-id="search-empty-state">
+                <MudPaper Elevation="0" Class="ml-4 mr-4 mb-4 pa-6 d-flex justify-center" data-test-id="@TestIdHelper.For("SearchEmptyState")">
                     <MudStack Spacing="1" Class="text-center">
                         <MudIcon Icon="@Icons.Material.Filled.ManageSearch" Color="Color.Info" Size="Size.Large" />
                         <MudText Typo="Typo.subtitle1">No searches yet</MudText>
@@ -370,7 +330,6 @@
                     </MudStack>
                 </MudPaper>
             }
-
 
         </MudContainer>
     </div>

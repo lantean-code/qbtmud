@@ -40,16 +40,16 @@ namespace Lantean.QBTMud.Test.Pages
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Instance.Value.Should().BeNull();
 
-            var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "category-select");
+            var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "CategorySelect");
             categorySelect.Instance.Value.Should().Be(SearchForm.AllCategoryId);
 
-            var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "plugin-select");
+            var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
             pluginSelect.Instance.SelectedValues.Should().Contain("movies");
 
-            var toggleAdvancedButton = FindComponentByTestId<MudButton>(target, "toggle-advanced-filters");
+            var toggleAdvancedButton = FindComponentByTestId<MudButton>(target, "ToggleAdvancedFilters");
             toggleAdvancedButton.Markup.Should().Contain("Show filters");
 
-            var startButton = FindComponentByTestId<MudButton>(target, "start-search-button");
+            var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
             startButton.Instance.Disabled.Should().BeTrue();
         }
 
@@ -77,16 +77,16 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForState(() =>
             {
-                return FindComponentByTestId<MudCollapse>(target, "advanced-filters-collapse").Instance.Expanded;
+                return FindComponentByTestId<MudCollapse>(target, "AdvancedFiltersCollapse").Instance.Expanded;
             }, TimeSpan.FromSeconds(2));
 
-            var advancedFiltersCollapse = FindComponentByTestId<MudCollapse>(target, "advanced-filters-collapse");
+            var advancedFiltersCollapse = FindComponentByTestId<MudCollapse>(target, "AdvancedFiltersCollapse");
             advancedFiltersCollapse.Instance.Expanded.Should().BeTrue();
 
-            var searchInSelect = FindComponentByTestId<MudSelect<SearchInScope>>(target, "search-in-select");
+            var searchInSelect = FindComponentByTestId<MudSelect<SearchInScope>>(target, "SearchInScopeSelect");
             searchInSelect.Instance.Value.Should().Be(SearchInScope.Names);
 
-            var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "plugin-select");
+            var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
             pluginSelect.Instance.SelectedValues.Should().Contain("movies");
         }
 
@@ -124,13 +124,13 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForState(() =>
             {
-                return FindComponentByTestId<MudText>(target, "job-summary").Markup.Contains("Results: 1/2");
+                return FindComponentByTestId<MudText>(target, "JobSummary").Markup.Contains("Results: 1/2");
             }, TimeSpan.FromSeconds(2));
 
-            var jobTabSummary = FindComponentByTestId<MudText>(target, "job-summary");
+            var jobTabSummary = FindComponentByTestId<MudText>(target, "JobSummary");
             jobTabSummary.Markup.Should().Contain("Results: 1/2");
 
-            var statusChip = FindComponentByTestId<MudChip<string>>(target, "job-status-chip");
+            var statusChip = FindComponentByTestId<MudChip<string>>(target, "JobStatusChip");
             statusChip.Markup.Should().Contain("Stopped");
 
             var resultsTable = target.FindComponent<DynamicTable<SearchResult>>();
@@ -158,17 +158,17 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var searchFormCollapse = FindComponentByTestId<MudCollapse>(target, "search-form-collapse");
+                var searchFormCollapse = FindComponentByTestId<MudCollapse>(target, "SearchFormCollapse");
                 searchFormCollapse.Instance.Expanded.Should().BeTrue();
 
-                var toggleAdvancedButton = FindComponentByTestId<MudButton>(target, "toggle-advanced-filters");
+                var toggleAdvancedButton = FindComponentByTestId<MudButton>(target, "ToggleAdvancedFilters");
                 toggleAdvancedButton.Markup.Should().Contain("Show filters");
 
-                var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "plugin-select");
+                var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
                 pluginSelect.Instance.SelectedValues.Should().Contain("movies");
             }, TimeSpan.FromSeconds(2));
 
-            var emptyState = FindComponentByTestId<MudPaper>(target, "search-empty-state");
+            var emptyState = FindComponentByTestId<MudPaper>(target, "SearchEmptyState");
             emptyState.Markup.Should().Contain("No searches yet");
         }
 
@@ -195,10 +195,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "plugin-select");
+                var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
                 pluginSelect.Instance.SelectedValues.Should().BeEquivalentTo(new[] { "primary" });
 
-                var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "category-select");
+                var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "CategorySelect");
                 categorySelect.Instance.Value.Should().Be(SearchForm.AllCategoryId);
             }, TimeSpan.FromSeconds(2));
         }
@@ -216,11 +216,11 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var alert = FindComponentByTestId<MudAlert>(target, "search-unavailable-alert");
+                var alert = FindComponentByTestId<MudAlert>(target, "SearchUnavailableAlert");
                 alert.Markup.Should().Contain("Search is disabled");
             }, TimeSpan.FromSeconds(2));
 
-            var startButton = FindComponentByTestId<MudButton>(target, "start-search-button");
+            var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
             startButton.Instance.Disabled.Should().BeTrue();
         }
 
@@ -242,10 +242,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var warning = FindComponentByTestId<MudAlert>(target, "no-plugin-alert");
+                var warning = FindComponentByTestId<MudAlert>(target, "NoPluginAlert");
                 warning.Markup.Should().Contain("Enable at least one search plugin");
 
-                var startButton = FindComponentByTestId<MudButton>(target, "start-search-button");
+                var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
                 startButton.Instance.Disabled.Should().BeTrue();
             }, TimeSpan.FromSeconds(2));
         }
@@ -279,7 +279,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "plugin-select");
+                var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
                 pluginSelect.Instance.SelectedValues.Should().Contain("primary");
             }, TimeSpan.FromSeconds(2));
 
@@ -320,7 +320,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 snackbarMock.Verify();
-                var alert = FindComponentByTestId<MudAlert>(target, "search-unavailable-alert");
+                var alert = FindComponentByTestId<MudAlert>(target, "SearchUnavailableAlert");
                 alert.Markup.Should().Contain("Search is disabled");
             }, TimeSpan.FromSeconds(2));
         }
@@ -477,7 +477,7 @@ namespace Lantean.QBTMud.Test.Pages
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
 
-            var startButton = FindComponentByTestId<MudButton>(target, "start-search-button");
+            var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
             target.WaitForAssertion(() =>
             {
                 startButton.Instance.Disabled.Should().BeFalse();
@@ -487,7 +487,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var chip = FindComponentByTestId<MudChip<string>>(target, "job-status-chip");
+                var chip = FindComponentByTestId<MudChip<string>>(target, "JobStatusChip");
                 chip.Markup.Should().Contain("Completed");
             }, TimeSpan.FromSeconds(5));
 
@@ -535,7 +535,7 @@ namespace Lantean.QBTMud.Test.Pages
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
 
-            var startButton = FindComponentByTestId<MudButton>(target, "start-search-button");
+            var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
             target.WaitForAssertion(() =>
             {
                 startButton.Instance.Disabled.Should().BeFalse();
@@ -584,13 +584,14 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() =>
             {
-                var closeAllButton = target.FindAll("button").First(element => element.TextContent.Contains("Close all", StringComparison.Ordinal));
+                var closeAllMudButton = FindComponentByTestId<MudIconButton>(target, "CloseAllJobsButton");
+                var closeAllButton = closeAllMudButton.FindAll("button")[0];
                 closeAllButton.Click();
             });
 
             target.WaitForAssertion(() =>
             {
-                var emptyState = FindComponentByTestId<MudPaper>(target, "search-empty-state");
+                var emptyState = FindComponentByTestId<MudPaper>(target, "SearchEmptyState");
                 emptyState.Markup.Should().Contain("No searches yet");
             }, TimeSpan.FromSeconds(2));
 
@@ -654,7 +655,7 @@ namespace Lantean.QBTMud.Test.Pages
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
 
-            var startButton = FindComponentByTestId<MudButton>(target, "start-search-button");
+            var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
             target.WaitForAssertion(() =>
             {
                 startButton.Instance.Disabled.Should().BeFalse();
@@ -664,12 +665,12 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("data-test-id=\"jobs-tabs\"");
+                target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
             }, TimeSpan.FromSeconds(5));
 
             target.WaitForAssertion(() =>
             {
-                var chipElement = target.Find("[data-test-id='job-status-chip']");
+                var chipElement = target.Find("[data-test-id='JobStatusChip']");
                 chipElement.TextContent.Should().Contain("Error");
             }, TimeSpan.FromSeconds(5));
 
@@ -707,7 +708,7 @@ namespace Lantean.QBTMud.Test.Pages
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
 
-            var startButton = FindComponentByTestId<MudButton>(target, "start-search-button");
+            var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
             target.WaitForAssertion(() =>
             {
                 startButton.Instance.Disabled.Should().BeFalse();
@@ -717,12 +718,12 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("data-test-id=\"jobs-tabs\"");
+                target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
             }, TimeSpan.FromSeconds(5));
 
             target.WaitForAssertion(() =>
             {
-                var chipElement = target.Find("[data-test-id='job-status-chip']");
+                var chipElement = target.Find("[data-test-id='JobStatusChip']");
                 chipElement.TextContent.Should().Contain("Stopped");
             }, TimeSpan.FromSeconds(5));
 
@@ -777,7 +778,7 @@ namespace Lantean.QBTMud.Test.Pages
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
             criteriaField.Find("input").Input("Ubuntu");
 
-            var startButton = FindComponentByTestId<MudButton>(target, "start-search-button");
+            var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
             target.WaitForAssertion(() =>
             {
                 startButton.Instance.Disabled.Should().BeFalse();
@@ -787,7 +788,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("data-test-id=\"jobs-tabs\"");
+                target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
             }, TimeSpan.FromSeconds(5));
 
             target.WaitForAssertion(() =>
@@ -799,7 +800,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var chipElement = target.Find("[data-test-id='job-status-chip']");
+                var chipElement = target.Find("[data-test-id='JobStatusChip']");
                 chipElement.TextContent.Should().Contain("Error");
             }, TimeSpan.FromSeconds(5));
         }
@@ -846,7 +847,7 @@ namespace Lantean.QBTMud.Test.Pages
                 target.Markup.Should().NotContain("Fedora 39");
             }, TimeSpan.FromSeconds(5));
 
-            var summary = FindComponentByTestId<MudText>(target, "job-summary");
+            var summary = FindComponentByTestId<MudText>(target, "JobSummary");
             summary.Markup.Should().Contain("Results: 1/2");
         }
 
@@ -900,7 +901,7 @@ namespace Lantean.QBTMud.Test.Pages
                 target.Markup.Should().NotContain("Large Size Result");
             }, TimeSpan.FromSeconds(5));
 
-            var summary = FindComponentByTestId<MudText>(target, "job-summary");
+            var summary = FindComponentByTestId<MudText>(target, "JobSummary");
             summary.Markup.Should().Contain("Results: 1/3");
         }
 
@@ -1232,13 +1233,13 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.Instance.ShowAdvancedFiltersValue.Should().BeTrue();
 
-            var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "category-select");
+            var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "CategorySelect");
             await target.InvokeAsync(() => categorySelect.Instance.ValueChanged.InvokeAsync("tv"));
 
             var filterField = target.FindComponents<MudTextField<string>>().First(field => field.Instance.Label == "Filter results");
             await target.InvokeAsync(() => filterField.Instance.ValueChanged.InvokeAsync("dv"));
 
-            var searchInSelect = FindComponentByTestId<MudSelect<SearchInScope>>(target, "search-in-select");
+            var searchInSelect = FindComponentByTestId<MudSelect<SearchInScope>>(target, "SearchInScopeSelect");
             await target.InvokeAsync(() => searchInSelect.Instance.ValueChanged.InvokeAsync(SearchInScope.Names));
 
             var minSeedsField = target.FindComponents<MudNumericField<int?>>().First(field => field.Instance.Label == "Min seeders");
