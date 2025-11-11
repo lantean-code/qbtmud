@@ -6,7 +6,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <CompressionEnabled>false</CompressionEnabled>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
@@ -17,6 +16,7 @@
     <WasmSingleFileBundle>false</WasmSingleFileBundle>
     <WasmFingerprintAssets>false</WasmFingerprintAssets>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <CompressionEnabled>false</CompressionEnabled>
   </PropertyGroup>
 
   <!-- AOT build for CDN -->
@@ -27,6 +27,7 @@
     <PublishTrimmed>true</PublishTrimmed>
     <WasmNativeStrip>true</WasmNativeStrip>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <CompressionEnabled>true</CompressionEnabled>
   </PropertyGroup>
     
   <PropertyGroup>
@@ -52,14 +53,11 @@
     </PropertyGroup>
     <!-- Make a tiny JS file with the flags -->
     <ItemGroup>
-      <_AotConfigLines Include="window.__useCdnAot = $(_UseCdnAotJs);"/>
-      <_AotConfigLines Include="window.__cdnBase = '$(_AotCdnBaseEscaped)';"/>
+      <_AotConfigLines Include="window.__useCdnAot = $(_UseCdnAotJs);" />
+      <_AotConfigLines Include="window.__cdnBase = '$(_AotCdnBaseEscaped)';" />
     </ItemGroup>
   
-    <WriteLinesToFile
-        File="$(IntermediateOutputPath)boot.settings.js"
-        Lines="@(_AotConfigLines)"
-        Overwrite="true" />
+    <WriteLinesToFile File="$(IntermediateOutputPath)boot.settings.js" Lines="@(_AotConfigLines)" Overwrite="true" />
   
     <!-- Publish it to wwwroot -->
     <ItemGroup>
@@ -92,9 +90,9 @@
   <ItemGroup>
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageReference Include="ByteSize" Version="2.1.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0-rc.2.25502.107" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0-rc.2.25502.107" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0-rc.2.25502.107" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
     <PackageReference Include="MudBlazor" Version="8.14.0" />
     <PackageReference Include="MudBlazor.ThemeManager" Version="3.0.0" />
   </ItemGroup>
