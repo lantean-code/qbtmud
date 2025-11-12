@@ -213,5 +213,8 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("has_other_announce_error")]
         public bool? HasOtherAnnounceError { get; init; }
+
+        [JsonPropertyName("trackers")]
+        public IReadOnlyList<TorrentTracker>? Trackers { get; init; }
     }
 }

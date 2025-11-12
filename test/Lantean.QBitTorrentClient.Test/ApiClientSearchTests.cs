@@ -343,6 +343,20 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_PluginAndUrl_WHEN_DownloadSearchResult_THEN_ShouldPOSTForm()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.Method.Should().Be(HttpMethod.Post);
+                req.RequestUri!.ToString().Should().Be("http://localhost/search/downloadTorrent");
+                (await req.Content!.ReadAsStringAsync(ct)).Should().Be("pluginName=qb&torrentUrl=http%3A%2F%2Fexample.com");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
+
+            await _target.DownloadSearchResult("qb", "http://example.com");
+        }
+
+        [Fact]
         public async Task GIVEN_Request_WHEN_UpdateSearchPlugins_THEN_ShouldPOSTAndNotThrow()
         {
             _handler.Responder = (req, _) =>

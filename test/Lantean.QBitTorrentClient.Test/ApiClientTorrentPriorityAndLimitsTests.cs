@@ -127,7 +127,7 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
-        public async Task GIVEN_Ratios_WHEN_SetTorrentShareLimit_THEN_ShouldPostAllValuesAndOptionalAction()
+        public async Task GIVEN_Ratios_WHEN_SetTorrentShareLimit_THEN_ShouldIgnoreProvidedAction()
         {
             var ratio = 1.5f.ToString();
             var seed = 2.25f.ToString();
@@ -145,9 +145,7 @@ namespace Lantean.QBitTorrentClient.Test
                 parts["ratioLimit"].Should().Be(ratio);
                 parts["seedingTimeLimit"].Should().Be(seed);
                 parts["inactiveSeedingTimeLimit"].Should().Be(inactive);
-
-                // enum is serialized as its NAME, not numeric value
-                parts["shareLimitAction"].Should().Be(ShareLimitAction.Remove.ToString());
+                parts.ContainsKey("shareLimitAction").Should().BeFalse();
 
                 return new HttpResponseMessage(HttpStatusCode.OK);
             };
@@ -156,7 +154,7 @@ namespace Lantean.QBitTorrentClient.Test
                 ratioLimit: 1.5f,
                 seedingTimeLimit: 2.25f,
                 inactiveSeedingTimeLimit: 0.75f,
-                shareLimitAction: ShareLimitAction.Remove, // <-- changed from Delete
+                shareLimitAction: ShareLimitAction.Remove,
                 all: false,
                 hashes: new[] { "h1", "h2" }
             );

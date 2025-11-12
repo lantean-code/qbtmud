@@ -231,55 +231,34 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
-        public async Task GIVEN_OKEmptyBody_WHEN_RotateApiKey_THEN_ShouldReturnEmptyString()
+        public async Task GIVEN_Success_WHEN_SendTestEmail_THEN_ShouldPOSTToEndpoint()
         {
-            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            _handler.Responder = (req, _) =>
             {
-                Content = new StringContent(string.Empty)
-            });
+                req.Method.Should().Be(HttpMethod.Post);
+                req.RequestUri!.ToString().Should().Be("http://localhost/app/sendTestEmail");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+            };
 
-            var result = await _target.RotateApiKey();
-
-            result.Should().Be(string.Empty);
+            await _target.SendTestEmail();
         }
 
         [Fact]
-        public async Task GIVEN_ObjectWithApiKey_WHEN_RotateApiKey_THEN_ShouldReturnApiKeyValue()
+        public async Task GIVEN_Parameters_WHEN_GetDirectoryContent_THEN_ShouldQueryAndReturnList()
         {
-            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            _handler.Responder = (req, _) =>
             {
-                Content = new StringContent("{\"apiKey\":\"abcd1234\"}")
-            });
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.ToString().Should().Be("http://localhost/app/getDirectoryContent?dirPath=%2Fdata&mode=dirs");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("[\"/data/folder\"]")
+                });
+            };
 
-            var result = await _target.RotateApiKey();
+            var result = await _target.GetDirectoryContent("/data", DirectoryContentMode.Directories);
 
-            result.Should().Be("abcd1234");
-        }
-
-        [Fact]
-        public async Task GIVEN_ObjectWithoutApiKey_WHEN_RotateApiKey_THEN_ShouldReturnEmptyString()
-        {
-            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("{}")
-            });
-
-            var result = await _target.RotateApiKey();
-
-            result.Should().Be(string.Empty);
-        }
-
-        [Fact]
-        public async Task GIVEN_NonObjectJson_WHEN_RotateApiKey_THEN_ShouldReturnEmptyString()
-        {
-            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("[]")
-            });
-
-            var result = await _target.RotateApiKey();
-
-            result.Should().Be(string.Empty);
+            result.Should().ContainSingle().Which.Should().Be("/data/folder");
         }
 
         [Fact]

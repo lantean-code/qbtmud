@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Lantean.QBitTorrentClient.Models;
 using System.Net;
 
 namespace Lantean.QBitTorrentClient.Test
@@ -52,6 +53,20 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_DownloadPathOption_WHEN_AddCategory_THEN_ShouldIncludeDownloadPathFields()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrents/createCategory");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().Be("category=Shows&savePath=%2Ftv&downloadPathEnabled=true&downloadPath=%2Ftemp");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
+
+            await _target.AddCategory("Shows", "/tv", new DownloadPathOption(true, "/temp"));
+        }
+
+        [Fact]
         public async Task GIVEN_CategoryAndPath_WHEN_EditCategory_THEN_ShouldPOSTForm()
         {
             _handler.Responder = async (req, ct) =>
@@ -63,6 +78,20 @@ namespace Lantean.QBitTorrentClient.Test
             };
 
             await _target.EditCategory("Shows", "/tv");
+        }
+
+        [Fact]
+        public async Task GIVEN_DownloadPathOption_WHEN_EditCategory_THEN_ShouldIncludeDownloadPathFields()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrents/editCategory");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().Be("category=Music&savePath=%2Fmusic&downloadPathEnabled=false");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
+
+            await _target.EditCategory("Music", "/music", new DownloadPathOption(false, null));
         }
 
         [Fact]
@@ -91,6 +120,20 @@ namespace Lantean.QBitTorrentClient.Test
             };
 
             await _target.AddTorrentTags(new[] { "one", "two", "three" }, false, "h1", "h2");
+        }
+
+        [Fact]
+        public async Task GIVEN_Tags_WHEN_SetTorrentTags_THEN_ShouldPOSTToSetTags()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrents/setTags");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().Be("hashes=all&tags=a%2Cb");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
+
+            await _target.SetTorrentTags(new[] { "a", "b" }, true);
         }
 
         [Fact]

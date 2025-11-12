@@ -13,7 +13,9 @@ namespace Lantean.QBitTorrentClient.Models
             long? downloadRateLimit,
             long? uploadInfoData,
             long? uploadInfoSpeed,
-            long? uploadRateLimit)
+            long? uploadRateLimit,
+            string? lastExternalAddressV4 = null,
+            string? lastExternalAddressV6 = null)
         {
             ConnectionStatus = connectionStatus;
             DHTNodes = dHTNodes;
@@ -23,6 +25,8 @@ namespace Lantean.QBitTorrentClient.Models
             UploadInfoData = uploadInfoData;
             UploadInfoSpeed = uploadInfoSpeed;
             UploadRateLimit = uploadRateLimit;
+            LastExternalAddressV4 = lastExternalAddressV4;
+            LastExternalAddressV6 = lastExternalAddressV6;
         }
 
         [JsonPropertyName("connection_status")]
@@ -48,5 +52,11 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("up_rate_limit")]
         public long? UploadRateLimit { get; }
+
+        [JsonPropertyName("last_external_address_v4")]
+        public string? LastExternalAddressV4 { get; }
+
+        [JsonPropertyName("last_external_address_v6")]
+        public string? LastExternalAddressV6 { get; }
     }
 }

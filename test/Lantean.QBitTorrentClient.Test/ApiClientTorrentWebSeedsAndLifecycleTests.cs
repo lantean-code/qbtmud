@@ -223,19 +223,12 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
-        public async Task GIVEN_Trackers_WHEN_ReannounceTorrents_THEN_ShouldIncludeUrlsJoinedByPipe()
+        public async Task GIVEN_Trackers_WHEN_ReannounceTorrents_THEN_ShouldOnlySendHashes()
         {
             _handler.Responder = async (req, ct) =>
             {
                 var body = await req.Content!.ReadAsStringAsync(ct);
-                // Decode to assert actual values
-                var parts = body.Split('&').ToDictionary(
-                    s => s.Split('=')[0],
-                    s => Uri.UnescapeDataString(s.Split('=')[1])
-                );
-
-                parts["hashes"].Should().Be("h1|h2");
-                parts["urls"].Should().Be("http://t1|http://t2");
+                body.Should().Be("hashes=h1%7Ch2");
 
                 return new HttpResponseMessage(HttpStatusCode.OK);
             };

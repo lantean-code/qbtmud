@@ -89,6 +89,21 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_Value_WHEN_SetAlternativeSpeedLimitsState_THEN_ShouldPOSTMode()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.Method.Should().Be(HttpMethod.Post);
+                req.RequestUri!.ToString().Should().Be("http://localhost/transfer/setSpeedLimitsMode");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().Be("mode=1");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
+
+            await _target.SetAlternativeSpeedLimitsState(true);
+        }
+
+        [Fact]
         public async Task GIVEN_OK_WHEN_ToggleAlternativeSpeedLimits_THEN_ShouldPOSTAndNotThrow()
         {
             _handler.Responder = (req, _) =>

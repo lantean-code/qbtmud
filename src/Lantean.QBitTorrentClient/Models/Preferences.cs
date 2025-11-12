@@ -10,6 +10,9 @@ namespace Lantean.QBitTorrentClient.Models
             bool addStoppedEnabled,
             string addTrackers,
             bool addTrackersEnabled,
+            bool addTrackersFromUrlEnabled,
+            string addTrackersUrl,
+            string addTrackersUrlList,
             int altDlLimit,
             int altUpLimit,
             bool alternativeWebuiEnabled,
@@ -27,6 +30,7 @@ namespace Lantean.QBitTorrentClient.Models
             bool autorunOnTorrentAddedEnabled,
             string autorunOnTorrentAddedProgram,
             string autorunProgram,
+            bool deleteTorrentContentFiles,
             string bannedIPs,
             int bdecodeDepthLimit,
             int bdecodeTokenLimit,
@@ -231,6 +235,9 @@ namespace Lantean.QBitTorrentClient.Models
             AddStoppedEnabled = addStoppedEnabled;
             AddTrackers = addTrackers;
             AddTrackersEnabled = addTrackersEnabled;
+            AddTrackersFromUrlEnabled = addTrackersFromUrlEnabled;
+            AddTrackersUrl = addTrackersUrl;
+            AddTrackersUrlList = addTrackersUrlList;
             AltDlLimit = altDlLimit;
             AltUpLimit = altUpLimit;
             AlternativeWebuiEnabled = alternativeWebuiEnabled;
@@ -248,6 +255,7 @@ namespace Lantean.QBitTorrentClient.Models
             AutorunOnTorrentAddedEnabled = autorunOnTorrentAddedEnabled;
             AutorunOnTorrentAddedProgram = autorunOnTorrentAddedProgram;
             AutorunProgram = autorunProgram;
+            DeleteTorrentContentFiles = deleteTorrentContentFiles;
             BannedIPs = bannedIPs;
             BdecodeDepthLimit = bdecodeDepthLimit;
             BdecodeTokenLimit = bdecodeTokenLimit;
@@ -460,6 +468,15 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("add_trackers_enabled")]
         public bool AddTrackersEnabled { get; }
 
+        [JsonPropertyName("add_trackers_from_url_enabled")]
+        public bool AddTrackersFromUrlEnabled { get; }
+
+        [JsonPropertyName("add_trackers_url")]
+        public string AddTrackersUrl { get; }
+
+        [JsonPropertyName("add_trackers_url_list")]
+        public string AddTrackersUrlList { get; }
+
         [JsonPropertyName("alt_dl_limit")]
         public int AltDlLimit { get; }
 
@@ -510,6 +527,9 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("autorun_program")]
         public string AutorunProgram { get; }
+
+        [JsonPropertyName("delete_torrent_content_files")]
+        public bool DeleteTorrentContentFiles { get; }
 
         [JsonPropertyName("banned_IPs")]
         public string BannedIPs { get; }

@@ -12,6 +12,7 @@ namespace Lantean.QBitTorrentClient
         {
             Options = new JsonSerializerOptions();
             Options.Converters.Add(new StringFloatJsonConverter());
+            Options.Converters.Add(new NullableStringFloatJsonConverter());
             Options.Converters.Add(new SaveLocationJsonConverter());
             Options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         }

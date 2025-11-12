@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Lantean.QBitTorrentClient.Models;
 using System.Net;
 
 namespace Lantean.QBitTorrentClient.Test
@@ -78,32 +79,31 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
-        public async Task GIVEN_HashesAndComment_WHEN_SetTorrentComment_THEN_ShouldPOSTForm()
+        public async Task GIVEN_Hashes_WHEN_SetTorrentSavePath_THEN_ShouldPOSTIdsAndPath()
         {
             _handler.Responder = async (req, ct) =>
             {
-                req.RequestUri!.ToString().Should().Be("http://localhost/torrents/setComment");
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrents/setSavePath");
                 var body = await req.Content!.ReadAsStringAsync(ct);
-                body.Should().Be("hashes=h1%7Ch2&comment=hello+world");
+                body.Should().Be("id=a%7Cb&path=%2Fmnt%2Fsaves");
                 return new HttpResponseMessage(HttpStatusCode.OK);
             };
 
-            await _target.SetTorrentComment(new[] { "h1", "h2" }, "hello world");
+            await _target.SetTorrentSavePath(new[] { "a", "b" }, "/mnt/saves");
         }
 
         [Fact]
-        public async Task GIVEN_NonSuccess_WHEN_SetTorrentComment_THEN_ShouldThrow()
+        public async Task GIVEN_Hashes_WHEN_SetTorrentDownloadPath_THEN_ShouldPOSTIdsAndPath()
         {
-            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden)
+            _handler.Responder = async (req, ct) =>
             {
-                Content = new StringContent("forbidden")
-            });
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrents/setDownloadPath");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().Be("id=a%7Cb&path=temp");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
 
-            var act = async () => await _target.SetTorrentComment(Array.Empty<string>(), "x");
-
-            var ex = await act.Should().ThrowAsync<HttpRequestException>();
-            ex.Which.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-            ex.Which.Message.Should().Be("forbidden");
+            await _target.SetTorrentDownloadPath(new[] { "a", "b" }, "temp");
         }
 
         [Fact]
@@ -133,6 +133,38 @@ namespace Lantean.QBitTorrentClient.Test
             var ex = await act.Should().ThrowAsync<HttpRequestException>();
             ex.Which.StatusCode.Should().Be(HttpStatusCode.BadGateway);
             ex.Which.Message.Should().Be("bad");
+        }
+
+        [Fact]
+        public async Task GIVEN_Hash_WHEN_GetTorrentSslParameters_THEN_ShouldDeserialize()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"ssl_certificate\":\"cert\",\"ssl_private_key\":\"key\",\"ssl_dh_params\":\"dh\"}")
+            });
+
+            var result = await _target.GetTorrentSslParameters("abc");
+
+            result.Certificate.Should().Be("cert");
+            result.PrivateKey.Should().Be("key");
+            result.DhParams.Should().Be("dh");
+        }
+
+        [Fact]
+        public async Task GIVEN_Parameters_WHEN_SetTorrentSslParameters_THEN_ShouldPOSTAllFields()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.Method.Should().Be(HttpMethod.Post);
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrents/setSSLParameters");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().Be("hash=abc&ssl_certificate=cert&ssl_private_key=key&ssl_dh_params=dh");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
+
+            var parameters = new SslParameters("cert", "key", "dh");
+
+            await _target.SetTorrentSslParameters("abc", parameters);
         }
     }
 }

@@ -46,13 +46,14 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
-        public async Task GIVEN_UrlOnly_WHEN_AddRssFeed_THEN_ShouldPOSTUrlWithoutPath()
+        public async Task GIVEN_UrlOnly_WHEN_AddRssFeed_THEN_ShouldPOSTUrlWithEmptyPath()
         {
             _handler.Responder = async (req, ct) =>
             {
                 req.Method.Should().Be(HttpMethod.Post);
                 req.RequestUri!.ToString().Should().Be("http://localhost/rss/addFeed");
-                (await req.Content!.ReadAsStringAsync(ct)).Should().Be("url=http%3A%2F%2Ffeed");
+                var decoded = Uri.UnescapeDataString(await req.Content!.ReadAsStringAsync(ct));
+                decoded.Should().Be("url=http://feed&path=");
                 return new HttpResponseMessage(HttpStatusCode.OK);
             };
 

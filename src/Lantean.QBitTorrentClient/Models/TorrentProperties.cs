@@ -40,7 +40,15 @@ namespace Lantean.QBitTorrentClient.Models
             long uploadSpeed,
             long uploadSpeedAverage,
             string infoHashV1,
-            string infoHashV2)
+            string infoHashV2,
+            string? hash = null,
+            string? name = null,
+            string? downloadPath = null,
+            float? popularity = null,
+            float? progress = null,
+            bool? isPrivate = null,
+            bool? @private = null,
+            bool? hasMetadata = null)
         {
             AdditionDate = additionDate;
             Comment = comment;
@@ -77,6 +85,14 @@ namespace Lantean.QBitTorrentClient.Models
             UploadSpeedAverage = uploadSpeedAverage;
             InfoHashV1 = infoHashV1;
             InfoHashV2 = infoHashV2;
+            Hash = hash;
+            Name = name;
+            DownloadPath = downloadPath;
+            Popularity = popularity;
+            Progress = progress;
+            IsPrivate = isPrivate;
+            Private = @private;
+            HasMetadata = hasMetadata;
         }
 
         [JsonPropertyName("addition_date")]
@@ -136,6 +152,9 @@ namespace Lantean.QBitTorrentClient.Models
         [JsonPropertyName("save_path")]
         public string SavePath { get; }
 
+        [JsonPropertyName("download_path")]
+        public string? DownloadPath { get; }
+
         [JsonPropertyName("seeding_time")]
         public int SeedingTime { get; }
 
@@ -147,6 +166,12 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("share_ratio")]
         public float ShareRatio { get; }
+
+        [JsonPropertyName("popularity")]
+        public float? Popularity { get; }
+
+        [JsonPropertyName("progress")]
+        public float? Progress { get; }
 
         [JsonPropertyName("time_elapsed")]
         public int TimeElapsed { get; }
@@ -183,5 +208,20 @@ namespace Lantean.QBitTorrentClient.Models
 
         [JsonPropertyName("infohash_v2")]
         public string InfoHashV2 { get; }
+
+        [JsonPropertyName("hash")]
+        public string? Hash { get; }
+
+        [JsonPropertyName("name")]
+        public string? Name { get; }
+
+        [JsonPropertyName("is_private")]
+        public bool? IsPrivate { get; }
+
+        [JsonPropertyName("private")]
+        public bool? Private { get; }
+
+        [JsonPropertyName("has_metadata")]
+        public bool? HasMetadata { get; }
     }
 }

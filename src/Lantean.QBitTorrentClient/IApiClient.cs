@@ -1,5 +1,4 @@
 using Lantean.QBitTorrentClient.Models;
-using System.Text.Json;
 
 namespace Lantean.QBitTorrentClient
 {
@@ -33,7 +32,9 @@ namespace Lantean.QBitTorrentClient
 
         Task SetApplicationCookies(IEnumerable<ApplicationCookie> cookies);
 
-        Task<string> RotateApiKey();
+        Task SendTestEmail();
+
+        Task<IReadOnlyList<string>> GetDirectoryContent(string directoryPath, DirectoryContentMode mode = DirectoryContentMode.All);
 
         Task<string> GetDefaultSavePath();
 
@@ -42,14 +43,6 @@ namespace Lantean.QBitTorrentClient
         Task<IReadOnlyList<string>> GetNetworkInterfaceAddressList(string @interface);
 
         #endregion Application
-
-        #region Client data
-
-        Task<IReadOnlyDictionary<string, JsonElement>> LoadClientData(IEnumerable<string>? keys = null);
-
-        Task StoreClientData(IReadOnlyDictionary<string, JsonElement> data);
-
-        #endregion Client data
 
         #region Log
 
@@ -73,6 +66,8 @@ namespace Lantean.QBitTorrentClient
 
         Task<bool> GetAlternativeSpeedLimitsState();
 
+        Task SetAlternativeSpeedLimitsState(bool enabled);
+
         Task ToggleAlternativeSpeedLimits();
 
         Task<long> GetGlobalDownloadLimit();
@@ -89,7 +84,9 @@ namespace Lantean.QBitTorrentClient
 
         #region Torrent management
 
-        Task<IReadOnlyList<Torrent>> GetTorrentList(string? filter = null, string? category = null, string? tag = null, string? sort = null, bool? reverse = null, int? limit = null, int? offset = null, bool? isPrivate = null, bool? includeFiles = null, params string[] hashes);
+        Task<IReadOnlyList<Torrent>> GetTorrentList(string? filter = null, string? category = null, string? tag = null, string? sort = null, bool? reverse = null, int? limit = null, int? offset = null, bool? isPrivate = null, bool? includeFiles = null, bool? includeTrackers = null, params string[] hashes);
+
+        Task<int> GetTorrentCount();
 
         Task<TorrentProperties> GetTorrentProperties(string hash);
 
@@ -151,21 +148,25 @@ namespace Lantean.QBitTorrentClient
 
         Task SetTorrentLocation(string location, bool? all = null, params string[] hashes);
 
-        Task SetTorrentName(string name, string hash);
+        Task SetTorrentSavePath(IEnumerable<string> hashes, string path);
 
-        Task SetTorrentComment(IEnumerable<string> hashes, string comment);
+        Task SetTorrentDownloadPath(IEnumerable<string> hashes, string? path);
+
+        Task SetTorrentName(string name, string hash);
 
         Task SetTorrentCategory(string category, bool? all = null, params string[] hashes);
 
         Task<IReadOnlyDictionary<string, Category>> GetAllCategories();
 
-        Task AddCategory(string category, string savePath);
+        Task AddCategory(string category, string savePath, DownloadPathOption? downloadPathOption = null);
 
-        Task EditCategory(string category, string savePath);
+        Task EditCategory(string category, string savePath, DownloadPathOption? downloadPathOption = null);
 
         Task RemoveCategories(params string[] categories);
 
         Task AddTorrentTags(IEnumerable<string> tags, bool? all = null, params string[] hashes);
+
+        Task SetTorrentTags(IEnumerable<string> tags, bool? all = null, params string[] hashes);
 
         Task RemoveTorrentTags(IEnumerable<string> tags, bool? all = null, params string[] hashes);
 
@@ -191,11 +192,9 @@ namespace Lantean.QBitTorrentClient
 
         Task<string> GetExportUrl(string hash);
 
-        Task<TorrentMetadata?> FetchMetadata(string source, string? downloader = null);
+        Task<SslParameters> GetTorrentSslParameters(string hash);
 
-        Task<IReadOnlyList<TorrentMetadata>> ParseMetadata(IEnumerable<(string FileName, Stream Content)> torrents);
-
-        Task<byte[]> SaveMetadata(string source);
+        Task SetTorrentSslParameters(string hash, SslParameters parameters);
 
         #endregion Torrent management
 
@@ -264,6 +263,8 @@ namespace Lantean.QBitTorrentClient
         Task EnableSearchPlugins(params string[] names);
 
         Task DisableSearchPlugins(params string[] names);
+
+        Task DownloadSearchResult(string pluginName, string torrentUrl);
 
         Task UpdateSearchPlugins();
 

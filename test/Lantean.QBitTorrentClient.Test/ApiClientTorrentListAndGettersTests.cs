@@ -45,7 +45,7 @@ namespace Lantean.QBitTorrentClient.Test
             {
                 req.Method.Should().Be(HttpMethod.Get);
                 req.RequestUri!.AbsolutePath.Should().Be("/torrents/info");
-                req.RequestUri!.Query.Should().Be("?filter=active&category=Movies&tag=HD&sort=name&reverse=true&limit=50&offset=5&hashes=a%7Cb%7Cc&private=true&includeFiles=false");
+                req.RequestUri!.Query.Should().Be("?filter=active&category=Movies&tag=HD&sort=name&reverse=true&limit=50&offset=5&hashes=a%7Cb%7Cc&private=true&includeFiles=false&includeTrackers=true");
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("[]")
@@ -62,11 +62,38 @@ namespace Lantean.QBitTorrentClient.Test
                 offset: 5,
                 isPrivate: true,
                 includeFiles: false,
+                includeTrackers: true,
                 "a", "b", "c"
             );
 
             result.Should().NotBeNull();
             result.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_Response_WHEN_GetTorrentCount_THEN_ShouldParseInteger()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("42")
+            });
+
+            var result = await _target.GetTorrentCount();
+
+            result.Should().Be(42);
+        }
+
+        [Fact]
+        public async Task GIVEN_InvalidResponse_WHEN_GetTorrentCount_THEN_ShouldReturnZero()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("NaN")
+            });
+
+            var result = await _target.GetTorrentCount();
+
+            result.Should().Be(0);
         }
 
         [Fact]
