@@ -124,14 +124,11 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForState(() =>
             {
-                return FindComponentByTestId<MudText>(target, "JobSummary").Markup.Contains("Results: 1/2");
+                return FindComponentByTestId<MudText>(target, "JobSummary").Markup.Contains("1/2");
             }, TimeSpan.FromSeconds(2));
 
             var jobTabSummary = FindComponentByTestId<MudText>(target, "JobSummary");
-            jobTabSummary.Markup.Should().Contain("Results: 1/2");
-
-            var statusChip = FindComponentByTestId<MudChip<string>>(target, "JobStatusChip");
-            statusChip.Markup.Should().Contain("Stopped");
+            jobTabSummary.Markup.Should().Contain("1/2");
 
             var resultsTable = target.FindComponent<DynamicTable<SearchResult>>();
             resultsTable.Markup.Should().Contain("Ubuntu 24.04");
@@ -485,12 +482,6 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.Find("form").Submit();
 
-            target.WaitForAssertion(() =>
-            {
-                var chip = FindComponentByTestId<MudChip<string>>(target, "JobStatusChip");
-                chip.Markup.Should().Contain("Completed");
-            }, TimeSpan.FromSeconds(5));
-
             var resultsTable = target.FindComponent<DynamicTable<SearchResult>>();
             resultsTable.Markup.Should().Contain("Ubuntu 24.04");
 
@@ -668,12 +659,6 @@ namespace Lantean.QBTMud.Test.Pages
                 target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
             }, TimeSpan.FromSeconds(5));
 
-            target.WaitForAssertion(() =>
-            {
-                var chipElement = target.Find("[data-test-id='JobStatusChip']");
-                chipElement.TextContent.Should().Contain("Error");
-            }, TimeSpan.FromSeconds(5));
-
             snackbarMock.Verify();
         }
 
@@ -721,11 +706,9 @@ namespace Lantean.QBTMud.Test.Pages
                 target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
             }, TimeSpan.FromSeconds(5));
 
-            target.WaitForAssertion(() =>
-            {
-                var chipElement = target.Find("[data-test-id='JobStatusChip']");
-                chipElement.TextContent.Should().Contain("Stopped");
-            }, TimeSpan.FromSeconds(5));
+
+            var icon = FindComponentByTestId<MudIcon>(target, "JobStatusIcon");
+            icon.Instance.Icon.Should().Be(Icons.Material.Filled.Stop);
 
             snackbarMock.Verify(snackbar => snackbar.Add(
                 It.IsAny<string>(),
@@ -797,12 +780,6 @@ namespace Lantean.QBTMud.Test.Pages
             }, TimeSpan.FromSeconds(5));
 
             target.Render();
-
-            target.WaitForAssertion(() =>
-            {
-                var chipElement = target.Find("[data-test-id='JobStatusChip']");
-                chipElement.TextContent.Should().Contain("Error");
-            }, TimeSpan.FromSeconds(5));
         }
 
         [Fact]
@@ -848,7 +825,7 @@ namespace Lantean.QBTMud.Test.Pages
             }, TimeSpan.FromSeconds(5));
 
             var summary = FindComponentByTestId<MudText>(target, "JobSummary");
-            summary.Markup.Should().Contain("Results: 1/2");
+            summary.Markup.Should().Contain("1/2");
         }
 
         [Fact]
@@ -902,7 +879,7 @@ namespace Lantean.QBTMud.Test.Pages
             }, TimeSpan.FromSeconds(5));
 
             var summary = FindComponentByTestId<MudText>(target, "JobSummary");
-            summary.Markup.Should().Contain("Results: 1/3");
+            summary.Markup.Should().Contain("1/3");
         }
 
         [Fact]

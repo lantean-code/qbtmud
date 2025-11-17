@@ -1,6 +1,6 @@
 @inherits LayoutComponentBase
 
-<MudBreakpointProvider OnBreakpointChanged="BreakpointChanged">
+<BreakpointOrientationProvider OnBreakpointChanged="BreakpointChanged">
     <CascadingValue Value="DrawerOpen" Name="DrawerOpen">
         <CascadingValue Value="DrawerOpenChangedCallback" Name="DrawerOpenChanged">
         <EnhancedErrorBoundary @ref="ErrorBoundary" OnClear="Cleared">
@@ -39,4 +39,4 @@
         </EnhancedErrorBoundary>
         </CascadingValue>
     </CascadingValue>
-</MudBreakpointProvider>
+</BreakpointOrientationProvider>

@@ -76,6 +76,9 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
 
+        [CascadingParameter]
+        public Orientation CurrentOrientation { get; set; }
+
         [Parameter]
         public string? Hash { get; set; }
 
@@ -244,7 +247,7 @@ namespace Lantean.QBTMud.Pages
                 {
                     ShowAdvancedFilters = false;
                 }
-                if (CurrentBreakpoint <= Breakpoint.Sm)
+                if ((CurrentOrientation == Orientation.Portrait && CurrentBreakpoint <= Breakpoint.Sm) || (CurrentOrientation == Orientation.Landscape && CurrentBreakpoint <= Breakpoint.Md))
                 {
                     ShowSearchForm = false;
                 }

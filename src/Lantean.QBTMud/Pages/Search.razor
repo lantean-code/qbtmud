@@ -51,12 +51,12 @@
                      PositionAtCursor="true"
                      ListClass="unselectable"
                      PopoverClass="unselectable">
-                <MudMenuItem Icon="@Icons.Material.Filled.Download" Disabled="@( !HasContextResult )" OnClick="DownloadResultFromContext">Download</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.OpenInNew" Disabled="@( !HasContextResult )" OnClick="OpenDescriptionFromContext">Open description</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.Download" Disabled="@(!HasContextResult)" OnClick="DownloadResultFromContext">Download</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.OpenInNew" Disabled="@(!HasContextResult)" OnClick="OpenDescriptionFromContext">Open description</MudMenuItem>
                 <MudDivider />
-                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@( !HasContextResult )" OnClick="CopyNameFromContext">Copy name</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@( !HasContextResult )" OnClick="CopyDownloadLinkFromContext">Copy download link</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@( !HasContextResult )" OnClick="CopyDescriptionLinkFromContext">Copy description link</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyNameFromContext">Copy name</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyDownloadLinkFromContext">Copy download link</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyDescriptionLinkFromContext">Copy description link</MudMenuItem>
             </MudMenu>
 
             <MudStack Row="true" Class="ml-4 mr-4 mt-2 mb-1 align-center search-form-toggle">
@@ -247,32 +247,6 @@
                 </MudAlert>
             }
 
-            <MudHidden Breakpoint="Breakpoint.MdAndDown">
-                <MudPaper Elevation="0" Class="ml-4 mr-4 mb-2 pa-3 search-actions">
-                    <MudStack Row="true" Spacing="1" Class="search-actions__stack">
-                        @if (ActiveJob is not null)
-                        {
-                            <MudChip T="string" Color="@GetJobStatusColor(ActiveJob)" Variant="Variant.Filled" Size="Size.Small" data-test-id="@TestIdHelper.For("JobStatusChip")">@ActiveJob.Status</MudChip>
-                            <MudText Typo="Typo.caption" Class="ml-2 search-actions__results" data-test-id="@TestIdHelper.For("JobSummary")">Results: @GetJobResultSummary(ActiveJob)</MudText>
-                        }
-                    </MudStack>
-                </MudPaper>
-            </MudHidden>
-
-            <MudHidden Breakpoint="Breakpoint.LgAndUp">
-                <MudPaper Elevation="0" Class="ml-4 mr-4 mb-2 pa-3 search-actions-mobile">
-                    <MudStack Spacing="1">
-                        @if (ActiveJob is not null)
-                        {
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mt-1">
-                                <MudChip T="string" Color="@GetJobStatusColor(ActiveJob)" Variant="Variant.Filled" Size="Size.Small" data-test-id="@TestIdHelper.For("JobStatusChip")">@ActiveJob.Status</MudChip>
-                                <MudText Typo="Typo.caption" data-test-id="@TestIdHelper.For("JobSummary")">Results: @GetJobResultSummary(ActiveJob)</MudText>
-                            </MudStack>
-                        }
-                    </MudStack>
-                </MudPaper>
-            </MudHidden>
-
             @if (HasJobs)
             {
                 <MudTabs Class="ml-4 mr-4 mb-4"
@@ -286,7 +260,7 @@
                         <MudTabPanel>
                             <TabContent>
                                 <div class="d-flex align-center">
-                                    <MudIcon Icon="@GetJobStatusIcon(job)" Color="@GetJobStatusColor(job)" Size="Size.Small" Class="mr-1" />
+                                    <MudIcon Icon="@GetJobStatusIcon(job)" Color="@GetJobStatusColor(job)" Size="Size.Small" Class="mr-1" data-test-id="@TestIdHelper.For("JobStatusIcon")" />
                                     <MudText Typo="Typo.body2">@job.Pattern</MudText>
                                     <MudText Typo="Typo.caption" Class="ml-2" data-test-id="@TestIdHelper.For("JobSummary")" > @GetJobResultSummary(job)</MudText>
                                     <MudIconButton Icon="@Icons.Material.Filled.Close"
@@ -296,16 +270,6 @@
                                                    OnClick="@(async () => await CloseJob(job))" />
                                 </div>
                             </TabContent>
-                            <ChildContent>
-                                <MudHidden Breakpoint="Breakpoint.SmAndDown">
-                                    <MudStack Spacing="1" Class="pa-3">
-                                        <MudText Typo="Typo.subtitle2">@job.Pattern</MudText>
-                                        <MudText Typo="Typo.body2">Category: @job.Category</MudText>
-                                        <MudText Typo="Typo.caption">Plugins: @string.Join(", ", job.Plugins)</MudText>
-                                        <MudText Typo="Typo.caption">Status: @job.Status</MudText>
-                                    </MudStack>
-                                </MudHidden>
-                            </ChildContent>
                         </MudTabPanel>
                     }
                 </MudTabs>  
