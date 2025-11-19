@@ -1,0 +1,82 @@
+.pieces-progress-canvas {
+    --pieces-progress-canvas-linear-height: 44px;
+    --pieces-progress-canvas-linear-padding-y: var(--mud-spacing-1);
+    padding: var(--mud-spacing-3);
+    border-radius: 16px;
+    background-color: transparent;
+    display: block;
+}
+
+.pieces-progress-canvas__linear {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border-radius: 12px;
+    border: 1px solid var(--mud-palette-lines-default);
+    overflow: hidden;
+    min-height: var(--pieces-progress-canvas-linear-height);
+    cursor: pointer;
+    outline: none;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+    .pieces-progress-canvas__linear:focus-visible {
+        box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.35);
+    }
+
+    .pieces-progress-canvas__linear:hover {
+        transform: translateY(-1px);
+    }
+
+.pieces-progress-canvas__linear-bar {
+    position: absolute;
+    inset: 0;
+    background-color: transparent;
+    transition: opacity 0.2s ease;
+}
+
+.pieces-progress-canvas__linear-overlay {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--pieces-progress-canvas-linear-padding-y) var(--mud-spacing-3);
+    padding-inline-start: max(calc(var(--mud-spacing-3) * 2.5), 24px);
+    color: inherit;
+    background: linear-gradient(to right, rgba(17, 24, 39, 0.28), rgba(17, 24, 39, 0));
+    mix-blend-mode: normal;
+}
+
+.mud-theme-dark .pieces-progress-canvas__linear-overlay {
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+}
+
+.pieces-progress-canvas__icon {
+    transition: transform 0.2s ease;
+}
+
+.pieces-progress-canvas__surface {
+    margin-top: var(--mud-spacing-3);
+    padding: var(--mud-spacing-3);
+    border-radius: 12px;
+    border: 1px solid var(--mud-palette-lines-default);
+    background-color: var(--mud-palette-surface);
+}
+
+.mud-theme-dark .pieces-progress-canvas__surface {
+    background-color: var(--mud-palette-background-grey);
+}
+
+.pieces-progress-canvas__canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.pieces-progress-canvas__empty {
+    color: var(--mud-palette-text-secondary);
+    padding: var(--mud-spacing-2);
+}

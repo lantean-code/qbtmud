@@ -1,0 +1,57 @@
+@using Lantean.QBitTorrentClient.Models
+@using MudBlazor
+@using System.Globalization
+
+<MudPaper Class="pieces-progress-svg" Elevation="0">
+    <MudStack Spacing="1">
+        <MudTooltip Text="@LinearTooltip" Placement="Placement.Top">
+            <div class="pieces-progress-svg__linear" role="button" tabindex="0" aria-expanded="@_showSvg.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" @onclick="ToggleSvg" @onkeydown="HandleLinearKeyDown">
+                <div class="pieces-progress-svg__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
+                <div class="pieces-progress-svg__linear-overlay">
+                    <MudText Typo="Typo.body2" Class="pl-2">@LinearSummary</MudText>
+                    <MudIcon Icon="@ToggleIcon" Class="pieces-progress-svg__icon" />
+                </div>
+            </div>
+        </MudTooltip>
+
+        <MudCollapse Expanded="@_showSvg">
+            <MudPaper Class="pieces-progress-svg__surface" Elevation="0">
+                @if (!HasPieceData)
+                {
+                    <MudText Typo="Typo.body2" Class="pieces-progress-svg__empty">@SvgEmptyText</MudText>
+                }
+                else if (ColumnsForCurrentBreakpoint == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="pieces-progress-svg__empty">@SvgHiddenText</MudText>
+                }
+                else
+                {
+                    <svg class="pieces-progress-svg__grid"
+                         role="img"
+                         aria-label="@SvgAriaLabel"
+                         viewBox="@_viewBox"
+                         preserveAspectRatio="xMidYMid meet">
+                        <defs>
+                            <style>
+                                .pieces-progress-svg__rect { stroke: @StrokeColor; stroke-width: 0.03; }
+                                .pieces-progress-svg__rect--downloaded { fill: @DownloadedColor; }
+                                .pieces-progress-svg__rect--downloading { fill: @DownloadingColor; }
+                                .pieces-progress-svg__rect--pending { fill: @PendingFillColor; stroke: @PendingStrokeColor; stroke-width: 0.06; stroke-dasharray: 0.4 0.9; stroke-linecap: round; }
+                            </style>
+                        </defs>
+                        @foreach (var cell in Cells)
+                        {
+                            <rect class="pieces-progress-svg__rect @cell.CssClass"
+                                  x="@cell.X.ToString("0.###", CultureInfo.InvariantCulture)"
+                                  y="@cell.Y.ToString("0.###", CultureInfo.InvariantCulture)"
+                                  width="@cell.Width.ToString("0.###", CultureInfo.InvariantCulture)"
+                                  height="@cell.Height.ToString("0.###", CultureInfo.InvariantCulture)">
+                                <title>@cell.Tooltip</title>
+                            </rect>
+                        }
+                    </svg>
+                }
+            </MudPaper>
+        </MudCollapse>
+    </MudStack>
+</MudPaper>

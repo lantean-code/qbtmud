@@ -1,0 +1,33 @@
+@typeparam T
+@inherits SubmittableDialog
+
+<MudDialog>
+    <DialogContent>
+        <MudCard Class="w-100" Elevation="0">
+            <MudGrid>
+                @for (var i = 0; i < OrderedColumns.Length; i++)
+                {
+                    var item = OrderedColumns[i];
+                    var column = Columns.First(c => c.Id == item);
+                    var index = i;
+                    <MudItem xs="7">
+                        <MudCheckBox T="bool" ValueChanged="@(c => SetSelected(c, column.Id))" Label="@column.Header" LabelPlacement="Placement.End" Value="@(SelectedColumnsInternal.Contains(column.Id))" />
+                    </MudItem>
+                    <MudItem xs="3">
+                        <MudTextField T="string" Value="@(GetValue(column.Width, column.Id))" ValueChanged="@(c => SetWidth(c, column.Id))" Label="Width" Variant="Variant.Text" HelperText="px" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.WidthNormal" OnAdornmentClick="@(c => SetWidth("auto", column.Id))" />
+                    </MudItem>
+                    <MudItem xs="1">
+                        <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowUp" Disabled="@(index == 0)" OnClick="@(e => MoveUp(index))" />
+                    </MudItem>
+                    <MudItem xs="1">
+                        <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowDown" Disabled="@(index == Columns.Count - 1)" OnClick="@(e => MoveDown(index))" />
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudCard>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
