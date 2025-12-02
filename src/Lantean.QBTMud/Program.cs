@@ -1,4 +1,5 @@
 using Blazored.LocalStorage;
+using Blazored.SessionStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
@@ -48,6 +49,7 @@ namespace Lantean.QBTMud
             builder.Services.AddSingleton<IRssDataManager, RssDataManager>();
 
             builder.Services.AddBlazoredLocalStorage();
+            builder.Services.AddBlazoredSessionStorage();
             builder.Services.AddSingleton<IClipboardService, ClipboardService>();
             builder.Services.AddTransient<IKeyboardService, KeyboardService>();
 
