@@ -7,6 +7,7 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
+using System.Net;
 
 namespace Lantean.QBTMud.Layout
 {
@@ -355,7 +356,11 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            var decoded = Uri.UnescapeDataString(downloadValue);
+            var decoded = WebUtility.UrlDecode(downloadValue);
+            if (string.IsNullOrWhiteSpace(decoded))
+            {
+                return;
+            }
 
             if (!IsValidDownloadValue(decoded))
             {
