@@ -579,7 +579,17 @@ namespace Lantean.QBTMud.Pages
 
             StopPolling();
             _pollingCancellationToken = new CancellationTokenSource();
-            _pollingTask = Task.Run(() => PollSearchJobsAsync(_pollingCancellationToken.Token));
+            _pollingTask = Task.Run(() => PollSearchJobsAsync(_pollingCancellationToken.Token))
+                .ContinueWith(
+                    t =>
+                    {
+                        // Observe faults to prevent unobserved exceptions and to allow restart.
+                        if (t.IsFaulted)
+                        {
+                            HandlePollingFailure(t.Exception);
+                        }
+                    },
+                    TaskScheduler.Current);
         }
 
         private void StopPollingIfAllJobsCompleted()
@@ -629,6 +639,10 @@ namespace Lantean.QBTMud.Pages
             {
                 // Expected during disposal.
             }
+            catch (Exception exception)
+            {
+                HandlePollingFailure(exception);
+            }
         }
 
         private async Task SynchronizeJobsAsync(CancellationToken cancellationToken)
@@ -647,6 +661,11 @@ namespace Lantean.QBTMud.Pages
             catch (HttpRequestException exception)
             {
                 HandleConnectionFailure(exception);
+                return;
+            }
+            catch (Exception exception)
+            {
+                HandlePollingFailure(exception);
                 return;
             }
 
@@ -722,6 +741,10 @@ namespace Lantean.QBTMud.Pages
                 job.SetError("Failed to load results.");
                 Snackbar.Add($"Failed to load results for \"{job.Pattern}\": {exception.Message}", Severity.Error);
                 StopPollingIfAllJobsCompleted();
+            }
+            catch (Exception exception)
+            {
+                HandlePollingFailure(exception);
             }
         }
 
@@ -1171,6 +1194,21 @@ namespace Lantean.QBTMud.Pages
             {
                 job.SetError("Connection lost.");
             }
+        }
+
+        private void HandlePollingFailure(Exception? exception)
+        {
+            foreach (var job in _jobs)
+            {
+                job.SetError("Search polling failed.");
+            }
+
+            if (exception is not null)
+            {
+                Snackbar.Add($"Search polling stopped: {exception.GetBaseException().Message}", Severity.Error);
+            }
+
+            StopPolling();
         }
 
         protected virtual void Dispose(bool disposing)

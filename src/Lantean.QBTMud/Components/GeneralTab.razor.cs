@@ -48,6 +48,11 @@ namespace Lantean.QBTMud.Components
             {
                 Properties = await ApiClient.GetTorrentProperties(Hash);
             }
+            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+            {
+                _timerCancellationToken.CancelIfNotDisposed();
+                return;
+            }
             catch (HttpRequestException)
             {
                 return;
@@ -83,6 +88,11 @@ namespace Lantean.QBTMud.Components
                             try
                             {
                                 Properties = await ApiClient.GetTorrentProperties(Hash);
+                            }
+                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+                            {
+                                _timerCancellationToken.CancelIfNotDisposed();
+                                return;
                             }
                             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
                             {

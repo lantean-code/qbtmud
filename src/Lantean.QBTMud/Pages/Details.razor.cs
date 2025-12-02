@@ -36,6 +36,20 @@ namespace Lantean.QBTMud.Pages
 
         protected bool ShowTabs { get; set; } = true;
 
+        protected override void OnParametersSet()
+        {
+            base.OnParametersSet();
+
+            if (!IsTorrentAvailable())
+            {
+                ShowTabs = false;
+                NavigationManager.NavigateToHome(forceLoad: true);
+                return;
+            }
+
+            ShowTabs = true;
+        }
+
         private string GetName()
         {
             if (Hash is null || MainData is null)
@@ -54,6 +68,16 @@ namespace Lantean.QBTMud.Pages
         protected void NavigateBack()
         {
             NavigationManager.NavigateToHome();
+        }
+
+        private bool IsTorrentAvailable()
+        {
+            if (MainData is null || string.IsNullOrWhiteSpace(Hash))
+            {
+                return false;
+            }
+
+            return MainData.Torrents.ContainsKey(Hash);
         }
     }
 }
