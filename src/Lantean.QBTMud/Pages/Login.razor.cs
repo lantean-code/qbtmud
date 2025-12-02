@@ -44,14 +44,5 @@ namespace Lantean.QBTMud.Pages
                 ApiError = "Unable to communicate with the qBittorrent API.";
             }
         }
-
-#if DEBUG
-
-        protected override Task OnInitializedAsync()
-        {
-            return DoLogin("admin", "5FUM5pATq");
-        }
-
-#endif
     }
 }
