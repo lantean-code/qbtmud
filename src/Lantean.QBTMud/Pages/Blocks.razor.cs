@@ -16,8 +16,9 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Blocks : IAsyncDisposable
     {
-        private readonly bool _refreshEnabled = true;
         private const string _selectedTypesStorageKey = "Blocks.SelectedTypes";
+        private const int MaxResults = 500;
+        private readonly bool _refreshEnabled = true;
 
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
@@ -107,6 +108,7 @@ namespace Lantean.QBTMud.Pages
                 Results ??= [];
                 Results.AddRange(results);
                 Model.LastKnownId = results[^1].Id;
+                TrimResults();
             }
         }
 
@@ -228,5 +230,16 @@ namespace Lantean.QBTMud.Pages
             new ColumnDefinition<PeerLog>("Blocked", l => l.Blocked ? "Blocked" : "Banned"),
             new ColumnDefinition<PeerLog>("Reason", l => l.Reason),
         ];
+
+        private void TrimResults()
+        {
+            if (Results is null || Results.Count <= MaxResults)
+            {
+                return;
+            }
+
+            var removeCount = Results.Count - MaxResults;
+            Results.RemoveRange(0, removeCount);
+        }
     }
 }

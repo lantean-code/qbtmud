@@ -15,8 +15,9 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Log : IAsyncDisposable
     {
-        private readonly bool _refreshEnabled = true;
         private const string _selectedTypesStorageKey = "Log.SelectedTypes";
+        private const int MaxResults = 500;
+        private readonly bool _refreshEnabled = true;
 
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
@@ -111,6 +112,7 @@ namespace Lantean.QBTMud.Pages
                 Results ??= [];
                 Results.AddRange(results);
                 Model.LastKnownId = results[^1].Id;
+                TrimResults();
             }
         }
 
@@ -231,5 +233,16 @@ namespace Lantean.QBTMud.Pages
             new ColumnDefinition<QBitTorrentClient.Models.Log>("Timestamp", l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp)),
             new ColumnDefinition<QBitTorrentClient.Models.Log>("Log type", l => l.Type),
         ];
+
+        private void TrimResults()
+        {
+            if (Results is null || Results.Count <= MaxResults)
+            {
+                return;
+            }
+
+            var removeCount = Results.Count - MaxResults;
+            Results.RemoveRange(0, removeCount);
+        }
     }
 }
