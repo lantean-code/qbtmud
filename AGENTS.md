@@ -17,7 +17,7 @@
 - Config/conventions: `.editorconfig`, `.gitattributes`, `nuget.config`, `global.json` (SDK pin).
 
 ## Build, test, publish
-- Prerequisites: .NET 9 SDK (use the version pinned by `global.json` if present).
+- Prerequisites: .NET 10 SDK (use the version pinned by `global.json` if present).
   - Agents must verify the pinned SDK is available in the current environment; if `dotnet --info` does not list the required version, install it (e.g., via `dotnet-install.sh`) before running restore/build/test commands.
 - Restore & build:
   - `dotnet restore`

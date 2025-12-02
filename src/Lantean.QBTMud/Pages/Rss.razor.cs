@@ -12,14 +12,10 @@ using System.Net.Http;
 
 namespace Lantean.QBTMud.Pages
 {
-    public partial class Rss : IAsyncDisposable
+    public partial class Rss
     {
         private const char PathSeparator = '\\';
 
-        private readonly bool _refreshEnabled = true;
-        private readonly CancellationTokenSource _timerCancellationToken = new();
-
-        private bool _disposedValue;
         private RssTreeNode? _selectedNode;
         private RssTreeNode? _contextNode;
         private bool _contextIsEmptyArea;
@@ -69,8 +65,6 @@ namespace Lantean.QBTMud.Pages
 
         protected int UnreadCount => RssList?.UnreadCount ?? 0;
 
-        protected int RefreshInterval => MainData?.ServerState.RefreshInterval ?? 1500;
-
         protected ServerState? ServerState => MainData?.ServerState;
 
         protected bool CanMarkSelectionAsRead => _selectedNode is not null && !IsClientDisconnected;
@@ -80,36 +74,6 @@ namespace Lantean.QBTMud.Pages
         protected override async Task OnInitializedAsync()
         {
             await RefreshRssList(preferUnread: true);
-        }
-
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (!_refreshEnabled)
-            {
-                return;
-            }
-
-            if (!firstRender)
-            {
-                return;
-            }
-
-            using (var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(RefreshInterval)))
-            {
-                while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync())
-                {
-                    try
-                    {
-                        await RefreshRssList(preferredPath: _selectedNode?.Path, preferUnread: _selectedNode?.IsUnread == true);
-                        await InvokeAsync(StateHasChanged);
-                    }
-                    catch (HttpRequestException exception) when (exception.StatusCode == System.Net.HttpStatusCode.Forbidden || exception.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    {
-                        _timerCancellationToken.CancelIfNotDisposed();
-                        return;
-                    }
-                }
-            }
         }
 
         protected IReadOnlyList<RssTreeItem> TreeItems => FeedItems;
@@ -218,6 +182,8 @@ namespace Lantean.QBTMud.Pages
             }
 
             _selectedNode = node;
+            SelectedArticle = null;
+            Article = null;
             UpdateArticlesForSelection();
             await InvokeAsync(StateHasChanged);
         }
@@ -276,11 +242,13 @@ namespace Lantean.QBTMud.Pages
             await DialogWorkflow.InvokeRssRulesDialog();
         }
 
+        protected async Task SelectArticle(RssArticle article)
+        {
+            await HandleArticleSelection(article);
+        }
+
         protected async Task SelectedArticleChanged(string value)
         {
-            Article = null;
-            SelectedArticle = value;
-
             if (RssList is null)
             {
                 return;
@@ -292,17 +260,44 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
+            await HandleArticleSelection(article);
+        }
+
+        private async Task HandleArticleSelection(RssArticle article)
+        {
+            Article = article;
+            SelectedArticle = article.Id;
+
+            if (article.IsRead)
+            {
+                return;
+            }
+
             article.IsRead = true;
-            var localArticle = Articles.FirstOrDefault(a => a.Id == value);
+            var localArticle = Articles.FirstOrDefault(a => a.Id == article.Id);
             if (localArticle is not null)
             {
                 localArticle.IsRead = true;
             }
 
-            Article = article;
-
             await ApiClient.MarkRssItemAsRead(article.Feed, article.Id);
-            await RefreshRssList(preferredPath: _selectedNode?.Path, preferUnread: _selectedNode?.IsUnread == true);
+            UpdateUnreadCountsAfterRead(article);
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private void UpdateUnreadCountsAfterRead(RssArticle article)
+        {
+            if (RssList is null)
+            {
+                return;
+            }
+
+            if (RssList.Feeds.TryGetValue(article.Feed, out var feed) && feed.UnreadCount > 0)
+            {
+                feed.UnreadCount--;
+            }
+
+            RssList.RecalculateCounts();
         }
 
         protected async Task UpdateContextUpdate()
@@ -622,10 +617,13 @@ namespace Lantean.QBTMud.Pages
 
         private void UpdateArticlesForSelection()
         {
+            var previousSelectedArticle = SelectedArticle;
             Articles.Clear();
 
             if (RssList is null || _selectedNode is null)
             {
+                Article = null;
+                SelectedArticle = null;
                 return;
             }
 
@@ -645,8 +643,21 @@ namespace Lantean.QBTMud.Pages
             }
 
             Articles.AddRange(source);
-            Article = Articles.FirstOrDefault();
+
+            Article = Articles.FirstOrDefault(a => a.Id == previousSelectedArticle) ?? Articles.FirstOrDefault();
             SelectedArticle = Article?.Id;
+        }
+
+        protected string GetArticleCssClass(RssArticle article)
+        {
+            var classes = new List<string> { "rss-article-item" };
+            if (string.Equals(SelectedArticle, article.Id, StringComparison.Ordinal))
+            {
+                classes.Add("mud-selected-item");
+                classes.Add("rss-article-item--selected");
+            }
+
+            return string.Join(" ", classes);
         }
 
         private async Task GetRssList()
@@ -731,28 +742,6 @@ namespace Lantean.QBTMud.Pages
             }
 
             return feedPath.StartsWith($"{ancestorPath}{PathSeparator}", StringComparison.Ordinal);
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await DisposeAsync(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual async Task DisposeAsync(bool disposing)
-        {
-            if (!_disposedValue)
-            {
-                if (disposing)
-                {
-                    _timerCancellationToken.Cancel();
-                    _timerCancellationToken.Dispose();
-
-                    await Task.CompletedTask;
-                }
-
-                _disposedValue = true;
-            }
         }
     }
 }

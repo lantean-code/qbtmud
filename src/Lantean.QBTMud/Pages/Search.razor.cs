@@ -17,12 +17,12 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Search : IDisposable
     {
-        private const int ResultsBatchSize = 250;
-        private const int PollIntervalMilliseconds = 1500;
-        private const string SearchPreferencesStorageKey = "Search.Preferences";
-        private const string SearchJobsStorageKey = "Search.Jobs";
+        private const int _resultsBatchSize = 250;
+        private const int _pollIntervalMilliseconds = 1500;
+        private const string _searchPreferencesStorageKey = "Search.Preferences";
+        private const string _searchJobsStorageKey = "Search.Jobs";
 
-        private static readonly IReadOnlyList<(SearchSizeUnit Unit, string Label)> SizeUnitOptions =
+        private static readonly IReadOnlyList<(SearchSizeUnit Unit, string Label)> _sizeUnitOptions =
         [
             (SearchSizeUnit.Bytes, "Bytes"),
             (SearchSizeUnit.Kibibytes, "KiB"),
@@ -34,7 +34,7 @@ namespace Lantean.QBTMud.Pages
         ];
 
         private IReadOnlyList<SearchPlugin>? _plugins;
-        private readonly List<SearchJobViewModel> _jobs = new();
+        private readonly List<SearchJobViewModel> _jobs = [];
         private CancellationTokenSource? _pollingCancellationToken;
         private Task? _pollingTask;
         private bool _disposedValue;
@@ -44,7 +44,7 @@ namespace Lantean.QBTMud.Pages
         private SearchResult? _contextMenuResult;
         private SearchPreferences _preferences = new();
         private bool _preferencesLoaded;
-        private Dictionary<int, SearchJobMetadata> _jobMetadata = new();
+        private Dictionary<int, SearchJobMetadata> _jobMetadata = [];
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -138,7 +138,7 @@ namespace Lantean.QBTMud.Pages
 
         protected bool HasContextResult => _contextMenuResult is not null;
 
-        protected IReadOnlyList<(SearchSizeUnit Unit, string Label)> SizeUnitOptionsList => SizeUnitOptions;
+        protected IReadOnlyList<(SearchSizeUnit Unit, string Label)> SizeUnitOptionsList => _sizeUnitOptions;
 
         protected bool ShowAdvancedFilters { get; set; }
 
@@ -166,7 +166,7 @@ namespace Lantean.QBTMud.Pages
         {
             if (_searchUnavailable)
             {
-                await RemoveStaleMetadataAsync(Array.Empty<int>());
+                await RemoveStaleMetadataAsync([]);
                 return;
             }
 
@@ -183,7 +183,7 @@ namespace Lantean.QBTMud.Pages
 
             if (statuses.Count == 0)
             {
-                await RemoveStaleMetadataAsync(Array.Empty<int>());
+                await RemoveStaleMetadataAsync([]);
                 return;
             }
 
@@ -201,7 +201,7 @@ namespace Lantean.QBTMud.Pages
                 await FetchJobSnapshot(job);
             }
 
-            await RemoveStaleMetadataAsync(statuses.Select(s => s.Id).ToList());
+            await RemoveStaleMetadataAsync(statuses.Select(s => s.Id).ToHashSet());
             EnsurePollingStarted();
         }
 
@@ -328,7 +328,7 @@ namespace Lantean.QBTMud.Pages
                 ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Site", r => r.SiteUrl ?? string.Empty, SiteColumnTemplate, width: 220),
                 ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Published", r => r.PublishedOn ?? 0, PublishedColumnTemplate, width: 150),
                 ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Actions", r => r.FileUrl ?? string.Empty, ActionColumnTemplate, width: 120, tdClass: "no-wrap")
-            };
+            }.AsReadOnly();
         }
 
         private static RenderFragment<RowContext<SearchResult>> NameColumnTemplate => context => builder =>
@@ -524,7 +524,7 @@ namespace Lantean.QBTMud.Pages
             {
                 return HasEnabledPlugins
                     ? EnabledPlugins.Select(plugin => plugin.Name).OrderBy(name => name, comparer).ToArray()
-                    : Array.Empty<string>();
+                    : [];
             }
 
             return Model.SelectedPlugins.OrderBy(value => value, comparer).ToArray();
@@ -599,7 +599,13 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            try { _pollingCancellationToken?.Cancel(); } catch (ObjectDisposedException) { }
+            try
+            {
+                _pollingCancellationToken?.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
             _pollingCancellationToken?.Dispose();
             _pollingCancellationToken = null;
             _pollingTask = null;
@@ -607,7 +613,7 @@ namespace Lantean.QBTMud.Pages
 
         private async Task PollSearchJobsAsync(CancellationToken cancellationToken)
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(PollIntervalMilliseconds));
+            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_pollIntervalMilliseconds));
             try
             {
                 while (!cancellationToken.IsCancellationRequested)
@@ -694,7 +700,7 @@ namespace Lantean.QBTMud.Pages
         {
             try
             {
-                var results = await ApiClient.GetSearchResults(job.Id, ResultsBatchSize, job.CurrentOffset);
+                var results = await ApiClient.GetSearchResults(job.Id, _resultsBatchSize, job.CurrentOffset);
                 if (results.Results.Count > 0)
                 {
                     job.AppendResults(results.Results);
@@ -736,7 +742,7 @@ namespace Lantean.QBTMud.Pages
         {
             if (job is null || job.Results.Count == 0)
             {
-                return Array.Empty<SearchResult>();
+                return [];
             }
 
             var options = BuildFilterOptions();
@@ -796,7 +802,7 @@ namespace Lantean.QBTMud.Pages
         {
             try
             {
-                var stored = await LocalStorage.GetItemAsync<SearchPreferences>(SearchPreferencesStorageKey);
+                var stored = await LocalStorage.GetItemAsync<SearchPreferences>(_searchPreferencesStorageKey);
                 _preferences = stored ?? new SearchPreferences();
             }
             catch
@@ -813,7 +819,7 @@ namespace Lantean.QBTMud.Pages
         {
             try
             {
-                var stored = await LocalStorage.GetItemAsync<List<SearchJobMetadata>>(SearchJobsStorageKey);
+                var stored = await LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_searchJobsStorageKey);
                 _jobMetadata = stored?.ToDictionary(job => job.Id) ?? new Dictionary<int, SearchJobMetadata>();
             }
             catch
@@ -873,12 +879,12 @@ namespace Lantean.QBTMud.Pages
             _preferences.MinimumSizeUnit = Model.MinimumSizeUnit;
             _preferences.MaximumSizeUnit = Model.MaximumSizeUnit;
 
-            await LocalStorage.SetItemAsync(SearchPreferencesStorageKey, _preferences);
+            await LocalStorage.SetItemAsync(_searchPreferencesStorageKey, _preferences);
         }
 
         private ValueTask SaveJobMetadataAsync()
         {
-            return LocalStorage.SetItemAsync(SearchJobsStorageKey, _jobMetadata.Values.ToList());
+            return LocalStorage.SetItemAsync(_searchJobsStorageKey, _jobMetadata.Values.ToList());
         }
 
         private async Task OnPluginsChanged(IEnumerable<string> values)
@@ -979,7 +985,7 @@ namespace Lantean.QBTMud.Pages
                 Id = jobId,
                 Pattern = $"Job #{jobId}",
                 Category = SearchForm.AllCategoryId,
-                Plugins = new List<string>()
+                Plugins = []
             };
         }
 
@@ -1004,10 +1010,10 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        private async Task RemoveStaleMetadataAsync(IReadOnlyCollection<int> activeJobIds)
+        private async Task RemoveStaleMetadataAsync(HashSet<int> activeJobIds)
         {
             var hasChanges = false;
-            foreach (var jobId in _jobMetadata.Keys.ToList())
+            foreach (var jobId in _jobMetadata.Keys)
             {
                 if (!activeJobIds.Contains(jobId))
                 {

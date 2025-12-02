@@ -23,7 +23,7 @@ namespace Lantean.QBTMud.Models
 
         public string Pattern { get; }
 
-        public IReadOnlyCollection<string> Plugins { get; }
+        public IReadOnlyList<string> Plugins { get; }
 
         public string Category { get; }
 

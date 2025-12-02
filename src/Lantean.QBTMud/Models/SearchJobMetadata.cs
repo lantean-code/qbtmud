@@ -8,6 +8,6 @@ namespace Lantean.QBTMud.Models
 
         public string Category { get; set; } = SearchForm.AllCategoryId;
 
-        public List<string> Plugins { get; set; } = new();
+        public List<string> Plugins { get; set; } = [];
     }
 }

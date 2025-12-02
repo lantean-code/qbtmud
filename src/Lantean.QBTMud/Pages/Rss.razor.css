@@ -1,0 +1,16 @@
+.rss-article-item {
+    border-radius: 4px;
+}
+
+.rss-article-item--selected {
+    background-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+.rss-article-item--selected .mud-list-item-text {
+    color: inherit;
+}
+
+.rss-article-item--selected .mud-icon-root {
+    color: inherit;
+}
