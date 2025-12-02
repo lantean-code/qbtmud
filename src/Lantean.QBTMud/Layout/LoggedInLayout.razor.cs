@@ -41,6 +41,12 @@ namespace Lantean.QBTMud.Layout
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
+        [CascadingParameter]
+        public Breakpoint CurrentBreakpoint { get; set; }
+
+        [CascadingParameter]
+        public Orientation CurrentOrientation { get; set; }
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -86,6 +92,8 @@ namespace Lantean.QBTMud.Layout
         private string? _lastProcessedDownloadToken;
         private string? _pendingDownloadLink;
         private bool _navigationHandlerAttached;
+
+        protected bool ShowStatusLabels => (CurrentBreakpoint > Breakpoint.Md && CurrentOrientation == Orientation.Portrait) || (CurrentBreakpoint > Breakpoint.Lg && CurrentOrientation == Orientation.Landscape);
 
         protected override void OnInitialized()
         {
@@ -530,6 +538,31 @@ namespace Lantean.QBTMud.Layout
 
             var address = hasV4 ? v4 : v6;
             return $"External IP: {address}";
+        }
+
+        private static string? BuildExternalIpValue(ServerState? serverState)
+        {
+            if (serverState is null)
+            {
+                return null;
+            }
+
+            var v4 = serverState.LastExternalAddressV4;
+            var v6 = serverState.LastExternalAddressV6;
+            var hasV4 = !string.IsNullOrWhiteSpace(v4);
+            var hasV6 = !string.IsNullOrWhiteSpace(v6);
+
+            if (!hasV4 && !hasV6)
+            {
+                return null;
+            }
+
+            if (hasV4 && hasV6)
+            {
+                return $"{v4}, {v6}";
+            }
+
+            return hasV4 ? v4 : v6;
         }
 
         private void OnCategoryChanged(string category)

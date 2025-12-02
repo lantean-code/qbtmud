@@ -22,6 +22,8 @@ namespace Lantean.QBTMud.Layout
 
         protected EnhancedErrorBoundary? ErrorBoundary { get; set; }
 
+        protected string AppBarTitle => UseShortTitle ? "qBittorrent" : "qBittorrent Web UI";
+
         protected bool IsDarkMode { get; set; }
 
         protected MudThemeProvider MudThemeProvider { get; set; } = default!;
@@ -31,6 +33,8 @@ namespace Lantean.QBTMud.Layout
         private Menu Menu { get; set; } = default!;
 
         protected MudTheme Theme { get; set; }
+
+        private bool UseShortTitle => CurrentBreakpoint <= Breakpoint.Sm;
 
         public MainLayout()
         {
@@ -113,6 +117,8 @@ namespace Lantean.QBTMud.Layout
 
         private void BreakpointChanged(Breakpoint value)
         {
+            CurrentBreakpoint = value;
+
             if (value <= Breakpoint.Sm && DrawerOpen)
             {
                 _ = SetDrawerOpenAsync(false);
@@ -121,6 +127,10 @@ namespace Lantean.QBTMud.Layout
             if (ErrorDrawerOpen && (ErrorBoundary?.Errors.Count ?? 0) == 0)
             {
                 ErrorDrawerOpen = false;
+                StateHasChanged();
+            }
+            else
+            {
                 StateHasChanged();
             }
         }
