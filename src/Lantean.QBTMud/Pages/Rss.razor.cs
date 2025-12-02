@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -23,6 +25,62 @@ namespace Lantean.QBTMud.Pages
         private bool _pendingRefresh;
         private string? _pendingPreferredPath;
         private bool _pendingPreferUnread;
+        private bool _hasNavigatedForward;
+        private bool _showDetailsPane;
+        private bool _isAnimating;
+        private int _animationToken;
+        private int _previousStartPaneForAnimation;
+        private int ColumnCount => DetermineColumnCount();
+        private int ColumnSpan => ColumnCount switch
+        {
+            1 => 12,
+            2 => 6,
+            _ => 4
+        };
+        private int CurrentStage
+        {
+            get
+            {
+                if (ColumnCount == 1 && !_hasNavigatedForward && !_showDetailsPane)
+                {
+                    return 0;
+                }
+
+                if (_showDetailsPane)
+                {
+                    return 2;
+                }
+
+                if (_selectedNode is not null)
+                {
+                    return 1;
+                }
+
+                return 0;
+            }
+        }
+        private int StartPane => Math.Max(0, CurrentStage - (ColumnCount - 1));
+        private double SlideOffsetPercent => ColumnCount switch
+        {
+            1 => StartPane * 100,
+            2 => StartPane * 50,
+            _ => 0
+        };
+        private string SliderContainerClass => ColumnCount switch
+        {
+            1 => "rss-slider rss-slider--one",
+            2 => "rss-slider rss-slider--two",
+            _ => "rss-slider"
+        };
+        private string SliderTrackClass => ColumnCount switch
+        {
+            1 => "rss-slider__track rss-slider__track--one",
+            2 => "rss-slider__track rss-slider__track--two",
+            _ => "rss-slider__track"
+        };
+        private string SliderTrackStyle => ColumnCount >= 3
+            ? string.Empty
+            : $"transform: translateX(-{SlideOffsetPercent.ToString(CultureInfo.InvariantCulture)}%);";
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -47,6 +105,12 @@ namespace Lantean.QBTMud.Pages
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
+
+        [CascadingParameter]
+        public Breakpoint CurrentBreakpoint { get; set; }
+
+        [CascadingParameter]
+        public Orientation CurrentOrientation { get; set; }
 
         [Parameter]
         public string? Hash { get; set; }
@@ -95,6 +159,21 @@ namespace Lantean.QBTMud.Pages
         protected bool ContextCanUpdateAll => _contextIsEmptyArea && !IsClientDisconnected;
 
         protected bool ContextCanCopyUrl => _contextNode?.Feed is not null;
+
+        protected bool ShowFeedsColumn => StartPane == 0 || ColumnCount >= 3;
+
+        protected bool ShowArticlesColumn => ColumnCount >= 3 || (StartPane <= 1 && StartPane + ColumnCount > 1);
+
+        protected bool ShowDetailsColumn => ColumnCount >= 3 || (StartPane <= 2 && StartPane + ColumnCount > 2);
+
+        protected bool ShowBackToFeedsFromArticles => ColumnCount switch
+        {
+            1 => StartPane > 0 || (_isAnimating && _previousStartPaneForAnimation > 0),
+            2 => StartPane > 0,
+            _ => false
+        };
+
+        protected bool ShowBackToArticlesFromDetails => ColumnCount == 1 && Article is not null;
 
         protected string GetNodeDisplay(RssTreeNode node)
         {
@@ -176,15 +255,19 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
+            var previousStartPane = StartPane;
             if (_selectedNode == node)
             {
                 return;
             }
 
             _selectedNode = node;
+            _hasNavigatedForward = true;
+            _showDetailsPane = false;
             SelectedArticle = null;
             Article = null;
             UpdateArticlesForSelection();
+            TriggerSlideAnimation(previousStartPane);
             await InvokeAsync(StateHasChanged);
         }
 
@@ -244,7 +327,11 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task SelectArticle(RssArticle article)
         {
+            var previousStartPane = StartPane;
+            _hasNavigatedForward = true;
+            _showDetailsPane = true;
             await HandleArticleSelection(article);
+            TriggerSlideAnimation(previousStartPane);
         }
 
         protected async Task SelectedArticleChanged(string value)
@@ -260,7 +347,11 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
+            var previousStartPane = StartPane;
+            _hasNavigatedForward = true;
+            _showDetailsPane = true;
             await HandleArticleSelection(article);
+            TriggerSlideAnimation(previousStartPane);
         }
 
         private async Task HandleArticleSelection(RssArticle article)
@@ -469,6 +560,24 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateToHome();
         }
 
+        protected Task ShowFeedsPanel()
+        {
+            var previousStartPane = StartPane;
+            _selectedNode = null;
+            _hasNavigatedForward = false;
+            _showDetailsPane = false;
+            TriggerSlideAnimation(previousStartPane);
+            return InvokeAsync(StateHasChanged);
+        }
+
+        protected Task ShowArticlesPanel()
+        {
+            var previousStartPane = StartPane;
+            _showDetailsPane = false;
+            TriggerSlideAnimation(previousStartPane);
+            return InvokeAsync(StateHasChanged);
+        }
+
         private async Task AddSubscriptionAtNode(RssTreeNode? node)
         {
             var url = await DialogWorkflow.ShowStringFieldDialog("RSS Feed URL", "Feed URL", null);
@@ -617,6 +726,7 @@ namespace Lantean.QBTMud.Pages
 
         private void UpdateArticlesForSelection()
         {
+            var previousStartPane = StartPane;
             var previousSelectedArticle = SelectedArticle;
             Articles.Clear();
 
@@ -646,6 +756,13 @@ namespace Lantean.QBTMud.Pages
 
             Article = Articles.FirstOrDefault(a => a.Id == previousSelectedArticle) ?? Articles.FirstOrDefault();
             SelectedArticle = Article?.Id;
+
+            if (_showDetailsPane && Article is null)
+            {
+                _showDetailsPane = false;
+            }
+
+            TriggerSlideAnimation(previousStartPane);
         }
 
         protected string GetArticleCssClass(RssArticle article)
@@ -742,6 +859,54 @@ namespace Lantean.QBTMud.Pages
             }
 
             return feedPath.StartsWith($"{ancestorPath}{PathSeparator}", StringComparison.Ordinal);
+        }
+
+        private int DetermineColumnCount()
+        {
+            if (CurrentBreakpoint >= Breakpoint.Lg)
+            {
+                return 3;
+            }
+
+            if (CurrentBreakpoint == Breakpoint.Md)
+            {
+                return CurrentOrientation == Orientation.Landscape ? 3 : 2;
+            }
+
+            if (CurrentBreakpoint == Breakpoint.Sm)
+            {
+                return CurrentOrientation == Orientation.Landscape ? 2 : 1;
+            }
+
+            return 1;
+        }
+
+        private void TriggerSlideAnimation(int previousStartPane)
+        {
+            if (ColumnCount >= 3)
+            {
+                return;
+            }
+
+            var currentStartPane = StartPane;
+            if (currentStartPane == previousStartPane)
+            {
+                return;
+            }
+
+            _isAnimating = true;
+            _previousStartPaneForAnimation = previousStartPane;
+            var token = ++_animationToken;
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(700);
+                if (token == _animationToken)
+                {
+                    _isAnimating = false;
+                    await InvokeAsync(StateHasChanged);
+                }
+            });
         }
     }
 }
