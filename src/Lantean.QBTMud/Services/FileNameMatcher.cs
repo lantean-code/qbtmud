@@ -26,7 +26,7 @@ namespace Lantean.QBTMud.Services
         private const int _maxMatchesPerFile = 250;
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
 
-        public static Dictionary<string, FileRow> GetRenamedFiles(
+        public static IReadOnlyList<FileRow> GetRenamedFiles(
             IEnumerable<FileRow> files,
             string search,
             bool useRegex,
@@ -39,11 +39,11 @@ namespace Lantean.QBTMud.Services
             bool replaceAll,
             int fileEnumerationStart)
         {
-            var matchedFiles = new Dictionary<string, FileRow>();
+            var matchedFiles = new List<FileRow>();
 
             if (string.IsNullOrEmpty(search))
             {
-                return [];
+                return matchedFiles;
             }
 
             // Setup regex options
@@ -62,7 +62,7 @@ namespace Lantean.QBTMud.Services
             }
             catch (ArgumentException)
             {
-                return [];
+                return matchedFiles;
             }
 
             var fileEnumeration = fileEnumerationStart;
@@ -187,12 +187,12 @@ namespace Lantean.QBTMud.Services
 
                     row.NewName = renamed;
                     fileEnumeration++;
-                    matchedFiles.Add(row.Name, row);
+                    matchedFiles.Add(row);
                 }
             }
             catch (RegexMatchTimeoutException)
             {
-                return [];
+                return matchedFiles;
             }
 
             return matchedFiles;
@@ -249,11 +249,6 @@ namespace Lantean.QBTMud.Services
 
         private static string ReplaceBetween(string input, int start, int end, string replacement)
         {
-            if (start < 0 || end > input.Length || start > end)
-            {
-                return input;
-            }
-
             return string.Concat(input.AsSpan(0, start), replacement, input.AsSpan(end));
         }
 

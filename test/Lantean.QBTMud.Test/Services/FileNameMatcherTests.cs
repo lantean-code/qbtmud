@@ -1,7 +1,6 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
-using System.Reflection;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -54,7 +53,64 @@ namespace Lantean.QBTMud.Test.Services
                 5);
 
             result.Should().HaveCount(1);
-            result["FileA"].NewName.Should().Be("DocAlpha.txt");
+            result[0].NewName.Should().Be("DocAlpha.txt");
+        }
+
+        [Fact]
+        public void GIVEN_MultipleMatches_AND_ReplaceAllFalse_WHEN_GetRenamedFiles_THEN_ShouldRenameOnlyFirst()
+        {
+            var rows = new[]
+            {
+                CreateFile("First", "first.txt"),
+                CreateFile("Second", "first.txt")
+            };
+
+            var result = FileNameMatcher.GetRenamedFiles(
+                rows,
+                "first",
+                false,
+                "renamed",
+                false,
+                false,
+                AppliesTo.FilenameExtension,
+                true,
+                false,
+                false,
+                0);
+
+            result.Should().HaveCount(2);
+            result[0].Name.Should().Be("First");
+            result[0].NewName.Should().Be("renamed.txt");
+            result[1].NewName.Should().Be("renamed.txt");
+        }
+
+        [Fact]
+        public void GIVEN_MultipleMatches_AND_ReplaceAllTrue_WHEN_GetRenamedFiles_THEN_ShouldRenameAll()
+        {
+            var rows = new[]
+            {
+                CreateFile("First", "first.txt"),
+                CreateFile("Second", "first.txt")
+            };
+
+            var result = FileNameMatcher.GetRenamedFiles(
+                rows,
+                "first",
+                false,
+                "renamed",
+                false,
+                false,
+                AppliesTo.FilenameExtension,
+                true,
+                false,
+                true,
+                0);
+
+            result.Should().HaveCount(2);
+            result[0].Name.Should().Be("First");
+            result[0].NewName.Should().Be("renamed.txt");
+            result[1].Name.Should().Be("Second");
+            result[1].NewName.Should().Be("renamed.txt");
         }
 
         [Fact]
@@ -129,7 +185,7 @@ namespace Lantean.QBTMud.Test.Services
                 0);
 
             result.Should().HaveCount(1);
-            result["Report"].NewName.Should().Be("report.XxX");
+            result[0].NewName.Should().Be("report.XxX");
         }
 
         [Fact]
@@ -153,7 +209,7 @@ namespace Lantean.QBTMud.Test.Services
                 false,
                 42);
 
-            var renamed = result["File1"].NewName;
+            var renamed = result[0].NewName;
             renamed.Should().Be(@"\prefix-123-file-123-$digits-042.txt");
         }
 
@@ -179,34 +235,86 @@ namespace Lantean.QBTMud.Test.Services
                 false,
                 0);
 
-            var renamed = result["LongFile"].NewName!;
+            var renamed = result[0].NewName!;
             renamed.Length.Should().Be(longName.Length);
             renamed.Take(250).Should().AllSatisfy(c => c.Should().Be('b'));
             renamed.Skip(250).Should().AllSatisfy(c => c.Should().Be('a'));
         }
 
         [Fact]
-        public void GIVEN_StartBeforeZero_WHEN_ReplaceBetweenInvoked_THEN_ShouldReturnOriginal()
+        public void GIVEN_InvalidRegex_WHEN_GetRenamedFiles_THEN_ShouldReturnEmpty()
         {
-            var method = typeof(FileNameMatcher).GetMethod("ReplaceBetween", BindingFlags.NonPublic | BindingFlags.Static)!;
-            var result = (string)method.Invoke(null, new object[] { "sample", -1, 3, "X" })!;
-            result.Should().Be("sample");
+            var rows = new[]
+            {
+                CreateFile("File", "File.txt")
+            };
+
+            var result = FileNameMatcher.GetRenamedFiles(
+                rows,
+                "(",
+                true,
+                "Replacement",
+                false,
+                false,
+                AppliesTo.FilenameExtension,
+                true,
+                false,
+                false,
+                0);
+
+            result.Should().BeEmpty();
+            rows[0].NewName.Should().BeNull();
         }
 
         [Fact]
-        public void GIVEN_EndBeyondLength_WHEN_ReplaceBetweenInvoked_THEN_ShouldReturnOriginal()
+        public void GIVEN_RegexWithEmptyGroup_WHEN_GroupValueIsEmpty_THEN_ShouldSkipEmptyGroupReplacement()
         {
-            var method = typeof(FileNameMatcher).GetMethod("ReplaceBetween", BindingFlags.NonPublic | BindingFlags.Static)!;
-            var result = (string)method.Invoke(null, new object[] { "sample", 2, 20, "X" })!;
-            result.Should().Be("sample");
+            var rows = new[]
+            {
+                CreateFile("File", "File.txt")
+            };
+
+            var result = FileNameMatcher.GetRenamedFiles(
+                rows,
+                "()",
+                true,
+                "X",
+                false,
+                false,
+                AppliesTo.FilenameExtension,
+                true,
+                false,
+                false,
+                0);
+
+            result.Should().HaveCount(1);
+            result[0].NewName.Should().Be("XFile.txt");
         }
 
         [Fact]
-        public void GIVEN_StartGreaterThanEnd_WHEN_ReplaceBetweenInvoked_THEN_ShouldReturnOriginal()
+        public void GIVEN_CatastrophicRegex_WHEN_TimeoutOccurs_THEN_ShouldReturnEmpty()
         {
-            var method = typeof(FileNameMatcher).GetMethod("ReplaceBetween", BindingFlags.NonPublic | BindingFlags.Static)!;
-            var result = (string)method.Invoke(null, new object[] { "sample", 4, 3, "X" })!;
-            result.Should().Be("sample");
+            var longName = new string('a', 50000) + "b";
+            var rows = new[]
+            {
+                CreateFile("Long", longName)
+            };
+
+            var result = FileNameMatcher.GetRenamedFiles(
+                rows,
+                "^(a+)+$",
+                true,
+                "Replacement",
+                false,
+                false,
+                AppliesTo.Filename,
+                true,
+                false,
+                false,
+                0);
+
+            result.Should().BeEmpty();
+            rows[0].NewName.Should().BeNull();
         }
 
         private static FileRow CreateFile(string name, string originalName)

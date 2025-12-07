@@ -42,11 +42,14 @@ namespace Lantean.QBTMud.Services
             Exception exception,
             TimeSpan elapsed)
         {
+            var host = request.RequestUri?.GetComponents(UriComponents.SchemeAndServer, UriFormat.Unescaped) ?? string.Empty;
+            var pathAndQuery = request.RequestUri?.PathAndQuery ?? string.Empty;
+
             _logger.LogError(
                 exception,
                 "Request towards '{Request.Host}{Request.Path}' failed after {Response.ElapsedMilliseconds}ms",
-                request.RequestUri?.GetComponents(UriComponents.SchemeAndServer, UriFormat.Unescaped),
-                request.RequestUri!.PathAndQuery,
+                host,
+                pathAndQuery,
                 elapsed.TotalMilliseconds.ToString("F1"));
         }
     }

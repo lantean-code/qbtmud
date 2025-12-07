@@ -102,7 +102,8 @@ namespace Lantean.QBTMud.Components.Dialogs
             foreach (var item in items)
             {
                 var fileRow = CreateFileRow(item);
-                if (renamedFiles.TryGetValue(fileRow.Name, out var renamedRow))
+                var renamedRow = renamedFiles.FirstOrDefault(r => r.Name == fileRow.Name);
+                if (renamedRow is not null)
                 {
                     yield return renamedRow;
                 }
@@ -482,20 +483,42 @@ namespace Lantean.QBTMud.Components.Dialogs
                 ReplaceAll,
                 FileEnumerationStart);
 
-            foreach (var (_, renamedFile) in renamedFiles.Where(f => !f.Value.IsFolder))
+            if (ReplaceAll)
             {
-                var oldPath = renamedFile.Path + renamedFile.OriginalName;
-                var newPath = renamedFile.Path + renamedFile.NewName;
+                foreach (var renamedFile in renamedFiles.Where(f => !f.IsFolder))
+                {
+                    var oldPath = renamedFile.Path + renamedFile.OriginalName;
+                    var newPath = renamedFile.Path + renamedFile.NewName;
 
-                await ApiClient.RenameFile(Hash, oldPath, newPath);
+                    await ApiClient.RenameFile(Hash, oldPath, newPath);
+                }
+
+                foreach (var renamedFile in renamedFiles.Where(f => f.IsFolder).OrderBy(f => f.Path.Split(Extensions.DirectorySeparator)))
+                {
+                    var oldPath = renamedFile.Path + renamedFile.OriginalName;
+                    var newPath = renamedFile.Path + renamedFile.NewName;
+
+                    await ApiClient.RenameFolder(Hash, oldPath, newPath);
+                }
             }
-
-            foreach (var (_, renamedFile) in renamedFiles.Where(f => f.Value.IsFolder).OrderBy(f => f.Value.Path.Split(Extensions.DirectorySeparator)))
+            else
             {
-                var oldPath = renamedFile.Path + renamedFile.OriginalName;
-                var newPath = renamedFile.Path + renamedFile.NewName;
-
-                await ApiClient.RenameFolder(Hash, oldPath, newPath);
+                var first = renamedFiles.FirstOrDefault();
+                if (first is not null)
+                {
+                    if (first.IsFolder)
+                    {
+                        var oldPath = first.Path + first.OriginalName;
+                        var newPath = first.Path + first.NewName;
+                        await ApiClient.RenameFolder(Hash, oldPath, newPath);
+                    }
+                    else
+                    {
+                        var oldPath = first.Path + first.OriginalName;
+                        var newPath = first.Path + first.NewName;
+                        await ApiClient.RenameFile(Hash, oldPath, newPath);
+                    }
+                }
             }
 
             MudDialog.Close();

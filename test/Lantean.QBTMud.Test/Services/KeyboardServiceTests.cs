@@ -75,6 +75,102 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_KeypressRegistered_WHEN_HandleRepeatKeyPressEventInvoked_THEN_ShouldCallHandler()
+        {
+            _jsRuntime.Invocations.Clear();
+            var criteria = new KeyboardEvent("Enter");
+            _jsRuntime
+                .Setup(js => js.InvokeAsync<IJSVoidResult>(
+                    "qbt.registerKeypressEvent",
+                    It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
+                .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
+            _jsRuntime
+                .Setup(js => js.InvokeAsync<IJSVoidResult>(
+                    "qbt.unregisterKeypressEvent",
+                    It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
+                .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
+            var invoked = false;
+
+            await _target.RegisterKeypressEvent(criteria, _ =>
+            {
+                invoked = true;
+                return Task.CompletedTask;
+            });
+            await _target.HandleKeyPressEvent(new KeyboardEvent("Enter") { Repeat = true });
+
+            invoked.Should().BeTrue();
+            await _target.UnregisterKeypressEvent(criteria);
+        }
+
+        [Fact]
+        public async Task GIVEN_ModifierKeypressRegistered_WHEN_HandleKeyPressEventInvoked_THEN_ShouldCallHandler()
+        {
+            _jsRuntime.Invocations.Clear();
+            var criteria = new KeyboardEvent("K")
+            {
+                CtrlKey = true,
+                ShiftKey = true,
+                AltKey = true,
+                MetaKey = true
+            };
+            _jsRuntime
+                .Setup(js => js.InvokeAsync<IJSVoidResult>(
+                    "qbt.registerKeypressEvent",
+                    It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
+                .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
+            _jsRuntime
+                .Setup(js => js.InvokeAsync<IJSVoidResult>(
+                    "qbt.unregisterKeypressEvent",
+                    It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
+                .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
+            var invoked = false;
+
+            await _target.RegisterKeypressEvent(criteria, _ =>
+            {
+                invoked = true;
+                return Task.CompletedTask;
+            });
+            await _target.HandleKeyPressEvent(new KeyboardEvent("K")
+            {
+                CtrlKey = true,
+                ShiftKey = true,
+                AltKey = true,
+                MetaKey = true
+            });
+
+            invoked.Should().BeTrue();
+            await _target.UnregisterKeypressEvent(criteria);
+        }
+
+        [Fact]
+        public async Task GIVEN_NullKey_WHEN_HandleKeyPressEventInvoked_THEN_ShouldCallHandler()
+        {
+            _jsRuntime.Invocations.Clear();
+            var criteria = new KeyboardEvent(null!);
+            _jsRuntime
+                .Setup(js => js.InvokeAsync<IJSVoidResult>(
+                    "qbt.registerKeypressEvent",
+                    It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
+                .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
+            _jsRuntime
+                .Setup(js => js.InvokeAsync<IJSVoidResult>(
+                    "qbt.unregisterKeypressEvent",
+                    It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
+                .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
+            var invoked = false;
+
+            await _target.RegisterKeypressEvent(criteria, _ =>
+            {
+                invoked = true;
+                return Task.CompletedTask;
+            });
+            await _target.HandleKeyPressEvent(new KeyboardEvent(null!));
+
+            invoked.Should().BeTrue();
+            await _target.UnregisterKeypressEvent(criteria);
+        }
+
+        [Fact]
         public async Task GIVEN_KeypressNotRegistered_WHEN_HandleKeyPressEventInvoked_THEN_ShouldNotCallHandler()
         {
             _jsRuntime.Invocations.Clear();

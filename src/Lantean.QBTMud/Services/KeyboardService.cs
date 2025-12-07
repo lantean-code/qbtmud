@@ -93,7 +93,14 @@ namespace Lantean.QBTMud.Services
 
         private static string GetHandlerKey(KeyboardEvent keyboardEvent)
         {
-            return keyboardEvent.GetCanonicalKey();
+            var key = keyboardEvent.Key ?? string.Empty;
+
+            return string.Concat(
+                key,
+                keyboardEvent.CtrlKey ? '1' : '0',
+                keyboardEvent.ShiftKey ? '1' : '0',
+                keyboardEvent.AltKey ? '1' : '0',
+                keyboardEvent.MetaKey ? '1' : '0');
         }
 
         private sealed record KeyboardHandlerRegistration(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler);

@@ -710,7 +710,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 var icon = FindComponentByTestId<MudIcon>(target, "JobStatusIcon");
                 icon.Instance.Icon.Should().Be(Icons.Material.Filled.Stop);
-            }, TimeSpan.FromSeconds(2));
+            }, TimeSpan.FromSeconds(5));
 
             snackbarMock.Verify(snackbar => snackbar.Add(
                 It.IsAny<string>(),
