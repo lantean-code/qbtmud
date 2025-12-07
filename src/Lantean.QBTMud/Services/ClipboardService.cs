@@ -13,7 +13,14 @@ namespace Lantean.QBTMud.Services
 
         public async Task WriteToClipboard(string text)
         {
-            await _jSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            try
+            {
+                await _jSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            }
+            catch (JSException)
+            {
+                // Clipboard API unavailable or denied; ignore to avoid breaking UI.
+            }
         }
     }
 }

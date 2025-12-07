@@ -10,10 +10,10 @@ namespace Lantean.QBTMud.Components.UI
     public partial class DynamicTable<T> : MudComponentBase
     {
         private static readonly string _typeName = typeof(T).Name;
-        private readonly string _columnSelectionStorageKey = $"DynamicTable{_typeName}.ColumnSelection";
-        private readonly string _columnSortStorageKey = $"DynamicTable{_typeName}.ColumnSort";
-        private readonly string _columnWidthsStorageKey = $"DynamicTable{_typeName}.ColumnWidths";
-        private readonly string _columnOrderStorageKey = $"DynamicTable{_typeName}.ColumnOrder";
+        private readonly string _columnSelectionStorageKey = $"DynamicTable{_typeName}.ColumnSelection.{{_tableId}}";
+        private readonly string _columnSortStorageKey = $"DynamicTable{_typeName}.ColumnSort.{{_tableId}}";
+        private readonly string _columnWidthsStorageKey = $"DynamicTable{_typeName}.ColumnWidths.{{_tableId}}";
+        private readonly string _columnOrderStorageKey = $"DynamicTable{_typeName}.ColumnOrder.{{_tableId}}";
 
         [Inject]
         public ILocalStorageService LocalStorage { get; set; } = default!;
@@ -24,6 +24,13 @@ namespace Lantean.QBTMud.Components.UI
         [Parameter]
         [EditorRequired]
         public IEnumerable<ColumnDefinition<T>> ColumnDefinitions { get; set; } = [];
+
+        /// <summary>
+        /// Optional identifier to scope persisted column/sort state; useful when multiple tables share the same item type.
+        /// </summary>
+        [Parameter]
+        [EditorRequired]
+        public string TableId { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -103,8 +110,13 @@ namespace Lantean.QBTMud.Components.UI
 
         protected override async Task OnInitializedAsync()
         {
+            var columnSelectionStorageKey = _columnSelectionStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+            var columnSortStorageKey = _columnSortStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+            var columnWidthsStorageKey = _columnWidthsStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+            var columnOrderStorageKey = _columnOrderStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+
             HashSet<string> selectedColumns;
-            var storedSelectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(_columnSelectionStorageKey);
+            var storedSelectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(columnSelectionStorageKey);
             if (storedSelectedColumns is not null)
             {
                 selectedColumns = storedSelectedColumns;
@@ -130,7 +142,7 @@ namespace Lantean.QBTMud.Components.UI
             string? sortColumn;
             SortDirection sortDirection;
 
-            var sortData = await LocalStorage.GetItemAsync<SortData>(_columnSortStorageKey);
+            var sortData = await LocalStorage.GetItemAsync<SortData>(columnSortStorageKey);
             if (sortData is not null)
             {
                 sortColumn = sortData.SortColumn;
@@ -156,7 +168,7 @@ namespace Lantean.QBTMud.Components.UI
 
             MarkColumnsDirty();
 
-            var storedColumnsWidths = await LocalStorage.GetItemAsync<Dictionary<string, int?>>(_columnWidthsStorageKey);
+            var storedColumnsWidths = await LocalStorage.GetItemAsync<Dictionary<string, int?>>(columnWidthsStorageKey);
             if (storedColumnsWidths is not null)
             {
                 _columnWidths = storedColumnsWidths;
@@ -271,7 +283,8 @@ namespace Lantean.QBTMud.Components.UI
             {
                 return;
             }
-            await LocalStorage.SetItemAsync(_columnSortStorageKey, new SortData(columnId, sortDirection));
+            var columnSortStorageKey = _columnSortStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+            await LocalStorage.SetItemAsync(columnSortStorageKey, new SortData(columnId, sortDirection));
 
             if (_sortColumn != columnId)
             {
@@ -337,6 +350,7 @@ namespace Lantean.QBTMud.Components.UI
                 await SelectedItemChanged.InvokeAsync(eventArgs.Item);
             }
 
+            await SelectedItemsChangedInternal(SelectedItems);
             await OnRowClick.InvokeAsync(eventArgs);
         }
 
@@ -388,10 +402,14 @@ namespace Lantean.QBTMud.Components.UI
                 return;
             }
 
+            var columnSelectionStorageKey = _columnSelectionStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+            var columnWidthsStorageKey = _columnWidthsStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+            var columnOrderStorageKey = _columnOrderStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+
             if (!SelectedColumns.SetEquals(result.SelectedColumns))
             {
                 SelectedColumns = result.SelectedColumns;
-                await LocalStorage.SetItemAsync(_columnSelectionStorageKey, SelectedColumns);
+                await LocalStorage.SetItemAsync(columnSelectionStorageKey, SelectedColumns);
                 await SelectedColumnsChanged.InvokeAsync(SelectedColumns);
                 MarkColumnsDirty();
             }
@@ -399,14 +417,14 @@ namespace Lantean.QBTMud.Components.UI
             if (!DictionaryEqual(_columnWidths, result.ColumnWidths))
             {
                 _columnWidths = result.ColumnWidths;
-                await LocalStorage.SetItemAsync(_columnWidthsStorageKey, _columnWidths);
+                await LocalStorage.SetItemAsync(columnWidthsStorageKey, _columnWidths);
                 MarkColumnsDirty();
             }
 
             if (!DictionaryEqual(_columnOrder, result.ColumnOrder))
             {
                 _columnOrder = result.ColumnOrder;
-                await LocalStorage.SetItemAsync(_columnOrderStorageKey, _columnOrder);
+                await LocalStorage.SetItemAsync(columnOrderStorageKey, _columnOrder);
                 MarkColumnsDirty();
             }
         }

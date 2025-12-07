@@ -46,7 +46,14 @@ namespace Lantean.QBTMud.Interop
 
         public static async Task WriteToClipboard(this IJSRuntime runtime, string value)
         {
-            await runtime.InvokeVoidAsync("qbt.copyTextToClipboard", value);
+            try
+            {
+                await runtime.InvokeVoidAsync("qbt.copyTextToClipboard", value);
+            }
+            catch (JSException)
+            {
+                // Clipboard API unavailable; ignore to avoid surfacing errors to the user.
+            }
         }
 
         public static async Task ClearSelection(this IJSRuntime runtime)

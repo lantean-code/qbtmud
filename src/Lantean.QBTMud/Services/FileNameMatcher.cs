@@ -1,6 +1,7 @@
 using Lantean.QBTMud.Models;
 using System.Text;
 using System.Text.RegularExpressions;
+using System;
 
 namespace Lantean.QBTMud.Services
 {
@@ -23,6 +24,7 @@ namespace Lantean.QBTMud.Services
     public static class FileNameMatcher
     {
         private const int _maxMatchesPerFile = 250;
+        private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
 
         public static Dictionary<string, FileRow> GetRenamedFiles(
             IEnumerable<FileRow> files,
@@ -53,129 +55,144 @@ namespace Lantean.QBTMud.Services
 
             // Build regex pattern
             var pattern = useRegex ? search : Regex.Escape(search);
-            var regex = new Regex(pattern, options);
+            Regex regex;
+            try
+            {
+                regex = new Regex(pattern, options, RegexTimeout);
+            }
+            catch (ArgumentException)
+            {
+                return [];
+            }
 
             var fileEnumeration = fileEnumerationStart;
 
-            foreach (var row in files)
+            try
             {
-                // Filter files and folders
-                if (!row.IsFolder && !includeFiles)
+                foreach (var row in files)
                 {
-                    continue;
-                }
-                if (row.IsFolder && !includeFolders)
-                {
-                    continue;
-                }
-
-                // Extract file name and extension
-                var fileExtension = Path.GetExtension(row.OriginalName);
-                var fileNameWithoutExt = Path.GetFileNameWithoutExtension(row.OriginalName);
-
-                var targetString = string.Empty;
-                var offset = 0;
-
-                switch (appliesToOption)
-                {
-                    case AppliesTo.FilenameExtension:
-                        targetString = fileNameWithoutExt + fileExtension;
-                        break;
-
-                    case AppliesTo.Filename:
-                        targetString = fileNameWithoutExt;
-                        break;
-
-                    case AppliesTo.Extension:
-                        targetString = fileExtension;
-                        offset = fileNameWithoutExt.Length;
-                        break;
-                }
-
-                // Find matches based on MatchAllOccurrences
-                var matches = new List<Match>();
-                var matchCount = 0;
-
-                if (matchAllOccurrences)
-                {
-                    foreach (Match match in regex.Matches(targetString))
+                    // Filter files and folders
+                    if (!row.IsFolder && !includeFiles)
                     {
-                        matches.Add(match);
-                        matchCount++;
-                        if (matchCount >= _maxMatchesPerFile)
-                        {
+                        continue;
+                    }
+                    if (row.IsFolder && !includeFolders)
+                    {
+                        continue;
+                    }
+
+                    // Extract file name and extension
+                    var fileExtension = Path.GetExtension(row.OriginalName);
+                    var fileNameWithoutExt = Path.GetFileNameWithoutExtension(row.OriginalName);
+
+                    var targetString = string.Empty;
+                    var offset = 0;
+
+                    switch (appliesToOption)
+                    {
+                        case AppliesTo.FilenameExtension:
+                            targetString = fileNameWithoutExt + fileExtension;
                             break;
-                        }
+
+                        case AppliesTo.Filename:
+                            targetString = fileNameWithoutExt;
+                            break;
+
+                        case AppliesTo.Extension:
+                            targetString = fileExtension;
+                            offset = fileNameWithoutExt.Length;
+                            break;
                     }
-                }
-                else
-                {
-                    var match = regex.Match(targetString);
-                    if (match.Success)
+
+                    // Find matches based on MatchAllOccurrences
+                    var matches = new List<Match>();
+                    var matchCount = 0;
+
+                    if (matchAllOccurrences)
                     {
-                        matches.Add(match);
-                    }
-                }
-
-                if (matches.Count == 0)
-                {
-                    continue;
-                }
-
-                var renamed = row.OriginalName;
-
-                for (int i = matches.Count - 1; i >= 0; i--)
-                {
-                    var match = matches[i];
-                    var replacementValue = replacement;
-
-                    // Replace numerical groups
-                    for (var g = 0; g < match.Groups.Count; g++)
-                    {
-                        var groupValue = match.Groups[g].Value;
-                        if (string.IsNullOrEmpty(groupValue))
+                        foreach (Match match in regex.Matches(targetString))
                         {
-                            continue;
+                            matches.Add(match);
+                            matchCount++;
+                            if (matchCount >= _maxMatchesPerFile)
+                            {
+                                break;
+                            }
                         }
-
-                        replacementValue = ReplaceGroup(replacementValue, $"${g}", groupValue, "\\", false);
                     }
-
-                    // Replace named groups
-                    foreach (var groupName in regex.GetGroupNames())
+                    else
                     {
-                        if (int.TryParse(groupName, out _))
+                        var match = regex.Match(targetString);
+                        if (match.Success)
                         {
-                            continue; // Skip numerical group names
+                            matches.Add(match);
+                        }
+                    }
+
+                    if (matches.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    var renamed = row.OriginalName;
+
+                    for (int i = matches.Count - 1; i >= 0; i--)
+                    {
+                        var match = matches[i];
+                        var replacementValue = replacement;
+
+                        // Replace numerical groups
+                        for (var g = 0; g < match.Groups.Count; g++)
+                        {
+                            var groupValue = match.Groups[g].Value;
+                            if (string.IsNullOrEmpty(groupValue))
+                            {
+                                continue;
+                            }
+
+                            replacementValue = ReplaceGroup(replacementValue, $"${g}", groupValue, "\\", false);
                         }
 
-                        var groupValue = match.Groups[groupName].Value;
-                        replacementValue = ReplaceGroup(replacementValue, $"${groupName}", groupValue, "\\", false);
+                        // Replace named groups
+                        foreach (var groupName in regex.GetGroupNames())
+                        {
+                            if (int.TryParse(groupName, out _))
+                            {
+                                continue; // Skip numerical group names
+                            }
+
+                            var groupValue = match.Groups[groupName].Value;
+                            replacementValue = ReplaceGroup(replacementValue, $"${groupName}", groupValue, "\\", false);
+                        }
+
+                        // Replace auxiliary variables (e.g., $d, $dd, $ddd, etc.)
+                        var v = new string('d', 8);
+                        while (v.Length > 0)
+                        {
+                            var fileCount = fileEnumeration.ToString().PadLeft(v.Length, '0');
+                            replacementValue = ReplaceGroup(replacementValue, $"${v}", fileCount, "\\", false);
+                            v = v.Substring(1);
+                        }
+
+                        // Remove empty $ variable
+                        replacementValue = ReplaceGroup(replacementValue, "$", string.Empty, "\\");
+
+                        var matchIndex = match.Index;
+                        var matchLength = match.Length;
+                        var startIndex = matchIndex + offset;
+                        var endIndex = startIndex + matchLength;
+
+                        renamed = ReplaceBetween(renamed, startIndex, endIndex, replacementValue);
                     }
 
-                    // Replace auxiliary variables (e.g., $d, $dd, $ddd, etc.)
-                    var v = new string('d', 8);
-                    while (v.Length > 0)
-                    {
-                        var fileCount = fileEnumeration.ToString().PadLeft(v.Length, '0');
-                        replacementValue = ReplaceGroup(replacementValue, $"${v}", fileCount, "\\", false);
-                        v = v.Substring(1);
-                    }
-
-                    // Remove empty $ variable
-                    replacementValue = ReplaceGroup(replacementValue, "$", string.Empty, "\\");
-
-                    var matchIndex = match.Index;
-                    var matchLength = match.Length;
-                    var startIndex = matchIndex + offset;
-                    var endIndex = startIndex + matchLength;
-
-                    renamed = ReplaceBetween(renamed, startIndex, endIndex, replacementValue);
+                    row.NewName = renamed;
+                    fileEnumeration++;
+                    matchedFiles.Add(row.Name, row);
                 }
-
-                row.NewName = renamed;
-                fileEnumeration++;
-                matchedFiles.Add(row.Name, row);
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return [];
             }
 
             return matchedFiles;

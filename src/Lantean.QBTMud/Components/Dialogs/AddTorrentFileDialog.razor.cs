@@ -26,6 +26,12 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected void Submit()
         {
+            if (Files.Count == 0)
+            {
+                MudDialog.Cancel();
+                return;
+            }
+
             var options = new AddTorrentFileOptions(Files, TorrentOptions.GetTorrentOptions());
             MudDialog.Close(DialogResult.Ok(options));
         }

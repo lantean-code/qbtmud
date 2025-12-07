@@ -113,7 +113,7 @@ namespace Lantean.QBTMud.Services
                 serverState.AllTimeDownloaded.GetValueOrDefault(),
                 serverState.AllTimeUploaded.GetValueOrDefault(),
                 serverState.AverageTimeQueue.GetValueOrDefault(),
-                serverState.ConnectionStatus!,
+                serverState.ConnectionStatus ?? string.Empty,
                 serverState.DHTNodes.GetValueOrDefault(),
                 serverState.DownloadInfoData.GetValueOrDefault(),
                 serverState.DownloadInfoSpeed.GetValueOrDefault(),
@@ -170,7 +170,30 @@ namespace Lantean.QBTMud.Services
                         continue;
                     }
 
-                    if (torrentList.TagState.Remove(normalizedTag))
+                    var removedFromTags = torrentList.Tags.Remove(normalizedTag);
+                    var removedFromState = torrentList.TagState.Remove(normalizedTag);
+
+                    var affectedHashes = new List<string>();
+                    foreach (var (hash, torrent) in torrentList.Torrents)
+                    {
+                        if (!torrent.Tags.Remove(normalizedTag))
+                        {
+                            continue;
+                        }
+
+                        affectedHashes.Add(hash);
+                        if (torrent.Tags.Count == 0)
+                        {
+                            torrentList.TagState[FilterHelper.TAG_UNTAGGED].Add(hash);
+                        }
+                    }
+
+                    if (removedFromTags || affectedHashes.Count != 0)
+                    {
+                        dataChanged = true;
+                    }
+
+                    if (removedFromState || affectedHashes.Count != 0)
                     {
                         filterChanged = true;
                     }
@@ -266,6 +289,22 @@ namespace Lantean.QBTMud.Services
                     {
                         torrentList.Trackers[url] = hashes;
                         dataChanged = true;
+                        filterChanged = true;
+
+                        if (!torrentList.TrackersState.TryGetValue(url, out var trackerSet))
+                        {
+                            trackerSet = new HashSet<string>(StringComparer.Ordinal);
+                            torrentList.TrackersState[url] = trackerSet;
+                        }
+                        else
+                        {
+                            trackerSet.Clear();
+                        }
+
+                        foreach (var hash in hashes.Where(torrentList.Torrents.ContainsKey))
+                        {
+                            trackerSet.Add(hash);
+                        }
                     }
                 }
             }
@@ -573,10 +612,10 @@ namespace Lantean.QBTMud.Services
                 torrent.AmountLeft.GetValueOrDefault(),
                 torrent.AutomaticTorrentManagement.GetValueOrDefault(),
                 torrent.Availability.GetValueOrDefault(),
-                torrent.Category!,
+                torrent.Category ?? string.Empty,
                 torrent.Completed.GetValueOrDefault(),
                 torrent.CompletionOn.GetValueOrDefault(),
-                torrent.ContentPath!,
+                torrent.ContentPath ?? string.Empty,
                 torrent.DownloadLimit.GetValueOrDefault(),
                 torrent.DownloadSpeed.GetValueOrDefault(),
                 torrent.Downloaded.GetValueOrDefault(),
@@ -584,13 +623,13 @@ namespace Lantean.QBTMud.Services
                 torrent.EstimatedTimeOfArrival.GetValueOrDefault(),
                 torrent.FirstLastPiecePriority.GetValueOrDefault(),
                 torrent.ForceStart.GetValueOrDefault(),
-                torrent.InfoHashV1!,
-                torrent.InfoHashV2!,
+                torrent.InfoHashV1 ?? string.Empty,
+                torrent.InfoHashV2 ?? string.Empty,
                 torrent.LastActivity.GetValueOrDefault(),
-                torrent.MagnetUri!,
+                torrent.MagnetUri ?? string.Empty,
                 torrent.MaxRatio.GetValueOrDefault(),
                 torrent.MaxSeedingTime.GetValueOrDefault(),
-                torrent.Name!,
+                torrent.Name ?? string.Empty,
                 torrent.NumberComplete.GetValueOrDefault(),
                 torrent.NumberIncomplete.GetValueOrDefault(),
                 torrent.NumberLeeches.GetValueOrDefault(),
@@ -599,18 +638,18 @@ namespace Lantean.QBTMud.Services
                 torrent.Progress.GetValueOrDefault(),
                 torrent.Ratio.GetValueOrDefault(),
                 torrent.RatioLimit.GetValueOrDefault(),
-                torrent.SavePath!,
+                torrent.SavePath ?? string.Empty,
                 torrent.SeedingTime.GetValueOrDefault(),
                 torrent.SeedingTimeLimit.GetValueOrDefault(),
                 torrent.SeenComplete.GetValueOrDefault(),
                 torrent.SequentialDownload.GetValueOrDefault(),
                 torrent.Size.GetValueOrDefault(),
-                torrent.State!,
+                torrent.State ?? string.Empty,
                 torrent.SuperSeeding.GetValueOrDefault(),
                 normalizedTags,
                 torrent.TimeActive.GetValueOrDefault(),
                 torrent.TotalSize.GetValueOrDefault(),
-                torrent.Tracker!,
+                torrent.Tracker ?? string.Empty,
                 torrent.TrackersCount.GetValueOrDefault(),
                 torrent.HasTrackerError.GetValueOrDefault(),
                 torrent.HasTrackerWarning.GetValueOrDefault(),
@@ -1446,38 +1485,18 @@ namespace Lantean.QBTMud.Services
                     continue;
                 }
 
-                long sizeSum = 0;
-                double progressSum = 0;
-                double availabilitySum = 0;
-                var firstChild = true;
-                var aggregatedPriority = Priority.Normal;
+                var accumulator = new DirectoryAccumulator();
 
                 foreach (var child in folder.Children.Values)
                 {
                     var childItem = child.Item!;
-                    sizeSum += childItem.Size;
-
-                    if (firstChild)
-                    {
-                        aggregatedPriority = childItem.Priority;
-                        firstChild = false;
-                    }
-                    else if (aggregatedPriority != childItem.Priority)
-                    {
-                        aggregatedPriority = Priority.Mixed;
-                    }
-
-                    if (childItem.Priority != Priority.DoNotDownload)
-                    {
-                        progressSum += childItem.Progress * childItem.Size;
-                        availabilitySum += childItem.Availability * childItem.Size;
-                    }
+                    accumulator.Add(childItem.Priority, childItem.Progress, childItem.Size, childItem.Availability);
                 }
 
-                folderItem.Size = sizeSum;
-                folderItem.Progress = sizeSum > 0 ? (float)(progressSum / sizeSum) : 0;
-                folderItem.Availability = sizeSum > 0 ? (float)(availabilitySum / sizeSum) : 0;
-                folderItem.Priority = firstChild ? Priority.Normal : aggregatedPriority;
+                folderItem.Size = accumulator.TotalSize;
+                folderItem.Progress = accumulator.ResolveProgress();
+                folderItem.Availability = accumulator.ResolveAvailability();
+                folderItem.Priority = accumulator.ResolvePriority();
             }
 
             foreach (var node in nodes.Values)
@@ -1529,8 +1548,8 @@ namespace Lantean.QBTMud.Services
         {
             public long TotalSize { get; private set; }
 
-            private long _activeSize;
-            private double _progressSum;
+            private double _downloadedSum;
+            private long _availabilityWeight;
             private double _availabilitySum;
             private Priority? _priority;
             private bool _mixedPriority;
@@ -1539,11 +1558,15 @@ namespace Lantean.QBTMud.Services
             {
                 TotalSize += size;
 
-                if (priority != Priority.DoNotDownload)
+                if (priority == Priority.DoNotDownload)
                 {
-                    _activeSize += size;
-                    _progressSum += progress * size;
+                    _downloadedSum += size;
+                }
+                else
+                {
+                    _downloadedSum += progress * size;
                     _availabilitySum += availability * size;
+                    _availabilityWeight += size;
                 }
 
                 if (!_priority.HasValue)
@@ -1568,12 +1591,12 @@ namespace Lantean.QBTMud.Services
 
             public float ResolveProgress()
             {
-                if (_activeSize == 0 || TotalSize == 0)
+                if (TotalSize == 0)
                 {
                     return 0f;
                 }
 
-                var value = _progressSum / _activeSize;
+                var value = _downloadedSum / TotalSize;
                 if (value < 0)
                 {
                     return 0f;
@@ -1589,12 +1612,12 @@ namespace Lantean.QBTMud.Services
 
             public float ResolveAvailability()
             {
-                if (_activeSize == 0 || TotalSize == 0)
+                if (_availabilityWeight == 0)
                 {
                     return 0f;
                 }
 
-                return (float)(_availabilitySum / _activeSize);
+                return (float)(_availabilitySum / _availabilityWeight);
             }
         }
 

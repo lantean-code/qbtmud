@@ -112,9 +112,9 @@ namespace Lantean.QBTMud.Pages
                 Snackbar?.Add("Cookies saved.", Severity.Success);
                 await LoadCookiesAsync();
             }
-            catch (HttpRequestException exception)
+            catch (HttpRequestException)
             {
-                Snackbar?.Add($"Unable to save cookies: {exception.Message}", Severity.Error);
+                Snackbar?.Add("Unable to save cookies. Please try again.", Severity.Error);
             }
             finally
             {
@@ -137,9 +137,9 @@ namespace Lantean.QBTMud.Pages
                     _cookies.Add(CreateEntry(cookie));
                 }
             }
-            catch (HttpRequestException exception)
+            catch (HttpRequestException)
             {
-                Snackbar?.Add($"Unable to load cookies: {exception.Message}", Severity.Error);
+                Snackbar?.Add("Unable to load cookies. Please try again.", Severity.Error);
             }
             finally
             {

@@ -1,31 +1,31 @@
 @typeparam T
 @inherits MudComponentBase
 
-<MudTable
-    Items="OrderedItems" 
-    T="T" 
-    Hover="true"
-    FixedHeader="true" 
-    HeaderClass="table-head-bordered" 
-    Dense="true" 
-    Breakpoint="Breakpoint.None" 
-    Bordered="true" 
-    Striped="Striped" 
-    Square="true" 
-    LoadingProgressColor="Color.Info" 
-    HorizontalScrollbar="true" 
-    Virtualize="true"
-    AllowUnsorted="false"
-    SelectOnRowClick="false" 
-    Loading="@(Items is null)" 
-    MultiSelection="MultiSelection"
-    SelectedItems="SelectedItems"
-    SelectedItemsChanged="SelectedItemsChangedInternal"
-    OnRowClick="OnRowClickInternal"
-    RowStyleFunc="RowStyleFuncInternal"
-    RowClassFunc="RowClassFuncInternal"
-    Class="@Class"
-    @attributes="UserAttributes">
+    <MudTable
+        Items="OrderedItems" 
+        T="T" 
+        Hover="true"
+        FixedHeader="true" 
+        HeaderClass="table-head-bordered" 
+        Dense="true" 
+        Breakpoint="Breakpoint.None" 
+        Bordered="true" 
+        Striped="Striped" 
+        Square="true" 
+        LoadingProgressColor="Color.Info" 
+        HorizontalScrollbar="true" 
+        Virtualize="true"
+        AllowUnsorted="false"
+        SelectOnRowClick="false" 
+        Loading="@(Items is null)" 
+        MultiSelection="MultiSelection"
+        SelectedItems="SelectedItems"
+        SelectedItemsChanged="SelectedItemsChangedInternal"
+        OnRowClick="OnRowClickInternal"
+        RowStyleFunc="RowStyleFuncInternal"
+        RowClassFunc="RowClassFuncInternal"
+        Class="@Class"
+        @attributes="UserAttributes">
     <ColGroup>
         @if (MultiSelection)
         {

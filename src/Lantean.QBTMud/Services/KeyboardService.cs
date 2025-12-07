@@ -73,6 +73,11 @@ namespace Lantean.QBTMud.Services
                     }
 
                     _keyboardHandlers.Clear();
+
+                    if (_dotNetObjectReference is not null)
+                    {
+                        _dotNetObjectReference.Dispose();
+                    }
                 }
 
                 _disposedValue = true;

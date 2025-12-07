@@ -100,9 +100,20 @@ namespace Lantean.QBTMud.Services
 
             foreach (var file in options.Files)
             {
-                var stream = file.OpenReadStream(MaxFileSize);
-                streams.Add(stream);
-                files.Add(file.Name, stream);
+                try
+                {
+                    var stream = file.OpenReadStream(MaxFileSize);
+                    streams.Add(stream);
+
+                    var fileName = GetUniqueFileName(file.Name, files.Keys);
+                    files.Add(fileName, stream);
+                }
+                catch (Exception exception)
+                {
+                    await DisposeStreamsAsync(streams);
+                    _snackbar.Add($"Unable to read \"{file.Name}\": {exception.Message}", Severity.Error);
+                    return;
+                }
             }
 
             var addTorrentParams = CreateAddTorrentParams(options);
@@ -113,6 +124,11 @@ namespace Lantean.QBTMud.Services
             {
                 addTorrentResult = await _apiClient.AddTorrent(addTorrentParams);
             }
+            catch (HttpRequestException)
+            {
+                _snackbar.Add("Unable to add torrent. Please try again.", Severity.Error);
+                return;
+            }
             finally
             {
                 foreach (var stream in streams)
@@ -122,6 +138,29 @@ namespace Lantean.QBTMud.Services
             }
 
             ShowAddTorrentSnackbarMessage(addTorrentResult);
+        }
+
+        private static string GetUniqueFileName(string fileName, IEnumerable<string> existingNames)
+        {
+            if (!existingNames.Contains(fileName, StringComparer.OrdinalIgnoreCase))
+            {
+                return fileName;
+            }
+
+            var nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+            var extension = Path.GetExtension(fileName);
+            var counter = 1;
+
+            while (true)
+            {
+                var candidate = $"{nameWithoutExtension} ({counter}){extension}";
+                if (!existingNames.Contains(candidate, StringComparer.OrdinalIgnoreCase))
+                {
+                    return candidate;
+                }
+
+                counter++;
+            }
         }
 
         public async Task InvokeAddTorrentLinkDialog(string? url = null)
@@ -142,7 +181,16 @@ namespace Lantean.QBTMud.Services
             var addTorrentParams = CreateAddTorrentParams(options);
             addTorrentParams.Urls = options.Urls;
 
-            var addTorrentResult = await _apiClient.AddTorrent(addTorrentParams);
+            QBitTorrentClient.Models.AddTorrentResult addTorrentResult;
+            try
+            {
+                addTorrentResult = await _apiClient.AddTorrent(addTorrentParams);
+            }
+            catch (HttpRequestException)
+            {
+                _snackbar.Add("Unable to add torrent. Please try again.", Severity.Error);
+                return;
+            }
 
             ShowAddTorrentSnackbarMessage(addTorrentResult);
         }
@@ -315,6 +363,16 @@ namespace Lantean.QBTMud.Services
             {
                 await onSuccess(result);
             }
+        }
+
+        private static async Task DisposeStreamsAsync(List<Stream> streams)
+        {
+            foreach (var stream in streams)
+            {
+                await stream.DisposeAsync();
+            }
+
+            streams.Clear();
         }
 
         public async Task InvokeUploadRateDialog(long rate, IEnumerable<string> hashes)

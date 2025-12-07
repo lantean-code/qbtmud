@@ -33,19 +33,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             if (SelectedColumnsInternal.Count == 0)
             {
-                if (SelectedColumns.Count != 0)
+                var source = SelectedColumns.Count != 0
+                    ? SelectedColumns
+                    : Columns.Where(c => c.Enabled).Select(c => c.Id);
+
+                foreach (var selectedColumn in source)
                 {
-                    foreach (var selectedColumn in SelectedColumns)
-                    {
-                        SelectedColumnsInternal.Add(selectedColumn);
-                    }
-                }
-                else
-                {
-                    foreach (var column in Columns.Where(c => c.Enabled))
-                    {
-                        SelectedColumns.Add(column.Id);
-                    }
+                    SelectedColumnsInternal.Add(selectedColumn);
                 }
             }
 
@@ -138,7 +132,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected void MoveDown(int index)
         {
-            if (index >= Columns.Count)
+            if (index < 0 || index >= Columns.Count - 1)
             {
                 return;
             }

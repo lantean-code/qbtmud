@@ -9,6 +9,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class FilterOptionsDialog<T>
     {
         private static readonly IReadOnlyList<PropertyInfo> _properties = typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
+        private List<PropertyFilterDefinition<T>> _workingDefinitions = [];
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -20,21 +21,23 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override void OnParametersSet()
         {
-            // as
+            _workingDefinitions = FilterDefinitions is null
+                ? new List<PropertyFilterDefinition<T>>()
+                : FilterDefinitions.Select(def => new PropertyFilterDefinition<T>(def.Column, def.Operator, def.Value)).ToList();
         }
 
         protected void RemoveDefinition(PropertyFilterDefinition<T> definition)
         {
-            if (FilterDefinitions is null)
+            if (_workingDefinitions is null)
             {
                 return;
             }
-            FilterDefinitions.Remove(definition);
+            _workingDefinitions.Remove(definition);
         }
 
         protected void DefinitionOperatorChanged(PropertyFilterDefinition<T> definition, string @operator)
         {
-            var existingDefinition = FilterDefinitions?.Find(d => d == definition);
+            var existingDefinition = _workingDefinitions?.Find(d => d == definition);
             if (existingDefinition is null)
             {
                 return;
@@ -45,7 +48,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected void DefinitionValueChanged(PropertyFilterDefinition<T> definition, object? value)
         {
-            var existingDefinition = FilterDefinitions?.Find(d => d == definition);
+            var existingDefinition = _workingDefinitions?.Find(d => d == definition);
             if (existingDefinition is null)
             {
                 return;
@@ -88,7 +91,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected async Task AddDefinition()
         {
-            if (Column is null || Operator is null || (FilterDefinitions?.Exists(d => d.Column == Column) ?? false))
+            if (Column is null || Operator is null || (_workingDefinitions?.Exists(d => d.Column == Column) ?? false))
             {
                 return;
             }
@@ -100,8 +103,8 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private void CreateAndAdd(string column, string @operator, object? value)
         {
-            FilterDefinitions ??= [];
-            FilterDefinitions.Add(new PropertyFilterDefinition<T>(column, @operator, value));
+            _workingDefinitions ??= [];
+            _workingDefinitions.Add(new PropertyFilterDefinition<T>(column, @operator, value));
 
             Column = null;
             Operator = null;
@@ -115,12 +118,12 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected void Submit()
         {
-            if (Column is not null && Operator is not null && !(FilterDefinitions?.Exists(d => d.Column == Column) ?? false))
+            if (Column is not null && Operator is not null && !(_workingDefinitions?.Exists(d => d.Column == Column) ?? false))
             {
                 CreateAndAdd(Column, Operator, Value);
             }
 
-            MudDialog.Close(DialogResult.Ok(FilterDefinitions));
+            MudDialog.Close(DialogResult.Ok(_workingDefinitions));
         }
 
         protected override Task Submit(KeyboardEvent keyboardEvent)

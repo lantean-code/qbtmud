@@ -13,6 +13,7 @@ namespace Lantean.QBTMud.Components
     public partial class TorrentActions : IAsyncDisposable
     {
         private bool _disposedValue;
+        private bool _deleteShortcutRegistered;
 
         private List<UIAction>? _actions;
 
@@ -141,9 +142,10 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
+            if (firstRender && RenderType == RenderType.Menu)
             {
-                await KeyboardService.RegisterKeypressEvent("Delete", k => Remove());
+                // Shortcut is registered only while the actions menu is open.
+                await UnregisterDeleteShortcutAsync();
             }
         }
 
@@ -156,9 +158,20 @@ namespace Lantean.QBTMud.Components
             }
         }
 
-        protected void ActionsMenuOpenChanged(bool value)
+        protected async Task ActionsMenuOpenChanged(bool value)
         {
             OverlayVisible = value;
+            if (RenderType == RenderType.Menu)
+            {
+                if (value)
+                {
+                    await RegisterDeleteShortcutAsync();
+                }
+                else
+                {
+                    await UnregisterDeleteShortcutAsync();
+                }
+            }
         }
 
         protected async Task Stop()
@@ -187,6 +200,48 @@ namespace Lantean.QBTMud.Components
             {
                 NavigationManager.NavigateToHome();
             }
+        }
+
+        private Task RemoveViaShortcut()
+        {
+            if (!ActionsMenuVisible() || Disabled)
+            {
+                return Task.CompletedTask;
+            }
+
+            return Remove();
+        }
+
+        private bool ActionsMenuVisible()
+        {
+            if (RenderType != RenderType.Menu || ActionsMenu is null)
+            {
+                return false;
+            }
+
+            return OverlayVisible;
+        }
+
+        private async Task RegisterDeleteShortcutAsync()
+        {
+            if (_deleteShortcutRegistered)
+            {
+                return;
+            }
+
+            await KeyboardService.RegisterKeypressEvent("Delete", k => RemoveViaShortcut());
+            _deleteShortcutRegistered = true;
+        }
+
+        private async Task UnregisterDeleteShortcutAsync()
+        {
+            if (!_deleteShortcutRegistered)
+            {
+                return;
+            }
+
+            await KeyboardService.UnregisterKeypressEvent("Delete");
+            _deleteShortcutRegistered = false;
         }
 
         protected async Task SetLocation()
@@ -760,7 +815,7 @@ namespace Lantean.QBTMud.Components
             {
                 if (disposing)
                 {
-                    await KeyboardService.UnregisterKeypressEvent("Delete");
+                    await UnregisterDeleteShortcutAsync();
                 }
 
                 _disposedValue = true;

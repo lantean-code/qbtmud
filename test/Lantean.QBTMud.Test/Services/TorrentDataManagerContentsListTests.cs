@@ -78,51 +78,34 @@ namespace Lantean.QBTMud.Test.Services
             // arrange
             var files = new[]
             {
-        // ".unwanted" folder is skipped as a directory, but the file remains under "a"
-        new FileData(10, "a/.unwanted/skip.bin", 10, 0.8f, QbtPriority.Normal, false, Array.Empty<int>(), 2.0f),
-        new FileData(11, "a/b/c1.txt", 30, 0.4f, QbtPriority.High, false, Array.Empty<int>(), 1.0f),
-        new FileData(12, "a/b/c2.txt", 70, 0.9f, QbtPriority.DoNotDownload, false, Array.Empty<int>(), 1.5f),
-    };
+                new FileData(10, "a/.unwanted/skip.bin", 10, 0.8f, QbtPriority.Normal, false, Array.Empty<int>(), 2.0f),
+                new FileData(11, "a/b/c1.txt", 30, 0.4f, QbtPriority.High, false, Array.Empty<int>(), 1.0f),
+                new FileData(12, "a/b/c2.txt", 70, 0.9f, QbtPriority.DoNotDownload, false, Array.Empty<int>(), 1.5f),
+            };
 
             // act
             var result = _target.CreateContentsList(files);
 
-            // assert: keys present
             result.ContainsKey("a").Should().BeTrue();
             result.ContainsKey("a/b").Should().BeTrue();
             result.ContainsKey("a/.unwanted/skip.bin").Should().BeTrue();
             result.ContainsKey("a/b/c1.txt").Should().BeTrue();
             result.ContainsKey("a/b/c2.txt").Should().BeTrue();
 
-            // NOTE: CreateContentsList aggregates using TOTAL size as denominator (not "active" size).
-            // For "a/b":
-            //   size = 30 + 70 = 100
-            //   progressSum = 0.4*30 (DND child excluded from sum) = 12
-            //   availabilitySum = 1.0*30 = 30
-            //   => progress = 12 / 100 = 0.12
-            //   => availability = 30 / 100 = 0.3
-            //   priority = Mixed (High vs DoNotDownload)
             var ab = result["a/b"];
             ab.IsFolder.Should().BeTrue();
             ab.Level.Should().Be(1);
             ab.Size.Should().Be(100);
-            ab.Progress.Should().BeApproximately(0.12f, 1e-6f);
-            ab.Availability.Should().BeApproximately(0.3f, 1e-6f);
+            ab.Progress.Should().BeApproximately(0.82f, 1e-6f);
+            ab.Availability.Should().BeApproximately(1.0f, 1e-6f);
             ab.Priority.Should().Be(MudPriority.Mixed);
 
-            // For "a":
-            // children: "a/.unwanted/skip.bin" (size=10, p=0.8, avail=2.0, Normal)
-            //           "a/b" (size=100, p=0.12, avail=0.3, Mixed)
-            //   size = 110
-            //   progressSum = 0.8*10 + 0.12*100 = 8 + 12 = 20  => progress = 20/110 ≈ 0.181818...
-            //   availabilitySum = 2.0*10 + 0.3*100 = 20 + 30 = 50 => availability = 50/110 ≈ 0.454545...
-            //   priority = Mixed (Normal vs Mixed)
             var a = result["a"];
             a.IsFolder.Should().BeTrue();
             a.Level.Should().Be(0);
             a.Size.Should().Be(110);
-            a.Progress.Should().BeApproximately(20f / 110f, 1e-6f);
-            a.Availability.Should().BeApproximately(50f / 110f, 1e-6f);
+            a.Progress.Should().BeApproximately(90f / 110f, 1e-6f);
+            a.Availability.Should().BeApproximately(120f / 110f, 1e-6f);
             a.Priority.Should().Be(MudPriority.Mixed);
 
             // folder indices are less than min file index (10); deeper folder created later => smaller index
@@ -132,7 +115,7 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public void GIVEN_AllChildrenDoNotDownload_WHEN_CreateContentsList_THEN_FolderProgressAndAvailabilityAreZero_AndPriorityDND()
+        public void GIVEN_AllChildrenDoNotDownload_WHEN_CreateContentsList_THEN_FolderShowsCompleteAndDoNotDownloadPriority()
         {
             // arrange
             var files = new[]
@@ -149,9 +132,29 @@ namespace Lantean.QBTMud.Test.Services
             var d = result["d"];
             d.IsFolder.Should().BeTrue();
             d.Size.Should().Be(100);
-            d.Progress.Should().Be(0f);      // activeSize == 0
-            d.Availability.Should().Be(0f);  // activeSize == 0
+            d.Progress.Should().Be(1f);
+            d.Availability.Should().Be(0f);
             d.Priority.Should().Be(MudPriority.DoNotDownload);
+            d.Remaining.Should().Be(0);
+        }
+
+        [Fact]
+        public void GIVEN_DoNotDownloadAndCompletedFile_WHEN_CreateContentsList_THEN_RemainingIsZero()
+        {
+            var files = new[]
+            {
+                new FileData(1, "f/keep.bin", 100, 1f, QbtPriority.Normal, false, Array.Empty<int>(), 1.0f),
+                new FileData(2, "f/skip.bin", 120, 0f, QbtPriority.DoNotDownload, false, Array.Empty<int>(), 0.5f)
+            };
+
+            var result = _target.CreateContentsList(files);
+
+            var folder = result["f"];
+            folder.Size.Should().Be(220);
+            folder.Progress.Should().Be(1f);
+            folder.Remaining.Should().Be(0);
+            folder.Priority.Should().Be(MudPriority.Mixed);
+            folder.Availability.Should().Be(1f);
         }
 
         // ---------------------------
@@ -222,8 +225,27 @@ namespace Lantean.QBTMud.Test.Services
             var folder = contents["folder1"];
             folder.IsFolder.Should().BeTrue();
             folder.Size.Should().Be(100);
-            folder.Progress.Should().BeApproximately(0.4f, 1e-6f);
+            folder.Progress.Should().BeApproximately(0.82f, 1e-6f);
             folder.Availability.Should().BeApproximately(1.0f, 1e-6f);
+            folder.Priority.Should().Be(MudPriority.Mixed);
+        }
+
+        [Fact]
+        public void GIVEN_DoNotDownloadFile_WHEN_MergeContentsList_THEN_RemainingExcludesSkippedBytes()
+        {
+            var contents = new Dictionary<string, ContentItem>();
+            var files = new[]
+            {
+                new FileData(3, "folder/keep.bin", 400, 1f, QbtPriority.Normal, false, Array.Empty<int>(), 1.0f),
+                new FileData(4, "folder/skip.bin", 100, 0.25f, QbtPriority.DoNotDownload, false, Array.Empty<int>(), 0.2f)
+            };
+
+            var changed = _target.MergeContentsList(files, contents);
+
+            changed.Should().BeTrue();
+            var folder = contents["folder"];
+            folder.Progress.Should().Be(1f);
+            folder.Remaining.Should().Be(0);
             folder.Priority.Should().Be(MudPriority.Mixed);
         }
 

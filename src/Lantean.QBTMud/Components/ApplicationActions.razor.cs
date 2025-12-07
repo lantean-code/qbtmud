@@ -172,9 +172,9 @@ namespace Lantean.QBTMud.Components
                 await ApiClient.StartAllTorrents();
                 Snackbar?.Add("All torrents started.", Severity.Success);
             }
-            catch (HttpRequestException exception)
+            catch (HttpRequestException)
             {
-                Snackbar?.Add($"Unable to start torrents: {exception.Message}", Severity.Error);
+                Snackbar?.Add($"Unable to start torrents.", Severity.Error);
             }
             finally
             {
@@ -201,9 +201,9 @@ namespace Lantean.QBTMud.Components
                 await ApiClient.StopAllTorrents();
                 Snackbar?.Add("All torrents stopped.", Severity.Info);
             }
-            catch (HttpRequestException exception)
+            catch (HttpRequestException)
             {
-                Snackbar?.Add($"Unable to stop torrents: {exception.Message}", Severity.Error);
+                Snackbar?.Add($"Unable to stop torrents.", Severity.Error);
             }
             finally
             {

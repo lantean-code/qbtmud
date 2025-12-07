@@ -217,6 +217,58 @@ namespace Lantean.QBTMud.Test.Services
             result.ServerState.GlobalRatio.Should().Be(7.5f);
         }
 
+        [Fact]
+        public void GIVEN_TorrentWithNullStrings_WHEN_CreateMainData_THEN_UsesEmptyStrings()
+        {
+            var hash = "nulls";
+            var clientTorrent = new ClientModels.Torrent
+            {
+                Hash = hash,
+                Name = null,
+                Category = null,
+                ContentPath = null,
+                SavePath = null,
+                DownloadPath = null,
+                RootPath = null,
+                MagnetUri = null,
+                InfoHashV1 = null,
+                InfoHashV2 = null,
+                State = null,
+                Tracker = null,
+                Tags = null,
+                TrackersCount = 0
+            };
+
+            var client = new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: true,
+                torrents: new Dictionary<string, ClientModels.Torrent> { [hash] = clientTorrent },
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: new Dictionary<string, IReadOnlyList<string>>(),
+                trackersRemoved: null,
+                serverState: null);
+
+            var result = _target.CreateMainData(client);
+
+            var torrent = result.Torrents[hash];
+            torrent.Name.Should().Be(string.Empty);
+            torrent.Category.Should().Be(string.Empty);
+            torrent.ContentPath.Should().Be(string.Empty);
+            torrent.SavePath.Should().Be(string.Empty);
+            torrent.DownloadPath.Should().Be(string.Empty);
+            torrent.RootPath.Should().Be(string.Empty);
+            torrent.MagnetUri.Should().Be(string.Empty);
+            torrent.InfoHashV1.Should().Be(string.Empty);
+            torrent.InfoHashV2.Should().Be(string.Empty);
+            torrent.State.Should().Be(string.Empty);
+            torrent.Tracker.Should().Be(string.Empty);
+            torrent.Tags.Should().BeEmpty();
+        }
+
         // -------------------- MergeMainData: removals --------------------
 
         [Fact]
@@ -308,6 +360,402 @@ namespace Lantean.QBTMud.Test.Services
             }
 
             existing.TrackersState[FilterHelper.TRACKER_ALL].Should().NotContain(hash);
+        }
+
+        [Fact]
+        public void GIVEN_TrackerMembershipChanges_WHEN_Merge_THEN_TrackersStateIsRebuilt_And_Flagged()
+        {
+            var hash = "h1";
+            var client = new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: true,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    [hash] = new ClientModels.Torrent { Name = "T1", State = "downloading", UploadSpeed = 0, Tags = Array.Empty<string>(), Tracker = "udp://t1", TrackersCount = 1, Category = string.Empty }
+                },
+                torrentsRemoved: null,
+                categories: new Dictionary<string, ClientModels.Category>(),
+                categoriesRemoved: null,
+                tags: Array.Empty<string>(),
+                tagsRemoved: null,
+                trackers: new Dictionary<string, IReadOnlyList<string>> { ["udp://t1"] = new[] { hash } },
+                trackersRemoved: null,
+                serverState: null);
+            var existing = _target.CreateMainData(client);
+
+            var delta = new ClientModels.MainData(
+                responseId: 2,
+                fullUpdate: false,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: new Dictionary<string, IReadOnlyList<string>> { ["udp://t1"] = Array.Empty<string>() },
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeTrue();
+
+            existing.Trackers["udp://t1"].Should().BeEmpty();
+            existing.TrackersState["udp://t1"].Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_TrackerIncludesUnknownHash_WHEN_Merge_THEN_StateExcludesUnknownHash()
+        {
+            var knownHash = "h1";
+            var client = new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: true,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    [knownHash] = new ClientModels.Torrent { Name = "T1", State = "downloading", UploadSpeed = 0, Tags = Array.Empty<string>(), Tracker = "udp://t1", TrackersCount = 1, Category = string.Empty }
+                },
+                torrentsRemoved: null,
+                categories: new Dictionary<string, ClientModels.Category>(),
+                categoriesRemoved: null,
+                tags: Array.Empty<string>(),
+                tagsRemoved: null,
+                trackers: new Dictionary<string, IReadOnlyList<string>> { ["udp://t1"] = new[] { knownHash } },
+                trackersRemoved: null,
+                serverState: null);
+            var existing = _target.CreateMainData(client);
+
+            var delta = new ClientModels.MainData(
+                responseId: 2,
+                fullUpdate: false,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: new Dictionary<string, IReadOnlyList<string>> { ["udp://t1"] = new[] { knownHash, "ghost" } },
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeTrue();
+            existing.TrackersState["udp://t1"].Should().ContainSingle().Which.Should().Be(knownHash);
+        }
+
+        [Fact]
+        public void GIVEN_TagsRemovedContainsEmpty_WHEN_Merge_THEN_NoChanges()
+        {
+            var existing = _target.CreateMainData(
+                new ClientModels.MainData(0, true, null, null, null, null, null, null, new Dictionary<string, IReadOnlyList<string>>(), null, null));
+
+            var delta = new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: false,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: new[] { "   " },
+                trackers: null,
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged);
+
+            changed.Should().BeFalse();
+            filterChanged.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_TagRemovedNotPresentOnTorrent_WHEN_Merge_THEN_NoTagStateChange()
+        {
+            var hash = "h1";
+            var clientTorrent = new ClientModels.Torrent
+            {
+                Name = "T1",
+                State = "downloading",
+                UploadSpeed = 0,
+                Tags = new[] { "keep" },
+                Tracker = string.Empty,
+                TrackersCount = 0,
+                Category = string.Empty
+            };
+
+            var existing = _target.CreateMainData(
+                new ClientModels.MainData(
+                    responseId: 1,
+                    fullUpdate: true,
+                    torrents: new Dictionary<string, ClientModels.Torrent> { [hash] = clientTorrent },
+                    torrentsRemoved: null,
+                    categories: new Dictionary<string, ClientModels.Category>(),
+                    categoriesRemoved: null,
+                    tags: new[] { "keep" },
+                    tagsRemoved: null,
+                    trackers: new Dictionary<string, IReadOnlyList<string>>(),
+                    trackersRemoved: null,
+                    serverState: null));
+
+            var delta = new ClientModels.MainData(
+                responseId: 2,
+                fullUpdate: false,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: new[] { "missing" },
+                trackers: null,
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged);
+
+            changed.Should().BeFalse();
+            filterChanged.Should().BeFalse();
+            existing.Torrents[hash].Tags.Should().ContainSingle().Which.Should().Be("keep");
+            existing.TagState.Should().ContainKey("keep");
+        }
+
+        [Fact]
+        public void GIVEN_NewCategory_WHEN_Merge_THEN_CategoryAddedAndFlagged()
+        {
+            var existing = _target.CreateMainData(
+                new ClientModels.MainData(0, true, null, null, null, null, null, null, new Dictionary<string, IReadOnlyList<string>>(), null, null));
+
+            var delta = new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: false,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: new Dictionary<string, ClientModels.Category> { ["New"] = new ClientModels.Category("New", "/new", null) },
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: null,
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeTrue();
+            existing.Categories.Should().ContainKey("New");
+        }
+
+        [Fact]
+        public void GIVEN_NewTrackerUrl_WHEN_Merge_THEN_TrackerStateCreated()
+        {
+            var hash = "h1";
+            var clientTorrent = new ClientModels.Torrent
+            {
+                Name = "T1",
+                State = "downloading",
+                UploadSpeed = 0,
+                Tags = Array.Empty<string>(),
+                Tracker = string.Empty,
+                TrackersCount = 0,
+                Category = string.Empty
+            };
+
+            var existing = _target.CreateMainData(
+                new ClientModels.MainData(
+                    responseId: 1,
+                    fullUpdate: true,
+                    torrents: new Dictionary<string, ClientModels.Torrent> { [hash] = clientTorrent },
+                    torrentsRemoved: null,
+                    categories: new Dictionary<string, ClientModels.Category>(),
+                    categoriesRemoved: null,
+                    tags: Array.Empty<string>(),
+                    tagsRemoved: null,
+                    trackers: new Dictionary<string, IReadOnlyList<string>>(),
+                    trackersRemoved: null,
+                    serverState: null));
+
+            var delta = new ClientModels.MainData(
+                responseId: 2,
+                fullUpdate: false,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: new Dictionary<string, IReadOnlyList<string>> { ["udp://new"] = new[] { hash } },
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeTrue();
+            existing.Trackers.Should().ContainKey("udp://new");
+        }
+
+        [Fact]
+        public void GIVEN_MissingStatusEntries_WHEN_TorrentRemoved_THEN_RemovalContinuesGracefully()
+        {
+            var hash = "h1";
+            var torrents = new Dictionary<string, Torrent> { [hash] = BuildTorrent(hash) };
+            var tags = new HashSet<string>();
+            var categories = new Dictionary<string, Category>();
+            var trackers = new Dictionary<string, IReadOnlyList<string>>();
+            var tagState = new Dictionary<string, HashSet<string>> { [FilterHelper.TAG_ALL] = new HashSet<string> { hash }, [FilterHelper.TAG_UNTAGGED] = new HashSet<string>() };
+            var categoriesState = new Dictionary<string, HashSet<string>> { [FilterHelper.CATEGORY_ALL] = new HashSet<string>(), [FilterHelper.CATEGORY_UNCATEGORIZED] = new HashSet<string>() };
+            var statusState = new Dictionary<string, HashSet<string>> { { nameof(Status.Downloading), new HashSet<string> { hash } } };
+            var trackersState = new Dictionary<string, HashSet<string>> { { FilterHelper.TRACKER_ALL, new HashSet<string> { hash } } };
+            var main = new MainData(torrents, tags, categories, trackers, new ServerState(), tagState, categoriesState, statusState, trackersState);
+
+            var delta = new ClientModels.MainData(1, false, null, new[] { hash }, null, null, null, null, null, null, null);
+
+            var changed = _target.MergeMainData(delta, main, out var filterChanged);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeTrue();
+            main.Torrents.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_EmptyTags_WHEN_UpdateTagStateForAddition_THEN_UntaggedUpdated()
+        {
+            var tagState = new Dictionary<string, HashSet<string>> { { FilterHelper.TAG_UNTAGGED, new HashSet<string>() } };
+            var categoriesState = new Dictionary<string, HashSet<string>>();
+            var statusState = new Dictionary<string, HashSet<string>>();
+            var trackersState = new Dictionary<string, HashSet<string>>();
+            var main = new MainData(new Dictionary<string, Torrent>(), Array.Empty<string>(), new Dictionary<string, Category>(), new Dictionary<string, IReadOnlyList<string>>(), new ServerState(), tagState, categoriesState, statusState, trackersState);
+            TorrentDataManager.UpdateTagStateForAddition(main, BuildTorrent("h1"), "h1");
+
+            main.TagState[FilterHelper.TAG_UNTAGGED].Should().Contain("h1");
+        }
+
+        [Fact]
+        public void GIVEN_NewTags_WHEN_UpdateTagStateForUpdate_THEN_UnTaggedCleared_And_TagsAdded()
+        {
+            var tagState = new Dictionary<string, HashSet<string>> { { FilterHelper.TAG_UNTAGGED, new HashSet<string> { "h1" } } };
+            var main = new MainData(new Dictionary<string, Torrent>(), Array.Empty<string>(), new Dictionary<string, Category>(), new Dictionary<string, IReadOnlyList<string>>(), new ServerState(), tagState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
+            var newTags = new List<string> { string.Empty, "x" };
+
+            TorrentDataManager.UpdateTagStateForUpdate(main, "h1", new List<string>(), newTags);
+
+            main.TagState[FilterHelper.TAG_UNTAGGED].Should().BeEmpty();
+            main.TagState["x"].Should().Contain("h1");
+        }
+
+        [Fact]
+        public void GIVEN_PreviousTags_WHEN_UpdateTagStateForRemoval_THEN_RemovedFromSets()
+        {
+            var tagState = new Dictionary<string, HashSet<string>>
+            {
+                { FilterHelper.TAG_UNTAGGED, new HashSet<string>() },
+                { "x", new HashSet<string> { "h1" } }
+            };
+            var main = new MainData(new Dictionary<string, Torrent>(), Array.Empty<string>(), new Dictionary<string, Category>(), new Dictionary<string, IReadOnlyList<string>>(), new ServerState(), tagState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
+
+            TorrentDataManager.UpdateTagStateForRemoval(main, "h1", new List<string> { "x", string.Empty });
+
+            main.TagState["x"].Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_PreviousCategoryAndSubcategoriesEnabled_WHEN_UpdateCategoryState_THEN_RemovedFromPreviousKeys()
+        {
+            var categoriesState = new Dictionary<string, HashSet<string>>
+            {
+                { FilterHelper.CATEGORY_UNCATEGORIZED, new HashSet<string>() },
+                { "A/B", new HashSet<string> { "h1" } },
+                { "A", new HashSet<string> { "h1" } }
+            };
+            var main = new MainData(new Dictionary<string, Torrent>(), Array.Empty<string>(), new Dictionary<string, Category>(), new Dictionary<string, IReadOnlyList<string>>(), new ServerState { UseSubcategories = true }, new Dictionary<string, HashSet<string>>(), categoriesState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
+            TorrentDataManager.UpdateCategoryState(main, BuildTorrent("h1", "New", new[] { "x" }), "h1", "A/B");
+
+            main.CategoriesState["A/B"].Should().BeEmpty();
+            main.CategoriesState["A"].Should().BeEmpty();
+            main.CategoriesState["New"].Should().Contain("h1");
+        }
+
+        [Fact]
+        public void GIVEN_NoPreviousCategory_WHEN_UpdateCategoryStateForRemoval_THEN_RemovedFromUncategorized()
+        {
+            var categoriesState = new Dictionary<string, HashSet<string>>
+            {
+                { FilterHelper.CATEGORY_UNCATEGORIZED, new HashSet<string> { "h1" } }
+            };
+            var main = new MainData(new Dictionary<string, Torrent>(), Array.Empty<string>(), new Dictionary<string, Category>(), new Dictionary<string, IReadOnlyList<string>>(), new ServerState(), new Dictionary<string, HashSet<string>>(), categoriesState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
+
+            TorrentDataManager.UpdateCategoryStateForRemoval(main, "h1", null);
+
+            main.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].Should().BeEmpty();
+        }
+
+        private Torrent BuildTorrent(string hash, string category = "", IEnumerable<string>? tags = null, string tracker = "", string state = "downloading")
+        {
+            return _target.CreateTorrent(
+                hash,
+                new ClientModels.Torrent
+                {
+                    Name = "Name",
+                    Category = category,
+                    Tags = tags?.ToArray(),
+                    Tracker = tracker,
+                    State = state,
+                    UploadSpeed = 0,
+                    TrackersCount = 0
+                });
+        }
+
+        [Fact]
+        public void GIVEN_TagRemoved_WHEN_Merge_THEN_TagDroppedFromLists_And_UntaggedUpdated()
+        {
+            var hash1 = "h1";
+            var hash2 = "h2";
+            var client = new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: true,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    [hash1] = new ClientModels.Torrent { Name = "T1", State = "downloading", UploadSpeed = 0, Tags = new[] { "x" }, Tracker = string.Empty, TrackersCount = 0, Category = string.Empty },
+                    [hash2] = new ClientModels.Torrent { Name = "T2", State = "downloading", UploadSpeed = 0, Tags = new[] { "x", "y" }, Tracker = string.Empty, TrackersCount = 0, Category = string.Empty }
+                },
+                torrentsRemoved: null,
+                categories: new Dictionary<string, ClientModels.Category>(),
+                categoriesRemoved: null,
+                tags: new[] { "x", "y" },
+                tagsRemoved: null,
+                trackers: new Dictionary<string, IReadOnlyList<string>>(),
+                trackersRemoved: null,
+                serverState: null);
+            var existing = _target.CreateMainData(client);
+
+            var delta = new ClientModels.MainData(
+                responseId: 2,
+                fullUpdate: false,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: new[] { "x" },
+                trackers: null,
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeTrue();
+
+            existing.Tags.Should().ContainSingle().Which.Should().Be("y");
+            existing.TagState.Should().NotContainKey("x");
+
+            existing.Torrents[hash1].Tags.Should().BeEmpty();
+            existing.Torrents[hash2].Tags.Should().ContainSingle().Which.Should().Be("y");
+
+            existing.TagState[FilterHelper.TAG_UNTAGGED].Should().Contain(hash1);
+            existing.TagState[FilterHelper.TAG_UNTAGGED].Should().NotContain(hash2);
         }
 
         // -------------------- MergeMainData: additions (from empty) --------------------
@@ -503,7 +951,7 @@ namespace Lantean.QBTMud.Test.Services
             var changed = _target.MergeMainData(delta, list, out var filterChanged);
 
             changed.Should().BeTrue();
-            filterChanged.Should().BeFalse();
+            filterChanged.Should().BeTrue();
 
             list.Trackers["t1"].Should().Equal(h, "other");
             list.Categories["C"].SavePath.Should().Be("/b");
