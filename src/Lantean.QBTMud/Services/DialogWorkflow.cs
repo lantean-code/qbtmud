@@ -666,6 +666,11 @@ namespace Lantean.QBTMud.Services
                 addTorrentParams.SavePath = options.SavePath;
             }
 
+            if (!string.IsNullOrWhiteSpace(options.Cookie))
+            {
+                addTorrentParams.Cookie = options.Cookie;
+            }
+
             if (!string.IsNullOrWhiteSpace(options.ShareLimitAction))
             {
                 addTorrentParams.ShareLimitAction = Enum.Parse<QBitTorrentClient.Models.ShareLimitAction>(options.ShareLimitAction);

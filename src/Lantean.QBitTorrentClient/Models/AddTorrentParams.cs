@@ -56,6 +56,8 @@ namespace Lantean.QBitTorrentClient.Models
 
         public string? SslDhParams { get; set; }
 
+        public string? Cookie { get; set; }
+
         public Dictionary<string, Stream>? Torrents { get; set; }
     }
 }

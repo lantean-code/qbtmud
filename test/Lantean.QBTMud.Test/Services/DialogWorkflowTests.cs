@@ -155,6 +155,139 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_FileOpenFails_WHEN_InvokeAddTorrentFileDialog_THEN_ShouldDisposeOpenedStreamsAndShowError()
+        {
+            var stream = new TrackingStream();
+            var fileOne = new Mock<IBrowserFile>(MockBehavior.Strict);
+            fileOne.Setup(f => f.Name).Returns("First.torrent");
+            fileOne.Setup(f => f.OpenReadStream(4194304, It.IsAny<CancellationToken>())).Returns(stream);
+            var fileTwo = new Mock<IBrowserFile>(MockBehavior.Strict);
+            fileTwo.Setup(f => f.Name).Returns("Second.torrent");
+            fileTwo.Setup(f => f.OpenReadStream(4194304, It.IsAny<CancellationToken>())).Throws(new InvalidOperationException("fail"));
+
+            var options = CreateTorrentOptions(false, false);
+            var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options);
+            var reference = CreateReference(DialogResult.Ok(fileOptions));
+            _dialogService
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Upload local torrent", DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            await _target.InvokeAddTorrentFileDialog();
+
+            stream.DisposeAsyncCalled.Should().BeTrue();
+            _apiClient.Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
+            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            snackbarCall.Arguments[0].Should().Be("Unable to read \"Second.torrent\": fail");
+            snackbarCall.Arguments[1].Should().Be(Severity.Error);
+            fileOne.VerifyAll();
+            fileTwo.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_AddTorrentFails_WHEN_InvokeAddTorrentFileDialog_THEN_ShouldDisposeStreamsAndShowError()
+        {
+            var streamOne = new TrackingStream();
+            var streamTwo = new TrackingStream();
+            var fileOne = new Mock<IBrowserFile>(MockBehavior.Strict);
+            fileOne.Setup(f => f.Name).Returns("One.torrent");
+            fileOne.Setup(f => f.OpenReadStream(4194304, It.IsAny<CancellationToken>())).Returns(streamOne);
+            var fileTwo = new Mock<IBrowserFile>(MockBehavior.Strict);
+            fileTwo.Setup(f => f.Name).Returns("Two.torrent");
+            fileTwo.Setup(f => f.OpenReadStream(4194304, It.IsAny<CancellationToken>())).Returns(streamTwo);
+
+            var options = CreateTorrentOptions(false, false);
+            var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options);
+            var reference = CreateReference(DialogResult.Ok(fileOptions));
+            _dialogService
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Upload local torrent", DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            _apiClient
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ThrowsAsync(new HttpRequestException());
+
+            await _target.InvokeAddTorrentFileDialog();
+
+            streamOne.DisposeAsyncCalled.Should().BeTrue();
+            streamTwo.DisposeAsyncCalled.Should().BeTrue();
+            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            snackbarCall.Arguments[0].Should().Be("Unable to add torrent. Please try again.");
+            snackbarCall.Arguments[1].Should().Be(Severity.Error);
+            fileOne.VerifyAll();
+            fileTwo.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_DuplicateFileNames_WHEN_InvokeAddTorrentFileDialog_THEN_ShouldEnsureUniqueNames()
+        {
+            var streamOne = new TrackingStream();
+            var streamTwo = new TrackingStream();
+            var streamThree = new TrackingStream();
+            var fileOne = new Mock<IBrowserFile>(MockBehavior.Strict);
+            fileOne.Setup(f => f.Name).Returns("Same.torrent");
+            fileOne.Setup(f => f.OpenReadStream(4194304, It.IsAny<CancellationToken>())).Returns(streamOne);
+            var fileTwo = new Mock<IBrowserFile>(MockBehavior.Strict);
+            fileTwo.Setup(f => f.Name).Returns("Same.torrent");
+            fileTwo.Setup(f => f.OpenReadStream(4194304, It.IsAny<CancellationToken>())).Returns(streamTwo);
+            var fileThree = new Mock<IBrowserFile>(MockBehavior.Strict);
+            fileThree.Setup(f => f.Name).Returns("Same.torrent");
+            fileThree.Setup(f => f.OpenReadStream(4194304, It.IsAny<CancellationToken>())).Returns(streamThree);
+
+            var options = CreateTorrentOptions(false, false);
+            var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object, fileThree.Object }, options);
+            var reference = CreateReference(DialogResult.Ok(fileOptions));
+            _dialogService
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Upload local torrent", DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            AddTorrentParams? captured = null;
+            _apiClient
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Callback<AddTorrentParams>(p => captured = p)
+                .ReturnsAsync(new AddTorrentResult(0, 0));
+
+            await _target.InvokeAddTorrentFileDialog();
+
+            captured.Should().NotBeNull();
+            captured!.Torrents.Should().NotBeNull();
+            captured!.Torrents!.Count.Should().Be(3);
+            captured!.Torrents!.ContainsKey("Same.torrent").Should().BeTrue();
+            captured!.Torrents!.ContainsKey("Same (1).torrent").Should().BeTrue();
+            captured!.Torrents!.ContainsKey("Same (2).torrent").Should().BeTrue();
+            streamOne.DisposeAsyncCalled.Should().BeTrue();
+            streamTwo.DisposeAsyncCalled.Should().BeTrue();
+            streamThree.DisposeAsyncCalled.Should().BeTrue();
+            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            snackbarCall.Arguments[0].Should().Be("No torrents processed.");
+            snackbarCall.Arguments[1].Should().Be(Severity.Success);
+            fileOne.VerifyAll();
+            fileTwo.VerifyAll();
+            fileThree.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_CookieProvided_WHEN_InvokeAddTorrentLinkDialog_THEN_ShouldSendCookie()
+        {
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            _dialogService
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            AddTorrentParams? captured = null;
+            _apiClient
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Callback<AddTorrentParams>(p => captured = p)
+                .ReturnsAsync(new AddTorrentResult(1, 0, 0, null));
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            captured.Should().NotBeNull();
+            captured!.Cookie.Should().Be("Cookie");
+        }
+
+        [Fact]
         public async Task GIVEN_DialogCanceled_WHEN_InvokeAddTorrentFileDialog_THEN_ShouldNotUpload()
         {
             var reference = CreateReference(DialogResult.Cancel());
@@ -166,6 +299,26 @@ namespace Lantean.QBTMud.Test.Services
 
             _apiClient.Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
             _snackbar.Invocations.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_NoFiles_WHEN_InvokeAddTorrentFileDialog_THEN_ShouldHandleGracefully()
+        {
+            var options = CreateTorrentOptions(false, false);
+            var fileOptions = new AddTorrentFileOptions(Array.Empty<IBrowserFile>(), options);
+            var reference = CreateReference(DialogResult.Ok(fileOptions));
+            _dialogService
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Upload local torrent", DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            _apiClient
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(new AddTorrentResult(0, 0));
+
+            await _target.InvokeAddTorrentFileDialog();
+
+            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            snackbarCall.Arguments[0].Should().Be("No torrents processed.");
+            snackbarCall.Arguments[1].Should().Be(Severity.Success);
         }
 
         [Fact]
@@ -258,6 +411,66 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_AddTorrentLinkThrows_WHEN_InvokeAddTorrentLinkDialog_THEN_ShouldShowError()
+        {
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            _dialogService
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            _apiClient
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ThrowsAsync(new HttpRequestException());
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            snackbarCall.Arguments[0].Should().Be("Unable to add torrent. Please try again.");
+            snackbarCall.Arguments[1].Should().Be(Severity.Error);
+        }
+
+        [Fact]
+        public async Task GIVEN_MixedAddResults_WHEN_InvokeAddTorrentLinkDialog_THEN_ShouldShowAggregatedWarning()
+        {
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            _dialogService
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            _apiClient
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(new AddTorrentResult(2, 2, 1, null));
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            snackbarCall.Arguments[0].Should().Be("Added 2 torrents and failed to add 2 torrents and Pending 1 torrent.");
+            snackbarCall.Arguments[1].Should().Be(Severity.Warning);
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingAddRequests_WHEN_InvokeAddTorrentLinkDialog_THEN_ShouldShowPendingInfo()
+        {
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            _dialogService
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            _apiClient
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(new AddTorrentResult(0, 0, 2, null));
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            snackbarCall.Arguments[0].Should().Be("Pending 2 torrents.");
+            snackbarCall.Arguments[1].Should().Be(Severity.Info);
+        }
+
+        [Fact]
         public async Task GIVEN_DeleteWithoutConfirmation_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldDelete()
         {
             _apiClient
@@ -316,9 +529,40 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_MultipleHashes_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldUsePluralTitle()
+        {
+            DialogParameters? captured = null;
+            var reference = CreateReference(DialogResult.Ok(false));
+            _dialogService
+                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrents?", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
+                .ReturnsAsync(reference);
+            _apiClient
+                .Setup(a => a.DeleteTorrents(null, false, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "Other" }))))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            var result = await _target.InvokeDeleteTorrentDialog(true, "Hash", "Other");
+
+            result.Should().BeTrue();
+            captured.Should().NotBeNull();
+            captured!.Any(p => p.Key == nameof(DeleteDialog.Count)).Should().BeTrue();
+            captured[nameof(DeleteDialog.Count)].Should().Be(2);
+            _apiClient.Verify();
+        }
+
+        [Fact]
         public async Task GIVEN_NoHashes_WHEN_ForceRecheckAsync_THEN_ShouldNotInvokeApi()
         {
             await _target.ForceRecheckAsync(Array.Empty<string>(), false);
+
+            _apiClient.Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NullHashes_WHEN_ForceRecheckAsync_THEN_ShouldNotInvokeApi()
+        {
+            await _target.ForceRecheckAsync(null!, false);
 
             _apiClient.Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
         }
@@ -367,6 +611,23 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_MultipleHashes_WHEN_ForceRecheckAsync_THEN_ShouldPluralizeConfirmation()
+        {
+            var reference = CreateReference(DialogResult.Ok(true));
+            _dialogService
+                .Setup(s => s.ShowAsync<ConfirmDialog>("Force recheck", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .ReturnsAsync(reference);
+            _apiClient
+                .Setup(a => a.RecheckTorrents(null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "Other" }))))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            await _target.ForceRecheckAsync(new[] { "Hash", "Other" }, true);
+
+            _apiClient.Verify();
+        }
+
+        [Fact]
         public async Task GIVEN_DialogConfirmed_WHEN_InvokeDownloadRateDialog_THEN_ShouldUpdateRate()
         {
             var reference = CreateReference(DialogResult.Ok(3L));
@@ -397,6 +658,28 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_DownloadRateDialog_WHEN_BuildingParameters_THEN_ValueFuncsCoverBranches()
+        {
+            DialogParameters? captured = null;
+            var reference = CreateReference(DialogResult.Cancel());
+            _dialogService
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Download Rate", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
+                .ReturnsAsync(reference);
+
+            await _target.InvokeDownloadRateDialog(1024, new[] { "Hash" });
+
+            captured.Should().NotBeNull();
+            var parameters = captured!;
+            var display = (Func<long, string>)parameters[nameof(SliderFieldDialog<long>.ValueDisplayFunc)]!;
+            display(Limits.NoLimit).Should().Be("∞");
+            display(2048).Should().Be("2048");
+            var getter = (Func<string, long>)parameters[nameof(SliderFieldDialog<long>.ValueGetFunc)]!;
+            getter("∞").Should().Be(Limits.NoLimit);
+            getter("5").Should().Be(5);
+        }
+
+        [Fact]
         public async Task GIVEN_DialogConfirmed_WHEN_InvokeUploadRateDialog_THEN_ShouldUpdateRate()
         {
             var reference = CreateReference(DialogResult.Ok(4L));
@@ -424,6 +707,28 @@ namespace Lantean.QBTMud.Test.Services
             await _target.InvokeUploadRateDialog(1024, new[] { "Hash" });
 
             _apiClient.Verify(a => a.SetTorrentUploadLimit(It.IsAny<long>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_UploadRateDialog_WHEN_BuildingParameters_THEN_ValueFuncsCoverBranches()
+        {
+            DialogParameters? captured = null;
+            var reference = CreateReference(DialogResult.Cancel());
+            _dialogService
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Upload Rate", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
+                .ReturnsAsync(reference);
+
+            await _target.InvokeUploadRateDialog(1024, new[] { "Hash" });
+
+            captured.Should().NotBeNull();
+            var parameters = captured!;
+            var display = (Func<long, string>)parameters[nameof(SliderFieldDialog<long>.ValueDisplayFunc)]!;
+            display(Limits.NoLimit).Should().Be("∞");
+            display(1024).Should().Be("1024");
+            var getter = (Func<string, long>)parameters[nameof(SliderFieldDialog<long>.ValueGetFunc)]!;
+            getter("∞").Should().Be(Limits.NoLimit);
+            getter("7").Should().Be(7);
         }
 
         [Fact]
@@ -782,6 +1087,20 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_NullResult_WHEN_ShowConfirmDialog_THEN_ShouldReturnFalse()
+        {
+            var reference = new Mock<IDialogReference>();
+            reference.Setup(r => r.Result).Returns(Task.FromResult<DialogResult?>(null));
+            _dialogService
+                .Setup(s => s.ShowAsync<ConfirmDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .ReturnsAsync(reference.Object);
+
+            var result = await _target.ShowConfirmDialog("Title", "Content");
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
         public async Task GIVEN_ConfirmationAccepted_WHEN_ShowConfirmDialogWithTask_THEN_ShouldInvokeCallback()
         {
             var reference = CreateReference(DialogResult.Ok(true));
@@ -929,6 +1248,32 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.ShowSearchPluginsDialog();
 
             result.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_NoPluginChanges_WHEN_ShowSearchPluginsDialog_THEN_ShouldReturnFalse()
+        {
+            var reference = CreateReference(DialogResult.Ok(false));
+            _dialogService
+                .Setup(s => s.ShowAsync<SearchPluginsDialog>("Search plugins", DialogWorkflow.FullScreenDialogOptions))
+                .ReturnsAsync(reference);
+
+            var result = await _target.ShowSearchPluginsDialog();
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_NonBooleanResult_WHEN_ShowSearchPluginsDialog_THEN_ShouldReturnFalse()
+        {
+            var reference = CreateReference(DialogResult.Ok("ignore"));
+            _dialogService
+                .Setup(s => s.ShowAsync<SearchPluginsDialog>("Search plugins", DialogWorkflow.FullScreenDialogOptions))
+                .ReturnsAsync(reference);
+
+            var result = await _target.ShowSearchPluginsDialog();
+
+            result.Should().BeFalse();
         }
 
         [Fact]
