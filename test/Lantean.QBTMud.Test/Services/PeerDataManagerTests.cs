@@ -187,6 +187,159 @@ namespace Lantean.QBTMud.Test.Services
             p.Uploaded.Should().Be(0);
         }
 
+        [Fact]
+        public void GIVEN_PeerWithNullStrings_WHEN_CreatePeerList_THEN_DefaultsToEmptyStrings()
+        {
+            var input = new QbtTorrentPeers(
+                fullUpdate: false,
+                peers: new Dictionary<string, QbtPeer>
+                {
+                    ["k"] = new QbtPeer(
+                        client: null,
+                        connection: null,
+                        country: null,
+                        countryCode: null,
+                        downloadSpeed: 1,
+                        downloaded: 2,
+                        files: null,
+                        flags: null,
+                        flagsDescription: null,
+                        iPAddress: null,
+                        i2pDestination: null,
+                        clientId: null,
+                        port: 3,
+                        progress: 0.1f,
+                        relevance: 0.2f,
+                        uploadSpeed: 4,
+                        uploaded: 5)
+                },
+                peersRemoved: null,
+                requestId: 4,
+                showFlags: null);
+
+            var result = _target.CreatePeerList(input);
+
+            var peer = result.Peers["k"];
+            peer.Client.Should().Be(string.Empty);
+            peer.ClientId.Should().Be(string.Empty);
+            peer.Connection.Should().Be(string.Empty);
+            peer.Files.Should().Be(string.Empty);
+            peer.Flags.Should().Be(string.Empty);
+            peer.FlagsDescription.Should().Be(string.Empty);
+            peer.IPAddress.Should().Be(string.Empty);
+        }
+
+        [Fact]
+        public void GIVEN_ExistingPeer_AND_AllNullUpdate_WHEN_MergeTorrentPeers_THEN_ExistingRemainsUnchanged()
+        {
+            var existing = new Peer(
+                key: "k",
+                client: "Client0",
+                clientId: "CID0",
+                connection: "TCP0",
+                country: "COU0",
+                countryCode: "CC0",
+                downloaded: 1,
+                downloadSpeed: 2,
+                files: "files0",
+                flags: "flags0",
+                flagsDescription: "desc0",
+                iPAddress: "10.0.0.1",
+                port: 1000,
+                progress: 0.1f,
+                relevance: 0.2f,
+                uploaded: 3,
+                uploadSpeed: 4);
+            var peerList = new PeerList(new Dictionary<string, Peer> { [existing.Key] = existing });
+
+            var update = new QbtPeer(
+                client: null,
+                connection: null,
+                country: null,
+                countryCode: null,
+                downloadSpeed: null,
+                downloaded: null,
+                files: null,
+                flags: null,
+                flagsDescription: null,
+                iPAddress: null,
+                i2pDestination: null,
+                clientId: null,
+                port: null,
+                progress: null,
+                relevance: null,
+                uploadSpeed: null,
+                uploaded: null);
+            var delta = new QbtTorrentPeers(false, new Dictionary<string, QbtPeer> { [existing.Key] = update }, null, 20, null);
+
+            _target.MergeTorrentPeers(delta, peerList);
+
+            var p = peerList.Peers[existing.Key];
+            p.Client.Should().Be("Client0");
+            p.ClientId.Should().Be("CID0");
+            p.Connection.Should().Be("TCP0");
+            p.Country.Should().Be("COU0");
+            p.CountryCode.Should().Be("CC0");
+            p.Downloaded.Should().Be(1);
+            p.DownloadSpeed.Should().Be(2);
+            p.Files.Should().Be("files0");
+            p.Flags.Should().Be("flags0");
+            p.FlagsDescription.Should().Be("desc0");
+            p.IPAddress.Should().Be("10.0.0.1");
+            p.Port.Should().Be(1000);
+            p.Progress.Should().Be(0.1f);
+            p.Relevance.Should().Be(0.2f);
+            p.Uploaded.Should().Be(3);
+            p.UploadSpeed.Should().Be(4);
+        }
+
+        [Fact]
+        public void GIVEN_ExistingPeer_AND_AllFieldsSet_WHEN_MergeTorrentPeers_THEN_AllFieldsUpdated()
+        {
+            var existing = new Peer("k", "Old", "OldId", "TCP", "OldC", "OldCC", 1, 2, "oldf", "oldfl", "olddesc", "10.0.0.1", 1000, 0.1f, 0.2f, 3, 4);
+            var peerList = new PeerList(new Dictionary<string, Peer> { [existing.Key] = existing });
+
+            var update = new QbtPeer(
+                client: "NewClient",
+                connection: "uTP",
+                country: "NewCountry",
+                countryCode: "NC",
+                downloadSpeed: 200,
+                downloaded: 100,
+                files: "newf",
+                flags: "newflags",
+                flagsDescription: "newdesc",
+                iPAddress: "20.0.0.2",
+                i2pDestination: null,
+                clientId: "NewId",
+                port: 2000,
+                progress: 0.9f,
+                relevance: 0.8f,
+                uploadSpeed: 400,
+                uploaded: 300);
+            var delta = new QbtTorrentPeers(false, new Dictionary<string, QbtPeer> { [existing.Key] = update }, null, 21, null);
+
+            _target.MergeTorrentPeers(delta, peerList);
+
+            var p = peerList.Peers[existing.Key];
+            p.Client.Should().Be("NewClient");
+            p.ClientId.Should().Be("NewId");
+            p.Connection.Should().Be("uTP");
+            p.Country.Should().Be("NewCountry");
+            p.CountryCode.Should().Be("NC");
+            p.Downloaded.Should().Be(100);
+            p.DownloadSpeed.Should().Be(200);
+            p.Files.Should().Be("newf");
+            p.Flags.Should().Be("newflags");
+            p.FlagsDescription.Should().Be("newdesc");
+            p.IPAddress.Should().Be("20.0.0.2");
+            p.Port.Should().Be(2000);
+            p.Progress.Should().Be(0.9f);
+            p.Relevance.Should().Be(0.8f);
+            p.Uploaded.Should().Be(300);
+            p.UploadSpeed.Should().Be(400);
+        }
+
         // ---------- MergeTorrentPeers ----------
 
         [Fact]

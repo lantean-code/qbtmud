@@ -30,13 +30,13 @@ namespace Lantean.QBTMud.Services
                         key,
                         rssArticle.Category,
                         rssArticle.Comments,
-                        rssArticle.Date!,
+                        rssArticle.Date ?? string.Empty,
                         rssArticle.Description,
-                        rssArticle.Id!,
+                        rssArticle.Id ?? string.Empty,
                         rssArticle.Link,
                         rssArticle.Thumbnail,
-                        rssArticle.Title!,
-                        rssArticle.TorrentURL!,
+                        rssArticle.Title ?? string.Empty,
+                        rssArticle.TorrentURL ?? string.Empty,
                         rssArticle.IsRead);
 
                     articles.Add(article);
