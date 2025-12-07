@@ -85,11 +85,6 @@ namespace Lantean.QBTMud.Helpers
                     term = term[1..];
                 }
 
-                if (string.IsNullOrEmpty(term))
-                {
-                    continue;
-                }
-
                 if (isExclude)
                 {
                     if (MatchesTerm(target, term, useRegex))
@@ -371,11 +366,6 @@ namespace Lantean.QBTMud.Helpers
 
         private static string NormalizeTrackerKey(string tracker)
         {
-            if (string.IsNullOrEmpty(tracker))
-            {
-                return string.Empty;
-            }
-
             return tracker.TrimEnd('/');
         }
 
@@ -384,11 +374,6 @@ namespace Lantean.QBTMud.Helpers
             if (Uri.TryCreate(tracker, UriKind.Absolute, out var trackerUri))
             {
                 return trackerUri.Host;
-            }
-
-            if (string.IsNullOrEmpty(tracker))
-            {
-                return string.Empty;
             }
 
             if (Uri.TryCreate(string.Concat("http://", tracker), UriKind.Absolute, out var fallbackUri))
@@ -401,11 +386,6 @@ namespace Lantean.QBTMud.Helpers
 
         private static bool IsTrackerUrl(string tracker)
         {
-            if (string.IsNullOrEmpty(tracker))
-            {
-                return false;
-            }
-
             return tracker.Contains("://", StringComparison.Ordinal);
         }
 

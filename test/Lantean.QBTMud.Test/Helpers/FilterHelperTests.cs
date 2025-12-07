@@ -93,10 +93,27 @@ namespace Lantean.QBTMud.Test.Helpers
         }
 
         [Fact]
+        public void GIVEN_TermsWithEmptyAndSignOnly_WHEN_ContainsAllTerms_THEN_ShouldSkipAndEvaluateRemaining()
+        {
+            var terms = new[] { "", "+", "-", "+include" };
+
+            FilterHelper.ContainsAllTerms("include me", terms, false).Should().BeTrue();
+            FilterHelper.ContainsAllTerms("something else", terms, false).Should().BeFalse();
+        }
+
+        [Fact]
         public void GIVEN_Terms_WHEN_ContainsAllTermsRegex_THEN_ShouldHandleInvalidPattern()
         {
             FilterHelper.ContainsAllTerms("123 value", new[] { "\\d+" }, true).Should().BeTrue();
             FilterHelper.ContainsAllTerms("value", new[] { "(" }, true).Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_TextNull_WHEN_ContainsAllTerms_THEN_ShouldTreatAsEmpty()
+        {
+            var terms = new[] { "missing" };
+
+            FilterHelper.ContainsAllTerms(null!, terms, false).Should().BeFalse();
         }
 
         [Fact]
@@ -114,11 +131,27 @@ namespace Lantean.QBTMud.Test.Helpers
         }
 
         [Fact]
+        public void GIVEN_RegexTerm_WHEN_FilterTermsRegexValid_THEN_ShouldEvaluate()
+        {
+            FilterHelper.FilterTerms("value123", "\\d+", useRegex: true, isRegexValid: true).Should().BeTrue();
+            FilterHelper.FilterTerms("value", "\\d+", useRegex: true, isRegexValid: true).Should().BeFalse();
+        }
+
+        [Fact]
         public void GIVEN_Torrent_WHEN_FilterTermsUsesField_THEN_ShouldSelectProperField()
         {
             var torrent = CreateTorrent(hash: "1", name: "Movie", savePath: "/downloads");
             var state = new FilterState(FilterHelper.CATEGORY_ALL, Status.All, FilterHelper.TAG_ALL, FilterHelper.TRACKER_ALL, false, "/downloads", TorrentFilterField.SavePath, false, true);
             FilterHelper.FilterTerms(torrent, state).Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_TorrentWithNullSavePath_WHEN_FilterTermsUsesSavePath_THEN_ShouldUseEmpty()
+        {
+            var torrent = CreateTorrent(hash: "1", name: "Movie", savePath: null!);
+            var state = new FilterState(FilterHelper.CATEGORY_ALL, Status.All, FilterHelper.TAG_ALL, FilterHelper.TRACKER_ALL, false, "x", TorrentFilterField.SavePath, false, true);
+
+            FilterHelper.FilterTerms(torrent, state).Should().BeFalse();
         }
 
         [Fact]
@@ -136,6 +169,8 @@ namespace Lantean.QBTMud.Test.Helpers
 
             var trackerless = CreateTorrent(hash: "1", tracker: string.Empty, trackersCount: 0);
             FilterHelper.FilterTracker(trackerless, FilterHelper.TRACKER_TRACKERLESS).Should().BeTrue();
+            var trackerlessWithCount = CreateTorrent(hash: "1c", tracker: string.Empty, trackersCount: 1);
+            FilterHelper.FilterTracker(trackerlessWithCount, FilterHelper.TRACKER_TRACKERLESS).Should().BeTrue();
 
             var errorTorrent = CreateTorrent(hash: "2", hasTrackerError: true);
             FilterHelper.FilterTracker(errorTorrent, FilterHelper.TRACKER_ERROR).Should().BeTrue();
@@ -154,9 +189,14 @@ namespace Lantean.QBTMud.Test.Helpers
 
             var trackerlessNonEmpty = CreateTorrent(hash: "7", tracker: "udp://tracker", trackersCount: 1);
             FilterHelper.FilterTracker(trackerlessNonEmpty, FilterHelper.TRACKER_TRACKERLESS).Should().BeFalse();
+            FilterHelper.FilterTracker(trackerlessNonEmpty, string.Empty).Should().BeFalse();
 
             FilterHelper.FilterTracker(urlTorrent, string.Empty).Should().BeFalse();
             FilterHelper.FilterTracker(trackerless, string.Empty).Should().BeTrue();
+            FilterHelper.FilterTracker(CreateTorrent(hash: "8", tracker: "udp://tracker"), "tracker").Should().BeTrue();
+            FilterHelper.FilterTracker(CreateTorrent(hash: "9", tracker: string.Empty), "host").Should().BeFalse();
+            FilterHelper.FilterTracker(CreateTorrent(hash: "10", tracker: "::::"), "::::").Should().BeTrue();
+            FilterHelper.FilterTracker(CreateTorrent(hash: "11", tracker: "tracker.example.com"), "tracker.example.com").Should().BeTrue();
         }
 
         [Fact]
@@ -238,7 +278,7 @@ namespace Lantean.QBTMud.Test.Helpers
             bool hasOtherAnnounceError = false,
             string state = "downloading",
             long uploadSpeed = 0,
-            string savePath = "/downloads")
+            string? savePath = "/downloads")
         {
             return new MudTorrent(
                 hash,
@@ -272,7 +312,7 @@ namespace Lantean.QBTMud.Test.Helpers
                 progress: 0,
                 ratio: 0,
                 ratioLimit: 0,
-                savePath,
+                savePath ?? string.Empty,
                 seedingTime: 0,
                 seedingTimeLimit: 0,
                 seenComplete: 0,
