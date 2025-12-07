@@ -14,6 +14,9 @@ namespace Lantean.QBTMud.Services
                     AddStoppedEnabled = changed.AddStoppedEnabled,
                     AddTrackers = changed.AddTrackers,
                     AddTrackersEnabled = changed.AddTrackersEnabled,
+                    AddTrackersFromUrlEnabled = changed.AddTrackersFromUrlEnabled,
+                    AddTrackersUrl = changed.AddTrackersUrl,
+                    AddTrackersUrlList = changed.AddTrackersUrlList,
                     AltDlLimit = changed.AltDlLimit,
                     AltUpLimit = changed.AltUpLimit,
                     AlternativeWebuiEnabled = changed.AlternativeWebuiEnabled,
@@ -31,6 +34,7 @@ namespace Lantean.QBTMud.Services
                     AutorunOnTorrentAddedEnabled = changed.AutorunOnTorrentAddedEnabled,
                     AutorunOnTorrentAddedProgram = changed.AutorunOnTorrentAddedProgram,
                     AutorunProgram = changed.AutorunProgram,
+                    DeleteTorrentContentFiles = changed.DeleteTorrentContentFiles,
                     BannedIPs = changed.BannedIPs,
                     BdecodeDepthLimit = changed.BdecodeDepthLimit,
                     BdecodeTokenLimit = changed.BdecodeTokenLimit,
@@ -230,6 +234,9 @@ namespace Lantean.QBTMud.Services
                     ConfirmTorrentRecheck = changed.ConfirmTorrentRecheck,
                     StatusBarExternalIp = changed.StatusBarExternalIp
                 };
+
+                ApplyMutuallyExclusiveLimits(original, changed);
+
                 return original;
             }
 
@@ -237,6 +244,9 @@ namespace Lantean.QBTMud.Services
             original.AddStoppedEnabled = changed.AddStoppedEnabled ?? original.AddStoppedEnabled;
             original.AddTrackers = changed.AddTrackers ?? original.AddTrackers;
             original.AddTrackersEnabled = changed.AddTrackersEnabled ?? original.AddTrackersEnabled;
+            original.AddTrackersFromUrlEnabled = changed.AddTrackersFromUrlEnabled ?? original.AddTrackersFromUrlEnabled;
+            original.AddTrackersUrl = changed.AddTrackersUrl ?? original.AddTrackersUrl;
+            original.AddTrackersUrlList = changed.AddTrackersUrlList ?? original.AddTrackersUrlList;
             original.AltDlLimit = changed.AltDlLimit ?? original.AltDlLimit;
             original.AltUpLimit = changed.AltUpLimit ?? original.AltUpLimit;
             original.AlternativeWebuiEnabled = changed.AlternativeWebuiEnabled ?? original.AlternativeWebuiEnabled;
@@ -254,6 +264,7 @@ namespace Lantean.QBTMud.Services
             original.AutorunOnTorrentAddedEnabled = changed.AutorunOnTorrentAddedEnabled ?? original.AutorunOnTorrentAddedEnabled;
             original.AutorunOnTorrentAddedProgram = changed.AutorunOnTorrentAddedProgram ?? original.AutorunOnTorrentAddedProgram;
             original.AutorunProgram = changed.AutorunProgram ?? original.AutorunProgram;
+            original.DeleteTorrentContentFiles = changed.DeleteTorrentContentFiles ?? original.DeleteTorrentContentFiles;
             original.BannedIPs = changed.BannedIPs ?? original.BannedIPs;
             original.BdecodeDepthLimit = changed.BdecodeDepthLimit ?? original.BdecodeDepthLimit;
             original.BdecodeTokenLimit = changed.BdecodeTokenLimit ?? original.BdecodeTokenLimit;
@@ -342,13 +353,7 @@ namespace Lantean.QBTMud.Services
             original.MaxConcurrentHttpAnnounces = changed.MaxConcurrentHttpAnnounces ?? original.MaxConcurrentHttpAnnounces;
             original.MaxConnec = changed.MaxConnec ?? original.MaxConnec;
             original.MaxConnecPerTorrent = changed.MaxConnecPerTorrent ?? original.MaxConnecPerTorrent;
-            original.MaxInactiveSeedingTime = changed.MaxInactiveSeedingTime ?? original.MaxInactiveSeedingTime;
-            original.MaxInactiveSeedingTimeEnabled = changed.MaxInactiveSeedingTimeEnabled ?? original.MaxInactiveSeedingTimeEnabled;
-            original.MaxRatio = changed.MaxRatio ?? original.MaxRatio;
             original.MaxRatioAct = changed.MaxRatioAct ?? original.MaxRatioAct;
-            original.MaxRatioEnabled = changed.MaxRatioEnabled ?? original.MaxRatioEnabled;
-            original.MaxSeedingTime = changed.MaxSeedingTime ?? original.MaxSeedingTime;
-            original.MaxSeedingTimeEnabled = changed.MaxSeedingTimeEnabled ?? original.MaxSeedingTimeEnabled;
             original.MaxUploads = changed.MaxUploads ?? original.MaxUploads;
             original.MaxUploadsPerTorrent = changed.MaxUploadsPerTorrent ?? original.MaxUploadsPerTorrent;
             original.MemoryWorkingSetLimit = changed.MemoryWorkingSetLimit ?? original.MemoryWorkingSetLimit;
@@ -453,7 +458,47 @@ namespace Lantean.QBTMud.Services
             original.ConfirmTorrentRecheck = changed.ConfirmTorrentRecheck ?? original.ConfirmTorrentRecheck;
             original.StatusBarExternalIp = changed.StatusBarExternalIp ?? original.StatusBarExternalIp;
 
+            ApplyMutuallyExclusiveLimits(original, changed);
+
             return original;
+        }
+
+        private static void ApplyMutuallyExclusiveLimits(
+            QBitTorrentClient.Models.UpdatePreferences target,
+            QBitTorrentClient.Models.UpdatePreferences changed)
+        {
+            if (changed.MaxRatio.HasValue)
+            {
+                target.MaxRatio = changed.MaxRatio;
+                target.MaxRatioEnabled = null;
+            }
+            else if (changed.MaxRatioEnabled.HasValue)
+            {
+                target.MaxRatioEnabled = changed.MaxRatioEnabled;
+                target.MaxRatio = null;
+            }
+
+            if (changed.MaxSeedingTime.HasValue)
+            {
+                target.MaxSeedingTime = changed.MaxSeedingTime;
+                target.MaxSeedingTimeEnabled = null;
+            }
+            else if (changed.MaxSeedingTimeEnabled.HasValue)
+            {
+                target.MaxSeedingTimeEnabled = changed.MaxSeedingTimeEnabled;
+                target.MaxSeedingTime = null;
+            }
+
+            if (changed.MaxInactiveSeedingTime.HasValue)
+            {
+                target.MaxInactiveSeedingTime = changed.MaxInactiveSeedingTime;
+                target.MaxInactiveSeedingTimeEnabled = null;
+            }
+            else if (changed.MaxInactiveSeedingTimeEnabled.HasValue)
+            {
+                target.MaxInactiveSeedingTimeEnabled = changed.MaxInactiveSeedingTimeEnabled;
+                target.MaxInactiveSeedingTime = null;
+            }
         }
     }
 }

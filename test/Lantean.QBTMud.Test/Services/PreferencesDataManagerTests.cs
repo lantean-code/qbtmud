@@ -23,6 +23,9 @@ namespace Lantean.QBTMud.Test.Services
                 AddStoppedEnabled = true,
                 AddTrackers = "a, b, c",
                 AddTrackersEnabled = true,
+                AddTrackersFromUrlEnabled = true,
+                AddTrackersUrl = "https://a.example.com/trackers.txt",
+                AddTrackersUrlList = "udp://a:1\nudp://b:1",
                 AltDlLimit = 1,
                 AltUpLimit = 2,
                 AlternativeWebuiEnabled = true,
@@ -40,6 +43,7 @@ namespace Lantean.QBTMud.Test.Services
                 AutorunOnTorrentAddedEnabled = true,
                 AutorunOnTorrentAddedProgram = "prog-added-a",
                 AutorunProgram = "prog-a",
+                DeleteTorrentContentFiles = true,
                 BannedIPs = "10.0.0.1;10.0.0.2",
                 BdecodeDepthLimit = 5,
                 BdecodeTokenLimit = 6,
@@ -254,6 +258,9 @@ namespace Lantean.QBTMud.Test.Services
                 AddStoppedEnabled = false,
                 AddTrackers = "x, y",
                 AddTrackersEnabled = false,
+                AddTrackersFromUrlEnabled = false,
+                AddTrackersUrl = "https://b.example.com/trackers.txt",
+                AddTrackersUrlList = "udp://c:1",
                 AltDlLimit = 101,
                 AltUpLimit = 102,
                 AlternativeWebuiEnabled = false,
@@ -271,6 +278,7 @@ namespace Lantean.QBTMud.Test.Services
                 AutorunOnTorrentAddedEnabled = false,
                 AutorunOnTorrentAddedProgram = "prog-added-b",
                 AutorunProgram = "prog-b",
+                DeleteTorrentContentFiles = false,
                 BannedIPs = "10.1.1.1",
                 BdecodeDepthLimit = 105,
                 BdecodeTokenLimit = 106,
@@ -506,6 +514,9 @@ namespace Lantean.QBTMud.Test.Services
             actual.AddStoppedEnabled.Should().Be(expected.AddStoppedEnabled);
             actual.AddTrackers.Should().Be(expected.AddTrackers);
             actual.AddTrackersEnabled.Should().Be(expected.AddTrackersEnabled);
+            actual.AddTrackersFromUrlEnabled.Should().Be(expected.AddTrackersFromUrlEnabled);
+            actual.AddTrackersUrl.Should().Be(expected.AddTrackersUrl);
+            actual.AddTrackersUrlList.Should().Be(expected.AddTrackersUrlList);
             actual.AltDlLimit.Should().Be(expected.AltDlLimit);
             actual.AltUpLimit.Should().Be(expected.AltUpLimit);
             actual.AlternativeWebuiEnabled.Should().Be(expected.AlternativeWebuiEnabled);
@@ -523,6 +534,7 @@ namespace Lantean.QBTMud.Test.Services
             actual.AutorunOnTorrentAddedEnabled.Should().Be(expected.AutorunOnTorrentAddedEnabled);
             actual.AutorunOnTorrentAddedProgram.Should().Be(expected.AutorunOnTorrentAddedProgram);
             actual.AutorunProgram.Should().Be(expected.AutorunProgram);
+            actual.DeleteTorrentContentFiles.Should().Be(expected.DeleteTorrentContentFiles);
             actual.BannedIPs.Should().Be(expected.BannedIPs);
             actual.BdecodeDepthLimit.Should().Be(expected.BdecodeDepthLimit);
             actual.BdecodeTokenLimit.Should().Be(expected.BdecodeTokenLimit);
@@ -751,7 +763,9 @@ namespace Lantean.QBTMud.Test.Services
 
             var result = _target.MergePreferences(null, changed);
 
-            AssertAllEqual(result, changed);
+            var expected = BuildAllSetB_AllNonNull();
+            NormalizeMutuallyExclusive(expected);
+            AssertAllEqual(result, expected);
         }
 
         [Fact]
@@ -762,7 +776,10 @@ namespace Lantean.QBTMud.Test.Services
 
             var result = _target.MergePreferences(original, changed);
 
-            AssertAllEqual(result, changed);
+            var expected = BuildAllSetB_AllNonNull();
+            NormalizeMutuallyExclusive(expected);
+            expected.ScanDirs = changed.ScanDirs;
+            AssertAllEqual(result, expected);
             result.ScanDirs.Should().BeSameAs(changed.ScanDirs);
         }
 
@@ -832,6 +849,84 @@ namespace Lantean.QBTMud.Test.Services
             Action act = () => p.Validate();
             act.Should().Throw<InvalidOperationException>()
                .WithMessage("*max_inactive_seeding_time or max_inactive_seeding_time_enabled*");
+        }
+
+        [Fact]
+        public void GIVEN_MaxRatioAlreadySet_WHEN_MaxRatioEnabledProvided_THEN_MaxRatioCleared()
+        {
+            var original = new UpdatePreferences { MaxRatio = 1.5f };
+            var changed = new UpdatePreferences { MaxRatioEnabled = true };
+
+            var result = _target.MergePreferences(original, changed);
+
+            result.MaxRatio.Should().BeNull();
+            result.MaxRatioEnabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_MaxSeedingTimeEnabledSet_WHEN_MaxSeedingTimeProvided_THEN_MaxSeedingTimeEnabledCleared()
+        {
+            var original = new UpdatePreferences { MaxSeedingTimeEnabled = true };
+            var changed = new UpdatePreferences { MaxSeedingTime = 120 };
+
+            var result = _target.MergePreferences(original, changed);
+
+            result.MaxSeedingTime.Should().Be(120);
+            result.MaxSeedingTimeEnabled.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_MaxSeedingTimeSet_WHEN_MaxSeedingTimeEnabledProvided_THEN_MaxSeedingTimeCleared()
+        {
+            var original = new UpdatePreferences { MaxSeedingTime = 200 };
+            var changed = new UpdatePreferences { MaxSeedingTimeEnabled = false };
+
+            var result = _target.MergePreferences(original, changed);
+
+            result.MaxSeedingTime.Should().BeNull();
+            result.MaxSeedingTimeEnabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_MaxInactiveSeedingTimeSet_WHEN_MaxInactiveSeedingTimeEnabledProvided_THEN_MaxInactiveSeedingTimeCleared()
+        {
+            var original = new UpdatePreferences { MaxInactiveSeedingTime = 240 };
+            var changed = new UpdatePreferences { MaxInactiveSeedingTimeEnabled = false };
+
+            var result = _target.MergePreferences(original, changed);
+
+            result.MaxInactiveSeedingTime.Should().BeNull();
+            result.MaxInactiveSeedingTimeEnabled.Should().BeFalse();
+        }
+
+        private static void NormalizeMutuallyExclusive(UpdatePreferences prefs)
+        {
+            if (prefs.MaxRatio.HasValue)
+            {
+                prefs.MaxRatioEnabled = null;
+            }
+            else if (prefs.MaxRatioEnabled.HasValue)
+            {
+                prefs.MaxRatio = null;
+            }
+
+            if (prefs.MaxSeedingTime.HasValue)
+            {
+                prefs.MaxSeedingTimeEnabled = null;
+            }
+            else if (prefs.MaxSeedingTimeEnabled.HasValue)
+            {
+                prefs.MaxSeedingTime = null;
+            }
+
+            if (prefs.MaxInactiveSeedingTime.HasValue)
+            {
+                prefs.MaxInactiveSeedingTimeEnabled = null;
+            }
+            else if (prefs.MaxInactiveSeedingTimeEnabled.HasValue)
+            {
+                prefs.MaxInactiveSeedingTime = null;
+            }
         }
     }
 }

@@ -157,18 +157,18 @@ namespace Lantean.QBTMud.Test.Services
             f.ArticleCount.Should().Be(1);
             f.UnreadCount.Should().Be(1);
 
-            // assert article null propagation (no normalization to empty string)
+            // assert article normalization of null strings to empty string
             var art = result.Articles.Single();
             art.Feed.Should().Be("feed-null"); // dictionary key is used as article.Feed
             art.Category.Should().BeNull();
             art.Comments.Should().BeNull();
-            art.Date.Should().BeNull();
+            art.Date.Should().Be(string.Empty);
             art.Description.Should().BeNull();
-            art.Id.Should().BeNull();
+            art.Id.Should().Be(string.Empty);
             art.Link.Should().BeNull();
             art.Thumbnail.Should().BeNull();
-            art.Title.Should().BeNull();
-            art.TorrentURL.Should().BeNull();
+            art.Title.Should().Be(string.Empty);
+            art.TorrentURL.Should().Be(string.Empty);
             art.IsRead.Should().BeFalse();
         }
 
