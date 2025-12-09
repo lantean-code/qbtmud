@@ -20,10 +20,10 @@
 - Prerequisites: .NET 10 SDK (use the version pinned by `global.json` if present).
   - Agents must verify the pinned SDK is available in the current environment; if `dotnet --info` does not list the required version, install it (e.g., via `dotnet-install.sh`) before running restore/build/test commands.
 - Restore & build:
-  - `dotnet restore`
-  - `dotnet build --configuration Release`
+  - `dotnet restore --artifacts-path=/tmp/artifacts/qbtmud`
+  - `dotnet build  --artifacts-path=/tmp/artifacts/qbtmud`
 - Run tests:
-  - `dotnet test`
+  - `dotnet test --artifacts-path=/tmp/artifacts/qbtmud`
 - Publish Web UI:
   - `dotnet publish Lantean.QBTMud -c Release`
   - Output (static assets): `Lantean.QBTMud/bin/Release/net9.0/publish/wwwroot/`

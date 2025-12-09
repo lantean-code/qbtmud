@@ -33,6 +33,7 @@
 
 - Tests must cover 100% of the lines of the implementation.
 - Never use reflection to invoke implementation code. Cover private methods via normal execution flow only.
+- If code cannot be reached via public methods then consider asking to refactor.
 
 ## Clarification Policy
 
@@ -49,6 +50,7 @@
 - Raise any uncertainties for clarification before proceeding with component tests.
 - Additions to the component under test to use a data attribute (data-test-id) is permitted to aid in element selection during testing.
 - `RazorComponentTestBase<T>` can be used as a base class for component tests to encapsulate common setup logic with helper methods for selecting components using `data-test-id`.
+- CSS selectors MUST not be used to locate/assert elements. FindComponent MUST be used. The only exception is to locate a DOM element to trigger an event.
 
 ## Pre-Flight Checklist (must confirm all before generating tests)
 
