@@ -62,7 +62,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StartTorrents(true, Array.Empty<string>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StartTorrents(true)).Returns(Task.CompletedTask);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -73,8 +73,8 @@ namespace Lantean.QBTMud.Test.Components
             var startItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Start all torrents", StringComparison.Ordinal));
             await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.StartTorrents(true, Array.Empty<string>()), Times.Once);
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("started", StringComparison.OrdinalIgnoreCase)), Severity.Success, null, null), Times.Once);
+            apiClientMock.Verify(c => c.StartTorrents(true), Times.Once);
+            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("All torrents started", StringComparison.OrdinalIgnoreCase)), Severity.Success, null, null), Times.Once);
         }
 
         [Fact]
@@ -82,7 +82,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StopTorrents(true, Array.Empty<string>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StopTorrents(true)).Returns(Task.CompletedTask);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -93,8 +93,8 @@ namespace Lantean.QBTMud.Test.Components
             var stopItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Stop all torrents", StringComparison.Ordinal));
             await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.StopTorrents(true, Array.Empty<string>()), Times.Once);
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("stopped", StringComparison.OrdinalIgnoreCase)), Severity.Info, null, null), Times.Once);
+            apiClientMock.Verify(c => c.StopTorrents(true), Times.Once);
+            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("All torrents stopped", StringComparison.OrdinalIgnoreCase)), Severity.Info, null, null), Times.Once);
         }
 
         [Fact]
@@ -125,7 +125,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StartTorrents(true, Array.Empty<string>())).ThrowsAsync(new HttpRequestException("boom"));
+            apiClientMock.Setup(c => c.StartTorrents(true)).ThrowsAsync(new HttpRequestException("boom"));
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -144,7 +144,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StopTorrents(true, Array.Empty<string>())).ThrowsAsync(new HttpRequestException("fail"));
+            apiClientMock.Setup(c => c.StopTorrents(true)).ThrowsAsync(new HttpRequestException("fail"));
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -164,7 +164,7 @@ namespace Lantean.QBTMud.Test.Components
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             var startSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            apiClientMock.Setup(c => c.StartTorrents(true, Array.Empty<string>())).Returns(() => startSource.Task);
+            apiClientMock.Setup(c => c.StartTorrents(true)).Returns(() => startSource.Task);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -181,8 +181,8 @@ namespace Lantean.QBTMud.Test.Components
 
             await Task.WhenAll(first, second);
 
-            apiClientMock.Verify(c => c.StartTorrents(true, Array.Empty<string>()), Times.Once);
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("started", StringComparison.OrdinalIgnoreCase)), Severity.Success, null, null), Times.Once);
+            apiClientMock.Verify(c => c.StartTorrents(true), Times.Once);
+            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("All torrents started", StringComparison.OrdinalIgnoreCase)), Severity.Success, null, null), Times.Once);
         }
 
         [Fact]
@@ -191,7 +191,7 @@ namespace Lantean.QBTMud.Test.Components
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             var stopSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            apiClientMock.Setup(c => c.StopTorrents(true, Array.Empty<string>())).Returns(() => stopSource.Task);
+            apiClientMock.Setup(c => c.StopTorrents(true)).Returns(() => stopSource.Task);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -208,8 +208,8 @@ namespace Lantean.QBTMud.Test.Components
 
             await Task.WhenAll(first, second);
 
-            apiClientMock.Verify(c => c.StopTorrents(true, Array.Empty<string>()), Times.Once);
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("stopped", StringComparison.OrdinalIgnoreCase)), Severity.Info, null, null), Times.Once);
+            apiClientMock.Verify(c => c.StopTorrents(true), Times.Once);
+            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("All torrents stopped", StringComparison.OrdinalIgnoreCase)), Severity.Info, null, null), Times.Once);
         }
 
         [Fact]
@@ -380,6 +380,27 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("fail", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RegisterMagnetHandler_WHEN_Invoked_THEN_UsesBaseUriTemplate()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.JSInterop.Setup<MagnetRegistrationResult>("qbt.registerMagnetHandler", _ => true)
+                .SetResult(new MagnetRegistrationResult { Status = "success" });
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var registerItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Register Magnet Handler", StringComparison.Ordinal));
+            await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
+
+            var invocation = TestContext.JSInterop.Invocations.Single(i => i.Identifier == "qbt.registerMagnetHandler");
+            invocation.Arguments.First().Should().Be("http://localhost/#download=%s");
         }
 
         [Fact]
