@@ -622,11 +622,6 @@ namespace Lantean.QBTMud.Components
                 actionStates["category"] = ActionState.Hidden;
             }
 
-            if (Tags.Count == 0)
-            {
-                actionStates["tags"] = ActionState.Hidden;
-            }
-
             var filteredActions = Filter(actionStates);
 
             foreach (var action in filteredActions)

@@ -172,7 +172,7 @@ else if (RenderType == RenderType.MenuItems)
     {
         return __builder =>
         {
-            <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="Actions" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" ActivationEvent="MouseEvent.LeftClick">
+            <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="Actions" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" ActivationEvent="MouseEvent.LeftClick" OpenChanged="ActionsMenuOpenChanged">
                 @MenuContents(actions)
             </MudMenu>
         };
