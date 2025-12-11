@@ -213,15 +213,7 @@ namespace Lantean.QBTMud.Components
 
         private string BuildMagnetHandlerTemplateUrl()
         {
-            var baseUri = NavigationManager.BaseUri;
-            if (string.IsNullOrEmpty(baseUri))
-            {
-                return "#download=%s";
-            }
-
-            var trimmedBase = baseUri.EndsWith('/')
-                ? baseUri[..^1]
-                : baseUri;
+            var trimmedBase = NavigationManager.BaseUri.TrimEnd('/');
 
             return $"{trimmedBase}/#download=%s";
         }
