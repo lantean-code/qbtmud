@@ -1,28 +1,28 @@
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu">Rename</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu" data-test-id="@TestIdHelper.For("ContextMenuRename")">Rename</MudMenuItem>
 </MudMenu>
 
 <div class="content-panel">
     <div class="content-panel__toolbar content-panel__toolbar--scroll">
         <MudToolBar Gutters="false" Dense="true">
-            <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileToolbar" title="Rename" />
+            <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileToolbar" title="Rename" data-test-id="@TestIdHelper.For("RenameToolbar")" />
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
+            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" data-test-id="@TestIdHelper.For("ColumnOptions")" />
             <MudDivider Vertical="true" />
-            <MudMenu Icon="@Icons.Material.Outlined.FileDownloadOff" Label="Do Not Download" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="Do Not Download">
-                <MudMenuItem OnClick="DoNotDownloadLessThan100PercentAvailability">Less Than 100% Availability</MudMenuItem>
-                <MudMenuItem OnClick="DoNotDownloadLessThan80PercentAvailability">Less than 80% Availability</MudMenuItem>
-                <MudMenuItem OnClick="DoNotDownloadCurrentlyFilteredFiles">Currently Filtered Files</MudMenuItem>
+            <MudMenu Icon="@Icons.Material.Outlined.FileDownloadOff" Label="Do Not Download" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="Do Not Download" data-test-id="@TestIdHelper.For("DoNotDownloadMenu")">
+                <MudMenuItem OnClick="DoNotDownloadLessThan100PercentAvailability" data-test-id="@TestIdHelper.For("DoNotDownloadLessThan100")">Less Than 100% Availability</MudMenuItem>
+                <MudMenuItem OnClick="DoNotDownloadLessThan80PercentAvailability" data-test-id="@TestIdHelper.For("DoNotDownloadLessThan80")">Less than 80% Availability</MudMenuItem>
+                <MudMenuItem OnClick="DoNotDownloadCurrentlyFilteredFiles" data-test-id="@TestIdHelper.For("DoNotDownloadFiltered")">Currently Filtered Files</MudMenuItem>
             </MudMenu>
-            <MudMenu Icon="@Icons.Material.Outlined.FileDownload" Label="Normal Priority" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="Download">
-                <MudMenuItem OnClick="NormalPriorityLessThan100PercentAvailability">Less Than 100% Availability</MudMenuItem>
-                <MudMenuItem OnClick="NormalPriorityLessThan80PercentAvailability">Less than 80% Availability</MudMenuItem>
-                <MudMenuItem OnClick="NormalPriorityCurrentlyFilteredFiles">Currently Filtered Files</MudMenuItem>
+            <MudMenu Icon="@Icons.Material.Outlined.FileDownload" Label="Normal Priority" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="Download" data-test-id="@TestIdHelper.For("NormalPriorityMenu")">
+                <MudMenuItem OnClick="NormalPriorityLessThan100PercentAvailability" data-test-id="@TestIdHelper.For("NormalPriorityLessThan100")">Less Than 100% Availability</MudMenuItem>
+                <MudMenuItem OnClick="NormalPriorityLessThan80PercentAvailability" data-test-id="@TestIdHelper.For("NormalPriorityLessThan80")">Less than 80% Availability</MudMenuItem>
+                <MudMenuItem OnClick="NormalPriorityCurrentlyFilteredFiles" data-test-id="@TestIdHelper.For("NormalPriorityFiltered")">Currently Filtered Files</MudMenuItem>
             </MudMenu>
-            <MudIconButton Icon="@Icons.Material.Outlined.FilterList" OnClick="ShowFilterDialog" title="Filter" />
-            <MudIconButton Icon="@Icons.Material.Outlined.FilterListOff" OnClick="RemoveFilter" title="Remove Filter" />
+            <MudIconButton Icon="@Icons.Material.Outlined.FilterList" OnClick="ShowFilterDialog" title="Filter" data-test-id="@TestIdHelper.For("ShowFilterDialog")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.FilterListOff" OnClick="RemoveFilter" title="Remove Filter" data-test-id="@TestIdHelper.For("RemoveFilter")" />
             <MudSpacer />
-            <MudTextField @ref="SearchInput" T="string" Value="SearchText" ValueChanged="SearchTextChanged" Immediate="true" DebounceInterval="500" Placeholder="Filter file list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            <MudTextField @ref="SearchInput" T="string" Value="SearchText" ValueChanged="SearchTextChanged" Immediate="true" DebounceInterval="500" Placeholder="Filter file list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" data-test-id="@TestIdHelper.For("FilesTabSearch")"></MudTextField>
         </MudToolBar>
     </div>
     <div class="content-panel__body">
@@ -40,6 +40,7 @@
             SortDirectionChanged="SortDirectionChanged"
             OnTableDataContextMenu="TableDataContextMenu"
             OnTableDataLongPress="TableDataLongPress"
+            RowKeyFunc="CreateKey"
             Class="file-list content-panel__table"
         />
     </div>
@@ -55,7 +56,7 @@
                 <div style="@($"margin-left: {(context.Data.Level * 14) + (context.Data.Level >= 1 ? 16 : 0)}px")">
                     @if (context.Data.IsFolder)
                     {
-                        <MudIconButton Class="folder-button" Edge="Edge.Start" ButtonType="ButtonType.Button" Icon="@(ExpandedNodes.Contains(context.Data.Name) ? Icons.Material.Filled.KeyboardArrowDown : Icons.Material.Filled.KeyboardArrowRight)" OnClick="@(c => ToggleNode(context.Data))"></MudIconButton>
+                        <MudIconButton Class="folder-button" Edge="Edge.Start" ButtonType="ButtonType.Button" Icon="@(ExpandedNodes.Contains(context.Data.Name) ? Icons.Material.Filled.KeyboardArrowDown : Icons.Material.Filled.KeyboardArrowRight)" OnClick="@(c => ToggleNode(context.Data))" data-test-id="@TestIdHelper.For($"FolderToggle-{CreateKey(context.Data)}")"></MudIconButton>
                         <MudIcon Icon="@Icons.Material.Filled.Folder" Class="pt-0" Style="margin-right: 4px; position: relative; top: 7px; margin-left: -15px" />
                     }
                     @context.Data.DisplayName
@@ -70,7 +71,7 @@
         {
             return context => __builder =>
             {
-                <MudSelect T="Priority" Dense="true" Value="@context.Data.Priority" ValueChanged="@(priority => PriorityValueChanged(context.Data, priority))" Class="mt-0">
+                <MudSelect T="Priority" Dense="true" Value="@context.Data.Priority" ValueChanged="@(priority => PriorityValueChanged(context.Data, priority))" Class="mt-0" data-test-id="@TestIdHelper.For($"Priority-{CreateKey(context.Data)}")">
                     <MudSelectItem T="Priority" Value="Priority.DoNotDownload">Do not download</MudSelectItem>
                     <MudSelectItem T="Priority" Value="Priority.Normal">Normal</MudSelectItem>
                     <MudSelectItem T="Priority" Value="Priority.High">High</MudSelectItem>

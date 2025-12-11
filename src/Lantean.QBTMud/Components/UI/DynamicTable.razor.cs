@@ -55,6 +55,9 @@ namespace Lantean.QBTMud.Components.UI
         public EventCallback<TableRowClickEventArgs<T>> OnRowClick { get; set; }
 
         [Parameter]
+        public Func<T, string>? RowKeyFunc { get; set; }
+
+        [Parameter]
         public HashSet<T> SelectedItems { get; set; } = [];
 
         [Parameter]
@@ -65,6 +68,9 @@ namespace Lantean.QBTMud.Components.UI
 
         [Parameter]
         public Func<ColumnDefinition<T>, bool> ColumnFilter { get; set; } = t => true;
+
+        [Parameter]
+        public Func<T, string>? RowTestIdFunc { get; set; }
 
         [Parameter]
         public EventCallback<string> SortColumnChanged { get; set; }
@@ -486,6 +492,22 @@ namespace Lantean.QBTMud.Components.UI
             }
 
             return className;
+        }
+
+        private string? GetRowTestId(T item)
+        {
+            if (RowKeyFunc is null)
+            {
+                return null;
+            }
+
+            var key = RowKeyFunc(item);
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return null;
+            }
+
+            return TestIdHelper.For($"Row-{TableId}-{key}");
         }
 
         private void MarkColumnsDirty()

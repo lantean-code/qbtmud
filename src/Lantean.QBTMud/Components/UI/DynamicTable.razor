@@ -60,7 +60,14 @@
     <RowTemplate>
         @foreach (var column in GetColumns())
         {
-            <TdExtended @ref="_tds[column.Id]" DataLabel="@column.Header" Class="@(GetColumnClass(column, context))" Style="@(GetColumnStyle(column))" OnLongPress="@(c => OnLongPressInternal(c, column.Id, context))" OnContextMenu="@(c => OnContextMenuInternal(c, column.Id, context))">
+            <TdExtended
+                @ref="_tds[column.Id]"
+                DataLabel="@column.Header"
+                Class="@(GetColumnClass(column, context))"
+                Style="@(GetColumnStyle(column))"
+                OnLongPress="@(c => OnLongPressInternal(c, column.Id, context))"
+                OnContextMenu="@(c => OnContextMenuInternal(c, column.Id, context))"
+                data-test-id="@GetRowTestId(context)">
                 @column.RowTemplate(column.GetRowContext(context))
             </TdExtended>
         }

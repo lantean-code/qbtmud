@@ -51,6 +51,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected ITorrentDataManager DataManager { get; set; } = default!;
 
+        [Inject]
+        protected IPeriodicTimerFactory TimerFactory { get; set; } = default!;
+
         protected HashSet<string> ExpandedNodes { get; set; } = [];
 
         protected Dictionary<string, ContentItem>? FileList { get; set; }
@@ -146,17 +149,6 @@ namespace Lantean.QBTMud.Components
             }
         }
 
-        protected static Priority GetPriority(IEnumerable<ContentItem> items)
-        {
-            var distinctPriorities = items.Select(i => i.Priority).Distinct();
-            if (distinctPriorities.Count() == 1)
-            {
-                return distinctPriorities.First();
-            }
-
-            return Priority.Mixed;
-        }
-
         protected void SearchTextChanged(string value)
         {
             SearchText = value;
@@ -199,9 +191,9 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            using (var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(RefreshInterval)))
+            await using (var timer = TimerFactory.Create(TimeSpan.FromMilliseconds(RefreshInterval)))
             {
-                while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync())
+                while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync(_timerCancellationToken.Token))
                 {
                     var hasUpdates = false;
                     if (Active && Hash is not null)
@@ -640,6 +632,11 @@ namespace Lantean.QBTMud.Components
 
                 yield return columnDefinition;
             }
+        }
+
+        private static string CreateKey(ContentItem item)
+        {
+            return item.Name.Replace("/", "_");
         }
 
         public static List<ColumnDefinition<ContentItem>> ColumnsDefinitions { get; } =
