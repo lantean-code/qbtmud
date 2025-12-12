@@ -22,7 +22,7 @@ namespace Lantean.QBTMud.Components
         private const string _context = nameof(_context);
 
         [Parameter, EditorRequired]
-        public string? Hash { get; set; }
+        public string Hash { get; set; } = "";
 
         [Parameter]
         public bool Active { get; set; }
@@ -48,6 +48,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
 
+        [Inject]
+        protected IPeriodicTimerFactory TimerFactory { get; set; } = default!;
+
         protected PeerList? PeerList { get; set; }
 
         protected IEnumerable<Peer> Peers => PeerList?.Peers.Select(p => p.Value) ?? [];
@@ -64,7 +67,7 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnParametersSetAsync()
         {
-            if (Hash is null)
+            if (string.IsNullOrWhiteSpace(Hash))
             {
                 return;
             }
@@ -199,11 +202,11 @@ namespace Lantean.QBTMud.Components
         {
             if (firstRender)
             {
-                using (var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(RefreshInterval)))
+                await using (var timer = TimerFactory.Create(TimeSpan.FromMilliseconds(RefreshInterval)))
                 {
-                    while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync())
+                    while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync(_timerCancellationToken.Token))
                     {
-                        if (Hash is null)
+                        if (string.IsNullOrWhiteSpace(Hash))
                         {
                             return;
                         }

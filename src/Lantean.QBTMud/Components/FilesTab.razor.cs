@@ -226,7 +226,7 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnParametersSetAsync()
         {
-            if (Hash is null)
+            if (string.IsNullOrEmpty(Hash))
             {
                 return;
             }
