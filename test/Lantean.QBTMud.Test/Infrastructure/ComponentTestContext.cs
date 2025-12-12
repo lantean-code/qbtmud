@@ -24,6 +24,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
         public ComponentTestContext()
         {
             TestIdHelper.EnableTestIds();
+            BunitContext.DefaultWaitTimeout = TimeSpan.FromMinutes(1);
 
             _httpHandler = new TestHttpMessageHandler();
             _localStorage = new TestLocalStorageService();

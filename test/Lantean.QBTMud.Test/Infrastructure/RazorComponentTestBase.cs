@@ -17,11 +17,6 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
         internal ComponentTestContext TestContext { get; private set; } = new ComponentTestContext();
 
-        protected RazorComponentTestBase()
-        {
-            BunitContext.DefaultWaitTimeout = TimeSpan.FromSeconds(5);
-        }
-
         protected virtual ValueTask Dispose(bool disposing)
         {
             if (!_disposedValue)
