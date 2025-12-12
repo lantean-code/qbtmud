@@ -1556,16 +1556,17 @@ namespace Lantean.QBTMud.Services
 
             public void Add(Priority priority, float progress, long size, float availability)
             {
+                var sizeAsDouble = (double)size;
                 TotalSize += size;
 
                 if (priority == Priority.DoNotDownload)
                 {
-                    _downloadedSum += size;
+                    _downloadedSum += sizeAsDouble;
                 }
                 else
                 {
-                    _downloadedSum += progress * size;
-                    _availabilitySum += availability * size;
+                    _downloadedSum += sizeAsDouble * progress;
+                    _availabilitySum += sizeAsDouble * availability;
                     _availabilityWeight += size;
                 }
 

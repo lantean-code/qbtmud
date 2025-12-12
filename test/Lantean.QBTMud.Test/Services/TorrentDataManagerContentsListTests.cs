@@ -157,9 +157,47 @@ namespace Lantean.QBTMud.Test.Services
             folder.Availability.Should().Be(1f);
         }
 
+        [Fact]
+        public void GIVEN_LargeCompletedFile_WHEN_CreateContentsList_THEN_FolderHasNoRemainingBytes()
+        {
+            const long size = 9_000_000_000L;
+            var files = new[]
+            {
+                new FileData(1, "large/file.bin", size, 1f, QbtPriority.Normal, false, Array.Empty<int>(), 1.0f)
+            };
+
+            var result = _target.CreateContentsList(files);
+
+            result["large/file.bin"].Downloaded.Should().Be(size);
+            var folder = result["large"];
+            folder.Progress.Should().Be(1f);
+            folder.Remaining.Should().Be(0);
+            folder.Downloaded.Should().Be(size);
+        }
+
         // ---------------------------
         // MergeContentsList tests
         // ---------------------------
+
+        [Fact]
+        public void GIVEN_LargeCompletedFile_WHEN_MergeContentsList_THEN_FolderHasNoRemainingBytes()
+        {
+            const long size = 9_000_000_000L;
+            var files = new[]
+            {
+                new FileData(1, "large/file.bin", size, 1f, QbtPriority.Normal, false, Array.Empty<int>(), 1.0f)
+            };
+            var contents = new Dictionary<string, ContentItem>();
+
+            var changed = _target.MergeContentsList(files, contents);
+
+            changed.Should().BeTrue();
+            contents["large/file.bin"].Downloaded.Should().Be(size);
+            var folder = contents["large"];
+            folder.Progress.Should().Be(1f);
+            folder.Remaining.Should().Be(0);
+            folder.Downloaded.Should().Be(size);
+        }
 
         [Fact]
         public void GIVEN_NoFiles_AND_EmptyContents_WHEN_MergeContentsList_THEN_ReturnsFalseAndNoChange()

@@ -43,7 +43,7 @@ namespace Lantean.QBTMud.Models
 
         public float Availability { get; set; }
 
-        public long Downloaded => (long)Math.Round(Size * Progress, 0);
+        public long Downloaded => (long)Math.Round(Size * (double)Progress, 0);
 
         public long Remaining => Progress == 1 || Priority == Priority.DoNotDownload ? 0 : Size - Downloaded;
 
