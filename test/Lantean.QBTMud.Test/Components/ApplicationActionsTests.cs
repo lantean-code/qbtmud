@@ -6,6 +6,7 @@ using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,7 @@ using Microsoft.JSInterop;
 using Moq;
 using MudBlazor;
 using System.Text.Json;
+using System.Threading;
 using MainDataModel = Lantean.QBTMud.Models.MainData;
 using ServerStateModel = Lantean.QBTMud.Models.ServerState;
 using TorrentModel = Lantean.QBTMud.Models.Torrent;
@@ -35,7 +37,9 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            target.FindComponents<MudMenuItem>().Should().HaveCount(15);
+            var menuItems = target.FindComponents<MudMenuItem>();
+            menuItems.Should().HaveCount(16);
+            menuItems.Any(item => item.Markup.Contains("Speed", StringComparison.Ordinal)).Should().BeTrue();
             snackbarMock.Invocations.Should().BeEmpty();
             apiClientMock.VerifyNoOtherCalls();
         }
@@ -429,7 +433,9 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var speedHistoryMock = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
             apiClientMock.Setup(c => c.Logout()).Returns(Task.CompletedTask);
+            speedHistoryMock.Setup(s => s.ClearAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             dialogMock.Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
                 .Returns<string, string, Func<Task>>((_, _, callback) => callback());
 
@@ -443,6 +449,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.Logout(), Times.Once);
+            speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

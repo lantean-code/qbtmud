@@ -77,6 +77,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddSingleton<IPeerDataManager, PeerDataManager>();
             Services.AddSingleton<IPreferencesDataManager, PreferencesDataManager>();
             Services.AddSingleton<IRssDataManager, RssDataManager>();
+            Services.AddScoped<ISpeedHistoryService, SpeedHistoryService>();
 
             Services.AddTransient<IKeyboardService, KeyboardService>();
         }

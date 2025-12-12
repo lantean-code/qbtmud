@@ -45,6 +45,9 @@ namespace Lantean.QBTMud.Layout
         [Inject]
         protected ISessionStorageService SessionStorage { get; set; } = default!;
 
+        [Inject]
+        protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
+
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
 
@@ -166,6 +169,8 @@ namespace Lantean.QBTMud.Layout
 
             _requestId = data.ResponseId;
             _refreshInterval = MainData.ServerState.RefreshInterval;
+            await SpeedHistoryService.InitializeAsync();
+            await RecordSpeedSampleAsync(MainData.ServerState, _timerCancellationToken.Token);
 
             IsAuthenticated = true;
 
@@ -243,6 +248,7 @@ namespace Lantean.QBTMud.Layout
                 {
                     var newInterval = MainData.ServerState.RefreshInterval;
                     UpdateRefreshInterval(newInterval);
+                    await RecordSpeedSampleAsync(MainData.ServerState, cancellationToken);
                 }
 
                 _requestId = data.ResponseId;
@@ -618,6 +624,16 @@ namespace Lantean.QBTMud.Layout
             }
 
             return hasV4 ? v4 : v6;
+        }
+
+        private Task RecordSpeedSampleAsync(ServerState? serverState, CancellationToken cancellationToken)
+        {
+            if (serverState is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            return SpeedHistoryService.PushSampleAsync(DateTime.UtcNow, serverState.DownloadInfoSpeed, serverState.UploadInfoSpeed, cancellationToken);
         }
 
         private void OnCategoryChanged(string category)

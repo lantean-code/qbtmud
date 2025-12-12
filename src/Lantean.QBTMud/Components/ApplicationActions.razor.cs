@@ -3,6 +3,7 @@ using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
@@ -30,6 +31,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
+
+        [Inject]
+        protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
 
         [Parameter]
         public bool IsMenu { get; set; }
@@ -62,7 +66,8 @@ namespace Lantean.QBTMud.Components
             _actions =
             [
                 new("statistics", "Statistics", Icons.Material.Filled.PieChart, Color.Default, "./statistics"),
-                new("search", "Search", Icons.Material.Filled.Search, Color.Default, "./search"),
+                new("speed", "Speed", Icons.Material.Filled.ShowChart, Color.Default, "./speed"),
+                new("search", "Search", Icons.Material.Filled.Search, Color.Default, "./search", separatorBefore: true),
                 new("rss", "RSS", Icons.Material.Filled.RssFeed, Color.Default, "./rss"),
                 new("log", "Execution Log", Icons.Material.Filled.List, Color.Default, "./log"),
                 new("blocks", "Blocked IPs", Icons.Material.Filled.DisabledByDefault, Color.Default, "./blocks"),
@@ -96,6 +101,7 @@ namespace Lantean.QBTMud.Components
             await DialogWorkflow.ShowConfirmDialog("Logout?", "Are you sure you want to logout?", async () =>
             {
                 await ApiClient.Logout();
+                await SpeedHistoryService.ClearAsync();
 
                 NavigationManager.NavigateTo("./", true);
             });

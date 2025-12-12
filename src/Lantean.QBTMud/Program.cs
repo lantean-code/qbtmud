@@ -48,6 +48,7 @@ namespace Lantean.QBTMud
             builder.Services.AddSingleton<IPreferencesDataManager, PreferencesDataManager>();
             builder.Services.AddSingleton<IRssDataManager, RssDataManager>();
             builder.Services.AddSingleton<IPeriodicTimerFactory, PeriodicTimerFactory>();
+            builder.Services.AddScoped<ISpeedHistoryService, SpeedHistoryService>();
 
             builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddBlazoredSessionStorage();
