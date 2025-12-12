@@ -262,7 +262,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             {
                 selectedColumnsChanges.Should().ContainSingle();
                 selectedColumnsChanges[0].Should().BeEquivalentTo(new[] { "score", "age" });
-            }, TimeSpan.FromSeconds(2));
+            });
 
             sortColumnChanges.Should().ContainSingle();
             sortColumnChanges[0].Should().Be("age");
@@ -309,7 +309,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 sortDirectionEvents.Should().NotBeEmpty();
                 sortDirectionEvents.Last().Should().NotBe(SortDirection.None);
                 TestContext.LocalStorage.Snapshot().Should().ContainKey(columnSortKey);
-            }, TimeSpan.FromSeconds(2));
+            });
         }
 
         [Fact]
@@ -510,7 +510,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             {
                 selections.Should().NotBeEmpty();
                 selections.Last().Should().ContainSingle().And.Contain(items[0]);
-            }, TimeSpan.FromSeconds(2));
+            });
 
             await target.InvokeAsync(() => rows[1].Click(new MouseEventArgs { CtrlKey = true }));
             target.WaitForAssertion(() =>
@@ -518,19 +518,19 @@ namespace Lantean.QBTMud.Test.Components.UI
                 selections.Last().Should().HaveCount(2);
                 selections.Last().Should().Contain(items[0]);
                 selections.Last().Should().Contain(items[1]);
-            }, TimeSpan.FromSeconds(2));
+            });
 
             await target.InvokeAsync(() => rows[0].Click(new MouseEventArgs { CtrlKey = true }));
             target.WaitForAssertion(() =>
             {
                 selections.Last().Should().ContainSingle().And.Contain(items[1]);
-            }, TimeSpan.FromSeconds(2));
+            });
 
             await target.InvokeAsync(() => rows[0].Click(new MouseEventArgs { AltKey = true }));
             target.WaitForAssertion(() =>
             {
                 selections.Last().Should().ContainSingle().And.Contain(items[0]);
-            }, TimeSpan.FromSeconds(2));
+            });
         }
 
         [Fact]
@@ -780,7 +780,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 longPressEvents.Should().ContainSingle();
                 longPressEvents[0].Item.Should().Be(items[0]);
                 longPressEvents[0].Data.Should().NotBeNull();
-            }, TimeSpan.FromSeconds(2));
+            });
 
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.Click());
@@ -789,7 +789,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             {
                 selections.Should().BeEmpty();
                 rowClicks.Should().BeEmpty();
-            }, TimeSpan.FromSeconds(2));
+            });
         }
 
         [Fact]
@@ -823,7 +823,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 selections.Should().NotBeEmpty();
                 selections.Last().Should().ContainSingle().And.Contain(items[0]);
                 rowClicks.Should().ContainSingle();
-            }, TimeSpan.FromSeconds(2));
+            });
         }
 
         [Fact]

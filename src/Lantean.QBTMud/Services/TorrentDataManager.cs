@@ -1435,6 +1435,9 @@ namespace Lantean.QBTMud.Services
                 var segments = file.Name.Split(Extensions.DirectorySeparator);
                 var directoriesLength = segments.Length - 1;
 
+                var isDoNotDownload = file.Priority == QBitTorrentClient.Models.Priority.DoNotDownload;
+                var downloadSize = isDoNotDownload ? 0 : file.Size;
+
                 for (var i = 0; i < directoriesLength; i++)
                 {
                     var folderName = segments[i];
@@ -1450,7 +1453,7 @@ namespace Lantean.QBTMud.Services
                     if (!nodes.TryGetValue(folderPath, out var folderNode))
                     {
                         var level = (parent.Item?.Level ?? -1) + 1;
-                        var folderItem = new ContentItem(folderPath, folderName, folderIndex--, Priority.Normal, 0, 0, 0, true, level);
+                        var folderItem = new ContentItem(folderPath, folderName, folderIndex--, Priority.Normal, 0, 0, 0, true, level, 0);
                         folderNode = new ContentTreeNode(folderItem, parent);
                         nodes[folderPath] = folderNode;
                         parent.Children[folderPath] = folderNode;
@@ -1462,7 +1465,7 @@ namespace Lantean.QBTMud.Services
 
                 var displayName = segments[^1];
                 var fileLevel = (parent.Item?.Level ?? -1) + 1;
-                var fileItem = new ContentItem(file.Name, displayName, file.Index, (Priority)(int)file.Priority, file.Progress, file.Size, file.Availability, false, fileLevel);
+                var fileItem = new ContentItem(file.Name, displayName, file.Index, (Priority)(int)file.Priority, file.Progress, file.Size, file.Availability, false, fileLevel, downloadSize);
                 var fileNode = new ContentTreeNode(fileItem, parent);
                 nodes[file.Name] = fileNode;
                 parent.Children[fileItem.Name] = fileNode;
@@ -1490,10 +1493,11 @@ namespace Lantean.QBTMud.Services
                 foreach (var child in folder.Children.Values)
                 {
                     var childItem = child.Item!;
-                    accumulator.Add(childItem.Priority, childItem.Progress, childItem.Size, childItem.Availability);
+                    accumulator.Add(childItem.Priority, childItem.Progress, childItem.Size, childItem.Availability, childItem.DownloadSize);
                 }
 
                 folderItem.Size = accumulator.TotalSize;
+                folderItem.DownloadSize = accumulator.DownloadSize;
                 folderItem.Progress = accumulator.ResolveProgress();
                 folderItem.Availability = accumulator.ResolveAvailability();
                 folderItem.Priority = accumulator.ResolvePriority();
@@ -1535,6 +1539,12 @@ namespace Lantean.QBTMud.Services
                 changed = true;
             }
 
+            if (destination.DownloadSize != source.DownloadSize)
+            {
+                destination.DownloadSize = source.DownloadSize;
+                changed = true;
+            }
+
             if (Math.Abs(destination.Availability - source.Availability) > floatTolerance)
             {
                 destination.Availability = source.Availability;
@@ -1548,26 +1558,24 @@ namespace Lantean.QBTMud.Services
         {
             public long TotalSize { get; private set; }
 
-            private double _downloadedSum;
+            public long DownloadSize { get; private set; }
+
+            private double _downloadedDownloadSizeSum;
             private long _availabilityWeight;
             private double _availabilitySum;
             private Priority? _priority;
             private bool _mixedPriority;
 
-            public void Add(Priority priority, float progress, long size, float availability)
+            public void Add(Priority priority, float progress, long size, float availability, long downloadSize)
             {
-                var sizeAsDouble = (double)size;
                 TotalSize += size;
 
-                if (priority == Priority.DoNotDownload)
+                if (downloadSize > 0)
                 {
-                    _downloadedSum += sizeAsDouble;
-                }
-                else
-                {
-                    _downloadedSum += sizeAsDouble * progress;
-                    _availabilitySum += sizeAsDouble * availability;
-                    _availabilityWeight += size;
+                    DownloadSize += downloadSize;
+                    _downloadedDownloadSizeSum += downloadSize * progress;
+                    _availabilitySum += downloadSize * availability;
+                    _availabilityWeight += downloadSize;
                 }
 
                 if (!_priority.HasValue)
@@ -1592,12 +1600,16 @@ namespace Lantean.QBTMud.Services
 
             public float ResolveProgress()
             {
-                if (TotalSize == 0)
+                if (DownloadSize == 0)
                 {
                     return 0f;
                 }
 
-                var value = _downloadedSum / TotalSize;
+                var value = _downloadedDownloadSizeSum / DownloadSize;
+                if (value > 0.999999f)
+                {
+                    return 1f;
+                }
                 if (value < 0)
                 {
                     return 0f;
@@ -1664,6 +1676,8 @@ namespace Lantean.QBTMud.Services
             foreach (var file in files)
             {
                 var priority = (Priority)(int)file.Priority;
+                var isDoNotDownload = file.Priority == QBitTorrentClient.Models.Priority.DoNotDownload;
+                var downloadSize = isDoNotDownload ? 0 : file.Size;
                 var pathSegments = file.Name.Split(Extensions.DirectorySeparator);
                 var level = pathSegments.Length - 1;
                 var displayName = pathSegments[^1];
@@ -1672,7 +1686,7 @@ namespace Lantean.QBTMud.Services
 
                 if (contents.TryGetValue(filePath, out var existingFile))
                 {
-                    var updatedFile = new ContentItem(filePath, displayName, file.Index, priority, file.Progress, file.Size, file.Availability, false, level);
+                    var updatedFile = new ContentItem(filePath, displayName, file.Index, priority, file.Progress, file.Size, file.Availability, false, level, downloadSize);
                     if (UpdateContentItem(existingFile, updatedFile))
                     {
                         hasChanges = true;
@@ -1680,7 +1694,7 @@ namespace Lantean.QBTMud.Services
                 }
                 else
                 {
-                    var newFile = new ContentItem(filePath, displayName, file.Index, priority, file.Progress, file.Size, file.Availability, false, level);
+                    var newFile = new ContentItem(filePath, displayName, file.Index, priority, file.Progress, file.Size, file.Availability, false, level, downloadSize);
                     contents[filePath] = newFile;
                     hasChanges = true;
                 }
@@ -1702,7 +1716,7 @@ namespace Lantean.QBTMud.Services
 
                     if (!contents.TryGetValue(directoryPath, out var directoryItem))
                     {
-                        var newDirectory = new ContentItem(directoryPath, segment, nextFolderIndex--, Priority.Normal, 0, 0, 0, true, i);
+                        var newDirectory = new ContentItem(directoryPath, segment, nextFolderIndex--, Priority.Normal, 0, 0, 0, true, i, 0);
                         contents[directoryPath] = newDirectory;
                         hasChanges = true;
                     }
@@ -1712,7 +1726,7 @@ namespace Lantean.QBTMud.Services
                         accumulator = new DirectoryAccumulator();
                     }
 
-                    accumulator.Add(priority, file.Progress, file.Size, file.Availability);
+                    accumulator.Add(priority, file.Progress, file.Size, file.Availability, downloadSize);
                     directoryAccumulators[directoryPath] = accumulator;
                 }
             }
@@ -1743,7 +1757,8 @@ namespace Lantean.QBTMud.Services
                     accumulator.TotalSize,
                     accumulator.ResolveAvailability(),
                     true,
-                    directoryItem.Level);
+                    directoryItem.Level,
+                    accumulator.DownloadSize);
 
                 if (UpdateContentItem(directoryItem, updatedDirectory))
                 {

@@ -15,7 +15,7 @@
     <WasmEnableWebcil>true</WasmEnableWebcil>
     <WasmSingleFileBundle>false</WasmSingleFileBundle>
     <WasmFingerprintAssets>false</WasmFingerprintAssets>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <InvariantGlobalization>false</InvariantGlobalization>
     <CompressionEnabled>false</CompressionEnabled>
   </PropertyGroup>
 
@@ -26,7 +26,7 @@
     <WasmFingerprintAssets>true</WasmFingerprintAssets>
     <PublishTrimmed>true</PublishTrimmed>
     <WasmNativeStrip>true</WasmNativeStrip>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <InvariantGlobalization>false</InvariantGlobalization>
     <CompressionEnabled>true</CompressionEnabled>
   </PropertyGroup>
     

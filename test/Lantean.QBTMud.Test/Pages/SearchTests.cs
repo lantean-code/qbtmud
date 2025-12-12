@@ -78,7 +78,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForState(() =>
             {
                 return FindComponentByTestId<MudCollapse>(target, "AdvancedFiltersCollapse").Instance.Expanded;
-            }, TimeSpan.FromSeconds(2));
+            });
 
             var advancedFiltersCollapse = FindComponentByTestId<MudCollapse>(target, "AdvancedFiltersCollapse");
             advancedFiltersCollapse.Instance.Expanded.Should().BeTrue();
@@ -125,7 +125,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForState(() =>
             {
                 return FindComponentByTestId<MudText>(target, "JobSummary").Markup.Contains("1/2");
-            }, TimeSpan.FromSeconds(2));
+            });
 
             var jobTabSummary = FindComponentByTestId<MudText>(target, "JobSummary");
             jobTabSummary.Markup.Should().Contain("1/2");
@@ -163,7 +163,7 @@ namespace Lantean.QBTMud.Test.Pages
 
                 var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
                 pluginSelect.Instance.SelectedValues.Should().Contain("movies");
-            }, TimeSpan.FromSeconds(2));
+            });
 
             var emptyState = FindComponentByTestId<MudPaper>(target, "SearchEmptyState");
             emptyState.Markup.Should().Contain("No searches yet");
@@ -197,7 +197,7 @@ namespace Lantean.QBTMud.Test.Pages
 
                 var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "CategorySelect");
                 categorySelect.Instance.Value.Should().Be(SearchForm.AllCategoryId);
-            }, TimeSpan.FromSeconds(2));
+            });
         }
 
         [Fact]
@@ -215,7 +215,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 var alert = FindComponentByTestId<MudAlert>(target, "SearchUnavailableAlert");
                 alert.Markup.Should().Contain("Search is disabled");
-            }, TimeSpan.FromSeconds(2));
+            });
 
             var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
             startButton.Instance.Disabled.Should().BeTrue();
@@ -244,7 +244,7 @@ namespace Lantean.QBTMud.Test.Pages
 
                 var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
                 startButton.Instance.Disabled.Should().BeTrue();
-            }, TimeSpan.FromSeconds(2));
+            });
         }
 
         [Fact]
@@ -278,7 +278,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
                 pluginSelect.Instance.SelectedValues.Should().Contain("primary");
-            }, TimeSpan.FromSeconds(2));
+            });
 
             var storedPreferences = await TestContext.LocalStorage.GetItemAsync<SearchPreferences>(PreferencesStorageKey);
             storedPreferences.Should().NotBeNull();
@@ -319,7 +319,7 @@ namespace Lantean.QBTMud.Test.Pages
                 snackbarMock.Verify();
                 var alert = FindComponentByTestId<MudAlert>(target, "SearchUnavailableAlert");
                 alert.Markup.Should().Contain("Search is disabled");
-            }, TimeSpan.FromSeconds(2));
+            });
         }
 
         [Fact]
@@ -366,7 +366,7 @@ namespace Lantean.QBTMud.Test.Pages
             var form = target.Find("form");
             form.Submit();
 
-            target.WaitForAssertion(() => snackbarMock.Verify(), TimeSpan.FromSeconds(2));
+            target.WaitForAssertion(() => snackbarMock.Verify());
         }
 
         [Fact]
@@ -397,7 +397,7 @@ namespace Lantean.QBTMud.Test.Pages
             var form = target.Find("form");
             form.Submit();
 
-            target.WaitForAssertion(() => snackbarMock.Verify(), TimeSpan.FromSeconds(2));
+            target.WaitForAssertion(() => snackbarMock.Verify());
         }
 
         [Fact]
@@ -425,7 +425,7 @@ namespace Lantean.QBTMud.Test.Pages
             var form = target.Find("form");
             form.Submit();
 
-            target.WaitForAssertion(() => snackbarMock.Verify(), TimeSpan.FromSeconds(2));
+            target.WaitForAssertion(() => snackbarMock.Verify());
         }
 
         [Fact]
@@ -478,7 +478,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 startButton.Instance.Disabled.Should().BeFalse();
-            }, TimeSpan.FromSeconds(2));
+            });
 
             target.Find("form").Submit();
 
@@ -530,7 +530,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 startButton.Instance.Disabled.Should().BeFalse();
-            }, TimeSpan.FromSeconds(2));
+            });
 
             target.Find("form").Submit();
 
@@ -538,7 +538,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 var tabPanels = target.FindAll("[role='tab']");
                 tabPanels.Count.Should().Be(1);
-            }, TimeSpan.FromSeconds(2));
+            });
 
             apiMock.Verify(client => client.StartSearch(It.IsAny<string>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<string>()), Times.Never());
             apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
@@ -584,7 +584,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 var emptyState = FindComponentByTestId<MudPaper>(target, "SearchEmptyState");
                 emptyState.Markup.Should().Contain("No searches yet");
-            }, TimeSpan.FromSeconds(2));
+            });
 
             apiMock.Verify(client => client.StopSearch(jobId), Times.Once());
             apiMock.Verify(client => client.DeleteSearch(jobId), Times.Once());
@@ -650,14 +650,14 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 startButton.Instance.Disabled.Should().BeFalse();
-            }, TimeSpan.FromSeconds(2));
+            });
 
             target.Find("form").Submit();
 
             target.WaitForAssertion(() =>
             {
                 target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
-            }, TimeSpan.FromSeconds(5));
+            });
 
             snackbarMock.Verify();
         }
@@ -697,14 +697,14 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 startButton.Instance.Disabled.Should().BeFalse();
-            }, TimeSpan.FromSeconds(2));
+            });
 
             target.Find("form").Submit();
 
             target.WaitForAssertion(() =>
             {
                 target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
-            }, TimeSpan.FromSeconds(5));
+            });
 
             target.WaitForState(() =>
             {
@@ -767,19 +767,19 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 startButton.Instance.Disabled.Should().BeFalse();
-            }, TimeSpan.FromSeconds(2));
+            });
 
             target.Find("form").Submit();
 
             target.WaitForAssertion(() =>
             {
                 target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
-            }, TimeSpan.FromSeconds(5));
+            });
 
             target.WaitForAssertion(() =>
             {
                 mainData.LostConnection.Should().BeTrue();
-            }, TimeSpan.FromSeconds(5));
+            });
 
             target.Render();
         }
@@ -824,7 +824,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 target.Markup.Should().Contain("Ubuntu 24.04");
                 target.Markup.Should().NotContain("Fedora 39");
-            }, TimeSpan.FromSeconds(5));
+            });
 
             var summary = FindComponentByTestId<MudText>(target, "JobSummary");
             summary.Markup.Should().Contain("1/2");
@@ -878,7 +878,7 @@ namespace Lantean.QBTMud.Test.Pages
                 target.Markup.Should().Contain("Passing Result");
                 target.Markup.Should().NotContain("Low Seed Result");
                 target.Markup.Should().NotContain("Large Size Result");
-            }, TimeSpan.FromSeconds(5));
+            });
 
             var summary = FindComponentByTestId<MudText>(target, "JobSummary");
             summary.Markup.Should().Contain("1/3");
@@ -923,7 +923,7 @@ namespace Lantean.QBTMud.Test.Pages
                 target.Markup.Should().Contain("href=\"http://desc/item1\"");
                 target.Markup.Should().Contain("href=\"http://site/item1\"");
                 target.Markup.Should().Contain("Item Two");
-            }, TimeSpan.FromSeconds(5));
+            });
 
             target.Markup.Should().Contain("2023");
         }
@@ -940,7 +940,7 @@ namespace Lantean.QBTMud.Test.Pages
             await OpenContextMenuAsync(target, result);
             await target.Instance.InvokeDownloadResultFromContext();
 
-            target.WaitForAssertion(() => dialogMock.Verify(), TimeSpan.FromSeconds(2));
+            target.WaitForAssertion(() => dialogMock.Verify());
         }
 
         [Fact]
@@ -962,8 +962,8 @@ namespace Lantean.QBTMud.Test.Pages
             await OpenContextMenuAsync(target, result);
             await target.Instance.InvokeCopyNameFromContext();
 
-            target.WaitForAssertion(() => TestContext.Clipboard.PeekLast().Should().Be("Name Result"), TimeSpan.FromSeconds(2));
-            target.WaitForAssertion(() => snackbarMock.Verify(), TimeSpan.FromSeconds(2));
+            target.WaitForAssertion(() => TestContext.Clipboard.PeekLast().Should().Be("Name Result"));
+            target.WaitForAssertion(() => snackbarMock.Verify());
         }
 
         [Fact]
@@ -985,8 +985,8 @@ namespace Lantean.QBTMud.Test.Pages
             await OpenContextMenuAsync(target, result);
             await target.Instance.InvokeCopyDownloadLinkFromContext();
 
-            target.WaitForAssertion(() => TestContext.Clipboard.PeekLast().Should().Be("http://files/link"), TimeSpan.FromSeconds(2));
-            target.WaitForAssertion(() => snackbarMock.Verify(), TimeSpan.FromSeconds(2));
+            target.WaitForAssertion(() => TestContext.Clipboard.PeekLast().Should().Be("http://files/link"));
+            target.WaitForAssertion(() => snackbarMock.Verify());
         }
 
         [Fact]
@@ -1008,8 +1008,8 @@ namespace Lantean.QBTMud.Test.Pages
             await OpenContextMenuAsync(target, result);
             await target.Instance.InvokeCopyDescriptionLinkFromContext();
 
-            target.WaitForAssertion(() => TestContext.Clipboard.PeekLast().Should().Be("http://desc/detail"), TimeSpan.FromSeconds(2));
-            target.WaitForAssertion(() => snackbarMock.Verify(), TimeSpan.FromSeconds(2));
+            target.WaitForAssertion(() => TestContext.Clipboard.PeekLast().Should().Be("http://desc/detail"));
+            target.WaitForAssertion(() => snackbarMock.Verify());
         }
 
         [Fact]
@@ -1034,7 +1034,7 @@ namespace Lantean.QBTMud.Test.Pages
                     && second == "http://desc/open");
 
                 hasInvocation.Should().BeTrue();
-            }, TimeSpan.FromSeconds(2));
+            });
         }
 
         [Fact]
@@ -1057,8 +1057,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.Instance.InvokeCopyDownloadLinkFromContext();
 
-            target.WaitForAssertion(() => TestContext.Clipboard.PeekLast().Should().Be("http://files/longpress"), TimeSpan.FromSeconds(2));
-            target.WaitForAssertion(() => snackbarMock.Verify(), TimeSpan.FromSeconds(2));
+            target.WaitForAssertion(() => TestContext.Clipboard.PeekLast().Should().Be("http://files/longpress"));
+            target.WaitForAssertion(() => snackbarMock.Verify());
         }
 
         [Fact]
@@ -1091,7 +1091,7 @@ namespace Lantean.QBTMud.Test.Pages
                 var stored = TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(JobsStorageKey).GetAwaiter().GetResult();
                 stored.Should().NotBeNull();
                 stored!.Should().BeEmpty();
-            }, TimeSpan.FromSeconds(2));
+            });
         }
 
         [Fact]
@@ -1131,8 +1131,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.Find("form").Submit();
 
-            target.WaitForAssertion(() => target.Instance.ShowAdvancedFiltersValue.Should().BeFalse(), TimeSpan.FromSeconds(5));
-            target.WaitForAssertion(() => target.Instance.ShowSearchFormValue.Should().BeFalse(), TimeSpan.FromSeconds(5));
+            target.WaitForAssertion(() => target.Instance.ShowAdvancedFiltersValue.Should().BeFalse());
+            target.WaitForAssertion(() => target.Instance.ShowSearchFormValue.Should().BeFalse());
         }
 
         [Fact]
@@ -1173,7 +1173,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.Find("form").Submit();
 
-            target.WaitForAssertion(() => snackbarMock.Verify(), TimeSpan.FromSeconds(2));
+            target.WaitForAssertion(() => snackbarMock.Verify());
             target.Instance.ShowAdvancedFiltersValue.Should().BeTrue();
         }
 
@@ -1253,7 +1253,7 @@ namespace Lantean.QBTMud.Test.Pages
                 stored.MinimumSizeUnit.Should().Be(SearchSizeUnit.Gibibytes);
                 stored.MaximumSize.Should().Be(4);
                 stored.MaximumSizeUnit.Should().Be(SearchSizeUnit.Tebibytes);
-            }, TimeSpan.FromSeconds(5));
+            });
         }
 
         [Fact]
@@ -1406,7 +1406,7 @@ namespace Lantean.QBTMud.Test.Pages
                 job.Status.Should().Be("Stopped");
                 apiMockReference.Should().NotBeNull();
                 apiMockReference!.Verify(client => client.StopSearch(300), Times.Once());
-            }, TimeSpan.FromSeconds(2));
+            });
         }
 
         [Fact]
@@ -1443,7 +1443,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => target.Instance.InvokeStopJob(job));
 
-            target.WaitForAssertion(() => snackbarMock.Verify(), TimeSpan.FromSeconds(2));
+            target.WaitForAssertion(() => snackbarMock.Verify());
             job.Status.Should().Be("Running");
         }
 
@@ -1476,7 +1476,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 job.Results.Should().Contain(result => result.FileName == "Refreshed");
                 job.Results.Should().NotContain(result => result.FileName == "Initial");
-            }, TimeSpan.FromSeconds(5));
+            });
         }
 
         [Fact]
@@ -1517,7 +1517,7 @@ namespace Lantean.QBTMud.Test.Pages
                 apiMockReference.Should().NotBeNull();
                 apiMockReference!.Verify(client => client.StopSearch(304), Times.Once());
                 apiMockReference.Verify(client => client.DeleteSearch(304), Times.Once());
-            }, TimeSpan.FromSeconds(2));
+            });
 
             target.Instance.ExposedJobs.Should().BeEmpty();
         }
@@ -1556,7 +1556,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 target.Markup.Should().Contain("Context");
-            }, TimeSpan.FromSeconds(5));
+            });
 
             return target;
         }
@@ -1603,7 +1603,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 target.Instance.HasContextResultValue.Should().BeTrue();
-            }, TimeSpan.FromSeconds(2));
+            });
         }
     }
 }

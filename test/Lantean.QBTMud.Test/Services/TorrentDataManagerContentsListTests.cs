@@ -96,7 +96,7 @@ namespace Lantean.QBTMud.Test.Services
             ab.IsFolder.Should().BeTrue();
             ab.Level.Should().Be(1);
             ab.Size.Should().Be(100);
-            ab.Progress.Should().BeApproximately(0.82f, 1e-6f);
+            ab.Progress.Should().BeApproximately(0.4f, 1e-6f);
             ab.Availability.Should().BeApproximately(1.0f, 1e-6f);
             ab.Priority.Should().Be(MudPriority.Mixed);
 
@@ -104,8 +104,8 @@ namespace Lantean.QBTMud.Test.Services
             a.IsFolder.Should().BeTrue();
             a.Level.Should().Be(0);
             a.Size.Should().Be(110);
-            a.Progress.Should().BeApproximately(90f / 110f, 1e-6f);
-            a.Availability.Should().BeApproximately(120f / 110f, 1e-6f);
+            a.Progress.Should().BeApproximately(0.5f, 1e-6f);
+            a.Availability.Should().BeApproximately(1.25f, 1e-6f);
             a.Priority.Should().Be(MudPriority.Mixed);
 
             // folder indices are less than min file index (10); deeper folder created later => smaller index
@@ -132,7 +132,7 @@ namespace Lantean.QBTMud.Test.Services
             var d = result["d"];
             d.IsFolder.Should().BeTrue();
             d.Size.Should().Be(100);
-            d.Progress.Should().Be(1f);
+            d.Progress.Should().Be(0f);
             d.Availability.Should().Be(0f);
             d.Priority.Should().Be(MudPriority.DoNotDownload);
             d.Remaining.Should().Be(0);
@@ -263,7 +263,7 @@ namespace Lantean.QBTMud.Test.Services
             var folder = contents["folder1"];
             folder.IsFolder.Should().BeTrue();
             folder.Size.Should().Be(100);
-            folder.Progress.Should().BeApproximately(0.82f, 1e-6f);
+            folder.Progress.Should().BeApproximately(0.4f, 1e-6f);
             folder.Availability.Should().BeApproximately(1.0f, 1e-6f);
             folder.Priority.Should().Be(MudPriority.Mixed);
         }

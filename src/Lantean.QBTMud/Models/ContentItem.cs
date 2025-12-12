@@ -14,7 +14,8 @@ namespace Lantean.QBTMud.Models
             long size,
             float availability,
             bool isFolder = false,
-            int level = 0)
+            int level = 0,
+            long? downloadSize = null)
         {
             Name = name;
             DisplayName = displayName;
@@ -22,6 +23,7 @@ namespace Lantean.QBTMud.Models
             Priority = priority;
             Progress = progress;
             Size = size;
+            DownloadSize = downloadSize ?? size;
             Availability = availability;
             IsFolder = isFolder;
             Level = level;
@@ -41,11 +43,13 @@ namespace Lantean.QBTMud.Models
 
         public long Size { get; set; }
 
+        public long DownloadSize { get; set; }
+
         public float Availability { get; set; }
 
-        public long Downloaded => (long)Math.Round(Size * (double)Progress, 0);
+        public long Downloaded => (long)Math.Round(DownloadSize * (double)Progress, 0);
 
-        public long Remaining => Progress == 1 || Priority == Priority.DoNotDownload ? 0 : Size - Downloaded;
+        public long Remaining => Progress == 1 || Priority == Priority.DoNotDownload ? 0 : DownloadSize - Downloaded;
 
         public bool IsFolder { get; }
 
