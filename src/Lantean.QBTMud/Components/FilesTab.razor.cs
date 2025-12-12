@@ -14,7 +14,6 @@ namespace Lantean.QBTMud.Components
 {
     public partial class FilesTab : IAsyncDisposable
     {
-        private readonly bool _refreshEnabled = true;
         private const string _expandedNodesStorageKey = "FilesTab.ExpandedNodes";
 
         private readonly CancellationTokenSource _timerCancellationToken = new();
@@ -34,7 +33,7 @@ namespace Lantean.QBTMud.Components
         public bool Active { get; set; }
 
         [Parameter, EditorRequired]
-        public string? Hash { get; set; }
+        public string Hash { get; set; } = "";
 
         [CascadingParameter(Name = "RefreshInterval")]
         public int RefreshInterval { get; set; }
@@ -100,13 +99,9 @@ namespace Lantean.QBTMud.Components
                 MarkFilesDirty();
                 return;
             }
-
-            _filterDefinitions = filterDefinitions;
-            if (_filterDefinitions is null)
+            else
             {
-                Filters = null;
-                MarkFilesDirty();
-                return;
+                _filterDefinitions = filterDefinitions;
             }
 
             var filters = new List<Func<ContentItem, bool>>();
@@ -181,11 +176,6 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (!_refreshEnabled)
-            {
-                return;
-            }
-
             if (!firstRender)
             {
                 return;
@@ -273,11 +263,6 @@ namespace Lantean.QBTMud.Components
 
         protected async Task PriorityValueChanged(ContentItem contentItem, Priority priority)
         {
-            if (Hash is null)
-            {
-                return;
-            }
-
             IEnumerable<int> fileIndexes;
             if (contentItem.IsFolder)
             {
@@ -295,7 +280,7 @@ namespace Lantean.QBTMud.Components
         {
             if (SelectedItem is null)
             {
-                return Task.CompletedTask;
+                return RenameFiles();
             }
 
             return RenameFiles(SelectedItem);
@@ -313,11 +298,6 @@ namespace Lantean.QBTMud.Components
 
         private async Task RenameFiles(params ContentItem[] contentItems)
         {
-            if (Hash is null || contentItems.Length == 0)
-            {
-                return;
-            }
-
             if (contentItems.Length == 1)
             {
                 var contentItem = contentItems[0];
@@ -376,11 +356,6 @@ namespace Lantean.QBTMud.Components
 
         private IEnumerable<ContentItem> GetDescendants(ContentItem contentItem)
         {
-            if (!contentItem.IsFolder || Files is null)
-            {
-                return [];
-            }
-
             return FileList!.Values.Where(f => f.Name.StartsWith(contentItem.Name + Extensions.DirectorySeparator) && !f.IsFolder);
         }
 

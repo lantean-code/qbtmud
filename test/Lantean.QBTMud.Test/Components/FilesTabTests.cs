@@ -163,9 +163,10 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public async Task GIVEN_NoSelection_WHEN_RenameToolbarClicked_THEN_NoDialogShown()
+        public async Task GIVEN_NoSelection_WHEN_RenameToolbarClicked_THEN_MultiRenameDialogInvoked()
         {
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
+            _dialogWorkflowMock.Setup(d => d.InvokeRenameFilesDialog("Hash")).Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
             await _timer.TriggerTickAsync();
@@ -175,7 +176,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _dialogWorkflowMock.Invocations.Should().BeEmpty();
+                _dialogWorkflowMock.Verify(d => d.InvokeRenameFilesDialog("Hash"), Times.Once);
             });
         }
 
@@ -264,6 +265,32 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_FileListMissing_WHEN_TimerRuns_THEN_ContentListInitialized()
+        {
+            var files = CreateFiles("root/file1.txt");
+            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+
+            var dataManagerMock = new Mock<ITorrentDataManager>();
+            TestContext.Services.RemoveAll(typeof(ITorrentDataManager));
+            TestContext.Services.AddSingleton(dataManagerMock.Object);
+
+            dataManagerMock
+                .SetupSequence(m => m.CreateContentsList(files))
+                .Returns((Dictionary<string, ContentItem>?)null!)
+                .Returns(new Dictionary<string, ContentItem>());
+
+            var target = RenderFilesTab();
+
+            await _timer.TriggerTickAsync();
+            await _timer.TriggerTickAsync(result: false);
+
+            target.WaitForAssertion(() =>
+            {
+                dataManagerMock.Verify(m => m.CreateContentsList(files), Times.Exactly(2));
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_TimerTick_WHEN_ComponentInactive_THEN_NoRefreshPerformed()
         {
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
@@ -325,12 +352,53 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderFilesTab();
 
             await _timer.TriggerTickAsync();
+            target.WaitForAssertion(() =>
+            {
+                _apiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().BeGreaterThanOrEqualTo(1);
+            });
             _apiClientMock.Invocations.Clear();
 
             await _timer.TriggerTickAsync(result: false);
             target.Render();
 
-            _apiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Never);
+            target.WaitForAssertion(() =>
+            {
+                _apiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().Be(0);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_NoUpdatesFromTimer_WHEN_RenderedTwice_THEN_SecondRenderSkipsLoop()
+        {
+            var dataManagerMock = new Mock<ITorrentDataManager>();
+            dataManagerMock.Setup(m => m.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>())).Returns(new Dictionary<string, ContentItem>());
+            dataManagerMock.Setup(m => m.MergeContentsList(It.IsAny<IReadOnlyList<FileData>>(), It.IsAny<Dictionary<string, ContentItem>>())).Returns(false);
+            TestContext.Services.RemoveAll(typeof(ITorrentDataManager));
+            TestContext.Services.AddSingleton(dataManagerMock.Object);
+
+            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
+
+            await _timer.TriggerTickAsync();
+            await _timer.TriggerTickAsync(result: false);
+
+            var target = TestContext.Render<FilesTab>(parameters =>
+            {
+                parameters.AddCascadingValue("RefreshInterval", 10);
+                parameters.Add(p => p.Active, true);
+                parameters.Add(p => p.Hash, "Hash");
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                _apiClientMock.Invocations.Count(i => i.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().BeGreaterThanOrEqualTo(1);
+            });
+
+            _apiClientMock.Invocations.Clear();
+
+            target.Render();
+            await _timer.TriggerTickAsync(result: false);
+
+            _apiClientMock.Invocations.Should().BeEmpty();
         }
 
         [Fact]
@@ -795,15 +863,20 @@ namespace Lantean.QBTMud.Test.Components
 
         private sealed class FakePeriodicTimer : IPeriodicTimer
         {
-            private TaskCompletionSource<bool>? _pendingTick;
             private bool _disposed;
-            private Queue<bool> _scheduledResults = new Queue<bool>(new[] { true });
+            private TaskCompletionSource<bool>? _pendingTick;
+            private readonly Queue<bool> _scheduledResults = new Queue<bool>();
 
             public Task<bool> WaitForNextTickAsync(CancellationToken cancellationToken)
             {
                 if (_disposed)
                 {
                     return Task.FromResult(false);
+                }
+
+                if (_scheduledResults.Count > 0)
+                {
+                    return Task.FromResult(_scheduledResults.Dequeue());
                 }
 
                 _pendingTick = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
