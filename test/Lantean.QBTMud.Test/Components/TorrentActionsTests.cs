@@ -3,7 +3,6 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
-using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
@@ -106,8 +105,31 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => limitUpload.Instance.OnClick.InvokeAsync());
             await target.InvokeAsync(() => limitShareRatio.Instance.OnClick.InvokeAsync());
 
+            torrents["One"].AutomaticTorrentManagement.Should().BeFalse();
+            torrents["Two"].AutomaticTorrentManagement.Should().BeFalse();
             apiClientMock.Verify(c => c.SetAutomaticTorrentManagement(false, null, It.Is<string[]>(a => a.SequenceEqual(new[] { "One", "Two" }))), Times.Once);
-            apiClientMock.Verify(c => c.SetAutomaticTorrentManagement(true, null, It.Is<string[]>(a => a.Length == 0)), Times.Once);
+            apiClientMock.Verify(c => c.SetAutomaticTorrentManagement(true, null, It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_AutoTmmToggle_WHEN_ApiFails_THEN_StateRestored()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            apiClientMock.Setup(c => c.SetAutomaticTorrentManagement(false, null, Hashes("One", "Two"))).ThrowsAsync(new InvalidOperationException());
+            TestContext.UseSnackbarMock();
+
+            var torrents = Torrents(
+                CreateTorrent("One", automaticTorrentManagement: true),
+                CreateTorrent("Two", automaticTorrentManagement: true));
+
+            var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
+
+            var autoTmm = FindMenuItem(target, "Automatic Torrent Management");
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => target.InvokeAsync(() => autoTmm.Instance.OnClick.InvokeAsync()));
+
+            torrents["One"].AutomaticTorrentManagement.Should().BeTrue();
+            torrents["Two"].AutomaticTorrentManagement.Should().BeTrue();
         }
 
         [Fact]
@@ -137,9 +159,51 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => recheck.Instance.OnClick.InvokeAsync());
             await target.InvokeAsync(() => reannounce.Instance.OnClick.InvokeAsync());
 
+            torrents["Alpha"].SequentialDownload.Should().BeTrue();
+            torrents["Beta"].SequentialDownload.Should().BeTrue();
+            torrents["Alpha"].FirstLastPiecePriority.Should().BeTrue();
+            torrents["Beta"].FirstLastPiecePriority.Should().BeTrue();
             apiClientMock.Verify(c => c.ToggleSequentialDownload(null, Hashes("Alpha", "Beta")), Times.Once);
             apiClientMock.Verify(c => c.SetFirstLastPiecePriority(null, Hashes("Alpha", "Beta")), Times.Once);
             apiClientMock.Verify(c => c.ReannounceTorrents(null, Hashes("Alpha", "Beta")), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_SequentialToggle_WHEN_ApiFails_THEN_StateRestored()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            apiClientMock.Setup(c => c.ToggleSequentialDownload(null, Hashes("Hash"))).ThrowsAsync(new InvalidOperationException());
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var torrents = Torrents(CreateTorrent("Hash", sequentialDownload: true));
+
+            var target = RenderMenuItems(Hashes("Hash"), torrents, Tags("Tag"), Categories("Category"));
+
+            var sequential = FindMenuItem(target, "Download in sequential order");
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => target.InvokeAsync(() => sequential.Instance.OnClick.InvokeAsync()));
+
+            torrents["Hash"].SequentialDownload.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_FirstLastPiecePriorityToggle_WHEN_ApiFails_THEN_StateRestored()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            apiClientMock.Setup(c => c.SetFirstLastPiecePriority(null, Hashes("Hash"))).ThrowsAsync(new InvalidOperationException());
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var torrents = Torrents(CreateTorrent("Hash", firstLastPiecePriority: true));
+
+            var target = RenderMenuItems(Hashes("Hash"), torrents, Tags("Tag"), Categories("Category"));
+
+            var firstLast = FindMenuItem(target, "Download first and last pieces first");
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => target.InvokeAsync(() => firstLast.Instance.OnClick.InvokeAsync()));
+
+            torrents["Hash"].FirstLastPiecePriority.Should().BeTrue();
         }
 
         [Fact]
@@ -297,8 +361,31 @@ namespace Lantean.QBTMud.Test.Components
             var superSeeding = FindMenuItem(target, "Super seeding mode");
             await target.InvokeAsync(() => superSeeding.Instance.OnClick.InvokeAsync());
 
+            torrents["Done"].SuperSeeding.Should().BeFalse();
+            torrents["Other"].SuperSeeding.Should().BeTrue();
             apiClientMock.Verify(c => c.SetSuperSeeding(false, null, Hashes("Done")), Times.Once);
             apiClientMock.Verify(c => c.SetSuperSeeding(true, null, Hashes("Other")), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_SuperSeedingToggle_WHEN_ApiFails_THEN_StateRestored()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            apiClientMock.Setup(c => c.SetSuperSeeding(false, null, Hashes("Done"))).ThrowsAsync(new InvalidOperationException());
+            TestContext.UseSnackbarMock();
+
+            var torrents = Torrents(
+                CreateTorrent("Done", progress: 1f, superSeeding: true),
+                CreateTorrent("Other", progress: 1f, superSeeding: false));
+
+            var target = RenderMenuItems(Hashes("Done", "Other"), torrents, Tags("Tag"), Categories("Category"));
+
+            var superSeeding = FindMenuItem(target, "Super seeding mode");
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => target.InvokeAsync(() => superSeeding.Instance.OnClick.InvokeAsync()));
+
+            torrents["Done"].SuperSeeding.Should().BeTrue();
+            torrents["Other"].SuperSeeding.Should().BeFalse();
         }
 
         [Fact]

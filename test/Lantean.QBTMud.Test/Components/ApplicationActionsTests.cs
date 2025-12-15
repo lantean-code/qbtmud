@@ -38,10 +38,38 @@ namespace Lantean.QBTMud.Test.Components
             });
 
             var menuItems = target.FindComponents<MudMenuItem>();
-            menuItems.Should().HaveCount(16);
+            menuItems.Should().HaveCount(17);
             menuItems.Any(item => item.Markup.Contains("Speed", StringComparison.Ordinal)).Should().BeTrue();
             snackbarMock.Invocations.Should().BeEmpty();
             apiClientMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task GIVEN_DarkModeMenuItem_WHEN_Clicked_THEN_InvokesCallback()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.UseSnackbarMock();
+            bool? newValue = null;
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.IsDarkMode, false);
+                parameters.Add(p => p.DarkModeChanged, EventCallback.Factory.Create<bool>(this, value => newValue = value));
+            });
+
+            var darkMode = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Switch to dark mode", StringComparison.Ordinal));
+            await target.InvokeAsync(() => darkMode.Instance.OnClick.InvokeAsync());
+
+            var items = target.FindComponents<MudMenuItem>().ToList();
+            var darkIndex = items.FindIndex(item => item.Markup.Contains("Switch to light mode", StringComparison.Ordinal));
+            var aboutIndex = items.FindIndex(item => item.Markup.Contains("About", StringComparison.Ordinal));
+            darkIndex.Should().BeGreaterThanOrEqualTo(0);
+            aboutIndex.Should().BeGreaterThan(darkIndex);
+            newValue.Should().BeTrue();
+            target.Markup.Should().Contain("Switch to light mode");
+            target.Markup.Should().Contain("mud-info-text");
         }
 
         [Fact]
@@ -471,6 +499,22 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => exitItem.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.Shutdown(), Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_NavMode_WHEN_Rendered_THEN_DarkModeToggleNotShown()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.UseSnackbarMock();
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, false);
+                parameters.Add(p => p.Preferences, CreatePreferences(rssEnabled: true));
+                parameters.Add(p => p.IsDarkMode, true);
+            });
+
+            target.FindComponents<MudNavLink>().Any(item => item.Markup.Contains("Switch to dark mode", StringComparison.OrdinalIgnoreCase)).Should().BeFalse();
         }
 
         [Fact]

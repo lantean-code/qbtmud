@@ -379,6 +379,7 @@ td .folder-button {
     padding: 6px 16px 6px 16px !important;
 }
 
+
 @keyframes spin {
     0% {
         transform: rotate(0deg);

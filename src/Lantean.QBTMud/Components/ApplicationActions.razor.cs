@@ -42,8 +42,14 @@ namespace Lantean.QBTMud.Components
         [EditorRequired]
         public Preferences? Preferences { get; set; }
 
+        [Parameter]
+        public bool IsDarkMode { get; set; }
+
+        [Parameter]
+        public EventCallback<bool> DarkModeChanged { get; set; }
+
         [CascadingParameter]
-        public Lantean.QBTMud.Models.MainData? MainData { get; set; }
+        public Models.MainData? MainData { get; set; }
 
         protected IEnumerable<UIAction> Actions => GetActions();
 
@@ -53,6 +59,14 @@ namespace Lantean.QBTMud.Components
             {
                 foreach (var action in _actions)
                 {
+                    if (action.Name == "darkMode")
+                    {
+                        var text = $"Switch to {(IsDarkMode ? "light" : "dark")} mode";
+                        var color = IsDarkMode ? Color.Info : Color.Inherit;
+                        yield return new UIAction(action.Name, text, action.Icon, color, action.Callback);
+                        continue;
+                    }
+
                     if (action.Name != "rss" || Preferences is not null && Preferences.RssProcessingEnabled)
                     {
                         yield return action;
@@ -75,6 +89,7 @@ namespace Lantean.QBTMud.Components
                 new("categories", "Category Manager", Icons.Material.Filled.List, Color.Default, "./categories"),
                 new("cookies", "Cookie Manager", Icons.Material.Filled.Cookie, Color.Default, "./cookies"),
                 new("settings", "Settings", Icons.Material.Filled.Settings, Color.Default, "./settings", separatorBefore: true),
+                new("darkMode", "Switch to dark mode", Icons.Material.Filled.DarkMode, Color.Info, EventCallback.Factory.Create(this, ToggleDarkMode)),
                 new("about", "About", Icons.Material.Filled.Info, Color.Default, "./about"),
             ];
         }
@@ -110,6 +125,17 @@ namespace Lantean.QBTMud.Components
         protected async Task Exit()
         {
             await DialogWorkflow.ShowConfirmDialog("Quit?", "Are you sure you want to exit qBittorrent?", ApiClient.Shutdown);
+        }
+
+        protected async Task ToggleDarkMode()
+        {
+            IsDarkMode = !IsDarkMode;
+            if (DarkModeChanged.HasDelegate)
+            {
+                await DarkModeChanged.InvokeAsync(IsDarkMode);
+            }
+
+            StateHasChanged();
         }
 
         private async Task RegisterMagnetHandler()

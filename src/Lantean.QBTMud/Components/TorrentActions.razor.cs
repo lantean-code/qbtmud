@@ -278,10 +278,27 @@ namespace Lantean.QBTMud.Components
 
         protected async Task ToggleAutoTMM()
         {
-            var torrents = GetTorrents();
+            var stateChanges = ToggleTorrentState(torrent => torrent.AutomaticTorrentManagement, (torrent, value) => torrent.AutomaticTorrentManagement = value);
+            var disableHashes = stateChanges.Where(change => change.PreviousValue).Select(change => change.Hash).ToArray();
+            var enableHashes = stateChanges.Where(change => !change.PreviousValue).Select(change => change.Hash).ToArray();
 
-            await ApiClient.SetAutomaticTorrentManagement(false, null, torrents.Where(t => t.AutomaticTorrentManagement).Select(t => t.Hash).ToArray());
-            await ApiClient.SetAutomaticTorrentManagement(true, null, torrents.Where(t => !t.AutomaticTorrentManagement).Select(t => t.Hash).ToArray());
+            try
+            {
+                if (disableHashes.Length > 0)
+                {
+                    await ApiClient.SetAutomaticTorrentManagement(false, null, disableHashes);
+                }
+
+                if (enableHashes.Length > 0)
+                {
+                    await ApiClient.SetAutomaticTorrentManagement(true, null, enableHashes);
+                }
+            }
+            catch
+            {
+                RevertTorrentState(stateChanges, (torrent, value) => torrent.AutomaticTorrentManagement = value);
+                throw;
+            }
         }
 
         protected async Task LimitDownloadRate()
@@ -324,10 +341,27 @@ namespace Lantean.QBTMud.Components
 
         protected async Task ToggleSuperSeeding()
         {
-            var torrents = GetTorrents();
+            var stateChanges = ToggleTorrentState(torrent => torrent.SuperSeeding, (torrent, value) => torrent.SuperSeeding = value);
+            var disableHashes = stateChanges.Where(change => change.PreviousValue).Select(change => change.Hash).ToArray();
+            var enableHashes = stateChanges.Where(change => !change.PreviousValue).Select(change => change.Hash).ToArray();
 
-            await ApiClient.SetSuperSeeding(false, null, torrents.Where(t => t.SuperSeeding).Select(t => t.Hash).ToArray());
-            await ApiClient.SetSuperSeeding(true, null, torrents.Where(t => !t.SuperSeeding).Select(t => t.Hash).ToArray());
+            try
+            {
+                if (disableHashes.Length > 0)
+                {
+                    await ApiClient.SetSuperSeeding(false, null, disableHashes);
+                }
+
+                if (enableHashes.Length > 0)
+                {
+                    await ApiClient.SetSuperSeeding(true, null, enableHashes);
+                }
+            }
+            catch
+            {
+                RevertTorrentState(stateChanges, (torrent, value) => torrent.SuperSeeding = value);
+                throw;
+            }
         }
 
         protected async Task ForceRecheck()
@@ -406,12 +440,32 @@ namespace Lantean.QBTMud.Components
 
         protected async Task DownloadSequential()
         {
-            await ApiClient.ToggleSequentialDownload(null, Hashes.ToArray());
+            var stateChanges = ToggleTorrentState(torrent => torrent.SequentialDownload, (torrent, value) => torrent.SequentialDownload = value);
+
+            try
+            {
+                await ApiClient.ToggleSequentialDownload(null, Hashes.ToArray());
+            }
+            catch
+            {
+                RevertTorrentState(stateChanges, (torrent, value) => torrent.SequentialDownload = value);
+                throw;
+            }
         }
 
         protected async Task DownloadFirstLast()
         {
-            await ApiClient.SetFirstLastPiecePriority(null, Hashes.ToArray());
+            var stateChanges = ToggleTorrentState(torrent => torrent.FirstLastPiecePriority, (torrent, value) => torrent.FirstLastPiecePriority = value);
+
+            try
+            {
+                await ApiClient.SetFirstLastPiecePriority(null, Hashes.ToArray());
+            }
+            catch
+            {
+                RevertTorrentState(stateChanges, (torrent, value) => torrent.FirstLastPiecePriority = value);
+                throw;
+            }
         }
 
         protected async Task SubMenuTouch(UIAction action)
@@ -729,6 +783,52 @@ namespace Lantean.QBTMud.Components
                 CategoryState[torrent.Hash] = category;
             }
         }
+
+        private IReadOnlyList<TorrentStateChange> ToggleTorrentState(Func<Torrent, bool> selector, Action<Torrent, bool> setter)
+        {
+            var stateChanges = new List<TorrentStateChange>();
+            var seenHashes = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var torrent in GetTorrents())
+            {
+                if (!seenHashes.Add(torrent.Hash))
+                {
+                    continue;
+                }
+
+                var previousValue = selector(torrent);
+                setter(torrent, !previousValue);
+                stateChanges.Add(new TorrentStateChange(torrent.Hash, previousValue));
+            }
+
+            if (stateChanges.Count > 0)
+            {
+                StateHasChanged();
+            }
+
+            return stateChanges;
+        }
+
+        private void RevertTorrentState(IEnumerable<TorrentStateChange> changes, Action<Torrent, bool> setter)
+        {
+            var reverted = false;
+
+            foreach (var change in changes)
+            {
+                if (Torrents.TryGetValue(change.Hash, out var torrent))
+                {
+                    setter(torrent, change.PreviousValue);
+                    reverted = true;
+                }
+            }
+
+            if (reverted)
+            {
+                StateHasChanged();
+            }
+        }
+
+        private readonly record struct TorrentStateChange(string Hash, bool PreviousValue);
 
         private IEnumerable<UIAction> Filter(Dictionary<string, ActionState> actionStates)
         {

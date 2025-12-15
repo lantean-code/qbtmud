@@ -11,6 +11,12 @@ namespace Lantean.QBTMud.Components
 
         protected Preferences? Preferences => _preferences;
 
+        [Parameter]
+        public bool IsDarkMode { get; set; }
+
+        [Parameter]
+        public EventCallback<bool> DarkModeChanged { get; set; }
+
         public void ShowMenu(Preferences? preferences = null)
         {
             _isVisible = true;

@@ -22,8 +22,7 @@
                             <MudIconButton Icon="@Icons.Material.Filled.Error" Color="Color.Default" OnClick="ToggleErrorDrawer" />
                         </MudBadge>
                     }
-                    <MudSwitch T="bool" Label="Dark Mode" LabelPlacement="Placement.End" Value="IsDarkMode" ValueChanged="DarkModeChanged" Class="pl-3" />
-                    <Menu @ref="Menu" />
+                    <Menu @ref="Menu" IsDarkMode="IsDarkMode" DarkModeChanged="DarkModeChanged" />
                 </MudAppBar>
                 <MudDrawer @bind-Open="ErrorDrawerOpen" ClipMode="DrawerClipMode.Docked" Elevation="2" Anchor="Anchor.Right">
                     <ErrorDisplay ErrorBoundary="ErrorBoundary" />

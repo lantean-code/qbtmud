@@ -57,6 +57,9 @@ namespace Lantean.QBTMud.Components.UI
         [Parameter]
         public Func<T, string>? RowKeyFunc { get; set; }
 
+        [CascadingParameter(Name = "IsDarkMode")]
+        public bool IsDarkMode { get; set; }
+
         [Parameter]
         public HashSet<T> SelectedItems { get; set; } = [];
 
@@ -365,7 +368,14 @@ namespace Lantean.QBTMud.Components.UI
             var style = "user-select: none; cursor: pointer;";
             if (SelectOnRowClick && SelectedItems.Contains(item))
             {
-                style += " background-color: var(--mud-palette-gray-dark); color: var(--mud-palette-gray-light) !important;";
+                if (IsDarkMode)
+                {
+                    style += " background-color: var(--mud-palette-gray-dark); color: var(--mud-palette-gray-light) !important;";
+                }
+                else
+                {
+                    style += " background-color: var(--mud-palette-primary-lighten); color: #f8fbff !important; --mud-palette-text-primary: #f8fbff; --mud-palette-text-secondary: #f8fbff;";
+                }
             }
             return style;
         }
