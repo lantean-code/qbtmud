@@ -1,0 +1,26 @@
+@inherits MudComponentBase
+
+@if (ProvideBreakpoint && ProvideOrientation)
+{
+    <CascadingValue Value="CurrentBreakpoint">
+        <CascadingValue Value="CurrentOrientation">
+            @ChildContent
+        </CascadingValue>
+    </CascadingValue>
+}
+else if (ProvideBreakpoint)
+{
+    <CascadingValue Value="CurrentBreakpoint">
+        @ChildContent
+    </CascadingValue>
+}
+else if (ProvideOrientation)
+{
+    <CascadingValue Value="CurrentOrientation">
+        @ChildContent
+    </CascadingValue>
+}
+else
+{
+    @ChildContent
+}

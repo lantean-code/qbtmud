@@ -1,0 +1,15 @@
+@inherits SubmittableDialog
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="@Label" Value="@Value" ValueChanged="ValueChanged" Disabled="Disabled" Variant="Variant.Outlined" ShrinkLabel="true" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>

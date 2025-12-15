@@ -1,0 +1,89 @@
+@inherits LayoutComponentBase
+@layout MainLayout
+
+<PageTitle>qBittorrent @Version Web UI</PageTitle>
+
+@if (!IsAuthenticated)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" Style="width: 100%; height: 30px" />
+    return;
+}
+
+<CascadingValue Value="Torrents">
+    <CascadingValue Value="_torrentsVersion" Name="TorrentsVersion">
+        <CascadingValue Value="MainData">
+            <CascadingValue Value="Preferences">
+                <CascadingValue Value="SortColumnChanged" Name="SortColumnChanged">
+                    <CascadingValue Value="SortColumn" Name="SortColumn">
+                        <CascadingValue Value="SortDirectionChanged" Name="SortDirectionChanged">
+                            <CascadingValue Value="SortDirection" Name="SortDirection">
+                                <CascadingValue Value="CategoryChanged" Name="CategoryChanged">
+                                    <CascadingValue Value="StatusChanged" Name="StatusChanged">
+                                        <CascadingValue Value="TagChanged" Name="TagChanged">
+                                            <CascadingValue Value="TrackerChanged" Name="TrackerChanged">
+                                                <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
+                                                    <CascadingValue Value="@(MainData?.LostConnection ?? false)" Name="LostConnection">
+                                                        <CascadingValue Value="Version" Name="Version">
+                                                            <div class="app-shell">
+                                                                @Body
+                                                                <MudAppBar Bottom="true" Elevation="0" Dense="true" Class="app-shell__status-bar">
+                                                                    @if (MainData?.LostConnection == true)
+                                                                    {
+                                                                        <MudText Class="mx-2 mb-1 d-none d-sm-flex" Color="Color.Error">qBittorrent client is not reachable</MudText>
+                                                                    }
+                                                                    <MudSpacer />
+                                                                    <MudText Class="mx-2 mb-1 d-none d-sm-flex">@DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk, ShowStatusLabels ? "Free space: " : string.Empty)</MudText>
+                                                                    @{
+                                                                        var externalIpLabel = Preferences?.StatusBarExternalIp == true
+                                                                            ? (ShowStatusLabels ? BuildExternalIpLabel(MainData?.ServerState) : BuildExternalIpValue(MainData?.ServerState))
+                                                                            : null;
+                                                                    }
+                                                                    @if (!string.IsNullOrEmpty(externalIpLabel))
+                                                                    {
+                                                                        <MudDivider Vertical="true" Class="d-none d-sm-flex" />
+                                                                        <MudText Class="mx-2 mb-1 d-none d-sm-flex">@externalIpLabel</MudText>
+                                                                    }
+                                                                    <MudDivider Vertical="true" Class="d-none d-sm-flex" />
+                                                                    <MudText Class="mx-2 mb-1 d-none d-sm-flex">@(ShowStatusLabels ? $"DHT nodes: {MainData?.ServerState.DHTNodes ?? 0}" : $"DHT: {MainData?.ServerState.DHTNodes ?? 0}")</MudText>
+                                                                    <MudDivider Vertical="true" Class="d-none d-sm-flex" />
+                                                                    @{
+                                                                        var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);
+                                                                    }
+                                                                    <MudIcon Class="mx-1 mb-1" Icon="@icon" Color="@colour" Title="@MainData?.ServerState.ConnectionStatus" />
+                                                                    <MudDivider Vertical="true" />
+                                                                    <MudTooltip Text="Toggle alternative speed limits">
+                                                                        <MudIconButton Class="mx-1 mb-1"
+                                                                                       Icon="@Icons.Material.Outlined.Speed"
+                                                                                       Color="@((MainData?.ServerState.UseAltSpeedLimits ?? false) ? Color.Error : Color.Success)"
+                                                                                       OnClick="ToggleAlternativeSpeedLimits"
+                                                                                       Disabled="_toggleAltSpeedLimitsInProgress" />
+                                                                    </MudTooltip>
+                                                                    <MudDivider Vertical="true" />
+                                                                    <MudIcon Class="ml-1 mb-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Success" />
+                                                                    <MudText Class="mr-1 mb-1">
+                                                                        @DisplayHelpers.Size(MainData?.ServerState.DownloadInfoSpeed, null, "/s")
+                                                                        @DisplayHelpers.Size(MainData?.ServerState.DownloadInfoData, "(", ")")
+                                                                    </MudText>
+                                                                    <MudDivider Vertical="true" />
+                                                                    <MudIcon Class="ml-1 mb-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowUp" Color="Color.Info" />
+                                                                    <MudText Class="mr-1 mb-1">
+                                                                        @DisplayHelpers.Size(MainData?.ServerState.UploadInfoSpeed, null, "/s")
+                                                                        @DisplayHelpers.Size(MainData?.ServerState.UploadInfoData, "(", ")")
+                                                                    </MudText>
+                                                                </MudAppBar>
+                                                            </div>
+                                                        </CascadingValue>
+                                                    </CascadingValue>
+                                                </CascadingValue>
+                                            </CascadingValue>
+                                        </CascadingValue>
+                                    </CascadingValue>
+                                </CascadingValue>
+                            </CascadingValue>
+                        </CascadingValue>
+                    </CascadingValue>
+                </CascadingValue>
+            </CascadingValue>
+        </CascadingValue>
+    </CascadingValue>
+</CascadingValue>

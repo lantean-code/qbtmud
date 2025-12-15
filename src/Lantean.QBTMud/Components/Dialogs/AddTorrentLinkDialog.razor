@@ -1,0 +1,18 @@
+@inherits SubmittableDialog
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudFocusTrap>
+                    <MudTextField @ref="UrlsTextField" Label="Urls" Lines="10" @bind-Value="Urls" Variant="Variant.Outlined" ShrinkLabel="true" AutoFocus="true" />
+                </MudFocusTrap>
+            </MudItem>
+        </MudGrid>
+        <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="false" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Upload Torrents</MudButton>
+    </DialogActions>
+</MudDialog>

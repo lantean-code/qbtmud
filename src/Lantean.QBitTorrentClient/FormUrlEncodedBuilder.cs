@@ -1,0 +1,56 @@
+using System.Globalization;
+
+namespace Lantean.QBitTorrentClient
+{
+    public class FormUrlEncodedBuilder
+    {
+        private readonly IList<KeyValuePair<string, string>> _parameters;
+
+        public FormUrlEncodedBuilder()
+        {
+            _parameters = [];
+        }
+
+        public FormUrlEncodedBuilder(IList<KeyValuePair<string, string>> parameters)
+        {
+            _parameters = parameters;
+        }
+
+        public FormUrlEncodedBuilder Add(string key, string value)
+        {
+            _parameters.Add(new KeyValuePair<string, string>(key, value));
+            return this;
+        }
+
+        public FormUrlEncodedBuilder AddIfNotNullOrEmpty(string key, string? value)
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                _parameters.Add(new KeyValuePair<string, string>(key, value));
+            }
+
+            return this;
+        }
+
+        public FormUrlEncodedBuilder AddIfNotNullOrEmpty<T>(string key, T? value) where T : struct
+        {
+            if (value.HasValue)
+            {
+                var stringValue = Convert.ToString(value.Value, CultureInfo.InvariantCulture) ?? string.Empty;
+                _parameters.Add(new KeyValuePair<string, string>(key, stringValue));
+            }
+
+            return this;
+        }
+
+        public FormUrlEncodedContent ToFormUrlEncodedContent()
+        {
+            return new FormUrlEncodedContent(_parameters);
+        }
+
+        internal IList<KeyValuePair<string, string>> GetParameters()
+        {
+            return _parameters;
+        }
+    }
+}

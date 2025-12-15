@@ -1,0 +1,126 @@
+<MudDialog Class="search-plugins-dialog">
+    <DialogContent>
+        @if (IsBusy)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+        }
+        <MudGrid Class="mb-4" Spacing="2">
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4">
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">Install from URL</MudText>
+                    <MudTextField @bind-Value="InstallUrl"
+                                  Placeholder="https://example.com/plugin.zip"
+                                  Variant="Variant.Outlined"
+                                  Disabled="OperationInProgress"
+                                  Immediate="true" />
+                    <MudButton Color="Color.Primary"
+                               Variant="Variant.Filled"
+                               Disabled="OperationInProgress || string.IsNullOrWhiteSpace(InstallUrl)"
+                               OnClick="InstallFromUrl"
+                               Class="mt-3"
+                               StartIcon="@Icons.Material.Filled.CloudDownload">Install</MudButton>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudPaper Class="pa-4">
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">Install from server path</MudText>
+                    <MudTextField @bind-Value="InstallLocalPath"
+                                  Placeholder="/home/qbt/plugins/my-plugin.py"
+                                  Variant="Variant.Outlined"
+                                  Disabled="OperationInProgress"
+                                  Immediate="true" />
+                    <MudButton Color="Color.Primary"
+                               Variant="Variant.Filled"
+                               Disabled="OperationInProgress || string.IsNullOrWhiteSpace(InstallLocalPath)"
+                               OnClick="InstallFromPath"
+                               Class="mt-3"
+                               StartIcon="@Icons.Material.Filled.UploadFile">Install</MudButton>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+        <MudPaper Class="pa-3 mb-3">
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="!HasSelection || OperationInProgress"
+                           StartIcon="@Icons.Material.Filled.ToggleOn"
+                           OnClick="EnableSelected">Enable</MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           Disabled="!HasSelection || OperationInProgress"
+                           StartIcon="@Icons.Material.Filled.ToggleOff"
+                           OnClick="DisableSelected">Disable</MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           Disabled="!HasSelection || OperationInProgress"
+                           StartIcon="@Icons.Material.Filled.Delete"
+                           OnClick="UninstallSelected">Uninstall</MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Info"
+                           Disabled="OperationInProgress || Plugins.Count == 0"
+                           StartIcon="@Icons.Material.Filled.Update"
+                           OnClick="UpdateAll">Update all</MudButton>
+                <MudSpacer />
+                <MudTooltip Text="Refresh plugins">
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                   Color="Color.Default"
+                                   Disabled="OperationInProgress"
+                                   OnClick="RefreshPlugins" />
+                </MudTooltip>
+            </MudStack>
+        </MudPaper>
+        <MudTable T="Lantean.QBitTorrentClient.Models.SearchPlugin"
+                  Items="Plugins"
+                  Hover="true"
+                  Bordered="true"
+                  Dense="true">
+            <HeaderContent>
+                <MudTh>Select</MudTh>
+                <MudTh>Enabled</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Identifier</MudTh>
+                <MudTh>Version</MudTh>
+                <MudTh>Last update</MudTh>
+                <MudTh>Source</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Select">
+                    <MudIconButton Icon="@GetSelectionIcon(context)"
+                                   Color="@GetSelectionColor(context)"
+                                   Disabled="OperationInProgress"
+                                   OnClick="@(() => ToggleSelection(context))" />
+                </MudTd>
+                <MudTd DataLabel="Enabled">
+                    <MudIconButton Icon="@GetEnabledIcon(context)"
+                                   Color="@GetEnabledColor(context)"
+                                   Disabled="OperationInProgress"
+                                   OnClick="@(() => TogglePlugin(context, !context.Enabled))" />
+                </MudTd>
+                <MudTd DataLabel="Name">
+                    <MudText Typo="Typo.body2">@context.FullName</MudText>
+                </MudTd>
+                <MudTd DataLabel="Identifier">
+                    <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small">@context.Name</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Version">@context.Version</MudTd>
+                <MudTd DataLabel="Last update">@GetLastUpdatedText(context)</MudTd>
+                <MudTd DataLabel="Source">
+                    @if (string.IsNullOrWhiteSpace(context.Url))
+                    {
+                        <MudText Typo="Typo.caption">Not provided</MudText>
+                    }
+                    else
+                    {
+                        <MudLink Href="@context.Url" Target="_blank">@context.Url</MudLink>
+                    }
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.subtitle2" Class="pa-4">No plugins installed.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="CloseDialog">Close</MudButton>
+    </DialogActions>
+</MudDialog>

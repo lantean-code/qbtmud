@@ -1,0 +1,109 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- IL build you self-host (per-assembly .wasm via Webcil) -->
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <WasmEnableWebcil>true</WasmEnableWebcil>
+    <WasmSingleFileBundle>false</WasmSingleFileBundle>
+    <WasmFingerprintAssets>false</WasmFingerprintAssets>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <CompressionEnabled>false</CompressionEnabled>
+  </PropertyGroup>
+
+  <!-- AOT build for CDN -->
+  <PropertyGroup Condition="'$(Configuration)'=='ReleaseAOT'">
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <!-- give the CDN excellent cacheability -->
+    <WasmFingerprintAssets>true</WasmFingerprintAssets>
+    <PublishTrimmed>true</PublishTrimmed>
+    <WasmNativeStrip>true</WasmNativeStrip>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <CompressionEnabled>true</CompressionEnabled>
+  </PropertyGroup>
+    
+  <PropertyGroup>
+    <UseCdnAot>false</UseCdnAot>
+    <AotCdnBaseUrl></AotCdnBaseUrl>
+    <RequireAotCdnBase Condition="'$(RequireAotCdnBase)'==''">true</RequireAotCdnBase>
+  </PropertyGroup>
+  
+  <!-- AOT build toggles this on -->
+  <PropertyGroup Condition="'$(Configuration)'=='ReleaseAOT'">
+    <UseCdnAot>true</UseCdnAot>
+  </PropertyGroup>
+  
+  <Target Name="ValidateReleaseAotProperties" BeforeTargets="EmitAotConfig" Condition="'$(Configuration)'=='ReleaseAOT' and '$(RequireAotCdnBase)'=='true'">
+    <Error Condition="'$(AotCdnBaseUrl)'==''" Text="AotCdnBaseUrl must be set when publishing ReleaseAOT builds. Pass /p:AotCdnBaseUrl=https://cdn.jsdelivr.net/... or set RequireAotCdnBase=false for local testing." />
+  </Target>
+  
+  <Target Name="EmitAotConfig" BeforeTargets="Publish">
+    <PropertyGroup>
+      <_UseCdnAotJs Condition="'$(UseCdnAot)'!=''">$([System.String]::Copy('$(UseCdnAot)').ToLowerInvariant())</_UseCdnAotJs>
+      <_UseCdnAotJs Condition="'$(_UseCdnAotJs)'==''">false</_UseCdnAotJs>
+      <_AotCdnBaseEscaped>$([System.String]::Copy('$(AotCdnBaseUrl)').Replace("'", "\\'"))</_AotCdnBaseEscaped>
+    </PropertyGroup>
+    <!-- Make a tiny JS file with the flags -->
+    <ItemGroup>
+      <_AotConfigLines Include="window.__useCdnAot = $(_UseCdnAotJs);" />
+      <_AotConfigLines Include="window.__cdnBase = '$(_AotCdnBaseEscaped)';" />
+    </ItemGroup>
+  
+    <WriteLinesToFile File="$(IntermediateOutputPath)boot.settings.js" Lines="@(_AotConfigLines)" Overwrite="true" />
+  
+    <!-- Publish it to wwwroot -->
+    <ItemGroup>
+      <ContentWithTargetPath Include="$(IntermediateOutputPath)boot.settings.js">
+        <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        <TargetPath>wwwroot/js/boot.settings.js</TargetPath>
+      </ContentWithTargetPath>
+    </ItemGroup>
+  </Target>
+  
+  <Target Name="PrepareReleaseAotPayload" AfterTargets="Publish" Condition="'$(UseCdnAot)'=='true'">
+    <PropertyGroup>
+      <ReleaseAotPayloadRoot Condition="'$(ReleaseAotPayloadRoot)'==''">$(PublishDir)cdn</ReleaseAotPayloadRoot>
+    </PropertyGroup>
+    <ItemGroup>
+      <_CdnFrameworkFiles Include="$(PublishDir)wwwroot/_framework/**/*.*" />
+      <_CdnManifestLines Include="@(_CdnFrameworkFiles->'_framework/%(RecursiveDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+    <MakeDir Directories="$(ReleaseAotPayloadRoot)/_framework" />
+    <Copy SourceFiles="@(_CdnFrameworkFiles)" DestinationFiles="@(_CdnFrameworkFiles->'$(ReleaseAotPayloadRoot)/_framework/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <WriteLinesToFile File="$(ReleaseAotPayloadRoot)/manifest.txt" Lines="@(_CdnManifestLines)" Overwrite="true" />
+    <ItemGroup>
+      <_CdnReadmeLines Include="Deploy the contents of this folder to your CDN (ex: https://cdn.jsdelivr.net/gh/&lt;owner&gt;/&lt;repo&gt;@&lt;ref&gt;/) under the same _framework path." />
+      <_CdnReadmeLines Include="Publish command: dotnet publish -c ReleaseAOT /p:AotCdnBaseUrl=$(AotCdnBaseUrl)" />
+      <_CdnReadmeLines Include="Upload path: $(AotCdnBaseUrl)" Condition="'$(AotCdnBaseUrl)'!=''" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(ReleaseAotPayloadRoot)/README.txt" Lines="@(_CdnReadmeLines)" Overwrite="true" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="Blazored.SessionStorage" Version="2.4.0" />
+    <PackageReference Include="ByteSize" Version="2.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="MudBlazor" Version="8.15.0" />
+    <PackageReference Include="MudBlazor.ThemeManager" Version="3.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lantean.QBitTorrentClient\Lantean.QBitTorrentClient.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lantean.QBTMud.Test" />
+  </ItemGroup>
+
+</Project>

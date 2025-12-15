@@ -1,0 +1,16 @@
+@inherits MudSwitch<T>
+@typeparam T
+@{
+    base.BuildRenderTree(__builder);
+}
+
+@code{
+    protected override void OnParametersSet()
+    {
+        if (Value is bool boolValue)
+        {
+            this.ThumbIcon = boolValue ? Icons.Material.Filled.Done : Icons.Material.Filled.Close;
+            this.ThumbIconColor = boolValue ? Color.Success : Color.Error;
+        }
+    }
+}

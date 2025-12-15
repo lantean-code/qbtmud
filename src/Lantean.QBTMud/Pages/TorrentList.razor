@@ -1,0 +1,79 @@
+@page "/"
+@layout ListLayout
+@using Lantean.QBTMud.Models
+
+<MudMenu @ref="ContextMenu" Dense="true" RelativeWidth="DropdownWidth.Ignore" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
+    <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" OnClick="ShowTorrentContextMenu">View torrent details</MudMenuItem>
+    <MudDivider />
+    <TorrentActions RenderType="RenderType.MenuItems" Hashes="GetContextMenuTargetHashes()" PrimaryHash="@(ContextMenuItem?.Hash)" Torrents="MainData.Torrents" Preferences="Preferences" Tags="@MainData.Tags" Categories="@MainData.Categories" />
+</MudMenu>
+
+<div class="content-panel">
+    <div class="content-panel__toolbar content-panel__toolbar--scroll">
+        <MudToolBar Gutters="false" Dense="true">
+            <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="Add torrent link" />
+            <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="Add torrent file" />
+            <MudDivider Vertical="true" />
+            <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrentsHashes()" Torrents="MainData.Torrents" Preferences="Preferences" Tags="@MainData.Tags" Categories="@MainData.Categories" />
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" Disabled="@(!ToolbarButtonsEnabled)" OnClick="ShowTorrentToolbar" title="View torrent details" />
+            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
+            <MudSpacer />
+            <MudSelect T="TorrentFilterField" @bind-Value="SearchField" @bind-Value:after="OnSearchFieldChanged" Dense="true" Class="mt-0 mr-2 filter-field-select" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <MudSelectItem Value="TorrentFilterField.Name">Name</MudSelectItem>
+                <MudSelectItem Value="TorrentFilterField.SavePath">Save path</MudSelectItem>
+            </MudSelect>
+            <MudCheckBox T="bool" @bind-Value="UseRegex" @bind-Value:after="OnUseRegexChanged" Label="Regex" Class="mt-0 mr-2" />
+            <MudTextField Value="SearchText" TextChanged="SearchTextChanged" Immediate="true" DebounceInterval="1000" Placeholder="Filter torrent list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Error="@(UseRegex && !IsRegexValid)" ErrorText="@SearchErrorText"></MudTextField>
+        </MudToolBar>
+    </div>
+    <div class="content-panel__body">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="ma-0 pa-0 content-panel__container">
+            <DynamicTable
+                @ref="Table"
+                T="Torrent" 
+                TableId="Torrents"
+                Class="torrent-list content-panel__table"
+                ColumnDefinitions="Columns" 
+                Items="Torrents" 
+                OnRowClick="RowClick" 
+                MultiSelection="true"
+                SelectOnRowClick="true"
+                SelectedItemsChanged="SelectedItemsChanged"
+                SortColumnChanged="SortColumnChangedHandler"
+                SortDirectionChanged="SortDirectionChangedHandler"
+                OnTableDataContextMenu="TableDataContextMenu"
+                OnTableDataLongPress="TableDataLongPress"
+            />
+        </MudContainer>
+    </div>
+</div>
+
+@code {
+    private static RenderFragment<RowContext<Torrent>> ProgressBarColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var value = (float?)context.GetValue();
+                var color = value < 1 ? Color.Success : Color.Info;
+                <MudProgressLinear title="Progress" Color="@color" Value="@((value ?? 0) * 100)" Class="progress-expand" Size="Size.Large">
+                    @DisplayHelpers.Percentage(value)
+                </MudProgressLinear>;
+            };
+        }
+    }
+
+    private static RenderFragment<RowContext<Torrent>> IconColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var (icon, color) = DisplayHelpers.GetStateIcon((string?)context.GetValue());
+                <MudIcon Icon="@icon" Color="@color" />
+            };
+        }
+    }
+}

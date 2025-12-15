@@ -1,0 +1,87 @@
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="4">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <FieldSwitch Label="Remember Multi-Rename settings" Value="RememberMultiRenameSettings" ValueChanged="RememberMultiRenameSettingsChanged" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField T="string" Label="Search files" Value="Search" ValueChanged="SearchChanged" Variant="Variant.Outlined" ShrinkLabel="true" />
+                    </MudItem>
+                    <MudItem xs="12" lg="4">
+                        <FieldSwitch Label="Use regular expressions" Value="UseRegex" ValueChanged="UseRegexChanged" />
+                    </MudItem>
+                    <MudItem xs="12" lg="4">
+                        <FieldSwitch Label="Match all occurrences" Value="MatchAllOccurrences" ValueChanged="MatchAllOccurrencesChanged" />
+                    </MudItem>
+                    <MudItem xs="12" lg="4">
+                        <FieldSwitch Label="Case sensitive" Value="CaseSensitive" ValueChanged="CaseSensitiveChanged" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField T="string" Label="Replacement" Value="Replacement" ValueChanged="ReplacementChanged" Variant="Variant.Outlined" ShrinkLabel="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect T="AppliesTo" Label="Applies to" Value="AppliesToValue" ValueChanged="AppliesToChanged" Variant="Variant.Outlined" ShrinkLabel="true">
+                            <MudSelectItem T="AppliesTo" Value="AppliesTo.FilenameExtension">Filename + Extension</MudSelectItem>
+                            <MudSelectItem T="AppliesTo" Value="AppliesTo.Filename">Filename</MudSelectItem>
+                            <MudSelectItem T="AppliesTo" Value="AppliesTo.Extension">Extension</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" lg="4">
+                        <FieldSwitch Label="Include files" Value="IncludeFiles" ValueChanged="IncludeFilesChanged" />
+                    </MudItem>
+                    <MudItem xs="12" lg="4">
+                        <FieldSwitch Label="Include folders" Value="IncludeFolders" ValueChanged="IncludeFoldersChanged" />
+                    </MudItem>
+                    <MudItem xs="12" lg="4">
+                        <MudNumericField T="int" Label="Enumerate files" Value="FileEnumerationStart" ValueChanged="FileEnumerationStartChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect T="bool" Label="Replace type" Value="ReplaceAll" ValueChanged="ReplaceAllChanged" Variant="Variant.Outlined" ShrinkLabel="true">
+                            <MudSelectItem T="bool" Value="false">Replace</MudSelectItem>
+                            <MudSelectItem T="bool" Value="true">Replace all</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            <MudItem xs="8">
+                <DynamicTable T="FileRow"
+                              TableId="RenameFiles"
+                              ColumnDefinitions="Columns"
+                              Items="Files"
+                              MultiSelection="true"
+                              SelectedItems="SelectedItems"
+                              SelectedItemsChanged="SelectedItemsChanged"
+                              PreSorted="true"
+                              SortColumnChanged="SortColumnChanged"
+                              SortDirectionChanged="SortDirectionChanged"
+                              Class="file-list" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">@(ReplaceAll ? "Replace all" : "Replace")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private static RenderFragment<RowContext<FileRow>> NameColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                <div style="@($"margin-left: {(context.Data.Level * 14) + (context.Data.Level >= 1 ? 16 : 0)}px")">
+                    @if (context.Data.IsFolder)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Folder" Class="pt-0" Style="margin-right: 4px; position: relative; top: 7px; margin-left: -15px" />
+                    }
+                    @context.Data.OriginalName
+                </div>
+                ;
+            };
+        }
+    }
+}

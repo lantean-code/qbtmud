@@ -1,0 +1,210 @@
+@if (RenderType == RenderType.Toolbar)
+{
+    <MudToolBar Dense="true" Gutters="false" WrapContent="true">
+        @ToolbarContent
+    </MudToolBar>
+}
+else if (RenderType == RenderType.ToolbarContents)
+{
+    @ToolbarContent
+}
+else if (RenderType == RenderType.MixedToolbar)
+{
+    <MudToolBar Dense="true" Gutters="false" WrapContent="true">
+        @MixedToolbarContent
+    </MudToolBar>
+}
+else if (RenderType == RenderType.MixedToolbarContents)
+{
+    @MixedToolbarContent
+}
+else if (RenderType == RenderType.InitialIconsOnly)
+{
+    @foreach (var action in Actions.Take(5))
+    {
+        @if (action.SeparatorBefore)
+        {
+            <MudDivider Vertical="true" />
+        }
+
+        <MudIconButton title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
+    }
+
+    @Menu(Actions.Skip(5))
+}
+else if (RenderType == RenderType.Children)
+{
+    var parent = Actions.FirstOrDefault(a => a.Name == ParentAction?.Name);
+    if (parent is not null)
+    {
+        <MudList Class="unselectable" T="string">
+            @foreach (var action in parent.Children)
+            {
+                @if (action.SeparatorBefore)
+                {
+                    <MudDivider />
+                }
+
+                <MudListItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled">@action.Text</MudListItem>
+            }
+        </MudList>
+    }
+}
+else if (RenderType == RenderType.Menu)
+{
+    @Menu(Actions)
+}
+else if (RenderType == RenderType.MenuWithoutActivator)
+{
+    <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" Style="display: none" PositionAtCursor="true" OpenChanged="ActionsMenuOpenChanged" PopoverClass="unselectable">
+        <ActivatorContent>
+
+        </ActivatorContent>
+        <ChildContent>
+            @if (PrimaryHash is not null)
+            {
+                <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" Disabled="Disabled" Href="@("./details/" + PrimaryHash)">View torrent details</MudMenuItem>
+                <MudDivider />
+            }
+            @MenuContents(Actions)
+        </ChildContent>
+    </MudMenu>
+    <MudOverlay LockScroll="true" AutoClose="true" Visible="OverlayVisible" VisibleChanged="OverlayVisibleChanged">
+        <div style="width: 100%; height: 100%" @oncontextmenu="@(e => OverlayVisible = false)" @oncontextmenu:preventDefault></div>
+    </MudOverlay>
+}
+else if (RenderType == RenderType.MenuItems)
+{
+    @MenuContents(Actions)
+}
+
+@code {
+    private RenderFragment ToolbarContent
+    {
+        get
+        {
+            return __builder =>
+            {
+                foreach (var action in Actions)
+                {
+                    if (action.SeparatorBefore)
+                    {
+                        <MudDivider Vertical="true" />
+                    }
+                    
+                    if (!action.Children.Any())
+                    {
+                        if (action.Icon is null)
+                        {
+                            <MudButton Color="action.Color" OnClick="action.Callback">@action.Text</MudButton>
+                        }
+                        else
+                        {
+                            <MudIconButton title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
+                        }
+                    }
+                    else
+                    {
+                        <MudMenu Icon="@action.Icon" IconColor="@action.Color" Label="@action.Text" title="@action.Text" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                            @foreach (var childItem in action.Children)
+                            {
+                                @ChildItem(childItem)
+                            }
+                        </MudMenu>
+                    }
+                }
+            };
+        }
+    }
+
+    private RenderFragment MixedToolbarContent
+    {
+        get
+        {
+            return __builder =>
+            {
+                foreach (var action in Actions)
+                {
+                    if (action.SeparatorBefore)
+                    {
+                        <MudDivider Vertical="true" />
+                    }
+                    
+                    if (!action.Children.Any())
+                    {
+                        if (action.Icon is null)
+                        {
+                            <MudButton Color="action.Color" OnClick="action.Callback" Disabled="Disabled">@action.Text</MudButton>
+                        }
+                        else
+                        {
+                            <MudIconButton title="@action.Text" Icon="@action.Icon" Color="action.Color" OnClick="action.Callback" Disabled="Disabled" />
+                        }
+                    }
+                    else
+                    {
+                        <MudMenu Label="@action.Text" title="@action.Text" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" EndIcon="@Icons.Material.Filled.ArrowDropDown">
+                            @foreach (var childItem in action.Children)
+                            {
+                                @ChildItem(childItem)
+                            }
+                        </MudMenu>
+                    }
+                }
+            };
+        }
+    }
+
+    private RenderFragment ChildItem(UIAction action)
+    {
+        return __builder =>
+        {
+            if (action.SeparatorBefore)
+            {
+                <MudDivider />
+            }
+
+            <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled" AutoClose="@action.AutoClose">@action.Text</MudMenuItem>
+        };
+    }
+
+    private RenderFragment Menu(IEnumerable<UIAction> actions)
+    {
+        return __builder =>
+        {
+            <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="Actions" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" ActivationEvent="MouseEvent.LeftClick" OpenChanged="ActionsMenuOpenChanged">
+                @MenuContents(actions)
+            </MudMenu>
+        };
+    }
+
+    private RenderFragment MenuContents(IEnumerable<UIAction> actions)
+    {
+        return __builder =>
+        {
+            foreach (var action in actions)
+            {
+                if (action.SeparatorBefore)
+                {
+                    <MudDivider />
+                }
+
+                if (!action.Children.Any())
+                {
+                    <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled" Class="icon-menu-dense" AutoClose="@action.AutoClose">
+                        @action.Text
+                    </MudMenuItem>
+                }
+                else
+                {
+                    <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopLeft" ActivationEvent="MouseEvent.MouseOver" StartIcon="@action.Icon" IconColor="@action.Color" Label="@action.Text">
+                        @foreach (var childItem in action.Children)
+                        {
+                            @ChildItem(childItem)
+                        }
+                    </MudMenu>
+                }
+            }
+        };
+    }
+}

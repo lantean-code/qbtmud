@@ -1,0 +1,11 @@
+<div class="@Classname" @attributes="AdditionalAttributes">
+    <div @onclick="this.AsNonRenderingEventHandler<MouseEventArgs>(OnClickHandler)" class="@LinkClassname" @onlongpress="OnLongPressInternal" @onlongpress:preventDefault @oncontextmenu="OnContextMenuInternal" @oncontextmenu:preventDefault>
+        @if (!string.IsNullOrEmpty(Icon))
+        {
+            <MudIcon Icon="@Icon" Color="@IconColor" Class="@IconClassname" />
+        }
+        <div class="mud-nav-link-text">
+            @ChildContent
+        </div>
+    </div>
+</div>

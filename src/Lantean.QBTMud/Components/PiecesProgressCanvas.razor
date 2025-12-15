@@ -1,0 +1,36 @@
+@using Lantean.QBitTorrentClient.Models
+@using MudBlazor
+
+<MudPaper Class="pieces-progress-canvas" Elevation="1">
+    <MudStack Spacing="1">
+        <MudTooltip Text="@LinearTooltip" Placement="Placement.Top">
+            <div class="pieces-progress-canvas__linear" role="button" tabindex="0" aria-expanded="@_showCanvas.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" @onclick="ToggleCanvas" @onkeydown="HandleLinearKeyDown">
+                <div class="pieces-progress-canvas__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
+                <div class="pieces-progress-canvas__linear-overlay">
+                    <MudText Typo="Typo.body2">@LinearSummary</MudText>
+                    <MudIcon Icon="@ToggleIcon" Class="pieces-progress-canvas__icon" />
+                </div>
+            </div>
+        </MudTooltip>
+
+        <MudCollapse Expanded="@_showCanvas">
+            <MudPaper Class="pieces-progress-canvas__surface" Elevation="0">
+                @if (!HasPieceData)
+                {
+                    <MudText Typo="Typo.body2" Class="pieces-progress-canvas__empty">@CanvasEmptyText</MudText>
+                }
+                else if (ColumnsForCurrentBreakpoint == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="pieces-progress-canvas__empty">@CanvasHiddenText</MudText>
+                }
+                else
+                {
+                    <canvas id="@_canvasId"
+                            class="pieces-progress-canvas__canvas"
+                            role="img"
+                            aria-label="@CanvasAriaLabel"></canvas>
+                }
+            </MudPaper>
+        </MudCollapse>
+    </MudStack>
+</MudPaper>

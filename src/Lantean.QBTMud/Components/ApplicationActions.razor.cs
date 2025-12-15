@@ -1,0 +1,253 @@
+using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Interop;
+using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
+using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using MudBlazor;
+
+namespace Lantean.QBTMud.Components
+{
+    public partial class ApplicationActions
+    {
+        private List<UIAction>? _actions;
+        private bool _startAllInProgress;
+        private bool _stopAllInProgress;
+        private bool _registerMagnetHandlerInProgress;
+
+        [Inject]
+        protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [Inject]
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected ISnackbar Snackbar { get; set; } = default!;
+
+        [Inject]
+        protected IJSRuntime JSRuntime { get; set; } = default!;
+
+        [Inject]
+        protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
+
+        [Parameter]
+        public bool IsMenu { get; set; }
+
+        [Parameter]
+        [EditorRequired]
+        public Preferences? Preferences { get; set; }
+
+        [Parameter]
+        public bool IsDarkMode { get; set; }
+
+        [Parameter]
+        public EventCallback<bool> DarkModeChanged { get; set; }
+
+        [CascadingParameter]
+        public Models.MainData? MainData { get; set; }
+
+        protected IEnumerable<UIAction> Actions => GetActions();
+
+        private IEnumerable<UIAction> GetActions()
+        {
+            if (_actions is not null)
+            {
+                foreach (var action in _actions)
+                {
+                    if (action.Name == "darkMode")
+                    {
+                        var text = $"Switch to {(IsDarkMode ? "light" : "dark")} mode";
+                        var color = IsDarkMode ? Color.Info : Color.Inherit;
+                        yield return new UIAction(action.Name, text, action.Icon, color, action.Callback);
+                        continue;
+                    }
+
+                    if (action.Name != "rss" || Preferences is not null && Preferences.RssProcessingEnabled)
+                    {
+                        yield return action;
+                    }
+                }
+            }
+        }
+
+        protected override void OnInitialized()
+        {
+            _actions =
+            [
+                new("statistics", "Statistics", Icons.Material.Filled.PieChart, Color.Default, "./statistics"),
+                new("speed", "Speed", Icons.Material.Filled.ShowChart, Color.Default, "./speed"),
+                new("search", "Search", Icons.Material.Filled.Search, Color.Default, "./search", separatorBefore: true),
+                new("rss", "RSS", Icons.Material.Filled.RssFeed, Color.Default, "./rss"),
+                new("log", "Execution Log", Icons.Material.Filled.List, Color.Default, "./log"),
+                new("blocks", "Blocked IPs", Icons.Material.Filled.DisabledByDefault, Color.Default, "./blocks"),
+                new("tags", "Tag Manager", Icons.Material.Filled.Label, Color.Default, "./tags", separatorBefore: true),
+                new("categories", "Category Manager", Icons.Material.Filled.List, Color.Default, "./categories"),
+                new("cookies", "Cookie Manager", Icons.Material.Filled.Cookie, Color.Default, "./cookies"),
+                new("settings", "Settings", Icons.Material.Filled.Settings, Color.Default, "./settings", separatorBefore: true),
+                new("darkMode", "Switch to dark mode", Icons.Material.Filled.DarkMode, Color.Info, EventCallback.Factory.Create(this, ToggleDarkMode)),
+                new("about", "About", Icons.Material.Filled.Info, Color.Default, "./about"),
+            ];
+        }
+
+        protected void NavigateBack()
+        {
+            NavigationManager.NavigateToHome();
+        }
+
+        protected async Task ResetWebUI()
+        {
+            var preferences = new UpdatePreferences
+            {
+                AlternativeWebuiEnabled = false,
+            };
+
+            await ApiClient.SetApplicationPreferences(preferences);
+
+            NavigationManager.NavigateTo("./", true);
+        }
+
+        protected async Task Logout()
+        {
+            await DialogWorkflow.ShowConfirmDialog("Logout?", "Are you sure you want to logout?", async () =>
+            {
+                await ApiClient.Logout();
+                await SpeedHistoryService.ClearAsync();
+
+                NavigationManager.NavigateTo("./", true);
+            });
+        }
+
+        protected async Task Exit()
+        {
+            await DialogWorkflow.ShowConfirmDialog("Quit?", "Are you sure you want to exit qBittorrent?", ApiClient.Shutdown);
+        }
+
+        protected async Task ToggleDarkMode()
+        {
+            IsDarkMode = !IsDarkMode;
+            if (DarkModeChanged.HasDelegate)
+            {
+                await DarkModeChanged.InvokeAsync(IsDarkMode);
+            }
+
+            StateHasChanged();
+        }
+
+        private async Task RegisterMagnetHandler()
+        {
+            if (_registerMagnetHandlerInProgress)
+            {
+                return;
+            }
+
+            _registerMagnetHandlerInProgress = true;
+
+            try
+            {
+                var templateUrl = BuildMagnetHandlerTemplateUrl();
+                var result = await JSRuntime.RegisterMagnetHandler(templateUrl);
+
+                var status = (result.Status ?? string.Empty).ToLowerInvariant();
+                switch (status)
+                {
+                    case "success":
+                        Snackbar?.Add("Magnet handler registered. Magnet links will now open in qBittorrent WebUI.", Severity.Success);
+                        break;
+
+                    case "insecure":
+                        Snackbar?.Add("Access this WebUI over HTTPS to register the magnet handler.", Severity.Warning);
+                        break;
+
+                    case "unsupported":
+                        Snackbar?.Add("This browser does not support registering magnet handlers.", Severity.Warning);
+                        break;
+
+                    default:
+                        var message = string.IsNullOrWhiteSpace(result.Message)
+                            ? "Unable to register the magnet handler."
+                            : $"Unable to register the magnet handler: {result.Message}";
+                        Snackbar?.Add(message, Severity.Error);
+                        break;
+                }
+            }
+            catch (JSException exception)
+            {
+                Snackbar?.Add($"Unable to register the magnet handler: {exception.Message}", Severity.Error);
+            }
+            finally
+            {
+                _registerMagnetHandlerInProgress = false;
+            }
+        }
+
+        protected async Task StartAllTorrents()
+        {
+            if (_startAllInProgress)
+            {
+                return;
+            }
+
+            if (MainData?.LostConnection == true)
+            {
+                Snackbar?.Add("qBittorrent client is not reachable.", Severity.Warning);
+                return;
+            }
+
+            _startAllInProgress = true;
+            try
+            {
+                await ApiClient.StartAllTorrents();
+                Snackbar?.Add("All torrents started.", Severity.Success);
+            }
+            catch (HttpRequestException)
+            {
+                Snackbar?.Add($"Unable to start torrents.", Severity.Error);
+            }
+            finally
+            {
+                _startAllInProgress = false;
+            }
+        }
+
+        protected async Task StopAllTorrents()
+        {
+            if (_stopAllInProgress)
+            {
+                return;
+            }
+
+            if (MainData?.LostConnection == true)
+            {
+                Snackbar?.Add("qBittorrent client is not reachable.", Severity.Warning);
+                return;
+            }
+
+            _stopAllInProgress = true;
+            try
+            {
+                await ApiClient.StopAllTorrents();
+                Snackbar?.Add("All torrents stopped.", Severity.Info);
+            }
+            catch (HttpRequestException)
+            {
+                Snackbar?.Add($"Unable to stop torrents.", Severity.Error);
+            }
+            finally
+            {
+                _stopAllInProgress = false;
+            }
+        }
+
+        private string BuildMagnetHandlerTemplateUrl()
+        {
+            var trimmedBase = NavigationManager.BaseUri.TrimEnd('/');
+
+            return $"{trimmedBase}/#download=%s";
+        }
+    }
+}

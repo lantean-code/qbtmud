@@ -1,0 +1,46 @@
+@page "/categories"
+@layout OtherLayout
+
+<div class="content-panel">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudDivider Vertical="true" />
+            }
+            <MudText Class="px-5 no-wrap">Categories</MudText>
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Filled.PlaylistAdd" OnClick="AddCategory" title="Add Category" />
+        </MudToolBar>
+    </div>
+
+    <div class="content-panel__body">
+        <DynamicTable @ref="Table"
+                      TableId="Categories"
+                      T="Category"
+                      ColumnDefinitions="Columns"
+                      Items="Results"
+                      MultiSelection="false"
+                      SelectOnRowClick="false"
+                      Class="details-list content-panel__table" />
+    </div>
+</div>
+
+@code {
+    private RenderFragment<RowContext<Category>> ActionsColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var value = (Category?)context.GetValue();
+                <MudButtonGroup>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" OnClick="@(e => EditCategory(value?.Name))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(e => DeleteCategory(value?.Name))" />
+                </MudButtonGroup>
+                ;
+            };
+        }
+    }
+}

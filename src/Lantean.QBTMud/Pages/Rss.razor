@@ -1,0 +1,270 @@
+@page "/rss"
+@layout OtherLayout
+
+<div class="content-panel">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudDivider Vertical="true" />
+            }
+            <MudText Class="px-5 no-wrap">RSS</MudText>
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" Disabled="@IsClientDisconnected" title="New subscription" />
+            <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="Mark items read" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="RefreshAllFeeds" Disabled="@IsClientDisconnected" title="Update all" />
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="Edit auto downloading rules" />
+        </MudToolBar>
+    </div>
+
+    <div class="content-panel__body">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="content-panel__container">
+            <MudMenu @ref="FeedContextMenu"
+                     Dense="true"
+                     PositionAtCursor="true"
+                     RelativeWidth="DropdownWidth.Ignore"
+                     ListClass="unselectable"
+                     PopoverClass="unselectable">
+                @if (ContextCanUpdate)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="UpdateContextUpdate">Update</MudMenuItem>
+                }
+                @if (ContextCanMarkRead)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.MarkEmailRead" IconColor="Color.Info" OnClick="UpdateContextMarkRead">Mark items read</MudMenuItem>
+                }
+                @if (ContextCanRename)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" IconColor="Color.Info" OnClick="UpdateContextRename">Rename…</MudMenuItem>
+                }
+                @if (ContextCanEditUrl)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="UpdateContextEditUrl">Edit feed URL…</MudMenuItem>
+                }
+                @if (ContextCanDelete)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="UpdateContextDelete">Delete</MudMenuItem>
+                }
+                @if (ContextCanAddSubscription || ContextCanAddFolder || ContextCanUpdateAll)
+                {
+                    <MudDivider />
+                }
+                @if (ContextCanAddSubscription)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Outlined.Subscriptions" IconColor="Color.Info" OnClick="UpdateContextAddSubscription">New subscription…</MudMenuItem>
+                }
+                @if (ContextCanAddFolder)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="UpdateContextAddFolder">New folder…</MudMenuItem>
+                }
+                @if (ContextCanUpdateAll)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Outlined.Update" IconColor="Color.Info" OnClick="RefreshAllFeeds">Update all</MudMenuItem>
+                }
+                @if (ContextCanCopyUrl)
+                {
+                    <MudDivider />
+                    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="UpdateContextCopyUrl">Copy feed URL</MudMenuItem>
+                }
+            </MudMenu>
+
+            <MudGrid Class="rss-contents" Spacing="0">
+                @if (ColumnCount >= 3)
+                {
+                    <MudItem xs="@ColumnSpan" sm="@ColumnSpan" md="@ColumnSpan" lg="@ColumnSpan" xl="@ColumnSpan" Style="height: 100%;" Class="px-0">
+                        <div class="rss-feed-list-container"
+                             tabindex="0"
+                             @oncontextmenu="ShowFeedContextMenuFromContainer"
+                             @oncontextmenu:preventDefault="true">
+                            <MudList T="RssTreeNode"
+                                     Dense="true"
+                                     Class="rss-feed-list"
+                                     SelectionMode="SelectionMode.SingleSelection"
+                                     SelectedValue="_selectedNode"
+                                     SelectedValueChanged="SelectNode">
+                                @foreach (var item in TreeItems)
+                                {
+                                    var node = item.Node;
+                                    <MudListItem @key="GetNodeKey(node)"
+                                                 Value="node"
+                                                 Class="@($"rss-feed-list__item {GetNodeCssClass(node)}")"
+                                                 Style="@($"padding-left: {item.Depth * 20 + 12}px")">
+                                        <div class="rss-feed-list__item-content"
+                                             @oncontextmenu="@(e => ShowFeedContextMenu(e, node))"
+                                             @oncontextmenu:preventDefault="true"
+                                             @oncontextmenu:stopPropagation="true">
+                                            <MudIcon Icon="@GetNodeIcon(node)" Color="@GetNodeIconColor(node)" Class="mr-2" />
+                                            <MudText Typo="Typo.body2">@GetNodeDisplay(node)</MudText>
+                                        </div>
+                                    </MudListItem>
+                                }
+                            </MudList>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="@ColumnSpan" sm="@ColumnSpan" md="@ColumnSpan" lg="@ColumnSpan" xl="@ColumnSpan" Style="height: 100%; overflow: auto" Class="px-0">
+                        @if (Articles.Count > 0)
+                        {
+                            <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedArticle" SelectedValueChanged="SelectedArticleChanged" Dense="true">
+                                @foreach (var article in Articles)
+                                {
+                                    <MudListItem Text="@article.Title"
+                                                 Value="article.Id"
+                                                 @key="article.Id"
+                                                 Class="@GetArticleCssClass(article)"
+                                                 Icon="@Icons.Material.Filled.Check"
+                                                 IconColor="@(article.IsRead ? Color.Success : Color.Transparent)"
+                                                 OnClick="@(() => SelectArticle(article))" />
+                                }
+                            </MudList>
+                        }
+                        else
+                        {
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100%" Animation="Animation.False" Width="100%" />
+                        }
+                    </MudItem>
+                    <MudItem xs="@ColumnSpan" sm="@ColumnSpan" md="@ColumnSpan" lg="@ColumnSpan" xl="@ColumnSpan" Style="height: 100%" Class="px-0">
+                        @if (Article is not null)
+                        {
+                            <MudCard>
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6" Style="overflow-wrap: anywhere">@Article.Title</MudText>
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense>
+                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="Download">Download</MudMenuItem>
+                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="Download">Open torrent URL</MudMenuItem>
+                                            @if (!string.IsNullOrWhiteSpace(Article.Link))
+                                            {
+                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link">Open news URL</MudMenuItem>
+                                            }
+                                        </MudMenu>
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+
+                                <MudCardContent>
+                                    <MudText Typo="Typo.subtitle2">@Article.Date</MudText>
+                                    <MudText Typo="Typo.body1">@Article.Description</MudText>
+                                </MudCardContent>
+                            </MudCard>
+                        }
+                        else
+                        {
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100%" Animation="Animation.False" Width="100%" />
+                        }
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem xs="12" Style="height: 100%;">
+                        <div class="@SliderContainerClass">
+                            <div class="@SliderTrackClass" style="@SliderTrackStyle">
+                                <div class="rss-slider__pane @( _isAnimating ? "rss-slider__pane--no-scroll" : string.Empty)">
+                                    <div class="rss-slider__pane-content">
+                                        <div class="rss-feed-list-container"
+                                             tabindex="0"
+                                             @oncontextmenu="ShowFeedContextMenuFromContainer"
+                                             @oncontextmenu:preventDefault="true">
+                                            <MudList T="RssTreeNode"
+                                                     Dense="true"
+                                                     Gutters="false"
+                                                     Class="rss-feed-list"
+                                                     SelectionMode="SelectionMode.SingleSelection"
+                                                     SelectedValue="_selectedNode"
+                                                     SelectedValueChanged="SelectNode">
+                                                @foreach (var item in TreeItems)
+                                                {
+                                                    var node = item.Node;
+                                                    <MudListItem @key="GetNodeKey(node)"
+                                                                 Value="node"
+                                                                 Class="@($"rss-feed-list__item {GetNodeCssClass(node)}")"
+                                                                 Style="@($"padding-left: {item.Depth * 20 + 12}px")">
+                                                        <div class="rss-feed-list__item-content"
+                                                             @oncontextmenu="@(e => ShowFeedContextMenu(e, node))"
+                                                             @oncontextmenu:preventDefault="true"
+                                                             @oncontextmenu:stopPropagation="true">
+                                                            <MudIcon Icon="@GetNodeIcon(node)" Color="@GetNodeIconColor(node)" Class="mr-2" />
+                                                            <MudText Typo="Typo.body2">@GetNodeDisplay(node)</MudText>
+                                                        </div>
+                                                    </MudListItem>
+                                                }
+                                            </MudList>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="rss-slider__pane rss-slider__pane--articles @(_isAnimating ? "rss-slider__pane--no-scroll" : string.Empty)">
+                                    @if (ShowBackToFeedsFromArticles)
+                                    {
+                                        <div class="rss-back-button-container">
+                                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="ShowFeedsPanel" Class="rss-back-button">Feeds</MudButton>
+                                        </div>
+                                    }
+                                    <div class="rss-slider__pane-content @(ShowBackToFeedsFromArticles ? "rss-slider__pane-content--with-back" : string.Empty)">
+                                        @if (Articles.Count > 0)
+                                        {
+                                            <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedArticle" SelectedValueChanged="SelectedArticleChanged" Dense="true" Gutters="false">
+                                                @foreach (var article in Articles)
+                                                {
+                                                    <MudListItem Text="@article.Title"
+                                                                 Value="article.Id"
+                                                                 @key="article.Id"
+                                                                 Class="@GetArticleCssClass(article)"
+                                                                 Icon="@Icons.Material.Filled.Check"
+                                                                 IconColor="@(article.IsRead ? Color.Success : Color.Transparent)"
+                                                                 OnClick="@(() => SelectArticle(article))" />
+                                                }
+                                            </MudList>
+                                        }
+                                        else
+                                        {
+                                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100%" Animation="Animation.False" Width="100%" />
+                                        }
+                                    </div>
+                                </div>
+                                <div class="rss-slider__pane @( _isAnimating ? "rss-slider__pane--no-scroll" : string.Empty)">
+                                    <div class="rss-slider__pane-content">
+                                        @if (ShowBackToArticlesFromDetails)
+                                        {
+                                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="ShowArticlesPanel" Class="rss-back-button">Articles</MudButton>
+                                        }
+                                        @if (Article is not null)
+                                        {
+                                            <MudCard>
+                                                <MudCardHeader>
+                                                    <CardHeaderContent>
+                                                        <MudText Typo="Typo.h6" Style="overflow-wrap: anywhere">@Article.Title</MudText>
+                                                    </CardHeaderContent>
+                                                    <CardHeaderActions>
+                                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense>
+                                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="Download">Download</MudMenuItem>
+                                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="Download">Open torrent URL</MudMenuItem>
+                                                            @if (!string.IsNullOrWhiteSpace(Article.Link))
+                                                            {
+                                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link">Open news URL</MudMenuItem>
+                                                            }
+                                                        </MudMenu>
+                                                    </CardHeaderActions>
+                                                </MudCardHeader>
+
+                                                <MudCardContent>
+                                                    <MudText Typo="Typo.subtitle2">@Article.Date</MudText>
+                                                    <MudText Typo="Typo.body1">@Article.Description</MudText>
+                                                </MudCardContent>
+                                            </MudCard>
+                                        }
+                                        else
+                                        {
+                                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100%" Animation="Animation.False" Width="100%" />
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudContainer>
+    </div>
+</div>

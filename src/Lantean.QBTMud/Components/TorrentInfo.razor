@@ -1,0 +1,23 @@
+@if (Torrent is null)
+{
+    return;
+}
+
+<MudToolBar Dense="true" Gutters="false" WrapContent="true">
+    @{
+        var (icon, color) = DisplayHelpers.GetStateIcon(Torrent.State);
+    }
+    <MudIcon Color="@color" Icon="@icon" />
+    <MudText Class="pl-5 no-wrap">@Torrent.Name</MudText>
+    <MudDivider Vertical="true" />
+    <MudText Class="pl-5 no-wrap">@DisplayHelpers.Size(Torrent.Size)</MudText>
+    <MudDivider Vertical="true" />
+    @{
+        var value = Torrent.Progress;
+        var progressColor = value < 1 ? Color.Success : Color.Info;
+        <MudProgressLinear title="Progress" Color="@(progressColor)" Value="@((value) * 100)" Class="progress-expand" Size="Size.Large">
+            @DisplayHelpers.Percentage(value)
+        </MudProgressLinear>
+        ;
+    }
+</MudToolBar>

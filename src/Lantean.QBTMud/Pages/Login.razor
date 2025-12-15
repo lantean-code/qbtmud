@@ -1,0 +1,38 @@
+@page "/login"
+@layout MainLayout
+
+<PageTitle>Login</PageTitle>
+
+<MudMainContent>
+    <MudContainer Fixed MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+        <EditForm Model="Model" OnValidSubmit="LoginClick">
+            <MudGrid Justify="Justify.Center">
+                <MudItem xs="12">
+                    <MudCard>
+                        <MudCardHeader>
+                            <MudText Typo="Typo.h6">Login</MudText>
+                        </MudCardHeader>
+                        <MudCardContent Class="pt-0">
+                            @if (ApiError is not null)
+                            {
+                                <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Dense="true" Class="my-2">@ApiError</MudAlert>
+                            }
+                            <DataAnnotationsValidator />
+                            <MudItem xs="12">
+                                <MudTextField Label="Username" @bind-Value="Model.Username" For="@(() => Model.Username)" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField Label="Password" @bind-Value="Model.Password" For="@(() => Model.Password)" InputType="InputType.Password" />
+                            </MudItem>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudItem xs="12">
+                                <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit">Login</MudButton>
+                            </MudItem>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </MudContainer>
+</MudMainContent>

@@ -1,0 +1,301 @@
+@page "/search"
+@layout OtherLayout
+
+<div class="content-panel">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudDivider Vertical="true" />
+            }
+            <MudDivider Vertical="true" />
+            <MudText Class="px-5 no-wrap">Search</MudText>
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                           title="Manage Plugins"
+                           OnClick="ManagePlugins"
+                           data-test-id="@TestIdHelper.For("ManagePluginsButton")" />
+            <MudDivider Vertical="true" />
+            <MudIconButton Color="Color.Error"
+                           Icon="@Icons.Material.Filled.Stop"
+                           title="Stop"
+                           Disabled="@(ActiveJob?.IsRunning != true)"
+                           OnClick="StopActiveJob"
+                           data-test-id="@TestIdHelper.For("StopActiveJobButton")" />
+            <MudIconButton Color="Color.Primary"
+                           Icon="@Icons.Material.Filled.Refresh"
+                           title="Refresh"
+                           Disabled="@(ActiveJob is null)"
+                           OnClick="RefreshActiveJob"
+                           data-test-id="@TestIdHelper.For("RefreshActiveJobButton")" />
+            <MudIconButton Color="Color.Secondary"
+                           Icon="@Icons.Material.Filled.Close"
+                           title="Close"
+                           Disabled="@(ActiveJob is null)"
+                           OnClick="CloseActiveJob"
+                           data-test-id="@TestIdHelper.For("CloseActiveJobButton")" />
+            <MudIconButton Color="Color.Default"
+                           Icon="@Icons.Material.Filled.Cancel"
+                           title="Close all"
+                           Disabled="@(Jobs.Count == 0)"
+                           OnClick="CloseAllJobs"
+                           data-test-id="@TestIdHelper.For("CloseAllJobsButton")" />
+        </MudToolBar>
+    </div>
+    <div class="content-panel__body">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="ma-0 pa-0 content-panel__container">
+            <MudMenu @ref="ResultContextMenu"
+                     Dense="true"
+                     RelativeWidth="DropdownWidth.Ignore"
+                     PositionAtCursor="true"
+                     ListClass="unselectable"
+                     PopoverClass="unselectable">
+                <MudMenuItem Icon="@Icons.Material.Filled.Download" Disabled="@(!HasContextResult)" OnClick="DownloadResultFromContext">Download</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.OpenInNew" Disabled="@(!HasContextResult)" OnClick="OpenDescriptionFromContext">Open description</MudMenuItem>
+                <MudDivider />
+                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyNameFromContext">Copy name</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyDownloadLinkFromContext">Copy download link</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyDescriptionLinkFromContext">Copy description link</MudMenuItem>
+            </MudMenu>
+
+            <MudStack Row="true" Class="ml-4 mr-4 mt-2 mb-1 align-center search-form-toggle">
+                <MudText Typo="Typo.subtitle2">Search filters</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Text"
+                           Size="Size.Small"
+                           StartIcon="@(ShowSearchForm ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                           OnClick="ToggleSearchForm">
+                    @(ShowSearchForm ? "Hide" : "Show")
+                </MudButton>
+            </MudStack>
+            <MudCollapse Expanded="ShowSearchForm" data-test-id="@TestIdHelper.For("SearchFormCollapse")">
+                <MudCard Elevation="1" Class="ml-4 mr-4 mb-2 search-filters">
+                    <MudCardContent>
+                        <EditForm Model="Model" OnValidSubmit="DoSearch">
+                            <MudGrid>
+                                <MudItem xs="12" md="4">
+                                    <MudTextField T="string"
+                                                  Label="Criteria"
+                                                  Variant="Variant.Outlined"
+                                                  ShrinkLabel="true"
+                                                  Immediate="true"
+                                                  @bind-Value="Model.SearchText"
+                                                  data-test-id="@TestIdHelper.For("Criteria")" />
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <MudSelect T="string"
+                                               Label="Categories"
+                                               Variant="Variant.Outlined"
+                                               ShrinkLabel="true"
+                                               Value="@Model.SelectedCategory"
+                                               ValueChanged="OnCategoryChanged"
+                                               data-test-id="@TestIdHelper.For("CategorySelect")">
+                                        @foreach (var category in Categories)
+                                        {
+                                            <MudSelectItem Value="@category.Key">@category.Value</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="3">
+                                    <MudSelect T="string"
+                                               Label="Plugins"
+                                               Variant="Variant.Outlined"
+                                               ShrinkLabel="true"
+                                               MultiSelection="true"
+                                               SelectAll="true"
+                                               SelectAllText="Select all enabled"
+                                               SelectedValues="@Model.SelectedPlugins"
+                                               SelectedValuesChanged="OnPluginsChanged"
+                                               MultiSelectionTextFunc="PluginsSelectionText"
+                                               data-test-id="@TestIdHelper.For("PluginSelect")">
+                                        @foreach (var plugin in EnabledPlugins)
+                                        {
+                                            <MudSelectItem Value="@plugin.Name">@plugin.FullName</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="2">
+                                    <MudStack Spacing="1">
+                                        <MudButton ButtonType="ButtonType.Submit"
+                                                   FullWidth="true"
+                                                   Disabled="@( !CanStartNewSearch )"
+                                                   Color="Color.Primary"
+                                                   EndIcon="@Icons.Material.Filled.Search"
+                                                   Variant="Variant.Filled"
+                                                   data-test-id="@TestIdHelper.For("StartSearchButton")">
+                                            Start search
+                                        </MudButton>
+                                        <MudButton FullWidth="true"
+                                                   Variant="Variant.Text"
+                                                   StartIcon="@(ShowAdvancedFilters ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                                                   OnClick="ToggleAdvancedFilters"
+                                                   data-test-id="@TestIdHelper.For("ToggleAdvancedFilters")">
+                                            @(ShowAdvancedFilters ? "Hide filters" : "Show filters")
+                                        </MudButton>
+                                    </MudStack>
+                                </MudItem>
+                            </MudGrid>
+                            <MudCollapse Expanded="ShowAdvancedFilters" data-test-id="@TestIdHelper.For("AdvancedFiltersCollapse")">
+                                <MudGrid Class="mt-2">
+                                    <MudItem xs="12" md="4">
+                                        <MudTextField T="string"
+                                                      Label="Filter results"
+                                                      Variant="Variant.Outlined"
+                                                      ShrinkLabel="true"
+                                                      Value="@Model.FilterText"
+                                                      ValueChanged="OnFilterTextChanged"
+                                                      Immediate="true" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="2">
+                                        <MudSelect T="SearchInScope"
+                                                   Label="Search in"
+                                                   Variant="Variant.Outlined"
+                                                   ShrinkLabel="true"
+                                                   Value="@Model.SearchIn"
+                                                   ValueChanged="OnSearchInChanged"
+                                                   data-test-id="@TestIdHelper.For("SearchInScopeSelect")">
+                                            <MudSelectItem Value="@SearchInScope.Everywhere">Everywhere</MudSelectItem>
+                                            <MudSelectItem Value="@SearchInScope.Names">Names only</MudSelectItem>
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" md="2">
+                                        <MudNumericField T="int?"
+                                                         Label="Min seeders"
+                                                         Variant="Variant.Outlined"
+                                                         ShrinkLabel="true"
+                                                         Min="0"
+                                                         Value="@Model.MinimumSeeds"
+                                                         ValueChanged="OnMinimumSeedsChanged"
+                                                         Immediate="true" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="2">
+                                        <MudNumericField T="int?"
+                                                         Label="Max seeders"
+                                                         Variant="Variant.Outlined"
+                                                         ShrinkLabel="true"
+                                                         Min="0"
+                                                         Value="@Model.MaximumSeeds"
+                                                         ValueChanged="OnMaximumSeedsChanged"
+                                                         Immediate="true" />
+                                    </MudItem>
+                                </MudGrid>
+                                <MudGrid Class="mt-2">
+                                    <MudItem xs="12" md="3">
+                                        <MudNumericField T="double?"
+                                                         Label="Min size"
+                                                         Variant="Variant.Outlined"
+                                                         ShrinkLabel="true"
+                                                         Min="0"
+                                                         Value="@Model.MinimumSize"
+                                                         ValueChanged="OnMinimumSizeChanged"
+                                                         Immediate="true" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="1">
+                                        <MudSelect T="SearchSizeUnit"
+                                                   Label="Unit"
+                                                   Variant="Variant.Outlined"
+                                                   ShrinkLabel="true"
+                                                   Value="@Model.MinimumSizeUnit"
+                                                   ValueChanged="OnMinimumSizeUnitChanged">
+                                            @foreach (var option in SizeUnitOptionsList)
+                                            {
+                                                <MudSelectItem Value="@option.Unit">@option.Label</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudNumericField T="double?"
+                                                         Label="Max size"
+                                                         Variant="Variant.Outlined"
+                                                         ShrinkLabel="true"
+                                                         Min="0"
+                                                         Value="@Model.MaximumSize"
+                                                         ValueChanged="OnMaximumSizeChanged"
+                                                         Immediate="true" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="1">
+                                        <MudSelect T="SearchSizeUnit"
+                                                   Label="Unit"
+                                                   Variant="Variant.Outlined"
+                                                   ShrinkLabel="true"
+                                                   Value="@Model.MaximumSizeUnit"
+                                                   ValueChanged="OnMaximumSizeUnitChanged">
+                                            @foreach (var option in SizeUnitOptionsList)
+                                            {
+                                                <MudSelectItem Value="@option.Unit">@option.Label</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudCollapse>
+                        </EditForm>
+                    </MudCardContent>
+                </MudCard>
+            </MudCollapse>
+
+            @if (ShowSearchUnavailableMessage)
+            {
+                <MudAlert Severity="Severity.Error" Elevation="0" Class="ml-4 mr-4 mb-2" data-test-id="@TestIdHelper.For("SearchUnavailableAlert")">
+                    @SearchUnavailableMessage
+                </MudAlert>
+            }
+            else if (ShowNoPluginWarning)
+            {
+                <MudAlert Severity="Severity.Warning" Elevation="0" Class="ml-4 mr-4 mb-2" data-test-id="@TestIdHelper.For("NoPluginAlert")">
+                    Enable at least one search plugin to run searches.
+                </MudAlert>
+            }
+
+            @if (HasJobs)
+            {
+                <MudTabs Class="ml-4 mr-4 mb-4"
+                         Border="true"
+                         ApplyEffectsToContainer="true"
+                         @bind-ActivePanelIndex="ActiveTabIndex"
+                         data-test-id="@TestIdHelper.For("JobTabs")">
+                    @for (var index = 0; index < Jobs.Count; index++)
+                    {
+                        var job = Jobs[index];
+                        <MudTabPanel>
+                            <TabContent>
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@GetJobStatusIcon(job)" Color="@GetJobStatusColor(job)" Size="Size.Small" Class="mr-1" data-test-id="@TestIdHelper.For("JobStatusIcon")" />
+                                    <MudText Typo="Typo.body2">@job.Pattern</MudText>
+                                    <MudText Typo="Typo.caption" Class="ml-2" data-test-id="@TestIdHelper.For("JobSummary")" > @GetJobResultSummary(job)</MudText>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                                   Size="Size.Small"
+                                                   Color="Color.Inherit"
+                                                   Class="ml-2"
+                                                   OnClick="@(async () => await CloseJob(job))" />
+                                </div>
+                            </TabContent>
+                        </MudTabPanel>
+                    }
+                </MudTabs>  
+
+                <DynamicTable @ref="Table"
+                              TableId="SearchResults"
+                              T="Lantean.QBitTorrentClient.Models.SearchResult"
+                              ColumnDefinitions="Columns"
+                              Items="Results"
+                              MultiSelection="false"
+                              SelectOnRowClick="false"
+                              OnTableDataContextMenu="HandleResultContextMenu"
+                              OnTableDataLongPress="HandleResultLongPress"
+                              Class="search-list content-panel__table" />
+            }
+            else
+            {
+                <MudPaper Elevation="0" Class="ml-4 mr-4 mb-4 pa-6 d-flex justify-center" data-test-id="@TestIdHelper.For("SearchEmptyState")">
+                    <MudStack Spacing="1" Class="text-center">
+                        <MudIcon Icon="@Icons.Material.Filled.ManageSearch" Color="Color.Info" Size="Size.Large" />
+                        <MudText Typo="Typo.subtitle1">No searches yet</MudText>
+                        <MudText Typo="Typo.body2" Align="Align.Center">Run a search to start tracking jobs and see results here.</MudText>
+                    </MudStack>
+                </MudPaper>
+            }
+
+        </MudContainer>
+    </div>
+</div>

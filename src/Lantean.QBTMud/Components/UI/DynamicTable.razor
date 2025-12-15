@@ -1,0 +1,75 @@
+@typeparam T
+@inherits MudComponentBase
+
+    <MudTable
+        Items="OrderedItems" 
+        T="T" 
+        Hover="true"
+        FixedHeader="true" 
+        HeaderClass="table-head-bordered" 
+        Dense="true" 
+        Breakpoint="Breakpoint.None" 
+        Bordered="true" 
+        Striped="Striped" 
+        Square="true" 
+        LoadingProgressColor="Color.Info" 
+        HorizontalScrollbar="true" 
+        Virtualize="true"
+        AllowUnsorted="false"
+        SelectOnRowClick="false" 
+        Loading="@(Items is null)" 
+        MultiSelection="MultiSelection"
+        SelectedItems="SelectedItems"
+        SelectedItemsChanged="SelectedItemsChangedInternal"
+        OnRowClick="OnRowClickInternal"
+        RowStyleFunc="RowStyleFuncInternal"
+        RowClassFunc="RowClassFuncInternal"
+        Class="@Class"
+        @attributes="UserAttributes">
+    <ColGroup>
+        @if (MultiSelection)
+        {
+            <col style="width: 30px" />
+        }
+        @foreach (var column in GetColumns())
+        {
+            <col style="@(GetColumnStyle(column))" />
+        }
+    </ColGroup>
+    <HeaderContent>
+        @foreach (var column in GetColumns())
+        {
+            var className = column.IconOnly ? null : "table-header-cell";
+            if (!column.IconOnly && column.SortSelector is not null)
+            {
+                className = $"{className} table-header-cell--sortable";
+            }
+            var columnHeader = column.IconOnly ? "" : column.Header;
+            <MudTh Class="@className" Style="@(GetColumnStyle(column))">
+                @if (column.SortSelector is not null)
+                {
+                    <SortLabel Class="column-header" SortDirectionChanged="@(c => SetSort(column.Id, c))" SortDirection="@(column.Id == _sortColumn ? _sortDirection : SortDirection.None)">@columnHeader</SortLabel>
+                }
+                else
+                {
+                    @columnHeader
+                }
+            </MudTh>
+        }
+    </HeaderContent>
+    <RowTemplate>
+        @foreach (var column in GetColumns())
+        {
+            <TdExtended
+                @ref="_tds[column.Id]"
+                DataLabel="@column.Header"
+                Class="@(GetColumnClass(column, context))"
+                Style="@(GetColumnStyle(column))"
+                OnLongPress="@(c => OnLongPressInternal(c, column.Id, context))"
+                OnContextMenu="@(c => OnContextMenuInternal(c, column.Id, context))"
+                data-test-id="@GetRowTestId(context)">
+                @column.RowTemplate(column.GetRowContext(context))
+            </TdExtended>
+        }
+    </RowTemplate>
+</MudTable>
