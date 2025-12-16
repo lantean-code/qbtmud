@@ -1097,6 +1097,35 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
+        public void GIVEN_InitialDescendingDirection_WHEN_Rendered_THEN_DefaultSortUsesInitialDirection()
+        {
+            var columns = CreateColumns();
+            columns[0].InitialDirection = SortDirection.Descending;
+
+            var sortEvents = new List<string?>();
+            var directionEvents = new List<SortDirection>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "InitialDirection");
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "B", Age = 2, Score = 2 },
+                    new TestRow { Name = "A", Age = 1, Score = 1 }
+                });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortEvents.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => directionEvents.Add(value)));
+            });
+
+            sortEvents.Should().Contain("name");
+            directionEvents.Should().Contain(SortDirection.Descending);
+
+            var sortLabel = target.FindComponents<SortLabel>().First(component => component.Markup.Contains("Name", StringComparison.Ordinal));
+            sortLabel.Instance.SortDirection.Should().Be(SortDirection.Descending);
+        }
+
+        [Fact]
         public void GIVEN_NonSortableColumn_WHEN_Rendered_THEN_HeaderHasNoSortLabelAndItemsUnsorted()
         {
             var columns = CreateColumns().ToArray();
