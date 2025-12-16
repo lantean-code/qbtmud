@@ -1097,6 +1097,45 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
+        public void GIVEN_AllColumnsFilteredOut_WHEN_Rendered_THEN_NoSortApplied()
+        {
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "FilteredOut");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Only", Age = 1, Score = 1 } });
+                parameters.Add(p => p.ColumnFilter, new Func<ColumnDefinition<TestRow>, bool>(_ => false));
+            });
+
+            target.FindComponents<MudTh>().Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_NoPersistedSortAndFirstColumnHidden_WHEN_Rendered_THEN_DefaultSortUsesFirstVisible()
+        {
+            var tableId = "VisibleDefaultSort";
+            var selectionKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSelection.{tableId}";
+            await TestContext.LocalStorage.SetItemAsync(selectionKey, new HashSet<string>(new[] { "age", "score" }, StringComparer.Ordinal));
+
+            var columns = CreateColumns();
+            var sortEvents = new List<string?>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "B", Age = 2, Score = 2 },
+                    new TestRow { Name = "A", Age = 1, Score = 1 }
+                });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortEvents.Add(value)));
+            });
+
+            sortEvents.Should().Contain("age");
+        }
+
+        [Fact]
         public void GIVEN_InitialDescendingDirection_WHEN_Rendered_THEN_DefaultSortUsesInitialDirection()
         {
             var columns = CreateColumns();

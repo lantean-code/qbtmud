@@ -157,11 +157,32 @@ namespace Lantean.QBTMud.Components.UI
             }
             else
             {
-                var defaultColumn = ColumnDefinitions.First(c => c.Enabled);
-                sortColumn = defaultColumn.Id;
-                sortDirection = defaultColumn.InitialDirection == SortDirection.None
+                var defaultColumn = ColumnDefinitions.FirstOrDefault(c => c.Enabled && SelectedColumns.Contains(c.Id))
+                    ?? ColumnDefinitions.FirstOrDefault(c => c.Enabled);
+                sortColumn = defaultColumn?.Id;
+                sortDirection = defaultColumn?.InitialDirection == SortDirection.None
                     ? SortDirection.Ascending
-                    : defaultColumn.InitialDirection;
+                    : defaultColumn?.InitialDirection ?? SortDirection.Ascending;
+            }
+
+            var visibleColumns = ColumnDefinitions
+                .Where(c => c.Enabled)
+                .Where(c => SelectedColumns.Contains(c.Id))
+                .Where(ColumnFilter)
+                .ToList();
+
+            if (visibleColumns.Count == 0)
+            {
+                sortColumn = null;
+                sortDirection = SortDirection.None;
+            }
+            else if (sortColumn is null || visibleColumns.All(c => c.Id != sortColumn))
+            {
+                var fallbackColumn = visibleColumns[0];
+                sortColumn = fallbackColumn.Id;
+                sortDirection = fallbackColumn.InitialDirection == SortDirection.None
+                    ? SortDirection.Ascending
+                    : fallbackColumn.InitialDirection;
             }
 
             if (_sortColumn != sortColumn)
