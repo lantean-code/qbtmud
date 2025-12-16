@@ -115,12 +115,14 @@ namespace Lantean.QBTMud.Components.UI
 
         private IEnumerable<ColumnDefinition<T>>? _lastColumnDefinitions;
 
+        private bool _initialized;
+
         protected override async Task OnInitializedAsync()
         {
             var columnSelectionStorageKey = _columnSelectionStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
-            var columnSortStorageKey = _columnSortStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
             var columnWidthsStorageKey = _columnWidthsStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
             var columnOrderStorageKey = _columnOrderStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+            var columnSortStorageKey = GetColumnSortStorageKey();
 
             HashSet<string> selectedColumns;
             var storedSelectedColumns = await LocalStorage.GetItemAsync<HashSet<string>>(columnSelectionStorageKey);
@@ -175,6 +177,7 @@ namespace Lantean.QBTMud.Components.UI
             {
                 sortColumn = null;
                 sortDirection = SortDirection.None;
+                await LocalStorage.RemoveItemAsync(columnSortStorageKey);
             }
             else if (sortColumn is null || visibleColumns.All(c => c.Id != sortColumn))
             {
@@ -211,6 +214,8 @@ namespace Lantean.QBTMud.Components.UI
                 _columnOrder = storedColumnOrder;
             }
             MarkColumnsDirty();
+
+            _initialized = true;
         }
 
         protected override void OnParametersSet()
@@ -220,6 +225,11 @@ namespace Lantean.QBTMud.Components.UI
             {
                 _lastColumnDefinitions = ColumnDefinitions;
                 MarkColumnsDirty();
+                if (_initialized)
+                {
+                    var columnSortStorageKey = GetColumnSortStorageKey();
+                    _ = InvokeAsync(() => EnsureSortColumnValidAsync(columnSortStorageKey));
+                }
             }
         }
 
@@ -334,6 +344,8 @@ namespace Lantean.QBTMud.Components.UI
                 _sortDirection = sortDirection;
                 await SortDirectionChanged.InvokeAsync(_sortDirection);
             }
+
+            await EnsureSortColumnValidAsync(columnSortStorageKey);
         }
 
         protected async Task OnRowClickInternal(TableRowClickEventArgs<T> eventArgs)
@@ -445,6 +457,7 @@ namespace Lantean.QBTMud.Components.UI
             }
 
             var columnSelectionStorageKey = _columnSelectionStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+            var columnSortStorageKey = _columnSortStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
             var columnWidthsStorageKey = _columnWidthsStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
             var columnOrderStorageKey = _columnOrderStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
 
@@ -469,6 +482,8 @@ namespace Lantean.QBTMud.Components.UI
                 await LocalStorage.SetItemAsync(columnOrderStorageKey, _columnOrder);
                 MarkColumnsDirty();
             }
+
+            await EnsureSortColumnValidAsync(columnSortStorageKey);
         }
 
         private static bool DictionaryEqual<TKey, TValue>(Dictionary<TKey, TValue> left, Dictionary<TKey, TValue> right) where TKey : notnull
@@ -550,6 +565,45 @@ namespace Lantean.QBTMud.Components.UI
         {
             _columnsDirty = true;
             _visibleColumns = EmptyColumns;
+        }
+
+        private string GetColumnSortStorageKey()
+        {
+            return _columnSortStorageKey.Replace("{_tableId}", TableId, StringComparison.Ordinal);
+        }
+
+        private async Task EnsureSortColumnValidAsync(string columnSortStorageKey)
+        {
+            var visibleColumns = ColumnDefinitions
+                .Where(c => c.Enabled)
+                .Where(c => SelectedColumns.Contains(c.Id))
+                .Where(ColumnFilter)
+                .ToList();
+
+            if (visibleColumns.Count == 0)
+            {
+                if (_sortColumn is not null || _sortDirection != SortDirection.None)
+                {
+                    _sortColumn = null;
+                    _sortDirection = SortDirection.None;
+                    await LocalStorage.RemoveItemAsync(columnSortStorageKey);
+                    await SortColumnChanged.InvokeAsync(_sortColumn);
+                    await SortDirectionChanged.InvokeAsync(_sortDirection);
+                }
+                return;
+            }
+
+            if (_sortColumn is not null && visibleColumns.Any(c => c.Id == _sortColumn))
+            {
+                return;
+            }
+
+            var fallbackColumn = visibleColumns[0];
+            var fallbackDirection = fallbackColumn.InitialDirection == SortDirection.None
+                ? SortDirection.Ascending
+                : fallbackColumn.InitialDirection;
+
+            await SetSort(fallbackColumn.Id, fallbackDirection);
         }
 
         private sealed record SortData

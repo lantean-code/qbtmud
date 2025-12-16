@@ -706,12 +706,13 @@ namespace Lantean.QBTMud.Test.Pages
                 target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
             });
 
-            target.WaitForState(() =>
+            target.WaitForAssertion(() =>
             {
                 var icon = FindComponentByTestId<MudIcon>(target, "JobStatusIcon");
-                return icon.Instance.Icon == Icons.Material.Filled.Stop;
-            }, TimeSpan.FromSeconds(20));
+                icon.Instance.Icon.Should().Be(Icons.Material.Filled.Stop);
+            });
 
+            apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
             snackbarMock.Verify(snackbar => snackbar.Add(
                 It.IsAny<string>(),
                 It.IsAny<Severity>(),

@@ -63,9 +63,27 @@ namespace Lantean.QBTMud.Components.Dialogs
                 }
                 else
                 {
-                    foreach (var order in Order)
+                    var knownColumns = new HashSet<string>(Columns.Select(c => c.Id), StringComparer.Ordinal);
+                    var index = 0;
+
+                    foreach (var order in Order.OrderBy(o => o.Value))
                     {
-                        OrderInternal[order.Key] = order.Value;
+                        if (!knownColumns.Contains(order.Key))
+                        {
+                            continue;
+                        }
+
+                        OrderInternal[order.Key] = index++;
+                    }
+
+                    foreach (var column in Columns)
+                    {
+                        if (OrderInternal.ContainsKey(column.Id))
+                        {
+                            continue;
+                        }
+
+                        OrderInternal[column.Id] = index++;
                     }
                 }
             }
@@ -122,6 +140,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             var currentId = OrderInternal.FirstOrDefault(o => o.Value == index).Key;
             var otherId = OrderInternal.FirstOrDefault(o => o.Value == index - 1).Key;
 
+            if (currentId is null || otherId is null)
+            {
+                return;
+            }
+
             OrderInternal[otherId] = index;
             OrderInternal[currentId] = index - 1;
 
@@ -139,6 +162,11 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             var currentId = OrderInternal.FirstOrDefault(o => o.Value == index).Key;
             var otherId = OrderInternal.FirstOrDefault(o => o.Value == index + 1).Key;
+
+            if (currentId is null || otherId is null)
+            {
+                return;
+            }
 
             OrderInternal[otherId] = index;
             OrderInternal[currentId] = index + 1;

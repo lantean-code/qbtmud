@@ -1136,6 +1136,35 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
+        public async Task GIVEN_PersistedSortOnHiddenColumn_WHEN_ColumnOptionsDeselectedColumn_THEN_SortFallsBackToVisible()
+        {
+            var tableId = "HiddenSort";
+            var sortKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}";
+            await TestContext.LocalStorage.SetItemAsStringAsync(sortKey, "{\"SortColumn\":\"name\",\"SortDirection\":1}");
+
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((new HashSet<string>(new[] { "age" }, StringComparer.Ordinal), new Dictionary<string, int?>(), new Dictionary<string, int> { { "age", 0 } }));
+
+            var sortEvents = new List<string?>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Only", Age = 1, Score = 1 } });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortEvents.Add(value)));
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+
+            sortEvents.Should().Contain("age");
+            var storedSort = await TestContext.LocalStorage.GetItemAsStringAsync(sortKey);
+            storedSort.Should().Contain("\"sortColumn\":\"age\"");
+        }
+
+        [Fact]
         public void GIVEN_InitialDescendingDirection_WHEN_Rendered_THEN_DefaultSortUsesInitialDirection()
         {
             var columns = CreateColumns();
@@ -1276,6 +1305,50 @@ namespace Lantean.QBTMud.Test.Components.UI
             var headers = target.FindComponents<MudTh>();
             headers.Should().HaveCount(2);
             headers.Should().OnlyContain(h => h.Markup.Contains("Name", StringComparison.Ordinal) || h.Markup.Contains("Age", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void GIVEN_SortColumnRemovedAfterInitialization_WHEN_ColumnsUpdated_THEN_SortFallsBackToVisibleColumn()
+        {
+            var columns = CreateColumns();
+            var items = new List<TestRow>
+            {
+                new TestRow { Name = "Later", Age = 5, Score = 1 },
+                new TestRow { Name = "Early", Age = 10, Score = 2 },
+            };
+
+            var sortChanges = new List<string>();
+            var directionChanges = new List<SortDirection>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "SortFallbackColumnsUpdate");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortChanges.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => directionChanges.Add(value)));
+            });
+
+            var initialAges = target.FindAll("[data-test-id='AgeCell']").Select(e => e.TextContent).ToList();
+            initialAges.Should().ContainInOrder("10", "5");
+            sortChanges.Should().Contain("name");
+
+            var updatedColumns = new[] { columns[1], columns[2] };
+
+            target.Render(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, updatedColumns);
+                parameters.Add(p => p.TableId, "SortFallbackColumnsUpdate");
+                parameters.Add(p => p.Items, items);
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortChanges.Add(value)));
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => directionChanges.Add(value)));
+            });
+
+            target.WaitForState(() => target.FindAll("[data-test-id='AgeCell']").First().TextContent == "5");
+
+            var updatedAges = target.FindAll("[data-test-id='AgeCell']").Select(e => e.TextContent).ToList();
+            updatedAges.Should().ContainInOrder("5", "10");
+            sortChanges.Should().Contain("age");
         }
 
         [Fact]
