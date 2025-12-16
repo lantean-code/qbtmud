@@ -190,6 +190,10 @@ let supportedEvents = new Map();
 let focusInstance = null;
 
 document.addEventListener('keyup', event => {
+    if (shouldIgnoreKeyPress(event)) {
+        return;
+    }
+
     const key = getKey(event);
 
     const references = supportedEvents.get(key);
@@ -245,6 +249,23 @@ window.qbt.keyPressFocusInstance = dotNetObjectReference => {
 
 window.qbt.keyPressUnFocusInstance = dotNetObjectReference => {
     focusInstance = null;
+}
+
+function shouldIgnoreKeyPress(event) {
+    if (event.key !== 'Delete') {
+        return false;
+    }
+
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+        return false;
+    }
+
+    if (target.isContentEditable) {
+        return true;
+    }
+
+    return target.closest('input, textarea, select, [contenteditable="true"]') !== null;
 }
 
 function getKey(keyboardEvent) {
