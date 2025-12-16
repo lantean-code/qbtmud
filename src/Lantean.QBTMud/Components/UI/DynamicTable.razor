@@ -4,7 +4,7 @@
     <MudTable
         Items="OrderedItems" 
         T="T" 
-        Hover="true"
+        Hover="Hover"
         FixedHeader="true" 
         HeaderClass="table-head-bordered" 
         Dense="true" 
@@ -61,12 +61,11 @@
         @foreach (var column in GetColumns())
         {
             <TdExtended
-                @ref="_tds[column.Id]"
                 DataLabel="@column.Header"
                 Class="@(GetColumnClass(column, context))"
                 Style="@(GetColumnStyle(column))"
-                OnLongPress="@(c => OnLongPressInternal(c, column.Id, context))"
-                OnContextMenu="@(c => OnContextMenuInternal(c, column.Id, context))"
+                OnLongPress="@(c => OnLongPressInternal(c, context))"
+                OnContextMenu="@(c => OnContextMenuInternal(c, context))"
                 data-test-id="@GetRowTestId(context)">
                 @column.RowTemplate(column.GetRowContext(context))
             </TdExtended>

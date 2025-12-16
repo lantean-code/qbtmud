@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             var target = TestContext.Render<TdExtended>(parameters =>
             {
-                parameters.Add(p => p.OnLongPress, EventCallback.Factory.Create<LongPressEventArgs>(this, _ =>
+                parameters.Add(p => p.OnLongPress, EventCallback.Factory.Create<CellLongPressEventArgs>(this, _ =>
                 {
                     invoked = true;
                     return Task.CompletedTask;
@@ -36,7 +36,7 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             var target = TestContext.Render<TdExtended>(parameters =>
             {
-                parameters.Add(p => p.OnContextMenu, EventCallback.Factory.Create<MouseEventArgs>(this, _ =>
+                parameters.Add(p => p.OnContextMenu, EventCallback.Factory.Create<CellMouseEventArgs>(this, _ =>
                 {
                     invoked = true;
                     return Task.CompletedTask;

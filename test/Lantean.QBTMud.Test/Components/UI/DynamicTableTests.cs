@@ -150,6 +150,46 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
+        public async Task GIVEN_MultipleRows_WHEN_ContextOrLongPressTriggered_THEN_ShouldProvideCorrectCell()
+        {
+            var contextArgs = new List<TableDataContextMenuEventArgs<SampleItem>>();
+            var longPressArgs = new List<TableDataLongPressEventArgs<SampleItem>>();
+
+            var target = TestContext.Render<DynamicTable<SampleItem>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, new[] { new ColumnDefinition<SampleItem>("Name", item => item.Name) });
+                parameters.Add(p => p.TableId, "CellLookup");
+                parameters.Add(p => p.Items, CreateItems());
+                parameters.Add(p => p.OnTableDataContextMenu, EventCallback.Factory.Create<TableDataContextMenuEventArgs<SampleItem>>(this, args =>
+                {
+                    contextArgs.Add(args);
+                    return Task.CompletedTask;
+                }));
+                parameters.Add(p => p.OnTableDataLongPress, EventCallback.Factory.Create<TableDataLongPressEventArgs<SampleItem>>(this, args =>
+                {
+                    longPressArgs.Add(args);
+                    return Task.CompletedTask;
+                }));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponents<TdExtended>().Count.Should().Be(2);
+            });
+
+            var cells = target.FindComponents<TdExtended>();
+
+            await cells[0].Find("td").TriggerEventAsync("oncontextmenu", new MouseEventArgs());
+            await cells[1].Find("td").TriggerEventAsync("onlongpress", new LongPressEventArgs());
+
+            contextArgs.Should().ContainSingle();
+            contextArgs[0].Data.Should().BeSameAs(cells[0].Instance);
+
+            longPressArgs.Should().ContainSingle();
+            longPressArgs[0].Data.Should().BeSameAs(cells[1].Instance);
+        }
+
+        [Fact]
         public async Task GIVEN_ShowColumnOptionsDialog_WHEN_ResultReturned_THEN_ShouldPersistState()
         {
             var dialogServiceMock = new Mock<IDialogService>(MockBehavior.Strict);
@@ -275,6 +315,40 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             columns.Single(c => c.Header == "Age").Width.Should().Be(120);
             columns.Single(c => c.Header == "Score").Width.Should().Be(90);
+        }
+
+        [Fact]
+        public async Task GIVEN_PersistedColumnOrder_WHEN_Rendered_THEN_OrderRestored()
+        {
+            var tableId = "PersistedOrder";
+            var columnOrderKey = $"DynamicTable{typeof(TestRow).Name}.ColumnOrder.{tableId}";
+            var columnOrder = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                { "score", 0 },
+                { "name", 1 },
+                { "age", 2 }
+            };
+
+            await TestContext.LocalStorage.SetItemAsync(columnOrderKey, columnOrder);
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, tableId);
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "First", Age = 10, Score = 20 }
+                });
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                var headers = target.FindComponents<MudTh>().Select(component => component.Find("th").TextContent.Trim()).ToList();
+                headers.Should().HaveCount(3);
+                headers[0].Should().Be("Score");
+                headers[1].Should().Be("Name");
+                headers[2].Should().Be("Age");
+            });
         }
 
         [Fact]
@@ -1134,6 +1208,21 @@ namespace Lantean.QBTMud.Test.Components.UI
             var headers = target.FindComponents<MudTh>();
             headers.Should().HaveCount(2);
             headers.Should().OnlyContain(h => h.Markup.Contains("Name", StringComparison.Ordinal) || h.Markup.Contains("Age", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public void GIVEN_HoverDisabled_WHEN_Rendered_THEN_TableHoverIsFalse()
+        {
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, CreateColumns());
+                parameters.Add(p => p.TableId, "HoverDisabled");
+                parameters.Add(p => p.Items, new List<TestRow> { new TestRow { Name = "Row", Age = 1, Score = 1 } });
+                parameters.Add(p => p.Hover, false);
+            });
+
+            var mudTable = target.FindComponent<MudTable<TestRow>>();
+            mudTable.Instance.Hover.Should().BeFalse();
         }
 
         [Fact]

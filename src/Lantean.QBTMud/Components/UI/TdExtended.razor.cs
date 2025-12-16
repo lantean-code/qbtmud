@@ -7,19 +7,19 @@ namespace Lantean.QBTMud.Components.UI
     public partial class TdExtended : MudTd
     {
         [Parameter]
-        public EventCallback<LongPressEventArgs> OnLongPress { get; set; }
+        public EventCallback<CellLongPressEventArgs> OnLongPress { get; set; }
 
         [Parameter]
-        public EventCallback<MouseEventArgs> OnContextMenu { get; set; }
+        public EventCallback<CellMouseEventArgs> OnContextMenu { get; set; }
 
         protected Task OnLongPressInternal(LongPressEventArgs e)
         {
-            return OnLongPress.InvokeAsync(e);
+            return OnLongPress.InvokeAsync(new CellLongPressEventArgs(e, this));
         }
 
         protected Task OnContextMenuInternal(MouseEventArgs e)
         {
-            return OnContextMenu.InvokeAsync(e);
+            return OnContextMenu.InvokeAsync(new CellMouseEventArgs(e, this));
         }
     }
 }

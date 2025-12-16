@@ -109,8 +109,6 @@ namespace Lantean.QBTMud.Components.UI
 
         private DateTimeOffset? _suppressRowClickUntil;
 
-        private readonly Dictionary<string, TdExtended> _tds = [];
-
         private IReadOnlyList<ColumnDefinition<T>> _visibleColumns = EmptyColumns;
 
         private bool _columnsDirty = true;
@@ -181,6 +179,12 @@ namespace Lantean.QBTMud.Components.UI
             if (storedColumnsWidths is not null)
             {
                 _columnWidths = storedColumnsWidths;
+            }
+
+            var storedColumnOrder = await LocalStorage.GetItemAsync<Dictionary<string, int>>(columnOrderStorageKey);
+            if (storedColumnOrder is not null)
+            {
+                _columnOrder = storedColumnOrder;
             }
             MarkColumnsDirty();
         }
@@ -396,17 +400,15 @@ namespace Lantean.QBTMud.Components.UI
             SelectedItems = selectedItems;
         }
 
-        protected Task OnContextMenuInternal(MouseEventArgs eventArgs, string columnId, T item)
+        protected Task OnContextMenuInternal(CellMouseEventArgs eventArgs, T item)
         {
-            var data = _tds[columnId];
-            return OnTableDataContextMenu.InvokeAsync(new TableDataContextMenuEventArgs<T>(eventArgs, data, item));
+            return OnTableDataContextMenu.InvokeAsync(new TableDataContextMenuEventArgs<T>(eventArgs.MouseEventArgs, eventArgs.Cell, item));
         }
 
-        protected Task OnLongPressInternal(LongPressEventArgs eventArgs, string columnId, T item)
+        protected Task OnLongPressInternal(CellLongPressEventArgs eventArgs, T item)
         {
             _suppressRowClickUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
-            var data = _tds[columnId];
-            return OnTableDataLongPress.InvokeAsync(new TableDataLongPressEventArgs<T>(eventArgs, data, item));
+            return OnTableDataLongPress.InvokeAsync(new TableDataLongPressEventArgs<T>(eventArgs.LongPressEventArgs, eventArgs.Cell, item));
         }
 
         public async Task ShowColumnOptionsDialog()
