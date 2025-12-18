@@ -26,7 +26,8 @@ namespace Lantean.QBTMud.Services
         /// Persists the current in-memory history to local storage.
         /// </summary>
         /// <param name="cancellationToken">Token that signals cancellation.</param>
-        Task PersistAsync(CancellationToken cancellationToken = default);
+        /// <param name="timestampUtc">Optional timestamp to record as the persistence time.</param>
+        Task PersistAsync(CancellationToken cancellationToken = default, DateTime? timestampUtc = null);
 
         /// <summary>
         /// Clears all in-memory and persisted history.

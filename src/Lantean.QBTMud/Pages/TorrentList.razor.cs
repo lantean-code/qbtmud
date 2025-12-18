@@ -4,6 +4,7 @@ using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
 using MudBlazor;
 using System.Text.RegularExpressions;
@@ -13,6 +14,7 @@ namespace Lantean.QBTMud.Pages
     public partial class TorrentList : IAsyncDisposable
     {
         private bool _disposedValue;
+        private bool _shortcutsRegistered;
 
         private static readonly KeyboardEvent _addTorrentFileKey = new("a") { AltKey = true };
         private static readonly KeyboardEvent _addTorrentLinkKey = new("l") { AltKey = true };
@@ -92,12 +94,18 @@ namespace Lantean.QBTMud.Pages
 
         private bool _toolbarButtonsEnabled;
 
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+
+            NavigationManager.LocationChanged += OnLocationChanged;
+        }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
-                await KeyboardService.RegisterKeypressEvent(_addTorrentFileKey, k => AddTorrentFile());
-                await KeyboardService.RegisterKeypressEvent(_addTorrentLinkKey, k => AddTorrentLink());
+                await RegisterShortcutsAsync();
             }
         }
 
@@ -394,12 +402,46 @@ namespace Lantean.QBTMud.Pages
             {
                 if (disposing)
                 {
-                    await KeyboardService.UnregisterKeypressEvent(_addTorrentFileKey);
-                    await KeyboardService.UnregisterKeypressEvent(_addTorrentLinkKey);
+                    await UnregisterShortcutsAsync();
+                    NavigationManager.LocationChanged -= OnLocationChanged;
                 }
 
                 _disposedValue = true;
             }
+        }
+
+        private async Task RegisterShortcutsAsync()
+        {
+            if (_shortcutsRegistered)
+            {
+                return;
+            }
+
+            await KeyboardService.RegisterKeypressEvent(_addTorrentFileKey, k => AddTorrentFile());
+            await KeyboardService.RegisterKeypressEvent(_addTorrentLinkKey, k => AddTorrentLink());
+            _shortcutsRegistered = true;
+        }
+
+        private async Task UnregisterShortcutsAsync()
+        {
+            if (!_shortcutsRegistered)
+            {
+                return;
+            }
+
+            await KeyboardService.UnregisterKeypressEvent(_addTorrentFileKey);
+            await KeyboardService.UnregisterKeypressEvent(_addTorrentLinkKey);
+            _shortcutsRegistered = false;
+        }
+
+        private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+        {
+            if (_disposedValue)
+            {
+                return;
+            }
+
+            _ = UnregisterShortcutsAsync();
         }
     }
 }

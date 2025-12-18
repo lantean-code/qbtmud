@@ -8,10 +8,22 @@ namespace Lantean.QBTMud.Test.Infrastructure
         private readonly Dictionary<string, object?> _store = new(StringComparer.Ordinal);
         private readonly object _lock = new();
         private readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerDefaults.Web);
+        private int _writeCount;
 
         public event EventHandler<ChangingEventArgs>? Changing;
 
         public event EventHandler<ChangedEventArgs>? Changed;
+
+        public int WriteCount
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _writeCount;
+                }
+            }
+        }
 
         public ValueTask ClearAsync(CancellationToken cancellationToken = default)
         {
@@ -179,6 +191,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
             lock (_lock)
             {
                 _store[key] = newValue;
+                ++_writeCount;
             }
 
             if (raiseEvents)

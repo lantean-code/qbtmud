@@ -12,6 +12,7 @@ namespace Lantean.QBTMud.Services
     {
         private const string StorageKey = "qbtmud.speedhistory.v1";
         private const int SchemaVersion = 1;
+        private static readonly TimeSpan DefaultFlushInterval = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan MaximumRetention = TimeSpan.FromHours(24);
 
         private static readonly IReadOnlyDictionary<SpeedPeriod, BucketConfiguration> BucketConfigurations = new Dictionary<SpeedPeriod, BucketConfiguration>
@@ -29,13 +30,16 @@ namespace Lantean.QBTMud.Services
         private readonly Dictionary<SpeedPeriod, Bucketizer> _bucketizers;
         private bool _isInitialized;
         private bool _stateDirty;
+        private readonly TimeSpan _flushInterval;
+        private DateTime? _lastPersistUtc;
 
-        public SpeedHistoryService(ILocalStorageService localStorage)
+        public SpeedHistoryService(ILocalStorageService localStorage, TimeSpan? flushInterval = null)
         {
             _localStorage = localStorage;
             _bucketizers = BucketConfigurations.ToDictionary(
                 kvp => kvp.Key,
                 kvp => new Bucketizer(kvp.Key, kvp.Value.BucketSize, kvp.Value.MaxDuration));
+            _flushInterval = flushInterval ?? DefaultFlushInterval;
         }
 
         /// <summary>
@@ -89,23 +93,23 @@ namespace Lantean.QBTMud.Services
             }
 
             var bucketsChanged = false;
+            var bucketRolled = false;
             foreach (var bucketizer in _bucketizers.Values)
             {
-                if (bucketizer.PushSample(timestampUtc, downloadBytesPerSecond, uploadBytesPerSecond))
-                {
-                    bucketsChanged = true;
-                }
+                var result = bucketizer.PushSample(timestampUtc, downloadBytesPerSecond, uploadBytesPerSecond);
+                bucketsChanged |= result.DataChanged;
+                bucketRolled |= result.BucketRolled;
             }
 
             if (bucketsChanged)
             {
                 _stateDirty = true;
                 LastUpdatedUtc = timestampUtc;
-                await PersistAsync(cancellationToken);
+                await MaybePersistAsync(bucketRolled, timestampUtc, cancellationToken);
             }
         }
 
-        public async Task PersistAsync(CancellationToken cancellationToken = default)
+        public async Task PersistAsync(CancellationToken cancellationToken = default, DateTime? timestampUtc = null)
         {
             if (!_isInitialized || !_stateDirty)
             {
@@ -122,6 +126,32 @@ namespace Lantean.QBTMud.Services
             var state = new PersistedState(SchemaVersion, buckets, LastUpdatedUtc);
             await _localStorage.SetItemAsync(StorageKey, state, cancellationToken);
             _stateDirty = false;
+            _lastPersistUtc = timestampUtc ?? DateTime.UtcNow;
+        }
+
+        private Task MaybePersistAsync(bool bucketRolled, DateTime timestampUtc, CancellationToken cancellationToken)
+        {
+            if (!_stateDirty)
+            {
+                return Task.CompletedTask;
+            }
+
+            if (bucketRolled || ShouldFlush(timestampUtc))
+            {
+                return PersistAsync(cancellationToken, timestampUtc);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private bool ShouldFlush(DateTime timestampUtc)
+        {
+            if (_lastPersistUtc is null)
+            {
+                return true;
+            }
+
+            return (timestampUtc - _lastPersistUtc.Value) >= _flushInterval;
         }
 
         public async Task ClearAsync(CancellationToken cancellationToken = default)
@@ -170,17 +200,18 @@ namespace Lantean.QBTMud.Services
 
             private BucketBuilder? Builder { get; set; }
 
-            public bool PushSample(DateTime timestampUtc, long downloadBytesPerSecond, long uploadBytesPerSecond)
+            public BucketPushResult PushSample(DateTime timestampUtc, long downloadBytesPerSecond, long uploadBytesPerSecond)
             {
                 var bucketStart = AlignTimestamp(timestampUtc);
-                if (Builder is null || Builder.StartUtc != bucketStart)
+                var bucketRolled = Builder is not null && Builder.StartUtc != bucketStart;
+                if (Builder is null || bucketRolled)
                 {
                     CompleteCurrentBucket();
                     Builder = new BucketBuilder(bucketStart, BucketSize);
                 }
 
                 Builder.AddSample(downloadBytesPerSecond, uploadBytesPerSecond);
-                return true;
+                return new BucketPushResult(bucketRolled);
             }
 
             public List<SpeedBucket> Snapshot(bool includeBuilder)
@@ -273,6 +304,11 @@ namespace Lantean.QBTMud.Services
                 var uploadAverage = UploadAccumulator / SampleCount;
                 return new SpeedBucket(StartUtc, (int)Duration.TotalMilliseconds, downloadAverage, uploadAverage);
             }
+        }
+
+        private readonly record struct BucketPushResult(bool BucketRolled)
+        {
+            public bool DataChanged => true;
         }
 
         private sealed class SpeedBucket

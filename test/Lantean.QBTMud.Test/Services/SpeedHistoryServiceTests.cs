@@ -93,5 +93,48 @@ namespace Lantean.QBTMud.Test.Services
 
             series.Should().BeEmpty();
         }
+
+        [Fact]
+        public async Task GIVEN_SamplesWithinFlushInterval_WHEN_PushingSamples_THEN_PersistsOnce()
+        {
+            var localStorage = new TestLocalStorageService();
+            var target = new SpeedHistoryService(localStorage, TimeSpan.FromSeconds(1));
+            await target.InitializeAsync();
+            var baseTime = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            await target.PushSampleAsync(baseTime, 10, 10);
+            await target.PushSampleAsync(baseTime.AddMilliseconds(500), 20, 20);
+            await target.PushSampleAsync(baseTime.AddMilliseconds(900), 30, 30);
+
+            localStorage.WriteCount.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task GIVEN_BucketRollover_WHEN_PushingSamples_THEN_PersistsCompletedBucket()
+        {
+            var localStorage = new TestLocalStorageService();
+            var target = new SpeedHistoryService(localStorage, TimeSpan.FromHours(1));
+            await target.InitializeAsync();
+            var baseTime = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            await target.PushSampleAsync(baseTime, 10, 10);
+            await target.PushSampleAsync(baseTime.AddSeconds(3), 20, 20);
+
+            localStorage.WriteCount.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task GIVEN_FlushIntervalElapsedWithoutRollover_WHEN_PushingSamples_THEN_PersistsBuilder()
+        {
+            var localStorage = new TestLocalStorageService();
+            var target = new SpeedHistoryService(localStorage, TimeSpan.FromSeconds(1));
+            await target.InitializeAsync();
+            var baseTime = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            await target.PushSampleAsync(baseTime, 10, 10);
+            await target.PushSampleAsync(baseTime.AddSeconds(1.5), 20, 20);
+
+            localStorage.WriteCount.Should().Be(2);
+        }
     }
 }
