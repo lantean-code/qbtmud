@@ -86,6 +86,11 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
+            if (!Active)
+            {
+                return;
+            }
+
             WebSeeds = await ApiClient.GetTorrentWebSeeds(Hash);
 
             await InvokeAsync(StateHasChanged);

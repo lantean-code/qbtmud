@@ -1,11 +1,12 @@
 @using Lantean.QBitTorrentClient.Models
 @using MudBlazor
 @using System.Globalization
+@using Lantean.QBTMud.Helpers
 
 <MudPaper Class="pieces-progress-svg" Elevation="0">
     <MudStack Spacing="1">
         <MudTooltip Text="@LinearTooltip" Placement="Placement.Top">
-            <div class="pieces-progress-svg__linear" role="button" tabindex="0" aria-expanded="@_showSvg.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" @onclick="ToggleSvg" @onkeydown="HandleLinearKeyDown">
+            <div class="pieces-progress-svg__linear" role="button" tabindex="0" aria-expanded="@_showSvg.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" data-test-id="@TestIdHelper.For("PiecesToggle")" @onclick="ToggleSvg" @onkeydown="HandleLinearKeyDown">
                 <div class="pieces-progress-svg__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
                 <div class="pieces-progress-svg__linear-overlay">
                     <MudText Typo="Typo.body2" Class="pl-2">@LinearSummary</MudText>
@@ -16,7 +17,18 @@
 
         <MudCollapse Expanded="@_showSvg">
             <MudPaper Class="pieces-progress-svg__surface" Elevation="0">
-                @if (!HasPieceData)
+                @if (PiecesLoading)
+                {
+                    <MudText Typo="Typo.body2" Class="pieces-progress-svg__empty">@SvgLoadingText</MudText>
+                }
+                else if (_svgBuilding)
+                {
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Class="pieces-progress-svg__empty" data-test-id="@TestIdHelper.For("PiecesSpinner")">
+                        <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Large" />
+                        <MudText Typo="Typo.body2" Class="ml-4">Rendering pieces...</MudText>
+                    </MudStack>
+                }
+                else if (PiecesFailed || !HasPieceData)
                 {
                     <MudText Typo="Typo.body2" Class="pieces-progress-svg__empty">@SvgEmptyText</MudText>
                 }

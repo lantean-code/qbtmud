@@ -12,6 +12,9 @@ namespace Lantean.QBTMud.Components
 
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
+        private bool _piecesLoaded;
+        private bool _piecesLoading = true;
+        private bool _piecesFailed;
 
         [Parameter, EditorRequired]
         public string? Hash { get; set; }
@@ -32,6 +35,10 @@ namespace Lantean.QBTMud.Components
 
         protected TorrentProperties Properties { get; set; } = default!;
 
+        protected bool PiecesLoading => _piecesLoading;
+
+        protected bool PiecesFailed => _piecesFailed;
+
         protected override async Task OnParametersSetAsync()
         {
             if (Hash is null)
@@ -44,27 +51,38 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
+            if (!_piecesLoaded)
+            {
+                _piecesLoading = true;
+                _piecesFailed = false;
+            }
+
             try
             {
                 Properties = await ApiClient.GetTorrentProperties(Hash);
             }
             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
             {
+                MarkPiecesFailed();
                 _timerCancellationToken.CancelIfNotDisposed();
+                await InvokeAsync(StateHasChanged);
                 return;
             }
             catch (HttpRequestException)
             {
+                MarkPiecesFailed();
+                await InvokeAsync(StateHasChanged);
                 return;
             }
 
             try
             {
                 Pieces = await ApiClient.GetTorrentPieceStates(Hash);
+                MarkPiecesLoaded();
             }
             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
             {
-                Pieces = [];
+                MarkPiecesFailed();
             }
 
             await InvokeAsync(StateHasChanged);
@@ -91,22 +109,28 @@ namespace Lantean.QBTMud.Components
                             }
                             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
                             {
+                                MarkPiecesFailed();
                                 _timerCancellationToken.CancelIfNotDisposed();
+                                await InvokeAsync(StateHasChanged);
                                 return;
                             }
                             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
                             {
+                                MarkPiecesFailed();
                                 _timerCancellationToken.CancelIfNotDisposed();
+                                await InvokeAsync(StateHasChanged);
                                 return;
                             }
 
                             try
                             {
                                 Pieces = await ApiClient.GetTorrentPieceStates(Hash);
+                                MarkPiecesLoaded();
                             }
                             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
                             {
-                                Pieces = [];
+                                MarkPiecesFailed();
+                                await InvokeAsync(StateHasChanged);
                                 return;
                             }
                         }
@@ -138,6 +162,21 @@ namespace Lantean.QBTMud.Components
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             await DisposeAsync(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        private void MarkPiecesLoaded()
+        {
+            _piecesLoaded = true;
+            _piecesLoading = false;
+            _piecesFailed = false;
+        }
+
+        private void MarkPiecesFailed()
+        {
+            _piecesLoaded = true;
+            _piecesLoading = false;
+            _piecesFailed = true;
+            Pieces = [];
         }
     }
 }

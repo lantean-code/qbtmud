@@ -9,6 +9,8 @@ namespace Lantean.QBTMud.Components
 {
     public partial class PiecesProgressSvg : ComponentBase
     {
+        private const int LargePieceCountThreshold = 50000;
+
         private bool _showSvg = false;
         private string _linearBarStyle = string.Empty;
         private string _linearSummary = "Pieces data unavailable";
@@ -19,6 +21,13 @@ namespace Lantean.QBTMud.Components
         private string _svgAriaLabel = string.Empty;
         private string _viewBox = "0 0 0 0";
         private IReadOnlyList<PieceCell> _cells = Array.Empty<PieceCell>();
+        private string _svgLoadingText = "Loading pieces...";
+        private bool _svgBuilding;
+        private bool _buildPending;
+        private bool _buildInProgress;
+        private IReadOnlyList<PieceState> _lastPiecesReference = Array.Empty<PieceState>();
+        private int _lastPiecesSignature;
+        private int _lastPiecesCount;
 
         [Parameter]
         [EditorRequired]
@@ -27,6 +36,12 @@ namespace Lantean.QBTMud.Components
         [Parameter]
         [EditorRequired]
         public IReadOnlyList<PieceState> Pieces { get; set; } = Array.Empty<PieceState>();
+
+        [Parameter]
+        public bool PiecesLoading { get; set; }
+
+        [Parameter]
+        public bool PiecesFailed { get; set; }
 
         [CascadingParameter(Name = "IsDarkMode")]
         public bool IsDarkMode { get; set; }
@@ -48,6 +63,8 @@ namespace Lantean.QBTMud.Components
         protected string LinearAriaLabel => _linearAriaLabel;
 
         protected string SvgEmptyText => _svgEmptyText;
+
+        protected string SvgLoadingText => _svgLoadingText;
 
         protected string SvgHiddenText => _svgHiddenText;
 
@@ -81,27 +98,61 @@ namespace Lantean.QBTMud.Components
         {
             base.OnParametersSet();
 
-            BuildProgressSummary();
-            BuildSvgCells();
+            var piecesChanged = UpdatePiecesSignature();
+
+            if (piecesChanged || string.IsNullOrWhiteSpace(_linearBarStyle) || PiecesLoading || PiecesFailed)
+            {
+                BuildProgressSummary();
+            }
+
+            if (ShouldBuildSvgCells())
+            {
+                if (piecesChanged || _cells.Count == 0 || _viewBox == "0 0 0 0" || PiecesLoading || PiecesFailed)
+                {
+                    QueueBuildSvgCells();
+                }
+            }
+            else
+            {
+                DeferSvgCells();
+            }
         }
 
-        protected void ToggleSvg()
+        protected async Task ToggleSvg()
         {
             _showSvg = !_showSvg;
             BuildProgressSummary();
+
+            if (_showSvg && (_cells.Count == 0 || _viewBox == "0 0 0 0"))
+            {
+                QueueBuildSvgCells();
+            }
+
+            await InvokeAsync(StateHasChanged);
         }
 
-        protected void HandleLinearKeyDown(KeyboardEventArgs args)
+        protected Task HandleLinearKeyDown(KeyboardEventArgs args)
         {
             if (args.Key is "Enter" or " " or "Space" or "Spacebar")
             {
-                ToggleSvg();
+                return ToggleSvg();
             }
+
+            return Task.CompletedTask;
         }
 
         private void BuildProgressSummary()
         {
-            if (Pieces.Count == 0)
+            if (PiecesLoading)
+            {
+                _linearBarStyle = $"background-color: {PendingColor};";
+                _linearSummary = "Loading pieces...";
+                _linearTooltip = "Loading pieces data...";
+                _linearAriaLabel = $"Loading pieces progress for torrent {Hash}.";
+                return;
+            }
+
+            if (PiecesFailed || Pieces.Count == 0)
             {
                 _linearBarStyle = $"background-color: {PendingColor};";
                 _linearSummary = "Pieces data unavailable";
@@ -157,9 +208,59 @@ namespace Lantean.QBTMud.Components
                 pendingCount);
         }
 
-        private void BuildSvgCells()
+        private void QueueBuildSvgCells()
         {
-            if (Pieces.Count == 0)
+            _buildPending = true;
+            _ = BuildSvgCellsAsync();
+        }
+
+        private async Task BuildSvgCellsAsync()
+        {
+            if (_buildInProgress)
+            {
+                return;
+            }
+
+            _buildInProgress = true;
+
+            try
+            {
+                while (_buildPending)
+                {
+                    _buildPending = false;
+                    var shouldShowSpinner = Pieces.Count >= LargePieceCountThreshold && !PiecesLoading && !PiecesFailed;
+                    _svgBuilding = shouldShowSpinner;
+                    if (shouldShowSpinner)
+                    {
+                        await InvokeAsync(StateHasChanged);
+                        await Task.Yield();
+                        await Task.Delay(50);
+                    }
+
+                    BuildSvgCellsCore();
+
+                    _svgBuilding = false;
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            finally
+            {
+                _buildInProgress = false;
+            }
+        }
+
+        private void BuildSvgCellsCore()
+        {
+            if (PiecesLoading)
+            {
+                _svgEmptyText = _svgLoadingText;
+                _svgAriaLabel = $"Loading pieces SVG for torrent {Hash}.";
+                _viewBox = "0 0 0 0";
+                _cells = Array.Empty<PieceCell>();
+                return;
+            }
+
+            if (PiecesFailed || Pieces.Count == 0)
             {
                 _svgEmptyText = "Pieces data unavailable.";
                 _svgAriaLabel = $"Pieces SVG unavailable for torrent {Hash}.";
@@ -382,6 +483,55 @@ namespace Lantean.QBTMud.Components
                 formatted.Length,
                 formatted,
                 static (span, state) => state.AsSpan().CopyTo(span));
+        }
+
+        private bool UpdatePiecesSignature()
+        {
+            if (ReferenceEquals(Pieces, _lastPiecesReference))
+            {
+                return false;
+            }
+
+            var signatureBuilder = new HashCode();
+            signatureBuilder.Add(Pieces.Count);
+            for (var index = 0; index < Pieces.Count; index++)
+            {
+                signatureBuilder.Add((int)Pieces[index]);
+            }
+
+            var signature = signatureBuilder.ToHashCode();
+            var unchanged = _lastPiecesCount == Pieces.Count && _lastPiecesSignature == signature;
+
+            _lastPiecesReference = Pieces;
+            _lastPiecesSignature = signature;
+            _lastPiecesCount = Pieces.Count;
+
+            return !unchanged;
+        }
+
+        private bool ShouldBuildSvgCells()
+        {
+            if (PiecesLoading || PiecesFailed || Pieces.Count == 0)
+            {
+                return true;
+            }
+
+            if (Pieces.Count < LargePieceCountThreshold)
+            {
+                return true;
+            }
+
+            return _showSvg;
+        }
+
+        private void DeferSvgCells()
+        {
+            _viewBox = "0 0 0 0";
+            _cells = Array.Empty<PieceCell>();
+            _svgEmptyText = string.Empty;
+            _svgAriaLabel = CreateInvariant("Pieces SVG deferred for torrent {0}. Expand to render.", Hash);
+            _buildPending = false;
+            _svgBuilding = false;
         }
 
         protected sealed record PieceCell(double X, double Y, double Width, double Height, string CssClass, string Tooltip);

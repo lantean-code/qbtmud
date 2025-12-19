@@ -18,7 +18,7 @@ using TorrentModel = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Components
 {
-    public sealed class TorrentActionsTests : RazorComponentTestBase
+    public sealed class TorrentActionsTests : RazorComponentTestBase<TorrentActions>
     {
         [Fact]
         public async Task GIVEN_MenuItems_WHEN_StartStopForceStartInvoked_THEN_ApiCalledAndSnackbarsShown()
