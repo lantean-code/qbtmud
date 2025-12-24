@@ -6,7 +6,7 @@
 <MudPaper Class="pieces-progress-svg" Elevation="0">
     <MudStack Spacing="1">
         <MudTooltip Text="@LinearTooltip" Placement="Placement.Top">
-            <div class="pieces-progress-svg__linear" role="button" tabindex="0" aria-expanded="@_showSvg.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" data-test-id="@TestIdHelper.For("PiecesToggle")" @onclick="ToggleSvg" @onkeydown="HandleLinearKeyDown">
+            <div class="pieces-progress-svg__linear" role="button" tabindex="0" aria-expanded="@_showSvg.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" data-test-id="@TestIdHelper.For("PiecesToggle")" @onclick="ToggleSvg" @onkeydown="HandleLinearKeyDown" @onkeydown:preventDefault="true">
                 <div class="pieces-progress-svg__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
                 <div class="pieces-progress-svg__linear-overlay">
                     <MudText Typo="Typo.body2" Class="pl-2">@LinearSummary</MudText>

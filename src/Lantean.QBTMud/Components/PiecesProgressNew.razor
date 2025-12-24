@@ -4,7 +4,7 @@
 <MudPaper Class="pieces-progress-new" Elevation="1">
         <MudStack Spacing="1">
             <MudTooltip Text="@LinearTooltip" Placement="Placement.Top">
-                <div class="pieces-progress-new__linear" role="button" tabindex="0" aria-expanded="@_showHeatmap.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" @onclick="ToggleHeatmap" @onkeydown="HandleLinearKeyDown">
+                <div class="pieces-progress-new__linear" role="button" tabindex="0" aria-expanded="@_showHeatmap.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" @onclick="ToggleHeatmap" @onkeydown="HandleLinearKeyDown" @onkeydown:preventDefault="true">
                     <div class="pieces-progress-new__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
                     <div class="pieces-progress-new__linear-overlay">
                         <MudText Typo="Typo.body2" class="pl-2">@LinearSummary</MudText>

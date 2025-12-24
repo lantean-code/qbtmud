@@ -133,9 +133,9 @@ namespace Lantean.QBTMud.Components
                                 await InvokeAsync(StateHasChanged);
                                 return;
                             }
-                        }
 
-                        await InvokeAsync(StateHasChanged);
+                            await InvokeAsync(StateHasChanged);
+                        }
                     }
                 }
             }

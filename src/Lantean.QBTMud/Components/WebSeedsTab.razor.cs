@@ -71,9 +71,9 @@ namespace Lantean.QBTMud.Components
                                 _timerCancellationToken.CancelIfNotDisposed();
                                 return;
                             }
-                        }
 
-                        await InvokeAsync(StateHasChanged);
+                            await InvokeAsync(StateHasChanged);
+                        }
                     }
                 }
             }

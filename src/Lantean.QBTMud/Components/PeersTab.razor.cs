@@ -233,8 +233,8 @@ namespace Lantean.QBTMud.Components
                             }
 
                             _requestId = peers.RequestId;
+                            await InvokeAsync(StateHasChanged);
                         }
-                        await InvokeAsync(StateHasChanged);
                     }
                 }
             }
