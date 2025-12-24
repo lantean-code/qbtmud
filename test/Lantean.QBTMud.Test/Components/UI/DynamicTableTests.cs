@@ -245,6 +245,39 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
+        public void GIVEN_ColumnFilterStateChanges_WHEN_ParametersUpdated_THEN_RendersUpdatedColumns()
+        {
+            var filterState = false;
+
+            Func<ColumnDefinition<SampleItem>, bool> columnFilter = column =>
+            {
+                return filterState || column.Id != "name";
+            };
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, CreateItems());
+                builder.Add(p => p.ColumnFilter, columnFilter);
+                builder.Add(p => p.ColumnFilterState, filterState);
+            });
+
+            target.FindComponents<MudTh>().Count.Should().Be(2);
+
+            filterState = true;
+
+            target.Render(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, CreateItems());
+                builder.Add(p => p.ColumnFilter, columnFilter);
+                builder.Add(p => p.ColumnFilterState, filterState);
+            });
+
+            target.FindComponents<MudTh>().Count.Should().Be(3);
+        }
+
+        [Fact]
         public async Task GIVEN_EmptyPersistedSelection_WHEN_Rendered_THEN_NoSelectionChangeRaised()
         {
             var tableId = "NoSelectionChange";

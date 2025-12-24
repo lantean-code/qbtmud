@@ -73,6 +73,9 @@ namespace Lantean.QBTMud.Components.UI
         public Func<ColumnDefinition<T>, bool> ColumnFilter { get; set; } = t => true;
 
         [Parameter]
+        public object? ColumnFilterState { get; set; }
+
+        [Parameter]
         public Func<T, string>? RowTestIdFunc { get; set; }
 
         [Parameter]
@@ -114,6 +117,8 @@ namespace Lantean.QBTMud.Components.UI
         private bool _columnsDirty = true;
 
         private IEnumerable<ColumnDefinition<T>>? _lastColumnDefinitions;
+
+        private object? _lastColumnFilterState;
 
         private bool _initialized;
 
@@ -221,15 +226,25 @@ namespace Lantean.QBTMud.Components.UI
         protected override void OnParametersSet()
         {
             base.OnParametersSet();
+            var ensureSort = false;
             if (!ReferenceEquals(_lastColumnDefinitions, ColumnDefinitions))
             {
                 _lastColumnDefinitions = ColumnDefinitions;
                 MarkColumnsDirty();
-                if (_initialized)
-                {
-                    var columnSortStorageKey = GetColumnSortStorageKey();
-                    _ = InvokeAsync(() => EnsureSortColumnValidAsync(columnSortStorageKey));
-                }
+                ensureSort = _initialized;
+            }
+
+            if (!Equals(_lastColumnFilterState, ColumnFilterState))
+            {
+                _lastColumnFilterState = ColumnFilterState;
+                MarkColumnsDirty();
+                ensureSort = _initialized;
+            }
+
+            if (ensureSort)
+            {
+                var columnSortStorageKey = GetColumnSortStorageKey();
+                _ = InvokeAsync(() => EnsureSortColumnValidAsync(columnSortStorageKey));
             }
         }
 

@@ -324,6 +324,40 @@ code {
     outline-offset: 2px;
 }
 
+.peer-country {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.peer-country__flag {
+    position: relative;
+    width: 13px;
+    height: 10px;
+    overflow: hidden;
+    display: inline-block;
+    flex: 0 0 auto;
+}
+
+.peer-country__flag-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: scale(0.25);
+    transform-origin: top left;
+    margin: 0;
+}
+
+.peer-country__flag-image.small-flag {
+    margin: 0;
+    transform: scale(0.25);
+    transform-origin: top left;
+}
+
+.peer-country__name {
+    white-space: nowrap;
+}
+
 .rss-feed-list__item {
     cursor: pointer;
 }

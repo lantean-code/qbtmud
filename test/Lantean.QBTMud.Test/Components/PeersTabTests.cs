@@ -1,5 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBitTorrentClient;
+using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
@@ -7,41 +9,140 @@ using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using UIComponents.Flags;
+using ClientPeer = Lantean.QBitTorrentClient.Models.Peer;
 
 namespace Lantean.QBTMud.Test.Components
 {
     public sealed class PeersTabTests : RazorComponentTestBase
     {
+        private readonly Mock<IApiClient> _apiClientMock;
         private readonly FakePeriodicTimer _timer;
-        private readonly IRenderedComponent<PeersTab> _target;
 
         public PeersTabTests()
         {
-            TestContext.UseApiClientMock(MockBehavior.Strict);
+            _apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             TestContext.UseSnackbarMock(MockBehavior.Loose);
 
             _timer = new FakePeriodicTimer();
             TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
             TestContext.Services.AddSingleton<IPeriodicTimerFactory>(new FakePeriodicTimerFactory(_timer));
-
-            _target = TestContext.Render<PeersTab>(parameters =>
-            {
-                parameters.Add(p => p.Active, false);
-                parameters.Add(p => p.Hash, "Hash");
-                parameters.AddCascadingValue("RefreshInterval", 10);
-            });
         }
 
         [Fact]
         public async Task GIVEN_InactiveTab_WHEN_TimerTicks_THEN_DoesNotRender()
         {
-            var initialRenderCount = _target.RenderCount;
+            var target = RenderPeersTab(false);
+            var initialRenderCount = target.RenderCount;
 
             await _timer.TriggerTickAsync();
-            await _target.InvokeAsync(() => Task.CompletedTask);
+            await target.InvokeAsync(() => Task.CompletedTask);
 
-            _target.RenderCount.Should().Be(initialRenderCount);
+            target.RenderCount.Should().Be(initialRenderCount);
+        }
+
+        [Fact]
+        public void GIVEN_ShowFlagsTrue_WHEN_Rendered_THEN_RendersCountryFlag()
+        {
+            _apiClientMock
+                .Setup(c => c.GetTorrentPeersData("Hash", 0))
+                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+
+            var target = RenderPeersTab(true);
+
+            target.WaitForAssertion(() =>
+            {
+                var flags = target.FindComponents<CountryFlag>();
+                flags.Count.Should().Be(1);
+                flags[0].Instance.Country.Should().Be(Country.US);
+                flags[0].Instance.Background.Should().Be("_content/BlazorFlags/flags.png");
+            });
+        }
+
+        [Fact]
+        public void GIVEN_ShowFlagsFalse_WHEN_Rendered_THEN_DoesNotRenderCountryFlag()
+        {
+            _apiClientMock
+                .Setup(c => c.GetTorrentPeersData("Hash", 0))
+                .ReturnsAsync(CreatePeers(false, "US", "Country"));
+
+            var target = RenderPeersTab(true);
+
+            target.WaitForAssertion(() =>
+            {
+                var flags = target.FindComponents<CountryFlag>();
+                flags.Should().BeEmpty();
+            });
+        }
+
+        [Fact]
+        public void GIVEN_FlagsDescriptionPresent_WHEN_Rendered_THEN_RendersFlagsTooltip()
+        {
+            _apiClientMock
+                .Setup(c => c.GetTorrentPeersData("Hash", 0))
+                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+
+            var target = RenderPeersTab(true);
+
+            target.WaitForAssertion(() =>
+            {
+                target.Markup.Should().Contain("title=\"FlagsDescription\"");
+            });
+        }
+
+        [Fact]
+        public void GIVEN_FlagsMissing_WHEN_Rendered_THEN_DoesNotRenderFlagsTooltip()
+        {
+            _apiClientMock
+                .Setup(c => c.GetTorrentPeersData("Hash", 0))
+                .ReturnsAsync(CreatePeers(true, "US", "Country", null, "FlagsDescription"));
+
+            var target = RenderPeersTab(true);
+
+            target.WaitForAssertion(() =>
+            {
+                target.Markup.Should().NotContain("title=\"FlagsDescription\"");
+            });
+        }
+
+        private IRenderedComponent<PeersTab> RenderPeersTab(bool active)
+        {
+            return TestContext.Render<PeersTab>(parameters =>
+            {
+                parameters.Add(p => p.Active, active);
+                parameters.Add(p => p.Hash, "Hash");
+                parameters.AddCascadingValue("RefreshInterval", 10);
+            });
+        }
+
+        private static TorrentPeers CreatePeers(bool showFlags, string? countryCode, string? country, string? flags = "Flags", string? flagsDescription = "FlagsDescription")
+        {
+            var peer = new ClientPeer(
+                "Client",
+                "Connection",
+                country,
+                countryCode,
+                1,
+                2,
+                "Files",
+                flags,
+                flagsDescription,
+                "IPAddress",
+                "I2pDestination",
+                "ClientId",
+                6881,
+                0.5f,
+                0.4f,
+                3,
+                4);
+
+            return new TorrentPeers(
+                true,
+                new Dictionary<string, ClientPeer> { { "Key", peer } },
+                null,
+                1,
+                showFlags);
         }
     }
 }

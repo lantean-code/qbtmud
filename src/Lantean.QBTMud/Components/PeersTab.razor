@@ -18,9 +18,12 @@
     </div>
 
     <div class="content-panel__body">
-        <DynamicTable T="Peer"
+        <DynamicTable @ref="Table"
+                      T="Peer"
                       TableId="Peers"
                       ColumnDefinitions="Columns"
+                      ColumnFilter="FilterColumns"
+                      ColumnFilterState="@(ShowFlags)"
                       Items="Peers"
                       MultiSelection="false"
                       SelectOnRowClick="true"

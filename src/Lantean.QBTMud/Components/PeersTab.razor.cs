@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using System.Data;
 using System.Net;
+using UIComponents.Flags;
 
 namespace Lantean.QBTMud.Components
 {
@@ -240,15 +241,25 @@ namespace Lantean.QBTMud.Components
             }
         }
 
-        protected IEnumerable<ColumnDefinition<Peer>> Columns => ColumnsDefinitions.Where(c => c.Id != "country/region" || _showFlags == true);
+        protected IEnumerable<ColumnDefinition<Peer>> Columns => ColumnsDefinitions;
+
+        protected bool FilterColumns(ColumnDefinition<Peer> column)
+        {
+            if (column.Id == "country/region")
+            {
+                return ShowFlags;
+            }
+
+            return true;
+        }
 
         public static List<ColumnDefinition<Peer>> ColumnsDefinitions { get; } =
         [
-            new ColumnDefinition<Peer>("Country/Region", p => p.Country),
+            new ColumnDefinition<Peer>("Country/Region", p => p.Country, CountryColumnTemplate),
             new ColumnDefinition<Peer>("IP", p => p.IPAddress),
             new ColumnDefinition<Peer>("Port", p => p.Port),
             new ColumnDefinition<Peer>("Connection", p => p.Connection),
-            new ColumnDefinition<Peer>("Flags", p => p.Flags),
+            new ColumnDefinition<Peer>("Flags", p => p.Flags, FlagsColumnTemplate),
             new ColumnDefinition<Peer>("Client", p => p.Client),
             new ColumnDefinition<Peer>("Progress", p => p.Progress, p => DisplayHelpers.Percentage(p.Progress)),
             new ColumnDefinition<Peer>("Download Speed", p => p.DownloadSpeed, p => DisplayHelpers.Speed(p.DownloadSpeed)),
@@ -258,6 +269,86 @@ namespace Lantean.QBTMud.Components
             new ColumnDefinition<Peer>("Relevance", p => p.Relevance, p => @DisplayHelpers.Percentage(p.Relevance)),
             new ColumnDefinition<Peer>("Files", p => p.Files),
         ];
+
+        private static RenderFragment<RowContext<Peer>> FlagsColumnTemplate => context => builder =>
+        {
+            var flags = context.Data.Flags;
+            if (string.IsNullOrWhiteSpace(flags))
+            {
+                return;
+            }
+
+            var flagsDescription = context.Data.FlagsDescription;
+
+            builder.OpenElement(0, "span");
+            if (!string.IsNullOrWhiteSpace(flagsDescription))
+            {
+                builder.AddAttribute(1, "title", flagsDescription);
+            }
+            builder.AddContent(2, flags);
+            builder.CloseElement();
+        };
+
+        private static RenderFragment<RowContext<Peer>> CountryColumnTemplate => context => builder =>
+        {
+            var country = context.Data.Country;
+            var countryCode = context.Data.CountryCode;
+            var hasCountry = !string.IsNullOrWhiteSpace(country);
+            var hasFlag = TryGetCountry(countryCode, out var flagCountry);
+
+            if (!hasCountry && !hasFlag)
+            {
+                return;
+            }
+
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", "peer-country");
+            if (hasCountry)
+            {
+                builder.AddAttribute(2, "title", country);
+            }
+
+            var sequence = 3;
+            if (hasFlag)
+            {
+                builder.OpenElement(sequence++, "span");
+                builder.AddAttribute(sequence++, "class", "peer-country__flag");
+                builder.OpenComponent<CountryFlag>(sequence++);
+                builder.AddAttribute(sequence++, nameof(CountryFlag.Country), flagCountry);
+                builder.AddAttribute(sequence++, nameof(CountryFlag.Size), FlagSize.Small);
+                builder.AddAttribute(sequence++, nameof(CountryFlag.Background), "_content/BlazorFlags/flags.png");
+                builder.AddAttribute(sequence++, nameof(CountryFlag.Class), "peer-country__flag-image");
+                builder.CloseComponent();
+                builder.CloseElement();
+            }
+
+            if (hasCountry)
+            {
+                builder.OpenElement(sequence++, "span");
+                builder.AddAttribute(sequence++, "class", "peer-country__name");
+                builder.AddContent(sequence++, country);
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
+        };
+
+        private static bool TryGetCountry(string? countryCode, out Country country)
+        {
+            country = default;
+            if (string.IsNullOrWhiteSpace(countryCode))
+            {
+                return false;
+            }
+
+            if (!Enum.TryParse(countryCode, true, out country))
+            {
+                country = default;
+                return false;
+            }
+
+            return Enum.IsDefined(country);
+        }
 
         protected virtual async Task DisposeAsync(bool disposing)
         {
