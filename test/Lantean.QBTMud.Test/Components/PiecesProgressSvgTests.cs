@@ -107,6 +107,16 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public void GIVEN_ToggleRendered_WHEN_Checked_THEN_PreventDefaultIsEnabled()
+        {
+            var pieces = Enumerable.Repeat(PieceState.Downloaded, 2).ToList();
+
+            var target = RenderComponent(pieces);
+
+            target.Markup.Should().Contain("onkeydown:preventDefault");
+        }
+
+        [Fact]
         public void GIVEN_NonToggleKey_WHEN_Pressed_THEN_RemainsCollapsed()
         {
             var pieces = Enumerable.Repeat(PieceState.Downloading, 4).ToList();

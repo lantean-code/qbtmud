@@ -38,6 +38,9 @@ namespace Lantean.QBTMud.Pages
         protected IClipboardService ClipboardService { get; set; } = default!;
 
         [Inject]
+        protected IPeriodicTimerFactory TimerFactory { get; set; } = default!;
+
+        [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
@@ -205,9 +208,9 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            using (var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1500)))
+            await using (var timer = TimerFactory.Create(TimeSpan.FromMilliseconds(1500)))
             {
-                while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync())
+                while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync(_timerCancellationToken.Token))
                 {
                     try
                     {

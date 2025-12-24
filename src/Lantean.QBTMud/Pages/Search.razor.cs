@@ -56,6 +56,9 @@ namespace Lantean.QBTMud.Pages
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
+        protected IPeriodicTimerFactory TimerFactory { get; set; } = default!;
+
+        [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [Inject]
@@ -623,7 +626,7 @@ namespace Lantean.QBTMud.Pages
 
         private async Task PollSearchJobsAsync(CancellationToken cancellationToken)
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_pollIntervalMilliseconds));
+            await using var timer = TimerFactory.Create(TimeSpan.FromMilliseconds(_pollIntervalMilliseconds));
             try
             {
                 while (!cancellationToken.IsCancellationRequested)

@@ -44,6 +44,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected ITorrentDataManager DataManager { get; set; } = default!;
 
+        [Inject]
+        protected IPeriodicTimerFactory TimerFactory { get; set; } = default!;
+
         protected IReadOnlyList<TorrentTracker>? TrackerList { get; set; }
 
         protected IEnumerable<TorrentTracker>? Trackers => GetTrackers();
@@ -243,9 +246,9 @@ namespace Lantean.QBTMud.Components
         {
             if (firstRender)
             {
-                using (var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(RefreshInterval)))
+                await using (var timer = TimerFactory.Create(TimeSpan.FromMilliseconds(RefreshInterval)))
                 {
-                    while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync())
+                    while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync(_timerCancellationToken.Token))
                     {
                         if (Active && Hash is not null)
                         {

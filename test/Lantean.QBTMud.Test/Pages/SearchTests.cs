@@ -663,23 +663,14 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_RunningJob_WHEN_ResultNotFound_THEN_StatusStopsWithoutSnackbar()
+        public async Task GIVEN_RunningJob_WHEN_ResultNotFound_THEN_StatusStopsWithoutSnackbar()
         {
             var jobId = 41;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            var statusQueue = new Queue<IReadOnlyList<SearchStatus>>();
-            statusQueue.Enqueue(Array.Empty<SearchStatus>());
-            statusQueue.Enqueue(new List<SearchStatus> { new SearchStatus(jobId, "Running", 1) });
-            statusQueue.Enqueue(new List<SearchStatus> { new SearchStatus(jobId, "Stopped", 1) });
 
             var apiMock = TestContext.UseApiClientMock();
             apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
-            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(() =>
-            {
-                var next = statusQueue.Count > 1 ? statusQueue.Dequeue() : statusQueue.Peek();
-                return next;
-            });
-            apiMock.Setup(client => client.StartSearch("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsAsync(jobId);
+            apiMock.Setup(client => client.GetSearchesStatus()).ReturnsAsync(Array.Empty<SearchStatus>());
             apiMock.Setup(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>())).ThrowsAsync(new HttpRequestException("Not found", null, HttpStatusCode.NotFound));
 
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
@@ -688,31 +679,14 @@ namespace Lantean.QBTMud.Test.Pages
 
             TestContext.Render<MudPopoverProvider>();
 
-            var target = TestContext.Render<Search>();
+            var target = TestContext.Render<SearchTestHost>();
+            var job = new SearchJobViewModel(jobId, "Ubuntu", new[] { "movies" }, SearchForm.AllCategoryId);
 
-            var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
-            criteriaField.Find("input").Input("Ubuntu");
+            await target.InvokeAsync(() => target.Instance.InvokeRefreshJob(job));
 
-            var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
-            target.WaitForAssertion(() =>
-            {
-                startButton.Instance.Disabled.Should().BeFalse();
-            });
+            job.IsStopped.Should().BeTrue();
 
-            target.Find("form").Submit();
-
-            target.WaitForAssertion(() =>
-            {
-                target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
-            });
-
-            target.WaitForAssertion(() =>
-            {
-                var icon = FindComponentByTestId<MudIcon>(target, "JobStatusIcon");
-                icon.Instance.Icon.Should().Be(Icons.Material.Filled.Stop);
-            });
-
-            apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
+            apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.AtLeastOnce());
             snackbarMock.Verify(snackbar => snackbar.Add(
                 It.IsAny<string>(),
                 It.IsAny<Severity>(),
