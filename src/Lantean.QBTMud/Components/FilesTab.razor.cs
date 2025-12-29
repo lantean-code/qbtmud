@@ -44,7 +44,7 @@ namespace Lantean.QBTMud.Components
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
+        protected ISessionStorageService SessionStorage { get; set; } = default!;
 
         [Inject]
         protected ITorrentDataManager DataManager { get; set; } = default!;
@@ -247,7 +247,7 @@ namespace Lantean.QBTMud.Components
             MarkFilesDirty();
             PruneSelectionIfMissing();
 
-            var expandedNodes = await LocalStorage.GetItemAsync<HashSet<string>>($"{_expandedNodesStorageKey}.{Hash}");
+            var expandedNodes = await SessionStorage.GetItemAsync<HashSet<string>>($"{_expandedNodesStorageKey}.{Hash}");
             if (expandedNodes is not null)
             {
                 ExpandedNodes = expandedNodes;
@@ -338,7 +338,7 @@ namespace Lantean.QBTMud.Components
             }
 
             MarkFilesDirty();
-            await LocalStorage.SetItemAsync($"{_expandedNodesStorageKey}.{Hash}", ExpandedNodes);
+            await SessionStorage.SetItemAsync($"{_expandedNodesStorageKey}.{Hash}", ExpandedNodes);
         }
 
         private static QBitTorrentClient.Models.Priority MapPriority(Priority priority)

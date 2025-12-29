@@ -18,6 +18,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
         private static readonly Uri _baseAddress = new Uri("http://localhost:8080");
         private readonly TestHttpMessageHandler _httpHandler;
         private readonly TestLocalStorageService _localStorage;
+        private readonly TestSessionStorageService _sessionStorage;
         private readonly TestClipboardService _clipboard;
 
         public ComponentTestContext()
@@ -27,6 +28,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
             _httpHandler = new TestHttpMessageHandler();
             _localStorage = new TestLocalStorageService();
+            _sessionStorage = new TestSessionStorageService();
             _clipboard = new TestClipboardService();
 
             // Keep JS interop permissive while bootstrapping tests.
@@ -48,6 +50,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
             // Deterministic infrastructure shims
             Services.AddSingleton<ILocalStorageService>(_localStorage);
+            Services.AddSingleton<ISessionStorageService>(_sessionStorage);
             Services.AddSingleton<IClipboardService>(_clipboard);
 
             // Message handlers used by your HttpClient pipeline
@@ -84,6 +87,8 @@ namespace Lantean.QBTMud.Test.Infrastructure
         }
 
         public TestLocalStorageService LocalStorage => _localStorage;
+
+        public TestSessionStorageService SessionStorage => _sessionStorage;
 
         public TestClipboardService Clipboard => _clipboard;
 
