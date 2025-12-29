@@ -1,11 +1,8 @@
-using Blazored.LocalStorage;
-using Blazored.SessionStorage;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using MudBlazor;
 using MudBlazor.Services;
 
 namespace Lantean.QBTMud
@@ -50,8 +47,8 @@ namespace Lantean.QBTMud
             builder.Services.AddSingleton<IPeriodicTimerFactory, PeriodicTimerFactory>();
             builder.Services.AddScoped<ISpeedHistoryService, SpeedHistoryService>();
 
-            builder.Services.AddBlazoredLocalStorage();
-            builder.Services.AddBlazoredSessionStorage();
+            builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+            builder.Services.AddScoped<ISessionStorageService, SessionStorageService>();
             builder.Services.AddSingleton<IClipboardService, ClipboardService>();
             builder.Services.AddTransient<IKeyboardService, KeyboardService>();
 

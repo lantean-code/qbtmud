@@ -1,4 +1,4 @@
-using Blazored.LocalStorage;
+using Lantean.QBTMud.Services;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Infrastructure
@@ -10,10 +10,6 @@ namespace Lantean.QBTMud.Test.Infrastructure
         private readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerDefaults.Web);
         private int _writeCount;
 
-        public event EventHandler<ChangingEventArgs>? Changing;
-
-        public event EventHandler<ChangedEventArgs>? Changed;
-
         public int WriteCount
         {
             get
@@ -22,30 +18,6 @@ namespace Lantean.QBTMud.Test.Infrastructure
                 {
                     return _writeCount;
                 }
-            }
-        }
-
-        public ValueTask ClearAsync(CancellationToken cancellationToken = default)
-        {
-            List<string> keys;
-            lock (_lock)
-            {
-                keys = _store.Keys.ToList();
-            }
-
-            foreach (var key in keys)
-            {
-                RemoveItemInternal(key, raiseEvents: true);
-            }
-
-            return ValueTask.CompletedTask;
-        }
-
-        public ValueTask<bool> ContainKeyAsync(string key, CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                return new ValueTask<bool>(_store.ContainsKey(key));
             }
         }
 
@@ -90,60 +62,21 @@ namespace Lantean.QBTMud.Test.Infrastructure
             }
         }
 
-        public ValueTask<string?> KeyAsync(int index, CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                if (index < 0 || index >= _store.Count)
-                {
-                    return ValueTask.FromResult<string?>(null);
-                }
-
-                return ValueTask.FromResult<string?>(_store.Keys.ElementAt(index));
-            }
-        }
-
-        public ValueTask<IEnumerable<string>> KeysAsync(CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                return ValueTask.FromResult<IEnumerable<string>>(_store.Keys.ToList());
-            }
-        }
-
-        public ValueTask<int> LengthAsync(CancellationToken cancellationToken = default)
-        {
-            lock (_lock)
-            {
-                return ValueTask.FromResult(_store.Count);
-            }
-        }
-
         public ValueTask RemoveItemAsync(string key, CancellationToken cancellationToken = default)
         {
-            RemoveItemInternal(key, raiseEvents: true);
-            return ValueTask.CompletedTask;
-        }
-
-        public ValueTask RemoveItemsAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default)
-        {
-            foreach (var key in keys)
-            {
-                RemoveItemInternal(key, raiseEvents: true);
-            }
-
+            RemoveItemInternal(key);
             return ValueTask.CompletedTask;
         }
 
         public ValueTask SetItemAsStringAsync(string key, string data, CancellationToken cancellationToken = default)
         {
-            SetItemInternal(key, data, raiseEvents: true);
+            SetItemInternal(key, data);
             return ValueTask.CompletedTask;
         }
 
         public ValueTask SetItemAsync<T>(string key, T data, CancellationToken cancellationToken = default)
         {
-            SetItemInternal(key, data, raiseEvents: true);
+            SetItemInternal(key, data);
             return ValueTask.CompletedTask;
         }
 
@@ -163,88 +96,20 @@ namespace Lantean.QBTMud.Test.Infrastructure
             }
         }
 
-        private void SetItemInternal(string key, object? newValue, bool raiseEvents)
+        private void SetItemInternal(string key, object? newValue)
         {
-            object? oldValue;
-            lock (_lock)
-            {
-                _store.TryGetValue(key, out oldValue);
-            }
-
-            if (raiseEvents)
-            {
-                var changingArgs = new ChangingEventArgs
-                {
-                    Key = key,
-                    OldValue = oldValue,
-                    NewValue = newValue
-                };
-                Changing?.Invoke(this, changingArgs);
-                if (changingArgs.Cancel)
-                {
-                    return;
-                }
-
-                newValue = changingArgs.NewValue;
-            }
-
             lock (_lock)
             {
                 _store[key] = newValue;
                 ++_writeCount;
             }
-
-            if (raiseEvents)
-            {
-                Changed?.Invoke(this, new ChangedEventArgs
-                {
-                    Key = key,
-                    OldValue = oldValue,
-                    NewValue = newValue
-                });
-            }
         }
 
-        private void RemoveItemInternal(string key, bool raiseEvents)
+        private void RemoveItemInternal(string key)
         {
-            object? oldValue;
-            lock (_lock)
-            {
-                if (!_store.TryGetValue(key, out oldValue))
-                {
-                    return;
-                }
-            }
-
-            if (raiseEvents)
-            {
-                var changingArgs = new ChangingEventArgs
-                {
-                    Key = key,
-                    OldValue = oldValue,
-                    NewValue = null
-                };
-                Changing?.Invoke(this, changingArgs);
-                if (changingArgs.Cancel)
-                {
-                    return;
-                }
-            }
-
             lock (_lock)
             {
                 _store.Remove(key);
-            }
-
-            if (raiseEvents)
-            {
-                var args = new ChangedEventArgs
-                {
-                    Key = key,
-                    OldValue = oldValue,
-                    NewValue = null
-                };
-                Changed?.Invoke(this, args);
             }
         }
     }
