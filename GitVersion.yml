@@ -1,0 +1,35 @@
+assembly-versioning-scheme: MajorMinorPatch
+assembly-file-versioning-format : '{Major}.{Minor}.{Patch}.{env:BUILD_BUILDID ?? 0}'
+assembly-informational-format: '{SemVer}+{EscapedBranchName}.{ShortSha}'
+commit-date-format: 'yyyyMMddHHmmssFFF'
+commit-message-incrementing: Enabled
+major-version-bump-message: '\+semver:\s?(major|breaking)'
+minor-version-bump-message: '\+semver:\s?minor'
+patch-version-bump-message: '\+semver:\s?patch'
+mode: ContinuousDelivery
+
+branches:
+  feature:
+    regex: ^feature/
+    label: alpha
+    increment: Minor
+  develop:
+    regex: ^develop$
+    label: beta
+    increment: Minor
+  release:
+    regex: ^release/
+    label: rc
+    increment: Minor
+  hotfix:
+    regex: ^hotfix/
+    label: rc
+    increment: Patch
+  master:
+    regex: ^master$
+    label: ''
+    increment: None
+  main:
+    regex: ^main$
+    label: ''
+    increment: None
