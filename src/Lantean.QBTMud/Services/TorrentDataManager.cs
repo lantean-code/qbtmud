@@ -1561,7 +1561,6 @@ namespace Lantean.QBTMud.Services
             public long DownloadSize { get; private set; }
 
             private double _downloadedDownloadSizeSum;
-            private long _availabilityWeight;
             private double _availabilitySum;
             private Priority? _priority;
             private bool _mixedPriority;
@@ -1574,8 +1573,11 @@ namespace Lantean.QBTMud.Services
                 {
                     DownloadSize += downloadSize;
                     _downloadedDownloadSizeSum += downloadSize * progress;
-                    _availabilitySum += downloadSize * availability;
-                    _availabilityWeight += downloadSize;
+                }
+
+                if (priority != Priority.DoNotDownload)
+                {
+                    _availabilitySum += size * availability;
                 }
 
                 if (!_priority.HasValue)
@@ -1625,12 +1627,12 @@ namespace Lantean.QBTMud.Services
 
             public float ResolveAvailability()
             {
-                if (_availabilityWeight == 0)
+                if (TotalSize == 0)
                 {
                     return 0f;
                 }
 
-                return (float)(_availabilitySum / _availabilityWeight);
+                return (float)(_availabilitySum / TotalSize);
             }
         }
 
