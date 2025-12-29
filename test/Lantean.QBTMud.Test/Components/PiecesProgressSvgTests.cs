@@ -3,9 +3,9 @@ using Bunit;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Test.Infrastructure;
-using MudBlazor;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components
 {

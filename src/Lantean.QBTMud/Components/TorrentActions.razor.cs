@@ -708,7 +708,6 @@ namespace Lantean.QBTMud.Components
                     ));
                 }
                 yield return action;
-                
             }
         }
 

@@ -1,14 +1,14 @@
 using AwesomeAssertions;
+using Bunit;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
+using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
-using Lantean.QBTMud.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
-using Bunit;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Lantean.QBTMud.Test.Pages
 {

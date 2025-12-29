@@ -2,8 +2,6 @@ using AwesomeAssertions;
 using Lantean.QBTMud.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
-using System.Net.Http;
 
 namespace Lantean.QBTMud.Test.Services
 {

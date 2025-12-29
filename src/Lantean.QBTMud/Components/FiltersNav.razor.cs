@@ -5,7 +5,6 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
-using System;
 
 namespace Lantean.QBTMud.Components
 {

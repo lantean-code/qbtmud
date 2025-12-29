@@ -100,13 +100,13 @@ code {
     cursor: pointer;
 }
 
-.table-header-cell--sortable .column-header {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-}
+    .table-header-cell--sortable .column-header {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+    }
 
 .search-filters {
     box-sizing: border-box;
@@ -319,10 +319,10 @@ code {
     height: 100%;
 }
 
-.rss-feed-list-container:focus-visible {
-    outline: 2px solid var(--mud-palette-primary);
-    outline-offset: 2px;
-}
+    .rss-feed-list-container:focus-visible {
+        outline: 2px solid var(--mud-palette-primary);
+        outline-offset: 2px;
+    }
 
 .peer-country {
     display: inline-flex;
@@ -348,11 +348,11 @@ code {
     margin: 0;
 }
 
-.peer-country__flag-image.small-flag {
-    margin: 0;
-    transform: scale(0.25);
-    transform-origin: top left;
-}
+    .peer-country__flag-image.small-flag {
+        margin: 0;
+        transform: scale(0.25);
+        transform-origin: top left;
+    }
 
 .peer-country__name {
     white-space: nowrap;
@@ -412,7 +412,6 @@ td.icon-cell {
 td .folder-button {
     padding: 6px 16px 6px 16px !important;
 }
-
 
 @keyframes spin {
     0% {
@@ -590,18 +589,18 @@ body {
     background-color: transparent;
 }
 
-.speed-chart .mud-charts-grid path {
-    stroke: #555;
-    stroke-dasharray: 4 3;
-    stroke-width: 0.6;
-    opacity: 0.6;
-}
+    .speed-chart .mud-charts-grid path {
+        stroke: #555;
+        stroke-dasharray: 4 3;
+        stroke-width: 0.6;
+        opacity: 0.6;
+    }
 
-.speed-chart .mud-charts-yaxis text,
-.speed-chart .mud-charts-xaxis text {
-    fill: #b8b8b8;
-}
+    .speed-chart .mud-charts-yaxis text,
+    .speed-chart .mud-charts-xaxis text {
+        fill: #b8b8b8;
+    }
 
-.speed-chart .mud-chart-serie.mud-chart-line path {
-    stroke-width: 2;
-}
+    .speed-chart .mud-chart-serie.mud-chart-line path {
+        stroke-width: 2;
+    }

@@ -1,6 +1,6 @@
-using System.Net;
 using AwesomeAssertions;
 using Lantean.QBTMud.Services;
+using System.Net;
 
 namespace Lantean.QBTMud.Test.Services
 {

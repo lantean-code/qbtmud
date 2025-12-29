@@ -30,7 +30,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
-        public async Task GIVENTestContextMenuHandler_WHENTestContextMenuRaised_THEN_ShouldInvokeCallback()
+        public async Task GIVEN_TestContextMenuHandler_WHENTestContextMenuRaised_THEN_ShouldInvokeCallback()
         {
             var invoked = false;
 

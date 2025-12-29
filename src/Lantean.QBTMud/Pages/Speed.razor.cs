@@ -2,7 +2,6 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using MudBlazor.Charts;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -20,6 +19,7 @@ namespace Lantean.QBTMud.Pages
         };
 
         private static readonly string[] Palette = ["#86c43f", "#3299ff"];
+
         private static readonly Dictionary<SpeedPeriod, TimeSpan> BucketSizes = new()
         {
             { SpeedPeriod.Min1, TimeSpan.FromSeconds(2) },

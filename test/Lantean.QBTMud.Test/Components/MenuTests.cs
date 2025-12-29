@@ -3,7 +3,6 @@ using Bunit;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Test.Infrastructure;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using System.Text.Json;
 

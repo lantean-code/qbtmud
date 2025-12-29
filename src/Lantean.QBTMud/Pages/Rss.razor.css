@@ -2,22 +2,22 @@
     border-radius: 4px;
 }
 
-::deep .rss-article-item .mud-list-item-icon {
-    min-width: 36px !important;
-}
+    ::deep .rss-article-item .mud-list-item-icon {
+        min-width: 36px !important;
+    }
 
 ::deep .rss-article-item--selected {
     background-color: var(--mud-palette-primary);
     color: var(--mud-palette-primary-text);
 }
 
-::deep .rss-article-item--selected .mud-list-item-text {
-    color: inherit;
-}
+    ::deep .rss-article-item--selected .mud-list-item-text {
+        color: inherit;
+    }
 
-::deep .rss-article-item--selected .mud-icon-root {
-    color: inherit;
-}
+    ::deep .rss-article-item--selected .mud-icon-root {
+        color: inherit;
+    }
 
 .rss-back-button {
     margin-bottom: 8px;

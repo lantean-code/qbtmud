@@ -5,40 +5,47 @@ using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Infrastructure
 {
-    public class ComponentTestContextTests
+    public class ComponentTestContextTests : IDisposable
     {
-        [Fact]
-        public async Task LocalStorageStub_RoundTripsValues()
+        private readonly ComponentTestContext _target;
+
+        public ComponentTestContextTests()
         {
-            using var context = new ComponentTestContext();
+            _target = new ComponentTestContext();
+        }
 
-            await context.LocalStorage.SetItemAsync("Number", 42);
+        [Fact]
+        public async Task GIVEN_LocalStorageStub_WHEN_RoundTrippingValues_THEN_ShouldReturnStoredValue()
+        {
+            await _target.LocalStorage.SetItemAsync("Number", 42);
 
-            var value = await context.LocalStorage.GetItemAsync<int>("Number");
+            var value = await _target.LocalStorage.GetItemAsync<int>("Number");
             value.Should().Be(42);
         }
 
         [Fact]
-        public async Task ClipboardStub_RecordsWrites()
+        public async Task GIVEN_ClipboardStub_WHEN_WritingEntries_THEN_ShouldRecordWritesInOrder()
         {
-            using var context = new ComponentTestContext();
+            await _target.Clipboard.WriteToClipboard("hello");
+            await _target.Clipboard.WriteToClipboard("world");
 
-            await context.Clipboard.WriteToClipboard("hello");
-            await context.Clipboard.WriteToClipboard("world");
-
-            context.Clipboard.Entries.Should().ContainInOrder("hello", "world");
-            context.Clipboard.PeekLast().Should().Be("world");
+            _target.Clipboard.Entries.Should().ContainInOrder("hello", "world");
+            _target.Clipboard.PeekLast().Should().Be("world");
         }
 
         [Fact]
-        public void SnackbarMock_ReplacesRegisteredService()
+        public void GIVEN_SnackbarMock_WHEN_ReplacingRegisteredService_THEN_ShouldResolveMock()
         {
-            using var context = new ComponentTestContext();
-
-            var mock = context.UseSnackbarMock(MockBehavior.Loose);
-            var resolved = context.Services.GetRequiredService<ISnackbar>();
+            var mock = _target.UseSnackbarMock(MockBehavior.Loose);
+            var resolved = _target.Services.GetRequiredService<ISnackbar>();
 
             ReferenceEquals(resolved, mock.Object).Should().BeTrue();
+        }
+
+        public void Dispose()
+        {
+            _target.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

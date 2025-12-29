@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Services;
-using System.Threading;
-using Xunit;
 
 namespace Lantean.QBTMud.Test.Services
 {

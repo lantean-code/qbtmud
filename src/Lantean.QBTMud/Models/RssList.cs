@@ -1,12 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
-
 namespace Lantean.QBTMud.Models
 {
     public class RssList
     {
-        private const char PathSeparator = '\\';
-        private const string UnreadKey = "__unread__";
+        private const char _pathSeparator = '\\';
+        private const string _unreadKey = "__unread__";
 
         private readonly Dictionary<string, RssTreeNode> _nodesByPath;
 
@@ -31,7 +28,7 @@ namespace Lantean.QBTMud.Models
             Root = BuildTree(feeds);
             _nodesByPath = BuildNodeLookup(Root);
             TreeItems = BuildTreeItems(Root);
-            UnreadNode = _nodesByPath[UnreadKey];
+            UnreadNode = _nodesByPath[_unreadKey];
             RecalculateCounts();
         }
 
@@ -109,7 +106,7 @@ namespace Lantean.QBTMud.Models
             foreach (var feed in orderedFeeds)
             {
                 var path = feed.Path;
-                var segments = path.Split(PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+                var segments = path.Split(_pathSeparator, StringSplitOptions.RemoveEmptyEntries);
 
                 var parent = root;
                 var currentPath = string.Empty;
@@ -117,7 +114,7 @@ namespace Lantean.QBTMud.Models
                 {
                     currentPath = string.IsNullOrEmpty(currentPath)
                         ? segments[i]
-                        : $"{currentPath}{PathSeparator}{segments[i]}";
+                        : $"{currentPath}{_pathSeparator}{segments[i]}";
 
                     if (!folderLookup.TryGetValue(currentPath, out var folderNode))
                     {
@@ -149,7 +146,7 @@ namespace Lantean.QBTMud.Models
         {
             var dict = new Dictionary<string, RssTreeNode>(StringComparer.Ordinal)
             {
-                [UnreadKey] = root.Children.First(n => n.IsUnread)
+                [_unreadKey] = root.Children.First(n => n.IsUnread)
             };
 
             void Traverse(RssTreeNode node)

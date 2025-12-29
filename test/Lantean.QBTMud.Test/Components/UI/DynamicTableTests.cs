@@ -114,7 +114,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
-        public async Task GIVENTestContextActions_WHEN_Triggered_THEN_ShouldInvokeHandlers()
+        public async Task GIVEN_TestContextActions_WHEN_Triggered_THEN_ShouldInvokeHandlers()
         {
             var contextInvoked = false;
             var longPressInvoked = false;

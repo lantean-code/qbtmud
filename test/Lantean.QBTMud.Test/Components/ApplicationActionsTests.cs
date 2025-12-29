@@ -3,9 +3,8 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
-using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Helpers;
-using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -15,11 +14,10 @@ using Microsoft.JSInterop;
 using Moq;
 using MudBlazor;
 using System.Text.Json;
-using System.Threading;
+using CategoryModel = Lantean.QBTMud.Models.Category;
 using MainDataModel = Lantean.QBTMud.Models.MainData;
 using ServerStateModel = Lantean.QBTMud.Models.ServerState;
 using TorrentModel = Lantean.QBTMud.Models.Torrent;
-using CategoryModel = Lantean.QBTMud.Models.Category;
 
 namespace Lantean.QBTMud.Test.Components
 {

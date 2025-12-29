@@ -422,7 +422,7 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public void GIVEN_ExistingDirectories_THEN_NewFolderIndicesAreLessThanMinOfExistingAndIncoming()
+        public void GIVEN_ExistingDirectories_WHEN_MergeContentsList_THEN_NewFolderIndicesAreLessThanMinOfExistingAndIncoming()
         {
             // arrange
             // existing directory with index -2 and an existing independent file with index 50

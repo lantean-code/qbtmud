@@ -1,25 +1,7 @@
 using Lantean.QBTMud.Services;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Lantean.QBTMud.Test.Infrastructure
 {
-    public sealed class FakePeriodicTimerFactory : IPeriodicTimerFactory
-    {
-        private readonly FakePeriodicTimer _timer;
-
-        public FakePeriodicTimerFactory(FakePeriodicTimer timer)
-        {
-            _timer = timer;
-        }
-
-        public IPeriodicTimer Create(TimeSpan period)
-        {
-            return _timer;
-        }
-    }
-
     public sealed class FakePeriodicTimer : IPeriodicTimer
     {
         private bool _disposed;
