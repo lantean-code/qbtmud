@@ -563,6 +563,50 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
+        public async Task GIVEN_DisabledColumnAddedFromChooser_WHEN_SortHeaderClicked_THEN_SortUsesAddedColumn()
+        {
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var columns = CreateColumns();
+            columns[1].Enabled = false;
+
+            var selectedColumns = new HashSet<string>(new[] { "name", "age", "score" }, StringComparer.Ordinal);
+            var columnOrder = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                { "name", 0 },
+                { "age", 1 },
+                { "score", 2 }
+            };
+
+            dialogWorkflowMock
+                .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
+                .ReturnsAsync((selectedColumns, new Dictionary<string, int?>(), columnOrder));
+
+            var sortEvents = new List<string?>();
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "AddedColumnSort");
+                parameters.Add(p => p.Items, new List<TestRow>
+                {
+                    new TestRow { Name = "B", Age = 2, Score = 1 },
+                    new TestRow { Name = "A", Age = 1, Score = 2 }
+                });
+                parameters.Add(p => p.SortColumnChanged, EventCallback.Factory.Create<string>(this, value => sortEvents.Add(value)));
+            });
+
+            await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
+            target.Render();
+
+            target.FindAll("span.mud-table-sort-label").Any(element => element.TextContent.Contains("Age", StringComparison.Ordinal)).Should().BeTrue();
+
+            var ageHeader = target.FindAll("span.mud-table-sort-label").Single(element => element.TextContent.Contains("Age", StringComparison.Ordinal));
+            await target.InvokeAsync(() => ageHeader.Click());
+
+            sortEvents.Last().Should().Be("age");
+        }
+
+        [Fact]
         public async Task GIVEN_ShowColumnsDialogUnchanged_WHEN_Invoked_THEN_NoPersistence()
         {
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);

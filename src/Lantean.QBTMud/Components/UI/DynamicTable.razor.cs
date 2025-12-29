@@ -2,7 +2,6 @@ using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Components.UI
@@ -164,7 +163,7 @@ namespace Lantean.QBTMud.Components.UI
             }
             else
             {
-                var defaultColumn = ColumnDefinitions.FirstOrDefault(c => c.Enabled && SelectedColumns.Contains(c.Id))
+                var defaultColumn = ColumnDefinitions.FirstOrDefault(c => SelectedColumns.Contains(c.Id))
                     ?? ColumnDefinitions.FirstOrDefault(c => c.Enabled);
                 sortColumn = defaultColumn?.Id;
                 sortDirection = defaultColumn?.InitialDirection == SortDirection.None
@@ -173,7 +172,6 @@ namespace Lantean.QBTMud.Components.UI
             }
 
             var visibleColumns = ColumnDefinitions
-                .Where(c => c.Enabled)
                 .Where(c => SelectedColumns.Contains(c.Id))
                 .Where(ColumnFilter)
                 .ToList();
@@ -590,7 +588,6 @@ namespace Lantean.QBTMud.Components.UI
         private async Task EnsureSortColumnValidAsync(string columnSortStorageKey)
         {
             var visibleColumns = ColumnDefinitions
-                .Where(c => c.Enabled)
                 .Where(c => SelectedColumns.Contains(c.Id))
                 .Where(ColumnFilter)
                 .ToList();
