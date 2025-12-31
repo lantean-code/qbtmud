@@ -37,6 +37,22 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Parameter]
         public string? AdornmentText { get; set; }
 
+        private string GetValueLabel(string? value)
+        {
+            var trimmedValue = value?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(Label))
+            {
+                return trimmedValue;
+            }
+
+            if (string.IsNullOrEmpty(trimmedValue))
+            {
+                return Label;
+            }
+
+            return $"{Label}: {trimmedValue}";
+        }
+
         private string? GetDisplayValue()
         {
             var value = ValueDisplayFunc?.Invoke(Value);

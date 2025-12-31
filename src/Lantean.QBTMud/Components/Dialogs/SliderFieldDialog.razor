@@ -12,11 +12,11 @@
                     <ValueLabelContent>
                         @if (ValueDisplayFunc is not null)
                         {
-                            @ValueDisplayFunc(context.Value)
+                            @GetValueLabel(ValueDisplayFunc(context.Value))
                         }
                         else
                         {
-                            @context.Value
+                            @GetValueLabel(context.Value.ToString())
                         }
                     </ValueLabelContent>
                 </MudSlider>

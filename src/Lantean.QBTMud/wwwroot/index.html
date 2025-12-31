@@ -21,11 +21,16 @@
 
 <body>
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+        <div class="loading-screen">
+            <div class="loading-screen__brand">
+                <img class="loading-screen__logo" src="images/qbittorrent-tray.svg" alt="" aria-hidden="true" />
+                <div class="loading-screen__title">qBittorrent Web UI</div>
+            </div>
+            <div class="loading-screen__track" aria-hidden="true">
+                <div class="loading-screen__fill"></div>
+            </div>
+            <div class="loading-screen__text" role="status" aria-live="polite"></div>
+        </div>
     </div>
 
     <div id="blazor-error-ui" data-nosnippet>

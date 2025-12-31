@@ -418,7 +418,7 @@ namespace Lantean.QBTMud.Components.UI
 
         protected string RowStyleFuncInternal(T item, int index)
         {
-            var style = "user-select: none; cursor: pointer;";
+            var style = "-webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; cursor: pointer;";
             if (SelectOnRowClick && SelectedItems.Contains(item))
             {
                 if (IsDarkMode)

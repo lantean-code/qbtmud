@@ -253,7 +253,7 @@ namespace Lantean.QBTMud.Services
             var parameters = new DialogParameters
             {
                 { nameof(SliderFieldDialog<long>.Min), -1L },
-                { nameof(SliderFieldDialog<long>.Max), 1000L },
+                { nameof(SliderFieldDialog<long>.Max), 4096L },
                 { nameof(SliderFieldDialog<long>.Value), rate / 1024 },
                 { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
                 { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
@@ -383,7 +383,7 @@ namespace Lantean.QBTMud.Services
             var parameters = new DialogParameters
             {
                 { nameof(SliderFieldDialog<long>.Min), -1L },
-                { nameof(SliderFieldDialog<long>.Max), 1000L },
+                { nameof(SliderFieldDialog<long>.Max), 4096L },
                 { nameof(SliderFieldDialog<long>.Value), rate / 1024 },
                 { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
                 { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
