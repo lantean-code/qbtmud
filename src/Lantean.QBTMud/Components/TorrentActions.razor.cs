@@ -142,7 +142,16 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender && RenderType == RenderType.Menu)
+            if (!firstRender)
+            {
+                return;
+            }
+
+            if (ShouldAlwaysRegisterDeleteShortcut())
+            {
+                await RegisterDeleteShortcutAsync();
+            }
+            else
             {
                 // Shortcut is registered only while the actions menu is open.
                 await UnregisterDeleteShortcutAsync();
@@ -161,7 +170,7 @@ namespace Lantean.QBTMud.Components
         protected async Task ActionsMenuOpenChanged(bool value)
         {
             OverlayVisible = value;
-            if (RenderType == RenderType.Menu)
+            if (RenderType == RenderType.Menu || RenderType == RenderType.MenuWithoutActivator)
             {
                 if (value)
                 {
@@ -204,7 +213,12 @@ namespace Lantean.QBTMud.Components
 
         private Task RemoveViaShortcut()
         {
-            if (!ActionsMenuVisible() || Disabled)
+            if (Disabled)
+            {
+                return Task.CompletedTask;
+            }
+
+            if (!ShouldAlwaysRegisterDeleteShortcut() && !ActionsMenuVisible())
             {
                 return Task.CompletedTask;
             }
@@ -214,12 +228,21 @@ namespace Lantean.QBTMud.Components
 
         private bool ActionsMenuVisible()
         {
-            if (RenderType != RenderType.Menu || ActionsMenu is null)
+            if ((RenderType != RenderType.Menu && RenderType != RenderType.MenuWithoutActivator) || ActionsMenu is null)
             {
                 return false;
             }
 
             return OverlayVisible;
+        }
+
+        private bool ShouldAlwaysRegisterDeleteShortcut()
+        {
+            return RenderType == RenderType.Toolbar
+                || RenderType == RenderType.ToolbarContents
+                || RenderType == RenderType.MixedToolbar
+                || RenderType == RenderType.MixedToolbarContents
+                || RenderType == RenderType.InitialIconsOnly;
         }
 
         private async Task RegisterDeleteShortcutAsync()

@@ -6,16 +6,31 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public abstract class SubmittableDialog : ComponentBase, IAsyncDisposable
     {
+        private static readonly KeyboardEvent _ctrlEnterKey = new("Enter") { CtrlKey = true };
+
+        private static readonly KeyboardEvent _enterKey = new("Enter");
+
         private bool _disposedValue;
 
         [Inject]
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
+        protected virtual DialogSubmitTriggers SubmitTriggers => DialogSubmitTriggers.CtrlEnter;
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
-                await KeyboardService.RegisterKeypressEvent("Enter", k => Submit(k));
+                if (SubmitTriggers.HasFlag(DialogSubmitTriggers.Enter))
+                {
+                    await KeyboardService.RegisterKeypressEvent(_enterKey, Submit);
+                }
+
+                if (SubmitTriggers.HasFlag(DialogSubmitTriggers.CtrlEnter))
+                {
+                    await KeyboardService.RegisterKeypressEvent(_ctrlEnterKey, Submit);
+                }
+
                 await KeyboardService.Focus();
             }
         }
@@ -28,7 +43,16 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 if (disposing)
                 {
-                    await KeyboardService.UnregisterKeypressEvent("Enter");
+                    if (SubmitTriggers.HasFlag(DialogSubmitTriggers.Enter))
+                    {
+                        await KeyboardService.UnregisterKeypressEvent(_enterKey);
+                    }
+
+                    if (SubmitTriggers.HasFlag(DialogSubmitTriggers.CtrlEnter))
+                    {
+                        await KeyboardService.UnregisterKeypressEvent(_ctrlEnterKey);
+                    }
+
                     await KeyboardService.UnFocus();
                 }
 

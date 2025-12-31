@@ -57,7 +57,7 @@ namespace Lantean.QBTMud.Test.Pages
                 parameters.AddCascadingValue("SortDirectionChanged", EventCallback.Factory.Create<SortDirection>(this, _ => { }));
             });
 
-            _keyboardServiceMock.Verify(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()), Times.Exactly(2));
+            _keyboardServiceMock.Verify(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()), Times.Exactly(3));
 
             _navigationManager.TriggerLocationChanged("http://localhost/details/test");
 
