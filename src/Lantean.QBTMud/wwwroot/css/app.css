@@ -33,7 +33,9 @@
     align-items: center;
     justify-content: center;
     gap: 1.25rem;
-    height: 100%;
+    position: fixed;
+    inset: 0;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
     background: radial-gradient(circle at top, #f6f9ff 0%, #eaf2fb 45%, #dbe8f6 100%);
     color: #1b3b5d;
     text-align: center;
