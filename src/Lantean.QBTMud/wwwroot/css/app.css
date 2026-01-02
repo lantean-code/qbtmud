@@ -682,8 +682,8 @@ body {
         }
 
 .speed-chart-container {
-    background-color: #2b2b2b;
-    border: 1px solid #3a3a3a;
+    background-color: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
     box-shadow: none;
 }
 
@@ -691,16 +691,20 @@ body {
     background-color: transparent;
 }
 
+    .speed-chart .mud-chart-line {
+        overflow: visible;
+    }
+
     .speed-chart .mud-charts-grid path {
-        stroke: #555;
+        stroke: var(--mud-palette-divider);
         stroke-dasharray: 4 3;
         stroke-width: 0.6;
-        opacity: 0.6;
+        opacity: 0.8;
     }
 
     .speed-chart .mud-charts-yaxis text,
     .speed-chart .mud-charts-xaxis text {
-        fill: #b8b8b8;
+        fill: var(--mud-palette-text-secondary);
     }
 
     .speed-chart .mud-chart-serie.mud-chart-line path {
