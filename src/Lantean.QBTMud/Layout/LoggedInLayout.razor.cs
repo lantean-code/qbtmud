@@ -59,6 +59,9 @@ namespace Lantean.QBTMud.Layout
         [CascadingParameter]
         public Menu? Menu { get; set; }
 
+        [CascadingParameter(Name = "IsDarkMode")]
+        public bool IsDarkMode { get; set; }
+
         protected MainData? MainData { get; set; }
 
         protected string Category { get; set; } = FilterHelper.CATEGORY_ALL;
@@ -100,6 +103,8 @@ namespace Lantean.QBTMud.Layout
         private bool _navigationHandlerAttached;
 
         protected bool ShowStatusLabels => (CurrentBreakpoint > Breakpoint.Md && CurrentOrientation == Orientation.Portrait) || (CurrentBreakpoint > Breakpoint.Lg && CurrentOrientation == Orientation.Landscape);
+
+        protected bool UseLightStatusBarDividers => IsDarkMode;
 
         protected override void OnInitialized()
         {

@@ -596,17 +596,25 @@ body {
     flex: 0 0 calc(var(--app-status-bar-height) + env(safe-area-inset-bottom, 0px));
     height: calc(var(--app-status-bar-height) + env(safe-area-inset-bottom, 0px));
     width: 100%;
-    background-color: var(--mud-palette-dark-lighten);
+    border-top: 1px solid var(--mud-palette-divider);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background-color: var(--mud-palette-surface) !important;
+    color: var(--mud-palette-text-primary);
     align-items: center;
     justify-content: flex-start;
     box-sizing: border-box;
     z-index: -100;
 }
 
+.mud-theme-dark .app-shell__status-bar.mud-appbar {
+    background-color: var(--mud-palette-dark-lighten) !important;
+}
+
 .app-shell__status-bar .mud-toolbar {
     width: 100%;
-    height: 100%;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: var(--app-status-bar-height);
+    min-height: var(--app-status-bar-height);
+    align-items: center;
     background-color: inherit;
     box-sizing: border-box;
 }
