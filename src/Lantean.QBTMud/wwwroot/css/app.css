@@ -384,6 +384,18 @@ code {
     height: 100%;
 }
 
+@supports (-webkit-touch-callout: none) {
+    .torrent-list .mud-table-container {
+        box-sizing: border-box;
+        padding-right: 1414px;
+        padding-right: calc(14px + env(safe-area-inset-right));
+    }
+
+    .torrent-list .mud-table-container th:last-child, .torrent-list .mud-table-container td:last-child {
+        padding-right: 14px;
+    }
+}
+
 .details-tab-contents,
 .options-tab-contents,
 .rss-contents {
