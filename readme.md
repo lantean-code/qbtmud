@@ -18,7 +18,6 @@ qbtmud replicates all core features of the qBittorrent WebUI, including:
 - **IP Filtering** – Improve security by filtering specific IP addresses.
 - **IPv6 Support** – Full support for IPv6 networks.
 - **Bandwidth Scheduler** – Schedule bandwidth limits.
-- **WebUI Access** – Remotely manage torrents through the WebUI.
 
 <img width="2070" height="1494" alt="Screenshot 2026-01-03 120037" src="https://github.com/user-attachments/assets/de12286c-f731-4b36-a714-a93af1084f83" />
 <img width="2068" height="1494" alt="Screenshot 2026-01-03 120122" src="https://github.com/user-attachments/assets/3029cfb9-b299-4363-a174-58e0f7352697" />
@@ -55,7 +54,7 @@ For more detailed instructions, refer to the [Alternate WebUI Usage Guide](https
 
 ## Building from Source
 
-To build qbtmud from source, you need to have the **.NET 9.0 SDK** installed on your system.
+To build qbtmud from source, you need to have the **.NET 10.0 SDK** installed on your system.
 
 ### 1. Clone the Repository
 ```sh
