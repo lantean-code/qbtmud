@@ -1,5 +1,6 @@
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -38,8 +39,7 @@ namespace Lantean.QBTMud.Layout
 
         public MainLayout()
         {
-            Theme = new MudTheme();
-            Theme.Typography.Default.FontFamily = ["Nunito Sans"];
+            Theme = QbtMudThemeFactory.CreateDefaultTheme();
         }
 
         protected EventCallback<bool> DrawerOpenChangedCallback => EventCallback.Factory.Create<bool>(this, SetDrawerOpenAsync);
