@@ -423,11 +423,11 @@ namespace Lantean.QBTMud.Components.UI
             {
                 if (IsDarkMode)
                 {
-                    style += " background-color: var(--mud-palette-gray-dark); color: var(--mud-palette-gray-light) !important;";
+                    style += " background-color: var(--mud-palette-primary-darken); color: var(--mud-palette-primary-text) !important; --mud-palette-text-primary: var(--mud-palette-primary-text); --mud-palette-text-secondary: var(--mud-palette-primary-text);";
                 }
                 else
                 {
-                    style += " background-color: var(--mud-palette-primary-lighten); color: #f8fbff !important; --mud-palette-text-primary: #f8fbff; --mud-palette-text-secondary: #f8fbff;";
+                    style += " background-color: var(--mud-palette-primary-lighten); color: var(--mud-palette-primary-text) !important; --mud-palette-text-primary: var(--mud-palette-primary-text); --mud-palette-text-secondary: var(--mud-palette-primary-text);";
                 }
             }
             return style;

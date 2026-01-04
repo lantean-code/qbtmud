@@ -21,7 +21,7 @@
 }
 
     .pieces-progress-canvas__linear:focus-visible {
-        box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.35);
+        box-shadow: 0 0 0 3px rgba(var(--mud-palette-primary-rgb), 0.35);
     }
 
     .pieces-progress-canvas__linear:hover {
@@ -45,12 +45,8 @@
     padding: var(--pieces-progress-canvas-linear-padding-y) var(--mud-spacing-3);
     padding-inline-start: max(calc(var(--mud-spacing-3) * 2.5), 24px);
     color: inherit;
-    background: linear-gradient(to right, rgba(17, 24, 39, 0.28), rgba(17, 24, 39, 0));
+    background: linear-gradient(to right, rgba(var(--mud-palette-text-primary-rgb), 0.12), rgba(var(--mud-palette-text-primary-rgb), 0));
     mix-blend-mode: normal;
-}
-
-.mud-theme-dark .pieces-progress-canvas__linear-overlay {
-    background: linear-gradient(to right, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
 }
 
 .pieces-progress-canvas__icon {

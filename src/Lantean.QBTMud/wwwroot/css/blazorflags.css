@@ -34,21 +34,21 @@
 }
 
 .small-flag.shadow {
-    -webkit-box-shadow: 0 0 8px #333;
-    -moz-box-shadow: 0 0 8px #333;
-    box-shadow: 0 0 8px #333;
+    -webkit-box-shadow: 0 0 8px rgba(var(--mud-palette-dark-rgb), 0.4);
+    -moz-box-shadow: 0 0 8px rgba(var(--mud-palette-dark-rgb), 0.4);
+    box-shadow: 0 0 8px rgba(var(--mud-palette-dark-rgb), 0.4);
 }
 
 .normal-flag.shadow {
-    -webkit-box-shadow: 0 0 6px #333;
-    -moz-box-shadow: 0 0 6px #333;
-    box-shadow: 0 0 6px #333;
+    -webkit-box-shadow: 0 0 6px rgba(var(--mud-palette-dark-rgb), 0.35);
+    -moz-box-shadow: 0 0 6px rgba(var(--mud-palette-dark-rgb), 0.35);
+    box-shadow: 0 0 6px rgba(var(--mud-palette-dark-rgb), 0.35);
 }
 
 .big-flag.shadow {
-    -webkit-box-shadow: 0 0 3px #333;
-    -moz-box-shadow: 0 0 3px #333;
-    box-shadow: 0 0 3px #333;
+    -webkit-box-shadow: 0 0 3px rgba(var(--mud-palette-dark-rgb), 0.3);
+    -moz-box-shadow: 0 0 3px rgba(var(--mud-palette-dark-rgb), 0.3);
+    box-shadow: 0 0 3px rgba(var(--mud-palette-dark-rgb), 0.3);
 }
 
 .flag {

@@ -23,7 +23,7 @@
 }
 
     .pieces-progress-new__linear:focus-visible {
-        box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.35);
+        box-shadow: 0 0 0 3px rgba(var(--mud-palette-primary-rgb), 0.35);
     }
 
     .pieces-progress-new__linear:hover {
@@ -46,11 +46,7 @@
     padding: var(--pieces-progress-linear-padding-y) var(--mud-spacing-3);
     padding-inline-start: max(calc(var(--mud-spacing-3) * 2.5), 24px);
     color: inherit;
-    background-color: rgba(0, 0, 0, 0.16);
-}
-
-.mud-theme-dark .pieces-progress-new__linear-overlay {
-    background-color: rgba(0, 0, 0, 0.35);
+    background-color: rgba(var(--mud-palette-text-primary-rgb), 0.12);
 }
 
 .pieces-progress-new__icon {
@@ -85,7 +81,7 @@
 
     .pieces-progress-new__cell:not(.pieces-progress-new__cell--empty):hover {
         transform: scale(1.05);
-        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+        box-shadow: 0 2px 6px rgba(var(--mud-palette-dark-rgb), 0.25);
     }
 
 .pieces-progress-new__cell-inner {
@@ -181,7 +177,7 @@
     width: 16px;
     height: 16px;
     border-radius: 4px;
-    border: 1px solid rgba(15, 23, 42, 0.12);
+    border: 1px solid rgba(var(--mud-palette-dark-rgb), 0.12);
 }
 
 .pieces-progress-new__legend-swatch--downloaded {
