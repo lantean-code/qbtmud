@@ -15,21 +15,12 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Inject]
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
-        protected virtual DialogSubmitTriggers SubmitTriggers => DialogSubmitTriggers.CtrlEnter;
-
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
             {
-                if (SubmitTriggers.HasFlag(DialogSubmitTriggers.Enter))
-                {
-                    await KeyboardService.RegisterKeypressEvent(_enterKey, Submit);
-                }
-
-                if (SubmitTriggers.HasFlag(DialogSubmitTriggers.CtrlEnter))
-                {
-                    await KeyboardService.RegisterKeypressEvent(_ctrlEnterKey, Submit);
-                }
+                await KeyboardService.RegisterKeypressEvent(_enterKey, Submit);
+                await KeyboardService.RegisterKeypressEvent(_ctrlEnterKey, Submit);
 
                 await KeyboardService.Focus();
             }
@@ -43,16 +34,8 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 if (disposing)
                 {
-                    if (SubmitTriggers.HasFlag(DialogSubmitTriggers.Enter))
-                    {
-                        await KeyboardService.UnregisterKeypressEvent(_enterKey);
-                    }
-
-                    if (SubmitTriggers.HasFlag(DialogSubmitTriggers.CtrlEnter))
-                    {
-                        await KeyboardService.UnregisterKeypressEvent(_ctrlEnterKey);
-                    }
-
+                    await KeyboardService.UnregisterKeypressEvent(_enterKey);
+                    await KeyboardService.UnregisterKeypressEvent(_ctrlEnterKey);
                     await KeyboardService.UnFocus();
                 }
 
