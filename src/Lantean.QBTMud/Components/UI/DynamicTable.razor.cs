@@ -380,7 +380,15 @@ namespace Lantean.QBTMud.Components.UI
             }
             if (MultiSelection)
             {
-                if (eventArgs.MouseEventArgs.CtrlKey)
+                if (eventArgs.MouseEventArgs.CtrlKey && eventArgs.MouseEventArgs.ShiftKey)
+                {
+                    AddRangeSelection(eventArgs.Item, replaceSelection: false, useFurthest: false);
+                }
+                else if (eventArgs.MouseEventArgs.ShiftKey)
+                {
+                    AddRangeSelection(eventArgs.Item, replaceSelection: true, useFurthest: true);
+                }
+                else if (eventArgs.MouseEventArgs.CtrlKey)
                 {
                     if (SelectedItems.Contains(eventArgs.Item))
                     {
@@ -431,6 +439,69 @@ namespace Lantean.QBTMud.Components.UI
                 }
             }
             return style;
+        }
+
+        private void AddRangeSelection(T item, bool replaceSelection, bool useFurthest)
+        {
+            var orderedItems = OrderedItems?.ToList();
+            if (orderedItems is null || orderedItems.Count == 0)
+            {
+                if (replaceSelection)
+                {
+                    SelectedItems.Clear();
+                }
+                SelectedItems.Add(item);
+                return;
+            }
+
+            var clickedIndex = orderedItems.IndexOf(item);
+            if (clickedIndex < 0)
+            {
+                if (replaceSelection)
+                {
+                    SelectedItems.Clear();
+                }
+                SelectedItems.Add(item);
+                return;
+            }
+
+            var rangeIndex = -1;
+            var rangeDistance = useFurthest ? -1 : int.MaxValue;
+            for (var i = 0; i < orderedItems.Count; i++)
+            {
+                if (!SelectedItems.Contains(orderedItems[i]))
+                {
+                    continue;
+                }
+
+                var distance = Math.Abs(i - clickedIndex);
+                if (useFurthest ? distance > rangeDistance : distance < rangeDistance)
+                {
+                    rangeDistance = distance;
+                    rangeIndex = i;
+                }
+            }
+
+            if (rangeIndex < 0)
+            {
+                if (replaceSelection)
+                {
+                    SelectedItems.Clear();
+                }
+                SelectedItems.Add(item);
+                return;
+            }
+
+            var startIndex = Math.Min(clickedIndex, rangeIndex);
+            var endIndex = Math.Max(clickedIndex, rangeIndex);
+            if (replaceSelection)
+            {
+                SelectedItems.Clear();
+            }
+            for (var i = startIndex; i <= endIndex; i++)
+            {
+                SelectedItems.Add(orderedItems[i]);
+            }
         }
 
         protected string RowClassFuncInternal(T item, int index)
