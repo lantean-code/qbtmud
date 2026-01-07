@@ -91,6 +91,273 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
+        public async Task GIVEN_SingleSelection_WHEN_EnterPressed_THEN_ShouldInvokeSelectedItemEnter()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItems = new HashSet<SampleItem> { items[0] };
+            SampleItem? selectedItem = null;
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.SelectedItems, selectedItems);
+                builder.Add(p => p.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, item => selectedItem = item));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "Enter", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
+
+            selectedItem.Should().Be(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultipleSelection_WHEN_EnterPressed_THEN_ShouldNotInvokeSelectedItemEnter()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItems = new HashSet<SampleItem> { items[0], items[1] };
+            var invoked = false;
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.SelectedItems, selectedItems);
+                builder.Add(p => p.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, _ => invoked = true));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "Enter", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
+
+            invoked.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_NoEnterHandler_WHEN_EnterPressed_THEN_ShouldNotChangeSelection()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItems = new HashSet<SampleItem> { items[0] };
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.SelectedItems, selectedItems);
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "Enter", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
+
+            target.Instance.SelectedItems.Should().ContainSingle().And.Contain(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_NoSelection_WHEN_ShiftArrowPressed_THEN_ShouldSelectFirstItem()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.MultiSelection, true);
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", true);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { ShiftKey = true }));
+
+            target.Instance.SelectedItems.Should().ContainSingle().And.Contain(items[0]);
+        }
+
+        [Fact]
+        public async Task GIVEN_MultiSelection_WHEN_ShiftArrowDownPressed_THEN_ShouldAddNextItem()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = new List<SampleItem>
+            {
+                new SampleItem(1, "Name", 1),
+                new SampleItem(2, "Name", 2),
+                new SampleItem(3, "Name", 3),
+                new SampleItem(4, "Name", 4),
+                new SampleItem(5, "Name", 5),
+                new SampleItem(6, "Name", 6)
+            };
+            var selectedItems = new HashSet<SampleItem> { items[1], items[3], items[4] };
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.SelectedItems, selectedItems);
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", true);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { ShiftKey = true }));
+
+            target.Instance.SelectedItems.Should().HaveCount(4);
+            target.Instance.SelectedItems.Should().Contain(items[5]);
+        }
+
+        [Fact]
+        public async Task GIVEN_TopBoundarySelection_WHEN_ShiftArrowUpPressed_THEN_ShouldNotChangeSelection()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = new List<SampleItem>
+            {
+                new SampleItem(1, "Name", 1),
+                new SampleItem(2, "Name", 2),
+                new SampleItem(3, "Name", 3)
+            };
+            var selectedItems = new HashSet<SampleItem> { items[0], items[2] };
+            var originalSelection = new HashSet<SampleItem>(selectedItems);
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.SelectedItems, selectedItems);
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowUp", true);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowUp") { ShiftKey = true }));
+
+            target.Instance.SelectedItems.Should().BeEquivalentTo(originalSelection);
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleSelectionDisabled_WHEN_ArrowPressed_THEN_ShouldNotChangeSelection()
+        {
+            var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
+            var items = CreateItems();
+            var selectedItems = new HashSet<SampleItem> { items[0] };
+
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock
+                .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => handlers.Add((criteria, handler)))
+                .Returns(Task.CompletedTask);
+            keyboardMock
+                .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderDynamicTable(builder =>
+            {
+                builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
+                builder.Add(p => p.Items, items);
+                builder.Add(p => p.TableId, "TableId");
+                builder.Add(p => p.MultiSelection, false);
+                builder.Add(p => p.SelectOnRowClick, false);
+                builder.Add(p => p.SelectedItems, selectedItems);
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
+
+            target.Instance.SelectedItems.Should().ContainSingle().And.Contain(items[0]);
+        }
+
+        [Fact]
         public async Task GIVEN_SelectOnRowClickDisabled_WHEN_ItemNotSelected_THEN_NoSelectionChange()
         {
             var items = CreateItems();
@@ -1469,6 +1736,19 @@ namespace Lantean.QBTMud.Test.Components.UI
         private IRenderedComponent<DynamicTable<SampleItem>> RenderDynamicTable(Action<ComponentParameterCollectionBuilder<DynamicTable<SampleItem>>> configure)
         {
             return TestContext.Render<DynamicTable<SampleItem>>(configure);
+        }
+
+        private static Func<KeyboardEvent, Task> FindKeyboardHandler(IReadOnlyList<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)> handlers, string key, bool shiftKey)
+        {
+            foreach (var (criteria, handler) in handlers)
+            {
+                if (criteria.Key == key && criteria.ShiftKey == shiftKey)
+                {
+                    return handler;
+                }
+            }
+
+            throw new InvalidOperationException("Handler not found.");
         }
 
         private static IReadOnlyList<ColumnDefinition<SampleItem>> CreateColumnDefinitions()
