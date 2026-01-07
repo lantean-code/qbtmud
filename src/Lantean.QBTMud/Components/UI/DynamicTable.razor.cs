@@ -6,9 +6,14 @@ using MudBlazor;
 
 namespace Lantean.QBTMud.Components.UI
 {
-    public partial class DynamicTable<T> : MudComponentBase
+    public partial class DynamicTable<T> : MudComponentBase, IAsyncDisposable
     {
         private static readonly string _typeName = typeof(T).Name;
+        private static readonly KeyboardEvent _arrowUpKey = new("ArrowUp");
+        private static readonly KeyboardEvent _arrowDownKey = new("ArrowDown");
+        private static readonly KeyboardEvent _shiftArrowUpKey = new("ArrowUp") { ShiftKey = true };
+        private static readonly KeyboardEvent _shiftArrowDownKey = new("ArrowDown") { ShiftKey = true };
+        private static readonly KeyboardEvent _enterKey = new("Enter");
         private readonly string _columnSelectionStorageKey = $"DynamicTable{_typeName}.ColumnSelection.{{_tableId}}";
         private readonly string _columnSortStorageKey = $"DynamicTable{_typeName}.ColumnSort.{{_tableId}}";
         private readonly string _columnWidthsStorageKey = $"DynamicTable{_typeName}.ColumnWidths.{{_tableId}}";
@@ -19,6 +24,9 @@ namespace Lantean.QBTMud.Components.UI
 
         [Inject]
         public IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IKeyboardService KeyboardService { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -67,6 +75,9 @@ namespace Lantean.QBTMud.Components.UI
 
         [Parameter]
         public EventCallback<T> SelectedItemChanged { get; set; }
+
+        [Parameter]
+        public EventCallback<T> OnSelectedItemEnter { get; set; }
 
         [Parameter]
         public Func<ColumnDefinition<T>, bool> ColumnFilter { get; set; } = t => true;
@@ -120,6 +131,11 @@ namespace Lantean.QBTMud.Components.UI
         private object? _lastColumnFilterState;
 
         private bool _initialized;
+
+        private bool _keyboardHandlersRegistered;
+
+        private bool _disposedValue;
+
 
         protected override async Task OnInitializedAsync()
         {
@@ -243,6 +259,17 @@ namespace Lantean.QBTMud.Components.UI
             {
                 var columnSortStorageKey = GetColumnSortStorageKey();
                 _ = InvokeAsync(() => EnsureSortColumnValidAsync(columnSortStorageKey));
+            }
+
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+
+            if (firstRender)
+            {
+                await RegisterKeyboardHandlersAsync();
             }
         }
 
@@ -378,6 +405,7 @@ namespace Lantean.QBTMud.Components.UI
             {
                 return;
             }
+
             if (MultiSelection)
             {
                 if (eventArgs.MouseEventArgs.CtrlKey && eventArgs.MouseEventArgs.ShiftKey)
@@ -502,6 +530,173 @@ namespace Lantean.QBTMud.Components.UI
             {
                 SelectedItems.Add(orderedItems[i]);
             }
+        }
+
+        private async Task HandleKeyboardNavigation(KeyboardEvent keyboardEvent)
+        {
+            if (keyboardEvent.Key == "Enter")
+            {
+                await HandleEnterKeyAsync();
+                return;
+            }
+
+            if (keyboardEvent.Key is not "ArrowUp" and not "ArrowDown")
+            {
+                return;
+            }
+
+            if (!MultiSelection && !SelectOnRowClick)
+            {
+                return;
+            }
+
+            var orderedItems = OrderedItems?.ToList();
+            if (orderedItems is null || orderedItems.Count == 0)
+            {
+                return;
+            }
+
+            if (SelectedItems.Count == 0)
+            {
+                await SelectSingleItemAsync(orderedItems[0]);
+                return;
+            }
+
+            var moveUp = keyboardEvent.Key == "ArrowUp";
+            var addSelection = keyboardEvent.ShiftKey && MultiSelection;
+            var targetIndex = GetBoundarySelectedIndex(orderedItems, moveUp);
+            if (targetIndex < 0)
+            {
+                await SelectSingleItemAsync(orderedItems[0]);
+                return;
+            }
+
+            var nextIndex = moveUp ? targetIndex - 1 : targetIndex + 1;
+            if (nextIndex < 0 || nextIndex >= orderedItems.Count)
+            {
+                return;
+            }
+
+            if (addSelection)
+            {
+                SelectedItems.Add(orderedItems[nextIndex]);
+                await SelectedItemsChangedInternal(SelectedItems);
+                return;
+            }
+
+            await SelectSingleItemAsync(orderedItems[nextIndex]);
+        }
+
+        private async Task HandleEnterKeyAsync()
+        {
+            if (!OnSelectedItemEnter.HasDelegate)
+            {
+                return;
+            }
+
+            if (SelectedItems.Count != 1)
+            {
+                return;
+            }
+
+            var item = SelectedItems.First();
+            await OnSelectedItemEnter.InvokeAsync(item);
+        }
+
+        private async Task SelectSingleItemAsync(T item)
+        {
+            if (SelectedItems.Count == 1 && SelectedItems.Contains(item))
+            {
+                return;
+            }
+
+            SelectedItems.Clear();
+            SelectedItems.Add(item);
+            await SelectedItemsChangedInternal(SelectedItems);
+
+            if (!MultiSelection && SelectOnRowClick)
+            {
+                await SelectedItemChanged.InvokeAsync(item);
+            }
+        }
+
+        private int GetBoundarySelectedIndex(IReadOnlyList<T> orderedItems, bool useTop)
+        {
+            var boundaryIndex = -1;
+            for (var i = 0; i < orderedItems.Count; i++)
+            {
+                if (!SelectedItems.Contains(orderedItems[i]))
+                {
+                    continue;
+                }
+
+                if (boundaryIndex < 0)
+                {
+                    boundaryIndex = i;
+                    continue;
+                }
+
+                if (useTop && i < boundaryIndex)
+                {
+                    boundaryIndex = i;
+                }
+                else if (!useTop && i > boundaryIndex)
+                {
+                    boundaryIndex = i;
+                }
+            }
+
+            return boundaryIndex;
+        }
+
+        private async Task RegisterKeyboardHandlersAsync()
+        {
+            if (_keyboardHandlersRegistered)
+            {
+                return;
+            }
+
+            await KeyboardService.RegisterKeypressEvent(_arrowUpKey, HandleKeyboardNavigation);
+            await KeyboardService.RegisterKeypressEvent(_arrowDownKey, HandleKeyboardNavigation);
+            await KeyboardService.RegisterKeypressEvent(_shiftArrowUpKey, HandleKeyboardNavigation);
+            await KeyboardService.RegisterKeypressEvent(_shiftArrowDownKey, HandleKeyboardNavigation);
+            await KeyboardService.RegisterKeypressEvent(_enterKey, HandleKeyboardNavigation);
+            _keyboardHandlersRegistered = true;
+        }
+
+        private async Task UnregisterKeyboardHandlersAsync()
+        {
+            if (!_keyboardHandlersRegistered)
+            {
+                return;
+            }
+
+            await KeyboardService.UnregisterKeypressEvent(_arrowUpKey);
+            await KeyboardService.UnregisterKeypressEvent(_arrowDownKey);
+            await KeyboardService.UnregisterKeypressEvent(_shiftArrowUpKey);
+            await KeyboardService.UnregisterKeypressEvent(_shiftArrowDownKey);
+            await KeyboardService.UnregisterKeypressEvent(_enterKey);
+            _keyboardHandlersRegistered = false;
+        }
+
+        protected virtual async ValueTask DisposeAsync(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    await UnregisterKeyboardHandlersAsync();
+                }
+
+                _disposedValue = true;
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            await DisposeAsync(disposing: true);
+            GC.SuppressFinalize(this);
         }
 
         protected string RowClassFuncInternal(T item, int index)
