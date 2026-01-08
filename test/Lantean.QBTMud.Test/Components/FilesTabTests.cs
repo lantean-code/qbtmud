@@ -51,7 +51,7 @@ namespace Lantean.QBTMud.Test.Components
             target.WaitForAssertion(() => target.Markup.Should().Contain("Folder"));
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-Folder");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
         }
@@ -66,7 +66,7 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-Root");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
 
@@ -95,12 +95,12 @@ namespace Lantean.QBTMud.Test.Components
             target.WaitForAssertion(() => target.Markup.Should().Contain("root"));
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
             target.WaitForAssertion(() => target.Markup.Should().Contain("low.txt"));
 
             var menu = FindComponentByTestId<MudMenu>(target, "DoNotDownloadMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
-            await menuActivator.InvokeAsync(() => menuActivator.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadLessThan80")}\"]");
             await target.InvokeAsync(() => availabilityItem.Click());
@@ -124,7 +124,7 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             var search = FindComponentByTestId<MudTextField<string>>(target, "FilesTabSearch");
             search.Find("input").Input("file2");
@@ -150,7 +150,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var menu = FindComponentByTestId<MudMenu>(target, "DoNotDownloadMenu");
             var activator = menu.FindComponent<MudIconButton>();
-            await activator.InvokeAsync(() => activator.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => activator.Find("button").Click());
 
             var filteredItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadFiltered")}\"]");
             await target.InvokeAsync(() => filteredItem.Click());
@@ -171,7 +171,7 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var renameButton = FindComponentByTestId<MudIconButton>(target, "RenameToolbar");
-            await renameButton.InvokeAsync(() => renameButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => renameButton.Find("button").Click());
 
             target.WaitForAssertion(() =>
             {
@@ -192,7 +192,7 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
 
@@ -200,7 +200,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => row.Click());
 
             var toolbarRename = FindComponentByTestId<MudIconButton>(target, "RenameToolbar");
-            await toolbarRename.InvokeAsync(() => toolbarRename.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toolbarRename.Find("button").Click());
 
             target.WaitForAssertion(() =>
             {
@@ -221,7 +221,7 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
 
@@ -334,11 +334,11 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
 
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             target.WaitForAssertion(() => target.Markup.Should().NotContain("file1.txt"));
         }
@@ -422,7 +422,7 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var filterButton = FindComponentByTestId<MudIconButton>(target, "ShowFilterDialog");
-            await filterButton.InvokeAsync(() => filterButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => filterButton.Find("button").Click());
 
             target.WaitForAssertion(() => target.Instance.Filters.Should().BeNull());
         }
@@ -442,10 +442,10 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             var filterButton = FindComponentByTestId<MudIconButton>(target, "ShowFilterDialog");
-            await filterButton.InvokeAsync(() => filterButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => filterButton.Find("button").Click());
 
             target.WaitForAssertion(() =>
             {
@@ -470,13 +470,13 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             var filterButton = FindComponentByTestId<MudIconButton>(target, "ShowFilterDialog");
-            await filterButton.InvokeAsync(() => filterButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => filterButton.Find("button").Click());
 
             var removeFilterButton = FindComponentByTestId<MudIconButton>(target, "RemoveFilter");
-            await removeFilterButton.InvokeAsync(() => removeFilterButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => removeFilterButton.Find("button").Click());
 
             target.WaitForAssertion(() =>
             {
@@ -561,11 +561,11 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             var menu = FindComponentByTestId<MudMenu>(target, "DoNotDownloadMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
-            await menuActivator.InvokeAsync(() => menuActivator.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadLessThan100")}\"]");
             await target.InvokeAsync(() => availabilityItem.Click());
@@ -593,11 +593,11 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             var menu = FindComponentByTestId<MudMenu>(target, "NormalPriorityMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
-            await menuActivator.InvokeAsync(() => menuActivator.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("NormalPriorityLessThan80")}\"]");
             await target.InvokeAsync(() => availabilityItem.Click());
@@ -624,11 +624,11 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             var menu = FindComponentByTestId<MudMenu>(target, "DoNotDownloadMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
-            await menuActivator.InvokeAsync(() => menuActivator.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var filteredItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadFiltered")}\"]");
             await target.InvokeAsync(() => filteredItem.Click());
@@ -655,11 +655,11 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             var menu = FindComponentByTestId<MudMenu>(target, "NormalPriorityMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
-            await menuActivator.InvokeAsync(() => menuActivator.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var filteredItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("NormalPriorityFiltered")}\"]");
             await target.InvokeAsync(() => filteredItem.Click());
@@ -687,11 +687,11 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await toggle.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => toggle.Find("button").Click());
 
             var menu = FindComponentByTestId<MudMenu>(target, "NormalPriorityMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
-            await menuActivator.InvokeAsync(() => menuActivator.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("NormalPriorityLessThan100")}\"]");
             await target.InvokeAsync(() => availabilityItem.Click());
@@ -717,7 +717,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var menu = FindComponentByTestId<MudMenu>(target, "NormalPriorityMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
-            await menuActivator.InvokeAsync(() => menuActivator.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("NormalPriorityLessThan100")}\"]");
             await target.InvokeAsync(() => availabilityItem.Click());
@@ -811,7 +811,7 @@ namespace Lantean.QBTMud.Test.Components
             await _timer.TriggerTickAsync();
 
             var columnButton = FindComponentByTestId<MudIconButton>(target, "ColumnOptions");
-            await columnButton.InvokeAsync(() => columnButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => columnButton.Find("button").Click());
         }
 
         [Fact]
