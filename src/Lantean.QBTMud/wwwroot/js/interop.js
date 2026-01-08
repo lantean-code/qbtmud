@@ -253,25 +253,17 @@ window.qbt.keyPressUnFocusInstance = dotNetObjectReference => {
 
 function shouldIgnoreKeyPress(event) {
     const target = event.target;
-    if (event.key === 'Enter' && !event.ctrlKey) {
-        if (target instanceof HTMLElement && target.closest('textarea, [contenteditable="true"]') !== null) {
-            return true;
-        }
-    }
-
-    if (event.key !== 'Delete') {
-        return false;
-    }
-
     if (!(target instanceof HTMLElement)) {
         return false;
     }
 
-    if (target.isContentEditable) {
-        return true;
+    const isEditable = target.isContentEditable
+        || target.closest('input, textarea, select, [contenteditable="true"]') !== null;
+    if (!isEditable) {
+        return false;
     }
 
-    return target.closest('input, textarea, select, [contenteditable="true"]') !== null;
+    return !(event.key === 'Enter' && event.ctrlKey);
 }
 
 function getKey(keyboardEvent) {
