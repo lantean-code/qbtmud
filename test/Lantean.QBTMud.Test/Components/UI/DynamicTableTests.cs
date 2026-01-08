@@ -1231,7 +1231,7 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             var cell = target.FindComponents<TdExtended>().First().Find("td");
             await target.InvokeAsync(() => cell.TriggerEventAsync("onlongpress", new LongPressEventArgs()));
-            await Task.Delay(600);
+            await Task.Delay(1000);
 
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.Click());
