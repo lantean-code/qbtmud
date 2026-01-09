@@ -278,22 +278,28 @@ namespace Lantean.QBTMud.Components
 
         protected Task RenameFileToolbar()
         {
-            if (SelectedItem is null)
+            return InvokeAsync(() =>
             {
-                return RenameFiles();
-            }
+                if (SelectedItem is null)
+                {
+                    return RenameFiles();
+                }
 
-            return RenameFiles(SelectedItem);
+                return RenameFiles(SelectedItem);
+            });
         }
 
         protected Task RenameFileContextMenu()
         {
-            if (ContextMenuItem is null)
+            return InvokeAsync(() =>
             {
-                return Task.CompletedTask;
-            }
+                if (ContextMenuItem is null)
+                {
+                    return Task.CompletedTask;
+                }
 
-            return RenameFiles(ContextMenuItem);
+                return RenameFiles(ContextMenuItem);
+            });
         }
 
         private async Task RenameFiles(params ContentItem[] contentItems)
@@ -327,19 +333,22 @@ namespace Lantean.QBTMud.Components
             SelectedItem = item;
         }
 
-        protected async Task ToggleNode(ContentItem contentItem)
+        protected Task ToggleNode(ContentItem contentItem)
         {
-            if (ExpandedNodes.Contains(contentItem.Name))
+            return InvokeAsync(async () =>
             {
-                ExpandedNodes.Remove(contentItem.Name);
-            }
-            else
-            {
-                ExpandedNodes.Add(contentItem.Name);
-            }
+                if (ExpandedNodes.Contains(contentItem.Name))
+                {
+                    ExpandedNodes.Remove(contentItem.Name);
+                }
+                else
+                {
+                    ExpandedNodes.Add(contentItem.Name);
+                }
 
-            MarkFilesDirty();
-            await SessionStorage.SetItemAsync($"{_expandedNodesStorageKey}.{Hash}", ExpandedNodes);
+                MarkFilesDirty();
+                await SessionStorage.SetItemAsync($"{_expandedNodesStorageKey}.{Hash}", ExpandedNodes);
+            });
         }
 
         private static QBitTorrentClient.Models.Priority MapPriority(Priority priority)

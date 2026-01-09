@@ -367,3 +367,5 @@ FodyWeavers.xsd
 coverage/
 coverage-report/
 TestResults/
+/ref/mudblazor
+/ref/mudblazor
