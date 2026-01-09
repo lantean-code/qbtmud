@@ -2,6 +2,7 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using MudBlazor.Charts;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -52,9 +53,8 @@ namespace Lantean.QBTMud.Pages
         private SpeedPeriod _selectedPeriod = SpeedPeriod.Min5;
         private bool _includeDownload = true;
         private bool _includeUpload = true;
-        private List<TimeSeriesChartSeries> _series = new();
-        private ChartOptions _chartOptions = new();
-        private AxisChartOptions _axisOptions = new();
+        private List<ChartSeries<double>> _series = new();
+        private TimeSeriesChartOptions _chartOptions = new();
         private TimeSpan _timeLabelSpacing = TimeSpan.FromMinutes(5);
         private string _lastUpdatedText = "n/a";
         private UnitScale _currentUnit = MebiBytesPerSecond;
@@ -129,19 +129,17 @@ namespace Lantean.QBTMud.Pages
 
             var paletteInfo = BuildChartData(downloadSamples, uploadSamples);
 
-            _chartOptions = new ChartOptions
+            _chartOptions = new TimeSeriesChartOptions
             {
                 ChartPalette = BuildPalette(paletteInfo.DownloadSegmentCount, paletteInfo.UploadSegmentCount, paletteInfo.HasBounds),
                 ShowLegend = false,
                 XAxisLines = true,
                 YAxisToStringFunc = value => FormatBytesPerSecond(value, _currentUnit),
                 MaxNumYAxisTicks = 6,
-                LineStrokeWidth = 2
-            };
-
-            _axisOptions = new AxisChartOptions
-            {
-                MatchBoundsToSize = true
+                LineStrokeWidth = 2,
+                TimeLabelSpacing = _timeLabelSpacing,
+                TimeLabelFormat = "''",
+                TooltipTimeLabelFormat = "HH:mm:ss"
             };
 
             _lastUpdatedText = SpeedHistoryService.LastUpdatedUtc?.ToLocalTime().ToString("G") ?? "n/a";
@@ -158,16 +156,15 @@ namespace Lantean.QBTMud.Pages
             var uploadSegments = SeriesBuilder.BuildSegments(uploadSamples, windowStart, windowEnd, bucketSize);
             _currentUnit = SelectUnit(downloadSegments.SelectMany(s => s).ToList(), uploadSegments.SelectMany(s => s).ToList());
 
-            var seriesList = new List<TimeSeriesChartSeries>();
+            var seriesList = new List<ChartSeries<double>>();
             if (_includeDownload)
             {
                 foreach (var segment in downloadSegments)
                 {
-                    seriesList.Add(new TimeSeriesChartSeries
+                    seriesList.Add(new ChartSeries<double>
                     {
                         Name = "Download",
-                        Data = segment,
-                        LineDisplayType = LineDisplayType.Line
+                        Data = segment
                     });
                 }
             }
@@ -176,11 +173,10 @@ namespace Lantean.QBTMud.Pages
             {
                 foreach (var segment in uploadSegments)
                 {
-                    seriesList.Add(new TimeSeriesChartSeries
+                    seriesList.Add(new ChartSeries<double>
                     {
                         Name = "Upload",
-                        Data = segment,
-                        LineDisplayType = LineDisplayType.Line
+                        Data = segment
                     });
                 }
             }
@@ -188,14 +184,10 @@ namespace Lantean.QBTMud.Pages
             var hasBounds = false;
             if (seriesList.Count > 0)
             {
-                seriesList.Add(new TimeSeriesChartSeries
+                seriesList.Add(new ChartSeries<double>
                 {
                     Name = string.Empty,
-                    Data = BuildBounds(windowStart, windowEnd),
-                    LineDisplayType = LineDisplayType.Line,
-                    ShowDataMarkers = false,
-                    StrokeOpacity = 0,
-                    FillOpacity = 0
+                    Data = BuildBounds(windowStart, windowEnd)
                 });
                 hasBounds = true;
             }
@@ -204,9 +196,9 @@ namespace Lantean.QBTMud.Pages
             return (_includeDownload ? downloadSegments.Count : 0, _includeUpload ? uploadSegments.Count : 0, hasBounds);
         }
 
-        private static List<TimeSeriesChartSeries.TimeValue> BuildBounds(DateTime windowStart, DateTime windowEnd)
+        private static List<TimeValue<double>> BuildBounds(DateTime windowStart, DateTime windowEnd)
         {
-            return new List<TimeSeriesChartSeries.TimeValue>
+            return new List<TimeValue<double>>
             {
                 new(windowStart, 0),
                 new(windowEnd, 0)
@@ -235,7 +227,7 @@ namespace Lantean.QBTMud.Pages
             return palette.ToArray();
         }
 
-        private static UnitScale SelectUnit(IReadOnlyList<TimeSeriesChartSeries.TimeValue> downloadSeries, IReadOnlyList<TimeSeriesChartSeries.TimeValue> uploadSeries)
+        private static UnitScale SelectUnit(IReadOnlyList<TimeValue<double>> downloadSeries, IReadOnlyList<TimeValue<double>> uploadSeries)
         {
             var maxValue = Math.Max(
                 downloadSeries.Count > 0 ? downloadSeries.Max(p => p.Value) : 0,

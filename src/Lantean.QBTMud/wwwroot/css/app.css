@@ -530,6 +530,10 @@ td .folder-button {
     padding-top: 4px !important;
 }
 
+.dialog-content-min-width-400 {
+    min-width: 400px;
+}
+
 .icon-menu-dense {
     padding-top: 2px;
     padding-bottom: 2px;

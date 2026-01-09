@@ -34,10 +34,10 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindSwitch(target, "RssAutoDownloadingEnabled").Instance.Value.Should().BeTrue();
             FindSwitch(target, "RssDownloadRepackProperEpisodes").Instance.Value.Should().BeFalse();
 
-            FindNumeric(target, "RssRefreshInterval").Instance.Value.Should().Be(30);
-            FindNumeric(target, "RssMaxArticlesPerFeed").Instance.Value.Should().Be(200);
+            FindNumeric(target, "RssRefreshInterval").Instance.GetState(x => x.Value).Should().Be(30);
+            FindNumeric(target, "RssMaxArticlesPerFeed").Instance.GetState(x => x.Value).Should().Be(200);
 
-            FindTextField(target, "RssSmartEpisodeFilters").Instance.Value.Should().Be("filter-one\nfilter-two");
+            FindTextField(target, "RssSmartEpisodeFilters").Instance.GetState(x => x.Value).Should().Be("filter-one\nfilter-two");
 
             update.RssProcessingEnabled.Should().BeNull();
         }

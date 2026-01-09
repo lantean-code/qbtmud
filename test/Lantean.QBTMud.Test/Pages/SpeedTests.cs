@@ -32,7 +32,7 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
 
             var toggleGroup = FindComponentByTestId<MudToggleGroup<SpeedPeriod>>(target, "PeriodToggleGroup");
-            toggleGroup.Instance.Value.Should().Be(SpeedPeriod.Min5);
+            toggleGroup.Instance.GetState(x => x.Value).Should().Be(SpeedPeriod.Min5);
 
             _speedHistoryService.Verify(s => s.InitializeAsync(It.IsAny<CancellationToken>()), Times.AtLeast(2));
             _speedHistoryService.Verify(s => s.GetSeries(SpeedPeriod.Min5, SpeedDirection.Download), Times.AtLeastOnce());
@@ -88,11 +88,11 @@ namespace Lantean.QBTMud.Test.Pages
 
             var downloadSwitch = FindComponentByTestId<MudSwitch<bool>>(target, "DownloadToggle");
             downloadSwitch.Find("input").Change(false);
-            target.InvokeAsync(() => downloadSwitch.Instance.ValueChanged.InvokeAsync(downloadSwitch.Instance.Value));
+            target.InvokeAsync(() => downloadSwitch.Instance.ValueChanged.InvokeAsync(downloadSwitch.Instance.GetState(x => x.Value)));
 
             var uploadSwitch = FindComponentByTestId<MudSwitch<bool>>(target, "UploadToggle");
             uploadSwitch.Find("input").Change(false);
-            target.InvokeAsync(() => uploadSwitch.Instance.ValueChanged.InvokeAsync(uploadSwitch.Instance.Value));
+            target.InvokeAsync(() => uploadSwitch.Instance.ValueChanged.InvokeAsync(uploadSwitch.Instance.GetState(x => x.Value)));
 
             calls.Should().Be(0);
         }
@@ -127,7 +127,7 @@ namespace Lantean.QBTMud.Test.Pages
             }
 
             var toggleGroup = FindComponentByTestId<MudToggleGroup<SpeedPeriod>>(target, "PeriodToggleGroup");
-            target.InvokeAsync(() => toggleGroup.Instance.ValueChanged.InvokeAsync(toggleGroup.Instance.Value));
+            target.InvokeAsync(() => toggleGroup.Instance.ValueChanged.InvokeAsync(toggleGroup.Instance.GetState(x => x.Value)));
         }
 
         [Fact]

@@ -6,6 +6,7 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using MudBlazor.Extensions;
 using System.Collections.ObjectModel;
 using System.Net;
 
@@ -501,7 +502,7 @@ namespace Lantean.QBTMud.Components
                 return false;
             }
 
-            var currentValue = SearchInput.Value;
+            var currentValue = SearchInput.GetState(x => x.Value);
             if (string.Equals(SearchText, currentValue, StringComparison.Ordinal))
             {
                 return false;

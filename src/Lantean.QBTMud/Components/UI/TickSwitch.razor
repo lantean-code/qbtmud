@@ -7,10 +7,13 @@
 @code{
     protected override void OnParametersSet()
     {
-        if (Value is bool boolValue)
+        var boolValue = BoolValue;
+        if (boolValue is null)
         {
-            this.ThumbIcon = boolValue ? Icons.Material.Filled.Done : Icons.Material.Filled.Close;
-            this.ThumbIconColor = boolValue ? Color.Success : Color.Error;
+            return;
         }
+
+        ThumbIcon = boolValue.Value ? Icons.Material.Filled.Done : Icons.Material.Filled.Close;
+        ThumbIconColor = boolValue.Value ? Color.Success : Color.Error;
     }
 }

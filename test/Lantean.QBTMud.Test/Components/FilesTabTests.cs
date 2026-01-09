@@ -95,12 +95,12 @@ namespace Lantean.QBTMud.Test.Components
             target.WaitForAssertion(() => target.Markup.Should().Contain("root"));
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await target.InvokeAsync(() => toggle.Find("button").Click());
+            await toggle.Find("button").ClickAsync();
             target.WaitForAssertion(() => target.Markup.Should().Contain("low.txt"));
 
             var menu = FindComponentByTestId<MudMenu>(target, "DoNotDownloadMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
-            await target.InvokeAsync(() => menuActivator.Find("button").Click());
+            await menuActivator.Find("button").ClickAsync();
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadLessThan80")}\"]");
             await target.InvokeAsync(() => availabilityItem.Click());
@@ -568,7 +568,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadLessThan100")}\"]");
-            await target.InvokeAsync(() => availabilityItem.Click());
+            await availabilityItem.ClickAsync();
 
             target.WaitForAssertion(() =>
             {
