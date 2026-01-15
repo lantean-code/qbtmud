@@ -88,13 +88,13 @@ namespace Lantean.QBTMud.Components.Dialogs
             var renamedFiles = FileNameMatcher.GetRenamedFiles(
                 SelectedItems,
                 Search,
-                UseRegex,
+                UseRegex.GetValueOrDefault(),
                 Replacement,
-                MatchAllOccurrences,
-                CaseSensitive,
+                MatchAllOccurrences.GetValueOrDefault(),
+                CaseSensitive.GetValueOrDefault(),
                 AppliesToValue,
-                IncludeFiles,
-                IncludeFolders,
+                IncludeFiles.GetValueOrDefault(),
+                IncludeFolders.GetValueOrDefault(),
                 ReplaceAll,
                 FileEnumerationStart);
 
@@ -324,7 +324,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             Search = value;
         }
 
-        protected bool UseRegex { get; set; }
+        protected bool? UseRegex { get; set; }
 
         protected async Task UseRegexChanged(bool value)
         {
@@ -333,7 +333,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             await UpdatePreferences(p => p.UseRegex = value);
         }
 
-        protected bool MatchAllOccurrences { get; set; }
+        protected bool? MatchAllOccurrences { get; set; }
 
         protected async Task MatchAllOccurrencesChanged(bool value)
         {
@@ -342,7 +342,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             await UpdatePreferences(p => p.MatchAllOccurrences = value);
         }
 
-        protected bool CaseSensitive { get; set; }
+        protected bool? CaseSensitive { get; set; }
 
         protected async Task CaseSensitiveChanged(bool value)
         {
@@ -369,7 +369,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             await UpdatePreferences(p => p.AppliesTo = value);
         }
 
-        protected bool IncludeFiles { get; set; } = true;
+        protected bool? IncludeFiles { get; set; } = true;
 
         protected async Task IncludeFilesChanged(bool value)
         {
@@ -378,7 +378,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             await UpdatePreferences(p => p.IncludeFiles = value);
         }
 
-        protected bool IncludeFolders { get; set; }
+        protected bool? IncludeFolders { get; set; }
 
         protected async Task IncludeFoldersChanged(bool value)
         {
@@ -405,7 +405,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             await UpdatePreferences(p => p.ReplaceAll = value);
         }
 
-        protected bool RememberMultiRenameSettings { get; set; }
+        protected bool? RememberMultiRenameSettings { get; set; }
 
         protected async Task RememberMultiRenameSettingsChanged(bool value)
         {
@@ -472,13 +472,13 @@ namespace Lantean.QBTMud.Components.Dialogs
             var renamedFiles = FileNameMatcher.GetRenamedFiles(
                 SelectedItems,
                 Search,
-                UseRegex,
+                UseRegex.GetValueOrDefault(),
                 Replacement,
-                MatchAllOccurrences,
-                CaseSensitive,
+                MatchAllOccurrences.GetValueOrDefault(),
+                CaseSensitive.GetValueOrDefault(),
                 AppliesToValue,
-                IncludeFiles,
-                IncludeFolders,
+                IncludeFiles.GetValueOrDefault(),
+                IncludeFolders.GetValueOrDefault(),
                 ReplaceAll,
                 FileEnumerationStart);
 

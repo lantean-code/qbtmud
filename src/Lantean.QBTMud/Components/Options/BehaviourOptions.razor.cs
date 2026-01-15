@@ -4,25 +4,25 @@ namespace Lantean.QBTMud.Components.Options
 {
     public partial class BehaviourOptions : Options
     {
-        protected bool ConfirmTorrentDeletion { get; set; }
+        protected bool? ConfirmTorrentDeletion { get; set; }
 
-        protected bool StatusBarExternalIp { get; set; }
+        protected bool? StatusBarExternalIp { get; set; }
 
-        protected bool FileLogEnabled { get; set; }
+        protected bool? FileLogEnabled { get; set; }
 
         protected string? FileLogPath { get; set; }
 
-        protected bool FileLogBackupEnabled { get; set; }
+        protected bool? FileLogBackupEnabled { get; set; }
 
         protected int FileLogMaxSize { get; set; }
 
-        protected bool FileLogDeleteOld { get; set; }
+        protected bool? FileLogDeleteOld { get; set; }
 
         protected int FileLogAge { get; set; }
 
         protected int FileLogAgeType { get; set; }
 
-        protected bool PerformanceWarning { get; set; }
+        protected bool? PerformanceWarning { get; set; }
 
         protected override bool SetOptions()
         {

@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Components.UI
     {
         /// <inheritdoc cref="MudBlazor.MudBooleanInput{T}.Value"/>
         [Parameter]
-        public bool Value { get; set; }
+        public bool? Value { get; set; }
 
         /// <inheritdoc cref="MudBlazor.MudBooleanInput{T}.ValueChanged"/>
         [Parameter]

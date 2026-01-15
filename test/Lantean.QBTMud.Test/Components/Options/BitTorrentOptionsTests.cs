@@ -67,6 +67,135 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldUseDefaults()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<BitTorrentOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, (Preferences?)null);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            target.Instance.Preferences.Should().BeNull();
+            FindNumericInt(target, "MaxActiveDownloads").Instance.Disabled.Should().BeTrue();
+            FindNumericInt(target, "MaxInactiveSeedingTime").Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_ValidationRules_WHEN_Invoked_THEN_ShouldReturnExpectedMessages()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<BitTorrentOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var maxDownloadsValidation = FindNumericInt(target, "MaxActiveDownloads").Instance.Validation as Func<int, string?>;
+            maxDownloadsValidation.Should().NotBeNull();
+            maxDownloadsValidation!(-2).Should().Be("Maximum active downloads must be greater than -1.");
+            maxDownloadsValidation(-1).Should().BeNull();
+
+            var maxUploadsValidation = FindNumericInt(target, "MaxActiveUploads").Instance.Validation as Func<int, string?>;
+            maxUploadsValidation.Should().NotBeNull();
+            maxUploadsValidation!(-2).Should().Be("Maximum active uploads must be greater than -1.");
+            maxUploadsValidation(-1).Should().BeNull();
+
+            var maxTorrentsValidation = FindNumericInt(target, "MaxActiveTorrents").Instance.Validation as Func<int, string?>;
+            maxTorrentsValidation.Should().NotBeNull();
+            maxTorrentsValidation!(-2).Should().Be("Maximum active torrents must be greater than -1.");
+            maxTorrentsValidation(-1).Should().BeNull();
+
+            var dlThresholdValidation = FindNumericInt(target, "SlowTorrentDlRateThreshold").Instance.Validation as Func<int, string?>;
+            dlThresholdValidation.Should().NotBeNull();
+            dlThresholdValidation!(0).Should().Be("Download rate threshold must be greater than 0.");
+            dlThresholdValidation(1).Should().BeNull();
+
+            var ulThresholdValidation = FindNumericInt(target, "SlowTorrentUlRateThreshold").Instance.Validation as Func<int, string?>;
+            ulThresholdValidation.Should().NotBeNull();
+            ulThresholdValidation!(0).Should().Be("Upload rate threshold must be greater than 0.");
+            ulThresholdValidation(1).Should().BeNull();
+
+            var inactiveTimerValidation = FindNumericInt(target, "SlowTorrentInactiveTimer").Instance.Validation as Func<int, string?>;
+            inactiveTimerValidation.Should().NotBeNull();
+            inactiveTimerValidation!(0).Should().Be("Torrent inactivity timer must be greater than 0.");
+            inactiveTimerValidation(1).Should().BeNull();
+
+            var maxRatioValidation = FindNumericFloat(target, "MaxRatio").Instance.Validation as Func<int, string?>;
+            maxRatioValidation.Should().NotBeNull();
+            maxRatioValidation!(-1).Should().Be("Share ratio limit must be between 0 and 9998.");
+            maxRatioValidation(0).Should().BeNull();
+
+            var maxSeedingTimeValidation = FindNumericInt(target, "MaxSeedingTime").Instance.Validation as Func<int, string?>;
+            maxSeedingTimeValidation.Should().NotBeNull();
+            maxSeedingTimeValidation!(-1).Should().Be("Seeding time limit must be between 0 and 525600 minutes.");
+            maxSeedingTimeValidation(0).Should().BeNull();
+
+            var maxInactiveSeedingTimeValidation = FindNumericInt(target, "MaxInactiveSeedingTime").Instance.Validation as Func<int, string?>;
+            maxInactiveSeedingTimeValidation.Should().NotBeNull();
+            maxInactiveSeedingTimeValidation!(-1).Should().Be("Seeding time limit must be between 0 and 525600 minutes.");
+            maxInactiveSeedingTimeValidation(0).Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_SeedingTimePreferences_WHEN_Rendered_THEN_ShouldSetDefaults()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            const string json = """
+            {
+                "dht": true,
+                "pex": true,
+                "lsd": false,
+                "encryption": 1,
+                "anonymous_mode": true,
+                "max_active_checking_torrents": 3,
+                "queueing_enabled": true,
+                "max_active_downloads": 5,
+                "max_active_uploads": 6,
+                "max_active_torrents": 7,
+                "dont_count_slow_torrents": true,
+                "slow_torrent_dl_rate_threshold": 12,
+                "slow_torrent_ul_rate_threshold": 13,
+                "slow_torrent_inactive_timer": 14,
+                "max_ratio_enabled": true,
+                "max_ratio": 3.5,
+                "max_seeding_time_enabled": true,
+                "max_seeding_time": 240,
+                "max_ratio_act": 2,
+                "max_inactive_seeding_time_enabled": false,
+                "max_inactive_seeding_time": 60,
+                "add_trackers_enabled": true,
+                "add_trackers": "udp://tracker.example:80"
+            }
+            """;
+
+            var preferences = JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<BitTorrentOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindSwitch(target, "MaxSeedingTimeEnabled").Instance.Value.Should().BeTrue();
+            FindNumericInt(target, "MaxSeedingTime").Instance.GetState(x => x.Value).Should().Be(240);
+            FindSwitch(target, "MaxInactiveSeedingTimeEnabled").Instance.Value.Should().BeFalse();
+            FindNumericInt(target, "MaxInactiveSeedingTime").Instance.GetState(x => x.Value).Should().Be(1440);
+        }
+
+        [Fact]
         public async Task GIVEN_PrivacySettings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
             TestContext.Render<MudPopoverProvider>();

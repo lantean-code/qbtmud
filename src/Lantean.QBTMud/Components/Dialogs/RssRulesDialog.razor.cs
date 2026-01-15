@@ -33,7 +33,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private QBitTorrentClient.Models.AutoDownloadingRule SelectedRule { get; set; } = default!;
 
-        protected bool UseRegex { get; set; }
+        protected bool? UseRegex { get; set; }
 
         protected void UseRegexChanged(bool value)
         {
@@ -65,7 +65,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             SelectedRule.EpisodeFilter = value;
         }
 
-        protected bool SmartFilter { get; set; }
+        protected bool? SmartFilter { get; set; }
 
         protected void SmartFilterChanged(bool value)
         {
@@ -89,7 +89,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             SelectedRule.TorrentParams.Tags = value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         }
 
-        protected bool SaveToDifferentDirectory { get; set; }
+        protected bool? SaveToDifferentDirectory { get; set; }
 
         protected void SaveToDifferentDirectoryChanged(bool value)
         {

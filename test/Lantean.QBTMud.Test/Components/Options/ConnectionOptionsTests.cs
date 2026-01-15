@@ -48,6 +48,59 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldUseDefaults()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, (Preferences?)null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            target.Instance.Preferences.Should().BeNull();
+            FindNumericInt(target, "MaxConnec").Instance.Disabled.Should().BeTrue();
+            FindTextField(target, "I2pAddress").Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_ValidationRules_WHEN_Invoked_THEN_ShouldReturnExpectedMessages()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var maxConnValidation = FindNumericInt(target, "MaxConnec").Instance.Validation as Func<int, string?>;
+            maxConnValidation.Should().NotBeNull();
+            maxConnValidation!(-1).Should().Be("Maximum number of connections limit must be greater than 0 or disabled.");
+            maxConnValidation(0).Should().BeNull();
+
+            var maxConnPerTorrentValidation = FindNumericInt(target, "MaxConnecPerTorrent").Instance.Validation as Func<int, string?>;
+            maxConnPerTorrentValidation.Should().NotBeNull();
+            maxConnPerTorrentValidation!(-1).Should().Be("Maximum number of connections per torrent limit must be greater than 0 or disabled.");
+            maxConnPerTorrentValidation(0).Should().BeNull();
+
+            var maxUploadsValidation = FindNumericInt(target, "MaxUploads").Instance.Validation as Func<int, string?>;
+            maxUploadsValidation.Should().NotBeNull();
+            maxUploadsValidation!(-1).Should().Be("Global number of upload slots limit must be greater than 0 or disabled.");
+            maxUploadsValidation(0).Should().BeNull();
+
+            var maxUploadsPerTorrentValidation = FindNumericInt(target, "MaxUploadsPerTorrent").Instance.Validation as Func<int, string?>;
+            maxUploadsPerTorrentValidation.Should().NotBeNull();
+            maxUploadsPerTorrentValidation!(-1).Should().Be("Maximum number of upload slots per torrent limit must be greater than 0 or disabled.");
+            maxUploadsPerTorrentValidation(0).Should().BeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_SwitchesAndInputs_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
             TestContext.Render<MudPopoverProvider>();
@@ -81,6 +134,48 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.ProxyType.Should().Be("None");
 
             events.Should().NotBeEmpty();
+            events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
+        }
+
+        [Fact]
+        public async Task GIVEN_ConnectionLimits_WHEN_ValuesChanged_THEN_ShouldUpdatePreferences()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializeCustomPreferences("""
+            {
+                "listen_port": 6881,
+                "upnp": true,
+                "max_connec": 800,
+                "max_connec_per_torrent": 300,
+                "max_uploads": 50,
+                "max_uploads_per_torrent": 12
+            }
+            """);
+
+            var update = new UpdatePreferences();
+            var events = new List<UpdatePreferences>();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
+            });
+
+            var perTorrentField = FindNumericInt(target, "MaxConnecPerTorrent");
+            await target.InvokeAsync(() => perTorrentField.Instance.ValueChanged.InvokeAsync(250));
+            update.MaxConnecPerTorrent.Should().Be(250);
+
+            var maxUploadsField = FindNumericInt(target, "MaxUploads");
+            await target.InvokeAsync(() => maxUploadsField.Instance.ValueChanged.InvokeAsync(40));
+            update.MaxUploads.Should().Be(40);
+
+            var uploadsPerTorrentField = FindNumericInt(target, "MaxUploadsPerTorrent");
+            await target.InvokeAsync(() => uploadsPerTorrentField.Instance.ValueChanged.InvokeAsync(8));
+            update.MaxUploadsPerTorrent.Should().Be(8);
+
+            events.Should().HaveCount(3);
             events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
         }
 
@@ -204,7 +299,11 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => proxyMiscSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.ProxyMisc.Should().BeFalse();
 
-            events.Should().HaveCount(11);
+            var proxyPeerConnectionsSwitch = FindSwitch(target, "ProxyPeerConnections");
+            await target.InvokeAsync(() => proxyPeerConnectionsSwitch.Instance.ValueChanged.InvokeAsync(true));
+            update.ProxyPeerConnections.Should().BeTrue();
+
+            events.Should().HaveCount(12);
             events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
         }
 

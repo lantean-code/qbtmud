@@ -43,6 +43,22 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldUseDefaults()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<RSSOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, (Preferences?)null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            target.Instance.Preferences.Should().BeNull();
+            FindSwitch(target, "RssProcessingEnabled").Instance.Value.Should().BeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_Settings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
             TestContext.Render<MudPopoverProvider>();

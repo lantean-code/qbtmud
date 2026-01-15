@@ -42,6 +42,23 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldUseDefaults()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<DownloadsOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, (Preferences?)null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            target.Instance.Preferences.Should().BeNull();
+            FindTextField(target, "TempPath").Instance.Disabled.Should().BeTrue();
+            FindTextField(target, "ExportDir").Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
         public async Task GIVEN_TogglesAndInputs_WHEN_Changed_THEN_ShouldUpdatePreferencesAndNotify()
         {
             TestContext.Render<MudPopoverProvider>();
@@ -314,6 +331,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             TestContext.Render<MudPopoverProvider>();
 
             var preferences = DeserializePreferences();
+            preferences.ScanDirs.Clear();
+            preferences.ScanDirs.Add("/watch", SaveLocation.Create("/override"));
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -324,8 +343,31 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
+            var existingSavePathField = FindExistingScanDirSavePath(target, 0);
+            existingSavePathField.Instance.GetState(x => x.Value).Should().Be("/override");
+
             var addedRowSelect = FindAddedScanDirType(target, 0);
             await target.InvokeAsync(() => addedRowSelect.Instance.ValueChanged.InvokeAsync("0"));
+
+            var addedKeyField = FindAddedScanDirKey(target, 0);
+            var validation = addedKeyField.Instance.Validation as Func<string, string?>;
+            validation.Should().NotBeNull();
+            string? nullKey = null;
+            validation!(nullKey!).Should().BeNull();
+            validation("/watch").Should().Be("A folder with this path already exists");
+            validation("/unique").Should().BeNull();
+
+            await target.InvokeAsync(() => addedKeyField.Instance.ValueChanged.InvokeAsync(string.Empty));
+            update.ScanDirs.Should().BeNull();
+
+            await target.InvokeAsync(() => existingSavePathField.Instance.ValueChanged.InvokeAsync("/override-new"));
+            update.ScanDirs.Should().NotBeNull();
+            update.ScanDirs!["/watch"].SavePath.Should().Be("/override-new");
+
+            var existingTypeSelect = FindExistingScanDirType(target, 0);
+            await target.InvokeAsync(() => existingTypeSelect.Instance.ValueChanged.InvokeAsync("0"));
+            update.ScanDirs.Should().NotBeNull();
+            update.ScanDirs!["/watch"].IsWatchedFolder.Should().BeTrue();
 
             var existingKeyField = FindExistingScanDirKey(target, 0);
             await target.InvokeAsync(() => existingKeyField.Instance.ValueChanged.InvokeAsync("/watch-renamed"));
@@ -334,10 +376,23 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.ScanDirs!.ContainsKey("/watch-renamed").Should().BeTrue();
             update.ScanDirs.ContainsKey("/watch").Should().BeFalse();
 
+            await target.InvokeAsync(() => addedRowSelect.Instance.ValueChanged.InvokeAsync("/custom"));
+            var addedSavePathField = FindAddedScanDirSavePath(target, 0);
+            addedSavePathField.Instance.GetState(x => x.Value).Should().Be("/custom");
+            await target.InvokeAsync(() => addedSavePathField.Instance.ValueChanged.InvokeAsync("/custom-updated"));
+            FindAddedScanDirSavePath(target, 0).Instance.GetState(x => x.Value).Should().Be("/custom-updated");
+
+            var addButton = FindAddedScanDirAddButton(target, 0);
+            await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+
+            var removeAddedButton = FindAddedScanDirRemoveButton(target, 0);
+            await target.InvokeAsync(() => removeAddedButton.Instance.OnClick.InvokeAsync());
+
             var newKeyField = FindAddedScanDirKey(target, 0);
             await target.InvokeAsync(() => newKeyField.Instance.ValueChanged.InvokeAsync("/new"));
 
-            update.ScanDirs.ContainsKey("/new").Should().BeTrue();
+            update.ScanDirs.Should().NotBeNull();
+            update.ScanDirs!.ContainsKey("/new").Should().BeTrue();
 
             var removeButton = FindExistingScanDirRemoveButton(target, 0);
             await target.InvokeAsync(() => removeButton.Instance.OnClick.InvokeAsync());
@@ -366,6 +421,16 @@ namespace Lantean.QBTMud.Test.Components.Options
             return FindTextField(target, $"ScanDirsExisting[{index}].Key");
         }
 
+        private static IRenderedComponent<MudSelect<string>> FindExistingScanDirType(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindSelect<string>(target, $"ScanDirsExisting[{index}].Type");
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindExistingScanDirSavePath(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindTextField(target, $"ScanDirsExisting[{index}].SavePath");
+        }
+
         private static IRenderedComponent<MudSelect<string>> FindAddedScanDirType(IRenderedComponent<DownloadsOptions> target, int index)
         {
             return FindSelect<string>(target, $"AddedScanDirs[{index}].Type");
@@ -374,6 +439,21 @@ namespace Lantean.QBTMud.Test.Components.Options
         private static IRenderedComponent<MudTextField<string>> FindAddedScanDirKey(IRenderedComponent<DownloadsOptions> target, int index)
         {
             return FindTextField(target, $"AddedScanDirs[{index}].Key");
+        }
+
+        private static IRenderedComponent<MudTextField<string>> FindAddedScanDirSavePath(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindTextField(target, $"AddedScanDirs[{index}].SavePath");
+        }
+
+        private static IRenderedComponent<MudIconButton> FindAddedScanDirAddButton(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindComponentByTestId<MudIconButton>(target, $"AddedScanDirs[{index}].Add");
+        }
+
+        private static IRenderedComponent<MudIconButton> FindAddedScanDirRemoveButton(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindComponentByTestId<MudIconButton>(target, $"AddedScanDirs[{index}].Remove");
         }
 
         private static IRenderedComponent<MudIconButton> FindExistingScanDirRemoveButton(IRenderedComponent<DownloadsOptions> target, int index)

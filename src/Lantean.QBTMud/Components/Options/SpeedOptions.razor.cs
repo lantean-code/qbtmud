@@ -7,10 +7,10 @@ namespace Lantean.QBTMud.Components.Options
         protected int AltUpLimit { get; private set; }
         protected int AltDlLimit { get; private set; }
         protected int BittorrentProtocol { get; private set; }
-        protected bool LimitUtpRate { get; private set; }
-        protected bool LimitTcpOverhead { get; private set; }
-        protected bool LimitLanPeers { get; private set; }
-        protected bool SchedulerEnabled { get; private set; }
+        protected bool? LimitUtpRate { get; private set; }
+        protected bool? LimitTcpOverhead { get; private set; }
+        protected bool? LimitLanPeers { get; private set; }
+        protected bool? SchedulerEnabled { get; private set; }
         protected TimeSpan ScheduleFrom { get; private set; }
         protected TimeSpan ScheduleTo { get; private set; }
         protected int SchedulerDays { get; private set; }

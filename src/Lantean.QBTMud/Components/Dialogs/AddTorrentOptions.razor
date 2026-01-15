@@ -49,10 +49,10 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="Start torrent" @bind-Value="StartTorrent" />
+            <FieldSwitch Label="Start torrent" Value="StartTorrent" ValueChanged="StartTorrentChanged" />
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="Add to top of queue" @bind-Value="AddToTopOfQueue" />
+            <FieldSwitch Label="Add to top of queue" Value="AddToTopOfQueue" ValueChanged="AddToTopOfQueueChanged" />
         </MudItem>
         <MudItem xs="12">
             <MudSelect T="string" Label="Stop condition" Value="@StopCondition" ValueChanged="@StopConditionChanged" Variant="Variant.Outlined" ShrinkLabel="true">
@@ -62,7 +62,7 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="Skip hash check" @bind-Value="SkipHashCheck" />
+            <FieldSwitch Label="Skip hash check" Value="SkipHashCheck" ValueChanged="SkipHashCheckChanged" />
         </MudItem>
         <MudItem xs="12">
             <MudSelect T="string" Label="Content layout" Value="@ContentLayout" ValueChanged="@ContentLayoutChanged" Variant="Variant.Outlined" ShrinkLabel="true">
@@ -72,10 +72,10 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="Download in sequential order" @bind-Value="DownloadInSequentialOrder" />
+            <FieldSwitch Label="Download in sequential order" Value="DownloadInSequentialOrder" ValueChanged="DownloadInSequentialOrderChanged" />
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="Download first and last pieces first" @bind-Value="DownloadFirstAndLastPiecesFirst" />
+            <FieldSwitch Label="Download first and last pieces first" Value="DownloadFirstAndLastPiecesFirst" ValueChanged="DownloadFirstAndLastPiecesFirstChanged" />
         </MudItem>
         <MudItem xs="12" sm="6">
             <MudNumericField Label="Limit download rate" @bind-Value="DownloadLimit" Variant="Variant.Outlined" ShrinkLabel="true" Min="0" />
@@ -94,19 +94,19 @@
             <FieldSwitch Label="Ratio" Value="@RatioLimitEnabled" ValueChanged="@RatioLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" />
         </MudItem>
         <MudItem xs="12" sm="8">
-            <MudNumericField T="float" Label="Ratio limit" Value="@RatioLimit" ValueChanged="@RatioLimitChanged" Disabled="@(!RatioLimitEnabled || !IsCustomShareLimit)" Min="0" Step="0.1f" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" />
+            <MudNumericField T="float" Label="Ratio limit" Value="@RatioLimit" ValueChanged="@RatioLimitChanged" Disabled="@(!RatioLimitEnabled.GetValueOrDefault() || !IsCustomShareLimit)" Min="0" Step="0.1f" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" />
         </MudItem>
         <MudItem xs="12" sm="4">
             <FieldSwitch Label="Total minutes" Value="@SeedingTimeLimitEnabled" ValueChanged="@SeedingTimeLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" />
         </MudItem>
         <MudItem xs="12" sm="8">
-            <MudNumericField T="int" Label="Total minutes" Value="@SeedingTimeLimit" ValueChanged="@SeedingTimeLimitChanged" Disabled="@(!SeedingTimeLimitEnabled || !IsCustomShareLimit)" Min="1" Variant="Variant.Outlined" ShrinkLabel="true" />
+            <MudNumericField T="int" Label="Total minutes" Value="@SeedingTimeLimit" ValueChanged="@SeedingTimeLimitChanged" Disabled="@(!SeedingTimeLimitEnabled.GetValueOrDefault() || !IsCustomShareLimit)" Min="1" Variant="Variant.Outlined" ShrinkLabel="true" />
         </MudItem>
         <MudItem xs="12" sm="4">
             <FieldSwitch Label="Inactive minutes" Value="@InactiveSeedingTimeLimitEnabled" ValueChanged="@InactiveSeedingTimeLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" />
         </MudItem>
         <MudItem xs="12" sm="8">
-            <MudNumericField T="int" Label="Inactive minutes" Value="@InactiveSeedingTimeLimit" ValueChanged="@InactiveSeedingTimeLimitChanged" Disabled="@(!InactiveSeedingTimeLimitEnabled || !IsCustomShareLimit)" Min="1" Variant="Variant.Outlined" ShrinkLabel="true" />
+            <MudNumericField T="int" Label="Inactive minutes" Value="@InactiveSeedingTimeLimit" ValueChanged="@InactiveSeedingTimeLimitChanged" Disabled="@(!InactiveSeedingTimeLimitEnabled.GetValueOrDefault() || !IsCustomShareLimit)" Min="1" Variant="Variant.Outlined" ShrinkLabel="true" />
         </MudItem>
         <MudItem xs="12">
             <MudSelect T="ShareLimitAction" Label="Action when limit is reached" Value="@SelectedShareLimitAction" ValueChanged="@ShareLimitActionChanged" Disabled="@(!IsCustomShareLimit)" Variant="Variant.Outlined" ShrinkLabel="true">

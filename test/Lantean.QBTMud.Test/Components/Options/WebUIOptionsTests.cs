@@ -51,6 +51,128 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldUseDefaults()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<WebUIOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, (Preferences?)null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            target.Instance.Preferences.Should().BeNull();
+            FindTextField(target, "WebUiHttpsCertPath").Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_LocaleAndPerformance_WHEN_Changed_THEN_ShouldUpdatePreferences()
+        {
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<WebUiOptionsHarness>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            await target.InvokeAsync(() => target.Instance.InvokeLocaleChanged("fr"));
+            await target.InvokeAsync(() => target.Instance.InvokePerformanceWarningChanged(true));
+
+            update.Locale.Should().Be("fr");
+            update.PerformanceWarning.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_RegisterDyndnsService_WHEN_DisabledOrInvalid_THEN_ShouldReturnOrThrow()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var disabledTarget = TestContext.Render<WebUiOptionsHarness>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, (Preferences?)null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            await disabledTarget.InvokeAsync(() => disabledTarget.Instance.InvokeRegisterDyndnsService());
+            TestContext.JSInterop.Invocations.Should().BeEmpty();
+
+            var preferences = DeserializePreferences();
+            var invalidTarget = TestContext.Render<WebUiOptionsHarness>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            await invalidTarget.InvokeAsync(() => invalidTarget.Instance.InvokeDyndnsServiceChanged(2));
+            Func<Task> act = async () => await invalidTarget.InvokeAsync(() => invalidTarget.Instance.InvokeRegisterDyndnsService());
+            await act.Should().ThrowAsync<InvalidOperationException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_ValidationRules_WHEN_Invoked_THEN_ShouldReturnExpectedMessages()
+        {
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<WebUIOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var portValidation = FindNumeric(target, "WebUiPort").Instance.Validation as Func<int, string?>;
+            portValidation.Should().NotBeNull();
+            portValidation!(0).Should().Be("The port used for the Web UI must be between 1 and 65535.");
+            portValidation(1).Should().BeNull();
+            portValidation(65536).Should().Be("The port used for the Web UI must be between 1 and 65535.");
+
+            var usernameValidation = FindTextField(target, "WebUiUsername").Instance.Validation as Func<string?, string?>;
+            usernameValidation.Should().NotBeNull();
+            string? nullValue = null;
+            usernameValidation!(nullValue).Should().Be("The Web UI username must be at least 3 characters long.");
+            usernameValidation("ab").Should().Be("The Web UI username must be at least 3 characters long.");
+            usernameValidation("abc").Should().BeNull();
+
+            var passwordValidation = FindTextField(target, "WebUiPassword").Instance.Validation as Func<string?, string?>;
+            passwordValidation.Should().NotBeNull();
+            passwordValidation!("12345").Should().Be("The Web UI password must be at least 6 characters long.");
+            passwordValidation("123456").Should().BeNull();
+
+            var certValidation = FindTextField(target, "WebUiHttpsCertPath").Instance.Validation as Func<string?, string?>;
+            certValidation.Should().NotBeNull();
+            certValidation!(string.Empty).Should().Be("HTTPS certificate should not be empty.");
+            certValidation("/cert.pem").Should().BeNull();
+
+            var keyValidation = FindTextField(target, "WebUiHttpsKeyPath").Instance.Validation as Func<string?, string?>;
+            keyValidation.Should().NotBeNull();
+            keyValidation!(string.Empty).Should().Be("HTTPS key should not be empty.");
+            keyValidation("/key.pem").Should().BeNull();
+
+            await target.InvokeAsync(() => FindSwitch(target, "UseHttps").Instance.ValueChanged.InvokeAsync(false));
+            certValidation(string.Empty).Should().BeNull();
+            keyValidation(string.Empty).Should().BeNull();
+
+            var altValidation = FindTextField(target, "AlternativeWebuiPath").Instance.Validation as Func<string?, string?>;
+            altValidation.Should().NotBeNull();
+            altValidation!(string.Empty).Should().Be("The alternative Web UI files location cannot be blank.");
+            altValidation("/var/ui").Should().BeNull();
+
+            await target.InvokeAsync(() => FindSwitch(target, "AlternativeWebuiEnabled").Instance.ValueChanged.InvokeAsync(false));
+            altValidation(string.Empty).Should().BeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_WebUiSettings_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
             var preferences = DeserializePreferences();
@@ -349,6 +471,29 @@ namespace Lantean.QBTMud.Test.Components.Options
         private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<WebUIOptions> target, string testId)
         {
             return FindComponentByTestId<MudSelect<T>>(target, testId);
+        }
+
+        private sealed class WebUiOptionsHarness : WebUIOptions
+        {
+            public Task InvokeLocaleChanged(string value)
+            {
+                return LocaleChanged(value);
+            }
+
+            public Task InvokePerformanceWarningChanged(bool value)
+            {
+                return PerformanceWarningChanged(value);
+            }
+
+            public Task InvokeDyndnsServiceChanged(int value)
+            {
+                return DyndnsServiceChanged(value);
+            }
+
+            public Task InvokeRegisterDyndnsService()
+            {
+                return RegisterDyndnsService();
+            }
         }
     }
 }

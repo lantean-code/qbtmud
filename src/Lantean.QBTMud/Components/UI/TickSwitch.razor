@@ -7,9 +7,22 @@
 @code{
     protected override void OnParametersSet()
     {
-        var boolValue = BoolValue;
+        base.OnParametersSet();
+        UpdateThumbIcon(BoolValue);
+    }
+
+    protected override async Task OnChange(ChangeEventArgs args)
+    {
+        await base.OnChange(args);
+        UpdateThumbIcon(BoolValue);
+    }
+
+    private void UpdateThumbIcon(bool? boolValue)
+    {
         if (boolValue is null)
         {
+            ThumbIcon = null;
+            ThumbIconColor = Color.Default;
             return;
         }
 

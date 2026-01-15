@@ -30,9 +30,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected string DownloadPath { get; set; } = string.Empty;
 
-        protected bool UseDownloadPath { get; set; }
+        protected bool? UseDownloadPath { get; set; }
 
-        protected bool DownloadPathDisabled => TorrentManagementMode || !UseDownloadPath;
+        protected bool DownloadPathDisabled => TorrentManagementMode || !UseDownloadPath.GetValueOrDefault();
 
         protected string? Cookie { get; set; }
 
@@ -46,19 +46,19 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected HashSet<string> SelectedTags { get; private set; } = new(StringComparer.Ordinal);
 
-        protected bool StartTorrent { get; set; } = true;
+        protected bool? StartTorrent { get; set; } = true;
 
-        protected bool AddToTopOfQueue { get; set; } = true;
+        protected bool? AddToTopOfQueue { get; set; } = true;
 
         protected string StopCondition { get; set; } = "None";
 
-        protected bool SkipHashCheck { get; set; }
+        protected bool? SkipHashCheck { get; set; }
 
         protected string ContentLayout { get; set; } = "Original";
 
-        protected bool DownloadInSequentialOrder { get; set; }
+        protected bool? DownloadInSequentialOrder { get; set; }
 
-        protected bool DownloadFirstAndLastPiecesFirst { get; set; }
+        protected bool? DownloadFirstAndLastPiecesFirst { get; set; }
 
         protected long DownloadLimit { get; set; }
 
@@ -66,15 +66,15 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected ShareLimitMode SelectedShareLimitMode { get; set; } = ShareLimitMode.Global;
 
-        protected bool RatioLimitEnabled { get; set; }
+        protected bool? RatioLimitEnabled { get; set; }
 
         protected float RatioLimit { get; set; } = 1.0f;
 
-        protected bool SeedingTimeLimitEnabled { get; set; }
+        protected bool? SeedingTimeLimitEnabled { get; set; }
 
         protected int SeedingTimeLimit { get; set; } = 1440;
 
-        protected bool InactiveSeedingTimeLimitEnabled { get; set; }
+        protected bool? InactiveSeedingTimeLimitEnabled { get; set; }
 
         protected int InactiveSeedingTimeLimit { get; set; } = 1440;
 
@@ -108,7 +108,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             _manualDownloadPath = _defaultDownloadPath;
             _manualUseDownloadPath = preferences.TempPathEnabled;
             UseDownloadPath = _manualUseDownloadPath;
-            DownloadPath = UseDownloadPath ? _manualDownloadPath : string.Empty;
+            DownloadPath = UseDownloadPath.GetValueOrDefault() ? _manualDownloadPath : string.Empty;
 
             StartTorrent = !preferences.AddStoppedEnabled;
             AddToTopOfQueue = preferences.AddToTopOfQueue;
@@ -191,7 +191,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected void DownloadPathChanged(string value)
         {
             DownloadPath = value;
-            if (!TorrentManagementMode && UseDownloadPath)
+            if (!TorrentManagementMode && UseDownloadPath.GetValueOrDefault())
             {
                 _manualDownloadPath = value;
             }
@@ -213,6 +213,16 @@ namespace Lantean.QBTMud.Components.Dialogs
                 : new HashSet<string>(tags, StringComparer.Ordinal);
         }
 
+        protected void StartTorrentChanged(bool value)
+        {
+            StartTorrent = value;
+        }
+
+        protected void AddToTopOfQueueChanged(bool value)
+        {
+            AddToTopOfQueue = value;
+        }
+
         protected void StopConditionChanged(string value)
         {
             StopCondition = value;
@@ -221,6 +231,21 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected void ContentLayoutChanged(string value)
         {
             ContentLayout = value;
+        }
+
+        protected void SkipHashCheckChanged(bool value)
+        {
+            SkipHashCheck = value;
+        }
+
+        protected void DownloadInSequentialOrderChanged(bool value)
+        {
+            DownloadInSequentialOrder = value;
+        }
+
+        protected void DownloadFirstAndLastPiecesFirstChanged(bool value)
+        {
+            DownloadFirstAndLastPiecesFirst = value;
         }
 
         protected void ShareLimitModeChanged(ShareLimitMode mode)
@@ -278,18 +303,18 @@ namespace Lantean.QBTMud.Components.Dialogs
                 Cookie,
                 RenameTorrent,
                 string.IsNullOrWhiteSpace(Category) ? null : Category,
-                StartTorrent,
-                AddToTopOfQueue,
+                StartTorrent.GetValueOrDefault(),
+                AddToTopOfQueue.GetValueOrDefault(),
                 StopCondition,
-                SkipHashCheck,
+                SkipHashCheck.GetValueOrDefault(),
                 ContentLayout,
-                DownloadInSequentialOrder,
-                DownloadFirstAndLastPiecesFirst,
+                DownloadInSequentialOrder.GetValueOrDefault(),
+                DownloadFirstAndLastPiecesFirst.GetValueOrDefault(),
                 DownloadLimit,
                 UploadLimit);
 
-            options.UseDownloadPath = TorrentManagementMode ? null : UseDownloadPath;
-            options.DownloadPath = (!TorrentManagementMode && UseDownloadPath) ? DownloadPath : null;
+            options.UseDownloadPath = TorrentManagementMode ? null : UseDownloadPath.GetValueOrDefault();
+            options.DownloadPath = (!TorrentManagementMode && UseDownloadPath.GetValueOrDefault()) ? DownloadPath : null;
             options.Tags = SelectedTags.Count > 0 ? SelectedTags.ToArray() : null;
 
             switch (SelectedShareLimitMode)
@@ -309,9 +334,9 @@ namespace Lantean.QBTMud.Components.Dialogs
                     break;
 
                 case ShareLimitMode.Custom:
-                    options.RatioLimit = RatioLimitEnabled ? RatioLimit : Limits.NoLimit;
-                    options.SeedingTimeLimit = SeedingTimeLimitEnabled ? SeedingTimeLimit : Limits.NoLimit;
-                    options.InactiveSeedingTimeLimit = InactiveSeedingTimeLimitEnabled ? InactiveSeedingTimeLimit : Limits.NoLimit;
+                    options.RatioLimit = RatioLimitEnabled.GetValueOrDefault() ? RatioLimit : Limits.NoLimit;
+                    options.SeedingTimeLimit = SeedingTimeLimitEnabled.GetValueOrDefault() ? SeedingTimeLimit : Limits.NoLimit;
+                    options.InactiveSeedingTimeLimit = InactiveSeedingTimeLimitEnabled.GetValueOrDefault() ? InactiveSeedingTimeLimit : Limits.NoLimit;
                     options.ShareLimitAction = SelectedShareLimitAction.ToString();
                     break;
             }

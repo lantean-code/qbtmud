@@ -48,6 +48,78 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldUseDefaults()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<SpeedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, (Preferences?)null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            target.Instance.Preferences.Should().BeNull();
+            FindTimePicker(target, "ScheduleFrom").Instance.Disabled.Should().BeTrue();
+            FindTimePicker(target, "ScheduleTo").Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_ValidationRules_WHEN_Invoked_THEN_ShouldReturnExpectedMessages()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<SpeedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var upValidation = FindNumeric(target, "UpLimit").Instance.Validation as Func<int, string?>;
+            upValidation.Should().NotBeNull();
+            upValidation!(-1).Should().Be("Global upload rate limit must be greater than 0 or disabled.");
+            upValidation(0).Should().BeNull();
+
+            var dlValidation = FindNumeric(target, "DlLimit").Instance.Validation as Func<int, string?>;
+            dlValidation.Should().NotBeNull();
+            dlValidation!(-1).Should().Be("Global download rate limit must be greater than 0 or disabled.");
+            dlValidation(0).Should().BeNull();
+
+            var altUpValidation = FindNumeric(target, "AltUpLimit").Instance.Validation as Func<int, string?>;
+            altUpValidation.Should().NotBeNull();
+            altUpValidation!(-1).Should().Be("Alternative upload rate limit must be greater than 0 or disabled.");
+            altUpValidation(0).Should().BeNull();
+
+            var altDlValidation = FindNumeric(target, "AltDlLimit").Instance.Validation as Func<int, string?>;
+            altDlValidation.Should().NotBeNull();
+            altDlValidation!(-1).Should().Be("Alternative download rate limit must be greater than 0 or disabled.");
+            altDlValidation(0).Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_Protocol_WHEN_Changed_THEN_ShouldUpdatePreferences()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<SpeedOptionsHarness>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            await target.InvokeAsync(() => target.Instance.InvokeBittorrentProtocolChanged(1));
+            update.BittorrentProtocol.Should().Be(1);
+        }
+
+        [Fact]
         public async Task GIVEN_UserAdjustments_WHEN_Changed_THEN_ShouldUpdatePreferences()
         {
             TestContext.Render<MudPopoverProvider>();
@@ -240,6 +312,14 @@ namespace Lantean.QBTMud.Test.Components.Options
         private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<SpeedOptions> target, string testId)
         {
             return FindComponentByTestId<MudSelect<T>>(target, testId);
+        }
+
+        private sealed class SpeedOptionsHarness : SpeedOptions
+        {
+            public Task InvokeBittorrentProtocolChanged(int value)
+            {
+                return BittorrentProtocolChanged(value);
+            }
         }
     }
 }

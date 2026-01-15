@@ -25,15 +25,15 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected int ShareRatioType { get; set; }
 
-        protected bool RatioEnabled { get; set; }
+        protected bool? RatioEnabled { get; set; }
 
         protected float Ratio { get; set; }
 
-        protected bool TotalMinutesEnabled { get; set; }
+        protected bool? TotalMinutesEnabled { get; set; }
 
         protected int TotalMinutes { get; set; }
 
-        protected bool InactiveMinutesEnabled { get; set; }
+        protected bool? InactiveMinutesEnabled { get; set; }
 
         protected int InactiveMinutes { get; set; }
 
@@ -162,9 +162,9 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             else
             {
-                result.RatioLimit = RatioEnabled ? Ratio : Limits.NoLimit;
-                result.SeedingTimeLimit = TotalMinutesEnabled ? TotalMinutes : Limits.NoLimit;
-                result.InactiveSeedingTimeLimit = InactiveMinutesEnabled ? InactiveMinutes : Limits.NoLimit;
+                result.RatioLimit = RatioEnabled.GetValueOrDefault() ? Ratio : Limits.NoLimit;
+                result.SeedingTimeLimit = TotalMinutesEnabled.GetValueOrDefault() ? TotalMinutes : Limits.NoLimit;
+                result.InactiveSeedingTimeLimit = InactiveMinutesEnabled.GetValueOrDefault() ? InactiveMinutes : Limits.NoLimit;
                 result.ShareLimitAction = SelectedShareLimitAction;
             }
             MudDialog.Close(DialogResult.Ok(result));

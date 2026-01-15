@@ -48,12 +48,37 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindNumeric(target, "SaveResumeDataInterval").Instance.GetState(x => x.Value).Should().Be(15);
             FindNumeric(target, "TorrentFileSizeLimit").Instance.GetState(x => x.Value).Should().Be(150);
             FindSwitch(target, "RecheckCompletedTorrents").Instance.Value.Should().BeTrue();
+            FindTextField(target, "AppInstanceName").Instance.GetState(x => x.Value).Should().Be("Instance");
             FindNumeric(target, "RefreshInterval").Instance.GetState(x => x.Value).Should().Be(1500);
             FindSwitch(target, "ResolvePeerCountries").Instance.Value.Should().BeTrue();
             FindSwitch(target, "EnableEmbeddedTracker").Instance.Value.Should().BeTrue();
             FindNumeric(target, "EmbeddedTrackerPort").Instance.GetState(x => x.Value).Should().Be(19000);
             FindSwitch(target, "EmbeddedTrackerPortForwarding").Instance.Value.Should().BeTrue();
+            FindSwitch(target, "MarkOfTheWeb").Instance.Value.Should().BeFalse();
+            FindTextField(target, "PythonExecutablePath").Instance.GetState(x => x.Value).Should().Be("/usr/bin/python");
+            FindTextField(target, "DhtBootstrapNodes").Instance.GetState(x => x.Value).Should().Be("node.example.com");
             target.Markup.Should().Contain("Ethernet");
+        }
+
+        [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldUseDefaults()
+        {
+            var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
+            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<AdvancedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, (Preferences?)null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            target.Instance.Preferences.Should().BeNull();
+            FindTextField(target, "AppInstanceName").Instance.GetState(x => x.Value).Should().BeNull();
+            FindNumeric(target, "RefreshInterval").Instance.GetState(x => x.Value).Should().Be(0);
         }
 
         [Fact]
@@ -95,6 +120,11 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.CurrentInterfaceAddress.Should().Be("::");
             raised[^1].Should().BeSameAs(update);
             api.Verify(a => a.GetNetworkInterfaceAddressList("eth0"), Times.Once);
+            await target.InvokeAsync(() => addressSelect.Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+                target.FindComponents<MudSelectItem<string>>()
+                    .Any(component => component.Instance.Value == "192.168.0.10")
+                    .Should().BeTrue());
         }
 
         [Fact]
@@ -123,9 +153,12 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindNumeric(target, "TorrentFileSizeLimit").Instance.ValueChanged.InvokeAsync(175));
             await target.InvokeAsync(() => FindSwitch(target, "RecheckCompletedTorrents").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "ConfirmTorrentRecheck").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindTextField(target, "AppInstanceName").Instance.ValueChanged.InvokeAsync("InstanceName"));
             await target.InvokeAsync(() => FindNumeric(target, "RefreshInterval").Instance.ValueChanged.InvokeAsync(2000));
             await target.InvokeAsync(() => FindSwitch(target, "ResolvePeerCountries").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "ReannounceWhenAddressChanged").Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => FindSwitch(target, "MarkOfTheWeb").Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => FindTextField(target, "PythonExecutablePath").Instance.ValueChanged.InvokeAsync("/usr/bin/python3"));
 
             update.ResumeDataStorageType.Should().Be("Legacy");
             update.MemoryWorkingSetLimit.Should().Be(768);
@@ -133,9 +166,12 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.TorrentFileSizeLimit.Should().Be(175 * 1024 * 1024);
             update.RecheckCompletedTorrents.Should().BeFalse();
             update.ConfirmTorrentRecheck.Should().BeFalse();
+            update.AppInstanceName.Should().Be("InstanceName");
             update.RefreshInterval.Should().Be(2000);
             update.ResolvePeerCountries.Should().BeFalse();
             update.ReannounceWhenAddressChanged.Should().BeFalse();
+            update.MarkOfTheWeb.Should().BeTrue();
+            update.PythonExecutablePath.Should().Be("/usr/bin/python3");
             raised.Should().NotBeEmpty();
         }
 
@@ -288,6 +324,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindNumeric(target, "PeerTurnoverCutoff").Instance.ValueChanged.InvokeAsync(25));
             await target.InvokeAsync(() => FindNumeric(target, "PeerTurnoverInterval").Instance.ValueChanged.InvokeAsync(120));
             await target.InvokeAsync(() => FindNumeric(target, "RequestQueueSize").Instance.ValueChanged.InvokeAsync(200));
+            await target.InvokeAsync(() => FindTextField(target, "DhtBootstrapNodes").Instance.ValueChanged.InvokeAsync("node.one:6881,node.two:6881"));
             await target.InvokeAsync(() => FindNumeric(target, "I2pInboundQuantity").Instance.ValueChanged.InvokeAsync(6));
             await target.InvokeAsync(() => FindNumeric(target, "I2pOutboundQuantity").Instance.ValueChanged.InvokeAsync(4));
             await target.InvokeAsync(() => FindNumeric(target, "I2pInboundLength").Instance.ValueChanged.InvokeAsync(3));
@@ -304,6 +341,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.PeerTurnoverCutoff.Should().Be(25);
             update.PeerTurnoverInterval.Should().Be(120);
             update.RequestQueueSize.Should().Be(200);
+            update.DhtBootstrapNodes.Should().Be("node.one:6881,node.two:6881");
             update.I2pInboundQuantity.Should().Be(6);
             update.I2pOutboundQuantity.Should().Be(4);
             update.I2pInboundLength.Should().Be(3);

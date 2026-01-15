@@ -47,6 +47,9 @@
                 <FieldSwitch Label="Recheck torrents on completion" Value="RecheckCompletedTorrents" ValueChanged="RecheckCompletedTorrentsChanged" data-test-id="@TestIdHelper.For("RecheckCompletedTorrents")" />
             </MudItem>
             <MudItem xs="12">
+                <MudTextField T="string" Label="Customize application instance name" Value="AppInstanceName" ValueChanged="AppInstanceNameChanged" Variant="Variant.Outlined" ShrinkLabel="true" HelperText="It appends the text to the window title to help distinguish qBittorrent instances" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AppInstanceName")" />
+            </MudItem>
+            <MudItem xs="12">
                 <MudNumericField T="int" Label="Refresh interval" Value="RefreshInterval" ValueChanged="RefreshIntervalChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="ms" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RefreshInterval")" />
             </MudItem>
             <MudItem xs="12">
@@ -63,6 +66,12 @@
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="Enable port forwarding for embedded tracker" Value="EmbeddedTrackerPortForwarding" ValueChanged="EmbeddedTrackerPortForwardingChanged" data-test-id="@TestIdHelper.For("EmbeddedTrackerPortForwarding")" />
+            </MudItem>
+            <MudItem xs="12">
+                <FieldSwitch Label="Enable Mark-of-the-Web (MOTW) for downloaded files (requires macOS or Windows)" Value="MarkOfTheWeb" ValueChanged="MarkOfTheWebChanged" data-test-id="@TestIdHelper.For("MarkOfTheWeb")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Python executable path (may require restart)" Value="PythonExecutablePath" ValueChanged="PythonExecutablePathChanged" Placeholder="Auto detect if empty" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("PythonExecutablePath")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -240,6 +249,9 @@
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="Maximum outstanding requests to a single peer" Value="RequestQueueSize" ValueChanged="RequestQueueSizeChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RequestQueueSize")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="DHT bootstrap nodes" Value="DhtBootstrapNodes" ValueChanged="DhtBootstrapNodesChanged" Placeholder="Resets to default if empty" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DhtBootstrapNodes")" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="I2P inbound quantity (requires libtorrent &gt;= 2.0)" Value="I2pInboundQuantity" ValueChanged="I2pInboundQuantityChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("I2pInboundQuantity")" />
