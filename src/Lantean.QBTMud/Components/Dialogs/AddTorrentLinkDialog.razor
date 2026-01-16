@@ -1,18 +1,19 @@
 @inherits SubmittableDialog
+@using Lantean.QBTMud.Helpers
 
 <MudDialog>
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
                 <MudFocusTrap>
-                    <MudTextField @ref="UrlsTextField" Label="Urls" Lines="10" @bind-Value="Urls" Variant="Variant.Outlined" ShrinkLabel="true" AutoFocus="true" />
+                    <MudTextField @ref="UrlsTextField" Label="Urls" Lines="10" @bind-Value="Urls" Variant="Variant.Outlined" ShrinkLabel="true" AutoFocus="true" data-test-id="@TestIdHelper.For("AddTorrentLinkUrls")" />
                 </MudFocusTrap>
             </MudItem>
         </MudGrid>
         <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="false" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Close</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Upload Torrents</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTorrentLinkClose")">Close</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTorrentLinkSubmit")">Upload Torrents</MudButton>
     </DialogActions>
 </MudDialog>
