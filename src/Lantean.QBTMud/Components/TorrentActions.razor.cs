@@ -705,7 +705,7 @@ namespace Lantean.QBTMud.Components
             {
                 if (action.Name == "tags")
                 {
-                    var hasAppliedTags = ApplyTags(firstTorrent, action);
+                    var hasAppliedTags = ApplyTags(action);
                     if (!hasAppliedTags)
                     {
                         continue;
@@ -713,34 +713,19 @@ namespace Lantean.QBTMud.Components
                 }
                 if (action.Name == "category")
                 {
-                    if (!Hashes.Any())
+                    var hasAppliedCategories = ApplyCategories(action);
+                    if (!hasAppliedCategories)
                     {
                         continue;
                     }
-                    if (firstTorrent is null)
-                    {
-                        continue;
-                    }
-                    action.Children = Categories.Values.Select(category => new UIAction(
-                        name: $"category-{category.Name}",
-                        text: category.Name,
-                        icon: Icons.Material.Filled.Check,
-                        color: IsCategoryApplied(category.Name, firstTorrent.Hash) ? Color.Info : Color.Transparent,
-                        callback: CreateCallback(() => ToggleCategory(category.Name, firstTorrent)),
-                        autoClose: false
-                    ));
                 }
                 yield return action;
             }
         }
 
-        private bool ApplyTags(Torrent? firstTorrent, UIAction action)
+        private bool ApplyTags(UIAction action)
         {
             if (!Hashes.Any())
-            {
-                return false;
-            }
-            if (firstTorrent is null)
             {
                 return false;
             }
@@ -748,14 +733,43 @@ namespace Lantean.QBTMud.Components
             {
                 return false;
             }
-            action.Children = Tags.Select(tag => new UIAction(
-                name: $"tag-{tag}",
-                text: tag,
-                icon: Icons.Material.Filled.Check,
-                color: IsTagApplied(tag, firstTorrent.Hash) ? Color.Info : Color.Transparent,
-                callback: CreateCallback(() => ToggleTag(tag, firstTorrent)),
-                autoClose: false
-            ));
+            action.Children = Tags.Select(tag =>
+            {
+                var state = GetTagSelectionState(tag);
+                return new UIAction(
+                    name: $"tag-{tag}",
+                    text: tag,
+                    icon: GetTagIcon(state),
+                    color: GetTagColor(state),
+                    callback: CreateCallback(() => ToggleTag(tag)),
+                    autoClose: false
+                );
+            });
+            return true;
+        }
+
+        private bool ApplyCategories(UIAction action)
+        {
+            if (!Hashes.Any())
+            {
+                return false;
+            }
+            if (Categories.Count == 0)
+            {
+                return false;
+            }
+            action.Children = Categories.Values.Select(category =>
+            {
+                var state = GetCategorySelectionState(category.Name);
+                return new UIAction(
+                    name: $"category-{category.Name}",
+                    text: category.Name,
+                    icon: GetTagIcon(state),
+                    color: GetTagColor(state),
+                    callback: CreateCallback(() => ToggleCategory(category.Name)),
+                    autoClose: false
+                );
+            });
             return true;
         }
 
@@ -763,46 +777,159 @@ namespace Lantean.QBTMud.Components
 
         private Dictionary<string, string?> CategoryState { get; set; } = [];
 
-        private bool IsTagApplied(string tag, string hash)
+        private TagSelectionState GetTagSelectionState(string tag)
         {
-            TagState.TryGetValue(hash, out var tags);
+            var hasTag = false;
+            var missingTag = false;
 
-            return tags?.Contains(tag) == true;
-        }
-
-        private bool IsCategoryApplied(string category, string hash)
-        {
-            CategoryState.TryGetValue(hash, out var cat);
-            return cat == category;
-        }
-
-        private async Task ToggleTag(string tag, Torrent torrent)
-        {
-            if (torrent.Tags.Contains(tag))
+            foreach (var hash in Hashes)
             {
-                await ApiClient.RemoveTorrentTag(tag, torrent.Hash);
+                if (TagState.TryGetValue(hash, out var tags) && tags.Contains(tag))
+                {
+                    hasTag = true;
+                }
+                else
+                {
+                    missingTag = true;
+                }
 
-                TagState[torrent.Hash].Remove(tag);
+                if (hasTag && missingTag)
+                {
+                    return TagSelectionState.Partial;
+                }
+            }
+
+            if (hasTag)
+            {
+                return TagSelectionState.All;
+            }
+
+            return TagSelectionState.None;
+        }
+
+        private TagSelectionState GetCategorySelectionState(string category)
+        {
+            var hasCategory = false;
+            var missingCategory = false;
+
+            foreach (var hash in Hashes)
+            {
+                if (CategoryState.TryGetValue(hash, out var currentCategory) && currentCategory == category)
+                {
+                    hasCategory = true;
+                }
+                else
+                {
+                    missingCategory = true;
+                }
+
+                if (hasCategory && missingCategory)
+                {
+                    return TagSelectionState.Partial;
+                }
+            }
+
+            if (hasCategory)
+            {
+                return TagSelectionState.All;
+            }
+
+            return TagSelectionState.None;
+        }
+
+        private string GetTagIcon(TagSelectionState state)
+        {
+            return state switch
+            {
+                TagSelectionState.All => Icons.Material.Filled.Check,
+                TagSelectionState.Partial => Icons.Material.Filled.HorizontalRule,
+                _ => Icons.Material.Filled.Check
+            };
+        }
+
+        private Color GetTagColor(TagSelectionState state)
+        {
+            return state switch
+            {
+                TagSelectionState.All => Color.Info,
+                TagSelectionState.Partial => Color.Warning,
+                _ => Color.Transparent
+            };
+        }
+
+        private async Task ToggleTag(string tag)
+        {
+            var selectedHashes = Hashes.ToArray();
+            if (selectedHashes.Length == 0)
+            {
+                return;
+            }
+
+            var allHaveTag = GetTagSelectionState(tag) == TagSelectionState.All;
+
+            if (allHaveTag)
+            {
+                await ApiClient.RemoveTorrentTag(tag, selectedHashes);
+
+                foreach (var hash in selectedHashes)
+                {
+                    if (TagState.TryGetValue(hash, out var tags))
+                    {
+                        tags.Remove(tag);
+                    }
+                }
             }
             else
             {
-                await ApiClient.AddTorrentTag(tag, torrent.Hash);
+                await ApiClient.AddTorrentTag(tag, selectedHashes);
 
-                TagState[torrent.Hash].Add(tag);
+                foreach (var hash in selectedHashes)
+                {
+                    if (!TagState.TryGetValue(hash, out var tags))
+                    {
+                        tags = [];
+                        TagState[hash] = tags;
+                    }
+
+                    tags.Add(tag);
+                }
             }
         }
 
-        private async Task ToggleCategory(string category, Torrent torrent)
+        private enum TagSelectionState
         {
-            if (torrent.Category == category)
+            None,
+            Partial,
+            All,
+        }
+
+        private async Task ToggleCategory(string category)
+        {
+            var selectedHashes = Hashes.ToArray();
+            if (selectedHashes.Length == 0)
             {
-                await ApiClient.SetTorrentCategory(string.Empty, null, torrent.Hash);
-                CategoryState.Remove(torrent.Hash);
+                return;
+            }
+
+            var allHaveCategory = GetCategorySelectionState(category) == TagSelectionState.All;
+
+            if (allHaveCategory)
+            {
+                await ApiClient.SetTorrentCategory(string.Empty, null, selectedHashes);
+
+                foreach (var hash in selectedHashes)
+                {
+                    CategoryState.Remove(hash);
+                }
             }
             else
             {
-                await ApiClient.SetTorrentCategory(category, null, torrent.Hash);
-                CategoryState[torrent.Hash] = category;
+                await ApiClient.SetTorrentCategory(category, null, selectedHashes);
+
+                foreach (var hash in selectedHashes)
+                {
+                    CategoryState[hash] = category;
+                }
             }
         }
 
