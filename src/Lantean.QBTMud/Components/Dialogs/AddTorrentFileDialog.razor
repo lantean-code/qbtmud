@@ -1,23 +1,25 @@
 @inherits SubmittableDialog
+@using Lantean.QBTMud.Helpers
 
 <MudDialog>
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadFiles" Accept=".torrent" MaximumFileCount="50" >
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadFiles" Accept=".torrent" MaximumFileCount="50" data-test-id="@TestIdHelper.For("AddTorrentFileUpload")">
                     <ActivatorContent>
                         <MudButton Variant="Variant.Filled"
                                    Color="Color.Primary"
-                                   StartIcon="@Icons.Material.Filled.CloudUpload">
+                                   StartIcon="@Icons.Material.Filled.CloudUpload"
+                                   data-test-id="@TestIdHelper.For("AddTorrentFileChoose")">
                             Choose files
                         </MudButton>
                     </ActivatorContent>
                 </MudFileUpload>
             </MudItem>
             <MudItem xs="12">
-                @if (Files?.Any() == true)
+                @if (Files.Any())
                 {
-                    <MudCard Elevation="3" Class="mb-3">
+                    <MudCard Elevation="3" Class="mb-3" data-test-id="@TestIdHelper.For("AddTorrentFileList")">
                         <MudCardHeader Class="pb-0">
                             Selected Torrent Files (@Files.Count)
                         </MudCardHeader>
@@ -33,7 +35,8 @@
                                                            Color="Color.Error"
                                                            Variant="Variant.Text"
                                                            Size="Size.Small"
-                                                           OnClick="@(() => Remove(file))" />
+                                                           OnClick="@(() => Remove(file))"
+                                                           data-test-id="@TestIdHelper.For($"RemoveTorrentFile-{file.Name}")" />
                                         </div>
                                     </MudListItem>
                                 }
@@ -46,7 +49,7 @@
         <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="true" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Close</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Upload Torrents</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTorrentFileClose")">Close</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTorrentFileSubmit")">Upload Torrents</MudButton>
     </DialogActions>
 </MudDialog>
