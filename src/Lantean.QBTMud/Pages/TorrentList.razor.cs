@@ -249,7 +249,18 @@ namespace Lantean.QBTMud.Pages
 
         private IEnumerable<string> GetContextMenuTargetHashes()
         {
-            return [(ContextMenuItem is null ? "fake" : ContextMenuItem.Hash)];
+            if (ContextMenuItem is null)
+            {
+                return [];
+            }
+
+            var contextHash = ContextMenuItem.Hash;
+            if (SelectedItems.Any(item => item.Hash == contextHash))
+            {
+                return SelectedItems.Select(item => item.Hash);
+            }
+
+            return [contextHash];
         }
 
         private async Task PublishSearchStateAsync()

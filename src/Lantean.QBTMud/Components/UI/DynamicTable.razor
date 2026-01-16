@@ -17,15 +17,13 @@
     Virtualize="true"
     AllowUnsorted="false"
     SelectOnRowClick="false" 
-    Loading="@(Items is null)" 
+    Loading="@(Items is null)"
     MultiSelection="MultiSelection"
-    SelectedItems="SelectedItems"
-    SelectedItemsChanged="SelectedItemsChangedInternal"
     OnRowClick="OnRowClickInternal"
     RowStyleFunc="RowStyleFuncInternal"
     RowClassFunc="RowClassFuncInternal"
     Class="@Class"
-    @attributes="UserAttributes">
+    @attributes="TableAttributes">
 <ColGroup>
     @if (MultiSelection)
     {

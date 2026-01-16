@@ -3,6 +3,7 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System;
 
 namespace Lantean.QBTMud.Components.UI
 {
@@ -14,6 +15,7 @@ namespace Lantean.QBTMud.Components.UI
         private static readonly KeyboardEvent _shiftArrowUpKey = new("ArrowUp") { ShiftKey = true };
         private static readonly KeyboardEvent _shiftArrowDownKey = new("ArrowDown") { ShiftKey = true };
         private static readonly KeyboardEvent _enterKey = new("Enter");
+        private static readonly IReadOnlyList<ColumnDefinition<T>> _emptyColumns = [];
         private readonly string _columnSelectionStorageKey = $"DynamicTable{_typeName}.ColumnSelection.{{_tableId}}";
         private readonly string _columnSortStorageKey = $"DynamicTable{_typeName}.ColumnSort.{{_tableId}}";
         private readonly string _columnWidthsStorageKey = $"DynamicTable{_typeName}.ColumnWidths.{{_tableId}}";
@@ -68,7 +70,7 @@ namespace Lantean.QBTMud.Components.UI
         public bool IsDarkMode { get; set; }
 
         [Parameter]
-        public HashSet<T> SelectedItems { get; set; } = [];
+        public T? SelectedItem { get; set; }
 
         [Parameter]
         public EventCallback<HashSet<T>> SelectedItemsChanged { get; set; }
@@ -108,9 +110,11 @@ namespace Lantean.QBTMud.Components.UI
 
         protected IEnumerable<T>? OrderedItems => GetOrderedItems();
 
+        protected HashSet<T> SelectedItems { get; set; } = [];
+
         protected HashSet<string> SelectedColumns { get; set; } = [];
 
-        private static readonly IReadOnlyList<ColumnDefinition<T>> EmptyColumns = Array.Empty<ColumnDefinition<T>>();
+        private IReadOnlyDictionary<string, object?> TableAttributes => BuildTableAttributes();
 
         private Dictionary<string, int?> _columnWidths = [];
 
@@ -122,7 +126,7 @@ namespace Lantean.QBTMud.Components.UI
 
         private DateTimeOffset? _suppressRowClickUntil;
 
-        private IReadOnlyList<ColumnDefinition<T>> _visibleColumns = EmptyColumns;
+        private IReadOnlyList<ColumnDefinition<T>> _visibleColumns = _emptyColumns;
 
         private bool _columnsDirty = true;
 
@@ -240,6 +244,17 @@ namespace Lantean.QBTMud.Components.UI
         protected override void OnParametersSet()
         {
             base.OnParametersSet();
+            if (MultiSelection)
+            {
+                if (SelectedItem is not null)
+                {
+                    SelectedItem = default;
+                }
+            }
+            else if (SelectedItems.Count > 0)
+            {
+                SelectedItems.Clear();
+            }
             var ensureSort = false;
             if (!ReferenceEquals(_lastColumnDefinitions, ColumnDefinitions))
             {
@@ -316,7 +331,7 @@ namespace Lantean.QBTMud.Components.UI
 
             if (filteredColumns.Count == 0)
             {
-                return EmptyColumns;
+                return _emptyColumns;
             }
 
             List<ColumnDefinition<T>> orderedColumns;
@@ -440,22 +455,20 @@ namespace Lantean.QBTMud.Components.UI
                         SelectedItems.Add(eventArgs.Item);
                     }
                 }
+                await SelectedItemsChangedInternal(SelectedItems);
             }
-            else if (SelectOnRowClick && !SelectedItems.Contains(eventArgs.Item))
+            else if (SelectOnRowClick)
             {
-                SelectedItems.Clear();
-                SelectedItems.Add(eventArgs.Item);
-                await SelectedItemChanged.InvokeAsync(eventArgs.Item);
+                await SelectSingleItemAsync(eventArgs.Item);
             }
 
-            await SelectedItemsChangedInternal(SelectedItems);
             await OnRowClick.InvokeAsync(eventArgs);
         }
 
         protected string RowStyleFuncInternal(T item, int index)
         {
             var style = "-webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; cursor: pointer;";
-            if (SelectOnRowClick && SelectedItems.Contains(item))
+            if (SelectOnRowClick && IsItemSelected(item))
             {
                 if (IsDarkMode)
                 {
@@ -545,14 +558,39 @@ namespace Lantean.QBTMud.Components.UI
                 return;
             }
 
-            if (!MultiSelection && !SelectOnRowClick)
+            var orderedItems = OrderedItems?.ToList();
+            if (orderedItems is null || orderedItems.Count == 0)
             {
                 return;
             }
 
-            var orderedItems = OrderedItems?.ToList();
-            if (orderedItems is null || orderedItems.Count == 0)
+            if (!MultiSelection)
             {
+                if (!SelectOnRowClick)
+                {
+                    return;
+                }
+
+                if (SelectedItem is null)
+                {
+                    await SelectSingleItemAsync(orderedItems[0]);
+                    return;
+                }
+
+                var currentIndex = orderedItems.IndexOf(SelectedItem);
+                if (currentIndex < 0)
+                {
+                    await SelectSingleItemAsync(orderedItems[0]);
+                    return;
+                }
+
+                var singleNextIndex = keyboardEvent.Key == "ArrowUp" ? currentIndex - 1 : currentIndex + 1;
+                if (singleNextIndex < 0 || singleNextIndex >= orderedItems.Count)
+                {
+                    return;
+                }
+
+                await SelectSingleItemAsync(orderedItems[singleNextIndex]);
                 return;
             }
 
@@ -563,7 +601,7 @@ namespace Lantean.QBTMud.Components.UI
             }
 
             var moveUp = keyboardEvent.Key == "ArrowUp";
-            var addSelection = keyboardEvent.ShiftKey && MultiSelection;
+            var addSelection = keyboardEvent.ShiftKey;
             var targetIndex = GetBoundarySelectedIndex(orderedItems, moveUp);
             if (targetIndex < 0)
             {
@@ -594,30 +632,47 @@ namespace Lantean.QBTMud.Components.UI
                 return;
             }
 
-            if (SelectedItems.Count != 1)
+            if (MultiSelection)
+            {
+                if (SelectedItems.Count != 1)
+                {
+                    return;
+                }
+
+                var item = SelectedItems.First();
+                await OnSelectedItemEnter.InvokeAsync(item);
+                return;
+            }
+
+            if (SelectedItem is null)
             {
                 return;
             }
 
-            var item = SelectedItems.First();
-            await OnSelectedItemEnter.InvokeAsync(item);
+            await OnSelectedItemEnter.InvokeAsync(SelectedItem);
         }
 
         private async Task SelectSingleItemAsync(T item)
         {
-            if (SelectedItems.Count == 1 && SelectedItems.Contains(item))
+            if (MultiSelection)
+            {
+                if (SelectedItems.Count == 1 && SelectedItems.Contains(item))
+                {
+                    return;
+                }
+
+                SelectedItems.Clear();
+                SelectedItems.Add(item);
+                await SelectedItemsChangedInternal(SelectedItems);
+                return;
+            }
+
+            if (SelectedItem is not null && EqualityComparer<T>.Default.Equals(SelectedItem, item))
             {
                 return;
             }
 
-            SelectedItems.Clear();
-            SelectedItems.Add(item);
-            await SelectedItemsChangedInternal(SelectedItems);
-
-            if (!MultiSelection && SelectOnRowClick)
-            {
-                await SelectedItemChanged.InvokeAsync(item);
-            }
+            await SelectedItemChangedInternal(item);
         }
 
         private int GetBoundarySelectedIndex(IReadOnlyList<T> orderedItems, bool useTop)
@@ -711,19 +766,125 @@ namespace Lantean.QBTMud.Components.UI
 
         protected async Task SelectedItemsChangedInternal(HashSet<T> selectedItems)
         {
+            if (!MultiSelection)
+            {
+                if (SelectedItems.Count > 0)
+                {
+                    SelectedItems.Clear();
+                }
+                return;
+            }
+
+            if (SelectedItem is not null)
+            {
+                SelectedItem = default;
+            }
+
             await SelectedItemsChanged.InvokeAsync(selectedItems);
             SelectedItems = selectedItems;
         }
 
-        protected Task OnContextMenuInternal(CellMouseEventArgs eventArgs, T item)
+        protected async Task SelectedItemChangedInternal(T item)
         {
-            return OnTableDataContextMenu.InvokeAsync(new TableDataContextMenuEventArgs<T>(eventArgs.MouseEventArgs, eventArgs.Cell, item));
+            if (MultiSelection)
+            {
+                if (SelectedItem is not null)
+                {
+                    SelectedItem = default;
+                }
+                return;
+            }
+
+            if (SelectedItems.Count > 0)
+            {
+                SelectedItems.Clear();
+            }
+
+            SelectedItem = item;
+            await SelectedItemChanged.InvokeAsync(item);
         }
 
-        protected Task OnLongPressInternal(CellLongPressEventArgs eventArgs, T item)
+        private bool IsItemSelected(T item)
+        {
+            if (MultiSelection)
+            {
+                return SelectedItems.Contains(item);
+            }
+
+            return SelectedItem is not null && EqualityComparer<T>.Default.Equals(SelectedItem, item);
+        }
+
+        protected async Task OnContextMenuInternal(CellMouseEventArgs eventArgs, T item)
+        {
+            await EnsureContextSelectionAsync(item);
+            await OnTableDataContextMenu.InvokeAsync(new TableDataContextMenuEventArgs<T>(eventArgs.MouseEventArgs, eventArgs.Cell, item));
+        }
+
+        protected async Task OnLongPressInternal(CellLongPressEventArgs eventArgs, T item)
         {
             _suppressRowClickUntil = DateTimeOffset.UtcNow.AddMilliseconds(500);
-            return OnTableDataLongPress.InvokeAsync(new TableDataLongPressEventArgs<T>(eventArgs.LongPressEventArgs, eventArgs.Cell, item));
+            await EnsureContextSelectionAsync(item);
+            await OnTableDataLongPress.InvokeAsync(new TableDataLongPressEventArgs<T>(eventArgs.LongPressEventArgs, eventArgs.Cell, item));
+        }
+
+        private async Task EnsureContextSelectionAsync(T item)
+        {
+            if (item is null)
+            {
+                return;
+            }
+
+            if (MultiSelection)
+            {
+                if (SelectedItems.Contains(item))
+                {
+                    return;
+                }
+
+                SelectedItems.Clear();
+                SelectedItems.Add(item);
+                await SelectedItemsChangedInternal(SelectedItems);
+            }
+            else
+            {
+                if (SelectedItem is not null && EqualityComparer<T>.Default.Equals(SelectedItem, item))
+                {
+                    return;
+                }
+
+                await SelectedItemChangedInternal(item);
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private Dictionary<string, object?> BuildTableAttributes()
+        {
+            var attributes = new Dictionary<string, object?>(StringComparer.Ordinal);
+
+            if (UserAttributes is not null)
+            {
+                foreach (var (key, value) in UserAttributes)
+                {
+                    attributes[key] = value;
+                }
+            }
+
+            if (MultiSelection)
+            {
+                attributes[nameof(MudTable<>.SelectedItems)] = SelectedItems;
+                attributes[nameof(MudTable<>.SelectedItemsChanged)] = EventCallback.Factory.Create<HashSet<T>>(this, SelectedItemsChangedInternal);
+            }
+            else
+            {
+                attributes[nameof(MudTable<>.SelectedItem)] = SelectedItem;
+                if (SelectOnRowClick)
+                {
+                    attributes[nameof(MudTable<>.SelectedItemChanged)] = EventCallback.Factory.Create<T>(this, SelectedItemChangedInternal);
+                }
+            }
+
+            return attributes;
         }
 
         public async Task ShowColumnOptionsDialog()
@@ -843,7 +1004,7 @@ namespace Lantean.QBTMud.Components.UI
         private void MarkColumnsDirty()
         {
             _columnsDirty = true;
-            _visibleColumns = EmptyColumns;
+            _visibleColumns = _emptyColumns;
         }
 
         private string GetColumnSortStorageKey()

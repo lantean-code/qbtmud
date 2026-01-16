@@ -75,15 +75,15 @@ namespace Lantean.QBTMud.Test.Components.UI
             var secondItem = items[1];
 
             await target.InvokeAsync(() => rows[0].Click());
-            target.Instance.SelectedItems.Should().Contain(firstItem);
+            selectedItemsChanged.Should().Contain(firstItem);
 
             await target.InvokeAsync(() => rows[1].Click(new MouseEventArgs { CtrlKey = true }));
-            target.Instance.SelectedItems.Should().Contain(firstItem);
-            target.Instance.SelectedItems.Should().Contain(secondItem);
+            selectedItemsChanged.Should().Contain(firstItem);
+            selectedItemsChanged.Should().Contain(secondItem);
 
             await target.InvokeAsync(() => rows[0].Click(new MouseEventArgs { AltKey = true }));
-            target.Instance.SelectedItems.Should().HaveCount(1);
-            target.Instance.SelectedItems.Should().Contain(firstItem);
+            selectedItemsChanged.Should().HaveCount(1);
+            selectedItemsChanged.Should().Contain(firstItem);
 
             await target.InvokeAsync(() => target.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<SampleItem> { firstItem }));
             selectedItemsChanged.Should().HaveCount(1);
@@ -95,8 +95,8 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
             var items = CreateItems();
-            var selectedItems = new HashSet<SampleItem> { items[0] };
-            SampleItem? selectedItem = null;
+            var selectedItem = items[0];
+            SampleItem? enteredItem = null;
 
             var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
             keyboardMock
@@ -112,8 +112,8 @@ namespace Lantean.QBTMud.Test.Components.UI
                 builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
                 builder.Add(p => p.Items, items);
                 builder.Add(p => p.TableId, "TableId");
-                builder.Add(p => p.SelectedItems, selectedItems);
-                builder.Add(p => p.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, item => selectedItem = item));
+                builder.Add(p => p.SelectedItem, selectedItem);
+                builder.Add(p => p.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, item => enteredItem = item));
             });
 
             target.WaitForAssertion(() =>
@@ -124,7 +124,8 @@ namespace Lantean.QBTMud.Test.Components.UI
             var handler = FindKeyboardHandler(handlers, "Enter", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
 
-            selectedItem.Should().Be(items[0]);
+            enteredItem.Should().Be(items[0]);
+            target.Instance.SelectedItem.Should().Be(items[0]);
         }
 
         [Fact]
@@ -132,7 +133,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
             var items = CreateItems();
-            var selectedItems = new HashSet<SampleItem> { items[0], items[1] };
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
             var invoked = false;
 
             var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
@@ -149,19 +150,25 @@ namespace Lantean.QBTMud.Test.Components.UI
                 builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
                 builder.Add(p => p.Items, items);
                 builder.Add(p => p.TableId, "TableId");
-                builder.Add(p => p.SelectedItems, selectedItems);
+                builder.Add(p => p.MultiSelection, true);
                 builder.Add(p => p.OnSelectedItemEnter, EventCallback.Factory.Create<SampleItem>(this, _ => invoked = true));
             });
 
             target.WaitForAssertion(() =>
             {
                 handlers.Should().NotBeEmpty();
+                target.FindComponents<MudTr>().Should().NotBeEmpty();
             });
+
+            var rows = target.FindComponents<MudTr>().Select(r => r.Find("tr")).ToList();
+            await target.InvokeAsync(() => rows[0].Click());
+            await target.InvokeAsync(() => rows[1].Click(new MouseEventArgs { CtrlKey = true }));
 
             var handler = FindKeyboardHandler(handlers, "Enter", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
 
             invoked.Should().BeFalse();
+            target.Instance.SelectedItem.Should().BeNull();
         }
 
         [Fact]
@@ -169,7 +176,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
             var items = CreateItems();
-            var selectedItems = new HashSet<SampleItem> { items[0] };
+            var selectedItem = items[0];
 
             var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
             keyboardMock
@@ -185,7 +192,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
                 builder.Add(p => p.Items, items);
                 builder.Add(p => p.TableId, "TableId");
-                builder.Add(p => p.SelectedItems, selectedItems);
+                builder.Add(p => p.SelectedItem, selectedItem);
             });
 
             target.WaitForAssertion(() =>
@@ -196,7 +203,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var handler = FindKeyboardHandler(handlers, "Enter", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("Enter")));
 
-            target.Instance.SelectedItems.Should().ContainSingle().And.Contain(items[0]);
+            target.Instance.SelectedItem.Should().Be(items[0]);
         }
 
         [Fact]
@@ -204,6 +211,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
             var items = CreateItems();
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
 
             var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
             keyboardMock
@@ -220,6 +228,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 builder.Add(p => p.Items, items);
                 builder.Add(p => p.TableId, "TableId");
                 builder.Add(p => p.MultiSelection, true);
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsEvents.Add(new HashSet<SampleItem>(value))));
             });
 
             target.WaitForAssertion(() =>
@@ -230,7 +239,8 @@ namespace Lantean.QBTMud.Test.Components.UI
             var handler = FindKeyboardHandler(handlers, "ArrowDown", true);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { ShiftKey = true }));
 
-            target.Instance.SelectedItems.Should().ContainSingle().And.Contain(items[0]);
+            selectedItemsEvents.Should().NotBeEmpty();
+            selectedItemsEvents.Last().Should().ContainSingle().And.Contain(items[0]);
         }
 
         [Fact]
@@ -246,7 +256,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 new SampleItem(5, "Name", 5),
                 new SampleItem(6, "Name", 6)
             };
-            var selectedItems = new HashSet<SampleItem> { items[1], items[3], items[4] };
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
 
             var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
             keyboardMock
@@ -263,7 +273,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 builder.Add(p => p.Items, items);
                 builder.Add(p => p.TableId, "TableId");
                 builder.Add(p => p.MultiSelection, true);
-                builder.Add(p => p.SelectedItems, selectedItems);
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsEvents.Add(new HashSet<SampleItem>(value))));
             });
 
             target.WaitForAssertion(() =>
@@ -271,11 +281,17 @@ namespace Lantean.QBTMud.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            var rows = target.FindComponents<MudTr>().Select(r => r.Find("tr")).ToList();
+            await target.InvokeAsync(() => rows[1].Click());
+            await target.InvokeAsync(() => rows[3].Click(new MouseEventArgs { CtrlKey = true }));
+            await target.InvokeAsync(() => rows[4].Click(new MouseEventArgs { CtrlKey = true }));
+
             var handler = FindKeyboardHandler(handlers, "ArrowDown", true);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { ShiftKey = true }));
 
-            target.Instance.SelectedItems.Should().HaveCount(4);
-            target.Instance.SelectedItems.Should().Contain(items[5]);
+            selectedItemsEvents.Should().NotBeEmpty();
+            selectedItemsEvents.Last().Should().HaveCount(4);
+            selectedItemsEvents.Last().Should().Contain(items[5]);
         }
 
         [Fact]
@@ -288,8 +304,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 new SampleItem(2, "Name", 2),
                 new SampleItem(3, "Name", 3)
             };
-            var selectedItems = new HashSet<SampleItem> { items[0], items[2] };
-            var originalSelection = new HashSet<SampleItem>(selectedItems);
+            var selectedItemsEvents = new List<HashSet<SampleItem>>();
 
             var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
             keyboardMock
@@ -306,7 +321,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 builder.Add(p => p.Items, items);
                 builder.Add(p => p.TableId, "TableId");
                 builder.Add(p => p.MultiSelection, true);
-                builder.Add(p => p.SelectedItems, selectedItems);
+                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedItemsEvents.Add(new HashSet<SampleItem>(value))));
             });
 
             target.WaitForAssertion(() =>
@@ -314,10 +329,17 @@ namespace Lantean.QBTMud.Test.Components.UI
                 handlers.Should().NotBeEmpty();
             });
 
+            var rows = target.FindComponents<MudTr>().Select(r => r.Find("tr")).ToList();
+            await target.InvokeAsync(() => rows[0].Click());
+            await target.InvokeAsync(() => rows[2].Click(new MouseEventArgs { CtrlKey = true }));
+
+            selectedItemsEvents.Should().NotBeEmpty();
+            var originalSelection = new HashSet<SampleItem>(selectedItemsEvents.Last());
+
             var handler = FindKeyboardHandler(handlers, "ArrowUp", true);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowUp") { ShiftKey = true }));
 
-            target.Instance.SelectedItems.Should().BeEquivalentTo(originalSelection);
+            selectedItemsEvents.Last().Should().BeEquivalentTo(originalSelection);
         }
 
         [Fact]
@@ -325,7 +347,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
             var items = CreateItems();
-            var selectedItems = new HashSet<SampleItem> { items[0] };
+            var selectedItem = items[0];
 
             var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
             keyboardMock
@@ -343,7 +365,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 builder.Add(p => p.TableId, "TableId");
                 builder.Add(p => p.MultiSelection, false);
                 builder.Add(p => p.SelectOnRowClick, false);
-                builder.Add(p => p.SelectedItems, selectedItems);
+                builder.Add(p => p.SelectedItem, selectedItem);
             });
 
             target.WaitForAssertion(() =>
@@ -354,20 +376,20 @@ namespace Lantean.QBTMud.Test.Components.UI
             var handler = FindKeyboardHandler(handlers, "ArrowDown", false);
             await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown")));
 
-            target.Instance.SelectedItems.Should().ContainSingle().And.Contain(items[0]);
+            target.Instance.SelectedItem.Should().Be(items[0]);
         }
 
         [Fact]
         public async Task GIVEN_SelectOnRowClickDisabled_WHEN_ItemNotSelected_THEN_NoSelectionChange()
         {
             var items = CreateItems();
-            var selectedEvents = new List<HashSet<SampleItem>>();
+            var selectedItemEvents = new List<SampleItem>();
             var target = RenderDynamicTable(builder =>
             {
                 builder.Add(p => p.ColumnDefinitions, CreateColumnDefinitions());
                 builder.Add(p => p.Items, items);
                 builder.Add(p => p.SelectOnRowClick, false);
-                builder.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<SampleItem>>(this, value => selectedEvents.Add(new HashSet<SampleItem>(value))));
+                builder.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<SampleItem>(this, value => selectedItemEvents.Add(value)));
             });
 
             target.WaitForAssertion(() => target.FindComponents<MudTr>().Should().NotBeEmpty());
@@ -375,9 +397,8 @@ namespace Lantean.QBTMud.Test.Components.UI
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.Click());
 
-            selectedEvents.Should().ContainSingle();
-            selectedEvents.Single().Should().BeEmpty();
-            target.Instance.SelectedItems.Should().BeEmpty();
+            selectedItemEvents.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().BeNull();
         }
 
         [Fact]
@@ -957,7 +978,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var columns = CreateColumns();
             var items = new List<TestRow> { new TestRow { Name = "N", Age = 1, Score = 1 } };
             var rowClicks = new List<TableRowClickEventArgs<TestRow>>();
-            var selectedEvents = new List<HashSet<TestRow>>();
+            var selectedItemEvents = new List<TestRow>();
 
             var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
             {
@@ -966,7 +987,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.Items, items);
                 parameters.Add(p => p.MultiSelection, false);
                 parameters.Add(p => p.SelectOnRowClick, true);
-                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectedEvents.Add(new HashSet<TestRow>(value))));
+                parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
                 parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
             });
 
@@ -977,8 +998,9 @@ namespace Lantean.QBTMud.Test.Components.UI
             await target.InvokeAsync(() => row.Click());
 
             rowClicks.Should().BeEmpty();
-            selectedEvents.Should().BeEmpty();
-            target.Instance.SelectedItems.Should().BeEmpty();
+            selectedItemEvents.Should().NotBeEmpty();
+            selectedItemEvents.Last().Should().Be(items[0]);
+            target.Instance.SelectedItem.Should().Be(items[0]);
         }
 
         [Fact]
@@ -998,7 +1020,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.Items, items);
                 parameters.Add(p => p.MultiSelection, false);
                 parameters.Add(p => p.SelectOnRowClick, true);
-                parameters.Add(p => p.SelectedItems, new HashSet<TestRow>(new[] { item }));
+                parameters.Add(p => p.SelectedItem, item);
                 parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectedItemsEvents.Add(new HashSet<TestRow>(value))));
                 parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
                 parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
@@ -1007,9 +1029,9 @@ namespace Lantean.QBTMud.Test.Components.UI
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.Click());
 
-            selectedItemsEvents.Should().NotBeEmpty();
-            selectedItemsEvents.Last().Should().ContainSingle().And.Contain(item);
+            selectedItemsEvents.Should().BeEmpty();
             selectedItemEvents.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().Be(item);
             rowClicks.Should().ContainSingle();
         }
 
@@ -1030,7 +1052,6 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.Items, items);
                 parameters.Add(p => p.MultiSelection, false);
                 parameters.Add(p => p.SelectOnRowClick, true);
-                parameters.Add(p => p.SelectedItems, new HashSet<TestRow>());
                 parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectedItemsEvents.Add(new HashSet<TestRow>(value))));
                 parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
                 parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
@@ -1039,9 +1060,10 @@ namespace Lantean.QBTMud.Test.Components.UI
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.Click());
 
-            selectedItemsEvents.Should().NotBeEmpty();
-            selectedItemsEvents.Last().Should().ContainSingle().And.Contain(item);
-            selectedItemEvents.Should().ContainSingle().And.Contain(item);
+            selectedItemsEvents.Should().BeEmpty();
+            selectedItemEvents.Should().NotBeEmpty();
+            selectedItemEvents.Last().Should().Be(item);
+            target.Instance.SelectedItem.Should().Be(item);
             rowClicks.Should().ContainSingle();
         }
 
@@ -1051,7 +1073,6 @@ namespace Lantean.QBTMud.Test.Components.UI
             var columns = CreateColumns();
             var item = new TestRow { Name = "Persist", Age = 2, Score = 2 };
             var selectedEvents = new List<HashSet<TestRow>>();
-            var selectionEvents = new List<HashSet<TestRow>>();
 
             var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
             {
@@ -1060,20 +1081,19 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.Items, new List<TestRow> { item });
                 parameters.Add(p => p.MultiSelection, true);
                 parameters.Add(p => p.SelectOnRowClick, false);
-                parameters.Add(p => p.SelectedItems, new HashSet<TestRow>(new[] { item }));
                 parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value =>
                 {
                     selectedEvents.Add(new HashSet<TestRow>(value));
-                    selectionEvents.Add(new HashSet<TestRow>(value));
                 }));
             });
 
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.Click());
+            selectedEvents.Clear();
+            await target.InvokeAsync(() => row.Click());
 
             selectedEvents.Should().NotBeEmpty();
             selectedEvents.Last().Should().ContainSingle().And.Contain(item);
-            target.Instance.SelectedItems.Should().ContainSingle().And.Contain(item);
         }
 
         [Fact]
@@ -1090,16 +1110,16 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.TableId, "KeepSelected");
                 parameters.Add(p => p.Items, items);
                 parameters.Add(p => p.MultiSelection, true);
-                parameters.Add(p => p.SelectedItems, new HashSet<TestRow>(new[] { item }));
                 parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectionEvents.Add(new HashSet<TestRow>(value))));
             });
 
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.Click());
+            selectionEvents.Clear();
+            await target.InvokeAsync(() => row.Click());
 
             selectionEvents.Should().NotBeEmpty();
             selectionEvents.Last().Should().ContainSingle().And.Contain(item);
-            target.Instance.SelectedItems.Should().ContainSingle().And.Contain(item);
         }
 
         [Fact]
@@ -1117,17 +1137,18 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.TableId, "ReplaceSelection");
                 parameters.Add(p => p.Items, new List<TestRow> { first, second });
                 parameters.Add(p => p.MultiSelection, true);
-                parameters.Add(p => p.SelectedItems, new HashSet<TestRow>(new[] { first }));
                 parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selectedEvents.Add(new HashSet<TestRow>(value))));
                 parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
             });
 
             var rows = target.FindComponents<MudTr>().Select(r => r.Find("tr")).ToList();
+            await target.InvokeAsync(() => rows[0].Click());
+            selectedEvents.Clear();
+            rowClicks.Clear();
             await target.InvokeAsync(() => rows[1].Click());
 
             selectedEvents.Should().NotBeEmpty();
             selectedEvents.Last().Should().ContainSingle().And.Contain(second);
-            target.Instance.SelectedItems.Should().ContainSingle().And.Contain(second);
             rowClicks.Should().ContainSingle();
         }
 
@@ -1205,7 +1226,8 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             target.WaitForAssertion(() =>
             {
-                selections.Should().BeEmpty();
+                selections.Should().NotBeEmpty();
+                selections.Last().Should().ContainSingle().And.Contain(items[0]);
                 rowClicks.Should().BeEmpty();
             });
         }
@@ -1215,7 +1237,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var columns = CreateColumns();
             var items = new List<TestRow> { new TestRow { Name = "Delayed", Age = 4, Score = 4 } };
-            var selections = new List<HashSet<TestRow>>();
+            var selectedItemEvents = new List<TestRow>();
             var rowClicks = new List<TableRowClickEventArgs<TestRow>>();
 
             var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
@@ -1225,7 +1247,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.Items, items);
                 parameters.Add(p => p.MultiSelection, false);
                 parameters.Add(p => p.SelectOnRowClick, true);
-                parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selections.Add(new HashSet<TestRow>(value))));
+                parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
                 parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
             });
 
@@ -1238,8 +1260,9 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             target.WaitForAssertion(() =>
             {
-                selections.Should().NotBeEmpty();
-                selections.Last().Should().ContainSingle().And.Contain(items[0]);
+                selectedItemEvents.Should().NotBeEmpty();
+                selectedItemEvents.Last().Should().Be(items[0]);
+                target.Instance.SelectedItem.Should().Be(items[0]);
                 rowClicks.Should().ContainSingle();
             });
         }
@@ -1277,7 +1300,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.TableId, "RowStyle");
                 parameters.Add(p => p.Items, new List<TestRow> { item });
                 parameters.Add(p => p.SelectOnRowClick, true);
-                parameters.Add(p => p.SelectedItems, new HashSet<TestRow>(new[] { item }));
+                parameters.Add(p => p.SelectedItem, item);
             });
 
             var row = target.FindComponents<MudTr>().First();
@@ -1730,7 +1753,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(args));
 
             rowClicks.Should().BeEmpty();
-            target.Instance.SelectedItems.Should().BeEmpty();
+            target.Instance.SelectedItem.Should().BeNull();
         }
 
         private IRenderedComponent<DynamicTable<SampleItem>> RenderDynamicTable(Action<ComponentParameterCollectionBuilder<DynamicTable<SampleItem>>> configure)
