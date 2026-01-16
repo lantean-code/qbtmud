@@ -1,27 +1,28 @@
 @inherits SubmittableDialog
+@using Lantean.QBTMud.Helpers
 
 <MudDialog>
     <DialogContent>
         <table width="100%">
             <tbody>
                 <tr>
-                    <td style="width: 70%"><MudTextField T="string" Label="IP" Value="@IP" ValueChanged="SetIP" Required Variant="Variant.Outlined" ShrinkLabel="true" /></td>
-                    <td style="width: 30%"><MudNumericField T="int?" Label="Port" Value="@Port" ValueChanged="SetPort" Required Variant="Variant.Outlined" ShrinkLabel="true" /></td>
-                    <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddTracker" /></td>
+                    <td style="width: 70%"><MudTextField T="string" Label="IP" Value="@IP" ValueChanged="SetIP" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddPeerIp")" /></td>
+                    <td style="width: 30%"><MudNumericField T="int?" Label="Port" Value="@Port" ValueChanged="SetPort" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddPeerPort")" /></td>
+                    <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddTracker" data-test-id="@TestIdHelper.For("AddPeerAdd")" /></td>
                 </tr>
                 @foreach (var peer in Peers)
                 {
                     var peerRef = peer;
                     <tr>
                         <td>@peer</td>
-                        <td><MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(e => DeletePeer(peerRef))" /></td>
+                        <td><MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(e => DeletePeer(peerRef))" data-test-id="@TestIdHelper.For($"DeletePeer-{peerRef.Host}-{peerRef.Port}")" /></td>
                     </tr>
                 }
             </tbody>
         </table>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddPeerCancel")">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddPeerSave")">Save</MudButton>
     </DialogActions>
 </MudDialog>
