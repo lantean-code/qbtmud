@@ -12,7 +12,7 @@ using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
-    public sealed class AddTagDialogTests : RazorComponentTestBase<AddTagDialogTestHarness>
+    public sealed class AddTagDialogTests : RazorComponentTestBase<AddTagDialog>
     {
         private readonly IKeyboardService _keyboardService;
         private readonly AddTagDialogTestDriver _target;
@@ -36,10 +36,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeAddTag();
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddTagAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            dialog.Component.Instance.GetTags().Should().BeEmpty();
-            dialog.Component.Instance.TagValue.Should().BeNull();
+            var tagField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTagInput");
+            dialog.Component.FindComponents<MudIconButton>().Should().HaveCount(1);
+            tagField.Instance.Value.Should().BeNull();
         }
 
         [Fact]
@@ -47,12 +49,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetTag("Tag");
-            dialog.Component.Instance.InvokeAddTag();
-            dialog.Component.Render();
+            var tagField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTagInput");
+            tagField.Find("input").Change("Tag");
 
-            dialog.Component.Instance.GetTags().Should().ContainSingle().Which.Should().Be("Tag");
-            dialog.Component.Instance.TagValue.Should().BeNull();
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddTagAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            tagField.Instance.Value.Should().BeNull();
 
             FindComponentByTestId<MudIconButton>(dialog.Component, "DeleteTag-Tag").Should().NotBeNull();
         }
@@ -62,14 +65,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetTag("Tag");
-            dialog.Component.Instance.InvokeAddTag();
-            dialog.Component.Render();
+            var tagField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTagInput");
+            tagField.Find("input").Change("Tag");
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddTagAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var deleteButton = FindComponentByTestId<MudIconButton>(dialog.Component, "DeleteTag-Tag");
-            await deleteButton.Find("button").TriggerEventAsync("onclick", new MouseEventArgs());
+            await deleteButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            dialog.Component.Instance.GetTags().Should().BeEmpty();
+            dialog.Component.FindComponents<MudIconButton>().Should().HaveCount(1);
         }
 
         [Fact]
@@ -77,7 +82,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync();
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeCancel());
+            var cancelButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTagCancel");
+            await cancelButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeTrue();
@@ -88,9 +94,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetTag("Tag");
+            var tagField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTagInput");
+            tagField.Find("input").Change("Tag");
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmit());
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTagSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
@@ -99,14 +107,32 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_NoTagsAndNoInput_WHEN_SubmitInvoked_THEN_ResultContainsNoTags()
+        {
+            var dialog = await _target.RenderDialogAsync();
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTagSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeFalse();
+            var tags = (HashSet<string>)result.Data!;
+            tags.Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_TagAdded_WHEN_SubmitInvoked_THEN_ResultContainsTags()
         {
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetTag("Tag");
-            dialog.Component.Instance.InvokeAddTag();
+            var tagField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTagInput");
+            tagField.Find("input").Change("Tag");
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmit());
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddTagAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTagSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
@@ -117,63 +143,32 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_TagAdded_WHEN_KeyboardSubmitInvoked_THEN_ResultContainsTags()
         {
+            Func<KeyboardEvent, Task>? submitHandler = null;
+            var keyboardMock = Mock.Get(_keyboardService);
+            keyboardMock
+                .Setup(service => service.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Enter"), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((_, handler) =>
+                {
+                    submitHandler = handler;
+                })
+                .Returns(Task.CompletedTask);
+
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetTag("Tag");
-            dialog.Component.Instance.InvokeAddTag();
+            dialog.Component.WaitForAssertion(() => submitHandler.Should().NotBeNull());
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmitWithKeyboardAsync(new KeyboardEvent("Enter")));
+            var tagField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTagInput");
+            tagField.Find("input").Change("Tag");
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddTagAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            await dialog.Component.InvokeAsync(() => submitHandler!(new KeyboardEvent("Enter")));
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
             var tags = (HashSet<string>)result.Data!;
             tags.Should().ContainSingle().Which.Should().Be("Tag");
-        }
-    }
-
-    public sealed class AddTagDialogTestHarness : AddTagDialog
-    {
-        public HashSet<string> GetTags()
-        {
-            return Tags;
-        }
-
-        public string? TagValue
-        {
-            get
-            {
-                return Tag;
-            }
-        }
-
-        public void InvokeSetTag(string tag)
-        {
-            SetTag(tag);
-        }
-
-        public void InvokeAddTag()
-        {
-            AddTag();
-        }
-
-        public void InvokeDeleteTag(string tag)
-        {
-            DeleteTag(tag);
-        }
-
-        public void InvokeCancel()
-        {
-            Cancel();
-        }
-
-        public void InvokeSubmit()
-        {
-            Submit();
-        }
-
-        public Task InvokeSubmitWithKeyboardAsync(KeyboardEvent keyboardEvent)
-        {
-            return Submit(keyboardEvent);
         }
     }
 
@@ -191,10 +186,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var provider = _testContext.Render<MudDialogProvider>();
             var dialogService = _testContext.Services.GetRequiredService<IDialogService>();
 
-            var reference = await dialogService.ShowAsync<AddTagDialogTestHarness>("Add Tag");
+            var reference = await dialogService.ShowAsync<AddTagDialog>("Add Tag");
 
             var dialog = provider.FindComponent<MudDialog>();
-            var component = provider.FindComponent<AddTagDialogTestHarness>();
+            var component = provider.FindComponent<AddTagDialog>();
 
             return new AddTagDialogRenderContext(provider, dialog, component, reference);
         }
@@ -205,7 +200,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public AddTagDialogRenderContext(
             IRenderedComponent<MudDialogProvider> provider,
             IRenderedComponent<MudDialog> dialog,
-            IRenderedComponent<AddTagDialogTestHarness> component,
+            IRenderedComponent<AddTagDialog> component,
             IDialogReference reference)
         {
             Provider = provider;
@@ -218,7 +213,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         public IRenderedComponent<MudDialog> Dialog { get; }
 
-        public IRenderedComponent<AddTagDialogTestHarness> Component { get; }
+        public IRenderedComponent<AddTagDialog> Component { get; }
 
         public IDialogReference Reference { get; }
     }

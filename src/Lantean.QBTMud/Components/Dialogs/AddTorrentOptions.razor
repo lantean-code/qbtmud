@@ -84,7 +84,7 @@
             <MudNumericField Label="Limit upload rate" @bind-Value="UploadLimit" Variant="Variant.Outlined" ShrinkLabel="true" Min="0" />
         </MudItem>
         <MudItem xs="12">
-            <MudSelect T="ShareLimitMode" Label="Share limit preset" Value="@SelectedShareLimitMode" ValueChanged="@ShareLimitModeChanged" Variant="Variant.Outlined" ShrinkLabel="true">
+            <MudSelect T="ShareLimitMode" Label="Share limit preset" Value="@SelectedShareLimitMode" ValueChanged="@ShareLimitModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ShareLimitMode")">
                 <MudSelectItem Value="@ShareLimitMode.Global">Use global share limit</MudSelectItem>
                 <MudSelectItem Value="@ShareLimitMode.NoLimit">Set no share limit</MudSelectItem>
                 <MudSelectItem Value="@ShareLimitMode.Custom">Set custom share limit</MudSelectItem>

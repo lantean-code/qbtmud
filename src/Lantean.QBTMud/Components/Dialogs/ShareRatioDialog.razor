@@ -47,7 +47,7 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("ShareRatioCancel")">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("ShareRatioSave")">Save</MudButton>
     </DialogActions>
 </MudDialog>

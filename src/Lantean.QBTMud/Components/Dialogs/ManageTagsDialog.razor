@@ -3,13 +3,13 @@
         <MudGrid>
             <MudItem xs="12">
                 <MudList T="string">
-                    <MudListItem Icon="@Icons.Material.Filled.Add" IconColor="Color.Info" OnClick="AddTag">Add</MudListItem>
-                    <MudListItem Icon="@Icons.Material.Filled.Remove" IconColor="Color.Error" OnClick="RemoveAllTags">Remove All</MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.Add" IconColor="Color.Info" OnClick="AddTag" data-test-id="@TestIdHelper.For("TagAdd")">Add</MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.Remove" IconColor="Color.Error" OnClick="RemoveAllTags" data-test-id="@TestIdHelper.For("TagRemoveAll")">Remove All</MudListItem>
                     <MudDivider />
                     @foreach (var tag in Tags)
                     {
                         var tagRef = tag;
-                        <MudListItem Icon="@GetIcon(tagRef)" IconColor="Color.Default" OnClick="@(e => SetTag(tagRef))">@tag</MudListItem>
+                        <MudListItem Icon="@GetIcon(tagRef)" IconColor="Color.Default" OnClick="@(e => SetTag(tagRef))" data-test-id="@TestIdHelper.For($"Tag-{tagRef}")">@tag</MudListItem>
                     }
                 </MudList>
             </MudItem>

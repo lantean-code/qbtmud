@@ -5,6 +5,7 @@ using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -14,7 +15,7 @@ using ClientModels = Lantean.QBitTorrentClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
-    public sealed class AddTorrentLinkDialogTests : RazorComponentTestBase<AddTorrentLinkDialogTestHarness>
+    public sealed class AddTorrentLinkDialogTests : RazorComponentTestBase<AddTorrentLinkDialog>
     {
         private readonly IKeyboardService _keyboardService;
         private readonly AddTorrentLinkDialogTestDriver _target;
@@ -39,7 +40,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             UseApiClientMock();
             var dialog = await _target.RenderDialogAsync();
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmit());
+            var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTorrentLinkSubmit");
+            await submitButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeTrue();
@@ -51,7 +53,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             UseApiClientMock();
             var dialog = await _target.RenderDialogAsync();
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeCancel());
+            var cancelButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTorrentLinkClose");
+            await cancelButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeTrue();
@@ -63,7 +66,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             UseApiClientMock();
             var dialog = await _target.RenderDialogAsync("Url");
 
-            dialog.Component.Instance.UrlsValue.Should().Be("Url");
+            var urlsField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTorrentLinkUrls");
+            urlsField.Instance.Value.Should().Be("Url");
         }
 
         [Fact]
@@ -72,9 +76,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             UseApiClientMock();
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetUrls("Url\nSecondUrl");
+            var urlsField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTorrentLinkUrls");
+            urlsField.Find("textarea").Change("Url\nSecondUrl");
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmit());
+            var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTorrentLinkSubmit");
+            await submitButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
@@ -85,12 +91,25 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_UrlsEntered_WHEN_KeyboardSubmitInvoked_THEN_ResultContainsUrls()
         {
+            Func<KeyboardEvent, Task>? submitHandler = null;
+            var keyboardMock = Mock.Get(_keyboardService);
+            keyboardMock
+                .Setup(service => service.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Enter"), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((_, handler) =>
+                {
+                    submitHandler = handler;
+                })
+                .Returns(Task.CompletedTask);
+
             UseApiClientMock();
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetUrls("Url");
+            dialog.Component.WaitForAssertion(() => submitHandler.Should().NotBeNull());
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmitWithKeyboardAsync(new KeyboardEvent("Key")));
+            var urlsField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTorrentLinkUrls");
+            urlsField.Find("textarea").Change("Url");
+
+            await dialog.Component.InvokeAsync(() => submitHandler!(new KeyboardEvent("Enter")));
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
@@ -114,37 +133,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
     }
 
-    public sealed class AddTorrentLinkDialogTestHarness : AddTorrentLinkDialog
-    {
-        public string? UrlsValue
-        {
-            get
-            {
-                return Urls;
-            }
-        }
-
-        public void InvokeSetUrls(string? urls)
-        {
-            Urls = urls;
-        }
-
-        public void InvokeCancel()
-        {
-            Cancel();
-        }
-
-        public void InvokeSubmit()
-        {
-            Submit();
-        }
-
-        public Task InvokeSubmitWithKeyboardAsync(KeyboardEvent keyboardEvent)
-        {
-            return Submit(keyboardEvent);
-        }
-    }
-
     internal sealed class AddTorrentLinkDialogTestDriver
     {
         private readonly ComponentTestContext _testContext;
@@ -165,10 +153,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 parameters.Add(nameof(AddTorrentLinkDialog.Url), url);
             }
 
-            var reference = await dialogService.ShowAsync<AddTorrentLinkDialogTestHarness>("Upload torrent file", parameters);
+            var reference = await dialogService.ShowAsync<AddTorrentLinkDialog>("Upload torrent file", parameters);
 
             var dialog = provider.FindComponent<MudDialog>();
-            var component = provider.FindComponent<AddTorrentLinkDialogTestHarness>();
+            var component = provider.FindComponent<AddTorrentLinkDialog>();
 
             return new AddTorrentLinkDialogRenderContext(provider, dialog, component, reference);
         }
@@ -179,7 +167,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public AddTorrentLinkDialogRenderContext(
             IRenderedComponent<MudDialogProvider> provider,
             IRenderedComponent<MudDialog> dialog,
-            IRenderedComponent<AddTorrentLinkDialogTestHarness> component,
+            IRenderedComponent<AddTorrentLinkDialog> component,
             IDialogReference reference)
         {
             Provider = provider;
@@ -192,7 +180,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         public IRenderedComponent<MudDialog> Dialog { get; }
 
-        public IRenderedComponent<AddTorrentLinkDialogTestHarness> Component { get; }
+        public IRenderedComponent<AddTorrentLinkDialog> Component { get; }
 
         public IDialogReference Reference { get; }
     }

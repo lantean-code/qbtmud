@@ -12,13 +12,15 @@
                                   Placeholder="https://example.com/plugin.zip"
                                   Variant="Variant.Outlined"
                                   Disabled="OperationInProgress"
-                                  Immediate="true" />
+                                  Immediate="true"
+                                  data-test-id="@TestIdHelper.For("SearchPluginInstallUrl")" />
                     <MudButton Color="Color.Primary"
                                Variant="Variant.Filled"
                                Disabled="OperationInProgress || string.IsNullOrWhiteSpace(InstallUrl)"
                                OnClick="InstallFromUrl"
                                Class="mt-3"
-                               StartIcon="@Icons.Material.Filled.CloudDownload">Install</MudButton>
+                               StartIcon="@Icons.Material.Filled.CloudDownload"
+                               data-test-id="@TestIdHelper.For("SearchPluginInstallUrlButton")">Install</MudButton>
                 </MudPaper>
             </MudItem>
             <MudItem xs="12" md="6">
@@ -28,13 +30,15 @@
                                   Placeholder="/home/qbt/plugins/my-plugin.py"
                                   Variant="Variant.Outlined"
                                   Disabled="OperationInProgress"
-                                  Immediate="true" />
+                                  Immediate="true"
+                                  data-test-id="@TestIdHelper.For("SearchPluginInstallPath")" />
                     <MudButton Color="Color.Primary"
                                Variant="Variant.Filled"
                                Disabled="OperationInProgress || string.IsNullOrWhiteSpace(InstallLocalPath)"
                                OnClick="InstallFromPath"
                                Class="mt-3"
-                               StartIcon="@Icons.Material.Filled.UploadFile">Install</MudButton>
+                               StartIcon="@Icons.Material.Filled.UploadFile"
+                               data-test-id="@TestIdHelper.For("SearchPluginInstallPathButton")">Install</MudButton>
                 </MudPaper>
             </MudItem>
         </MudGrid>
@@ -44,28 +48,33 @@
                            Color="Color.Primary"
                            Disabled="!HasSelection || OperationInProgress"
                            StartIcon="@Icons.Material.Filled.ToggleOn"
-                           OnClick="EnableSelected">Enable</MudButton>
+                           OnClick="EnableSelected"
+                           data-test-id="@TestIdHelper.For("SearchPluginEnable")">Enable</MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Default"
                            Disabled="!HasSelection || OperationInProgress"
                            StartIcon="@Icons.Material.Filled.ToggleOff"
-                           OnClick="DisableSelected">Disable</MudButton>
+                           OnClick="DisableSelected"
+                           data-test-id="@TestIdHelper.For("SearchPluginDisable")">Disable</MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Error"
                            Disabled="!HasSelection || OperationInProgress"
                            StartIcon="@Icons.Material.Filled.Delete"
-                           OnClick="UninstallSelected">Uninstall</MudButton>
+                           OnClick="UninstallSelected"
+                           data-test-id="@TestIdHelper.For("SearchPluginUninstall")">Uninstall</MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Info"
                            Disabled="OperationInProgress || Plugins.Count == 0"
                            StartIcon="@Icons.Material.Filled.Update"
-                           OnClick="UpdateAll">Update all</MudButton>
+                           OnClick="UpdateAll"
+                           data-test-id="@TestIdHelper.For("SearchPluginUpdateAll")">Update all</MudButton>
                 <MudSpacer />
                 <MudTooltip Text="Refresh plugins">
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh"
                                    Color="Color.Default"
                                    Disabled="OperationInProgress"
-                                   OnClick="RefreshPlugins" />
+                                   OnClick="RefreshPlugins"
+                                   data-test-id="@TestIdHelper.For("SearchPluginRefresh")" />
                 </MudTooltip>
             </MudStack>
         </MudPaper>
@@ -88,13 +97,15 @@
                     <MudIconButton Icon="@GetSelectionIcon(context)"
                                    Color="@GetSelectionColor(context)"
                                    Disabled="OperationInProgress"
-                                   OnClick="@(() => ToggleSelection(context))" />
+                                   OnClick="@(() => ToggleSelection(context))"
+                                   data-test-id="@TestIdHelper.For($"SearchPluginSelect-{context.Name}")" />
                 </MudTd>
                 <MudTd DataLabel="Enabled">
                     <MudIconButton Icon="@GetEnabledIcon(context)"
                                    Color="@GetEnabledColor(context)"
                                    Disabled="OperationInProgress"
-                                   OnClick="@(() => TogglePlugin(context, !context.Enabled))" />
+                                   OnClick="@(() => TogglePlugin(context, !context.Enabled))"
+                                   data-test-id="@TestIdHelper.For($"SearchPluginToggle-{context.Name}")" />
                 </MudTd>
                 <MudTd DataLabel="Name">
                     <MudText Typo="Typo.body2">@context.FullName</MudText>
@@ -121,6 +132,6 @@
         </MudTable>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="CloseDialog">Close</MudButton>
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="CloseDialog" data-test-id="@TestIdHelper.For("SearchPluginClose")">Close</MudButton>
     </DialogActions>
 </MudDialog>

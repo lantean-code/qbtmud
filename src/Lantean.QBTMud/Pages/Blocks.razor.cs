@@ -13,10 +13,7 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Blocks : IAsyncDisposable
     {
-        private const string _selectedTypesStorageKey = "Blocks.SelectedTypes";
         private const int MaxResults = 500;
-        private readonly bool _refreshEnabled = true;
-
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
 
@@ -28,9 +25,6 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
-
-        [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [Inject]
         protected IClipboardService ClipboardService { get; set; } = default!;
@@ -48,8 +42,6 @@ namespace Lantean.QBTMud.Pages
 
         protected List<PeerLog>? Results { get; private set; }
 
-        protected MudSelect<string>? CategoryMudSelect { get; set; }
-
         protected DynamicTable<PeerLog>? Table { get; set; }
 
         protected PeerLog? ContextMenuItem { get; set; }
@@ -60,39 +52,12 @@ namespace Lantean.QBTMud.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            var selectedTypes = await LocalStorage.GetItemAsync<IEnumerable<string>>(_selectedTypesStorageKey);
-            if (selectedTypes is not null)
-            {
-                Model.SelectedTypes = selectedTypes;
-            }
-            else
-            {
-                Model.SelectedTypes = ["Normal"];
-            }
-
             await DoSearch();
         }
 
         protected void NavigateBack()
         {
             NavigationManager.NavigateToHome();
-        }
-
-        protected async Task SelectedValuesChanged(IEnumerable<string> values)
-        {
-            Model.SelectedTypes = values;
-
-            await LocalStorage.SetItemAsync(_selectedTypesStorageKey, Model.SelectedTypes);
-        }
-
-        protected static string GenerateSelectedText(List<string> values)
-        {
-            if (values.Count == 4)
-            {
-                return "All";
-            }
-
-            return $"{values.Count} selected";
         }
 
         protected Task Submit(EditContext editContext)
@@ -131,14 +96,9 @@ namespace Lantean.QBTMud.Pages
         {
             ContextMenuItem = item;
 
-            if (ContextMenu is null)
-            {
-                return;
-            }
-
             var normalizedEventArgs = eventArgs.NormalizeForContextMenu();
 
-            await ContextMenu.OpenMenuAsync(normalizedEventArgs);
+            await ContextMenu!.OpenMenuAsync(normalizedEventArgs);
         }
 
         protected async Task CopyContextMenuItem()
@@ -191,11 +151,6 @@ namespace Lantean.QBTMud.Pages
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (!_refreshEnabled)
-            {
-                return;
-            }
-
             if (!firstRender)
             {
                 return;

@@ -4,12 +4,12 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@Label" Value="@Value" ValueChanged="ValueChanged" Disabled="Disabled" Variant="Variant.Outlined" ShrinkLabel="true" />
+                <MudTextField T="string" Label="@Label" Value="@Value" ValueChanged="ValueChanged" Disabled="Disabled" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("StringFieldInput")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("StringFieldCancel")">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("StringFieldSave")">Save</MudButton>
     </DialogActions>
 </MudDialog>

@@ -8,4 +8,8 @@
             </MudItem>
         </MudGrid>
     </DialogContent>
+    <DialogActions>
+        <MudButton Style="display:none" OnClick="Cancel" data-test-id="@TestIdHelper.For("SubMenuCancel")">Cancel</MudButton>
+        <MudButton Style="display:none" OnClick="CloseDialog" data-test-id="@TestIdHelper.For("SubMenuClose")">Close</MudButton>
+    </DialogActions>
 </MudDialog>

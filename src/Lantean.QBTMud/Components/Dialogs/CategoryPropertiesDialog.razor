@@ -4,15 +4,15 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField Label="Category" @bind-Value="Category" Required Variant="Variant.Outlined" ShrinkLabel="true" />
+                <MudTextField Label="Category" @bind-Value="Category" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryPropertiesCategory")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField Label="Save Path" @bind-Value="SavePath" Required Variant="Variant.Outlined" ShrinkLabel="true" />
+                <MudTextField Label="Save Path" @bind-Value="SavePath" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryPropertiesSavePath")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Add</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("CategoryPropertiesCancel")">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("CategoryPropertiesSave")">Add</MudButton>
     </DialogActions>
 </MudDialog>

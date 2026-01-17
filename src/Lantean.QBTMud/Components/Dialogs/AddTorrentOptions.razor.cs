@@ -324,7 +324,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             SavePath = ResolveAutomaticSavePath();
             var (enabled, path) = ResolveAutomaticDownloadPath();
             UseDownloadPath = enabled;
-            DownloadPath = enabled ? path ?? string.Empty : string.Empty;
+            DownloadPath = enabled ? path : string.Empty;
         }
 
         private void RestoreManualPaths()
@@ -347,7 +347,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return category.SavePath!;
             }
 
-            if (!string.IsNullOrWhiteSpace(_defaultSavePath) && !string.IsNullOrWhiteSpace(category.Name))
+            if (!string.IsNullOrWhiteSpace(_defaultSavePath))
             {
                 return Path.Combine(_defaultSavePath, category.Name);
             }
@@ -355,7 +355,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             return _defaultSavePath;
         }
 
-        private (bool Enabled, string? Path) ResolveAutomaticDownloadPath()
+        private (bool Enabled, string Path) ResolveAutomaticDownloadPath()
         {
             var category = GetSelectedCategory();
             if (category is null)
@@ -385,7 +385,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (!string.IsNullOrWhiteSpace(category.DownloadPath.Path))
             {
-                return (true, category.DownloadPath.Path);
+                return (true, category.DownloadPath.Path!);
             }
 
             return (true, ComposeDefaultDownloadPath(category.Name));
@@ -396,11 +396,6 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (string.IsNullOrWhiteSpace(_defaultDownloadPath))
             {
                 return string.Empty;
-            }
-
-            if (string.IsNullOrWhiteSpace(categoryName))
-            {
-                return _defaultDownloadPath;
             }
 
             return Path.Combine(_defaultDownloadPath, categoryName);
@@ -428,7 +423,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             };
         }
 
-        protected enum ShareLimitMode
+        protected internal enum ShareLimitMode
         {
             Global,
             NoLimit,

@@ -5,12 +5,12 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="string" Label="@Label" Value="@GetDisplayValue()" ValueChanged="ValueChanged" Min="@(Min.ToString())" Max="@(Max.ToString())" Disabled="Disabled" Variant="Variant.Outlined" ShrinkLabel="true" />
+                <MudNumericField T="string" Label="@Label" Value="@GetDisplayValue()" ValueChanged="ValueChanged" Min="@(Min.ToString())" Max="@(Max.ToString())" Disabled="Disabled" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("NumericFieldInput")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("NumericFieldCancel")">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("NumericFieldSave")">Save</MudButton>
     </DialogActions>
 </MudDialog>

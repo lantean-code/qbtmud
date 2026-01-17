@@ -14,8 +14,6 @@ namespace Lantean.QBTMud.Pages
     {
         private const string _selectedTypesStorageKey = "Log.SelectedTypes";
         private const int MaxResults = 500;
-        private readonly bool _refreshEnabled = true;
-
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private bool _disposedValue;
 
@@ -135,14 +133,9 @@ namespace Lantean.QBTMud.Pages
         {
             ContextMenuItem = item;
 
-            if (ContextMenu is null)
-            {
-                return;
-            }
-
             var normalizedEventArgs = eventArgs.NormalizeForContextMenu();
 
-            await ContextMenu.OpenMenuAsync(normalizedEventArgs);
+            await ContextMenu!.OpenMenuAsync(normalizedEventArgs);
         }
 
         protected async Task CopyContextMenuItem()
@@ -195,11 +188,6 @@ namespace Lantean.QBTMud.Pages
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (!_refreshEnabled)
-            {
-                return;
-            }
-
             if (!firstRender)
             {
                 return;

@@ -4,41 +4,41 @@
             <MudItem xs="4">
                 <MudGrid>
                     <MudItem xs="12">
-                        <FieldSwitch Label="Remember Multi-Rename settings" Value="RememberMultiRenameSettings" ValueChanged="RememberMultiRenameSettingsChanged" />
+                        <FieldSwitch Label="Remember Multi-Rename settings" Value="RememberMultiRenameSettings" ValueChanged="RememberMultiRenameSettingsChanged" data-test-id="@TestIdHelper.For("RenameFilesRemember")" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudTextField T="string" Label="Search files" Value="Search" ValueChanged="SearchChanged" Variant="Variant.Outlined" ShrinkLabel="true" />
+                        <MudTextField T="string" Label="Search files" Value="Search" ValueChanged="SearchChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesSearch")" />
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <FieldSwitch Label="Use regular expressions" Value="UseRegex" ValueChanged="UseRegexChanged" />
+                        <FieldSwitch Label="Use regular expressions" Value="UseRegex" ValueChanged="UseRegexChanged" data-test-id="@TestIdHelper.For("RenameFilesUseRegex")" />
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <FieldSwitch Label="Match all occurrences" Value="MatchAllOccurrences" ValueChanged="MatchAllOccurrencesChanged" />
+                        <FieldSwitch Label="Match all occurrences" Value="MatchAllOccurrences" ValueChanged="MatchAllOccurrencesChanged" data-test-id="@TestIdHelper.For("RenameFilesMatchAll")" />
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <FieldSwitch Label="Case sensitive" Value="CaseSensitive" ValueChanged="CaseSensitiveChanged" />
+                        <FieldSwitch Label="Case sensitive" Value="CaseSensitive" ValueChanged="CaseSensitiveChanged" data-test-id="@TestIdHelper.For("RenameFilesCaseSensitive")" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudTextField T="string" Label="Replacement" Value="Replacement" ValueChanged="ReplacementChanged" Variant="Variant.Outlined" ShrinkLabel="true" />
+                        <MudTextField T="string" Label="Replacement" Value="Replacement" ValueChanged="ReplacementChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesReplacement")" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudSelect T="AppliesTo" Label="Applies to" Value="AppliesToValue" ValueChanged="AppliesToChanged" Variant="Variant.Outlined" ShrinkLabel="true">
+                        <MudSelect T="AppliesTo" Label="Applies to" Value="AppliesToValue" ValueChanged="AppliesToChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesAppliesTo")">
                             <MudSelectItem T="AppliesTo" Value="AppliesTo.FilenameExtension">Filename + Extension</MudSelectItem>
                             <MudSelectItem T="AppliesTo" Value="AppliesTo.Filename">Filename</MudSelectItem>
                             <MudSelectItem T="AppliesTo" Value="AppliesTo.Extension">Extension</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <FieldSwitch Label="Include files" Value="IncludeFiles" ValueChanged="IncludeFilesChanged" />
+                        <FieldSwitch Label="Include files" Value="IncludeFiles" ValueChanged="IncludeFilesChanged" data-test-id="@TestIdHelper.For("RenameFilesIncludeFiles")" />
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <FieldSwitch Label="Include folders" Value="IncludeFolders" ValueChanged="IncludeFoldersChanged" />
+                        <FieldSwitch Label="Include folders" Value="IncludeFolders" ValueChanged="IncludeFoldersChanged" data-test-id="@TestIdHelper.For("RenameFilesIncludeFolders")" />
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <MudNumericField T="int" Label="Enumerate files" Value="FileEnumerationStart" ValueChanged="FileEnumerationStartChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" />
+                        <MudNumericField T="int" Label="Enumerate files" Value="FileEnumerationStart" ValueChanged="FileEnumerationStartChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesEnumerate")" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudSelect T="bool" Label="Replace type" Value="ReplaceAll" ValueChanged="ReplaceAllChanged" Variant="Variant.Outlined" ShrinkLabel="true">
+                        <MudSelect T="bool" Label="Replace type" Value="ReplaceAll" ValueChanged="ReplaceAllChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesReplaceType")">
                             <MudSelectItem T="bool" Value="false">Replace</MudSelectItem>
                             <MudSelectItem T="bool" Value="true">Replace all</MudSelectItem>
                         </MudSelect>
@@ -55,13 +55,15 @@
                               PreSorted="true"
                               SortColumnChanged="SortColumnChanged"
                               SortDirectionChanged="SortDirectionChanged"
-                              Class="file-list" />
+                              RowKeyFunc="@(row => row.Name.Replace('/', '_'))"
+                              Class="file-list"
+                              data-test-id="@TestIdHelper.For("RenameFilesTable")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Close</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">@(ReplaceAll ? "Replace all" : "Replace")</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("RenameFilesClose")">Close</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("RenameFilesSubmit")">@(ReplaceAll ? "Replace all" : "Replace")</MudButton>
     </DialogActions>
 </MudDialog>
 

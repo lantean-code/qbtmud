@@ -16,7 +16,7 @@ using ClientModels = Lantean.QBitTorrentClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
-    public sealed class AddTorrentFileDialogTests : RazorComponentTestBase<AddTorrentFileDialogTestHarness>
+    public sealed class AddTorrentFileDialogTests : RazorComponentTestBase<AddTorrentFileDialog>
     {
         private readonly IKeyboardService _keyboardService;
         private readonly AddTorrentFileDialogTestDriver _target;
@@ -41,7 +41,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             UseApiClientMock();
             var dialog = await _target.RenderDialogAsync();
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmit());
+            var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTorrentFileSubmit");
+            await submitButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeTrue();
@@ -53,7 +54,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             UseApiClientMock();
             var dialog = await _target.RenderDialogAsync();
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeCancel());
+            var cancelButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTorrentFileClose");
+            await cancelButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeTrue();
@@ -66,8 +68,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync();
 
             var file = CreateBrowserFile("Name");
-            dialog.Component.Instance.InvokeUploadFiles(new[] { file });
-            dialog.Component.Render();
+            await UploadFilesAsync(dialog.Component, new[] { file });
 
             FindComponentByTestId<MudCard>(dialog.Component, "AddTorrentFileList").Should().NotBeNull();
             dialog.Component.FindComponents<MudListItem<string>>().Should().ContainSingle();
@@ -81,13 +82,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var fileOne = CreateBrowserFile("Name");
             var fileTwo = CreateBrowserFile("SecondName");
-            dialog.Component.Instance.InvokeUploadFiles(new[] { fileOne, fileTwo });
-            dialog.Component.Render();
+            await UploadFilesAsync(dialog.Component, new[] { fileOne, fileTwo });
 
             var deleteButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RemoveTorrentFile-Name");
-            await deleteButton.Find("button").TriggerEventAsync("onclick", new MouseEventArgs());
+            await deleteButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmit());
+            var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTorrentFileSubmit");
+            await submitButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
@@ -102,9 +103,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync();
 
             var file = CreateBrowserFile("Name");
-            dialog.Component.Instance.InvokeUploadFiles(new[] { file });
+            await UploadFilesAsync(dialog.Component, new[] { file });
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmit());
+            var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "AddTorrentFileSubmit");
+            await submitButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
@@ -115,18 +117,36 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_FileUploaded_WHEN_KeyboardSubmitInvoked_THEN_ResultContainsFileOptions()
         {
+            Func<KeyboardEvent, Task>? submitHandler = null;
+            var keyboardMock = Mock.Get(_keyboardService);
+            keyboardMock
+                .Setup(service => service.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Enter"), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((_, handler) =>
+                {
+                    submitHandler = handler;
+                })
+                .Returns(Task.CompletedTask);
+
             UseApiClientMock();
             var dialog = await _target.RenderDialogAsync();
 
-            var file = CreateBrowserFile("Name");
-            dialog.Component.Instance.InvokeUploadFiles(new[] { file });
+            dialog.Component.WaitForAssertion(() => submitHandler.Should().NotBeNull());
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmitWithKeyboardAsync(new KeyboardEvent("Key")));
+            var file = CreateBrowserFile("Name");
+            await UploadFilesAsync(dialog.Component, new[] { file });
+
+            await dialog.Component.InvokeAsync(() => submitHandler!(new KeyboardEvent("Enter")));
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
             var options = (AddTorrentFileOptions)result.Data!;
             options.Files.Should().ContainSingle().Which.Should().Be(file);
+        }
+
+        private async Task UploadFilesAsync(IRenderedComponent<AddTorrentFileDialog> component, IReadOnlyList<IBrowserFile> files)
+        {
+            var upload = FindComponentByTestId<MudFileUpload<IReadOnlyList<IBrowserFile>>>(component, "AddTorrentFileUpload");
+            await component.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(files));
         }
 
         private Mock<IApiClient> UseApiClientMock()
@@ -152,29 +172,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
     }
 
-    public sealed class AddTorrentFileDialogTestHarness : AddTorrentFileDialog
-    {
-        public void InvokeUploadFiles(IReadOnlyList<IBrowserFile> files)
-        {
-            UploadFiles(files);
-        }
-
-        public void InvokeCancel()
-        {
-            Cancel();
-        }
-
-        public void InvokeSubmit()
-        {
-            Submit();
-        }
-
-        public Task InvokeSubmitWithKeyboardAsync(KeyboardEvent keyboardEvent)
-        {
-            return Submit(keyboardEvent);
-        }
-    }
-
     internal sealed class AddTorrentFileDialogTestDriver
     {
         private readonly ComponentTestContext _testContext;
@@ -189,10 +186,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var provider = _testContext.Render<MudDialogProvider>();
             var dialogService = _testContext.Services.GetRequiredService<IDialogService>();
 
-            var reference = await dialogService.ShowAsync<AddTorrentFileDialogTestHarness>("Upload local torrent");
+            var reference = await dialogService.ShowAsync<AddTorrentFileDialog>("Upload local torrent");
 
             var dialog = provider.FindComponent<MudDialog>();
-            var component = provider.FindComponent<AddTorrentFileDialogTestHarness>();
+            var component = provider.FindComponent<AddTorrentFileDialog>();
 
             return new AddTorrentFileDialogRenderContext(provider, dialog, component, reference);
         }
@@ -203,7 +200,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public AddTorrentFileDialogRenderContext(
             IRenderedComponent<MudDialogProvider> provider,
             IRenderedComponent<MudDialog> dialog,
-            IRenderedComponent<AddTorrentFileDialogTestHarness> component,
+            IRenderedComponent<AddTorrentFileDialog> component,
             IDialogReference reference)
         {
             Provider = provider;
@@ -216,7 +213,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         public IRenderedComponent<MudDialog> Dialog { get; }
 
-        public IRenderedComponent<AddTorrentFileDialogTestHarness> Component { get; }
+        public IRenderedComponent<AddTorrentFileDialog> Component { get; }
 
         public IDialogReference Reference { get; }
     }

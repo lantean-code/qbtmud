@@ -1,3 +1,4 @@
+
 @typeparam T
 @inherits SubmittableDialog
 @using Lantean.QBTMud.Helpers
@@ -28,7 +29,7 @@
         </MudCard>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("ColumnOptionsCancel")">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("ColumnOptionsSave")">Save</MudButton>
     </DialogActions>
 </MudDialog>

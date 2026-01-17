@@ -7,7 +7,7 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("TorrentOptionsCancel")">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("TorrentOptionsSave")">Save</MudButton>
     </DialogActions>
 </MudDialog>

@@ -5,10 +5,10 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@Label" Value="@GetDisplayValue()" ValueChanged="ValueChanged" Disabled="Disabled" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="@Adornment" AdornmentText="@AdornmentText" />
+                <MudTextField T="string" Label="@Label" Value="@GetDisplayValue()" ValueChanged="ValueChanged" Disabled="Disabled" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="@Adornment" AdornmentText="@AdornmentText" data-test-id="@TestIdHelper.For("SliderFieldInput")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSlider T="T" ValueLabel="true" Value="@Value" ValueChanged="ValueChanged" Min="@Min" Max="@Max" Disabled="Disabled">
+                <MudSlider T="T" ValueLabel="true" Value="@Value" ValueChanged="ValueChanged" Min="@Min" Max="@Max" Disabled="Disabled" data-test-id="@TestIdHelper.For("SliderFieldSlider")">
                     <ValueLabelContent>
                         @if (ValueDisplayFunc is not null)
                         {
@@ -24,7 +24,7 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit" OnClick="Submit">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("SliderFieldCancel")">Cancel</MudButton>
+        <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit" OnClick="Submit" data-test-id="@TestIdHelper.For("SliderFieldSave")">Save</MudButton>
     </DialogActions>
 </MudDialog>

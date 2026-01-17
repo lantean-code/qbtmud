@@ -6,12 +6,12 @@
 
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox Label="Also permanently delete the files" @bind-Value="DeleteFiles" LabelPlacement="Placement.End" />
+                <MudCheckBox Label="Also permanently delete the files" @bind-Value="DeleteFiles" LabelPlacement="Placement.End" data-test-id="@TestIdHelper.For("DeleteFiles")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Remove</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("DeleteDialogCancel")">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("DeleteDialogRemove")">Remove</MudButton>
     </DialogActions>
 </MudDialog>

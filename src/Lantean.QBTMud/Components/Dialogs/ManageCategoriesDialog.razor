@@ -3,13 +3,13 @@
         <MudGrid>
             <MudItem xs="12">
                 <MudList T="string">
-                    <MudListItem Icon="@Icons.Material.Filled.Add" IconColor="Color.Info" OnClick="AddCategory">Add</MudListItem>
-                    <MudListItem Icon="@Icons.Material.Filled.Remove" IconColor="Color.Error" OnClick="RemoveCategory">Remove</MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.Add" IconColor="Color.Info" OnClick="AddCategory" data-test-id="@TestIdHelper.For("CategoryAdd")">Add</MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.Remove" IconColor="Color.Error" OnClick="RemoveCategory" data-test-id="@TestIdHelper.For("CategoryRemove")">Remove</MudListItem>
                     <MudDivider />
                     @foreach (var category in Categories)
                     {
                         var categoryRef = category;
-                        <MudListItem Icon="@GetIcon(categoryRef)" IconColor="Color.Default" OnClick="@(e => SetCategory(categoryRef))">@categoryRef</MudListItem>
+                        <MudListItem Icon="@GetIcon(categoryRef)" IconColor="Color.Default" OnClick="@(e => SetCategory(categoryRef))" data-test-id="@TestIdHelper.For($"Category-{categoryRef}")">@categoryRef</MudListItem>
                     }
                 </MudList>
             </MudItem>

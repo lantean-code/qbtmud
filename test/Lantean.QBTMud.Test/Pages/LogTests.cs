@@ -3,7 +3,6 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -24,7 +23,8 @@ namespace Lantean.QBTMud.Test.Pages
         private readonly IApiClient _apiClient;
         private readonly ISnackbar _snackbar;
         private readonly FakePeriodicTimer _timer;
-        private readonly IRenderedComponent<LogHarness> _target;
+        private readonly IRenderedComponent<MudPopoverProvider> _popoverProvider;
+        private readonly IRenderedComponent<LogPage> _target;
 
         public LogTests()
         {
@@ -39,13 +39,13 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
             TestContext.Services.AddSingleton<IPeriodicTimerFactory>(new FakePeriodicTimerFactory(_timer));
 
-            TestContext.Render<MudPopoverProvider>();
+            _popoverProvider = TestContext.Render<MudPopoverProvider>();
 
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(new List<LogEntry>());
 
-            _target = TestContext.Render<LogHarness>(parameters =>
+            _target = TestContext.Render<LogPage>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", false);
             });
@@ -61,8 +61,9 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_SelectedValuesChanged_WHEN_Invoked_THEN_Persisted()
         {
             var values = new[] { "Info", "Warning" };
+            var select = FindCategorySelect();
 
-            await _target.InvokeAsync(() => _target.Instance.InvokeSelectedValuesChanged(values));
+            await _target.InvokeAsync(() => select.Instance.SelectedValuesChanged.InvokeAsync(values));
 
             var stored = await TestContext.LocalStorage.GetItemAsync<IEnumerable<string>>(SelectedTypesStorageKey);
             stored.Should().BeEquivalentTo(values);
@@ -71,14 +72,13 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_MultiSelectionTextFunc_WHEN_CountsProvided_THEN_ReturnsExpected()
         {
-            var text = _target.Instance.InvokeGenerateSelectedText(new List<string> { "Normal", "Info", "Warning", "Critical" });
-            text.Should().Be("All");
+            var select = FindCategorySelect();
+            select.Instance.MultiSelectionTextFunc.Should().NotBeNull();
 
-            text = _target.Instance.InvokeGenerateSelectedText(new List<string> { "Normal" });
-            text.Should().Be("Normal");
-
-            text = _target.Instance.InvokeGenerateSelectedText(new List<string> { "Normal", "Warning" });
-            text.Should().Be("2 selected");
+            var func = select.Instance.MultiSelectionTextFunc!;
+            func.Invoke(new List<string?> { "Normal", "Info", "Warning", "Critical" }).Should().Be("All");
+            func.Invoke(new List<string?> { "Normal" }).Should().Be("Normal");
+            func.Invoke(new List<string?> { "Normal", "Warning" }).Should().Be("2 selected");
         }
 
         [Fact]
@@ -89,7 +89,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await _timer.TriggerTickAsync();
+            await _target.InvokeAsync(() => _timer.TriggerTickAsync());
 
             var table = _target.FindComponent<DynamicTable<LogEntry>>();
             table.WaitForAssertion(() =>
@@ -103,9 +103,12 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_ContextMenuCopy_WHEN_MessagePresent_THEN_CopiesAndNotifies()
         {
             var item = CreateLog(1, "Message", LogType.Normal);
-            _target.Instance.SetContextMenuItem(item);
 
-            await _target.InvokeAsync(() => _target.Instance.InvokeCopyContextMenuItem());
+            await TriggerContextMenuAsync(item);
+            await OpenMenuAsync();
+
+            var copyItem = FindMenuItem(Icons.Material.Filled.ContentCopy);
+            await _target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
 
             TestContext.Clipboard.PeekLast().Should().Be("Message");
             Mock.Get(_snackbar).Verify(s => s.Add("Log entry copied to clipboard.", Severity.Info, null, null), Times.Once);
@@ -115,65 +118,36 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_ContextMenuCopy_WHEN_MessageMissing_THEN_DoesNotCopy()
         {
             var item = CreateLog(1, string.Empty, LogType.Normal);
-            _target.Instance.SetContextMenuItem(item);
 
-            await _target.InvokeAsync(() => _target.Instance.InvokeCopyContextMenuItem());
+            await TriggerLongPressAsync(item);
+            await OpenMenuAsync();
+
+            var copyItem = FindMenuItem(Icons.Material.Filled.ContentCopy);
+            await _target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
 
             TestContext.Clipboard.PeekLast().Should().BeNull();
             Mock.Get(_snackbar).Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), null, null), Times.Never);
         }
 
         [Fact]
-        public void GIVEN_NavigateBack_WHEN_Invoked_THEN_NavigatesHome()
+        public async Task GIVEN_NavigateBack_WHEN_Clicked_THEN_NavigatesHome()
         {
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            var backButton = _target.FindComponents<MudIconButton>()
+                .Single(button => button.Instance.Icon == Icons.Material.Outlined.NavigateBefore);
 
-            _target.Instance.InvokeNavigateBack();
+            await _target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
 
             navigationManager.Uri.Should().EndWith("/");
         }
 
         [Fact]
-        public async Task GIVEN_ContextMenuReferenceMissing_WHEN_TableDataContextMenuInvoked_THEN_ContextItemSet()
-        {
-            var item = CreateLog(1, "Message", LogType.Info);
-            _target.Instance.ClearContextMenuReference();
-
-            await _target.InvokeAsync(() => _target.Instance.InvokeTableDataContextMenu(item));
-
-            _target.Instance.CurrentContextMenuItem.Should().Be(item);
-        }
-
-        [Fact]
-        public async Task GIVEN_ContextMenuReferenceMissing_WHEN_TableDataLongPressInvoked_THEN_ContextItemSet()
-        {
-            var item = CreateLog(1, "Message", LogType.Info);
-            _target.Instance.ClearContextMenuReference();
-
-            await _target.InvokeAsync(() => _target.Instance.InvokeTableDataLongPress(item));
-
-            _target.Instance.CurrentContextMenuItem.Should().Be(item);
-        }
-
-        [Fact]
-        public async Task GIVEN_ContextMenuReferenceAvailable_WHEN_TableDataContextMenuInvoked_THEN_ContextItemSet()
-        {
-            var item = CreateLog(1, "Message", LogType.Info);
-
-            _target.WaitForAssertion(() =>
-            {
-                _target.Instance.HasContextMenuReference.Should().BeTrue();
-            });
-
-            await _target.InvokeAsync(() => _target.Instance.InvokeTableDataContextMenu(item));
-
-            _target.Instance.CurrentContextMenuItem.Should().Be(item);
-        }
-
-        [Fact]
         public async Task GIVEN_NoResults_WHEN_ClearInvoked_THEN_NoNotification()
         {
-            await _target.InvokeAsync(() => _target.Instance.InvokeClearResults());
+            await OpenMenuAsync();
+
+            var clearItem = FindMenuItem(Icons.Material.Filled.Clear);
+            await _target.InvokeAsync(() => clearItem.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_snackbar).Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), null, null), Times.Never);
         }
@@ -186,18 +160,21 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await _target.InvokeAsync(() => _target.Instance.InvokeSubmit(new EditContext(new LogForm())));
+            await InvokeSubmitAsync();
 
-            _target.WaitForAssertion(() =>
+            var table = _target.FindComponent<DynamicTable<LogEntry>>();
+            table.WaitForAssertion(() =>
             {
-                var items = _target.Instance.CurrentResults.Should().NotBeNull().And.Subject;
+                var items = table.Instance.Items.Should().NotBeNull().And.Subject;
                 items.Count().Should().Be(1);
             });
 
-            _target.Instance.SetContextMenuItem(results[0]);
-            await _target.InvokeAsync(() => _target.Instance.InvokeClearResults());
+            await OpenMenuAsync();
 
-            var clearedItems = _target.Instance.CurrentResults.Should().NotBeNull().And.Subject;
+            var clearItem = FindMenuItem(Icons.Material.Filled.Clear);
+            await _target.InvokeAsync(() => clearItem.Instance.OnClick.InvokeAsync());
+
+            var clearedItems = table.Instance.Items.Should().NotBeNull().And.Subject;
             clearedItems.Should().BeEmpty();
             Mock.Get(_snackbar).Verify(s => s.Add("Log view cleared.", Severity.Info, null, null), Times.Once);
         }
@@ -221,11 +198,12 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await _timer.TriggerTickAsync();
+            await _target.InvokeAsync(() => _timer.TriggerTickAsync());
 
-            _target.WaitForAssertion(() =>
+            var table = _target.FindComponent<DynamicTable<LogEntry>>();
+            table.WaitForAssertion(() =>
             {
-                var items = _target.Instance.CurrentResults.Should().NotBeNull().And.Subject.ToList();
+                var items = table.Instance.Items.Should().NotBeNull().And.Subject.ToList();
                 items.Count.Should().Be(500);
                 items[0].Id.Should().Be(2);
             });
@@ -234,9 +212,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_FormSubmitted_WHEN_SubmitInvoked_THEN_LogsRequested()
         {
-            var form = _target.FindComponent<EditForm>();
-
-            await _target.InvokeAsync(() => form.Instance.OnSubmit.InvokeAsync(form.Instance.EditContext));
+            await InvokeSubmitAsync();
 
             Mock.Get(_apiClient).Verify(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()), Times.AtLeast(2));
         }
@@ -258,7 +234,7 @@ namespace Lantean.QBTMud.Test.Pages
             localContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
             localContext.Services.AddSingleton<IPeriodicTimerFactory>(new FakePeriodicTimerFactory(new FakePeriodicTimer()));
 
-            var localTarget = localContext.Render<LogHarness>(parameters =>
+            var localTarget = localContext.Render<LogPage>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", false);
             });
@@ -277,9 +253,52 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ThrowsAsync(exception);
 
-            await _timer.TriggerTickAsync();
+            await _target.InvokeAsync(() => _timer.TriggerTickAsync());
 
             Mock.Get(_apiClient).Verify(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()), Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task GIVEN_DisposeInvoked_WHEN_Disposed_THEN_NoCrash()
+        {
+            await _target.Instance.DisposeAsync();
+        }
+
+        private IRenderedComponent<MudSelect<string>> FindCategorySelect()
+        {
+            return _target.FindComponents<MudSelect<string>>().Single(select => select.Instance.Label == "Categories");
+        }
+
+        private async Task InvokeSubmitAsync()
+        {
+            var form = _target.FindComponent<EditForm>();
+            await _target.InvokeAsync(() => form.Instance.OnSubmit.InvokeAsync(form.Instance.EditContext));
+        }
+
+        private async Task TriggerContextMenuAsync(LogEntry item)
+        {
+            var table = _target.FindComponent<DynamicTable<LogEntry>>();
+            var args = new TableDataContextMenuEventArgs<LogEntry>(new MouseEventArgs(), new MudTd(), item);
+            await _target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(args));
+        }
+
+        private async Task TriggerLongPressAsync(LogEntry item)
+        {
+            var table = _target.FindComponent<DynamicTable<LogEntry>>();
+            var args = new TableDataLongPressEventArgs<LogEntry>(new LongPressEventArgs(), new MudTd(), item);
+            await _target.InvokeAsync(() => table.Instance.OnTableDataLongPress.InvokeAsync(args));
+        }
+
+        private async Task OpenMenuAsync()
+        {
+            var menu = _target.FindComponent<MudMenu>();
+            await _target.InvokeAsync(() => menu.Instance.OpenMenuAsync(new MouseEventArgs()));
+        }
+
+        private IRenderedComponent<MudMenuItem> FindMenuItem(string icon)
+        {
+            return _popoverProvider.FindComponents<MudMenuItem>()
+                .Single(item => item.Instance.Icon == icon);
         }
 
         private static LogEntry CreateLog(int id, string message, LogType type)
@@ -296,81 +315,6 @@ namespace Lantean.QBTMud.Test.Pages
             }
 
             return results;
-        }
-
-        private sealed class LogHarness : LogPage
-        {
-            public IEnumerable<string> CurrentSelectedTypes
-            {
-                get { return Model.SelectedTypes; }
-            }
-
-            public List<LogEntry>? CurrentResults
-            {
-                get { return Results; }
-            }
-
-            public LogEntry? CurrentContextMenuItem
-            {
-                get { return ContextMenuItem; }
-            }
-
-            public bool HasContextMenuReference
-            {
-                get { return ContextMenu is not null; }
-            }
-
-            public void SetContextMenuItem(LogEntry? item)
-            {
-                ContextMenuItem = item;
-            }
-
-            public void ClearContextMenuReference()
-            {
-                ContextMenu = null;
-            }
-
-            public Task InvokeTableDataContextMenu(LogEntry? item)
-            {
-                var args = new TableDataContextMenuEventArgs<LogEntry>(new MouseEventArgs(), new MudTd(), item);
-                return TableDataContextMenu(args);
-            }
-
-            public Task InvokeTableDataLongPress(LogEntry? item)
-            {
-                var args = new TableDataLongPressEventArgs<LogEntry>(new LongPressEventArgs(), new MudTd(), item);
-                return TableDataLongPress(args);
-            }
-
-            public void InvokeNavigateBack()
-            {
-                NavigateBack();
-            }
-
-            public Task InvokeCopyContextMenuItem()
-            {
-                return CopyContextMenuItem();
-            }
-
-            public Task InvokeClearResults()
-            {
-                return ClearResults();
-            }
-
-            public Task InvokeSelectedValuesChanged(IEnumerable<string> values)
-            {
-                return SelectedValuesChanged(values);
-            }
-
-            public string InvokeGenerateSelectedText(List<string> values)
-            {
-                return GenerateSelectedText(values);
-            }
-
-            public Task InvokeSubmit(EditContext editContext)
-            {
-                return Submit(editContext);
-            }
         }
     }
 }

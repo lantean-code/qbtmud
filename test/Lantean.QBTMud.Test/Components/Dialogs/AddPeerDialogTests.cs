@@ -13,7 +13,7 @@ using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
-    public sealed class AddPeerDialogTests : RazorComponentTestBase<AddPeerDialogTestHarness>
+    public sealed class AddPeerDialogTests : RazorComponentTestBase<AddPeerDialog>
     {
         private readonly IKeyboardService _keyboardService;
         private readonly AddPeerDialogTestDriver _target;
@@ -37,11 +37,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeAddTracker();
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddPeerAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            dialog.Component.Instance.GetPeers().Should().BeEmpty();
-            dialog.Component.Instance.IPValue.Should().BeNull();
-            dialog.Component.Instance.PortValue.Should().BeNull();
+            var ipField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddPeerIp");
+            var portField = FindComponentByTestId<MudNumericField<int?>>(dialog.Component, "AddPeerPort");
+
+            dialog.Component.FindComponents<MudIconButton>().Should().HaveCount(1);
+            ipField.Instance.Value.Should().BeNull();
+            portField.Instance.Value.Should().BeNull();
         }
 
         [Fact]
@@ -49,20 +53,18 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetIP("IP");
-            dialog.Component.Instance.InvokeSetPort(6881);
-            dialog.Component.Instance.InvokeAddTracker();
-            dialog.Component.Render();
+            var ipField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddPeerIp");
+            ipField.Find("input").Change("IP");
 
-            var peers = dialog.Component.Instance.GetPeers();
-            peers.Should().ContainSingle();
-            var peer = peers.Single();
-            peer.Host.Should().Be("IP");
-            peer.Port.Should().Be(6881);
-            dialog.Component.Instance.IPValue.Should().BeNull();
-            dialog.Component.Instance.PortValue.Should().BeNull();
+            var portField = FindComponentByTestId<MudNumericField<int?>>(dialog.Component, "AddPeerPort");
+            portField.Find("input").Change("6881");
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddPeerAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
 
             FindComponentByTestId<MudIconButton>(dialog.Component, "DeletePeer-IP-6881").Should().NotBeNull();
+            ipField.Instance.Value.Should().BeNull();
+            portField.Instance.Value.Should().BeNull();
         }
 
         [Fact]
@@ -70,15 +72,19 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetIP("IP");
-            dialog.Component.Instance.InvokeSetPort(6881);
-            dialog.Component.Instance.InvokeAddTracker();
-            dialog.Component.Render();
+            var ipField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddPeerIp");
+            ipField.Find("input").Change("IP");
+
+            var portField = FindComponentByTestId<MudNumericField<int?>>(dialog.Component, "AddPeerPort");
+            portField.Find("input").Change("6881");
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddPeerAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var deleteButton = FindComponentByTestId<MudIconButton>(dialog.Component, "DeletePeer-IP-6881");
-            await deleteButton.Find("button").TriggerEventAsync("onclick", new MouseEventArgs());
+            await deleteButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            dialog.Component.Instance.GetPeers().Should().BeEmpty();
+            dialog.Component.FindComponents<MudIconButton>().Should().HaveCount(1);
         }
 
         [Fact]
@@ -86,7 +92,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync();
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeCancel());
+            var cancelButton = FindComponentByTestId<MudButton>(dialog.Component, "AddPeerCancel");
+            await cancelButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeTrue();
@@ -97,96 +104,56 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetIP("IP");
-            dialog.Component.Instance.InvokeSetPort(6881);
-            dialog.Component.Instance.InvokeAddTracker();
+            var ipField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddPeerIp");
+            ipField.Find("input").Change("IP");
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmit());
+            var portField = FindComponentByTestId<MudNumericField<int?>>(dialog.Component, "AddPeerPort");
+            portField.Find("input").Change("6881");
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddPeerAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "AddPeerSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
             var peers = (HashSet<PeerId>)result.Data!;
-            peers.Should().ContainSingle();
-            peers.Single().Host.Should().Be("IP");
-            peers.Single().Port.Should().Be(6881);
+            peers.Should().ContainSingle(peer => peer.Host == "IP" && peer.Port == 6881);
         }
 
         [Fact]
         public async Task GIVEN_PeerAdded_WHEN_KeyboardSubmitInvoked_THEN_ResultContainsPeers()
         {
+            Func<KeyboardEvent, Task>? submitHandler = null;
+            var keyboardMock = Mock.Get(_keyboardService);
+            keyboardMock
+                .Setup(service => service.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Enter"), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((_, handler) =>
+                {
+                    submitHandler = handler;
+                })
+                .Returns(Task.CompletedTask);
+
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.Instance.InvokeSetIP("IP");
-            dialog.Component.Instance.InvokeSetPort(6881);
-            dialog.Component.Instance.InvokeAddTracker();
+            dialog.Component.WaitForAssertion(() => submitHandler.Should().NotBeNull());
 
-            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.InvokeSubmitWithKeyboardAsync(new KeyboardEvent("Enter")));
+            var ipField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddPeerIp");
+            ipField.Find("input").Change("IP");
+
+            var portField = FindComponentByTestId<MudNumericField<int?>>(dialog.Component, "AddPeerPort");
+            portField.Find("input").Change("6881");
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddPeerAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            await dialog.Component.InvokeAsync(() => submitHandler!(new KeyboardEvent("Enter")));
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
             var peers = (HashSet<PeerId>)result.Data!;
-            peers.Should().ContainSingle();
-            peers.Single().Host.Should().Be("IP");
-            peers.Single().Port.Should().Be(6881);
-        }
-    }
-
-    public sealed class AddPeerDialogTestHarness : AddPeerDialog
-    {
-        public HashSet<PeerId> GetPeers()
-        {
-            return Peers;
-        }
-
-        public string? IPValue
-        {
-            get
-            {
-                return IP;
-            }
-        }
-
-        public int? PortValue
-        {
-            get
-            {
-                return Port;
-            }
-        }
-
-        public void InvokeSetIP(string value)
-        {
-            SetIP(value);
-        }
-
-        public void InvokeSetPort(int? value)
-        {
-            SetPort(value);
-        }
-
-        public void InvokeAddTracker()
-        {
-            AddTracker();
-        }
-
-        public void InvokeDeletePeer(PeerId peer)
-        {
-            DeletePeer(peer);
-        }
-
-        public void InvokeCancel()
-        {
-            Cancel();
-        }
-
-        public void InvokeSubmit()
-        {
-            Submit();
-        }
-
-        public Task InvokeSubmitWithKeyboardAsync(KeyboardEvent keyboardEvent)
-        {
-            return Submit(keyboardEvent);
+            peers.Should().ContainSingle(peer => peer.Host == "IP" && peer.Port == 6881);
         }
     }
 
@@ -204,10 +171,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var provider = _testContext.Render<MudDialogProvider>();
             var dialogService = _testContext.Services.GetRequiredService<IDialogService>();
 
-            var reference = await dialogService.ShowAsync<AddPeerDialogTestHarness>("Add Peer");
+            var reference = await dialogService.ShowAsync<AddPeerDialog>("Add Peer");
 
             var dialog = provider.FindComponent<MudDialog>();
-            var component = provider.FindComponent<AddPeerDialogTestHarness>();
+            var component = provider.FindComponent<AddPeerDialog>();
 
             return new AddPeerDialogRenderContext(provider, dialog, component, reference);
         }
@@ -218,7 +185,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public AddPeerDialogRenderContext(
             IRenderedComponent<MudDialogProvider> provider,
             IRenderedComponent<MudDialog> dialog,
-            IRenderedComponent<AddPeerDialogTestHarness> component,
+            IRenderedComponent<AddPeerDialog> component,
             IDialogReference reference)
         {
             Provider = provider;
@@ -231,7 +198,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         public IRenderedComponent<MudDialog> Dialog { get; }
 
-        public IRenderedComponent<AddPeerDialogTestHarness> Component { get; }
+        public IRenderedComponent<AddPeerDialog> Component { get; }
 
         public IDialogReference Reference { get; }
     }

@@ -5,22 +5,22 @@
         <table width="100%">
             <tbody>
                 <tr>
-                    <td style="width: 100%"><MudTextField T="string" Label="@(Label)" Value="@Value" ValueChanged="SetValue" Required Variant="Variant.Outlined" ShrinkLabel="true" /></td>
-                    <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddValue" /></td>
+                    <td style="width: 100%"><MudTextField T="string" Label="@(Label)" Value="@Value" ValueChanged="SetValue" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("MultipleFieldInput")" /></td>
+                    <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddValue" data-test-id="@TestIdHelper.For("MultipleFieldAdd")" /></td>
                 </tr>
                 @foreach (var value in NewValues)
                 {
                     var valueRef = value;
                     <tr>
                         <td>@value</td>
-                        <td><MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(e => DeleteValue(valueRef))" /></td>
+                        <td><MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(e => DeleteValue(valueRef))" data-test-id="@TestIdHelper.For($"MultipleFieldDelete-{valueRef}")" /></td>
                     </tr>
                 }
             </tbody>
         </table>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("MultipleFieldCancel")">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("MultipleFieldSave")">Save</MudButton>
     </DialogActions>
 </MudDialog>

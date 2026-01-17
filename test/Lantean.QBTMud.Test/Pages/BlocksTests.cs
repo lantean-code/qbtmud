@@ -3,7 +3,6 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -19,11 +18,11 @@ namespace Lantean.QBTMud.Test.Pages
 {
     public sealed class BlocksTests : RazorComponentTestBase
     {
-        private const string SelectedTypesStorageKey = "Blocks.SelectedTypes";
         private readonly IApiClient _apiClient;
         private readonly ISnackbar _snackbar;
         private readonly FakePeriodicTimer _timer;
-        private readonly IRenderedComponent<BlocksHarness> _target;
+        private readonly IRenderedComponent<MudPopoverProvider> _popoverProvider;
+        private readonly IRenderedComponent<Blocks> _target;
 
         public BlocksTests()
         {
@@ -38,13 +37,13 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
             TestContext.Services.AddSingleton<IPeriodicTimerFactory>(new FakePeriodicTimerFactory(_timer));
 
-            TestContext.Render<MudPopoverProvider>();
+            _popoverProvider = TestContext.Render<MudPopoverProvider>();
 
             Mock.Get(_apiClient)
                 .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
                 .ReturnsAsync(new List<PeerLog>());
 
-            _target = TestContext.Render<BlocksHarness>(parameters =>
+            _target = TestContext.Render<Blocks>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", false);
             });
@@ -76,7 +75,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await _timer.TriggerTickAsync();
+            await _target.InvokeAsync(() => _timer.TriggerTickAsync());
 
             var table = _target.FindComponent<DynamicTable<PeerLog>>();
             table.WaitForAssertion(() =>
@@ -90,9 +89,18 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_ContextMenuCopy_WHEN_AddressPresent_THEN_CopiesAndNotifies()
         {
             var item = CreatePeerLog(1, "IPAddress", true);
-            _target.Instance.SetContextMenuItem(item);
 
-            await _target.InvokeAsync(() => _target.Instance.InvokeCopyContextMenuItem());
+            await TriggerContextMenuAsync(item);
+            await OpenMenuAsync();
+
+            _target.WaitForAssertion(() =>
+            {
+                var menuItem = FindMenuItem(Icons.Material.Filled.ContentCopy);
+                menuItem.Instance.Disabled.Should().BeFalse();
+            });
+
+            var copyItem = FindMenuItem(Icons.Material.Filled.ContentCopy);
+            await _target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
 
             TestContext.Clipboard.PeekLast().Should().Be("IPAddress");
             Mock.Get(_snackbar).Verify(s => s.Add("Address copied to clipboard.", Severity.Info, null, null), Times.Once);
@@ -102,55 +110,25 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_ContextMenuCopy_WHEN_AddressMissing_THEN_DoesNotCopy()
         {
             var item = CreatePeerLog(1, string.Empty, true);
-            _target.Instance.SetContextMenuItem(item);
 
-            await _target.InvokeAsync(() => _target.Instance.InvokeCopyContextMenuItem());
+            await TriggerLongPressAsync(item);
+            await OpenMenuAsync();
+
+            var copyItem = FindMenuItem(Icons.Material.Filled.ContentCopy);
+            await _target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
 
             TestContext.Clipboard.PeekLast().Should().BeNull();
             Mock.Get(_snackbar).Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), null, null), Times.Never);
         }
 
         [Fact]
-        public async Task GIVEN_ContextMenuReferenceMissing_WHEN_TableDataContextMenuInvoked_THEN_ContextItemSet()
-        {
-            var item = CreatePeerLog(1, "IPAddress", true);
-            _target.Instance.ClearContextMenuReference();
-
-            await _target.InvokeAsync(() => _target.Instance.InvokeTableDataContextMenu(item));
-
-            _target.Instance.CurrentContextMenuItem.Should().Be(item);
-        }
-
-        [Fact]
-        public async Task GIVEN_ContextMenuReferenceMissing_WHEN_TableDataLongPressInvoked_THEN_ContextItemSet()
-        {
-            var item = CreatePeerLog(1, "IPAddress", true);
-            _target.Instance.ClearContextMenuReference();
-
-            await _target.InvokeAsync(() => _target.Instance.InvokeTableDataLongPress(item));
-
-            _target.Instance.CurrentContextMenuItem.Should().Be(item);
-        }
-
-        [Fact]
-        public async Task GIVEN_ContextMenuReferenceAvailable_WHEN_TableDataContextMenuInvoked_THEN_ContextItemSet()
-        {
-            var item = CreatePeerLog(1, "IPAddress", true);
-
-            _target.WaitForAssertion(() =>
-            {
-                _target.Instance.HasContextMenuReference.Should().BeTrue();
-            });
-
-            await _target.InvokeAsync(() => _target.Instance.InvokeTableDataContextMenu(item));
-
-            _target.Instance.CurrentContextMenuItem.Should().Be(item);
-        }
-
-        [Fact]
         public async Task GIVEN_NoResults_WHEN_ClearInvoked_THEN_NoNotification()
         {
-            await _target.InvokeAsync(() => _target.Instance.InvokeClearResults());
+            await OpenMenuAsync();
+
+            var clearItem = FindMenuItem(Icons.Material.Filled.Clear);
+
+            await _target.InvokeAsync(() => clearItem.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_snackbar).Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), null, null), Times.Never);
         }
@@ -163,18 +141,21 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await _target.InvokeAsync(() => _target.Instance.InvokeSubmit(new EditContext(new LogForm())));
+            await InvokeSubmitAsync();
 
-            _target.WaitForAssertion(() =>
+            var table = _target.FindComponent<DynamicTable<PeerLog>>();
+            table.WaitForAssertion(() =>
             {
-                var items = _target.Instance.CurrentResults.Should().NotBeNull().And.Subject;
+                var items = table.Instance.Items.Should().NotBeNull().And.Subject;
                 items.Count().Should().Be(1);
             });
 
-            _target.Instance.SetContextMenuItem(results[0]);
-            await _target.InvokeAsync(() => _target.Instance.InvokeClearResults());
+            await OpenMenuAsync();
 
-            var clearedItems = _target.Instance.CurrentResults.Should().NotBeNull().And.Subject;
+            var clearItem = FindMenuItem(Icons.Material.Filled.Clear);
+            await _target.InvokeAsync(() => clearItem.Instance.OnClick.InvokeAsync());
+
+            var clearedItems = table.Instance.Items.Should().NotBeNull().And.Subject;
             clearedItems.Should().BeEmpty();
             Mock.Get(_snackbar).Verify(s => s.Add("Blocked IP list cleared.", Severity.Info, null, null), Times.Once);
         }
@@ -198,11 +179,12 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await _timer.TriggerTickAsync();
+            await _target.InvokeAsync(() => _timer.TriggerTickAsync());
 
-            _target.WaitForAssertion(() =>
+            var table = _target.FindComponent<DynamicTable<PeerLog>>();
+            table.WaitForAssertion(() =>
             {
-                var items = _target.Instance.CurrentResults.Should().NotBeNull().And.Subject.ToList();
+                var items = table.Instance.Items.Should().NotBeNull().And.Subject.ToList();
                 items.Count.Should().Be(500);
                 items[0].Id.Should().Be(2);
             });
@@ -216,80 +198,47 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
                 .ThrowsAsync(exception);
 
-            await _timer.TriggerTickAsync();
+            await _target.InvokeAsync(() => _timer.TriggerTickAsync());
 
             Mock.Get(_apiClient).Verify(c => c.GetPeerLog(It.IsAny<int?>()), Times.AtLeastOnce);
         }
 
         [Fact]
-        public async Task GIVEN_SelectedValuesChanged_WHEN_Invoked_THEN_Persisted()
+        public async Task GIVEN_DisposeInvoked_WHEN_Disposed_THEN_NoCrash()
         {
-            var values = new[] { "Normal", "Warning" };
-
-            await _target.InvokeAsync(() => _target.Instance.InvokeSelectedValuesChanged(values));
-
-            var stored = await TestContext.LocalStorage.GetItemAsync<IEnumerable<string>>(SelectedTypesStorageKey);
-            stored.Should().BeEquivalentTo(values);
+            await _target.Instance.DisposeAsync();
         }
 
-        [Fact]
-        public async Task GIVEN_SubmitInvoked_WHEN_ApiReturnsData_THEN_TableUpdated()
+        private async Task InvokeSubmitAsync()
         {
-            var results = new List<PeerLog> { CreatePeerLog(1, "IPAddress", true) };
-            Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
-                .ReturnsAsync(results);
-
-            await _target.InvokeAsync(() => _target.Instance.InvokeSubmit(new EditContext(new LogForm())));
-
-            _target.WaitForAssertion(() =>
-            {
-                var items = _target.Instance.CurrentResults.Should().NotBeNull().And.Subject;
-                items.Count().Should().Be(1);
-            });
+            var form = _target.FindComponent<EditForm>();
+            await _target.InvokeAsync(() => form.Instance.OnSubmit.InvokeAsync(form.Instance.EditContext));
         }
 
-        [Fact]
-        public void GIVEN_GenerateSelectedText_WHEN_AllSelected_THEN_ReturnsAll()
+        private async Task TriggerContextMenuAsync(PeerLog item)
         {
-            var text = _target.Instance.InvokeGenerateSelectedText(new List<string> { "Normal", "Info", "Warning", "Critical" });
-
-            text.Should().Be("All");
+            var table = _target.FindComponent<DynamicTable<PeerLog>>();
+            var args = new TableDataContextMenuEventArgs<PeerLog>(new MouseEventArgs(), new MudTd(), item);
+            await _target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(args));
         }
 
-        [Fact]
-        public void GIVEN_GenerateSelectedText_WHEN_NotAllSelected_THEN_ReturnsCount()
+        private async Task TriggerLongPressAsync(PeerLog item)
         {
-            var text = _target.Instance.InvokeGenerateSelectedText(new List<string> { "Normal", "Warning" });
-
-            text.Should().Be("2 selected");
+            var table = _target.FindComponent<DynamicTable<PeerLog>>();
+            var args = new TableDataLongPressEventArgs<PeerLog>(new LongPressEventArgs(), new MudTd(), item);
+            await _target.InvokeAsync(() => table.Instance.OnTableDataLongPress.InvokeAsync(args));
         }
 
-        [Fact]
-        public async Task GIVEN_StoredTypes_WHEN_Rendered_THEN_PersistsSelection()
+        private async Task OpenMenuAsync()
         {
-            var values = new[] { "Info", "Critical" };
+            var menu = _target.FindComponent<MudMenu>();
+            await _target.InvokeAsync(() => menu.Instance.OpenMenuAsync(new MouseEventArgs()));
+        }
 
-            await using var localContext = new ComponentTestContext();
-            await localContext.LocalStorage.SetItemAsync(SelectedTypesStorageKey, values);
-
-            var apiClientMock = new Mock<IApiClient>();
-            apiClientMock.Setup(c => c.GetPeerLog(It.IsAny<int?>())).ReturnsAsync(new List<PeerLog>());
-            localContext.Services.RemoveAll(typeof(IApiClient));
-            localContext.Services.AddSingleton(apiClientMock.Object);
-            localContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
-            localContext.Services.AddSingleton<IPeriodicTimerFactory>(new FakePeriodicTimerFactory(new FakePeriodicTimer()));
-
-            var localTarget = localContext.Render<BlocksHarness>(parameters =>
-            {
-                parameters.AddCascadingValue("DrawerOpen", false);
-            });
-
-            localTarget.WaitForAssertion(() =>
-            {
-                var stored = localTarget.Instance.CurrentSelectedTypes;
-                stored.Should().BeEquivalentTo(values);
-            });
+        private IRenderedComponent<MudMenuItem> FindMenuItem(string icon)
+        {
+            return _popoverProvider.FindComponents<MudMenuItem>()
+                .Single(item => item.Instance.Icon == icon);
         }
 
         private static PeerLog CreatePeerLog(int id, string address, bool blocked)
@@ -306,76 +255,6 @@ namespace Lantean.QBTMud.Test.Pages
             }
 
             return results;
-        }
-
-        private sealed class BlocksHarness : Blocks
-        {
-            public IEnumerable<string> CurrentSelectedTypes
-            {
-                get { return Model.SelectedTypes; }
-            }
-
-            public List<PeerLog>? CurrentResults
-            {
-                get { return Results; }
-            }
-
-            public PeerLog? CurrentContextMenuItem
-            {
-                get { return ContextMenuItem; }
-            }
-
-            public bool HasContextMenuReference
-            {
-                get { return ContextMenu is not null; }
-            }
-
-            public void SetContextMenuItem(PeerLog? item)
-            {
-                ContextMenuItem = item;
-            }
-
-            public void ClearContextMenuReference()
-            {
-                ContextMenu = null;
-            }
-
-            public Task InvokeTableDataContextMenu(PeerLog? item)
-            {
-                var args = new TableDataContextMenuEventArgs<PeerLog>(new MouseEventArgs(), new MudTd(), item);
-                return TableDataContextMenu(args);
-            }
-
-            public Task InvokeTableDataLongPress(PeerLog? item)
-            {
-                var args = new TableDataLongPressEventArgs<PeerLog>(new LongPressEventArgs(), new MudTd(), item);
-                return TableDataLongPress(args);
-            }
-
-            public Task InvokeCopyContextMenuItem()
-            {
-                return CopyContextMenuItem();
-            }
-
-            public Task InvokeClearResults()
-            {
-                return ClearResults();
-            }
-
-            public Task InvokeSelectedValuesChanged(IEnumerable<string> values)
-            {
-                return SelectedValuesChanged(values);
-            }
-
-            public string InvokeGenerateSelectedText(List<string> values)
-            {
-                return GenerateSelectedText(values);
-            }
-
-            public Task InvokeSubmit(EditContext editContext)
-            {
-                return Submit(editContext);
-            }
         }
     }
 }
