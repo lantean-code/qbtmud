@@ -44,7 +44,7 @@
                                                                         <MudText Class="mx-2 d-none d-sm-flex">@externalIpLabel</MudText>
                                                                     }
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
-                                                                    <MudText Class="mx-2 d-none d-sm-flex">@(ShowStatusLabels ? $"DHT nodes: {MainData?.ServerState.DHTNodes ?? 0}" : $"DHT: {MainData?.ServerState.DHTNodes ?? 0}")</MudText>
+                                                                    <MudText Class="mx-2 d-none d-sm-flex">@(ShowStatusLabels ? $"DHT: {MainData?.ServerState.DHTNodes ?? 0} nodes" : $"DHT: {MainData?.ServerState.DHTNodes ?? 0}")</MudText>
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
                                                                     @{
                                                                         var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);
@@ -60,16 +60,10 @@
                                                                     </MudTooltip>
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
                                                                     <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Success" />
-                                                                    <MudText Class="mr-1">
-                                                                        @DisplayHelpers.Size(MainData?.ServerState.DownloadInfoSpeed, null, "/s")
-                                                                        @DisplayHelpers.Size(MainData?.ServerState.DownloadInfoData, "(", ")")
-                                                                    </MudText>
+                                                                    <MudText Class="mr-1">@BuildTransferInfo(MainData?.ServerState?.DownloadInfoSpeed, MainData?.ServerState?.DownloadRateLimit, MainData?.ServerState?.DownloadInfoData)</MudText>
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
                                                                     <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowUp" Color="Color.Info" />
-                                                                    <MudText Class="mr-1">
-                                                                        @DisplayHelpers.Size(MainData?.ServerState.UploadInfoSpeed, null, "/s")
-                                                                        @DisplayHelpers.Size(MainData?.ServerState.UploadInfoData, "(", ")")
-                                                                    </MudText>
+                                                                    <MudText Class="mr-1">@BuildTransferInfo(MainData?.ServerState?.UploadInfoSpeed, MainData?.ServerState?.UploadRateLimit, MainData?.ServerState?.UploadInfoData)</MudText>
                                                                 </MudAppBar>
                                                             </div>
                                                         </CascadingValue>

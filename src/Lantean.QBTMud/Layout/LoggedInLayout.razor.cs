@@ -630,6 +630,16 @@ namespace Lantean.QBTMud.Layout
             return hasV4 ? v4 : v6;
         }
 
+        private static string BuildTransferInfo(long? speed, long? rateLimit, long? data)
+        {
+            var speedText = DisplayHelpers.Speed(speed);
+            var limitText = rateLimit is > 0 ? $" [{DisplayHelpers.Speed(rateLimit)}]" : string.Empty;
+            var dataText = DisplayHelpers.Size(data);
+            var dataSuffix = string.IsNullOrEmpty(dataText) ? string.Empty : $" ({dataText})";
+
+            return $"{speedText}{limitText}{dataSuffix}";
+        }
+
         private Task RecordSpeedSampleAsync(ServerState? serverState, CancellationToken cancellationToken)
         {
             if (serverState is null)
