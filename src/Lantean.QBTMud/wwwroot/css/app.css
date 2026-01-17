@@ -620,7 +620,7 @@ body {
     align-items: center;
     justify-content: flex-start;
     box-sizing: border-box;
-    z-index: -100;
+    z-index: calc(var(--mud-zindex-popover) - 1);
 }
 
 .app-shell__status-bar .mud-toolbar {
