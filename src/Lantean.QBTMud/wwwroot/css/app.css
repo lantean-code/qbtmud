@@ -632,6 +632,11 @@ body {
     box-sizing: border-box;
 }
 
+.app-shell__alt-speed-enabled .mud-icon-root {
+    transform: scaleX(-1);
+    transform-origin: center;
+}
+
 @supports (-webkit-touch-callout: none) {
     :root {
         --app-viewport-height: -webkit-fill-available;
