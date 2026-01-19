@@ -35,6 +35,11 @@
 
 ## How to work in this repo (for agents)
 1. Read this file, then the relevant folder `AGENTS.md` (e.g., `src` or `test`).
+2. When referencing MudBlazor or qBittorrent source:
+   - Ensure the repos are checked out under `./ref/mudblazor` and `./ref/qBittorrent`.
+   - Check out a tagged release, not a branch (do not use `develop`, `dev`, `master`, or `main`).
+   - MudBlazor must match the installed package version used by this repo.
+   - qBittorrent must match the most recent tag.
 2. Before modifying code:
    - Confirm SDK target, nullable context, analyzers, and editorconfig rules.
    - Keep public surface consistent; do not break qBittorrent Web API expectations without approval.
