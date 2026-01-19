@@ -24,9 +24,6 @@
   - `dotnet build  --artifacts-path=/tmp/artifacts/qbtmud`
 - Run tests:
   - `dotnet test --artifacts-path=/tmp/artifacts/qbtmud`
-- Publish Web UI:
-  - `dotnet publish Lantean.QBTMud -c Release`
-  - Output (static assets): `Lantean.QBTMud/bin/Release/net9.0/publish/wwwroot/`
 
 ## Coding and test standards
 - Source code rules and generation constraints live in `./src/AGENTS.md` (authoritative for code style, design, docs).
