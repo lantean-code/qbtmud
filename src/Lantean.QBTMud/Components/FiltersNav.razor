@@ -3,31 +3,31 @@
 </MudMenu>
 
 <MudMenu @ref="CategoryContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-    <MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddCategory">Add category</MudMenuItem>
+<MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddCategory" data-test-id="@TestIdHelper.For("CategoryAdd")">Add category</MudMenuItem>
     @if (IsCategoryTarget)
     {
-        <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="EditCategory">Edit category</MudMenuItem>
-        <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="AddSubcategory">Add subcategory</MudMenuItem>
-        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveCategory">Remove category</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="EditCategory" data-test-id="@TestIdHelper.For("CategoryEdit")">Edit category</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="AddSubcategory" data-test-id="@TestIdHelper.For("CategoryAddSubcategory")">Add subcategory</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveCategory" data-test-id="@TestIdHelper.For("CategoryRemove")">Remove category</MudMenuItem>
     }
-    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedCategories">Remove unused categories</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedCategories" data-test-id="@TestIdHelper.For("CategoryRemoveUnused")">Remove unused categories</MudMenuItem>
     <MudDivider />
     @TorrentControls(_categoryType)
 </MudMenu>
 
 <MudMenu @ref="TagContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-    <MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddTag">Add tag</MudMenuItem>
+<MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddTag" data-test-id="@TestIdHelper.For("TagAdd")">Add tag</MudMenuItem>
     @if (IsTagTarget)
     {
-        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveTag">Remove tag</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveTag" data-test-id="@TestIdHelper.For("TagRemove")">Remove tag</MudMenuItem>
     }
-    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedTags">Remove unused tags</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedTags" data-test-id="@TestIdHelper.For("TagRemoveUnused")">Remove unused tags</MudMenuItem>
     <MudDivider />
     @TorrentControls(_tagType)
 </MudMenu>
 
 <MudMenu @ref="TrackerContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" Disabled="@(!CanRemoveTracker)" OnClick="RemoveTracker">Remove tracker</MudMenuItem>
+<MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" Disabled="@(!CanRemoveTracker)" OnClick="RemoveTracker" data-test-id="@TestIdHelper.For("TrackerRemove")">Remove tracker</MudMenuItem>
     <MudDivider />
     @TorrentControls(_trackerType)
 </MudMenu>
@@ -37,25 +37,25 @@
         @foreach (var (status, count) in Statuses)
         {
             var (icon, color) = DisplayHelpers.GetStatusIcon(status);
-            <CustomNavLink Class="filter-menu-item" Active="@(Status == status)" Icon="@icon" IconColor="@color" OnClick="@(e => StatusValueChanged(status))" OnContextMenu="@(e => StatusOnContextMenu(e, status))" OnLongPress="@(e => StatusOnLongPress(e, status))">@($"{status.GetStatusName()} ({count})")</CustomNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Status == status)" Icon="@icon" IconColor="@color" OnClick="@(e => StatusValueChanged(status))" OnContextMenu="@(e => StatusOnContextMenu(e, status))" OnLongPress="@(e => StatusOnLongPress(e, status))" data-test-id="@TestIdHelper.For($"Status-{status}")">@($"{status.GetStatusName()} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
     <MudNavGroup Title="Categories" @bind-Expanded="_categoriesExpanded">
         @foreach (var (category, count) in Categories)
         {
-            <CustomNavLink Class="filter-menu-item" Active="@(Category == category)" Icon="@Icons.Material.Filled.List" IconColor="Color.Info" OnClick="@(e => CategoryValueChanged(category))" OnContextMenu="@(e => CategoryOnContextMenu(e, category))" OnLongPress="@(e => CategoryOnLongPress(e, category))">@($"{category} ({count})")</CustomNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Category == category)" Icon="@Icons.Material.Filled.List" IconColor="Color.Info" OnClick="@(e => CategoryValueChanged(category))" OnContextMenu="@(e => CategoryOnContextMenu(e, category))" OnLongPress="@(e => CategoryOnLongPress(e, category))" data-test-id="@TestIdHelper.For($"Category-{category}")">@($"{category} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
     <MudNavGroup Title="Tags" @bind-Expanded="_tagsExpanded">
         @foreach (var (tag, count) in Tags)
         {
-            <CustomNavLink Class="filter-menu-item" Active="@(Tag == tag)" Icon="@Icons.Material.Filled.Label" IconColor="Color.Info" OnClick="@(e => TagValueChanged(tag))" OnContextMenu="@(e => TagOnContextMenu(e, tag))" OnLongPress="@(e => TagOnLongPress(e, tag))">@($"{tag} ({count})")</CustomNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Tag == tag)" Icon="@Icons.Material.Filled.Label" IconColor="Color.Info" OnClick="@(e => TagValueChanged(tag))" OnContextMenu="@(e => TagOnContextMenu(e, tag))" OnLongPress="@(e => TagOnLongPress(e, tag))" data-test-id="@TestIdHelper.For($"Tag-{tag}")">@($"{tag} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
     <MudNavGroup Title="Trackers" @bind-Expanded="_trackersExpanded">
         @foreach (var tracker in Trackers)
         {
-            <CustomNavLink Class="filter-menu-item" Active="@(Tracker == tracker.Key)" Icon="@Icons.Material.Filled.PinDrop" IconColor="Color.Info" OnClick="@(e => TrackerValueChanged(tracker.Key))" OnContextMenu="@(e => TrackerOnContextMenu(e, tracker.Key))" OnLongPress="@(e => TrackerOnLongPress(e, tracker.Key))">@($"{tracker.DisplayName} ({tracker.Count})")</CustomNavLink>
+            <CustomNavLink Class="filter-menu-item" Active="@(Tracker == tracker.Key)" Icon="@Icons.Material.Filled.PinDrop" IconColor="Color.Info" OnClick="@(e => TrackerValueChanged(tracker.Key))" OnContextMenu="@(e => TrackerOnContextMenu(e, tracker.Key))" OnLongPress="@(e => TrackerOnLongPress(e, tracker.Key))" data-test-id="@TestIdHelper.For($"Tracker-{tracker.Key}")">@($"{tracker.DisplayName} ({tracker.Count})")</CustomNavLink>
         }
     </MudNavGroup>
 </MudNavMenu>
@@ -66,9 +66,9 @@
     {
         return __builder =>
         {
-            <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="@(e => StartTorrents(type))">Start torrents</MudMenuItem>
-            <MudMenuItem Icon="@Icons.Material.Filled.Stop" IconColor="Color.Warning" OnClick="@(e => StopTorrents(type))">Stop torrents</MudMenuItem>
-            <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="@(e => RemoveTorrents(type))">Remove torrents</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="@(e => StartTorrents(type))" data-test-id="@TestIdHelper.For($"{type}-Start")">Start torrents</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Stop" IconColor="Color.Warning" OnClick="@(e => StopTorrents(type))" data-test-id="@TestIdHelper.For($"{type}-Stop")">Stop torrents</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="@(e => RemoveTorrents(type))" data-test-id="@TestIdHelper.For($"{type}-Remove")">Remove torrents</MudMenuItem>
         };
     }
 }

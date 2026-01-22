@@ -34,6 +34,7 @@
 - Tests must cover 100% of the lines and branches of the implementation.
 - Never use reflection to invoke implementation code. Cover private or protected methods via normal execution flow only.
 - If code cannot be reached via public methods then consider asking to refactor.
+- Do not add test-only hooks or methods to production code. If coverage gaps exist, ask for a refactor to expose the behavior through public/UI flows.
 
 ## Clarification Policy
 
@@ -67,3 +68,4 @@
 - [ ] No reflection is used; private logic is covered through normal flows.
 - [ ] Planned tests achieve 100% line coverage.
 - [ ] Any uncertainties have been raised and clarified.
+- [ ] If coverage would require new public/test-only members or hooks, I have stopped and asked for a refactor approval.
