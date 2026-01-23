@@ -17,6 +17,7 @@ namespace Lantean.QBTMud.Components
         protected string? _oldHash;
         private int _requestId = 0;
         private readonly CancellationTokenSource _timerCancellationToken = new();
+        private IManagedTimer? _refreshTimer;
         private bool? _showFlags;
 
         private const string _toolbar = nameof(_toolbar);
@@ -50,7 +51,7 @@ namespace Lantean.QBTMud.Components
         protected ISnackbar Snackbar { get; set; } = default!;
 
         [Inject]
-        protected IPeriodicTimerFactory TimerFactory { get; set; } = default!;
+        protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         protected PeerList? PeerList { get; set; }
 
@@ -203,42 +204,49 @@ namespace Lantean.QBTMud.Components
         {
             if (firstRender)
             {
-                await using (var timer = TimerFactory.Create(TimeSpan.FromMilliseconds(RefreshInterval)))
-                {
-                    while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync(_timerCancellationToken.Token))
-                    {
-                        if (string.IsNullOrWhiteSpace(Hash))
-                        {
-                            return;
-                        }
-
-                        if (Active)
-                        {
-                            QBitTorrentClient.Models.TorrentPeers peers;
-                            try
-                            {
-                                peers = await ApiClient.GetTorrentPeersData(Hash, _requestId);
-                            }
-                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
-                            {
-                                _timerCancellationToken.CancelIfNotDisposed();
-                                return;
-                            }
-                            if (PeerList is null || peers.FullUpdate)
-                            {
-                                PeerList = PeerDataManager.CreatePeerList(peers);
-                            }
-                            else
-                            {
-                                PeerDataManager.MergeTorrentPeers(peers, PeerList);
-                            }
-
-                            _requestId = peers.RequestId;
-                            await InvokeAsync(StateHasChanged);
-                        }
-                    }
-                }
+                _refreshTimer ??= ManagedTimerFactory.Create("PeersTabRefresh", TimeSpan.FromMilliseconds(RefreshInterval));
+                await _refreshTimer.StartAsync(RefreshTickAsync, _timerCancellationToken.Token);
             }
+        }
+
+        private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(Hash))
+            {
+                return ManagedTimerTickResult.Stop;
+            }
+
+            if (Active)
+            {
+                QBitTorrentClient.Models.TorrentPeers peers;
+                try
+                {
+                    peers = await ApiClient.GetTorrentPeersData(Hash, _requestId);
+                }
+                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
+                {
+                    _timerCancellationToken.CancelIfNotDisposed();
+                    return ManagedTimerTickResult.Stop;
+                }
+                if (PeerList is null || peers.FullUpdate)
+                {
+                    PeerList = PeerDataManager.CreatePeerList(peers);
+                }
+                else
+                {
+                    PeerDataManager.MergeTorrentPeers(peers, PeerList);
+                }
+
+                _requestId = peers.RequestId;
+                await InvokeAsync(StateHasChanged);
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return ManagedTimerTickResult.Stop;
+            }
+
+            return ManagedTimerTickResult.Continue;
         }
 
         protected IEnumerable<ColumnDefinition<Peer>> Columns => ColumnsDefinitions;
@@ -358,6 +366,10 @@ namespace Lantean.QBTMud.Components
                 {
                     await _timerCancellationToken.CancelAsync();
                     _timerCancellationToken.Dispose();
+                    if (_refreshTimer is not null)
+                    {
+                        await _refreshTimer.DisposeAsync();
+                    }
 
                     await Task.CompletedTask;
                 }
