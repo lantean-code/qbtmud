@@ -15,13 +15,13 @@ namespace Lantean.QBTMud.Layout
         private const string PendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
         private const string LastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
         private const int MaxDownloadLength = 8 * 1024;
+        private const int DefaultRefreshInterval = 1500;
 
         private readonly bool _refreshEnabled = true;
         private int _requestId = 0;
         private bool _disposedValue;
         private readonly CancellationTokenSource _timerCancellationToken = new();
-        private CancellationTokenSource? _refreshDelayCancellation;
-        private int _refreshInterval = 1500;
+        private IManagedTimer? _refreshTimer;
         private bool _toggleAltSpeedLimitsInProgress;
         private Task? _refreshLoopTask;
         private bool _authConfirmed;
@@ -46,6 +46,9 @@ namespace Lantean.QBTMud.Layout
 
         [Inject]
         protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
+
+        [Inject]
+        protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
@@ -110,6 +113,8 @@ namespace Lantean.QBTMud.Layout
         {
             base.OnInitialized();
 
+            _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(DefaultRefreshInterval));
+
             if (!_navigationHandlerAttached)
             {
                 NavigationManager.LocationChanged += NavigationManagerOnLocationChanged;
@@ -172,7 +177,7 @@ namespace Lantean.QBTMud.Layout
             MarkTorrentsDirty();
 
             _requestId = data.ResponseId;
-            _refreshInterval = MainData.ServerState.RefreshInterval;
+            await UpdateRefreshIntervalAsync(MainData.ServerState.RefreshInterval, _timerCancellationToken.Token);
             await SpeedHistoryService.InitializeAsync();
             await RecordSpeedSampleAsync(MainData.ServerState, _timerCancellationToken.Token);
 
@@ -196,140 +201,81 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
-        private async Task RefreshLoopAsync(CancellationToken cancellationToken)
+        private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            if (!IsAuthenticated)
             {
-                if (!await WaitForNextIntervalAsync(cancellationToken))
-                {
-                    return;
-                }
+                return ManagedTimerTickResult.Stop;
+            }
 
-                if (!IsAuthenticated)
-                {
-                    return;
-                }
-
-                QBitTorrentClient.Models.MainData data;
-                try
-                {
-                    data = await ApiClient.GetMainData(_requestId);
-                }
-                catch (HttpRequestException)
-                {
-                    if (MainData is not null)
-                    {
-                        MainData.LostConnection = true;
-                    }
-                    _timerCancellationToken.CancelIfNotDisposed();
-                    await InvokeAsync(StateHasChanged);
-                    return;
-                }
-
-                var shouldRender = false;
-
-                if (MainData is null || data.FullUpdate)
-                {
-                    MainData = DataManager.CreateMainData(data);
-                    MarkTorrentsDirty();
-                    shouldRender = true;
-                }
-                else
-                {
-                    var dataChanged = DataManager.MergeMainData(data, MainData, out var filterChanged);
-                    if (filterChanged)
-                    {
-                        MarkTorrentsDirty();
-                    }
-                    else if (dataChanged)
-                    {
-                        IncrementTorrentsVersion();
-                    }
-                    shouldRender = dataChanged;
-                }
-
+            QBitTorrentClient.Models.MainData data;
+            try
+            {
+                data = await ApiClient.GetMainData(_requestId);
+            }
+            catch (HttpRequestException)
+            {
                 if (MainData is not null)
                 {
-                    var newInterval = MainData.ServerState.RefreshInterval;
-                    UpdateRefreshInterval(newInterval);
-                    await RecordSpeedSampleAsync(MainData.ServerState, cancellationToken);
+                    MainData.LostConnection = true;
                 }
+                _timerCancellationToken.CancelIfNotDisposed();
+                await InvokeAsync(StateHasChanged);
+                return ManagedTimerTickResult.Stop;
+            }
 
-                _requestId = data.ResponseId;
+            var shouldRender = false;
 
-                if (shouldRender)
+            if (MainData is null || data.FullUpdate)
+            {
+                MainData = DataManager.CreateMainData(data);
+                MarkTorrentsDirty();
+                shouldRender = true;
+            }
+            else
+            {
+                var dataChanged = DataManager.MergeMainData(data, MainData, out var filterChanged);
+                if (filterChanged)
                 {
-                    await InvokeAsync(StateHasChanged);
+                    MarkTorrentsDirty();
                 }
-            }
-        }
-
-        private async Task<bool> WaitForNextIntervalAsync(CancellationToken cancellationToken)
-        {
-            var delayCancellation = new CancellationTokenSource();
-            _refreshDelayCancellation = delayCancellation;
-
-            using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, delayCancellation.Token);
-            try
-            {
-                await Task.Delay(_refreshInterval, linkedCancellation.Token);
-                return !cancellationToken.IsCancellationRequested;
-            }
-            catch (TaskCanceledException)
-            {
-                return !cancellationToken.IsCancellationRequested;
-            }
-            finally
-            {
-                if (ReferenceEquals(_refreshDelayCancellation, delayCancellation))
+                else if (dataChanged)
                 {
-                    _refreshDelayCancellation = null;
+                    IncrementTorrentsVersion();
                 }
-
-                delayCancellation.Dispose();
+                shouldRender = dataChanged;
             }
+
+            if (MainData is not null)
+            {
+                await UpdateRefreshIntervalAsync(MainData.ServerState.RefreshInterval, cancellationToken);
+                await RecordSpeedSampleAsync(MainData.ServerState, cancellationToken);
+            }
+
+            _requestId = data.ResponseId;
+
+            if (shouldRender)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+
+            return ManagedTimerTickResult.Continue;
         }
 
-        private void UpdateRefreshInterval(int newInterval)
+        private Task UpdateRefreshIntervalAsync(int newInterval, CancellationToken cancellationToken)
         {
-            if (newInterval <= 0 || newInterval == _refreshInterval)
+            if (newInterval <= 0 || _refreshTimer is null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
-            _refreshInterval = newInterval;
-            CancelRefreshDelay();
-        }
-
-        private void CancelRefreshDelay()
-        {
-            var delayCancellation = _refreshDelayCancellation;
-            if (delayCancellation is null)
-            {
-                return;
-            }
-
-            try
-            {
-                delayCancellation.Cancel();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Already disposed.
-            }
+            return _refreshTimer.UpdateIntervalAsync(TimeSpan.FromMilliseconds(newInterval), cancellationToken);
         }
 
         private void StartRefreshLoop()
         {
-            var refreshLoop = RefreshLoopAsync(_timerCancellationToken.Token);
-            _refreshLoopTask = refreshLoop;
-            _ = refreshLoop.ContinueWith(
-                t =>
-                {
-                    // Observe exceptions to prevent UnobservedTaskException.
-                    _ = t.Exception;
-                },
-                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+            _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(DefaultRefreshInterval));
+            _refreshLoopTask = _refreshTimer.StartAsync(RefreshTickAsync, _timerCancellationToken.Token);
         }
 
         private void NavigationManagerOnLocationChanged(object? sender, LocationChangedEventArgs e)
@@ -813,7 +759,6 @@ namespace Lantean.QBTMud.Layout
             {
                 if (disposing)
                 {
-                    CancelRefreshDelay();
                     _timerCancellationToken.Cancel();
                     _timerCancellationToken.Dispose();
 
