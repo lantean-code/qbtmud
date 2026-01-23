@@ -50,6 +50,9 @@ namespace Lantean.QBTMud.Layout
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
+        [Inject]
+        protected IManagedTimerRegistry TimerRegistry { get; set; } = default!;
+
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
 
@@ -58,6 +61,12 @@ namespace Lantean.QBTMud.Layout
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
+
+        [CascadingParameter(Name = "TimerDrawerOpen")]
+        public bool TimerDrawerOpen { get; set; }
+
+        [CascadingParameter(Name = "TimerDrawerOpenChanged")]
+        public EventCallback<bool> TimerDrawerOpenChanged { get; set; }
 
         [CascadingParameter]
         public Menu? Menu { get; set; }
@@ -515,6 +524,16 @@ namespace Lantean.QBTMud.Layout
 
         protected EventCallback<SortDirection> SortDirectionChanged => EventCallback.Factory.Create<SortDirection>(this, sortDirection => SortDirection = sortDirection);
 
+        protected async Task ToggleTimerDrawerAsync()
+        {
+            var nextValue = !TimerDrawerOpen;
+            TimerDrawerOpen = nextValue;
+            if (TimerDrawerOpenChanged.HasDelegate)
+            {
+                await TimerDrawerOpenChanged.InvokeAsync(nextValue);
+            }
+        }
+
         protected static (string, Color) GetConnectionIcon(string? status)
         {
             return status switch
@@ -523,6 +542,94 @@ namespace Lantean.QBTMud.Layout
                 "connected" => (Icons.Material.Outlined.SignalWifi4Bar, Color.Success),
                 _ => (Icons.Material.Outlined.SignalWifiOff, Color.Error),
             };
+        }
+
+        private ManagedTimerState? GetTimerStatus()
+        {
+            var timers = TimerRegistry.GetTimers();
+            if (timers.Count == 0)
+            {
+                return null;
+            }
+
+            var running = timers.Count(timer => timer.State == ManagedTimerState.Running);
+            var paused = timers.Count(timer => timer.State == ManagedTimerState.Paused);
+            var stopped = timers.Count(timer => timer.State == ManagedTimerState.Stopped);
+            var faulted = timers.Count(timer => timer.State == ManagedTimerState.Faulted);
+
+            if (faulted > 0)
+            {
+                return ManagedTimerState.Faulted;
+            }
+
+            if (paused > 0)
+            {
+                return ManagedTimerState.Paused;
+            }
+
+            if (running == timers.Count)
+            {
+                return ManagedTimerState.Running;
+            }
+
+            if (stopped > 0)
+            {
+                return ManagedTimerState.Stopped;
+            }
+
+            return null;
+        }
+
+        private string GetTimerStatusIcon()
+        {
+            var status = GetTimerStatus();
+            if (!status.HasValue)
+            {
+                return Icons.Material.Filled.TimerOff;
+            }
+
+            return status.Value switch
+            {
+                ManagedTimerState.Running => Icons.Material.Filled.Timer,
+                ManagedTimerState.Paused => Icons.Material.Filled.PauseCircle,
+                ManagedTimerState.Faulted => Icons.Material.Filled.Error,
+                ManagedTimerState.Stopped => Icons.Material.Filled.TimerOff,
+                _ => Icons.Material.Filled.Timer,
+            };
+        }
+
+        private Color GetTimerStatusColor()
+        {
+            var status = GetTimerStatus();
+            if (!status.HasValue)
+            {
+                return Color.Default;
+            }
+
+            return status.Value switch
+            {
+                ManagedTimerState.Running => Color.Success,
+                ManagedTimerState.Paused => Color.Warning,
+                ManagedTimerState.Faulted => Color.Error,
+                ManagedTimerState.Stopped => Color.Default,
+                _ => Color.Default,
+            };
+        }
+
+        private string BuildTimerTooltip()
+        {
+            var timers = TimerRegistry.GetTimers();
+            if (timers.Count == 0)
+            {
+                return "No timers registered.";
+            }
+
+            var running = timers.Count(timer => timer.State == ManagedTimerState.Running);
+            var paused = timers.Count(timer => timer.State == ManagedTimerState.Paused);
+            var stopped = timers.Count(timer => timer.State == ManagedTimerState.Stopped);
+            var faulted = timers.Count(timer => timer.State == ManagedTimerState.Faulted);
+
+            return $"Timers: {running} running, {paused} paused, {stopped} stopped, {faulted} faulted";
         }
 
         private static string? BuildExternalIpLabel(ServerState? serverState)

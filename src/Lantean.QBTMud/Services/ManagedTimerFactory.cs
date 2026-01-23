@@ -6,14 +6,17 @@ namespace Lantean.QBTMud.Services
     public sealed class ManagedTimerFactory : IManagedTimerFactory
     {
         private readonly IPeriodicTimerFactory _timerFactory;
+        private readonly IManagedTimerRegistry _registry;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ManagedTimerFactory"/> class.
         /// </summary>
         /// <param name="timerFactory">The periodic timer factory.</param>
-        public ManagedTimerFactory(IPeriodicTimerFactory timerFactory)
+        /// <param name="registry">The registry used to track managed timers.</param>
+        public ManagedTimerFactory(IPeriodicTimerFactory timerFactory, IManagedTimerRegistry registry)
         {
             _timerFactory = timerFactory;
+            _registry = registry;
         }
 
         /// <summary>
@@ -24,7 +27,9 @@ namespace Lantean.QBTMud.Services
         /// <returns>A new <see cref="IManagedTimer"/> instance.</returns>
         public IManagedTimer Create(string name, TimeSpan interval)
         {
-            return new ManagedTimer(_timerFactory, name, interval);
+            var timer = new RegisteredManagedTimer(new ManagedTimer(_timerFactory, name, interval), _registry);
+            _registry.Register(timer);
+            return timer;
         }
     }
 }
