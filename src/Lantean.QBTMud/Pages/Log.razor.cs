@@ -15,6 +15,7 @@ namespace Lantean.QBTMud.Pages
         private const string _selectedTypesStorageKey = "Log.SelectedTypes";
         private const int MaxResults = 500;
         private readonly CancellationTokenSource _timerCancellationToken = new();
+        private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
 
         [Inject]
@@ -33,7 +34,7 @@ namespace Lantean.QBTMud.Pages
         protected IClipboardService ClipboardService { get; set; } = default!;
 
         [Inject]
-        protected IPeriodicTimerFactory TimerFactory { get; set; } = default!;
+        protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
@@ -178,6 +179,10 @@ namespace Lantean.QBTMud.Pages
                 {
                     await _timerCancellationToken.CancelAsync();
                     _timerCancellationToken.Dispose();
+                    if (_refreshTimer is not null)
+                    {
+                        await _refreshTimer.DisposeAsync();
+                    }
 
                     await Task.CompletedTask;
                 }
@@ -193,23 +198,24 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            await using (var timer = TimerFactory.Create(TimeSpan.FromMilliseconds(1500)))
-            {
-                while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync(_timerCancellationToken.Token))
-                {
-                    try
-                    {
-                        await DoSearch();
-                    }
-                    catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
-                    {
-                        _timerCancellationToken.CancelIfNotDisposed();
-                        return;
-                    }
+            _refreshTimer ??= ManagedTimerFactory.Create("LogRefresh", TimeSpan.FromMilliseconds(1500));
+            await _refreshTimer.StartAsync(RefreshTickAsync, _timerCancellationToken.Token);
+        }
 
-                    await InvokeAsync(StateHasChanged);
-                }
+        private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await DoSearch();
             }
+            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
+            {
+                _timerCancellationToken.CancelIfNotDisposed();
+                return ManagedTimerTickResult.Stop;
+            }
+
+            await InvokeAsync(StateHasChanged);
+            return ManagedTimerTickResult.Continue;
         }
 
         protected IEnumerable<ColumnDefinition<QBitTorrentClient.Models.Log>> Columns => ColumnsDefinitions;
