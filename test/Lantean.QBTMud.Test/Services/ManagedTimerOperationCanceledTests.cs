@@ -13,7 +13,7 @@ namespace Lantean.QBTMud.Test.Services
         private TaskCompletionSource<bool>? _waitEntered;
         private readonly Queue<bool> _scheduledResults = new Queue<bool>();
         private bool _disposed;
-        private bool _throwOnCancellation;
+        private readonly bool _throwOnCancellation;
 
         public ManagedTimerOperationCanceledTests()
         {

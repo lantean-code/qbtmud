@@ -192,6 +192,7 @@ namespace Lantean.QBTMud.Components
             }
             catch (OperationCanceledException)
             {
+                // Cancellation is expected when polling stops.
             }
         }
     }

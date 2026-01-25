@@ -388,6 +388,10 @@ namespace Lantean.QBTMud.Services
                     {
                         tickResult = await _tickHandler!.Invoke(cancellationToken);
                     }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
                     catch (Exception exception)
                     {
                         SetFault(exception);
@@ -399,6 +403,10 @@ namespace Lantean.QBTMud.Services
                         break;
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancellation is expected during shutdown.
             }
             catch (Exception exception)
             {
@@ -438,8 +446,8 @@ namespace Lantean.QBTMud.Services
 
         private async Task<bool?> WaitForNextTickAsync(IPeriodicTimer timer, CancellationToken cancellationToken)
         {
-            var waitCancellation = new CancellationTokenSource();
-            var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, waitCancellation.Token);
+            using var waitCancellation = new CancellationTokenSource();
+            using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, waitCancellation.Token);
 
             lock (_syncLock)
             {
@@ -481,8 +489,6 @@ namespace Lantean.QBTMud.Services
                     }
                 }
 
-                linkedCancellation.Dispose();
-                waitCancellation.Dispose();
             }
         }
 
