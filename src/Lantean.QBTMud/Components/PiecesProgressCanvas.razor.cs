@@ -74,9 +74,17 @@ namespace Lantean.QBTMud.Components
             base.OnParametersSet();
 
             BuildProgressSummary();
-            BuildCanvasMetadata();
-            _pieceStates = Pieces.Select(static piece => (int)piece).ToArray();
-            _shouldRedraw = true;
+            if (_showCanvas)
+            {
+                BuildCanvasMetadata();
+                _pieceStates = Pieces.Select(static piece => (int)piece).ToArray();
+                _shouldRedraw = true;
+            }
+            else
+            {
+                _pieceStates = Array.Empty<int>();
+                _shouldRedraw = false;
+            }
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -126,7 +134,14 @@ namespace Lantean.QBTMud.Components
             _showCanvas = !_showCanvas;
             if (_showCanvas)
             {
+                BuildCanvasMetadata();
+                _pieceStates = Pieces.Select(static piece => (int)piece).ToArray();
                 _shouldRedraw = true;
+            }
+            else
+            {
+                _pieceStates = Array.Empty<int>();
+                _shouldRedraw = false;
             }
         }
 

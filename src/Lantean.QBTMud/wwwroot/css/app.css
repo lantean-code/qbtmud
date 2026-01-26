@@ -599,6 +599,16 @@ body {
     flex: 0 0 auto;
 }
 
+.app-shell__timer-drawer {
+    --mud-drawer-width: min(90vw, 520px);
+}
+
+@media (max-width: 960px) {
+    .app-shell__timer-drawer {
+        --mud-drawer-width: 100vw;
+    }
+}
+
 .app-shell__main {
     display: flex;
     flex-direction: column;

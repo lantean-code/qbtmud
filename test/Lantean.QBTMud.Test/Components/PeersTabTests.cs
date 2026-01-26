@@ -17,7 +17,8 @@ namespace Lantean.QBTMud.Test.Components
     public sealed class PeersTabTests : RazorComponentTestBase
     {
         private readonly Mock<IApiClient> _apiClientMock;
-        private readonly FakePeriodicTimer _timer;
+        private readonly IManagedTimer _timer;
+        private readonly IManagedTimerFactory _timerFactory;
 
         public PeersTabTests()
         {
@@ -25,9 +26,16 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             TestContext.UseSnackbarMock(MockBehavior.Loose);
 
-            _timer = new FakePeriodicTimer();
-            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
-            TestContext.Services.AddSingleton<IPeriodicTimerFactory>(new FakePeriodicTimerFactory(_timer));
+            _timer = Mock.Of<IManagedTimer>();
+            _timerFactory = Mock.Of<IManagedTimerFactory>();
+            Mock.Get(_timerFactory)
+                .Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<TimeSpan>()))
+                .Returns(_timer);
+            Mock.Get(_timer)
+                .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.AddSingleton(_timerFactory);
         }
 
         [Fact]
@@ -36,8 +44,7 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderPeersTab(false);
             var initialRenderCount = target.RenderCount;
 
-            await _timer.TriggerTickAsync();
-            await target.InvokeAsync(() => Task.CompletedTask);
+            await TriggerTimerTickAsync(target);
 
             target.RenderCount.Should().Be(initialRenderCount);
         }
@@ -114,6 +121,25 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Hash, "Hash");
                 parameters.AddCascadingValue("RefreshInterval", 10);
             });
+        }
+
+        private async Task TriggerTimerTickAsync(IRenderedComponent<PeersTab> target)
+        {
+            var handler = GetTickHandler(target);
+            await target.InvokeAsync(() => handler(CancellationToken.None));
+        }
+
+        private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler(IRenderedComponent<PeersTab> target)
+        {
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_timer).Verify(
+                    timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),
+                    Times.Once);
+            });
+
+            var invocation = Mock.Get(_timer).Invocations.Single(invocation => invocation.Method.Name == nameof(IManagedTimer.StartAsync));
+            return (Func<CancellationToken, Task<ManagedTimerTickResult>>)invocation.Arguments[0];
         }
 
         private static TorrentPeers CreatePeers(bool showFlags, string? countryCode, string? country, string? flags = "Flags", string? flagsDescription = "FlagsDescription")

@@ -90,12 +90,17 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            _piecesPerCell = DeterminePiecesPerCell(Pieces.Count);
-            _heatmapColumns = CalculateHeatmapColumns(Pieces.Count, _piecesPerCell);
-
             BuildLinearViewModel();
-            BuildHeatmapViewModel();
-            BuildLegend();
+
+            if (_showHeatmap)
+            {
+                BuildHeatmapModels();
+            }
+            else
+            {
+                _heatmapRows = Array.Empty<IReadOnlyList<HeatmapCellViewModel>>();
+                _legendItems = Array.Empty<LegendItem>();
+            }
 
             _pendingPieces = Pieces.ToArray();
             _pendingThemeSignature = themeSignature;
@@ -128,6 +133,15 @@ namespace Lantean.QBTMud.Components
         {
             _shouldRender = true;
             _showHeatmap = !_showHeatmap;
+            if (_showHeatmap)
+            {
+                BuildHeatmapModels();
+            }
+            else
+            {
+                _heatmapRows = Array.Empty<IReadOnlyList<HeatmapCellViewModel>>();
+                _legendItems = Array.Empty<LegendItem>();
+            }
         }
 
         protected void HandleLinearKeyDown(KeyboardEventArgs args)
@@ -136,7 +150,24 @@ namespace Lantean.QBTMud.Components
             {
                 _shouldRender = true;
                 _showHeatmap = !_showHeatmap;
+                if (_showHeatmap)
+                {
+                    BuildHeatmapModels();
+                }
+                else
+                {
+                    _heatmapRows = Array.Empty<IReadOnlyList<HeatmapCellViewModel>>();
+                    _legendItems = Array.Empty<LegendItem>();
+                }
             }
+        }
+
+        private void BuildHeatmapModels()
+        {
+            _piecesPerCell = DeterminePiecesPerCell(Pieces.Count);
+            _heatmapColumns = CalculateHeatmapColumns(Pieces.Count, _piecesPerCell);
+            BuildHeatmapViewModel();
+            BuildLegend();
         }
 
         private void BuildLinearViewModel()

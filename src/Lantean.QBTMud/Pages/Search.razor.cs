@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Pages
         private IReadOnlyList<SearchPlugin>? _plugins;
         private readonly List<SearchJobViewModel> _jobs = [];
         private CancellationTokenSource? _pollingCancellationToken;
-        private Task? _pollingTask;
+        private IManagedTimer? _pollingTimer;
         private bool _disposedValue;
         private int _activeTabIndex = -1;
         private bool _searchUnavailable;
@@ -55,7 +55,7 @@ namespace Lantean.QBTMud.Pages
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected IPeriodicTimerFactory TimerFactory { get; set; } = default!;
+        protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
@@ -574,24 +574,19 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            if (_pollingTask is not null && !_pollingTask.IsCompleted)
+            if (_pollingTimer is not null &&
+                _pollingCancellationToken is not null &&
+                !_pollingCancellationToken.IsCancellationRequested &&
+                _pollingTimer.State == ManagedTimerState.Running)
             {
                 return;
             }
 
             StopPolling();
             _pollingCancellationToken = new CancellationTokenSource();
-            _pollingTask = Task.Run(() => PollSearchJobsAsync(_pollingCancellationToken.Token))
-                .ContinueWith(
-                    t =>
-                    {
-                        // Observe faults to prevent unobserved exceptions and to allow restart.
-                        if (t.IsFaulted)
-                        {
-                            HandlePollingFailure(t.Exception);
-                        }
-                    },
-                    TaskScheduler.Current);
+            _pollingTimer = ManagedTimerFactory.Create("SearchPolling", TimeSpan.FromMilliseconds(_pollIntervalMilliseconds));
+            _ = _pollingTimer.StartAsync(PollSearchJobsAsync, _pollingCancellationToken.Token);
+            _ = PollSearchJobsAsync(_pollingCancellationToken.Token);
         }
 
         private void StopPollingIfAllJobsCompleted()
@@ -606,7 +601,7 @@ namespace Lantean.QBTMud.Pages
 
         private void StopPolling()
         {
-            if (_pollingTask is null)
+            if (_pollingCancellationToken is null && _pollingTimer is null)
             {
                 return;
             }
@@ -620,31 +615,35 @@ namespace Lantean.QBTMud.Pages
             }
             _pollingCancellationToken?.Dispose();
             _pollingCancellationToken = null;
-            _pollingTask = null;
+            if (_pollingTimer is not null)
+            {
+                _ = _pollingTimer.DisposeAsync();
+                _pollingTimer = null;
+            }
         }
 
-        private async Task PollSearchJobsAsync(CancellationToken cancellationToken)
+        private async Task<ManagedTimerTickResult> PollSearchJobsAsync(CancellationToken cancellationToken)
         {
-            await using var timer = TimerFactory.Create(TimeSpan.FromMilliseconds(_pollIntervalMilliseconds));
             try
             {
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    await InvokeAsync(async () => await SynchronizeJobsAsync(cancellationToken));
-                    if (!await timer.WaitForNextTickAsync(cancellationToken))
-                    {
-                        break;
-                    }
-                }
+                await InvokeAsync(async () => await SynchronizeJobsAsync(cancellationToken));
             }
             catch (OperationCanceledException)
             {
-                // Expected during disposal.
+                return ManagedTimerTickResult.Stop;
             }
             catch (Exception exception)
             {
                 HandlePollingFailure(exception);
+                return ManagedTimerTickResult.Stop;
             }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return ManagedTimerTickResult.Stop;
+            }
+
+            return ManagedTimerTickResult.Continue;
         }
 
         private async Task SynchronizeJobsAsync(CancellationToken cancellationToken)

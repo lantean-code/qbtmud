@@ -25,7 +25,8 @@ namespace Lantean.QBTMud.Test.Components
     public sealed class FilesTabTests : RazorComponentTestBase
     {
         private readonly Mock<IApiClient> _apiClientMock;
-        private readonly FakePeriodicTimer _timer;
+        private readonly IManagedTimer _timer;
+        private readonly IManagedTimerFactory _timerFactory;
         private readonly Mock<IDialogWorkflow> _dialogWorkflowMock;
         private IRenderedComponent<MudPopoverProvider>? _popoverProvider;
 
@@ -35,9 +36,16 @@ namespace Lantean.QBTMud.Test.Components
             _dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>();
             TestContext.UseSnackbarMock(MockBehavior.Loose);
 
-            _timer = new FakePeriodicTimer();
-            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
-            TestContext.Services.AddSingleton<IPeriodicTimerFactory>(new FakePeriodicTimerFactory(_timer));
+            _timer = Mock.Of<IManagedTimer>();
+            _timerFactory = Mock.Of<IManagedTimerFactory>();
+            Mock.Get(_timerFactory)
+                .Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<TimeSpan>()))
+                .Returns(_timer);
+            Mock.Get(_timer)
+                .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.AddSingleton(_timerFactory);
         }
 
         [Fact]
@@ -46,7 +54,7 @@ namespace Lantean.QBTMud.Test.Components
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("Folder/file1.txt", "Folder/file2.txt"));
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             target.WaitForAssertion(() => target.Markup.Should().Contain("Folder"));
 
@@ -63,7 +71,7 @@ namespace Lantean.QBTMud.Test.Components
             _apiClientMock.Setup(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.Single() == 1), ClientPriority.High)).Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-Root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -90,7 +98,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             target.WaitForAssertion(() => target.Markup.Should().Contain("root"));
 
@@ -121,7 +129,7 @@ namespace Lantean.QBTMud.Test.Components
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt", "folder/file2.txt"));
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -168,7 +176,7 @@ namespace Lantean.QBTMud.Test.Components
             _dialogWorkflowMock.Setup(d => d.InvokeRenameFilesDialog("Hash")).Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var renameButton = FindComponentByTestId<MudIconButton>(target, "RenameToolbar");
             await target.InvokeAsync(() => renameButton.Find("button").Click());
@@ -189,7 +197,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -218,7 +226,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -255,7 +263,7 @@ namespace Lantean.QBTMud.Test.Components
             dataManagerMock.Setup(m => m.MergeContentsList(updated, It.IsAny<Dictionary<string, ContentItem>>())).Returns(true);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             target.WaitForAssertion(() =>
             {
@@ -280,8 +288,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderFilesTab();
 
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
-            await _timer.TriggerTickAsync(result: false);
+            await TriggerTimerTickAsync(target);
 
             target.WaitForAssertion(() =>
             {
@@ -301,7 +308,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Hash, "Hash");
             });
 
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             _apiClientMock.Verify(c => c.GetTorrentContents(It.IsAny<string>()), Times.Never);
         }
@@ -316,8 +323,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderFilesTab();
 
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             target.WaitForAssertion(() =>
             {
@@ -331,7 +337,7 @@ namespace Lantean.QBTMud.Test.Components
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -350,14 +356,13 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderFilesTab();
 
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
             target.WaitForAssertion(() =>
             {
                 _apiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().BeGreaterThanOrEqualTo(1);
             });
             _apiClientMock.Invocations.Clear();
 
-            await _timer.TriggerTickAsync(result: false);
             target.Render();
 
             target.WaitForAssertion(() =>
@@ -377,15 +382,14 @@ namespace Lantean.QBTMud.Test.Components
 
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
 
-            await _timer.TriggerTickAsync();
-            await _timer.TriggerTickAsync(result: false);
-
             var target = TestContext.Render<FilesTab>(parameters =>
             {
                 parameters.AddCascadingValue("RefreshInterval", 10);
                 parameters.Add(p => p.Active, true);
                 parameters.Add(p => p.Hash, "Hash");
             });
+
+            await TriggerTimerTickAsync(target);
 
             target.WaitForAssertion(() =>
             {
@@ -395,7 +399,6 @@ namespace Lantean.QBTMud.Test.Components
             _apiClientMock.Invocations.Clear();
 
             target.Render();
-            await _timer.TriggerTickAsync(result: false);
 
             _apiClientMock.Invocations.Should().BeEmpty();
         }
@@ -419,7 +422,7 @@ namespace Lantean.QBTMud.Test.Components
             _dialogWorkflowMock.Setup(d => d.ShowFilterOptionsDialog(It.IsAny<List<PropertyFilterDefinition<ContentItem>>?>())).ReturnsAsync((List<PropertyFilterDefinition<ContentItem>>?)null);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var filterButton = FindComponentByTestId<MudIconButton>(target, "ShowFilterDialog");
             await target.InvokeAsync(() => filterButton.Find("button").Click());
@@ -439,7 +442,7 @@ namespace Lantean.QBTMud.Test.Components
                 });
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -467,7 +470,7 @@ namespace Lantean.QBTMud.Test.Components
                 });
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -496,7 +499,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Hash, null);
             });
 
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             _apiClientMock.Verify(c => c.GetTorrentContents(It.IsAny<string>()), Times.Never);
         }
@@ -536,7 +539,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var folderPriority = FindComponentByTestId<MudSelect<UiPriority>>(target, "Priority-Folder");
             await target.InvokeAsync(() => folderPriority.Instance.ValueChanged.InvokeAsync(UiPriority.Maximum));
@@ -558,7 +561,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -590,7 +593,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -621,7 +624,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -652,7 +655,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -684,7 +687,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
@@ -712,7 +715,7 @@ namespace Lantean.QBTMud.Test.Components
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
             _apiClientMock.Invocations.Clear();
 
             var menu = FindComponentByTestId<MudMenu>(target, "NormalPriorityMenu");
@@ -742,7 +745,7 @@ namespace Lantean.QBTMud.Test.Components
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             target.Markup.Should().NotContain("file1.txt");
         }
@@ -787,7 +790,7 @@ namespace Lantean.QBTMud.Test.Components
                 .ThrowsAsync(new HttpRequestException(null, null, HttpStatusCode.Forbidden));
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             target.WaitForAssertion(() =>
             {
@@ -808,7 +811,7 @@ namespace Lantean.QBTMud.Test.Components
                 .ReturnsAsync((new HashSet<string>(), new Dictionary<string, int?>(), new Dictionary<string, int>()));
 
             var target = RenderFilesTab();
-            await target.InvokeAsync(async () => await _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync(target);
 
             var columnButton = FindComponentByTestId<MudIconButton>(target, "ColumnOptions");
             await target.InvokeAsync(() => columnButton.Find("button").Click());
@@ -840,67 +843,28 @@ namespace Lantean.QBTMud.Test.Components
             return names.Select((name, index) => new FileData(index + 1, name, 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.9f)).ToList();
         }
 
+        private async Task TriggerTimerTickAsync(IRenderedComponent<FilesTab> target)
+        {
+            var handler = GetTickHandler(target);
+            await target.InvokeAsync(() => handler(CancellationToken.None));
+        }
+
+        private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler(IRenderedComponent<FilesTab> target)
+        {
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_timer).Verify(
+                    timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),
+                    Times.Once);
+            });
+
+            var invocation = Mock.Get(_timer).Invocations.Single(invocation => invocation.Method.Name == nameof(IManagedTimer.StartAsync));
+            return (Func<CancellationToken, Task<ManagedTimerTickResult>>)invocation.Arguments[0];
+        }
+
         private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<FilesTab> target, string testId) where TComponent : IComponent
         {
             return target.FindComponents<TComponent>().First(component => component.Markup.Contains($"data-test-id=\"{testId}\"", StringComparison.Ordinal));
-        }
-
-        private sealed class FakePeriodicTimerFactory : IPeriodicTimerFactory
-        {
-            private readonly FakePeriodicTimer _timer;
-
-            public FakePeriodicTimerFactory(FakePeriodicTimer timer)
-            {
-                _timer = timer;
-            }
-
-            public IPeriodicTimer Create(TimeSpan period)
-            {
-                return _timer;
-            }
-        }
-
-        private sealed class FakePeriodicTimer : IPeriodicTimer
-        {
-            private bool _disposed;
-            private TaskCompletionSource<bool>? _pendingTick;
-            private readonly Queue<bool> _scheduledResults = new Queue<bool>();
-
-            public Task<bool> WaitForNextTickAsync(CancellationToken cancellationToken)
-            {
-                if (_disposed)
-                {
-                    return Task.FromResult(false);
-                }
-
-                if (_scheduledResults.Count > 0)
-                {
-                    return Task.FromResult(_scheduledResults.Dequeue());
-                }
-
-                _pendingTick = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                cancellationToken.Register(() => _pendingTick.TrySetResult(false));
-                return _pendingTick.Task;
-            }
-
-            public Task TriggerTickAsync(bool result = true)
-            {
-                if (_pendingTick is null)
-                {
-                    _scheduledResults.Enqueue(result);
-                    return Task.CompletedTask;
-                }
-
-                _pendingTick?.TrySetResult(result);
-                return Task.CompletedTask;
-            }
-
-            public ValueTask DisposeAsync()
-            {
-                _disposed = true;
-                _pendingTick?.TrySetResult(false);
-                return ValueTask.CompletedTask;
-            }
         }
     }
 }

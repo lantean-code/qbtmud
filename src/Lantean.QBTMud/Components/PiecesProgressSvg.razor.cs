@@ -511,16 +511,6 @@ namespace Lantean.QBTMud.Components
 
         private bool ShouldBuildSvgCells()
         {
-            if (PiecesLoading || PiecesFailed || Pieces.Count == 0)
-            {
-                return true;
-            }
-
-            if (Pieces.Count < LargePieceCountThreshold)
-            {
-                return true;
-            }
-
             return _showSvg;
         }
 

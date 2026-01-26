@@ -20,7 +20,8 @@ namespace Lantean.QBTMud.Test.Pages
     {
         private readonly IApiClient _apiClient;
         private readonly ISnackbar _snackbar;
-        private readonly FakePeriodicTimer _timer;
+        private readonly IManagedTimer _timer;
+        private readonly IManagedTimerFactory _timerFactory;
         private readonly IRenderedComponent<MudPopoverProvider> _popoverProvider;
         private readonly IRenderedComponent<Blocks> _target;
 
@@ -28,14 +29,21 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _apiClient = Mock.Of<IApiClient>();
             _snackbar = Mock.Of<ISnackbar>();
-            _timer = new FakePeriodicTimer();
+            _timer = Mock.Of<IManagedTimer>();
+            _timerFactory = Mock.Of<IManagedTimerFactory>();
+            Mock.Get(_timerFactory)
+                .Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<TimeSpan>()))
+                .Returns(_timer);
+            Mock.Get(_timer)
+                .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
 
             TestContext.Services.RemoveAll(typeof(IApiClient));
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.RemoveAll(typeof(ISnackbar));
             TestContext.Services.AddSingleton(_snackbar);
-            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
-            TestContext.Services.AddSingleton<IPeriodicTimerFactory>(new FakePeriodicTimerFactory(_timer));
+            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.AddSingleton(_timerFactory);
 
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
 
@@ -75,7 +83,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await _target.InvokeAsync(() => _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync();
 
             var table = _target.FindComponent<DynamicTable<PeerLog>>();
             table.WaitForAssertion(() =>
@@ -179,7 +187,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await _target.InvokeAsync(() => _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync();
 
             var table = _target.FindComponent<DynamicTable<PeerLog>>();
             table.WaitForAssertion(() =>
@@ -198,7 +206,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
                 .ThrowsAsync(exception);
 
-            await _target.InvokeAsync(() => _timer.TriggerTickAsync());
+            await TriggerTimerTickAsync();
 
             Mock.Get(_apiClient).Verify(c => c.GetPeerLog(It.IsAny<int?>()), Times.AtLeastOnce);
         }
@@ -233,6 +241,25 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var menu = _target.FindComponent<MudMenu>();
             await _target.InvokeAsync(() => menu.Instance.OpenMenuAsync(new MouseEventArgs()));
+        }
+
+        private async Task TriggerTimerTickAsync()
+        {
+            var handler = GetTickHandler();
+            await _target.InvokeAsync(() => handler(CancellationToken.None));
+        }
+
+        private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler()
+        {
+            _target.WaitForAssertion(() =>
+            {
+                Mock.Get(_timer).Verify(
+                    timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),
+                    Times.Once);
+            });
+
+            var invocation = Mock.Get(_timer).Invocations.Single(invocation => invocation.Method.Name == nameof(IManagedTimer.StartAsync));
+            return (Func<CancellationToken, Task<ManagedTimerTickResult>>)invocation.Arguments[0];
         }
 
         private IRenderedComponent<MudMenuItem> FindMenuItem(string icon)

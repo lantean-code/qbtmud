@@ -12,7 +12,8 @@ namespace Lantean.QBTMud.Test.Components
 {
     public sealed class TrackersTabTests : RazorComponentTestBase
     {
-        private readonly FakePeriodicTimer _timer;
+        private readonly IManagedTimer _timer;
+        private readonly IManagedTimerFactory _timerFactory;
         private readonly IRenderedComponent<TrackersTab> _target;
 
         public TrackersTabTests()
@@ -20,9 +21,16 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock(MockBehavior.Strict);
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
 
-            _timer = new FakePeriodicTimer();
-            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
-            TestContext.Services.AddSingleton<IPeriodicTimerFactory>(new FakePeriodicTimerFactory(_timer));
+            _timer = Mock.Of<IManagedTimer>();
+            _timerFactory = Mock.Of<IManagedTimerFactory>();
+            Mock.Get(_timerFactory)
+                .Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<TimeSpan>()))
+                .Returns(_timer);
+            Mock.Get(_timer)
+                .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.AddSingleton(_timerFactory);
 
             _target = TestContext.Render<TrackersTab>(parameters =>
             {
@@ -37,10 +45,28 @@ namespace Lantean.QBTMud.Test.Components
         {
             var initialRenderCount = _target.RenderCount;
 
-            await _timer.TriggerTickAsync();
-            await _target.InvokeAsync(() => Task.CompletedTask);
+            await TriggerTimerTickAsync();
 
             _target.RenderCount.Should().Be(initialRenderCount);
+        }
+
+        private async Task TriggerTimerTickAsync()
+        {
+            var handler = GetTickHandler();
+            await _target.InvokeAsync(() => handler(CancellationToken.None));
+        }
+
+        private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler()
+        {
+            _target.WaitForAssertion(() =>
+            {
+                Mock.Get(_timer).Verify(
+                    timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),
+                    Times.Once);
+            });
+
+            var invocation = Mock.Get(_timer).Invocations.Single(invocation => invocation.Method.Name == nameof(IManagedTimer.StartAsync));
+            return (Func<CancellationToken, Task<ManagedTimerTickResult>>)invocation.Arguments[0];
         }
     }
 }

@@ -1,0 +1,301 @@
+using AwesomeAssertions;
+using Bunit;
+using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
+using MudBlazor;
+
+namespace Lantean.QBTMud.Test.Components
+{
+    public sealed class TimerStatusPanelTests : RazorComponentTestBase<TimerStatusPanel>
+    {
+        [Fact]
+        public void GIVEN_NoTimers_WHEN_Rendered_THEN_ShowsEmptyMessage()
+        {
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.AddSingleton(registry.Object);
+
+            var target = TestContext.Render<TimerStatusPanel>();
+
+            target.Markup.Should().Contain("No timers registered.");
+
+            target.Dispose();
+        }
+
+        [Fact]
+        public void GIVEN_DrawerOpen_WHEN_TimerTicks_THEN_Polls()
+        {
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
+
+            var periodicTimer = new Mock<IPeriodicTimer>();
+            periodicTimer.SetupSequence(timer => timer.WaitForNextTickAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true)
+                .ReturnsAsync(false);
+
+            var periodicTimerFactory = new Mock<IPeriodicTimerFactory>();
+            periodicTimerFactory
+                .Setup(factory => factory.Create(It.IsAny<TimeSpan>()))
+                .Returns(periodicTimer.Object);
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
+            TestContext.Services.AddSingleton(registry.Object);
+            TestContext.Services.AddSingleton(periodicTimerFactory.Object);
+
+            var target = TestContext.Render<TimerStatusPanel>(parameters => parameters.AddCascadingValue("TimerDrawerOpen", true));
+
+            periodicTimerFactory.Verify(factory => factory.Create(TimeSpan.FromSeconds(1)), Times.Once);
+            target.WaitForAssertion(() =>
+                periodicTimer.Verify(timer => timer.WaitForNextTickAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce));
+        }
+
+        [Fact]
+        public void GIVEN_DrawerOpen_WHEN_TickThrows_THEN_PollingStops()
+        {
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
+
+            var periodicTimer = new Mock<IPeriodicTimer>();
+            periodicTimer
+                .Setup(timer => timer.WaitForNextTickAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            var periodicTimerFactory = new Mock<IPeriodicTimerFactory>();
+            periodicTimerFactory
+                .Setup(factory => factory.Create(It.IsAny<TimeSpan>()))
+                .Returns(periodicTimer.Object);
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
+            TestContext.Services.AddSingleton(registry.Object);
+            TestContext.Services.AddSingleton(periodicTimerFactory.Object);
+
+            var target = TestContext.Render<TimerStatusPanel>(parameters => parameters.AddCascadingValue("TimerDrawerOpen", true));
+
+            target.WaitForAssertion(() =>
+                periodicTimer.Verify(timer => timer.WaitForNextTickAsync(It.IsAny<CancellationToken>()), Times.Once));
+        }
+
+        [Fact]
+        public async Task GIVEN_DrawerOpen_WHEN_Closed_THEN_DisposesTimer()
+        {
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
+
+            var periodicTimer = new Mock<IPeriodicTimer>();
+            periodicTimer.Setup(timer => timer.WaitForNextTickAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            periodicTimer.Setup(timer => timer.DisposeAsync()).Returns(ValueTask.CompletedTask);
+
+            var periodicTimerFactory = new Mock<IPeriodicTimerFactory>();
+            periodicTimerFactory
+                .Setup(factory => factory.Create(It.IsAny<TimeSpan>()))
+                .Returns(periodicTimer.Object);
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
+            TestContext.Services.AddSingleton(registry.Object);
+            TestContext.Services.AddSingleton(periodicTimerFactory.Object);
+
+            var target = TestContext.Render<TimerStatusPanelHost>(parameters => parameters.Add(p => p.Open, true));
+            var closeButton = target.FindComponents<MudIconButton>()
+                .Single(button => button.Instance.Icon == Icons.Material.Filled.Close);
+
+            await target.InvokeAsync(() => closeButton.Find("button").Click());
+
+            target.WaitForAssertion(() => periodicTimer.Verify(timer => timer.DisposeAsync(), Times.Once));
+        }
+
+        [Fact]
+        public async Task GIVEN_RunningTimer_WHEN_PauseClicked_THEN_PauseInvoked()
+        {
+            var timer = CreateTimer("RunningTimer", ManagedTimerState.Running, TimeSpan.FromSeconds(2));
+            timer.Setup(t => t.PauseAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            timer.SetupGet(t => t.LastTickUtc).Returns(DateTimeOffset.UtcNow);
+
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer> { timer.Object });
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.AddSingleton(registry.Object);
+
+            var target = TestContext.Render<TimerStatusPanel>();
+            var pauseButton = target.FindComponents<MudIconButton>()
+                .Single(button => button.Instance.Icon == Icons.Material.Filled.PauseCircle);
+
+            await target.InvokeAsync(() => pauseButton.Find("button").Click());
+
+            timer.Verify(t => t.PauseAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_PausedTimer_WHEN_ResumeClicked_THEN_ResumeInvoked()
+        {
+            var timer = CreateTimer("PausedTimer", ManagedTimerState.Paused, TimeSpan.FromMilliseconds(500));
+            timer.Setup(t => t.ResumeAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            timer.SetupGet(t => t.NextTickUtc).Returns(DateTimeOffset.UtcNow.AddSeconds(1));
+
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer> { timer.Object });
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.AddSingleton(registry.Object);
+
+            var target = TestContext.Render<TimerStatusPanel>();
+            var resumeButton = target.FindComponents<MudIconButton>()
+                .Single(button => button.Instance.Icon == Icons.Material.Filled.PlayCircle);
+
+            await target.InvokeAsync(() => resumeButton.Find("button").Click());
+
+            timer.Verify(t => t.ResumeAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_CloseClicked_WHEN_CallbackProvided_THEN_ClosesDrawer()
+        {
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
+
+            var periodicTimer = new Mock<IPeriodicTimer>();
+            periodicTimer.Setup(timer => timer.WaitForNextTickAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+            var periodicTimerFactory = new Mock<IPeriodicTimerFactory>();
+            periodicTimerFactory
+                .Setup(factory => factory.Create(It.IsAny<TimeSpan>()))
+                .Returns(periodicTimer.Object);
+
+            var closed = false;
+            var callback = EventCallback.Factory.Create<bool>(this, value => closed = !value);
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
+            TestContext.Services.AddSingleton(registry.Object);
+            TestContext.Services.AddSingleton(periodicTimerFactory.Object);
+
+            var target = TestContext.Render<TimerStatusPanel>(parameters =>
+            {
+                parameters.AddCascadingValue("TimerDrawerOpen", true);
+                parameters.AddCascadingValue("TimerDrawerOpenChanged", callback);
+            });
+
+            var closeButton = target.FindComponents<MudIconButton>()
+                .Single(button => button.Instance.Icon == Icons.Material.Filled.Close);
+
+            await target.InvokeAsync(() => closeButton.Find("button").Click());
+
+            closed.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_CloseClicked_WHEN_NoCallback_THEN_NoCloseTriggered()
+        {
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
+
+            var periodicTimer = new Mock<IPeriodicTimer>();
+            periodicTimer.Setup(timer => timer.WaitForNextTickAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+            var periodicTimerFactory = new Mock<IPeriodicTimerFactory>();
+            periodicTimerFactory
+                .Setup(factory => factory.Create(It.IsAny<TimeSpan>()))
+                .Returns(periodicTimer.Object);
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
+            TestContext.Services.AddSingleton(registry.Object);
+            TestContext.Services.AddSingleton(periodicTimerFactory.Object);
+
+            var target = TestContext.Render<TimerStatusPanel>(parameters => parameters.AddCascadingValue("TimerDrawerOpen", true));
+            var closeButton = target.FindComponents<MudIconButton>()
+                .Single(button => button.Instance.Icon == Icons.Material.Filled.Close);
+
+            await target.InvokeAsync(() => closeButton.Find("button").Click());
+
+            target.Markup.Should().Contain("Timers");
+        }
+
+        [Fact]
+        public void GIVEN_TimersWithAllStates_WHEN_Rendered_THEN_RendersRows()
+        {
+            var running = CreateTimer("RunningTimer", ManagedTimerState.Running, TimeSpan.FromSeconds(2));
+            running.SetupGet(t => t.LastTickUtc).Returns(DateTimeOffset.UtcNow);
+            var paused = CreateTimer("PausedTimer", ManagedTimerState.Paused, TimeSpan.FromMilliseconds(500));
+            paused.SetupGet(t => t.NextTickUtc).Returns(DateTimeOffset.UtcNow.AddSeconds(1));
+            var faulted = CreateTimer("FaultedTimer", ManagedTimerState.Faulted, TimeSpan.FromSeconds(1));
+            faulted.SetupGet(t => t.LastFault).Returns(new InvalidOperationException("Failure"));
+            var stopped = CreateTimer("StoppedTimer", ManagedTimerState.Stopped, TimeSpan.FromSeconds(1));
+
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>
+            {
+                running.Object,
+                paused.Object,
+                faulted.Object,
+                stopped.Object,
+            });
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.AddSingleton(registry.Object);
+
+            var target = TestContext.Render<TimerStatusPanel>();
+
+            target.Markup.Should().Contain("RunningTimer");
+            target.Markup.Should().Contain("PausedTimer");
+            target.Markup.Should().Contain("FaultedTimer");
+            target.Markup.Should().Contain("StoppedTimer");
+        }
+
+        private static Mock<IManagedTimer> CreateTimer(string name, ManagedTimerState state, TimeSpan interval)
+        {
+            var timer = new Mock<IManagedTimer>();
+            timer.SetupGet(t => t.Name).Returns(name);
+            timer.SetupGet(t => t.State).Returns(state);
+            timer.SetupGet(t => t.Interval).Returns(interval);
+            timer.SetupGet(t => t.LastTickUtc).Returns((DateTimeOffset?)null);
+            timer.SetupGet(t => t.NextTickUtc).Returns((DateTimeOffset?)null);
+            timer.SetupGet(t => t.LastFault).Returns((Exception?)null);
+            return timer;
+        }
+
+        private sealed class TimerStatusPanelHost : ComponentBase
+        {
+            [Parameter]
+            public bool Open { get; set; }
+
+            private Task HandleOpenChanged(bool value)
+            {
+                Open = value;
+                StateHasChanged();
+                return Task.CompletedTask;
+            }
+
+            protected override void BuildRenderTree(RenderTreeBuilder builder)
+            {
+                builder.OpenComponent<CascadingValue<bool>>(0);
+                builder.AddAttribute(1, "Name", "TimerDrawerOpen");
+                builder.AddAttribute(2, "Value", Open);
+                builder.AddAttribute(3, "ChildContent", (RenderFragment)(childBuilder =>
+                {
+                    childBuilder.OpenComponent<CascadingValue<EventCallback<bool>>>(0);
+                    childBuilder.AddAttribute(1, "Name", "TimerDrawerOpenChanged");
+                    childBuilder.AddAttribute(2, "Value", EventCallback.Factory.Create<bool>(this, HandleOpenChanged));
+                    childBuilder.AddAttribute(3, "ChildContent", (RenderFragment)(grandChildBuilder =>
+                    {
+                        grandChildBuilder.OpenComponent<TimerStatusPanel>(0);
+                        grandChildBuilder.CloseComponent();
+                    }));
+                    childBuilder.CloseComponent();
+                }));
+                builder.CloseComponent();
+            }
+        }
+    }
+}

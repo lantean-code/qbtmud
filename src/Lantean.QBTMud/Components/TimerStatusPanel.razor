@@ -1,0 +1,70 @@
+@using Lantean.QBTMud.Services
+
+<MudPaper Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+        <MudText Typo="Typo.h6">Timers</MudText>
+        <MudTooltip Text="Close">
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseDrawerAsync" />
+        </MudTooltip>
+    </MudStack>
+
+    @if (Timers.Count == 0)
+    {
+        <MudText Class="mt-2" Typo="Typo.body2">No timers registered.</MudText>
+    }
+    else
+    {
+        <MudStack Class="mt-2" Spacing="2">
+            @foreach (var timer in Timers)
+            {
+                <MudPaper Class="pa-3" Elevation="1">
+                    <MudStack Spacing="1">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.subtitle1">@timer.Name</MudText>
+                            <MudTooltip Text="@GetStateTooltip(timer)">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudIcon Icon="@GetStateIcon(timer.State)" Color="@GetStateColor(timer.State)" />
+                                    <MudText Typo="Typo.body2">@timer.State</MudText>
+                                </MudStack>
+                            </MudTooltip>
+                        </MudStack>
+
+                        <MudDivider />
+
+                        <MudStack Spacing="0">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                <MudText Typo="Typo.caption" Class="text-uppercase">Interval</MudText>
+                                <MudText Typo="Typo.body2">@FormatInterval(timer.Interval)</MudText>
+                            </MudStack>
+                        </MudStack>
+
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.caption" Class="text-uppercase">@GetTickLabel(timer)</MudText>
+                                <MudText Typo="Typo.body2">@FormatTimestamp(GetTickTimestamp(timer))</MudText>
+                            </MudStack>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd">
+                                @if (timer.State == ManagedTimerState.Running)
+                                {
+                                    <MudTooltip Text="Pause">
+                                        <MudIconButton Icon="@Icons.Material.Filled.PauseCircle" Color="Color.Warning" OnClick="() => PauseAsync(timer)" />
+                                    </MudTooltip>
+                                }
+                                else if (timer.State == ManagedTimerState.Paused)
+                                {
+                                    <MudTooltip Text="Resume">
+                                        <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" OnClick="() => ResumeAsync(timer)" />
+                                    </MudTooltip>
+                                }
+                                else
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Block" Disabled="true" />
+                                }
+                            </MudStack>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            }
+        </MudStack>
+    }
+</MudPaper>

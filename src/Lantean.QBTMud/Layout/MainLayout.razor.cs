@@ -21,6 +21,8 @@ namespace Lantean.QBTMud.Layout
 
         protected bool ErrorDrawerOpen { get; set; } = false;
 
+        protected bool TimerDrawerOpen { get; set; }
+
         protected EnhancedErrorBoundary? ErrorBoundary { get; set; }
 
         protected string AppBarTitle => UseShortTitle ? "qBittorrent" : "qBittorrent Web UI";
@@ -44,6 +46,8 @@ namespace Lantean.QBTMud.Layout
 
         protected EventCallback<bool> DrawerOpenChangedCallback => EventCallback.Factory.Create<bool>(this, SetDrawerOpenAsync);
 
+        protected EventCallback<bool> TimerDrawerOpenChangedCallback => EventCallback.Factory.Create<bool>(this, SetTimerDrawerOpenAsync);
+
         protected async Task ToggleDrawer()
         {
             await SetDrawerOpenAsync(!DrawerOpen);
@@ -59,6 +63,7 @@ namespace Lantean.QBTMud.Layout
                 if (currentErrorCount > _lastErrorCount && currentErrorCount > 0)
                 {
                     ErrorDrawerOpen = true;
+                    TimerDrawerOpen = false;
                 }
                 else if (currentErrorCount == 0)
                 {
@@ -101,6 +106,10 @@ namespace Lantean.QBTMud.Layout
         protected void ToggleErrorDrawer()
         {
             ErrorDrawerOpen = !ErrorDrawerOpen;
+            if (ErrorDrawerOpen)
+            {
+                TimerDrawerOpen = false;
+            }
         }
 
         protected void Cleared()
@@ -143,6 +152,22 @@ namespace Lantean.QBTMud.Layout
             }
 
             DrawerOpen = value;
+            return InvokeAsync(StateHasChanged);
+        }
+
+        private Task SetTimerDrawerOpenAsync(bool value)
+        {
+            if (TimerDrawerOpen == value)
+            {
+                return Task.CompletedTask;
+            }
+
+            TimerDrawerOpen = value;
+            if (TimerDrawerOpen)
+            {
+                ErrorDrawerOpen = false;
+            }
+
             return InvokeAsync(StateHasChanged);
         }
     }

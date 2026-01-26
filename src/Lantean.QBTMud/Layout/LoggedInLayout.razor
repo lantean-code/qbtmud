@@ -51,6 +51,10 @@
                                                                     }
                                                                     <MudIcon Class="mx-1" Icon="@icon" Color="@colour" Title="@MainData?.ServerState.ConnectionStatus" />
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
+                                                                    <MudTooltip Text="@BuildTimerTooltip()">
+                                                                        <MudIconButton Class="mx-1" Icon="@GetTimerStatusIcon()" Color="@GetTimerStatusColor()" OnClick="ToggleTimerDrawerAsync" />
+                                                                    </MudTooltip>
+                                                                    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
                                                                     <MudTooltip Text="Toggle alternative speed limits">
                                                                         <MudIconButton Class="@($"mx-1{((MainData?.ServerState.UseAltSpeedLimits ?? false) ? " app-shell__alt-speed-enabled" : string.Empty)}")"
                                                                                        Icon="@Icons.Material.Outlined.Speed"

@@ -81,6 +81,8 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddSingleton<IPreferencesDataManager, PreferencesDataManager>();
             Services.AddSingleton<IRssDataManager, RssDataManager>();
             Services.AddSingleton<IPeriodicTimerFactory, PeriodicTimerFactory>();
+            Services.AddSingleton<IManagedTimerRegistry, ManagedTimerRegistry>();
+            Services.AddSingleton<IManagedTimerFactory, ManagedTimerFactory>();
             Services.AddScoped<ISpeedHistoryService, SpeedHistoryService>();
 
             Services.AddTransient<IKeyboardService, KeyboardService>();

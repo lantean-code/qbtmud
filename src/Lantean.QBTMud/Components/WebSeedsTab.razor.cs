@@ -10,6 +10,7 @@ namespace Lantean.QBTMud.Components
     public partial class WebSeedsTab : IAsyncDisposable
     {
         private readonly CancellationTokenSource _timerCancellationToken = new();
+        private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
 
         [Parameter]
@@ -28,7 +29,7 @@ namespace Lantean.QBTMud.Components
         protected ITorrentDataManager DataManager { get; set; } = default!;
 
         [Inject]
-        protected IPeriodicTimerFactory TimerFactory { get; set; } = default!;
+        protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         protected IReadOnlyList<WebSeed>? WebSeeds { get; set; }
 
@@ -47,6 +48,10 @@ namespace Lantean.QBTMud.Components
                 {
                     _timerCancellationToken.Cancel();
                     _timerCancellationToken.Dispose();
+                    if (_refreshTimer is not null)
+                    {
+                        await _refreshTimer.DisposeAsync();
+                    }
 
                     await Task.CompletedTask;
                 }
@@ -59,27 +64,34 @@ namespace Lantean.QBTMud.Components
         {
             if (firstRender)
             {
-                await using (var timer = TimerFactory.Create(TimeSpan.FromMilliseconds(RefreshInterval)))
-                {
-                    while (!_timerCancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync(_timerCancellationToken.Token))
-                    {
-                        if (Active && Hash is not null)
-                        {
-                            try
-                            {
-                                WebSeeds = await ApiClient.GetTorrentWebSeeds(Hash);
-                            }
-                            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
-                            {
-                                _timerCancellationToken.CancelIfNotDisposed();
-                                return;
-                            }
-
-                            await InvokeAsync(StateHasChanged);
-                        }
-                    }
-                }
+                _refreshTimer ??= ManagedTimerFactory.Create("WebSeedsTabRefresh", TimeSpan.FromMilliseconds(RefreshInterval));
+                await _refreshTimer.StartAsync(RefreshTickAsync, _timerCancellationToken.Token);
             }
+        }
+
+        private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
+        {
+            if (Active && Hash is not null)
+            {
+                try
+                {
+                    WebSeeds = await ApiClient.GetTorrentWebSeeds(Hash);
+                }
+                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
+                {
+                    _timerCancellationToken.CancelIfNotDisposed();
+                    return ManagedTimerTickResult.Stop;
+                }
+
+                await InvokeAsync(StateHasChanged);
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return ManagedTimerTickResult.Stop;
+            }
+
+            return ManagedTimerTickResult.Continue;
         }
 
         protected override async Task OnParametersSetAsync()

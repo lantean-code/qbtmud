@@ -1,6 +1,8 @@
 # Unit Testing Rules (xUnit + Moq + AwesomeAssertions)
 
 - Frameworks: xUnit, Moq, AwesomeAssertions (FluentAssertions syntax, different namespace).
+- Use Moq for test doubles; do not introduce fake or stub implementations.
+- Moq callbacks should only be used when verifying the same behavior is impossible with `Verify`.
 - Do not add comments to test code (especially not Arrange/Act/Assert).
 - Braces must never be omitted.
 - Expression-bodied members are not permitted in tests.
