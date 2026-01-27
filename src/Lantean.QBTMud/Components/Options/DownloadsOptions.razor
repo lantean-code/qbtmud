@@ -1,4 +1,6 @@
 @inherits Options
+@using Lantean.QBitTorrentClient.Models
+@using Lantean.QBTMud.Components.UI
 
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
@@ -89,7 +91,13 @@
                 <FieldSwitch Label="Use Subcategories" Value="UseSubcategories" ValueChanged="UseSubcategoriesChanged" data-test-id="@TestIdHelper.For("UseSubcategories")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Default Save Path" Value="SavePath" ValueChanged="SavePathChanged" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SavePath")" />
+                <PathAutocomplete Label="Default Save Path"
+                                  Value="@SavePath"
+                                  ValueChanged="@(value => SavePathChanged(value ?? string.Empty))"
+                                  Mode="DirectoryContentMode.Directories"
+                                  Immediate="true"
+                                  DebounceInterval="300"
+                                  data-test-id="@TestIdHelper.For("SavePath")" />
             </MudItem>
             <MudItem xs="12">
                 <MudGrid>
@@ -97,7 +105,14 @@
                         <FieldSwitch Label="Keep incomplete torrents in" Value="TempPathEnabled" ValueChanged="TempPathEnabledChanged" data-test-id="@TestIdHelper.For("TempPathEnabled")" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
-                        <MudTextField T="string" Label="Path" Value="TempPath" ValueChanged="TempPathChanged" Disabled="@(!TempPathEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("TempPath")" />
+                        <PathAutocomplete Label="Path"
+                                          Value="@TempPath"
+                                          ValueChanged="@(value => TempPathChanged(value ?? string.Empty))"
+                                          Mode="DirectoryContentMode.Directories"
+                                          Disabled="@(!TempPathEnabled)"
+                                          Immediate="true"
+                                          DebounceInterval="300"
+                                          data-test-id="@TestIdHelper.For("TempPath")" />
                     </MudItem>
                 </MudGrid>
             </MudItem>
@@ -107,7 +122,14 @@
                         <FieldSwitch Label="Copy .torrent files to" Value="ExportDirEnabled" ValueChanged="ExportDirEnabledChanged" data-test-id="@TestIdHelper.For("ExportDirEnabled")" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
-                        <MudTextField T="string" Label="Path" Value="ExportDir" ValueChanged="ExportDirChanged" Disabled="@(!TempPathEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ExportDir")" />
+                        <PathAutocomplete Label="Path"
+                                          Value="@ExportDir"
+                                          ValueChanged="@(value => ExportDirChanged(value ?? string.Empty))"
+                                          Mode="DirectoryContentMode.Directories"
+                                          Disabled="@(!TempPathEnabled)"
+                                          Immediate="true"
+                                          DebounceInterval="300"
+                                          data-test-id="@TestIdHelper.For("ExportDir")" />
                     </MudItem>
                 </MudGrid>
             </MudItem>
@@ -117,7 +139,14 @@
                         <FieldSwitch Label="Copy .torrent files for finished downloads to" Value="ExportDirFinEnabled" ValueChanged="ExportDirFinEnabledChanged" data-test-id="@TestIdHelper.For("ExportDirFinEnabled")" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
-                        <MudTextField T="string" Label="Path" Value="ExportDirFin" ValueChanged="ExportDirFinChanged" Disabled="@(!TempPathEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ExportDirFin")" />
+                        <PathAutocomplete Label="Path"
+                                          Value="@ExportDirFin"
+                                          ValueChanged="@(value => ExportDirFinChanged(value ?? string.Empty))"
+                                          Mode="DirectoryContentMode.Directories"
+                                          Disabled="@(!TempPathEnabled)"
+                                          Immediate="true"
+                                          DebounceInterval="300"
+                                          data-test-id="@TestIdHelper.For("ExportDirFin")" />
                     </MudItem>
                 </MudGrid>
             </MudItem>
@@ -152,7 +181,15 @@
 
                     <tr>
                         <td>
-                            <MudTextField T="string" Label="Path" Value="@key" ValueChanged="@(v => ScanDirsKeyChanged(key, v))" Validation="IsValidNewKey" Immediate="true" DebounceInterval="300" data-test-id="@(TestIdHelper.For($"{rowId}.Key"))" />
+                            <PathAutocomplete Label="Path"
+                                              Value="@key"
+                                              ValueChanged="@(v => ScanDirsKeyChanged(key, v ?? string.Empty))"
+                                              Mode="DirectoryContentMode.Directories"
+                                              Validation="IsValidNewKey"
+                                              Immediate="true"
+                                              DebounceInterval="300"
+                                              Dense="true"
+                                              data-test-id="@(TestIdHelper.For($"{rowId}.Key"))" />
                         </td>
                         <td>
                             <MudGrid>
@@ -166,7 +203,14 @@
                                 @if (location.SavePath is not null)
                                 {
                                     <MudItem xs="8">
-                                        <MudTextField T="string" Label="Path" Value="@location.SavePath" ValueChanged="@(v => ScanDirsValueChanged(key, v))" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@(TestIdHelper.For($"{rowId}.SavePath"))" />
+                                        <PathAutocomplete Label="Path"
+                                                          Value="@location.SavePath"
+                                                          ValueChanged="@(v => ScanDirsValueChanged(key, v ?? string.Empty))"
+                                                          Mode="DirectoryContentMode.Directories"
+                                                          Immediate="true"
+                                                          DebounceInterval="300"
+                                                          Dense="true"
+                                                          data-test-id="@(TestIdHelper.For($"{rowId}.SavePath"))" />
                                     </MudItem>
                                 }
                                 <MudItem xs="1">
@@ -186,7 +230,15 @@
 
                     <tr>
                         <td>
-                            <MudTextField T="string" Label="Path" Value="@item.Key" ValueChanged="@(v => AddedScanDirsKeyChanged(index, v))" Validation="IsValidNewKey" Immediate="true" DebounceInterval="300" data-test-id="@(TestIdHelper.For($"{rowId}.Key"))" />
+                            <PathAutocomplete Label="Path"
+                                              Value="@item.Key"
+                                              ValueChanged="@(v => AddedScanDirsKeyChanged(index, v ?? string.Empty))"
+                                              Mode="DirectoryContentMode.Directories"
+                                              Validation="IsValidNewKey"
+                                              Immediate="true"
+                                              DebounceInterval="300"
+                                              Dense="true"
+                                              data-test-id="@(TestIdHelper.For($"{rowId}.Key"))" />
                         </td>
                         <td>
                             <MudGrid>
@@ -200,7 +252,14 @@
                                 @if (item.Value.SavePath is not null)
                                 {
                                     <MudItem xs="@(isLast ? 8 : 9)">
-                                        <MudTextField T="string" Label="Path" Value="@item.Value.SavePath" ValueChanged="@(v => AddedScanDirsValueChanged(index, v))" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@(TestIdHelper.For($"{rowId}.SavePath"))" />
+                                        <PathAutocomplete Label="Path"
+                                                          Value="@item.Value.SavePath"
+                                                          ValueChanged="@(v => AddedScanDirsValueChanged(index, v ?? string.Empty))"
+                                                          Mode="DirectoryContentMode.Directories"
+                                                          Immediate="true"
+                                                          DebounceInterval="300"
+                                                          Dense="true"
+                                                          data-test-id="@(TestIdHelper.For($"{rowId}.SavePath"))" />
                                     </MudItem>
                                 }
                                 <MudItem xs="1">

@@ -1,0 +1,97 @@
+@page "/torrent-creator"
+@layout OtherLayout
+@using Lantean.QBitTorrentClient.Models
+@using Lantean.QBTMud.Helpers
+@using Lantean.QBTMud.Models
+
+<div class="content-panel">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudDivider Vertical="true" />
+            }
+            <MudText Class="px-5 no-wrap">Torrent Creator</MudText>
+            <MudDivider Vertical="true" />
+            <MudIconButton Icon="@Icons.Material.Filled.AddBox" OnClick="OpenCreateDialog" Disabled="@IsLoading" title="Create torrent" />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshTasks" Disabled="@IsLoading" title="Refresh" />
+            <MudSpacer />
+            @if (IsPolling)
+            {
+                <MudText Typo="Typo.caption" Class="no-wrap">Updating</MudText>
+            }
+        </MudToolBar>
+    </div>
+
+    <div class="content-panel__body">
+        @if (!HasTasks)
+        {
+            <MudText Class="pa-4">No torrent creation tasks.</MudText>
+        }
+        else
+        {
+            <DynamicTable @ref="Table"
+                          TableId="TorrentCreatorTasks"
+                          T="TorrentCreationTaskStatus"
+                          ColumnDefinitions="Columns"
+                          Items="Tasks"
+                          MultiSelection="false"
+                          SelectOnRowClick="false"
+                          Class="details-list content-panel__table" />
+        }
+    </div>
+</div>
+
+@code {
+    private RenderFragment<RowContext<TorrentCreationTaskStatus>> StatusColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var status = (string?)context.GetValue();
+                var color = GetStatusColor(status);
+                <MudChip T="string" Color="@color" Variant="Variant.Outlined" Size="Size.Small">@DisplayHelpers.EmptyIfNull(status)</MudChip>;
+            };
+        }
+    }
+
+    private RenderFragment<RowContext<TorrentCreationTaskStatus>> ProgressColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var task = (TorrentCreationTaskStatus)context.Data;
+                var progress = GetProgress(task);
+                var color = progress < 100 ? Color.Success : Color.Info;
+                <MudProgressLinear title="Progress" Color="@color" Value="progress" Class="progress-expand" Size="Size.Large">
+                    @DisplayHelpers.Percentage((float?)(progress / 100f))
+                </MudProgressLinear>;
+            };
+        }
+    }
+
+    private RenderFragment<RowContext<TorrentCreationTaskStatus>> ActionsColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var task = (TorrentCreationTaskStatus)context.Data;
+                <MudButtonGroup>
+                    <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                   Color="Color.Primary"
+                                   Disabled="@(!CanDownload(task))"
+                                   OnClick="@(async () => await DownloadTask(task))"
+                                   title="Download torrent" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   OnClick="@(async () => await DeleteTask(task))"
+                                   title="Delete task" />
+                </MudButtonGroup>;
+            };
+        }
+    }
+}

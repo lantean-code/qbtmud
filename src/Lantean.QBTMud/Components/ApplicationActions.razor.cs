@@ -87,6 +87,7 @@ namespace Lantean.QBTMud.Components
                 new("blocks", "Blocked IPs", Icons.Material.Filled.DisabledByDefault, Color.Default, "./blocks"),
                 new("tags", "Tag Manager", Icons.Material.Filled.Label, Color.Default, "./tags", separatorBefore: true),
                 new("categories", "Category Manager", Icons.Material.Filled.List, Color.Default, "./categories"),
+                new("torrentCreator", "Torrent Creator", Icons.Material.Filled.CreateNewFolder, Color.Default, "./torrent-creator"),
                 new("cookies", "Cookie Manager", Icons.Material.Filled.Cookie, Color.Default, "./cookies"),
                 new("settings", "Settings", Icons.Material.Filled.Settings, Color.Default, "./settings", separatorBefore: true),
                 new("darkMode", "Switch to dark mode", Icons.Material.Filled.DarkMode, Color.Info, EventCallback.Factory.Create(this, ToggleDarkMode)),

@@ -1,4 +1,5 @@
 @using Lantean.QBitTorrentClient.Models
+@using Lantean.QBTMud.Components.UI
 
 <MudGrid>
     <MudItem xs="12">
@@ -14,13 +15,21 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="6">
-            <MudTextField T="string" Label="Save files to location" Value="@SavePath" ValueChanged="@SavePathChanged" Variant="Variant.Outlined" ShrinkLabel="true" Disabled="@TorrentManagementMode" />
+            <PathAutocomplete Label="Save files to location"
+                              Value="@SavePath"
+                              ValueChanged="@(value => SavePathChanged(value ?? string.Empty))"
+                              Mode="DirectoryContentMode.Directories"
+                              Disabled="@TorrentManagementMode" />
         </MudItem>
         <MudItem xs="12" sm="6">
             <FieldSwitch Label="Use incomplete save path" Value="@UseDownloadPath" ValueChanged="@SetUseDownloadPath" Disabled="@TorrentManagementMode" />
         </MudItem>
         <MudItem xs="12">
-            <MudTextField T="string" Label="Incomplete save path" Value="@DownloadPath" ValueChanged="@DownloadPathChanged" Variant="Variant.Outlined" ShrinkLabel="true" Disabled="@DownloadPathDisabled" />
+            <PathAutocomplete Label="Incomplete save path"
+                              Value="@DownloadPath"
+                              ValueChanged="@(value => DownloadPathChanged(value ?? string.Empty))"
+                              Mode="DirectoryContentMode.Directories"
+                              Disabled="@DownloadPathDisabled" />
         </MudItem>
         @if (ShowCookieOption)
         {

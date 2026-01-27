@@ -33,8 +33,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindSwitch(target, "AutoDeleteMode").Instance.Value.Should().BeTrue();
             FindSwitch(target, "PreallocateAll").Instance.Value.Should().BeTrue();
             FindSelect<bool>(target, "AutoTmmEnabled").Instance.Value.Should().BeTrue();
-            FindTextField(target, "TempPath").Instance.Disabled.Should().BeFalse();
-            FindTextField(target, "ExportDir").Instance.Disabled.Should().BeFalse();
+            FindPathField(target, "TempPath").Instance.Disabled.Should().BeFalse();
+            FindPathField(target, "ExportDir").Instance.Disabled.Should().BeFalse();
             FindSwitch(target, "MailNotificationEnabled").Instance.Value.Should().BeTrue();
             FindTextField(target, "MailNotificationUsername").Instance.Disabled.Should().BeFalse();
             target.FindAll("tbody tr").Count.Should().Be(2);
@@ -66,7 +66,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             var tempSwitch = FindSwitch(target, "TempPathEnabled");
             await target.InvokeAsync(() => tempSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var tempPathField = FindTextField(target, "TempPath");
+            var tempPathField = FindPathField(target, "TempPath");
             await target.InvokeAsync(() => tempPathField.Instance.ValueChanged.InvokeAsync("/tmp-new"));
 
             var subcategoriesSwitch = FindSwitch(target, "UseSubcategories");
@@ -149,7 +149,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => categoryPathSelect.Instance.ValueChanged.InvokeAsync(false));
             update.CategoryChangedTmmEnabled.Should().BeFalse();
 
-            var savePathField = FindTextField(target, "SavePath");
+            var savePathField = FindPathField(target, "SavePath");
             await target.InvokeAsync(() => savePathField.Instance.ValueChanged.InvokeAsync("/downloads/alt"));
             update.SavePath.Should().Be("/downloads/alt");
 
@@ -157,7 +157,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => exportSwitch.Instance.ValueChanged.InvokeAsync(false));
             exportSwitch.Instance.Value.Should().BeFalse();
 
-            var exportPathField = FindTextField(target, "ExportDir");
+            var exportPathField = FindPathField(target, "ExportDir");
             await target.InvokeAsync(() => exportPathField.Instance.ValueChanged.InvokeAsync("/archive"));
             update.ExportDir.Should().Be("/archive");
 
@@ -165,7 +165,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => exportFinSwitch.Instance.ValueChanged.InvokeAsync(false));
             exportFinSwitch.Instance.Value.Should().BeFalse();
 
-            var exportFinField = FindTextField(target, "ExportDirFin");
+            var exportFinField = FindPathField(target, "ExportDirFin");
             await target.InvokeAsync(() => exportFinField.Instance.ValueChanged.InvokeAsync("/archive_fin"));
             update.ExportDirFin.Should().Be("/archive_fin");
         }
@@ -361,9 +361,14 @@ namespace Lantean.QBTMud.Test.Components.Options
             return FindComponentByTestId<MudTextField<string>>(target, testId);
         }
 
-        private static IRenderedComponent<MudTextField<string>> FindExistingScanDirKey(IRenderedComponent<DownloadsOptions> target, int index)
+        private static IRenderedComponent<PathAutocomplete> FindPathField(IRenderedComponent<DownloadsOptions> target, string testId)
         {
-            return FindTextField(target, $"ScanDirsExisting[{index}].Key");
+            return FindComponentByTestId<PathAutocomplete>(target, testId);
+        }
+
+        private static IRenderedComponent<PathAutocomplete> FindExistingScanDirKey(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindPathField(target, $"ScanDirsExisting[{index}].Key");
         }
 
         private static IRenderedComponent<MudSelect<string>> FindAddedScanDirType(IRenderedComponent<DownloadsOptions> target, int index)
@@ -371,9 +376,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             return FindSelect<string>(target, $"AddedScanDirs[{index}].Type");
         }
 
-        private static IRenderedComponent<MudTextField<string>> FindAddedScanDirKey(IRenderedComponent<DownloadsOptions> target, int index)
+        private static IRenderedComponent<PathAutocomplete> FindAddedScanDirKey(IRenderedComponent<DownloadsOptions> target, int index)
         {
-            return FindTextField(target, $"AddedScanDirs[{index}].Key");
+            return FindPathField(target, $"AddedScanDirs[{index}].Key");
         }
 
         private static IRenderedComponent<MudIconButton> FindExistingScanDirRemoveButton(IRenderedComponent<DownloadsOptions> target, int index)

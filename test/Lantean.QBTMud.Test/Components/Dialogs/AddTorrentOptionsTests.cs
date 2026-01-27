@@ -528,6 +528,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             return component.FindComponents<MudTextField<string>>().Single(field => field.Instance.Label == label);
         }
 
+        private static IRenderedComponent<PathAutocomplete>? FindPathAutocomplete(IRenderedComponent<AddTorrentOptions> component, string label)
+        {
+            return component.FindComponents<PathAutocomplete>().SingleOrDefault(field => field.Instance.Label == label);
+        }
+
         private static IRenderedComponent<MudNumericField<T>> FindNumericField<T>(IRenderedComponent<AddTorrentOptions> component, string label)
         {
             return component.FindComponents<MudNumericField<T>>().Single(field => field.Instance.Label == label);
@@ -540,12 +545,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static string? GetSavePath(IRenderedComponent<AddTorrentOptions> component)
         {
-            return FindTextField(component, "Save files to location").Instance.Value;
+            return FindPathAutocomplete(component, "Save files to location")?.Instance.Value;
         }
 
         private static string? GetDownloadPath(IRenderedComponent<AddTorrentOptions> component)
         {
-            return FindTextField(component, "Incomplete save path").Instance.Value;
+            return FindPathAutocomplete(component, "Incomplete save path")?.Instance.Value;
         }
 
         private static bool GetUseDownloadPath(IRenderedComponent<AddTorrentOptions> component)
@@ -561,6 +566,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static async Task SetTextFieldValue(IRenderedComponent<AddTorrentOptions> component, string label, string value)
         {
+            var pathField = FindPathAutocomplete(component, label);
+            if (pathField is not null)
+            {
+                await component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync(value));
+                return;
+            }
+
             var field = FindTextField(component, label);
             await component.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(value));
         }

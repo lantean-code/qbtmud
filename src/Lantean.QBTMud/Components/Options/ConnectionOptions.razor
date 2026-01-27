@@ -1,4 +1,6 @@
 @inherits Options
+@using Lantean.QBitTorrentClient.Models
+@using Lantean.QBTMud.Components.UI
 
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardContent>
@@ -150,7 +152,15 @@
                 <FieldSwitch Label="IP Filter" Value="IpFilterEnabled" ValueChanged="IpFilterEnabledChanged" data-test-id="@TestIdHelper.For("IpFilterEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Filter path (.dat, .p2p, .p2b)" Value="IpFilterPath" ValueChanged="IpFilterPathChanged" Disabled="@(!IpFilterEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("IpFilterPath")" />
+                <PathAutocomplete Label="Filter path (.dat, .p2p, .p2b)"
+                                  Value="@IpFilterPath"
+                                  ValueChanged="@(value => IpFilterPathChanged(value ?? string.Empty))"
+                                  Mode="DirectoryContentMode.All"
+                                  AllowFolderSelection="false"
+                                  Disabled="@(!IpFilterEnabled)"
+                                  Immediate="true"
+                                  DebounceInterval="300"
+                                  data-test-id="@TestIdHelper.For("IpFilterPath")" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="Apply to trackers" Value="IpFilterTrackers" ValueChanged="IpFilterTrackersChanged" data-test-id="@TestIdHelper.For("IpFilterTrackers")" />

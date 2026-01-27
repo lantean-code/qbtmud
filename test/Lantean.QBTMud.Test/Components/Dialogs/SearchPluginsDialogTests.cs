@@ -3,6 +3,7 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
+using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -276,8 +277,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync();
 
-            var pathField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "SearchPluginInstallPath");
-            pathField.Find("input").Input("/path/plugin.py");
+            var pathField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "SearchPluginInstallPath");
+            await dialog.Component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("/path/plugin.py"));
 
             var installButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginInstallPathButton");
             await installButton.Find("button").ClickAsync(new MouseEventArgs());
@@ -302,8 +303,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync();
 
-            var pathField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "SearchPluginInstallPath");
-            pathField.Find("input").Input("/path/plugin.py");
+            var pathField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "SearchPluginInstallPath");
+            await dialog.Component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("/path/plugin.py"));
 
             var installButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginInstallPathButton");
             await installButton.Find("button").ClickAsync(new MouseEventArgs());

@@ -1,3 +1,6 @@
+@using Lantean.QBitTorrentClient.Models
+@using Lantean.QBTMud.Components.UI
+
 <MudDialog Class="search-plugins-dialog">
     <DialogContent>
         @if (IsBusy)
@@ -26,12 +29,14 @@
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4">
                     <MudText Typo="Typo.subtitle2" Class="mb-2">Install from server path</MudText>
-                    <MudTextField @bind-Value="InstallLocalPath"
-                                  Placeholder="/home/qbt/plugins/my-plugin.py"
-                                  Variant="Variant.Outlined"
-                                  Disabled="OperationInProgress"
-                                  Immediate="true"
-                                  data-test-id="@TestIdHelper.For("SearchPluginInstallPath")" />
+                    <PathAutocomplete Label="Path"
+                                      @bind-Value="InstallLocalPath"
+                                      Placeholder="/home/qbt/plugins/my-plugin.py"
+                                      Mode="DirectoryContentMode.All"
+                                      AllowFolderSelection="false"
+                                      Disabled="OperationInProgress"
+                                      Immediate="true"
+                                      data-test-id="@TestIdHelper.For("SearchPluginInstallPath")" />
                     <MudButton Color="Color.Primary"
                                Variant="Variant.Filled"
                                Disabled="OperationInProgress || string.IsNullOrWhiteSpace(InstallLocalPath)"

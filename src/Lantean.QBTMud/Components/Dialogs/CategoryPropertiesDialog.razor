@@ -1,4 +1,6 @@
 @inherits SubmittableDialog
+@using Lantean.QBitTorrentClient.Models
+@using Lantean.QBTMud.Components.UI
 
 <MudDialog>
     <DialogContent>
@@ -7,7 +9,12 @@
                 <MudTextField Label="Category" @bind-Value="Category" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryPropertiesCategory")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField Label="Save Path" @bind-Value="SavePath" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryPropertiesSavePath")" />
+                <PathAutocomplete Label="Save Path"
+                                  @bind-Value="SavePath"
+                                  Required="true"
+                                  RequiredErrorText="Save path is required."
+                                  Mode="DirectoryContentMode.Directories"
+                                  data-test-id="@TestIdHelper.For("CategoryPropertiesSavePath")" />
             </MudItem>
         </MudGrid>
     </DialogContent>

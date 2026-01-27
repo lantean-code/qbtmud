@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
+using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -42,7 +43,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync(category: "Category");
 
             var categoryField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CategoryPropertiesCategory");
-            var savePathField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CategoryPropertiesSavePath");
+            var savePathField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "CategoryPropertiesSavePath");
 
             categoryField.Instance.Value.Should().Be("Category");
             savePathField.Instance.Value.Should().Be("SavePath");
@@ -88,8 +89,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var categoryField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CategoryPropertiesCategory");
             categoryField.Find("input").Change("Category");
 
-            var savePathField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CategoryPropertiesSavePath");
-            savePathField.Find("input").Change("SavePath");
+            var savePathField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "CategoryPropertiesSavePath");
+            await dialog.Component.InvokeAsync(() => savePathField.Instance.ValueChanged.InvokeAsync("SavePath"));
 
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "CategoryPropertiesSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());

@@ -44,7 +44,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindTextField(target, "ProxyUsername").Instance.Disabled.Should().BeFalse();
 
             FindSwitch(target, "IpFilterEnabled").Instance.Value.Should().BeTrue();
-            FindTextField(target, "IpFilterPath").Instance.Disabled.Should().BeFalse();
+            FindPathField(target, "IpFilterPath").Instance.Disabled.Should().BeFalse();
         }
 
         [Fact]
@@ -272,7 +272,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => ipFilterSwitch.Instance.ValueChanged.InvokeAsync(false));
             update.IpFilterEnabled.Should().BeFalse();
 
-            var filterPathField = FindTextField(target, "IpFilterPath");
+            var filterPathField = FindPathField(target, "IpFilterPath");
             await target.InvokeAsync(() => filterPathField.Instance.ValueChanged.InvokeAsync("/new/filter.dat"));
             update.IpFilterPath.Should().Be("/new/filter.dat");
 
@@ -328,6 +328,11 @@ namespace Lantean.QBTMud.Test.Components.Options
         private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<ConnectionOptions> target, string testId)
         {
             return FindComponentByTestId<MudTextField<string>>(target, testId);
+        }
+
+        private static IRenderedComponent<PathAutocomplete> FindPathField(IRenderedComponent<ConnectionOptions> target, string testId)
+        {
+            return FindComponentByTestId<PathAutocomplete>(target, testId);
         }
 
         private static Preferences DeserializePreferences()

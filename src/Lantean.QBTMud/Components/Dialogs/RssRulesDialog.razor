@@ -1,3 +1,6 @@
+@using Lantean.QBitTorrentClient.Models
+@using Lantean.QBTMud.Components.UI
+
 <MudDialog>
     <DialogContent>
         <MudGrid>
@@ -50,7 +53,12 @@
                         <FieldSwitch Label="Save to a different directory" Value="SaveToDifferentDirectory" ValueChanged="SaveToDifferentDirectoryChanged" Disabled="@(SelectedRuleName is null)" data-test-id="@TestIdHelper.For("RssRulesSaveToDifferentDirectory")" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudTextField T="string" Label="Save to" Value="SaveTo" ValueChanged="SaveToChanged" Disabled="@(SelectedRuleName is null || !SaveToDifferentDirectory)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RssRulesSaveTo")" />
+                        <PathAutocomplete Label="Save to"
+                                          Value="@SaveTo"
+                                          ValueChanged="@(value => SaveToChanged(value ?? string.Empty))"
+                                          Mode="DirectoryContentMode.Directories"
+                                          Disabled="@(SelectedRuleName is null || !SaveToDifferentDirectory)"
+                                          data-test-id="@TestIdHelper.For("RssRulesSaveTo")" />
                     </MudItem>
                     <MudItem xs="12">
                         <MudNumericField T="int" Label="Ignore Subsequent Matches for (0 to Disable)" Value="IgnoreDays" ValueChanged="IgnoreDaysChanged" Disabled="@(SelectedRuleName is null)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RssRulesIgnoreDays")" />

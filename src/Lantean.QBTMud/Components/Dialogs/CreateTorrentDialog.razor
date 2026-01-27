@@ -1,0 +1,94 @@
+@inherits SubmittableDialog
+@using Lantean.QBitTorrentClient.Models
+@using Lantean.QBTMud.Components.UI
+@using Lantean.QBTMud.Helpers
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <PathAutocomplete Label="Source path"
+                                  Value="@_sourcePath"
+                                  ValueChanged="OnSourcePathChanged"
+                                  Required="true"
+                                  ForceValidation="@_forceSourcePathValidation"
+                                  RequiredErrorText="Source path is required."
+                                  Mode="DirectoryContentMode.All"
+                                  AutoFocus="true" />
+            </MudItem>
+            <MudItem xs="12">
+                <PathAutocomplete Label="Torrent file path (optional)"
+                                  @bind-Value="_torrentFilePath"
+                                  Mode="DirectoryContentMode.Directories"
+                                  HelperText="Leave empty to download from the task list." />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int?" Label="Piece size" @bind-Value="_pieceSize" Variant="Variant.Outlined" ShrinkLabel="true">
+                    <MudSelectItem T="int?" Value="@((int?)null)">Automatic</MudSelectItem>
+                    @foreach (var option in PieceSizeOptions)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)option)">@DisplayHelpers.Size(option)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <FieldSwitch Label="Private torrent" @bind-Value="_isPrivate" />
+            </MudItem>
+            <MudItem xs="12">
+                <FieldSwitch Label="Start seeding immediately" @bind-Value="_startSeeding" />
+            </MudItem>
+            @if (SupportsTorrentFormat)
+            {
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="string" Label="Torrent format" @bind-Value="_torrentFormat" Variant="Variant.Outlined" ShrinkLabel="true">
+                        <MudSelectItem Value="@("v2")">V2</MudSelectItem>
+                        <MudSelectItem Value="@("hybrid")">Hybrid</MudSelectItem>
+                        <MudSelectItem Value="@("v1")">V1</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="12" sm="6">
+                    <FieldSwitch Label="Optimize alignment" @bind-Value="_optimizeAlignment" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int"
+                                     Label="Padded file size limit (KiB)"
+                                     @bind-Value="_paddedFileSizeLimitKiB"
+                                     Variant="Variant.Outlined"
+                                     ShrinkLabel="true"
+                                     Min="-1"
+                                     Disabled="@(!_optimizeAlignment)"
+                                     HelperText="-1 disables padding" />
+                </MudItem>
+            }
+            <MudItem xs="12">
+                <MudTextField Label="Tracker URLs"
+                              @bind-Value="_trackers"
+                              Lines="4"
+                              Variant="Variant.Outlined"
+                              ShrinkLabel="true"
+                              HelperText="Enter one URL per line." />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField Label="Web seed URLs"
+                              @bind-Value="_urlSeeds"
+                              Lines="4"
+                              Variant="Variant.Outlined"
+                              ShrinkLabel="true"
+                              HelperText="Enter one URL per line." />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField Label="Comments" @bind-Value="_comment" Lines="3" Variant="Variant.Outlined" ShrinkLabel="true" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField Label="Source" @bind-Value="_source" Variant="Variant.Outlined" ShrinkLabel="true" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Create</MudButton>
+    </DialogActions>
+</MudDialog>
