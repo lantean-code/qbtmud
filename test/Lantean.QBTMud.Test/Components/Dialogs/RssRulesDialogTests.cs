@@ -187,7 +187,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var addStopped = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesAddStopped");
             var contentLayout = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesContentLayout");
             var feeds = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesFeeds");
-            var saveToField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "RssRulesSaveTo");
+            var saveToField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "RssRulesSaveTo");
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleDefault"));
             addStopped.Instance.Value.Should().Be("default");
@@ -233,7 +233,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var saveToDiff = FindComponentByTestId<FieldSwitch>(dialog.Component, "RssRulesSaveToDifferentDirectory");
             await dialog.Component.InvokeAsync(() => saveToDiff.Instance.ValueChanged.InvokeAsync(true));
 
-            var saveTo = FindComponentByTestId<MudTextField<string>>(dialog.Component, "RssRulesSaveTo");
+            var saveTo = FindComponentByTestId<PathAutocomplete>(dialog.Component, "RssRulesSaveTo");
             await dialog.Component.InvokeAsync(() => saveTo.Instance.ValueChanged.InvokeAsync("C:/Downloads/RuleA"));
 
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");

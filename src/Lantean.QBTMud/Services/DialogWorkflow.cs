@@ -59,6 +59,7 @@ namespace Lantean.QBTMud.Services
             _snackbar = snackbar;
         }
 
+        /// <inheritdoc />
         public async Task<string?> InvokeAddCategoryDialog(string? initialCategory = null, string? initialSavePath = null)
         {
             var parameters = new DialogParameters();
@@ -85,6 +86,7 @@ namespace Lantean.QBTMud.Services
             return category.Name;
         }
 
+        /// <inheritdoc />
         public async Task InvokeAddTorrentFileDialog()
         {
             var result = await _dialogService.ShowAsync<AddTorrentFileDialog>("Upload local torrent", FormDialogOptions);
@@ -163,6 +165,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
+        /// <inheritdoc />
         public async Task InvokeAddTorrentLinkDialog(string? url = null)
         {
             var parameters = new DialogParameters
@@ -195,6 +198,7 @@ namespace Lantean.QBTMud.Services
             ShowAddTorrentSnackbarMessage(addTorrentResult);
         }
 
+        /// <inheritdoc />
         public async Task<bool> InvokeDeleteTorrentDialog(bool confirmTorrentDeletion, params string[] hashes)
         {
             if (hashes.Length == 0)
@@ -224,6 +228,7 @@ namespace Lantean.QBTMud.Services
             return true;
         }
 
+        /// <inheritdoc />
         public async Task ForceRecheckAsync(IEnumerable<string> hashes, bool confirmTorrentRecheck)
         {
             var hashArray = hashes?.ToArray() ?? Array.Empty<string>();
@@ -245,6 +250,7 @@ namespace Lantean.QBTMud.Services
             await _apiClient.RecheckTorrents(null, hashArray);
         }
 
+        /// <inheritdoc />
         public async Task InvokeDownloadRateDialog(long rate, IEnumerable<string> hashes)
         {
             Func<long, string> valueDisplayFunc = v => v == Limits.NoLimit ? "∞" : v.ToString();
@@ -273,6 +279,7 @@ namespace Lantean.QBTMud.Services
             await _apiClient.SetTorrentDownloadLimit(kibs * 1024, null, hashes.ToArray());
         }
 
+        /// <inheritdoc />
         public async Task<string?> InvokeEditCategoryDialog(string categoryName)
         {
             var category = (await _apiClient.GetAllCategories()).FirstOrDefault(c => c.Key == categoryName).Value;
@@ -295,6 +302,7 @@ namespace Lantean.QBTMud.Services
             return updatedCategory.Name;
         }
 
+        /// <inheritdoc />
         public async Task InvokeRenameFilesDialog(string hash)
         {
             var parameters = new DialogParameters
@@ -305,11 +313,13 @@ namespace Lantean.QBTMud.Services
             await _dialogService.ShowAsync<RenameFilesDialog>("Rename Files", parameters, FullScreenDialogOptions);
         }
 
+        /// <inheritdoc />
         public async Task InvokeRssRulesDialog()
         {
             await _dialogService.ShowAsync<RssRulesDialog>("Edit Rss Auto Downloading Rules", FullScreenDialogOptions);
         }
 
+        /// <inheritdoc />
         public async Task InvokeShareRatioDialog(IEnumerable<Torrent> torrents)
         {
             var torrentList = torrents.ToList();
@@ -356,6 +366,7 @@ namespace Lantean.QBTMud.Services
                 hashes: torrentList.Select(t => t.Hash).ToArray());
         }
 
+        /// <inheritdoc />
         public async Task InvokeStringFieldDialog(string title, string label, string? value, Func<string, Task> onSuccess)
         {
             var result = await ShowStringFieldDialog(title, label, value);
@@ -375,6 +386,7 @@ namespace Lantean.QBTMud.Services
             streams.Clear();
         }
 
+        /// <inheritdoc />
         public async Task InvokeUploadRateDialog(long rate, IEnumerable<string> hashes)
         {
             Func<long, string> valueDisplayFunc = v => v == Limits.NoLimit ? "∞" : v.ToString();
@@ -403,6 +415,7 @@ namespace Lantean.QBTMud.Services
             await _apiClient.SetTorrentUploadLimit(kibs * 1024, null, hashes.ToArray());
         }
 
+        /// <inheritdoc />
         public async Task<HashSet<QBitTorrentClient.Models.PeerId>?> ShowAddPeersDialog()
         {
             var reference = await _dialogService.ShowAsync<AddPeerDialog>("Add Peer", NonBlurFormDialogOptions);
@@ -415,6 +428,7 @@ namespace Lantean.QBTMud.Services
             return (HashSet<QBitTorrentClient.Models.PeerId>)dialogResult.Data;
         }
 
+        /// <inheritdoc />
         public async Task<HashSet<string>?> ShowAddTagsDialog()
         {
             var reference = await _dialogService.ShowAsync<AddTagDialog>("Add Tags", NonBlurFormDialogOptions);
@@ -427,6 +441,7 @@ namespace Lantean.QBTMud.Services
             return (HashSet<string>)dialogResult.Data;
         }
 
+        /// <inheritdoc />
         public async Task<HashSet<string>?> ShowAddTrackersDialog()
         {
             var reference = await _dialogService.ShowAsync<AddTrackerDialog>("Add Tracker", NonBlurFormDialogOptions);
@@ -439,6 +454,7 @@ namespace Lantean.QBTMud.Services
             return (HashSet<string>)dialogResult.Data;
         }
 
+        /// <inheritdoc />
         public async Task<(HashSet<string> SelectedColumns, Dictionary<string, int?> ColumnWidths, Dictionary<string, int> ColumnOrder)> ShowColumnsOptionsDialog<T>(
             List<ColumnDefinition<T>> columnDefinitions,
             HashSet<string> selectedColumns,
@@ -463,6 +479,7 @@ namespace Lantean.QBTMud.Services
             return ((HashSet<string>, Dictionary<string, int?>, Dictionary<string, int>))dialogResult.Data;
         }
 
+        /// <inheritdoc />
         public async Task<bool> ShowConfirmDialog(string title, string content)
         {
             var parameters = new DialogParameters
@@ -476,6 +493,7 @@ namespace Lantean.QBTMud.Services
             return dialogResult is not null && !dialogResult.Canceled;
         }
 
+        /// <inheritdoc />
         public async Task ShowConfirmDialog(string title, string content, Func<Task> onSuccess)
         {
             var parameters = new DialogParameters
@@ -493,6 +511,7 @@ namespace Lantean.QBTMud.Services
             await onSuccess();
         }
 
+        /// <inheritdoc />
         public async Task ShowConfirmDialog(string title, string content, Action onSuccess)
         {
             await ShowConfirmDialog(
@@ -505,6 +524,7 @@ namespace Lantean.QBTMud.Services
                 });
         }
 
+        /// <inheritdoc />
         public async Task<List<PropertyFilterDefinition<T>>?> ShowFilterOptionsDialog<T>(List<PropertyFilterDefinition<T>>? propertyFilterDefinitions)
         {
             var parameters = new DialogParameters
@@ -522,6 +542,32 @@ namespace Lantean.QBTMud.Services
             return (List<PropertyFilterDefinition<T>>?)dialogResult.Data;
         }
 
+        /// <inheritdoc />
+        public async Task<string?> ShowPathBrowserDialog(string title, string? initialPath, QBitTorrentClient.Models.DirectoryContentMode mode, bool allowFolderSelection)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(PathBrowserDialog.InitialPath), initialPath },
+                { nameof(PathBrowserDialog.Mode), mode },
+                { nameof(PathBrowserDialog.AllowFolderSelection), allowFolderSelection },
+            };
+
+            var reference = await _dialogService.ShowAsync<PathBrowserDialog>(title, parameters, FormDialogOptions);
+            var dialogResult = await reference.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+            {
+                return null;
+            }
+
+            if (dialogResult.Data is not string selectedPath || string.IsNullOrWhiteSpace(selectedPath))
+            {
+                return null;
+            }
+
+            return selectedPath;
+        }
+
+        /// <inheritdoc />
         public async Task<string?> ShowStringFieldDialog(string title, string label, string? value)
         {
             var parameters = new DialogParameters
@@ -540,6 +586,7 @@ namespace Lantean.QBTMud.Services
             return (string)dialogResult.Data;
         }
 
+        /// <inheritdoc />
         public async Task ShowSubMenu(IEnumerable<string> hashes, UIAction parent, Dictionary<string, Torrent> torrents, QBitTorrentClient.Models.Preferences? preferences, HashSet<string> tags, Dictionary<string, Category> categories)
         {
             var parameters = new DialogParameters
@@ -555,6 +602,7 @@ namespace Lantean.QBTMud.Services
             await _dialogService.ShowAsync<SubMenuDialog>(parent.Text, parameters, FormDialogOptions);
         }
 
+        /// <inheritdoc />
         public async Task<bool> ShowSearchPluginsDialog()
         {
             var reference = await _dialogService.ShowAsync<SearchPluginsDialog>("Search plugins", FullScreenDialogOptions);

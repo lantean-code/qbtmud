@@ -36,7 +36,7 @@ namespace Lantean.QBTMud.Test.Components
             });
 
             var menuItems = target.FindComponents<MudMenuItem>();
-            menuItems.Should().HaveCount(17);
+            menuItems.Should().HaveCount(18);
             menuItems.Any(item => item.Markup.Contains("Speed", StringComparison.Ordinal)).Should().BeTrue();
             snackbarMock.Invocations.Should().BeEmpty();
             apiClientMock.VerifyNoOtherCalls();

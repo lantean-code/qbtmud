@@ -94,9 +94,9 @@
     color: #355679;
 }
 
-.loading-screen__text:after {
-    content: var(--qbt-load-percentage-text, var(--blazor-load-percentage-text, "Loading"));
-}
+    .loading-screen__text:after {
+        content: var(--qbt-load-percentage-text, var(--blazor-load-percentage-text, "Loading"));
+    }
 
 @keyframes qbt-loading-scan {
     from {
@@ -253,14 +253,14 @@ code {
     color: var(--mud-palette-text-primary);
 }
 
-.icon-menu::after {
-    content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h24v24H0V0z' fill='none'/%3E%3Cpath d='M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z' fill='currentColor'/%3E%3C/svg%3E");
-    width: 25px;
-    height: 25px;
-    position: absolute;
-    top: 10px;
-    right: -5px;
-}
+    .icon-menu::after {
+        content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h24v24H0V0z' fill='none'/%3E%3Cpath d='M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z' fill='currentColor'/%3E%3C/svg%3E");
+        width: 25px;
+        height: 25px;
+        position: absolute;
+        top: 10px;
+        right: -5px;
+    }
 
 .field-switch {
 }
@@ -396,9 +396,9 @@ code {
         padding-right: calc(14px + env(safe-area-inset-right));
     }
 
-    .torrent-list .mud-table-container th:last-child, .torrent-list .mud-table-container td:last-child {
-        padding-right: 14px;
-    }
+        .torrent-list .mud-table-container th:last-child, .torrent-list .mud-table-container td:last-child {
+            padding-right: 14px;
+        }
 }
 
 .details-tab-contents,
@@ -543,6 +543,34 @@ td .folder-button {
 
 .mud-popover .mud-divider:last-child {
     display: none;
+}
+
+.path-browser-dialog.mud-dialog,
+.path-browser-dialog .mud-dialog {
+    display: flex;
+    flex-direction: column;
+    height: var(--app-viewport-height);
+    max-height: var(--app-viewport-height);
+}
+
+    .path-browser-dialog.mud-dialog .mud-dialog-content,
+    .path-browser-dialog .mud-dialog-content {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+.path-browser-dialog__content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.path-browser-dialog__list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
 }
 
 :root {
