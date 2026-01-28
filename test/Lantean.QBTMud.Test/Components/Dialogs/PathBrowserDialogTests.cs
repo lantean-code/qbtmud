@@ -85,15 +85,21 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var tcs = new TaskCompletionSource<IReadOnlyList<string>>();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContent("C:/", DirectoryContentMode.Directories))
-                .Returns(tcs.Task);
+                .ReturnsAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContent("C:/", DirectoryContentMode.Files))
                 .ReturnsAsync(Array.Empty<string>());
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetDirectoryContent("D:/", DirectoryContentMode.Directories))
+                .Returns(tcs.Task);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetDirectoryContent("D:/", DirectoryContentMode.Files))
+                .ReturnsAsync(Array.Empty<string>());
 
-            var dialog = await _target.RenderDialogAsync(initialPath: string.Empty);
+            var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
             var pathField = dialog.Component.FindComponent<MudTextField<string>>();
 
-            var loadTask = dialog.Component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("C:/"));
+            var loadTask = dialog.Component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("D:/"));
             await Task.Delay(350);
 
             dialog.Component.Markup.Should().Contain("mud-progress-linear");
