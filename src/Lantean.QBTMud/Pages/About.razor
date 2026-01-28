@@ -27,35 +27,35 @@
                 <MudItem xs="12" sm="9" md="10" lg="10" xl="11">
                     <div class="d-flex flex-column gap-2">
                         <div class="d-flex gap-3 align-items-center">
-                            <MudImage Src="images/qbittorrent32.png" Fluid ObjectFit="ObjectFit.None"
+                            <MudImage Src="images/qbittorrent-tray.svg" Fluid ObjectFit="ObjectFit.None"
                                       Alt="QBT" Height="32" Width="32" />
-                            <MudText Typo="Typo.h6">qBittorrent @QBittorrentVersion</MudText>
+                            <MudText Typo="Typo.h6">qBittorrent @QBittorrentVersion WebUI</MudText>
                         </div>
 
                         <MudText Typo="Typo.body1">
                             An advanced BitTorrent client programmed in C++, based on Qt toolkit and libtorrent-rasterbar.
                         </MudText>
 
-                        <MudText Typo="Typo.body1">Copyright © 2006-2024 The qBittorrent project</MudText>
+                        <MudText Typo="Typo.body1">Copyright © 2006-@DateTime.UtcNow.Year The qBittorrent project</MudText>
 
                         <div class="d-flex flex-wrap">
                             <MudText Typo="Typo.body1" Class="fw-bold">Home Page: </MudText>
                             <MudLink Href="https://www.qbittorrent.org" Target="_blank" Class="ms-2">
-                                qbittorrent.org
+                                https://www.qbittorrent.org
                             </MudLink>
                         </div>
 
                         <div class="d-flex flex-wrap">
                             <MudText Typo="Typo.body1" Class="fw-bold">Bug Tracker: </MudText>
                             <MudLink Href="https://bugs.qbittorrent.org" Target="_blank" Class="ms-2">
-                                bugs.qbittorrent.org
+                                https://bugs.qbittorrent.org
                             </MudLink>
                         </div>
 
                         <div class="d-flex flex-wrap">
                             <MudText Typo="Typo.body1" Class="fw-bold">Forum: </MudText>
                             <MudLink Href="https://forum.qbittorrent.org" Target="_blank" Class="ms-2">
-                                forum.qbittorrent.org
+                                https://forum.qbittorrent.org
                             </MudLink>
                         </div>
                     </div>
@@ -124,8 +124,8 @@
     <MudTabPanel Text="Translators">
         <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 options-tab-contents">
             <MudText Typo="Typo.body1" Class="py-1">
-                I would like to thank the people who volunteered to Circle qBittorrent.<br>
-                Most of them Circled via <MudLink Target="https://www.transifex.com/sledgehammer999/qbittorrent/" Href="https://www.transifex.com/sledgehammer999/qbittorrent/">Transifex</MudLink> and some of them are mentioned below:<br>
+                I would like to thank the people who volunteered to translate qBittorrent.<br>
+                Most of them translated via <MudLink Target="https://explore.transifex.com/sledgehammer999/qbittorrent/" Href="https://explore.transifex.com/sledgehammer999/qbittorrent/">Transifex</MudLink> and some of them are mentioned below:<br>
                 (the list might not be up to date)
             </MudText>
             <MudList T="string" ReadOnly>
@@ -168,10 +168,10 @@
                 <MudListItem Icon="@Icons.Material.Filled.Circle"><u>Ukrainian:</u> Oleh Prypin (blaxpirit@gmail.com)</MudListItem>
                 <MudListItem Icon="@Icons.Material.Filled.Circle"><u>Vietnamese:</u> Anh Phan ppanhh(Transifex)</MudListItem>
             </MudList>
-            <MudText Typo="Typo.body1" Class="py-1">Please contact me if you would like to Circle qBittorrent into your own language.</MudText>
+            <MudText Typo="Typo.body1" Class="py-1">Please contact me if you would like to translate qBittorrent into your own language.</MudText>
         </MudContainer>
     </MudTabPanel>
-    <MudTabPanel Text="Licence">
+    <MudTabPanel Text="License">
         <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 options-tab-contents">
             <MudText Typo="Typo.body1" Class="py-1">
                 The qBittorrent source code is licensed under the GNU General Public License, version 2 or (at your option) any later version (GPLv2+).
