@@ -1289,6 +1289,78 @@ namespace Lantean.QBTMud.Test.Services
             result.Should().BeFalse();
         }
 
+        [Fact]
+        public async Task GIVEN_PathBrowserSelection_WHEN_ShowPathBrowserDialog_THEN_ShouldReturnSelectedPath()
+        {
+            DialogParameters? captured = null;
+            var reference = CreateReference(DialogResult.Ok("C:/Folder"));
+            _dialogService
+                .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
+                .ReturnsAsync(reference);
+
+            var result = await _target.ShowPathBrowserDialog("Pick", "C:/", DirectoryContentMode.Files, false);
+
+            result.Should().Be("C:/Folder");
+            captured.Should().NotBeNull();
+            captured![nameof(PathBrowserDialog.InitialPath)].Should().Be("C:/");
+            captured[nameof(PathBrowserDialog.Mode)].Should().Be(DirectoryContentMode.Files);
+            captured[nameof(PathBrowserDialog.AllowFolderSelection)].Should().Be(false);
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogCanceled_WHEN_ShowPathBrowserDialog_THEN_ShouldReturnNull()
+        {
+            var reference = CreateReference(DialogResult.Cancel());
+            _dialogService
+                .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            var result = await _target.ShowPathBrowserDialog("Pick", null, DirectoryContentMode.Directories, true);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_NullDialogResult_WHEN_ShowPathBrowserDialog_THEN_ShouldReturnNull()
+        {
+            var reference = new Mock<IDialogReference>();
+            reference.Setup(r => r.Result).ReturnsAsync((DialogResult?)null);
+            _dialogService
+                .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference.Object);
+
+            var result = await _target.ShowPathBrowserDialog("Pick", null, DirectoryContentMode.Directories, true);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_NonStringResult_WHEN_ShowPathBrowserDialog_THEN_ShouldReturnNull()
+        {
+            var reference = CreateReference(DialogResult.Ok(12));
+            _dialogService
+                .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            var result = await _target.ShowPathBrowserDialog("Pick", null, DirectoryContentMode.Directories, true);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_WhitespaceResult_WHEN_ShowPathBrowserDialog_THEN_ShouldReturnNull()
+        {
+            var reference = CreateReference(DialogResult.Ok(" "));
+            _dialogService
+                .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            var result = await _target.ShowPathBrowserDialog("Pick", null, DirectoryContentMode.Directories, true);
+
+            result.Should().BeNull();
+        }
+
         private static IDialogReference CreateReference(DialogResult result)
         {
             var reference = new Mock<IDialogReference>();
