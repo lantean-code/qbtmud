@@ -110,7 +110,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"Unable to create torrent: {exception.Message}", Severity.Error);
+                Snackbar.Add($"Unable to create torrent: {exception.Message}", Severity.Error);
                 return;
             }
 
@@ -142,7 +142,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"Unable to delete task: {exception.Message}", Severity.Error);
+                Snackbar.Add($"Unable to delete task: {exception.Message}", Severity.Error);
                 return;
             }
 
@@ -197,7 +197,7 @@ namespace Lantean.QBTMud.Pages
         {
             if (MainData?.LostConnection == true)
             {
-                Snackbar?.Add("qBittorrent client is not reachable.", Severity.Warning);
+                Snackbar.Add("qBittorrent client is not reachable.", Severity.Warning);
                 StopPolling();
                 return;
             }
@@ -209,7 +209,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"Unable to load torrent creation tasks: {exception.Message}", Severity.Error);
+                Snackbar.Add($"Unable to load torrent creation tasks: {exception.Message}", Severity.Error);
             }
             finally
             {
@@ -247,13 +247,7 @@ namespace Lantean.QBTMud.Pages
         {
             if (_pollingCancellationToken is not null)
             {
-                try
-                {
-                    _pollingCancellationToken.Cancel();
-                }
-                catch (ObjectDisposedException)
-                {
-                }
+                _pollingCancellationToken.Cancel();
                 _pollingCancellationToken.Dispose();
                 _pollingCancellationToken = null;
             }
@@ -277,7 +271,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (Exception exception)
             {
-                Snackbar?.Add($"Unable to refresh torrent creation tasks: {exception.Message}", Severity.Error);
+                Snackbar.Add($"Unable to refresh torrent creation tasks: {exception.Message}", Severity.Error);
                 return ManagedTimerTickResult.Stop;
             }
 

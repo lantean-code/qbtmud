@@ -12,7 +12,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private string _currentPath = string.Empty;
         private bool _isLoading;
         private string? _loadError;
-        private CancellationTokenSource? _pathChangeCts;
+        private int _pathChangeVersion;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -127,6 +127,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             _isLoading = true;
             _loadError = null;
+            await InvokeAsync(StateHasChanged);
 
             try
             {
@@ -163,22 +164,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private async Task DebounceLoadEntriesAsync()
         {
-            _pathChangeCts?.Cancel();
-            _pathChangeCts?.Dispose();
-
-            var cts = new CancellationTokenSource();
-            _pathChangeCts = cts;
-
-            try
-            {
-                await Task.Delay(PathChangeDebounceMs, cts.Token);
-            }
-            catch (TaskCanceledException)
-            {
-                return;
-            }
-
-            if (cts.IsCancellationRequested)
+            var version = Interlocked.Increment(ref _pathChangeVersion);
+            await Task.Delay(PathChangeDebounceMs);
+            if (version != _pathChangeVersion)
             {
                 return;
             }
@@ -223,13 +211,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return null;
             }
 
-            var parent = trimmed[..(index + 1)];
-            if (string.IsNullOrWhiteSpace(parent))
-            {
-                return null;
-            }
-
-            return parent;
+            return trimmed[..(index + 1)];
         }
 
         private static string TrimTrailingSeparators(string path)
