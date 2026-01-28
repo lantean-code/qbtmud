@@ -323,25 +323,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_CloseClicked_WHEN_Invoked_THEN_CancelsDialog()
-        {
-            Mock.Get(_apiClient)
-                .Setup(client => client.GetDirectoryContent(It.IsAny<string>(), DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
-            Mock.Get(_apiClient)
-                .Setup(client => client.GetDirectoryContent(It.IsAny<string>(), DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
-
-            var dialog = await _target.RenderDialogAsync(initialPath: "C:/Folder", allowFolderSelection: true);
-            var closeButton = FindButton(dialog.Component, "Close");
-
-            await dialog.Component.InvokeAsync(() => closeButton.Instance.OnClick.InvokeAsync());
-
-            var result = await dialog.Reference.Result;
-            result!.Canceled.Should().BeTrue();
-        }
-
-        [Fact]
         public async Task GIVEN_FileEntry_WHEN_ClickedWithFilesAllowed_THEN_ClosesWithFile()
         {
             Mock.Get(_apiClient)

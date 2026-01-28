@@ -132,6 +132,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var columns = TorrentCreator.ColumnsDefinitions;
 
+            columns.Should().ContainSingle(column => column.Header == "Name");
             columns.Should().ContainSingle(column => column.Header == "Torrent File" && column.Enabled == false);
             columns.Should().ContainSingle(column => column.Header == "Error" && column.Enabled == false);
             columns.Should().ContainSingle(column => column.Header == "Actions" && column.Width == 140);
@@ -195,6 +196,11 @@ namespace Lantean.QBTMud.Test.Pages
                     case "Progress":
                         valueWithValues.Should().Be(42.0);
                         valueWithNulls.Should().Be(0.0);
+                        break;
+
+                    case "Name":
+                        valueWithValues.Should().Be("SourcePath.torrent");
+                        valueWithNulls.Should().Be("TaskId.torrent");
                         break;
 
                     case "Source Path":

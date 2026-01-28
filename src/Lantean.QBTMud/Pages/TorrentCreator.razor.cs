@@ -158,6 +158,7 @@ namespace Lantean.QBTMud.Pages
         [
             new ColumnDefinition<TorrentCreationTaskStatus>("Status", t => t.Status ?? string.Empty),
             new ColumnDefinition<TorrentCreationTaskStatus>("Progress", t => t.Progress ?? 0.0, tdClass: "table-progress"),
+            new ColumnDefinition<TorrentCreationTaskStatus>("Name", t => ResolveFileName(t)),
             new ColumnDefinition<TorrentCreationTaskStatus>("Source Path", t => t.SourcePath),
             new ColumnDefinition<TorrentCreationTaskStatus>("Torrent File", t => t.TorrentFilePath ?? string.Empty) { Enabled = false },
             new ColumnDefinition<TorrentCreationTaskStatus>("Added", t => t.TimeAdded ?? string.Empty) { Enabled = false },
