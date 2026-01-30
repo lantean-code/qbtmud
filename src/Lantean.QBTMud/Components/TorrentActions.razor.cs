@@ -555,7 +555,8 @@ namespace Lantean.QBTMud.Components
                     allAreSuperSeeding = false;
                 }
 
-                if (torrent.State != "stoppedUP" && torrent.State != "stoppedDL")
+                if (!string.Equals(torrent.State, "stoppedUP", StringComparison.Ordinal) &&
+                    !string.Equals(torrent.State, "stoppedDL", StringComparison.Ordinal))
                 {
                     allAreStopped = false;
                 }
@@ -651,7 +652,7 @@ namespace Lantean.QBTMud.Components
 
             if (allAreStopped)
             {
-                actionStates["pause"] = ActionState.Hidden;
+                actionStates["stop"] = ActionState.Hidden;
             }
             else if (allAreForceStart)
             {
@@ -671,13 +672,13 @@ namespace Lantean.QBTMud.Components
                 actionStates["start"] = new ActionState { TextOverride = "Start" };
             }
 
-            if (actionStates.TryGetValue("pause", out ActionState? stopActionState))
+            if (actionStates.TryGetValue("stop", out ActionState? stopActionState))
             {
                 stopActionState.TextOverride = "Stop";
             }
             else
             {
-                actionStates["pause"] = new ActionState { TextOverride = "Stop" };
+                actionStates["stop"] = new ActionState { TextOverride = "Stop" };
             }
 
             if (!allAreAutoTmm && thereAreAutoTmm)

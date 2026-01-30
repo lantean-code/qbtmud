@@ -29,7 +29,12 @@ namespace Lantean.QBTMud.Test.Components
             apiClientMock.Setup(c => c.StopTorrents(null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
             apiClientMock.Setup(c => c.SetForceStart(true, null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
 
-            var target = RenderMenuItems(Hashes("Hash"), Torrents(CreateTorrent("Hash", state: "stoppedDL")), Tags("Tag"), Categories("Category"));
+            var torrents = Torrents(
+                CreateTorrent("One", state: "stoppedDL"),
+                CreateTorrent("Two", state: "downloading"));
+            var hashes = Hashes("One", "Two");
+
+            var target = RenderMenuItems(hashes, torrents, Tags("Tag"), Categories("Category"));
 
             var start = FindMenuItem(target, "Start");
             var stop = FindMenuItem(target, "Stop");
@@ -39,11 +44,22 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => stop.Instance.OnClick.InvokeAsync());
             await target.InvokeAsync(() => forceStart.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Verify(c => c.StartTorrents(null, It.Is<string[]>(a => a.SequenceEqual(Hashes("Hash")))), Times.Once);
-            apiClientMock.Verify(c => c.StopTorrents(null, It.Is<string[]>(a => a.SequenceEqual(Hashes("Hash")))), Times.Once);
-            apiClientMock.Verify(c => c.SetForceStart(true, null, It.Is<string[]>(a => a.SequenceEqual(Hashes("Hash")))), Times.Once);
+            apiClientMock.Verify(c => c.StartTorrents(null, It.Is<string[]>(a => a.SequenceEqual(hashes))), Times.Once);
+            apiClientMock.Verify(c => c.StopTorrents(null, It.Is<string[]>(a => a.SequenceEqual(hashes))), Times.Once);
+            apiClientMock.Verify(c => c.SetForceStart(true, null, It.Is<string[]>(a => a.SequenceEqual(hashes))), Times.Once);
             snackbarMock.Verify(s => s.Add(It.Is<string>(m => string.Equals(m, "Torrent started.", StringComparison.Ordinal)), Severity.Normal, null, null), Times.Once);
             snackbarMock.Verify(s => s.Add(It.Is<string>(m => m.Contains("stopped", StringComparison.OrdinalIgnoreCase)), Severity.Normal, null, null), Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_StoppedTorrent_WHEN_Rendered_THEN_StopHiddenAndStartVisible()
+        {
+            var target = RenderMenuItems(Hashes("Hash"), Torrents(CreateTorrent("Hash", state: "stoppedDL")), Tags("Tag"), Categories("Category"));
+
+            var menuItems = target.FindComponents<MudMenuItem>().Select(item => item.Markup).ToList();
+
+            menuItems.Should().Contain(item => item.Contains("Start", StringComparison.Ordinal));
+            menuItems.Should().NotContain(item => item.Contains("Stop", StringComparison.Ordinal));
         }
 
         [Fact]
