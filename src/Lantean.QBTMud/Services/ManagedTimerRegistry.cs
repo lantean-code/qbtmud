@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Services
         {
             lock (_syncLock)
             {
-                return _timers.ToList();
+                return _timers.AsReadOnly();
             }
         }
 
@@ -30,6 +30,13 @@ namespace Lantean.QBTMud.Services
             {
                 if (_timers.Contains(timer))
                 {
+                    return;
+                }
+
+                var existingIndex = _timers.FindIndex(existing => string.Equals(existing.Name, timer.Name, StringComparison.Ordinal));
+                if (existingIndex >= 0)
+                {
+                    _timers[existingIndex] = timer;
                     return;
                 }
 

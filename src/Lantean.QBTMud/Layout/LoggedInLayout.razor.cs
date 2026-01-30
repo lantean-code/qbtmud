@@ -10,7 +10,7 @@ using System.Net;
 
 namespace Lantean.QBTMud.Layout
 {
-    public partial class LoggedInLayout : IDisposable
+    public partial class LoggedInLayout : IAsyncDisposable
     {
         private const string PendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
         private const string LastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
@@ -860,30 +860,37 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
-        protected virtual void Dispose(bool disposing)
+        protected virtual async ValueTask DisposeAsync(bool disposing)
         {
-            if (!_disposedValue)
+            if (_disposedValue)
             {
-                if (disposing)
-                {
-                    _timerCancellationToken.Cancel();
-                    _timerCancellationToken.Dispose();
+                return;
+            }
 
-                    if (_navigationHandlerAttached)
-                    {
-                        NavigationManager.LocationChanged -= NavigationManagerOnLocationChanged;
-                        _navigationHandlerAttached = false;
-                    }
+            if (disposing)
+            {
+                _timerCancellationToken.Cancel();
+                _timerCancellationToken.Dispose();
+
+                if (_refreshTimer is not null)
+                {
+                    await _refreshTimer.DisposeAsync();
+                    _refreshTimer = null;
                 }
 
-                _disposedValue = true;
+                if (_navigationHandlerAttached)
+                {
+                    NavigationManager.LocationChanged -= NavigationManagerOnLocationChanged;
+                    _navigationHandlerAttached = false;
+                }
             }
+
+            _disposedValue = true;
         }
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(disposing: true);
+            await DisposeAsync(disposing: true);
             GC.SuppressFinalize(this);
         }
     }
