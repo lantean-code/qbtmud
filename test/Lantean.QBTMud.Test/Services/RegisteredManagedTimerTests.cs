@@ -46,6 +46,9 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
             Mock.Get(_inner)
+                .Setup(t => t.RestartAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            Mock.Get(_inner)
                 .Setup(t => t.PauseAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
             Mock.Get(_inner)
@@ -59,18 +62,21 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(true);
 
             var started = await _target.StartAsync(_ => Task.FromResult(ManagedTimerTickResult.Continue), CancellationToken.None);
+            var restarted = await _target.RestartAsync(CancellationToken.None);
             var paused = await _target.PauseAsync(CancellationToken.None);
             var resumed = await _target.ResumeAsync(CancellationToken.None);
             var stopped = await _target.StopAsync(CancellationToken.None);
             var updated = await _target.UpdateIntervalAsync(TimeSpan.FromSeconds(1), CancellationToken.None);
 
             started.Should().BeTrue();
+            restarted.Should().BeTrue();
             paused.Should().BeTrue();
             resumed.Should().BeFalse();
             stopped.Should().BeTrue();
             updated.Should().BeTrue();
 
             Mock.Get(_inner).Verify(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_inner).Verify(t => t.RestartAsync(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_inner).Verify(t => t.PauseAsync(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_inner).Verify(t => t.ResumeAsync(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_inner).Verify(t => t.StopAsync(It.IsAny<CancellationToken>()), Times.Once);

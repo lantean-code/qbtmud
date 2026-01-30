@@ -154,6 +154,46 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <summary>
+        /// Restarts the timer using the last configured tick handler.
+        /// </summary>
+        /// <param name="cancellationToken">A token that cancels the timer loop.</param>
+        /// <returns><see langword="true"/> when the timer restarts; otherwise <see langword="false"/>.</returns>
+        public Task<bool> RestartAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            lock (_syncLock)
+            {
+                if (_disposed)
+                {
+                    return Task.FromResult(false);
+                }
+
+                if (_state != ManagedTimerState.Stopped && _state != ManagedTimerState.Faulted)
+                {
+                    return Task.FromResult(false);
+                }
+
+                if (_tickHandler is null)
+                {
+                    return Task.FromResult(false);
+                }
+
+                _lastFault = null;
+                _lastTickUtc = null;
+                _nextTickUtc = null;
+                _intervalChangeRequested = false;
+                _waitCanceled = false;
+                _resumeSignal = null;
+                _runCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                _state = ManagedTimerState.Running;
+                _runTask = RunAsync(_runCancellationTokenSource.Token);
+            }
+
+            return Task.FromResult(true);
+        }
+
+        /// <summary>
         /// Pauses the timer.
         /// </summary>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
@@ -488,7 +528,6 @@ namespace Lantean.QBTMud.Services
                         _waitCancellation = null;
                     }
                 }
-
             }
         }
 

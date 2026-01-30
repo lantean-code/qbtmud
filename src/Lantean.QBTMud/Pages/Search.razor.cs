@@ -14,7 +14,7 @@ using MainUiData = Lantean.QBTMud.Models.MainData;
 
 namespace Lantean.QBTMud.Pages
 {
-    public partial class Search : IDisposable
+    public partial class Search : IAsyncDisposable
     {
         private const int _resultsBatchSize = 250;
         private const int _pollIntervalMilliseconds = 1500;
@@ -34,8 +34,8 @@ namespace Lantean.QBTMud.Pages
 
         private IReadOnlyList<SearchPlugin>? _plugins;
         private readonly List<SearchJobViewModel> _jobs = [];
-        private CancellationTokenSource? _pollingCancellationToken;
-        private IManagedTimer? _pollingTimer;
+        private readonly CancellationTokenSource _timerCancellationToken = new();
+        private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
         private int _activeTabIndex = -1;
         private bool _searchUnavailable;
@@ -154,14 +154,15 @@ namespace Lantean.QBTMud.Pages
             await HydrateJobsFromStatusAsync();
         }
 
-        protected override Task OnAfterRenderAsync(bool firstRender)
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender && _jobs.Count > 0)
+            if (!firstRender)
             {
-                EnsurePollingStarted();
+                return;
             }
 
-            return Task.CompletedTask;
+            _refreshTimer ??= ManagedTimerFactory.Create("SearchPolling", TimeSpan.FromMilliseconds(_pollIntervalMilliseconds));
+            await _refreshTimer.StartAsync(PollSearchJobsAsync, _timerCancellationToken.Token);
         }
 
         private async Task HydrateJobsFromStatusAsync()
@@ -204,7 +205,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             await RemoveStaleMetadataAsync(statuses.Select(s => s.Id).ToHashSet());
-            EnsurePollingStarted();
+            await EnsurePollingStartedAsync();
         }
 
         protected void NavigateBack()
@@ -280,7 +281,7 @@ namespace Lantean.QBTMud.Pages
                 await ApiClient.StopSearch(job.Id);
                 job.UpdateStatus("Stopped", job.Total);
                 StateHasChanged();
-                StopPollingIfAllJobsCompleted();
+                await StopPollingIfAllJobsCompletedAsync();
             }
             catch (HttpRequestException exception)
             {
@@ -293,14 +294,14 @@ namespace Lantean.QBTMud.Pages
             job.ResetResults();
             await FetchJobSnapshot(job);
             StateHasChanged();
-            EnsurePollingStarted();
+            await EnsurePollingStartedAsync();
         }
 
         protected async Task CloseJob(SearchJobViewModel job)
         {
             await StopAndDeleteJob(job);
-            RemoveJob(job);
-            StopPollingIfAllJobsCompleted();
+            await RemoveJobAsync(job);
+            await StopPollingIfAllJobsCompletedAsync();
         }
 
         protected async Task CloseAllJobs()
@@ -311,7 +312,7 @@ namespace Lantean.QBTMud.Pages
                 await CloseJob(job);
             }
 
-            StopPollingIfAllJobsCompleted();
+            await StopPollingIfAllJobsCompletedAsync();
         }
 
         private IReadOnlyList<ColumnDefinition<SearchResult>>? _columns;
@@ -546,7 +547,7 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        private void RemoveJob(SearchJobViewModel job)
+        private async Task RemoveJobAsync(SearchJobViewModel job)
         {
             var index = _jobs.IndexOf(job);
             if (index >= 0)
@@ -564,66 +565,26 @@ namespace Lantean.QBTMud.Pages
             }
 
             StateHasChanged();
-            StopPollingIfAllJobsCompleted();
+            await StopPollingIfAllJobsCompletedAsync();
         }
 
-        private void EnsurePollingStarted()
+        private Task EnsurePollingStartedAsync()
         {
-            if (!_jobs.Any(job => job.IsRunning))
-            {
-                return;
-            }
-
-            if (_pollingTimer is not null &&
-                _pollingCancellationToken is not null &&
-                !_pollingCancellationToken.IsCancellationRequested &&
-                _pollingTimer.State == ManagedTimerState.Running)
-            {
-                return;
-            }
-
-            StopPolling();
-            _pollingCancellationToken = new CancellationTokenSource();
-            _pollingTimer = ManagedTimerFactory.Create("SearchPolling", TimeSpan.FromMilliseconds(_pollIntervalMilliseconds));
-            _ = _pollingTimer.StartAsync(PollSearchJobsAsync, _pollingCancellationToken.Token);
-            _ = PollSearchJobsAsync(_pollingCancellationToken.Token);
+            return Task.CompletedTask;
         }
 
-        private void StopPollingIfAllJobsCompleted()
+        private Task StopPollingIfAllJobsCompletedAsync()
         {
-            if (_jobs.Any(job => job.IsRunning))
-            {
-                return;
-            }
-
-            StopPolling();
-        }
-
-        private void StopPolling()
-        {
-            if (_pollingCancellationToken is null && _pollingTimer is null)
-            {
-                return;
-            }
-
-            try
-            {
-                _pollingCancellationToken?.Cancel();
-            }
-            catch (ObjectDisposedException)
-            {
-            }
-            _pollingCancellationToken?.Dispose();
-            _pollingCancellationToken = null;
-            if (_pollingTimer is not null)
-            {
-                _ = _pollingTimer.DisposeAsync();
-                _pollingTimer = null;
-            }
+            return Task.CompletedTask;
         }
 
         private async Task<ManagedTimerTickResult> PollSearchJobsAsync(CancellationToken cancellationToken)
         {
+            if (!_jobs.Any(job => job.IsRunning))
+            {
+                return ManagedTimerTickResult.Continue;
+            }
+
             try
             {
                 await InvokeAsync(async () => await SynchronizeJobsAsync(cancellationToken));
@@ -634,7 +595,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (Exception exception)
             {
-                HandlePollingFailure(exception);
+                await HandlePollingFailureAsync(exception);
                 return ManagedTimerTickResult.Stop;
             }
 
@@ -650,7 +611,6 @@ namespace Lantean.QBTMud.Pages
         {
             if (_jobs.Count == 0)
             {
-                StopPolling();
                 return;
             }
 
@@ -666,7 +626,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (Exception exception)
             {
-                HandlePollingFailure(exception);
+                await HandlePollingFailureAsync(exception);
                 return;
             }
 
@@ -693,7 +653,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             StateHasChanged();
-            StopPollingIfAllJobsCompleted();
+            await StopPollingIfAllJobsCompletedAsync();
         }
 
         private static bool ShouldFetchResults(SearchJobViewModel job)
@@ -729,23 +689,23 @@ namespace Lantean.QBTMud.Pages
                 job.UpdateStatus(results.Status, results.Total);
                 if (!job.IsRunning)
                 {
-                    StopPollingIfAllJobsCompleted();
+                    await StopPollingIfAllJobsCompletedAsync();
                 }
             }
             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
             {
                 job.UpdateStatus("Stopped", job.Total);
-                StopPollingIfAllJobsCompleted();
+                await StopPollingIfAllJobsCompletedAsync();
             }
             catch (HttpRequestException exception)
             {
                 job.SetError("Failed to load results.");
                 Snackbar.Add($"Failed to load results for \"{job.Pattern}\": {exception.Message}", Severity.Error);
-                StopPollingIfAllJobsCompleted();
+                await StopPollingIfAllJobsCompletedAsync();
             }
             catch (Exception exception)
             {
-                HandlePollingFailure(exception);
+                await HandlePollingFailureAsync(exception);
             }
         }
 
@@ -792,7 +752,7 @@ namespace Lantean.QBTMud.Pages
 
             TrackJob(job, replaceIndex);
             await PersistJobMetadataAsync(job);
-            EnsurePollingStarted();
+            await EnsurePollingStartedAsync();
             await FetchJobSnapshot(job);
         }
 
@@ -1197,7 +1157,7 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        private void HandlePollingFailure(Exception? exception)
+        private Task HandlePollingFailureAsync(Exception? exception)
         {
             foreach (var job in _jobs)
             {
@@ -1209,25 +1169,33 @@ namespace Lantean.QBTMud.Pages
                 Snackbar.Add($"Search polling stopped: {exception.GetBaseException().Message}", Severity.Error);
             }
 
-            StopPolling();
+            return Task.CompletedTask;
         }
 
-        protected virtual void Dispose(bool disposing)
+        protected virtual async ValueTask DisposeAsync(bool disposing)
         {
-            if (!_disposedValue)
+            if (_disposedValue)
             {
-                if (disposing)
-                {
-                    StopPolling();
-                }
-
-                _disposedValue = true;
+                return;
             }
+
+            if (disposing)
+            {
+                await _timerCancellationToken.CancelAsync();
+                _timerCancellationToken.Dispose();
+                if (_refreshTimer is not null)
+                {
+                    await _refreshTimer.DisposeAsync();
+                    _refreshTimer = null;
+                }
+            }
+
+            _disposedValue = true;
         }
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
-            Dispose(disposing: true);
+            await DisposeAsync(disposing: true);
             GC.SuppressFinalize(this);
         }
     }

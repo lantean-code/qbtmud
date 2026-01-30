@@ -7,8 +7,11 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
+using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using System.Net;
@@ -467,9 +470,9 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.DeleteSearch(jobId)).Returns(Task.CompletedTask);
             apiMock.Setup(client => client.StopSearch(jobId)).Returns(Task.CompletedTask);
 
+            var handler = CapturePollHandler();
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
-
             var target = TestContext.Render<Search>();
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
@@ -482,6 +485,8 @@ namespace Lantean.QBTMud.Test.Pages
             });
 
             target.Find("form").Submit();
+
+            await handler(CancellationToken.None);
 
             var resultsTable = target.FindComponent<DynamicTable<SearchResult>>();
             var results = resultsTable.Instance.Items.Should().NotBeNull().And.Subject;
@@ -597,7 +602,7 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_RunningJob_WHEN_ResultFetchFails_THEN_ShowsErrorAndSnackbar()
+        public async Task GIVEN_RunningJob_WHEN_ResultFetchFails_THEN_ShowsErrorAndSnackbar()
         {
             var jobId = 31;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
@@ -641,8 +646,8 @@ namespace Lantean.QBTMud.Test.Pages
                 It.IsAny<Action<SnackbarOptions>>(),
                 It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
 
+            var handler = CapturePollHandler();
             TestContext.Render<MudPopoverProvider>();
-
             var target = TestContext.Render<Search>();
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
@@ -660,6 +665,8 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 FindComponentByTestId<MudTabs>(target, "JobTabs").Should().NotBeNull();
             });
+
+            await handler(CancellationToken.None);
 
             snackbarMock.Verify();
         }
@@ -697,7 +704,7 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_RunningJob_WHEN_SearchStatusRequestFails_THEN_FlagsConnectionLoss()
+        public async Task GIVEN_RunningJob_WHEN_SearchStatusRequestFails_THEN_FlagsConnectionLoss()
         {
             var jobId = 51;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
@@ -733,8 +740,8 @@ namespace Lantean.QBTMud.Test.Pages
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>());
 
+            var handler = CapturePollHandler();
             TestContext.Render<MudPopoverProvider>();
-
             var target = TestContext.Render<Search>(parameters => parameters.AddCascadingValue(mainData));
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
@@ -752,6 +759,8 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 FindComponentByTestId<MudTabs>(target, "JobTabs").Should().NotBeNull();
             });
+
+            await handler(CancellationToken.None);
 
             target.WaitForAssertion(() =>
             {
@@ -1590,6 +1599,24 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 target.Instance.HasContextResultValue.Should().BeTrue();
             });
+        }
+
+        private Func<CancellationToken, Task<ManagedTimerTickResult>> CapturePollHandler()
+        {
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            var timer = new Mock<IManagedTimer>();
+            timer.SetupGet(t => t.State).Returns(ManagedTimerState.Running);
+            timer.Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            var factory = new Mock<IManagedTimerFactory>();
+            factory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(timer.Object);
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.AddSingleton(factory.Object);
+
+            return cancellationToken => handler!.Invoke(cancellationToken);
         }
     }
 }

@@ -901,11 +901,26 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public void GIVEN_DefaultRender_WHEN_Disposed_THEN_Disposes()
+        public async Task GIVEN_DefaultRender_WHEN_Disposed_THEN_Disposes()
         {
-            _target.Instance.Dispose();
+            await _target.Instance.DisposeAsync();
 
-            _target.Instance.Dispose();
+            await _target.Instance.DisposeAsync();
+        }
+
+        [Fact]
+        public async Task GIVEN_DisposedLayout_WHEN_Disposed_THEN_DisposesRefreshTimer()
+        {
+            DisposeDefaultTarget();
+            var timer = new Mock<IManagedTimer>();
+            timer.Setup(t => t.DisposeAsync()).Returns(ValueTask.CompletedTask);
+            _managedTimerFactoryMock.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(timer.Object);
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            await target.Instance.DisposeAsync();
+
+            timer.Verify(t => t.DisposeAsync(), Times.Once);
         }
 
         [Fact]

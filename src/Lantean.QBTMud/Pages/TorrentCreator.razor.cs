@@ -18,8 +18,8 @@ namespace Lantean.QBTMud.Pages
         private static readonly StringComparison StatusComparison = StringComparison.OrdinalIgnoreCase;
 
         private readonly Dictionary<string, RenderFragment<RowContext<TorrentCreationTaskStatus>>> _columnRenderFragments = [];
-        private IManagedTimer? _pollingTimer;
-        private CancellationTokenSource? _pollingCancellationToken;
+        private readonly CancellationTokenSource _timerCancellationToken = new();
+        private IManagedTimer? _refreshTimer;
         private IReadOnlyList<TorrentCreationTaskStatus> _tasks = [];
         private bool _disposedValue;
         private bool _isLoading;
@@ -58,11 +58,6 @@ namespace Lantean.QBTMud.Pages
             get { return _isLoading; }
         }
 
-        protected bool IsPolling
-        {
-            get { return _pollingTimer?.State == ManagedTimerState.Running; }
-        }
-
         protected DynamicTable<TorrentCreationTaskStatus>? Table { get; set; }
 
         protected IEnumerable<TorrentCreationTaskStatus> Tasks
@@ -87,6 +82,17 @@ namespace Lantean.QBTMud.Pages
         protected override async Task OnInitializedAsync()
         {
             await RefreshTasksAsync();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (!firstRender)
+            {
+                return;
+            }
+
+            _refreshTimer ??= ManagedTimerFactory.Create("TorrentCreatorPolling", TimeSpan.FromMilliseconds(PollIntervalMilliseconds));
+            await _refreshTimer.StartAsync(PollTasksAsync, _timerCancellationToken.Token);
         }
 
         protected void NavigateBack()
@@ -174,7 +180,13 @@ namespace Lantean.QBTMud.Pages
             {
                 if (disposing)
                 {
-                    StopPolling();
+                    await _timerCancellationToken.CancelAsync();
+                    _timerCancellationToken.Dispose();
+                    if (_refreshTimer is not null)
+                    {
+                        await _refreshTimer.DisposeAsync();
+                        _refreshTimer = null;
+                    }
                 }
 
                 _disposedValue = true;
@@ -199,7 +211,7 @@ namespace Lantean.QBTMud.Pages
             if (MainData?.LostConnection == true)
             {
                 Snackbar.Add("qBittorrent client is not reachable.", Severity.Warning);
-                StopPolling();
+                _timerCancellationToken.CancelIfNotDisposed();
                 return;
             }
 
@@ -217,51 +229,21 @@ namespace Lantean.QBTMud.Pages
                 _isLoading = false;
             }
 
-            EnsurePollingStarted();
             await InvokeAsync(StateHasChanged);
         }
 
-        private void EnsurePollingStarted()
+        private bool ShouldPollTasks()
         {
-            if (_tasks.Count == 0 || !_tasks.Any(task => !IsTerminalStatus(task.Status)))
-            {
-                StopPolling();
-                return;
-            }
-
-            if (_pollingTimer is not null &&
-                _pollingCancellationToken is not null &&
-                !_pollingCancellationToken.IsCancellationRequested &&
-                _pollingTimer.State == ManagedTimerState.Running)
-            {
-                return;
-            }
-
-            StopPolling();
-            _pollingCancellationToken = new CancellationTokenSource();
-            _pollingTimer = ManagedTimerFactory.Create("TorrentCreatorPolling", TimeSpan.FromMilliseconds(PollIntervalMilliseconds));
-            _ = _pollingTimer.StartAsync(PollTasksAsync, _pollingCancellationToken.Token);
-            _ = PollTasksAsync(_pollingCancellationToken.Token);
-        }
-
-        private void StopPolling()
-        {
-            if (_pollingCancellationToken is not null)
-            {
-                _pollingCancellationToken.Cancel();
-                _pollingCancellationToken.Dispose();
-                _pollingCancellationToken = null;
-            }
-
-            if (_pollingTimer is not null)
-            {
-                _ = _pollingTimer.DisposeAsync();
-                _pollingTimer = null;
-            }
+            return _tasks.Count > 0 && _tasks.Any(task => !IsTerminalStatus(task.Status));
         }
 
         private async Task<ManagedTimerTickResult> PollTasksAsync(CancellationToken cancellationToken)
         {
+            if (!ShouldPollTasks())
+            {
+                return ManagedTimerTickResult.Continue;
+            }
+
             try
             {
                 await InvokeAsync(RefreshTasksAsync);

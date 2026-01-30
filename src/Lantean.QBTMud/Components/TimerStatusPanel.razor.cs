@@ -4,7 +4,7 @@ using MudBlazor;
 
 namespace Lantean.QBTMud.Components
 {
-    public partial class TimerStatusPanel : IDisposable
+    public partial class TimerStatusPanel : IAsyncDisposable
     {
         private const int PollIntervalMilliseconds = 1000;
 
@@ -28,7 +28,7 @@ namespace Lantean.QBTMud.Components
         [CascadingParameter(Name = "TimerDrawerOpenChanged")]
         public EventCallback<bool> TimerDrawerOpenChanged { get; set; }
 
-        protected override void OnParametersSet()
+        protected override async Task OnParametersSetAsync()
         {
             if (TimerDrawerOpen == _wasOpen)
             {
@@ -43,12 +43,12 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            StopPolling();
+            await StopPollingAsync();
         }
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
-            StopPolling();
+            await StopPollingAsync();
         }
 
         private async Task PauseAsync(IManagedTimer timer)
@@ -60,6 +60,12 @@ namespace Lantean.QBTMud.Components
         private async Task ResumeAsync(IManagedTimer timer)
         {
             await timer.ResumeAsync(CancellationToken.None);
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private async Task RestartAsync(IManagedTimer timer)
+        {
+            await timer.RestartAsync(CancellationToken.None);
             await InvokeAsync(StateHasChanged);
         }
 
@@ -158,7 +164,7 @@ namespace Lantean.QBTMud.Components
             _ = InvokeAsync(StateHasChanged);
         }
 
-        private void StopPolling()
+        private async Task StopPollingAsync()
         {
             CancellationTokenSource? cancellationTokenSource;
             IPeriodicTimer? timer;
@@ -177,7 +183,7 @@ namespace Lantean.QBTMud.Components
 
             if (timer is not null)
             {
-                _ = timer.DisposeAsync();
+                await timer.DisposeAsync();
             }
         }
 

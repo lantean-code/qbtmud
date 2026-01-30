@@ -112,7 +112,7 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_TerminalTasksOnly_WHEN_Rendered_THEN_DoesNotStartPolling()
+        public async Task GIVEN_TerminalTasksOnly_WHEN_Ticked_THEN_DoesNotRefreshTasks()
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasks())
@@ -121,11 +121,11 @@ namespace Lantean.QBTMud.Test.Pages
                     CreateTask("TaskId", "C:/Source", "Finished", 100)
                 });
 
+            var handler = CapturePollHandler();
             RenderPage();
+            await handler(CancellationToken.None);
 
-            Mock.Get(_timer).Verify(
-                timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),
-                Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentCreationTasks(), Times.Once);
         }
 
         [Fact]
@@ -546,6 +546,23 @@ namespace Lantean.QBTMud.Test.Pages
 
             var result = await handler.Invoke(CancellationToken.None);
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
+        }
+
+        [Fact]
+        public async Task GIVEN_RunningTask_WHEN_PollingTicked_THEN_Continues()
+        {
+            var handler = CapturePollHandler();
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetTorrentCreationTasks())
+                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", "Running", 10) })
+                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", "Running", 20) });
+
+            RenderPage();
+
+            var result = await handler.Invoke(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Continue);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentCreationTasks(), Times.Exactly(2));
         }
 
         [Fact]
