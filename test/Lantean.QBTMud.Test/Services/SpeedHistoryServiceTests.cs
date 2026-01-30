@@ -132,5 +132,28 @@ namespace Lantean.QBTMud.Test.Services
 
             localStorage.WriteCount.Should().Be(2);
         }
+
+        [Fact]
+        public async Task GIVEN_PersistedStateAndOtherKeys_WHEN_Clear_THEN_RemovesStateAndResetsHistory()
+        {
+            var localStorage = new TestLocalStorageService();
+            var target = new SpeedHistoryService(localStorage);
+            await target.InitializeAsync();
+            var baseTime = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            await target.PushSampleAsync(baseTime, 10, 20);
+            await target.PersistAsync();
+            await localStorage.SetItemAsStringAsync("OtherKey", "OtherValue");
+
+            target.LastUpdatedUtc.Should().NotBeNull();
+            localStorage.Snapshot().Keys.Should().Contain("qbtmud.speedhistory.v1");
+
+            await target.ClearAsync();
+
+            target.LastUpdatedUtc.Should().BeNull();
+            target.GetSeries(SpeedPeriod.Min1, SpeedDirection.Download).Should().BeEmpty();
+            localStorage.Snapshot().Keys.Should().NotContain("qbtmud.speedhistory.v1");
+            localStorage.Snapshot().Keys.Should().Contain("OtherKey");
+        }
     }
 }
