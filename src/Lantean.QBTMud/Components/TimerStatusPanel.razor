@@ -56,6 +56,12 @@
                                         <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" OnClick="() => ResumeAsync(timer)" />
                                     </MudTooltip>
                                 }
+                                else if (timer.State == ManagedTimerState.Stopped)
+                                {
+                                    <MudTooltip Text="Start">
+                                        <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" OnClick="() => RestartAsync(timer)" />
+                                    </MudTooltip>
+                                }
                                 else
                                 {
                                     <MudIconButton Icon="@Icons.Material.Filled.Block" Disabled="true" />

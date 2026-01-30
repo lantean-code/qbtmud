@@ -63,6 +63,12 @@ namespace Lantean.QBTMud.Components
             await InvokeAsync(StateHasChanged);
         }
 
+        private async Task RestartAsync(IManagedTimer timer)
+        {
+            await timer.RestartAsync(CancellationToken.None);
+            await InvokeAsync(StateHasChanged);
+        }
+
         private async Task CloseDrawerAsync()
         {
             if (!TimerDrawerOpenChanged.HasDelegate)

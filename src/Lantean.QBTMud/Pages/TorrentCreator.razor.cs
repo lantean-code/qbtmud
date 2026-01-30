@@ -58,11 +58,6 @@ namespace Lantean.QBTMud.Pages
             get { return _isLoading; }
         }
 
-        protected bool IsPolling
-        {
-            get { return _refreshTimer?.State == ManagedTimerState.Running; }
-        }
-
         protected DynamicTable<TorrentCreationTaskStatus>? Table { get; set; }
 
         protected IEnumerable<TorrentCreationTaskStatus> Tasks

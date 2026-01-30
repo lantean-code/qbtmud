@@ -43,6 +43,14 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_StoppedTimerWithoutHandler_WHEN_Restarted_THEN_ReturnsFalse()
+        {
+            var restarted = await _target.RestartAsync(CancellationToken.None);
+
+            restarted.Should().BeFalse();
+        }
+
+        [Fact]
         public async Task GIVEN_UpdateIntervalSame_WHEN_Updating_THEN_ReturnsFalse()
         {
             var updated = await _target.UpdateIntervalAsync(TimeSpan.FromMilliseconds(100), CancellationToken.None);
@@ -69,6 +77,48 @@ namespace Lantean.QBTMud.Test.Services
             startedAgain.Should().BeFalse();
 
             await _target.StopAsync(CancellationToken.None);
+        }
+
+        [Fact]
+        public async Task GIVEN_RunningTimer_WHEN_Restarted_THEN_ReturnsFalse()
+        {
+            await _target.StartAsync(_ => Task.FromResult(ManagedTimerTickResult.Continue), CancellationToken.None);
+
+            var restarted = await _target.RestartAsync(CancellationToken.None);
+
+            restarted.Should().BeFalse();
+            await _target.StopAsync(CancellationToken.None);
+        }
+
+        [Fact]
+        public async Task GIVEN_StoppedTimerWithHandler_WHEN_Restarted_THEN_TicksAgain()
+        {
+            var tickCount = 0;
+
+            await _target.StartAsync(
+                _ =>
+                {
+                    tickCount++;
+                    return Task.FromResult(ManagedTimerTickResult.Stop);
+                },
+                CancellationToken.None);
+
+            await TriggerTickAsync();
+            (await WaitUntilAsync(() => tickCount == 1)).Should().BeTrue();
+            await _target.StopAsync(CancellationToken.None);
+            tickCount.Should().Be(1);
+
+            _disposed = false;
+
+            var restarted = await _target.RestartAsync(CancellationToken.None);
+            restarted.Should().BeTrue();
+
+            await TriggerTickAsync();
+            (await WaitUntilAsync(() => tickCount == 2)).Should().BeTrue();
+            await _target.StopAsync(CancellationToken.None);
+
+            tickCount.Should().Be(2);
+            _target.State.Should().Be(ManagedTimerState.Stopped);
         }
 
         [Fact]
@@ -235,9 +285,11 @@ namespace Lantean.QBTMud.Test.Services
             await _target.DisposeAsync();
 
             var started = await _target.StartAsync(_ => Task.FromResult(ManagedTimerTickResult.Stop), CancellationToken.None);
+            var restarted = await _target.RestartAsync(CancellationToken.None);
             var updated = await _target.UpdateIntervalAsync(TimeSpan.FromMilliseconds(200), CancellationToken.None);
 
             started.Should().BeFalse();
+            restarted.Should().BeFalse();
             updated.Should().BeFalse();
         }
 

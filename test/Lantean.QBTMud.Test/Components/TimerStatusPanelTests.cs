@@ -159,6 +159,27 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_StoppedTimer_WHEN_StartClicked_THEN_RestartInvoked()
+        {
+            var timer = CreateTimer("StoppedTimer", ManagedTimerState.Stopped, TimeSpan.FromSeconds(1));
+            timer.Setup(t => t.RestartAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer> { timer.Object });
+
+            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.AddSingleton(registry.Object);
+
+            var target = TestContext.Render<TimerStatusPanel>();
+            var startButton = target.FindComponents<MudIconButton>()
+                .Single(button => button.Instance.Icon == Icons.Material.Filled.PlayCircle);
+
+            await target.InvokeAsync(() => startButton.Find("button").Click());
+
+            timer.Verify(t => t.RestartAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_CloseClicked_WHEN_CallbackProvided_THEN_ClosesDrawer()
         {
             var registry = new Mock<IManagedTimerRegistry>();

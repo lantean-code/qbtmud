@@ -17,10 +17,6 @@
             <MudIconButton Icon="@Icons.Material.Filled.AddBox" OnClick="OpenCreateDialog" Disabled="@IsLoading" title="Create torrent" />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshTasks" Disabled="@IsLoading" title="Refresh" />
             <MudSpacer />
-            @if (IsPolling)
-            {
-                <MudText Typo="Typo.caption" Class="no-wrap">Updating</MudText>
-            }
         </MudToolBar>
     </div>
 
@@ -63,7 +59,7 @@
         {
             return context => __builder =>
             {
-                var task = (TorrentCreationTaskStatus)context.Data;
+                var task = context.Data;
                 var progress = GetProgress(task);
                 var color = progress < 100 ? Color.Success : Color.Info;
                 <MudProgressLinear title="Progress" Color="@color" Value="progress" Class="progress-expand" Size="Size.Large">
@@ -79,7 +75,7 @@
         {
             return context => __builder =>
             {
-                var task = (TorrentCreationTaskStatus)context.Data;
+                var task = context.Data;
                 <MudButtonGroup>
                     <MudIconButton Icon="@Icons.Material.Filled.Download"
                                    Color="Color.Primary"

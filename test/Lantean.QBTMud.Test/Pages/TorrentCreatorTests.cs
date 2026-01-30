@@ -548,6 +548,23 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_RunningTask_WHEN_PollingTicked_THEN_Continues()
+        {
+            var handler = CapturePollHandler();
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetTorrentCreationTasks())
+                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", "Running", 10) })
+                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", "Running", 20) });
+
+            RenderPage();
+
+            var result = await handler.Invoke(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Continue);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentCreationTasks(), Times.Exactly(2));
+        }
+
+        [Fact]
         public async Task GIVEN_CancelledToken_WHEN_PollingTicked_THEN_Stops()
         {
             var handler = CapturePollHandler();

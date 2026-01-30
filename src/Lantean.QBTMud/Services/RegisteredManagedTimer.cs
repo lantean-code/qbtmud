@@ -97,6 +97,16 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <summary>
+        /// Restarts the timer using the last configured tick handler.
+        /// </summary>
+        /// <param name="cancellationToken">A token that cancels the timer loop.</param>
+        /// <returns><see langword="true"/> when the timer restarts; otherwise <see langword="false"/>.</returns>
+        public Task<bool> RestartAsync(CancellationToken cancellationToken)
+        {
+            return _inner.RestartAsync(cancellationToken);
+        }
+
+        /// <summary>
         /// Pauses the timer.
         /// </summary>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
