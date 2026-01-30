@@ -45,6 +45,9 @@
 - Use `async` only when needed; append `Async` only if a synchronous counterpart exists.
 - Prefer LINQ for simple operations; use loops for complex logic.
 - Do not use exceptions for flow control.
+- Do not use fire-and-forget tasks (discarded `Task`/`ValueTask`, `async void`, or `Task.Run` without awaiting).
+  - If an async operation must be triggered from a synchronous API/event, marshal via `InvokeAsync(...)` and await it, or refactor to an async lifecycle method.
+  - If you must keep a background task, add explicit exception handling and a clear shutdown/cancellation path.
 
 ### Design
 - Use constructor injection only, unless absolutely necessary (for example, in Blazor).

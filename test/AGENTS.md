@@ -56,6 +56,7 @@
 - Do not use test harness components that inherit from the component under test to access protected members or invoke protected methods. Drive all behavior via UI interactions and public APIs only; if behavior cannot be reached through the UI, ask for a refactor or clarification.
 - CSS selectors MUST not be used to locate/assert elements. FindComponent MUST be used. The only exception is to locate a DOM element to trigger an event.
 - Do not locate components by label/text or other user-facing strings. Prefer `data-test-id` via `TestIdHelper` and `FindComponentByTestId` to avoid translation/label changes breaking tests.
+- Avoid fire-and-forget patterns in tests. If a component uses async work triggered from a sync event, use `InvokeAsync(...)` on the relevant rendered component to marshal to the dispatcher, and await it.
 
 ## Pre-Flight Checklist (must confirm all before generating tests)
 

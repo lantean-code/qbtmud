@@ -24,6 +24,7 @@ namespace Lantean.QBTMud.Components
         private string _svgLoadingText = "Loading pieces...";
         private bool _svgBuilding;
         private bool _buildPending;
+        private bool _buildRequested;
         private bool _buildInProgress;
         private IReadOnlyList<PieceState> _lastPiecesReference = Array.Empty<PieceState>();
         private int _lastPiecesSignature;
@@ -115,6 +116,15 @@ namespace Lantean.QBTMud.Components
             else
             {
                 DeferSvgCells();
+            }
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (_buildRequested)
+            {
+                _buildRequested = false;
+                await BuildSvgCellsAsync();
             }
         }
 
@@ -211,7 +221,7 @@ namespace Lantean.QBTMud.Components
         private void QueueBuildSvgCells()
         {
             _buildPending = true;
-            _ = BuildSvgCellsAsync();
+            _buildRequested = true;
         }
 
         private async Task BuildSvgCellsAsync()

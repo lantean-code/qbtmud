@@ -112,6 +112,7 @@ namespace Lantean.QBTMud.Layout
         private int _torrentsVersion;
         private string? _lastProcessedDownloadToken;
         private string? _pendingDownloadLink;
+        private Task? _locationChangeTask;
         private bool _navigationHandlerAttached;
 
         protected bool ShowStatusLabels => (CurrentBreakpoint > Breakpoint.Md && CurrentOrientation == Orientation.Portrait) || (CurrentBreakpoint > Breakpoint.Lg && CurrentOrientation == Orientation.Landscape);
@@ -197,7 +198,7 @@ namespace Lantean.QBTMud.Layout
             await TryProcessPendingDownloadAsync();
         }
 
-        protected override void OnAfterRender(bool firstRender)
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (!_refreshEnabled)
             {
@@ -207,6 +208,11 @@ namespace Lantean.QBTMud.Layout
             if (firstRender && _refreshLoopTask is null)
             {
                 StartRefreshLoop();
+            }
+
+            if (_locationChangeTask is not null && _locationChangeTask.IsCompleted)
+            {
+                _locationChangeTask = null;
             }
         }
 
@@ -294,13 +300,7 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            CaptureDownloadFromUri(e.Location);
-            _ = PersistPendingDownloadAsync();
-
-            if (IsAuthenticated)
-            {
-                _ = TryProcessPendingDownloadAsync();
-            }
+            _locationChangeTask = InvokeAsync(() => HandleLocationChangedAsync(e.Location));
         }
 
         private void CaptureDownloadFromUri(string? uri)
@@ -507,6 +507,22 @@ namespace Lantean.QBTMud.Layout
             if (SessionStorage is not null)
             {
                 await SessionStorage.RemoveItemAsync(PendingDownloadStorageKey);
+            }
+        }
+
+        private async Task HandleLocationChangedAsync(string? location)
+        {
+            if (!_authConfirmed)
+            {
+                return;
+            }
+
+            CaptureDownloadFromUri(location);
+            await PersistPendingDownloadAsync();
+
+            if (IsAuthenticated)
+            {
+                await TryProcessPendingDownloadAsync();
             }
         }
 

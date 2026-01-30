@@ -79,7 +79,7 @@ namespace Lantean.QBTMud.Test.Components
             target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
 
             var prioritySelect = FindComponentByTestId<MudSelect<UiPriority>>(target, "Priority-Root_file1.txt");
-            await prioritySelect.InvokeAsync(() => prioritySelect.Instance.ValueChanged.InvokeAsync(UiPriority.High));
+            await target.InvokeAsync(() => prioritySelect.Instance.ValueChanged.InvokeAsync(UiPriority.High));
 
             _apiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.Single() == 1), ClientPriority.High), Times.Once);
         }
@@ -111,7 +111,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(async () => await menuActivator.Find("button").ClickAsync());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadLessThan80")}\"]");
-            await target.InvokeAsync(() => availabilityItem.Click());
+            await _popoverProvider!.InvokeAsync(() => availabilityItem.Click());
 
             target.WaitForAssertion(() =>
             {
@@ -161,7 +161,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => activator.Find("button").Click());
 
             var filteredItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadFiltered")}\"]");
-            await target.InvokeAsync(async () => await filteredItem.ClickAsync());
+            await _popoverProvider!.InvokeAsync(async () => await filteredItem.ClickAsync());
 
             target.WaitForAssertion(() =>
             {
@@ -237,7 +237,7 @@ namespace Lantean.QBTMud.Test.Components
             row.TriggerEvent("oncontextmenu", new MouseEventArgs());
 
             var contextRename = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("ContextMenuRename")}\"]");
-            await target.InvokeAsync(() => contextRename.Click());
+            await _popoverProvider!.InvokeAsync(() => contextRename.Click());
 
             target.WaitForAssertion(() =>
             {
@@ -571,7 +571,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadLessThan100")}\"]");
-            await target.InvokeAsync(() => availabilityItem.Click());
+            await _popoverProvider!.InvokeAsync(() => availabilityItem.Click());
 
             target.WaitForAssertion(() =>
             {
@@ -603,7 +603,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("NormalPriorityLessThan80")}\"]");
-            await target.InvokeAsync(() => availabilityItem.Click());
+            await _popoverProvider!.InvokeAsync(() => availabilityItem.Click());
 
             target.WaitForAssertion(() =>
             {
@@ -634,7 +634,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var filteredItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadFiltered")}\"]");
-            await target.InvokeAsync(() => filteredItem.Click());
+            await _popoverProvider!.InvokeAsync(() => filteredItem.Click());
 
             target.WaitForAssertion(() =>
             {
@@ -665,7 +665,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var filteredItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("NormalPriorityFiltered")}\"]");
-            await target.InvokeAsync(() => filteredItem.Click());
+            await _popoverProvider!.InvokeAsync(() => filteredItem.Click());
 
             target.WaitForAssertion(() =>
             {
@@ -697,7 +697,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("NormalPriorityLessThan100")}\"]");
-            await target.InvokeAsync(() => availabilityItem.Click());
+            await _popoverProvider!.InvokeAsync(() => availabilityItem.Click());
 
             target.WaitForAssertion(() =>
             {
@@ -723,7 +723,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => menuActivator.Find("button").Click());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("NormalPriorityLessThan100")}\"]");
-            await target.InvokeAsync(() => availabilityItem.Click());
+            await _popoverProvider!.InvokeAsync(() => availabilityItem.Click());
 
             target.WaitForAssertion(() =>
             {

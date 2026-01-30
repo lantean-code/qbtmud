@@ -24,14 +24,17 @@ namespace Lantean.QBTMud.Pages
         private bool _showDetailsPane;
         private bool _isAnimating;
         private int _animationToken;
+        private bool _pendingAnimation;
         private int _previousStartPaneForAnimation;
         private int ColumnCount => DetermineColumnCount();
+
         private int ColumnSpan => ColumnCount switch
         {
             1 => 12,
             2 => 6,
             _ => 4
         };
+
         private int CurrentStage
         {
             get
@@ -54,25 +57,30 @@ namespace Lantean.QBTMud.Pages
                 return 0;
             }
         }
+
         private int StartPane => Math.Max(0, CurrentStage - (ColumnCount - 1));
+
         private double SlideOffsetPercent => ColumnCount switch
         {
             1 => StartPane * 100,
             2 => StartPane * 50,
             _ => 0
         };
+
         private string SliderContainerClass => ColumnCount switch
         {
             1 => "rss-slider rss-slider--one",
             2 => "rss-slider rss-slider--two",
             _ => "rss-slider"
         };
+
         private string SliderTrackClass => ColumnCount switch
         {
             1 => "rss-slider__track rss-slider__track--one",
             2 => "rss-slider__track rss-slider__track--two",
             _ => "rss-slider__track"
         };
+
         private string SliderTrackStyle => ColumnCount >= 3
             ? string.Empty
             : $"transform: translateX(-{SlideOffsetPercent.ToString(CultureInfo.InvariantCulture)}%);";
@@ -133,6 +141,27 @@ namespace Lantean.QBTMud.Pages
         protected override async Task OnInitializedAsync()
         {
             await RefreshRssList(preferUnread: true);
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (!_pendingAnimation)
+            {
+                return;
+            }
+
+            _pendingAnimation = false;
+            var token = _animationToken;
+
+            await Task.Delay(700);
+
+            if (token != _animationToken)
+            {
+                return;
+            }
+
+            _isAnimating = false;
+            await InvokeAsync(StateHasChanged);
         }
 
         protected IReadOnlyList<RssTreeItem> TreeItems => FeedItems;
@@ -891,17 +920,8 @@ namespace Lantean.QBTMud.Pages
 
             _isAnimating = true;
             _previousStartPaneForAnimation = previousStartPane;
-            var token = ++_animationToken;
-
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(700);
-                if (token == _animationToken)
-                {
-                    _isAnimating = false;
-                    await InvokeAsync(StateHasChanged);
-                }
-            });
+            _animationToken++;
+            _pendingAnimation = true;
         }
     }
 }

@@ -91,6 +91,7 @@ namespace Lantean.QBTMud.Pages
         private int _lastSelectionCount;
         private int _lastTorrentsVersion = -1;
         private bool _pendingSelectionChange;
+        private Task? _locationChangeRenderTask;
 
         private bool _toolbarButtonsEnabled;
 
@@ -106,6 +107,11 @@ namespace Lantean.QBTMud.Pages
             if (firstRender)
             {
                 await RegisterShortcutsAsync();
+            }
+
+            if (_locationChangeRenderTask is not null && _locationChangeRenderTask.IsCompleted)
+            {
+                _locationChangeRenderTask = null;
             }
         }
 
@@ -452,7 +458,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            _ = UnregisterShortcutsAsync();
+            _locationChangeRenderTask = InvokeAsync(UnregisterShortcutsAsync);
         }
     }
 }

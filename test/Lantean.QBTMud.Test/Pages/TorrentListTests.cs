@@ -61,7 +61,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             _navigationManager.TriggerLocationChanged("http://localhost/details/test");
 
-            _keyboardServiceMock.Verify(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()), Times.Exactly(2));
+            target.WaitForAssertion(() =>
+                _keyboardServiceMock.Verify(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()), Times.Exactly(2)));
         }
 
         [Fact]

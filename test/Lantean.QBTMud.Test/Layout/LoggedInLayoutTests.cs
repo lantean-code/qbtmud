@@ -886,7 +886,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             target.WaitForAssertion(() => target.FindComponent<MudAppBar>().Should().NotBeNull());
 
-            _navigationManager.NavigateTo("http://localhost/?download=http://example.com/file.torrent");
+            target.InvokeAsync(() => _navigationManager.NavigateTo("http://localhost/?download=http://example.com/file.torrent"));
 
             _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent"), Times.AtLeastOnce);
         }

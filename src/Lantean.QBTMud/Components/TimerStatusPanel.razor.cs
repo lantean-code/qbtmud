@@ -40,6 +40,7 @@ namespace Lantean.QBTMud.Components
             if (TimerDrawerOpen)
             {
                 StartPolling();
+                await InvokeAsync(StateHasChanged);
                 return;
             }
 
@@ -160,8 +161,6 @@ namespace Lantean.QBTMud.Components
                 _pollingTimer = PeriodicTimerFactory.Create(TimeSpan.FromMilliseconds(PollIntervalMilliseconds));
                 _pollingTask = PollAsync(_pollingTimer, _pollingCancellationTokenSource.Token);
             }
-
-            _ = InvokeAsync(StateHasChanged);
         }
 
         private async Task StopPollingAsync()

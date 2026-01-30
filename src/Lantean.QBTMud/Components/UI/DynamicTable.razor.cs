@@ -239,9 +239,8 @@ namespace Lantean.QBTMud.Components.UI
             _initialized = true;
         }
 
-        protected override void OnParametersSet()
+        protected override async Task OnParametersSetAsync()
         {
-            base.OnParametersSet();
             if (MultiSelection)
             {
                 if (SelectedItem is not null)
@@ -271,7 +270,7 @@ namespace Lantean.QBTMud.Components.UI
             if (ensureSort)
             {
                 var columnSortStorageKey = GetColumnSortStorageKey();
-                _ = InvokeAsync(() => EnsureSortColumnValidAsync(columnSortStorageKey));
+                await EnsureSortColumnValidAsync(columnSortStorageKey);
             }
         }
 

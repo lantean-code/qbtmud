@@ -130,7 +130,7 @@ namespace Lantean.QBTMud.Layout
 
             if (value <= Breakpoint.Sm && DrawerOpen)
             {
-                _ = SetDrawerOpenAsync(false);
+                DrawerOpen = false;
             }
 
             if (ErrorDrawerOpen && (ErrorBoundary?.Errors.Count ?? 0) == 0)
