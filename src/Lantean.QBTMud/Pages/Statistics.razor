@@ -19,48 +19,60 @@
             <MudText Typo="Typo.subtitle2" Class="pt-6">User statistics</MudText>
             <MudGrid>
                 <MudItem xs="12">
-                    <MudField Label="All-time uploaded">@DisplayHelpers.Size(ServerState?.AllTimeUploaded)</MudField>
+                    <MudField Label="All-time uploaded"
+                              data-test-id="@TestIdHelper.For("AllTimeUploaded")">@DisplayHelpers.Size(ServerState?.AllTimeUploaded)</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="All-time downloaded">@DisplayHelpers.Size(ServerState?.AllTimeDownloaded)</MudField>
+                    <MudField Label="All-time downloaded"
+                              data-test-id="@TestIdHelper.For("AllTimeDownloaded")">@DisplayHelpers.Size(ServerState?.AllTimeDownloaded)</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="All-time share ratio">@DisplayHelpers.EmptyIfNull(ServerState?.GlobalRatio, format: "0.00")</MudField>
+                    <MudField Label="All-time share ratio"
+                              data-test-id="@TestIdHelper.For("AllTimeShareRatio")">@DisplayHelpers.EmptyIfNull(ServerState?.GlobalRatio, format: "0.00")</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Session waste">@DisplayHelpers.Size(ServerState?.TotalWastedSession)</MudField>
+                    <MudField Label="Session waste"
+                              data-test-id="@TestIdHelper.For("SessionWaste")">@DisplayHelpers.Size(ServerState?.TotalWastedSession)</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Connected peers">@DisplayHelpers.EmptyIfNull(ServerState?.TotalPeerConnections)</MudField>
+                    <MudField Label="Connected peers"
+                              data-test-id="@TestIdHelper.For("ConnectedPeers")">@DisplayHelpers.EmptyIfNull(ServerState?.TotalPeerConnections)</MudField>
                 </MudItem>
             </MudGrid>
 
             <MudText Typo="Typo.subtitle2" Class="pt-6">Cache statistics</MudText>
             <MudGrid>
                 <MudItem xs="12">
-                    <MudField Label="Read cache hits">@DisplayHelpers.Percentage(ServerState?.ReadCacheHits)</MudField>
+                    <MudField Label="Read cache hits"
+                              data-test-id="@TestIdHelper.For("ReadCacheHits")">@DisplayHelpers.Percentage(ServerState?.ReadCacheHits)</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Total buffer size">@DisplayHelpers.Size(ServerState?.TotalBuffersSize)</MudField>
+                    <MudField Label="Total buffer size"
+                              data-test-id="@TestIdHelper.For("TotalBufferSize")">@DisplayHelpers.Size(ServerState?.TotalBuffersSize)</MudField>
                 </MudItem>
             </MudGrid>
 
             <MudText Typo="Typo.subtitle2" Class="pt-6">Performance statistics</MudText>
             <MudGrid>
                 <MudItem xs="12">
-                    <MudField Label="Write cache overload">@DisplayHelpers.Percentage(ServerState?.WriteCacheOverload)</MudField>
+                    <MudField Label="Write cache overload"
+                              data-test-id="@TestIdHelper.For("WriteCacheOverload")">@DisplayHelpers.Percentage(ServerState?.WriteCacheOverload)</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Read cache overload">@DisplayHelpers.Percentage(ServerState?.ReadCacheOverload)</MudField>
+                    <MudField Label="Read cache overload"
+                              data-test-id="@TestIdHelper.For("ReadCacheOverload")">@DisplayHelpers.Percentage(ServerState?.ReadCacheOverload)</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Queued I/O jobs">@DisplayHelpers.EmptyIfNull(ServerState?.QueuedIOJobs)</MudField>
+                    <MudField Label="Queued I/O jobs"
+                              data-test-id="@TestIdHelper.For("QueuedIoJobs")">@DisplayHelpers.EmptyIfNull(ServerState?.QueuedIOJobs)</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Average time in queue">@DisplayHelpers.EmptyIfNull(ServerState?.AverageTimeQueue, suffix: "ms")</MudField>
+                    <MudField Label="Average time in queue"
+                              data-test-id="@TestIdHelper.For("AverageTimeQueue")">@DisplayHelpers.EmptyIfNull(ServerState?.AverageTimeQueue, suffix: "ms")</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Total queued size">@DisplayHelpers.Size(ServerState?.TotalQueuedSize)</MudField>
+                    <MudField Label="Total queued size"
+                              data-test-id="@TestIdHelper.For("TotalQueuedSize")">@DisplayHelpers.Size(ServerState?.TotalQueuedSize)</MudField>
                 </MudItem>
             </MudGrid>
         </MudContainer>

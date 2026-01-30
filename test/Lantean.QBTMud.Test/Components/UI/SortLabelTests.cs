@@ -1,3 +1,4 @@
+using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.UI;
@@ -36,9 +37,14 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
             });
 
-            target.Markup.Should().Contain("Label");
-            var html = target.Markup;
-            html.IndexOf("mud-table-sort-label-icon", StringComparison.Ordinal).Should().BeLessThan(html.IndexOf("Label", StringComparison.Ordinal));
+            var root = target.Find("span");
+            root.TextContent.Should().Contain("Label");
+            var children = root.ChildNodes.ToList();
+            var iconIndex = children.FindIndex(node => node is IElement element && element.ClassList.Contains("mud-table-sort-label-icon"));
+            var labelIndex = children.FindIndex(node => node.NodeType == NodeType.Text && node.TextContent.Contains("Label", StringComparison.Ordinal));
+            iconIndex.Should().BeGreaterThanOrEqualTo(0);
+            labelIndex.Should().BeGreaterThanOrEqualTo(0);
+            iconIndex.Should().BeLessThan(labelIndex);
         }
 
         [Fact]

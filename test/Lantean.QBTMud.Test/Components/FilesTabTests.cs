@@ -2,12 +2,12 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -56,12 +56,18 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("Folder"));
+            target.WaitForAssertion(() =>
+            {
+                GetVisibleItems(target).Any(item => item.DisplayName == "Folder").Should().BeTrue();
+            });
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-Folder");
             await target.InvokeAsync(() => toggle.Find("button").Click());
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
+            target.WaitForAssertion(() =>
+            {
+                GetVisibleItems(target).Any(item => item.DisplayName == "file1.txt").Should().BeTrue();
+            });
         }
 
         [Fact]
@@ -76,7 +82,10 @@ namespace Lantean.QBTMud.Test.Components
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-Root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
+            target.WaitForAssertion(() =>
+            {
+                GetVisibleItems(target).Any(item => item.DisplayName == "file1.txt").Should().BeTrue();
+            });
 
             var prioritySelect = FindComponentByTestId<MudSelect<UiPriority>>(target, "Priority-Root_file1.txt");
             await prioritySelect.InvokeAsync(() => prioritySelect.Instance.ValueChanged.InvokeAsync(UiPriority.High));
@@ -100,11 +109,17 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("root"));
+            target.WaitForAssertion(() =>
+            {
+                GetVisibleItems(target).Any(item => item.DisplayName == "root").Should().BeTrue();
+            });
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
-            target.WaitForAssertion(() => target.Markup.Should().Contain("low.txt"));
+            target.WaitForAssertion(() =>
+            {
+                GetVisibleItems(target).Any(item => item.DisplayName == "low.txt").Should().BeTrue();
+            });
 
             var menu = FindComponentByTestId<MudMenu>(target, "DoNotDownloadMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
@@ -139,8 +154,9 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("file2.txt");
-                target.Markup.Should().NotContain("file1.txt");
+                var visible = GetVisibleItems(target);
+                visible.Any(item => item.DisplayName == "file2.txt").Should().BeTrue();
+                visible.Any(item => item.DisplayName == "file1.txt").Should().BeFalse();
             });
         }
 
@@ -202,7 +218,10 @@ namespace Lantean.QBTMud.Test.Components
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
+            target.WaitForAssertion(() =>
+            {
+                GetVisibleItems(target).Any(item => item.DisplayName == "file1.txt").Should().BeTrue();
+            });
 
             var row = target.WaitForElement($"[data-test-id=\"{TestIdHelper.For("Row-Files-root_file1.txt")}\"]");
             await target.InvokeAsync(() => row.Click());
@@ -231,7 +250,10 @@ namespace Lantean.QBTMud.Test.Components
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
+            target.WaitForAssertion(() =>
+            {
+                GetVisibleItems(target).Any(item => item.DisplayName == "file1.txt").Should().BeTrue();
+            });
 
             var row = target.WaitForElement($"[data-test-id=\"{TestIdHelper.For("Row-Files-root_file1.txt")}\"]");
             row.TriggerEvent("oncontextmenu", new MouseEventArgs());
@@ -342,11 +364,17 @@ namespace Lantean.QBTMud.Test.Components
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
             await target.InvokeAsync(() => toggle.Find("button").Click());
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
+            target.WaitForAssertion(() =>
+            {
+                GetVisibleItems(target).Any(item => item.DisplayName == "file1.txt").Should().BeTrue();
+            });
 
             await target.InvokeAsync(() => toggle.Find("button").Click());
 
-            target.WaitForAssertion(() => target.Markup.Should().NotContain("file1.txt"));
+            target.WaitForAssertion(() =>
+            {
+                GetVisibleItems(target).Any(item => item.DisplayName == "file1.txt").Should().BeFalse();
+            });
         }
 
         [Fact]
@@ -452,8 +480,9 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("file2.txt");
-                target.Markup.Should().NotContain("file1.txt");
+                var visible = GetVisibleItems(target);
+                visible.Any(item => item.DisplayName == "file2.txt").Should().BeTrue();
+                visible.Any(item => item.DisplayName == "file1.txt").Should().BeFalse();
                 target.Instance.Filters.Should().NotBeNull();
             });
         }
@@ -483,8 +512,9 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("file1.txt");
-                target.Markup.Should().Contain("file2.txt");
+                var visible = GetVisibleItems(target);
+                visible.Any(item => item.DisplayName == "file1.txt").Should().BeTrue();
+                visible.Any(item => item.DisplayName == "file2.txt").Should().BeTrue();
                 target.Instance.Filters.Should().BeNull();
             });
         }
@@ -514,7 +544,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("file1.txt");
+                GetVisibleItems(target).Any(item => item.DisplayName == "file1.txt").Should().BeTrue();
             });
         }
 
@@ -542,7 +572,7 @@ namespace Lantean.QBTMud.Test.Components
             await TriggerTimerTickAsync(target);
 
             var folderPriority = FindComponentByTestId<MudSelect<UiPriority>>(target, "Priority-Folder");
-            await target.InvokeAsync(() => folderPriority.Instance.ValueChanged.InvokeAsync(UiPriority.Maximum));
+            await target.InvokeAsync(async () => await folderPriority.Instance.ValueChanged.InvokeAsync(UiPriority.Maximum));
 
             _apiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1, 2 })), ClientPriority.Maximum), Times.Once);
         }
@@ -564,14 +594,14 @@ namespace Lantean.QBTMud.Test.Components
             await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await target.InvokeAsync(() => toggle.Find("button").Click());
+            await toggle.InvokeAsync(() => toggle.Find("button").ClickAsync(new MouseEventArgs()));
 
             var menu = FindComponentByTestId<MudMenu>(target, "DoNotDownloadMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
-            await target.InvokeAsync(() => menuActivator.Find("button").Click());
+            await menuActivator.InvokeAsync(() => menuActivator.Find("button").ClickAsync(new MouseEventArgs()));
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("DoNotDownloadLessThan100")}\"]");
-            await target.InvokeAsync(() => availabilityItem.Click());
+            await target.InvokeAsync(() => availabilityItem.ClickAsync(new MouseEventArgs()));
 
             target.WaitForAssertion(() =>
             {
@@ -747,7 +777,7 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
 
-            target.Markup.Should().NotContain("file1.txt");
+            GetVisibleItems(target).Any(item => item.DisplayName == "file1.txt").Should().BeFalse();
         }
 
         [Fact]
@@ -862,9 +892,10 @@ namespace Lantean.QBTMud.Test.Components
             return (Func<CancellationToken, Task<ManagedTimerTickResult>>)invocation.Arguments[0];
         }
 
-        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<FilesTab> target, string testId) where TComponent : IComponent
+        private static IReadOnlyList<ContentItem> GetVisibleItems(IRenderedComponent<FilesTab> target)
         {
-            return target.FindComponents<TComponent>().First(component => component.Markup.Contains($"data-test-id=\"{testId}\"", StringComparison.Ordinal));
+            var table = target.FindComponent<DynamicTable<ContentItem>>();
+            return table.Instance.Items?.ToList() ?? [];
         }
     }
 }

@@ -2,7 +2,9 @@
 
 <MudDialog>
     <DialogContent>
-        <MudText>Are you sure you want to remove @Count torrent@(Count == 1 ? "": "s") from the transfer list?</MudText>
+        <MudText data-test-id="@TestIdHelper.For("DeleteDialogMessage")">
+            Are you sure you want to remove @Count torrent@(Count == 1 ? "" : "s") from the transfer list?
+        </MudText>
 
         <MudGrid>
             <MudItem xs="12">

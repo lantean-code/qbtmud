@@ -36,7 +36,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync(null, 5, value => value.ToString());
 
-            dialog.Component.Markup.Should().Contain("5");
+            var input = FindComponentByTestId<MudTextField<string>>(dialog.Component, "SliderFieldInput");
+            input.Instance.Value.Should().Be("5");
         }
 
         [Fact]
@@ -50,7 +51,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync("Rate", 10, _ => "10");
 
-            dialog.Component.Markup.Should().Contain("Rate: 10");
+            GetChildContentText(FindComponentByTestId<MudText>(dialog.Component, "SliderValueLabel").Instance.ChildContent).Should().Be("Rate: 10");
         }
 
         [Fact]

@@ -3,6 +3,7 @@ using Bunit;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components.UI
 {
@@ -18,8 +19,9 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.Value, false);
             });
 
-            target.Markup.Should().Contain("Label");
-            target.Markup.Should().Contain("HelperText");
+            var field = target.FindComponent<MudField>();
+            field.Instance.Label.Should().Be("Label");
+            field.Instance.HelperText.Should().Be("HelperText");
         }
 
         [Fact]

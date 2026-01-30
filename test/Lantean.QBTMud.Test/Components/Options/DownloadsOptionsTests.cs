@@ -346,11 +346,6 @@ namespace Lantean.QBTMud.Test.Components.Options
             raised.Should().HaveCountGreaterThanOrEqualTo(2);
         }
 
-        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<DownloadsOptions> target, string testId)
-        {
-            return FindComponentByTestId<FieldSwitch>(target, testId);
-        }
-
         private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<DownloadsOptions> target, string testId)
         {
             return FindComponentByTestId<MudSelect<T>>(target, testId);

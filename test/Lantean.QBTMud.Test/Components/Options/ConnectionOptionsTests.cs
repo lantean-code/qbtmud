@@ -310,11 +310,6 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.ListenPort.Should().BeLessThanOrEqualTo(65535);
         }
 
-        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<ConnectionOptions> target, string testId)
-        {
-            return FindComponentByTestId<FieldSwitch>(target, testId);
-        }
-
         private static IRenderedComponent<MudNumericField<int>> FindNumericInt(IRenderedComponent<ConnectionOptions> target, string testId)
         {
             return FindComponentByTestId<MudNumericField<int>>(target, testId);

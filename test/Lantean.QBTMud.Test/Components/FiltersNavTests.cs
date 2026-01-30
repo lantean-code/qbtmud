@@ -213,12 +213,14 @@ namespace Lantean.QBTMud.Test.Components
             var allLink = FindComponentByTestId<CustomNavLink>(target, "Category-All");
             await target.InvokeAsync(() => allLink.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            _popoverProvider!.FindComponents<MudMenuItem>().Any(item => item.Markup.Contains("Edit category", StringComparison.Ordinal)).Should().BeFalse();
+            _popoverProvider!.FindComponents<MudMenuItem>()
+                .Any(item => HasTestId(item, "CategoryEdit"))
+                .Should().BeFalse();
 
             var moviesLink = FindComponentByTestId<CustomNavLink>(target, "Category-Movies");
             await target.InvokeAsync(() => moviesLink.Instance.OnLongPress.InvokeAsync(new LongPressEventArgs()));
 
-            WaitForMenuItem("Edit category").Should().NotBeNull();
+            WaitForMenuItemByTestId("CategoryEdit").Should().NotBeNull();
         }
 
         [Fact]
@@ -233,12 +235,14 @@ namespace Lantean.QBTMud.Test.Components
             var allLink = FindComponentByTestId<CustomNavLink>(target, "Tag-All");
             await target.InvokeAsync(() => allLink.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            _popoverProvider!.FindComponents<MudMenuItem>().Any(item => item.Markup.Contains("Remove tag", StringComparison.Ordinal)).Should().BeFalse();
+            _popoverProvider!.FindComponents<MudMenuItem>()
+                .Any(item => HasTestId(item, "TagRemove"))
+                .Should().BeFalse();
 
             var tagLink = FindComponentByTestId<CustomNavLink>(target, "Tag-Tag1");
             await target.InvokeAsync(() => tagLink.Instance.OnLongPress.InvokeAsync(new LongPressEventArgs()));
 
-            WaitForMenuItem("Remove tag").Should().NotBeNull();
+            WaitForMenuItemByTestId("TagRemove").Should().NotBeNull();
         }
 
         [Fact]
@@ -259,13 +263,13 @@ namespace Lantean.QBTMud.Test.Components
             var allTracker = FindComponentByTestId<CustomNavLink>(target, "Tracker-All");
             await target.InvokeAsync(() => allTracker.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var removeTracker = WaitForMenuItem("Remove tracker");
+            var removeTracker = WaitForMenuItemByTestId("TrackerRemove");
             removeTracker.Instance.Disabled.Should().BeTrue();
 
             var hostTracker = FindComponentByTestId<CustomNavLink>(target, "Tracker-tracker.example.com");
             await target.InvokeAsync(() => hostTracker.Instance.OnLongPress.InvokeAsync(new LongPressEventArgs()));
 
-            removeTracker = WaitForMenuItem("Remove tracker");
+            removeTracker = WaitForMenuItemByTestId("TrackerRemove");
             removeTracker.Instance.Disabled.Should().BeFalse();
         }
 
@@ -286,16 +290,16 @@ namespace Lantean.QBTMud.Test.Components
             var movies = FindComponentByTestId<CustomNavLink>(target, "Category-Movies");
             await target.InvokeAsync(() => movies.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var addCategory = WaitForMenuItem("Add category");
+            var addCategory = WaitForMenuItemByTestId("CategoryAdd");
             await target.InvokeAsync(() => addCategory.Instance.OnClick.InvokeAsync());
 
-            var editCategory = WaitForMenuItem("Edit category");
+            var editCategory = WaitForMenuItemByTestId("CategoryEdit");
             await target.InvokeAsync(() => editCategory.Instance.OnClick.InvokeAsync());
 
-            var addSubcategory = WaitForMenuItem("Add subcategory");
+            var addSubcategory = WaitForMenuItemByTestId("CategoryAddSubcategory");
             await target.InvokeAsync(() => addSubcategory.Instance.OnClick.InvokeAsync());
 
-            var removeCategory = WaitForMenuItem("Remove category");
+            var removeCategory = WaitForMenuItemByTestId("CategoryRemove");
             await target.InvokeAsync(() => removeCategory.Instance.OnClick.InvokeAsync());
 
             dialogMock.Verify(d => d.InvokeAddCategoryDialog(null, null), Times.Once);
@@ -318,7 +322,7 @@ namespace Lantean.QBTMud.Test.Components
             var games = FindComponentByTestId<CustomNavLink>(target, "Category-Games\\");
             await target.InvokeAsync(() => games.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var addSubcategory = WaitForMenuItem("Add subcategory");
+            var addSubcategory = WaitForMenuItemByTestId("CategoryAddSubcategory");
             await target.InvokeAsync(() => addSubcategory.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Invocations.Should().BeEmpty();
@@ -357,7 +361,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await OpenMenuAsync(target, 1);
 
-            var removeUnused = WaitForMenuItem("Remove unused categories");
+            var removeUnused = WaitForMenuItemByTestId("CategoryRemoveUnused");
             await target.InvokeAsync(() => removeUnused.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.RemoveCategories("Games"), Times.Once);
@@ -377,7 +381,7 @@ namespace Lantean.QBTMud.Test.Components
             var tagLink = FindComponentByTestId<CustomNavLink>(target, "Tag-Tag1");
             await target.InvokeAsync(() => tagLink.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var removeTag = WaitForMenuItem("Remove tag");
+            var removeTag = WaitForMenuItemByTestId("TagRemove");
             await target.InvokeAsync(() => removeTag.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.DeleteTags("Tag1"), Times.Once);
@@ -415,7 +419,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await OpenMenuAsync(target, 2);
 
-            var removeUnused = WaitForMenuItem("Remove unused tags");
+            var removeUnused = WaitForMenuItemByTestId("TagRemoveUnused");
             await target.InvokeAsync(() => removeUnused.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.DeleteTags("Tag2"), Times.Once);
@@ -432,7 +436,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await OpenMenuAsync(target, 2);
 
-            var addTag = WaitForMenuItem("Add tag");
+            var addTag = WaitForMenuItemByTestId("TagAdd");
             await target.InvokeAsync(() => addTag.Instance.OnClick.InvokeAsync());
 
             dialogMock.Invocations.Should().BeEmpty();
@@ -452,7 +456,7 @@ namespace Lantean.QBTMud.Test.Components
             var tagLink = FindComponentByTestId<CustomNavLink>(target, "Tag-Tag1");
             await target.InvokeAsync(() => tagLink.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var addTag = WaitForMenuItem("Add tag");
+            var addTag = WaitForMenuItemByTestId("TagAdd");
             await target.InvokeAsync(() => addTag.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Invocations.Should().BeEmpty();
@@ -473,7 +477,7 @@ namespace Lantean.QBTMud.Test.Components
             var tagLink = FindComponentByTestId<CustomNavLink>(target, "Tag-Tag1");
             await target.InvokeAsync(() => tagLink.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var addTag = WaitForMenuItem("Add tag");
+            var addTag = WaitForMenuItemByTestId("TagAdd");
             await target.InvokeAsync(() => addTag.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.CreateTags(It.Is<IEnumerable<string>>(t => t.SequenceEqual(new[] { "Tag2" }))), Times.Once);
@@ -490,7 +494,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await OpenMenuAsync(target, 3);
 
-            var removeTracker = WaitForMenuItem("Remove tracker");
+            var removeTracker = WaitForMenuItemByTestId("TrackerRemove");
             await target.InvokeAsync(() => removeTracker.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Invocations.Should().BeEmpty();
@@ -508,7 +512,7 @@ namespace Lantean.QBTMud.Test.Components
             var tracker = FindComponentByTestId<CustomNavLink>(target, "Tracker-All");
             await target.InvokeAsync(() => tracker.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var removeTracker = WaitForMenuItem("Remove tracker");
+            var removeTracker = WaitForMenuItemByTestId("TrackerRemove");
             await target.InvokeAsync(() => removeTracker.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Invocations.Should().BeEmpty();
@@ -526,7 +530,7 @@ namespace Lantean.QBTMud.Test.Components
             var tracker = FindComponentByTestId<CustomNavLink>(target, "Tracker-unused.example.com");
             await target.InvokeAsync(() => tracker.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var removeTracker = WaitForMenuItem("Remove tracker");
+            var removeTracker = WaitForMenuItemByTestId("TrackerRemove");
             await target.InvokeAsync(() => removeTracker.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Invocations.Should().BeEmpty();
@@ -551,7 +555,7 @@ namespace Lantean.QBTMud.Test.Components
             var tracker = FindComponentByTestId<CustomNavLink>(target, "Tracker-tracker.example.com");
             await target.InvokeAsync(() => tracker.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var removeTracker = WaitForMenuItem("Remove tracker");
+            var removeTracker = WaitForMenuItemByTestId("TrackerRemove");
             await target.InvokeAsync(() => removeTracker.Instance.OnClick.InvokeAsync());
 
             apiClientMock.VerifyAll();
@@ -580,19 +584,19 @@ namespace Lantean.QBTMud.Test.Components
             var downloading = FindComponentByTestId<CustomNavLink>(target, "Status-Downloading");
             await target.InvokeAsync(() => downloading.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var start = WaitForMenuItem("Start torrents");
+            var start = WaitForMenuItemByTestId("_statusType-Start");
             await target.InvokeAsync(() => start.Instance.OnClick.InvokeAsync());
 
             var movies = FindComponentByTestId<CustomNavLink>(target, "Category-Movies");
             await target.InvokeAsync(() => movies.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var stop = WaitForMenuItem("Stop torrents");
+            var stop = WaitForMenuItemByTestId("_categoryType-Stop");
             await target.InvokeAsync(() => stop.Instance.OnClick.InvokeAsync());
 
             var tag = FindComponentByTestId<CustomNavLink>(target, "Tag-Tag1");
             await target.InvokeAsync(() => tag.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var remove = WaitForMenuItem("Remove torrents");
+            var remove = WaitForMenuItemByTestId("_tagType-Remove");
             await target.InvokeAsync(() => remove.Instance.OnClick.InvokeAsync());
 
             apiClientMock.VerifyAll();
@@ -614,22 +618,22 @@ namespace Lantean.QBTMud.Test.Components
 
             await OpenMenuAsync(target, 0);
 
-            var statusStart = WaitForMenuItem("Start torrents");
+            var statusStart = WaitForMenuItemByTestId("_statusType-Start");
             await target.InvokeAsync(() => statusStart.Instance.OnClick.InvokeAsync());
 
             await OpenMenuAsync(target, 1);
 
-            var categoryStop = WaitForMenuItem("Stop torrents");
+            var categoryStop = WaitForMenuItemByTestId("_categoryType-Stop");
             await target.InvokeAsync(() => categoryStop.Instance.OnClick.InvokeAsync());
 
             await OpenMenuAsync(target, 2);
 
-            var tagRemove = WaitForMenuItem("Remove torrents");
+            var tagRemove = WaitForMenuItemByTestId("_tagType-Remove");
             await target.InvokeAsync(() => tagRemove.Instance.OnClick.InvokeAsync());
 
             await OpenMenuAsync(target, 3);
 
-            var trackerStart = WaitForMenuItem("Start torrents");
+            var trackerStart = WaitForMenuItemByTestId("_trackerType-Start");
             await target.InvokeAsync(() => trackerStart.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Invocations.Count(i => i.Method.Name == nameof(IApiClient.StartTorrents)).Should().Be(2);
@@ -651,7 +655,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await OpenMenuAsync(target, 0);
 
-            var statusStart = WaitForMenuItem("Start torrents");
+            var statusStart = WaitForMenuItemByTestId("_statusType-Start");
             await target.InvokeAsync(() => statusStart.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Invocations.Count(i => i.Method.Name == nameof(IApiClient.StartTorrents)).Should().Be(1);
@@ -671,7 +675,7 @@ namespace Lantean.QBTMud.Test.Components
             var tagLink = FindComponentByTestId<CustomNavLink>(target, "Tag-Tag1");
             await target.InvokeAsync(() => tagLink.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
 
-            var addTag = WaitForMenuItem("Add tag");
+            var addTag = WaitForMenuItemByTestId("TagAdd");
             await target.InvokeAsync(() => addTag.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Invocations.Should().BeEmpty();
@@ -702,11 +706,6 @@ namespace Lantean.QBTMud.Test.Components
             return target;
         }
 
-        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<FiltersNav> target, string testId) where TComponent : IComponent
-        {
-            return target.FindComponents<TComponent>().First(component => component.Markup.Contains($"data-test-id=\"{testId}\"", StringComparison.Ordinal));
-        }
-
         private async Task OpenMenuAsync(IRenderedComponent<FiltersNav> target, int index)
         {
             var menus = target.FindComponents<MudMenu>();
@@ -714,7 +713,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => menu.Instance.OpenMenuAsync(new MouseEventArgs()));
         }
 
-        private IRenderedComponent<MudMenuItem> WaitForMenuItem(string text, int occurrenceFromEnd = 0)
+        private IRenderedComponent<MudMenuItem> WaitForMenuItemByTestId(string testId, int occurrenceFromEnd = 0)
         {
             if (_popoverProvider is null)
             {
@@ -722,10 +721,10 @@ namespace Lantean.QBTMud.Test.Components
             }
 
             _popoverProvider.WaitForState(() =>
-                _popoverProvider.FindComponents<MudMenuItem>().Count(component => component.Markup.Contains(text, StringComparison.Ordinal)) > occurrenceFromEnd);
+                _popoverProvider.FindComponents<MudMenuItem>().Count(component => HasTestId(component, testId)) > occurrenceFromEnd);
 
             var matches = _popoverProvider.FindComponents<MudMenuItem>()
-                .Where(component => component.Markup.Contains(text, StringComparison.Ordinal))
+                .Where(component => HasTestId(component, testId))
                 .ToList();
 
             return matches[matches.Count - 1 - occurrenceFromEnd];

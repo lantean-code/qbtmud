@@ -4,7 +4,8 @@
             @if (Exception is null)
             {
                 <MudItem xs="12">
-                    <MudAlert Severity="Severity.Error">
+                    <MudAlert Severity="Severity.Error"
+                              data-test-id="@TestIdHelper.For("ExceptionMissingMessage")">
                         Missing error information.
                     </MudAlert>
                 </MudItem>
@@ -12,13 +13,16 @@
             else
             {
                 <MudItem xs="12">
-                    <MudField Label="Message">@Exception.Message</MudField>
+                    <MudField Label="Message"
+                              data-test-id="@TestIdHelper.For("ExceptionMessage")">@Exception.Message</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Source">@Exception.Source</MudField>
+                    <MudField Label="Source"
+                              data-test-id="@TestIdHelper.For("ExceptionSource")">@Exception.Source</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Stack Trace">
+                    <MudField Label="Stack Trace"
+                              data-test-id="@TestIdHelper.For("ExceptionStackTrace")">
                         <pre class="overflow">
                             @Exception.StackTrace
                         </pre>

@@ -31,9 +31,9 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderMenuItems(Hashes("Hash"), Torrents(CreateTorrent("Hash", state: "stoppedDL")), Tags("Tag"), Categories("Category"));
 
-            var start = FindMenuItem(target, "Start");
-            var stop = FindMenuItem(target, "Stop");
-            var forceStart = FindMenuItem(target, "Force start");
+            var start = FindMenuItem(target, "start");
+            var stop = FindMenuItem(target, "stop");
+            var forceStart = FindMenuItem(target, "forceStart");
 
             await target.InvokeAsync(() => start.Instance.OnClick.InvokeAsync());
             await target.InvokeAsync(() => stop.Instance.OnClick.InvokeAsync());
@@ -64,10 +64,10 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderMenuItems(Hashes("Hash"), Torrents(CreateTorrent("Hash")), Tags("Tag"), Categories("Category"));
 
-            var remove = FindMenuItem(target, "Remove");
-            var setLocation = FindMenuItem(target, "Set location");
-            var rename = FindMenuItem(target, "Rename");
-            var renameFiles = FindMenuItem(target, "Rename files");
+            var remove = FindMenuItem(target, "delete");
+            var setLocation = FindMenuItem(target, "setLocation");
+            var rename = FindMenuItem(target, "rename");
+            var renameFiles = FindMenuItem(target, "renameFiles");
 
             await target.InvokeAsync(() => setLocation.Instance.OnClick.InvokeAsync());
             await target.InvokeAsync(() => rename.Instance.OnClick.InvokeAsync());
@@ -95,10 +95,10 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
 
-            var autoTmm = FindMenuItem(target, "Automatic Torrent Management");
-            var limitDownload = FindMenuItem(target, "Limit download rate");
-            var limitUpload = FindMenuItem(target, "Limit upload rate");
-            var limitShareRatio = FindMenuItem(target, "Limit share ratio");
+            var autoTmm = FindMenuItem(target, "autoTorrentManagement");
+            var limitDownload = FindMenuItem(target, "downloadLimit");
+            var limitUpload = FindMenuItem(target, "uploadLimit");
+            var limitShareRatio = FindMenuItem(target, "shareRatio");
 
             await target.InvokeAsync(() => autoTmm.Instance.OnClick.InvokeAsync());
             await target.InvokeAsync(() => limitDownload.Instance.OnClick.InvokeAsync());
@@ -124,7 +124,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
 
-            var autoTmm = FindMenuItem(target, "Automatic Torrent Management");
+            var autoTmm = FindMenuItem(target, "autoTorrentManagement");
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => target.InvokeAsync(() => autoTmm.Instance.OnClick.InvokeAsync()));
 
@@ -149,10 +149,10 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderMenuItems(Hashes("Alpha", "Beta"), torrents, Tags("Tag"), Categories("Category"));
 
-            var sequential = FindMenuItem(target, "Download in sequential order");
-            var firstLast = FindMenuItem(target, "Download first and last pieces first");
-            var recheck = FindMenuItem(target, "Force recheck");
-            var reannounce = FindMenuItem(target, "Force reannounce");
+            var sequential = FindMenuItem(target, "sequentialDownload");
+            var firstLast = FindMenuItem(target, "firstLastPiecePrio");
+            var recheck = FindMenuItem(target, "forceRecheck");
+            var reannounce = FindMenuItem(target, "forceReannounce");
 
             await target.InvokeAsync(() => sequential.Instance.OnClick.InvokeAsync());
             await target.InvokeAsync(() => firstLast.Instance.OnClick.InvokeAsync());
@@ -180,7 +180,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderMenuItems(Hashes("Hash"), torrents, Tags("Tag"), Categories("Category"));
 
-            var sequential = FindMenuItem(target, "Download in sequential order");
+            var sequential = FindMenuItem(target, "sequentialDownload");
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => target.InvokeAsync(() => sequential.Instance.OnClick.InvokeAsync()));
 
@@ -199,7 +199,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderMenuItems(Hashes("Hash"), torrents, Tags("Tag"), Categories("Category"));
 
-            var firstLast = FindMenuItem(target, "Download first and last pieces first");
+            var firstLast = FindMenuItem(target, "firstLastPiecePrio");
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => target.InvokeAsync(() => firstLast.Instance.OnClick.InvokeAsync()));
 
@@ -229,11 +229,11 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Categories, Categories("Category"));
             });
 
-            var copyMagnet = copyTarget.FindComponents<MudListItem<string>>().Single(item => item.Markup.Contains("Magnet link", StringComparison.Ordinal));
+            var copyMagnet = FindListItem(copyTarget, "copyMagnet");
             await copyTarget.InvokeAsync(() => copyMagnet.Instance.OnClick.InvokeAsync());
 
             var exportTarget = RenderMenuItems(Hashes("Hash"), torrents, Tags("Tag"), Categories("Category"));
-            var export = FindMenuItem(exportTarget, "Export");
+            var export = FindMenuItem(exportTarget, "export");
             await exportTarget.InvokeAsync(() => export.Instance.OnClick.InvokeAsync());
 
             TestContext.JSInterop.Invocations.Should().ContainSingle(inv => inv.Identifier == "qbt.copyTextToClipboard");
@@ -358,7 +358,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderMenuItems(Hashes("Done", "Other"), torrents, Tags("Tag"), Categories("Category"));
 
-            var superSeeding = FindMenuItem(target, "Super seeding mode");
+            var superSeeding = FindMenuItem(target, "superSeeding");
             await target.InvokeAsync(() => superSeeding.Instance.OnClick.InvokeAsync());
 
             torrents["Done"].SuperSeeding.Should().BeFalse();
@@ -380,7 +380,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderMenuItems(Hashes("Done", "Other"), torrents, Tags("Tag"), Categories("Category"));
 
-            var superSeeding = FindMenuItem(target, "Super seeding mode");
+            var superSeeding = FindMenuItem(target, "superSeeding");
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => target.InvokeAsync(() => superSeeding.Instance.OnClick.InvokeAsync()));
 
@@ -454,8 +454,12 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderMenuItems(Hashes("One", "Two"), new Dictionary<string, TorrentModel>(), Tags("Tag"), Categories("Category"));
 
-            target.FindComponents<MudMenuItem>().Any(item => item.Markup.Contains("Tags", StringComparison.Ordinal)).Should().BeFalse();
-            target.FindComponents<MudMenuItem>().Any(item => item.Markup.Contains("Category", StringComparison.Ordinal)).Should().BeFalse();
+            target.FindComponents<MudMenuItem>()
+                .Any(item => HasTestId(item, "Action-tags"))
+                .Should().BeFalse();
+            target.FindComponents<MudMenuItem>()
+                .Any(item => HasTestId(item, "Action-category"))
+                .Should().BeFalse();
         }
 
         [Fact]
@@ -645,7 +649,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.MudDialog, dialogMock.Object);
             });
 
-            var start = FindMenuItem(target, "Start");
+            var start = FindMenuItem(target, "start");
             await target.InvokeAsync(() => start.Instance.OnClick.InvokeAsync());
 
             dialogMock.Verify(d => d.Close(), Times.Once);
@@ -664,18 +668,14 @@ namespace Lantean.QBTMud.Test.Components
             });
         }
 
-        private static IRenderedComponent<MudMenuItem> FindMenuItem(IRenderedComponent<TorrentActions> target, string text)
+        private static IRenderedComponent<MudMenuItem> FindMenuItem(IRenderedComponent<TorrentActions> target, string actionName)
         {
-            var components = target.FindComponents<MudMenuItem>();
-            var match = components.FirstOrDefault(item => item.Markup.Contains($">{text}<", StringComparison.Ordinal))
-                ?? components.FirstOrDefault(item => item.Markup.Contains(text, StringComparison.Ordinal));
-            if (match is null)
-            {
-                var available = string.Join(" | ", components.Select(c => c.Markup));
-                throw new InvalidOperationException($"Menu item '{text}' not found. Available: {available}");
-            }
+            return FindComponentByTestId<MudMenuItem>(target, $"Action-{actionName}");
+        }
 
-            return match;
+        private static IRenderedComponent<MudListItem<string>> FindListItem(IRenderedComponent<TorrentActions> target, string actionName)
+        {
+            return FindComponentByTestId<MudListItem<string>>(target, $"Action-{actionName}");
         }
 
         private static Dictionary<string, TorrentModel> Torrents(params TorrentModel[] torrents)

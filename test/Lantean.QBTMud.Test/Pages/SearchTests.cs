@@ -47,7 +47,7 @@ namespace Lantean.QBTMud.Test.Pages
             pluginSelect.Instance.SelectedValues.Should().Contain("movies");
 
             var toggleAdvancedButton = FindComponentByTestId<MudButton>(target, "ToggleAdvancedFilters");
-            toggleAdvancedButton.Markup.Should().Contain("Show filters");
+            GetChildContentText(toggleAdvancedButton.Instance.ChildContent).Should().Be("Show filters");
 
             var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
             startButton.Instance.Disabled.Should().BeTrue();
@@ -124,14 +124,15 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForState(() =>
             {
-                return FindComponentByTestId<MudText>(target, "JobSummary").Markup.Contains("1/2");
+                return string.Equals(GetChildContentText(FindComponentByTestId<MudText>(target, "JobSummary").Instance.ChildContent), "1/2", StringComparison.Ordinal);
             });
 
             var jobTabSummary = FindComponentByTestId<MudText>(target, "JobSummary");
-            jobTabSummary.Markup.Should().Contain("1/2");
+            GetChildContentText(jobTabSummary.Instance.ChildContent).Should().Be("1/2");
 
             var resultsTable = target.FindComponent<DynamicTable<SearchResult>>();
-            resultsTable.Markup.Should().Contain("Ubuntu 24.04");
+            var items = resultsTable.Instance.Items.Should().NotBeNull().And.Subject;
+            items.Should().ContainSingle(result => result.FileName == "Ubuntu 24.04");
         }
 
         [Fact]
@@ -159,14 +160,14 @@ namespace Lantean.QBTMud.Test.Pages
                 searchFormCollapse.Instance.Expanded.Should().BeTrue();
 
                 var toggleAdvancedButton = FindComponentByTestId<MudButton>(target, "ToggleAdvancedFilters");
-                toggleAdvancedButton.Markup.Should().Contain("Show filters");
+                GetChildContentText(toggleAdvancedButton.Instance.ChildContent).Should().Be("Show filters");
 
                 var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
                 pluginSelect.Instance.SelectedValues.Should().Contain("movies");
             });
 
-            var emptyState = FindComponentByTestId<MudPaper>(target, "SearchEmptyState");
-            emptyState.Markup.Should().Contain("No searches yet");
+            var emptyStateTitle = FindComponentByTestId<MudText>(target, "SearchEmptyStateTitle");
+            GetChildContentText(emptyStateTitle.Instance.ChildContent).Should().Be("No searches yet");
         }
 
         [Fact]
@@ -214,7 +215,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 var alert = FindComponentByTestId<MudAlert>(target, "SearchUnavailableAlert");
-                alert.Markup.Should().Contain("Search is disabled");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Search is disabled in the connected qBittorrent instance.");
             });
 
             var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
@@ -240,7 +241,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 var warning = FindComponentByTestId<MudAlert>(target, "NoPluginAlert");
-                warning.Markup.Should().Contain("Enable at least one search plugin");
+                GetChildContentText(warning.Instance.ChildContent).Should().Be("Enable at least one search plugin to run searches.");
 
                 var startButton = FindComponentByTestId<MudButton>(target, "StartSearchButton");
                 startButton.Instance.Disabled.Should().BeTrue();
@@ -318,7 +319,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 snackbarMock.Verify();
                 var alert = FindComponentByTestId<MudAlert>(target, "SearchUnavailableAlert");
-                alert.Markup.Should().Contain("Search is disabled");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Search is disabled in the connected qBittorrent instance.");
             });
         }
 
@@ -483,7 +484,8 @@ namespace Lantean.QBTMud.Test.Pages
             target.Find("form").Submit();
 
             var resultsTable = target.FindComponent<DynamicTable<SearchResult>>();
-            resultsTable.Markup.Should().Contain("Ubuntu 24.04");
+            var results = resultsTable.Instance.Items.Should().NotBeNull().And.Subject;
+            results.Should().ContainSingle(result => result.FileName == "Ubuntu 24.04");
 
             apiMock.Verify(client => client.StartSearch("Ubuntu", It.Is<IReadOnlyCollection<string>>(plugins => plugins.Contains("movies")), SearchForm.AllCategoryId), Times.Once());
             apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.AtLeast(2));
@@ -582,8 +584,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var emptyState = FindComponentByTestId<MudPaper>(target, "SearchEmptyState");
-                emptyState.Markup.Should().Contain("No searches yet");
+                var emptyStateTitle = FindComponentByTestId<MudText>(target, "SearchEmptyStateTitle");
+                GetChildContentText(emptyStateTitle.Instance.ChildContent).Should().Be("No searches yet");
             });
 
             apiMock.Verify(client => client.StopSearch(jobId), Times.Once());
@@ -656,7 +658,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
+                FindComponentByTestId<MudTabs>(target, "JobTabs").Should().NotBeNull();
             });
 
             snackbarMock.Verify();
@@ -748,7 +750,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("data-test-id=\"JobTabs\"");
+                FindComponentByTestId<MudTabs>(target, "JobTabs").Should().NotBeNull();
             });
 
             target.WaitForAssertion(() =>
@@ -797,12 +799,14 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("Ubuntu 24.04");
-                target.Markup.Should().NotContain("Fedora 39");
+                var table = target.FindComponent<DynamicTable<SearchResult>>();
+                var items = table.Instance.Items.Should().NotBeNull().And.Subject.ToList();
+                items.Should().ContainSingle(result => result.FileName == "Ubuntu 24.04");
+                items.Should().NotContain(result => result.FileName == "Fedora 39");
             });
 
             var summary = FindComponentByTestId<MudText>(target, "JobSummary");
-            summary.Markup.Should().Contain("1/2");
+            GetChildContentText(summary.Instance.ChildContent).Should().Be("1/2");
         }
 
         [Fact]
@@ -850,13 +854,15 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("Passing Result");
-                target.Markup.Should().NotContain("Low Seed Result");
-                target.Markup.Should().NotContain("Large Size Result");
+                var table = target.FindComponent<DynamicTable<SearchResult>>();
+                var items = table.Instance.Items.Should().NotBeNull().And.Subject.ToList();
+                items.Should().ContainSingle(result => result.FileName == "Passing Result");
+                items.Should().NotContain(result => result.FileName == "Low Seed Result");
+                items.Should().NotContain(result => result.FileName == "Large Size Result");
             });
 
             var summary = FindComponentByTestId<MudText>(target, "JobSummary");
-            summary.Markup.Should().Contain("1/3");
+            GetChildContentText(summary.Instance.ChildContent).Should().Be("1/3");
         }
 
         [Fact]
@@ -895,12 +901,17 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("href=\"http://desc/item1\"");
-                target.Markup.Should().Contain("href=\"http://site/item1\"");
-                target.Markup.Should().Contain("Item Two");
+                var links = target.FindComponents<MudLink>();
+                links.Should().Contain(link => link.Instance.Href == "http://desc/item1");
+                links.Should().Contain(link => link.Instance.Href == "http://site/item1");
+
+                var table = target.FindComponent<DynamicTable<SearchResult>>();
+                var items = table.Instance.Items.Should().NotBeNull().And.Subject;
+                items.Should().ContainSingle(result => result.FileName == "Item Two");
             });
 
-            target.Markup.Should().Contain("2023");
+            var resultsTable = target.FindComponent<DynamicTable<SearchResult>>();
+            resultsTable.Instance.Items.Should().Contain(result => result.PublishedOn == 1_700_000_000);
         }
 
         [Fact]
@@ -1190,26 +1201,26 @@ namespace Lantean.QBTMud.Test.Pages
             var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "CategorySelect");
             await target.InvokeAsync(() => categorySelect.Instance.ValueChanged.InvokeAsync("tv"));
 
-            var filterField = target.FindComponents<MudTextField<string>>().First(field => field.Instance.Label == "Filter results");
+            var filterField = FindComponentByTestId<MudTextField<string>>(target, "FilterResults");
             await target.InvokeAsync(() => filterField.Instance.ValueChanged.InvokeAsync("dv"));
 
             var searchInSelect = FindComponentByTestId<MudSelect<SearchInScope>>(target, "SearchInScopeSelect");
             await target.InvokeAsync(() => searchInSelect.Instance.ValueChanged.InvokeAsync(SearchInScope.Names));
 
-            var minSeedsField = target.FindComponents<MudNumericField<int?>>().First(field => field.Instance.Label == "Min seeders");
+            var minSeedsField = FindComponentByTestId<MudNumericField<int?>>(target, "MinSeeders");
             await target.InvokeAsync(() => minSeedsField.Instance.ValueChanged.InvokeAsync(10));
 
-            var maxSeedsField = target.FindComponents<MudNumericField<int?>>().First(field => field.Instance.Label == "Max seeders");
+            var maxSeedsField = FindComponentByTestId<MudNumericField<int?>>(target, "MaxSeeders");
             await target.InvokeAsync(() => maxSeedsField.Instance.ValueChanged.InvokeAsync(120));
 
-            var minSizeField = target.FindComponents<MudNumericField<double?>>().First(field => field.Instance.Label == "Min size");
+            var minSizeField = FindComponentByTestId<MudNumericField<double?>>(target, "MinSize");
             await target.InvokeAsync(() => minSizeField.Instance.ValueChanged.InvokeAsync(8d));
 
             var sizeUnitSelects = target.FindComponents<MudSelect<SearchSizeUnit>>().ToList();
             var minSizeUnitSelect = sizeUnitSelects[0];
             await target.InvokeAsync(() => minSizeUnitSelect.Instance.ValueChanged.InvokeAsync(SearchSizeUnit.Gibibytes));
 
-            var maxSizeField = target.FindComponents<MudNumericField<double?>>().First(field => field.Instance.Label == "Max size");
+            var maxSizeField = FindComponentByTestId<MudNumericField<double?>>(target, "MaxSize");
             await target.InvokeAsync(() => maxSizeField.Instance.ValueChanged.InvokeAsync(4d));
 
             var maxSizeUnitSelect = sizeUnitSelects[1];
@@ -1530,7 +1541,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("Context");
+                target.Instance.ExposedJobs.Should().NotBeEmpty();
             });
 
             return target;

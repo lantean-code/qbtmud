@@ -217,10 +217,5 @@ namespace Lantean.QBTMud.Test.Pages
                 }
             });
         }
-
-        private static IRenderedComponent<MudIconButton> FindIconButton(IRenderedComponent<Categories> component, string icon)
-        {
-            return component.FindComponents<MudIconButton>().Single(button => button.Instance.Icon == icon);
-        }
     }
 }

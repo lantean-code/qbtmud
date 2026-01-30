@@ -36,7 +36,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync("Label", 5, value => "Display");
 
-            dialog.Component.Markup.Should().Contain("Display");
+            var input = FindComponentByTestId<MudNumericField<string>>(dialog.Component, "NumericFieldInput");
+            input.Instance.Value.Should().Be("Display");
         }
 
         [Fact]
@@ -44,7 +45,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync("Label", 7, _ => null!);
 
-            dialog.Component.Markup.Should().Contain("7");
+            var input = FindComponentByTestId<MudNumericField<string>>(dialog.Component, "NumericFieldInput");
+            input.Instance.Value.Should().Be("7");
         }
 
         [Fact]

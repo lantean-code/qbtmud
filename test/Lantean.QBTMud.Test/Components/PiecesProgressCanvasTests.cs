@@ -3,6 +3,7 @@ using Bunit;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components
@@ -10,7 +11,7 @@ namespace Lantean.QBTMud.Test.Components
     public sealed class PiecesProgressCanvasTests : RazorComponentTestBase
     {
         [Fact]
-        public void GIVEN_ToggleRendered_WHEN_Checked_THEN_PreventDefaultIsEnabled()
+        public void GIVEN_ToggleRendered_WHEN_EnterPressed_THEN_Expands()
         {
             var target = TestContext.Render<PiecesProgressCanvas>(parameters =>
             {
@@ -21,7 +22,13 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.AddCascadingValue(Breakpoint.Lg);
             });
 
-            target.Markup.Should().Contain("onkeydown:preventDefault");
+            var collapse = target.FindComponent<MudCollapse>();
+            collapse.Instance.Expanded.Should().BeTrue();
+
+            var toggle = target.Find("div.pieces-progress-canvas__linear");
+            toggle.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+            collapse.Instance.Expanded.Should().BeFalse();
         }
     }
 }

@@ -198,6 +198,38 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_SaveWithSecondsExpiration_WHEN_Clicked_THEN_SavesExpirationWithSeconds()
+        {
+            var cookies = Array.Empty<ApplicationCookie>();
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetApplicationCookies())
+                .ReturnsAsync(cookies)
+                .ReturnsAsync(cookies);
+
+            List<ApplicationCookie> savedCookies = [];
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .Callback<IEnumerable<ApplicationCookie>>(entries => savedCookies = entries.ToList())
+                .Returns(Task.CompletedTask);
+
+            var target = RenderPage(cookies, configureApi: false);
+            var addButton = FindIconButton(target, Icons.Material.Filled.Add);
+            await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+
+            await SetFieldValue(target, field => field.Required, "Name");
+            await SetFieldValue(target, field => field.InputType == InputType.DateTimeLocal, "2020-01-02T03:04:05");
+
+            var saveButton = FindIconButton(target, Icons.Material.Filled.Save);
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            savedCookies.Should().ContainSingle();
+
+            var expectedDate = DateTime.ParseExact("2020-01-02T03:04:05", "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal);
+            var expectedOffset = new DateTimeOffset(expectedDate, DateTimeOffset.Now.Offset).ToUnixTimeSeconds();
+            savedCookies[0].ExpirationDate.Should().Be(expectedOffset);
+        }
+
+        [Fact]
         public async Task GIVEN_SaveWithEmptyDomainAndPath_WHEN_Clicked_THEN_SavesNullValues()
         {
             var cookies = Array.Empty<ApplicationCookie>();
@@ -447,11 +479,6 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 parameters.AddCascadingValue("DrawerOpen", false);
             });
-        }
-
-        private static IRenderedComponent<MudIconButton> FindIconButton(IRenderedComponent<Cookies> component, string icon)
-        {
-            return component.FindComponents<MudIconButton>().Single(button => button.Instance.Icon == icon);
         }
 
         private static IRenderedComponent<MudIconButton> FindRowDeleteButton(IRenderedComponent<Cookies> component)

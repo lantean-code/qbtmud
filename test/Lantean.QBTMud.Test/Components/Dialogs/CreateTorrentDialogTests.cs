@@ -39,7 +39,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
-            var createButton = FindButton(dialog.Component, "Create");
+            var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
 
             await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
 
@@ -65,14 +65,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetTorrentFilePathAsync(dialog.Component, "C:/Out");
             await SetPieceSizeAsync(dialog.Component, 65536);
             await SetFormatAsync(dialog.Component, "v1");
-            await SetFieldSwitchAsync(dialog.Component, "Private torrent", true);
-            await SetFieldSwitchAsync(dialog.Component, "Start seeding immediately", false);
-            await SetTextFieldAsync(dialog.Component, "Tracker URLs", "http://a\n\n http://b ");
-            await SetTextFieldAsync(dialog.Component, "Web seed URLs", "http://c\r\nhttp://d");
+            await SetFieldSwitchAsync(dialog.Component, "PrivateTorrent", true);
+            await SetFieldSwitchAsync(dialog.Component, "StartSeeding", false);
+            await SetTextFieldAsync(dialog.Component, "TrackerUrls", "http://a\n\n http://b ");
+            await SetTextFieldAsync(dialog.Component, "WebSeedUrls", "http://c\r\nhttp://d");
             await SetTextFieldAsync(dialog.Component, "Comments", " Comment ");
             await SetTextFieldAsync(dialog.Component, "Source", " Source ");
 
-            var createButton = FindButton(dialog.Component, "Create");
+            var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
             await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
 
             var result = await dialog.Reference.Result;
@@ -102,10 +102,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync();
 
             await SetSourcePathAsync(dialog.Component, "C:/Source");
-            await SetFieldSwitchAsync(dialog.Component, "Optimize alignment", false);
-            await SetNumericFieldAsync(dialog.Component, "Padded file size limit (KiB)", 16);
+            await SetFieldSwitchAsync(dialog.Component, "OptimizeAlignment", false);
+            await SetNumericFieldAsync(dialog.Component, "PaddedFileSizeLimit", 16);
 
-            var createButton = FindButton(dialog.Component, "Create");
+            var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
             await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
 
             var result = await dialog.Reference.Result;
@@ -125,10 +125,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync();
 
             await SetSourcePathAsync(dialog.Component, "C:/Source");
-            await SetFieldSwitchAsync(dialog.Component, "Optimize alignment", true);
-            await SetNumericFieldAsync(dialog.Component, "Padded file size limit (KiB)", -1);
+            await SetFieldSwitchAsync(dialog.Component, "OptimizeAlignment", true);
+            await SetNumericFieldAsync(dialog.Component, "PaddedFileSizeLimit", -1);
 
-            var createButton = FindButton(dialog.Component, "Create");
+            var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
             await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
 
             var result = await dialog.Reference.Result;
@@ -148,10 +148,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync();
 
             await SetSourcePathAsync(dialog.Component, "C:/Source");
-            await SetFieldSwitchAsync(dialog.Component, "Optimize alignment", true);
-            await SetNumericFieldAsync(dialog.Component, "Padded file size limit (KiB)", 2097152);
+            await SetFieldSwitchAsync(dialog.Component, "OptimizeAlignment", true);
+            await SetNumericFieldAsync(dialog.Component, "PaddedFileSizeLimit", 2097152);
 
-            var createButton = FindButton(dialog.Component, "Create");
+            var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
             await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
 
             var result = await dialog.Reference.Result;
@@ -168,7 +168,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
-            var closeButton = FindButton(dialog.Component, "Close");
+            var closeButton = FindButton(dialog.Component, "CreateTorrentClose");
 
             await dialog.Component.InvokeAsync(() => closeButton.Instance.OnClick.InvokeAsync());
 
@@ -253,19 +253,19 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var pieceSelect = dialog.Component.FindComponent<MudSelect<int?>>();
             pieceSelect.Instance.Value.Should().Be(65536);
 
-            var privateSwitch = FindFieldSwitch(dialog.Component, "Private torrent");
+            var privateSwitch = FindFieldSwitch(dialog.Component, "PrivateTorrent");
             privateSwitch.Instance.Value.Should().BeTrue();
 
-            var seedSwitch = FindFieldSwitch(dialog.Component, "Start seeding immediately");
+            var seedSwitch = FindFieldSwitch(dialog.Component, "StartSeeding");
             seedSwitch.Instance.Value.Should().BeFalse();
 
-            var formatSelect = dialog.Component.FindComponent<MudSelect<string>>();
+            var formatSelect = FindComponentByTestId<MudSelect<string>>(dialog.Component, "TorrentFormat");
             formatSelect.Instance.Value.Should().Be("v2");
 
-            var trackers = FindTextField(dialog.Component, "Tracker URLs");
+            var trackers = FindTextField(dialog.Component, "TrackerUrls");
             trackers.Instance.Value.Should().Be("Trackers");
 
-            var urlSeeds = FindTextField(dialog.Component, "Web seed URLs");
+            var urlSeeds = FindTextField(dialog.Component, "WebSeedUrls");
             urlSeeds.Instance.Value.Should().Be("UrlSeeds");
 
             var comment = FindTextField(dialog.Component, "Comments");
@@ -284,9 +284,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync();
 
-            var formatSelect = dialog.Component.FindComponents<MudSelect<string>>()
-                .SingleOrDefault(select => string.Equals(select.Instance.Label, "Torrent format", StringComparison.Ordinal));
-            formatSelect.Should().BeNull();
+            dialog.Component.FindComponents<MudSelect<string>>()
+                .Any(select => HasTestId(select, "TorrentFormat"))
+                .Should().BeFalse();
         }
 
         [Fact]
@@ -298,9 +298,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync();
 
-            var formatSelect = dialog.Component.FindComponents<MudSelect<string>>()
-                .SingleOrDefault(select => string.Equals(select.Instance.Label, "Torrent format", StringComparison.Ordinal));
-            formatSelect.Should().BeNull();
+            dialog.Component.FindComponents<MudSelect<string>>()
+                .Any(select => HasTestId(select, "TorrentFormat"))
+                .Should().BeFalse();
         }
 
         [Fact]
@@ -312,9 +312,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync();
 
-            var formatSelect = dialog.Component.FindComponents<MudSelect<string>>()
-                .SingleOrDefault(select => string.Equals(select.Instance.Label, "Torrent format", StringComparison.Ordinal));
-            formatSelect.Should().NotBeNull();
+            dialog.Component.FindComponents<MudSelect<string>>()
+                .Any(select => HasTestId(select, "TorrentFormat"))
+                .Should().BeTrue();
         }
 
         [Fact]
@@ -352,13 +352,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             await SetSourcePathAsync(dialog.Component, "C:/Source");
             await SetTorrentFilePathAsync(dialog.Component, "C:/Out");
-            await SetTextFieldAsync(dialog.Component, "Tracker URLs", "Tracker");
-            await SetTextFieldAsync(dialog.Component, "Web seed URLs", "Seed");
+            await SetTextFieldAsync(dialog.Component, "TrackerUrls", "Tracker");
+            await SetTextFieldAsync(dialog.Component, "WebSeedUrls", "Seed");
             await SetTextFieldAsync(dialog.Component, "Comments", "Comment");
             await SetTextFieldAsync(dialog.Component, "Source", "Source");
             await SetFormatAsync(dialog.Component, "hybrid");
 
-            var createButton = FindButton(dialog.Component, "Create");
+            var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
             await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
 
             var stored = await TestContext.LocalStorage.GetItemAsync<TorrentCreationFormState>(StorageKey);
@@ -381,10 +381,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync();
 
-            var alignmentSwitch = FindFieldSwitch(dialog.Component, "Optimize alignment");
+            var alignmentSwitch = FindFieldSwitch(dialog.Component, "OptimizeAlignment");
             alignmentSwitch.Should().NotBeNull();
 
-            var numericField = FindNumericField(dialog.Component, "Padded file size limit (KiB)");
+            var numericField = FindNumericField(dialog.Component, "PaddedFileSizeLimit");
             numericField.Should().NotBeNull();
         }
 
@@ -393,65 +393,60 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             return new BuildInfo("QT", libTorrentVersion, "Boost", "OpenSSL", "ZLib", 64);
         }
 
-        private static IRenderedComponent<MudButton> FindButton(IRenderedComponent<CreateTorrentDialog> component, string label)
+        private static IRenderedComponent<FieldSwitch> FindFieldSwitch(IRenderedComponent<CreateTorrentDialog> component, string testId)
         {
-            return component.FindComponents<MudButton>().Single(button => button.Markup.Contains(label, StringComparison.Ordinal));
+            return FindComponentByTestId<FieldSwitch>(component, testId);
         }
 
-        private static IRenderedComponent<FieldSwitch> FindFieldSwitch(IRenderedComponent<CreateTorrentDialog> component, string label)
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<CreateTorrentDialog> component, string testId)
         {
-            return component.FindComponents<FieldSwitch>().Single(field => string.Equals(field.Instance.Label, label, StringComparison.Ordinal));
+            return FindComponentByTestId<MudTextField<string>>(component, testId);
         }
 
-        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<CreateTorrentDialog> component, string label)
+        private static IRenderedComponent<MudNumericField<int>> FindNumericField(IRenderedComponent<CreateTorrentDialog> component, string testId)
         {
-            return component.FindComponents<MudTextField<string>>().Single(field => string.Equals(field.Instance.Label, label, StringComparison.Ordinal));
-        }
-
-        private static IRenderedComponent<MudNumericField<int>> FindNumericField(IRenderedComponent<CreateTorrentDialog> component, string label)
-        {
-            return component.FindComponents<MudNumericField<int>>().Single(field => string.Equals(field.Instance.Label, label, StringComparison.Ordinal));
+            return FindComponentByTestId<MudNumericField<int>>(component, testId);
         }
 
         private static async Task SetSourcePathAsync(IRenderedComponent<CreateTorrentDialog> component, string value)
         {
-            var pathFields = component.FindComponents<PathAutocomplete>();
-            await component.InvokeAsync(() => pathFields[0].Instance.ValueChanged.InvokeAsync(value));
+            var pathField = FindComponentByTestId<PathAutocomplete>(component, "SourcePath");
+            await component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync(value));
         }
 
         private static async Task SetTorrentFilePathAsync(IRenderedComponent<CreateTorrentDialog> component, string value)
         {
-            var pathFields = component.FindComponents<PathAutocomplete>();
-            await component.InvokeAsync(() => pathFields[1].Instance.ValueChanged.InvokeAsync(value));
+            var pathField = FindComponentByTestId<PathAutocomplete>(component, "TorrentFilePath");
+            await component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync(value));
         }
 
         private static async Task SetPieceSizeAsync(IRenderedComponent<CreateTorrentDialog> component, int value)
         {
-            var select = component.FindComponent<MudSelect<int?>>();
+            var select = FindComponentByTestId<MudSelect<int?>>(component, "PieceSize");
             await component.InvokeAsync(() => select.Instance.ValueChanged.InvokeAsync(value));
         }
 
         private static async Task SetFormatAsync(IRenderedComponent<CreateTorrentDialog> component, string value)
         {
-            var select = component.FindComponent<MudSelect<string>>();
+            var select = FindComponentByTestId<MudSelect<string>>(component, "TorrentFormat");
             await component.InvokeAsync(() => select.Instance.ValueChanged.InvokeAsync(value));
         }
 
-        private static async Task SetFieldSwitchAsync(IRenderedComponent<CreateTorrentDialog> component, string label, bool value)
+        private static async Task SetFieldSwitchAsync(IRenderedComponent<CreateTorrentDialog> component, string testId, bool value)
         {
-            var fieldSwitch = FindFieldSwitch(component, label);
+            var fieldSwitch = FindFieldSwitch(component, testId);
             await component.InvokeAsync(() => fieldSwitch.Instance.ValueChanged.InvokeAsync(value));
         }
 
-        private static async Task SetTextFieldAsync(IRenderedComponent<CreateTorrentDialog> component, string label, string value)
+        private static async Task SetTextFieldAsync(IRenderedComponent<CreateTorrentDialog> component, string testId, string value)
         {
-            var field = FindTextField(component, label);
+            var field = FindTextField(component, testId);
             await component.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(value));
         }
 
-        private static async Task SetNumericFieldAsync(IRenderedComponent<CreateTorrentDialog> component, string label, int value)
+        private static async Task SetNumericFieldAsync(IRenderedComponent<CreateTorrentDialog> component, string testId, int value)
         {
-            var field = FindNumericField(component, label);
+            var field = FindNumericField(component, testId);
             await component.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(value));
         }
 

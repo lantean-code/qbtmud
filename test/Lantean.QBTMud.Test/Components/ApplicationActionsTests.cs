@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var menuItems = target.FindComponents<MudMenuItem>();
             menuItems.Should().HaveCount(18);
-            menuItems.Any(item => item.Markup.Contains("Speed", StringComparison.Ordinal)).Should().BeTrue();
+            menuItems.Any(item => HasTestId(item, "Action-speed")).Should().BeTrue();
             snackbarMock.Invocations.Should().BeEmpty();
             apiClientMock.VerifyNoOtherCalls();
         }
@@ -57,17 +57,17 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.DarkModeChanged, EventCallback.Factory.Create<bool>(this, value => newValue = value));
             });
 
-            var darkMode = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Switch to dark mode", StringComparison.Ordinal));
+            var darkMode = FindMenuItem(target, "Action-darkMode");
             await target.InvokeAsync(() => darkMode.Instance.OnClick.InvokeAsync());
 
             var items = target.FindComponents<MudMenuItem>().ToList();
-            var darkIndex = items.FindIndex(item => item.Markup.Contains("Switch to light mode", StringComparison.Ordinal));
-            var aboutIndex = items.FindIndex(item => item.Markup.Contains("About", StringComparison.Ordinal));
+            var darkIndex = items.FindIndex(item => HasTestId(item, "Action-darkMode"));
+            var aboutIndex = items.FindIndex(item => HasTestId(item, "Action-about"));
             darkIndex.Should().BeGreaterThanOrEqualTo(0);
             aboutIndex.Should().BeGreaterThan(darkIndex);
             newValue.Should().BeTrue();
-            target.Markup.Should().Contain("Switch to light mode");
-            target.Markup.Should().Contain("mud-info-text");
+            GetChildContentText(darkMode.Instance.ChildContent).Should().Be("Switch to light mode");
+            darkMode.Instance.IconColor.Should().Be(Color.Info);
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, preferences);
             });
 
-            target.FindComponents<MudMenuItem>().Any(item => item.Markup.Contains("RSS", StringComparison.Ordinal)).Should().BeTrue();
+            target.FindComponents<MudMenuItem>().Any(item => HasTestId(item, "Action-rss")).Should().BeTrue();
         }
 
         [Fact]
@@ -100,7 +100,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var startItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Start all torrents", StringComparison.Ordinal));
+            var startItem = FindMenuItem(target, "StartAllTorrents");
             await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.StartTorrents(true), Times.Once);
@@ -120,7 +120,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var stopItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Stop all torrents", StringComparison.Ordinal));
+            var stopItem = FindMenuItem(target, "StopAllTorrents");
             await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.StopTorrents(true), Times.Once);
@@ -143,7 +143,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.AddCascadingValue(mainData);
             });
 
-            var startItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Start all torrents", StringComparison.Ordinal));
+            var startItem = FindMenuItem(target, "StartAllTorrents");
             await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("not reachable", StringComparison.OrdinalIgnoreCase)), Severity.Warning, null, null), Times.Once);
@@ -163,7 +163,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var startItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Start all torrents", StringComparison.Ordinal));
+            var startItem = FindMenuItem(target, "StartAllTorrents");
             await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("Unable to start torrents", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
@@ -182,7 +182,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var stopItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Stop all torrents", StringComparison.Ordinal));
+            var stopItem = FindMenuItem(target, "StopAllTorrents");
             await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("Unable to stop torrents", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
@@ -202,7 +202,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var startItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Start all torrents", StringComparison.Ordinal));
+            var startItem = FindMenuItem(target, "StartAllTorrents");
 
             var first = target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
             var second = target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
@@ -229,7 +229,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var stopItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Stop all torrents", StringComparison.Ordinal));
+            var stopItem = FindMenuItem(target, "StopAllTorrents");
 
             var first = target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
             var second = target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
@@ -257,7 +257,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.AddCascadingValue(mainData);
             });
 
-            var stopItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Stop all torrents", StringComparison.Ordinal));
+            var stopItem = FindMenuItem(target, "StopAllTorrents");
             await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("not reachable", StringComparison.OrdinalIgnoreCase)), Severity.Warning, null, null), Times.Once);
@@ -277,7 +277,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var registerItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Register Magnet Handler", StringComparison.Ordinal));
+            var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
             await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("registered", StringComparison.OrdinalIgnoreCase)), Severity.Success, null, null), Times.Once);
@@ -297,7 +297,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var registerItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Register Magnet Handler", StringComparison.Ordinal));
+            var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
             await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("does not support", StringComparison.OrdinalIgnoreCase)), Severity.Warning, null, null), Times.Once);
@@ -317,7 +317,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var registerItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Register Magnet Handler", StringComparison.Ordinal));
+            var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
             await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("HTTPS", StringComparison.OrdinalIgnoreCase)), Severity.Warning, null, null), Times.Once);
@@ -337,7 +337,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var registerItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Register Magnet Handler", StringComparison.Ordinal));
+            var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
             await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("Oops", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
@@ -357,7 +357,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var registerItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Register Magnet Handler", StringComparison.Ordinal));
+            var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
             await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("Unable to register", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
@@ -379,7 +379,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var registerItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Register Magnet Handler", StringComparison.Ordinal));
+            var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
 
             var first = target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
             var second = target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
@@ -406,7 +406,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var registerItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Register Magnet Handler", StringComparison.Ordinal));
+            var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
             await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
 
             snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("fail", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
@@ -426,7 +426,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var registerItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Register Magnet Handler", StringComparison.Ordinal));
+            var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
             await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
 
             var invocation = TestContext.JSInterop.Invocations.Single(i => i.Identifier == "qbt.registerMagnetHandler");
@@ -446,7 +446,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var resetItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Reset Web UI", StringComparison.Ordinal));
+            var resetItem = FindMenuItem(target, "ResetWebUI");
             await target.InvokeAsync(() => resetItem.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.SetApplicationPreferences(It.Is<UpdatePreferences>(p => p.AlternativeWebuiEnabled == false)), Times.Once);
@@ -471,7 +471,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var logoutItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Logout", StringComparison.Ordinal));
+            var logoutItem = FindMenuItem(target, "Logout");
             await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.Logout(), Times.Once);
@@ -493,7 +493,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Preferences, null);
             });
 
-            var exitItem = target.FindComponents<MudMenuItem>().Single(item => item.Markup.Contains("Exit qBittorrent", StringComparison.Ordinal));
+            var exitItem = FindMenuItem(target, "Exit");
             await target.InvokeAsync(() => exitItem.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.Shutdown(), Times.Once);
@@ -512,7 +512,37 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.IsDarkMode, true);
             });
 
-            target.FindComponents<MudNavLink>().Any(item => item.Markup.Contains("Switch to dark mode", StringComparison.OrdinalIgnoreCase)).Should().BeFalse();
+            target.FindComponents<MudNavLink>()
+                .Any(item => HasTestId(item, "Action-darkMode"))
+                .Should().BeFalse();
+        }
+
+        private static IRenderedComponent<MudMenuItem> FindMenuItem(IRenderedComponent<ApplicationActions> target, string testId)
+        {
+            return FindComponentByTestId<MudMenuItem>(target, testId);
+        }
+
+        private static string? TryGetUserAttribute<TComponent>(IRenderedComponent<TComponent> component, string attribute)
+            where TComponent : MudComponentBase
+        {
+            if (component.Instance.UserAttributes is null)
+            {
+                return null;
+            }
+
+            return component.Instance.UserAttributes.TryGetValue(attribute, out var value)
+                ? value?.ToString()
+                : null;
+        }
+
+        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<ApplicationActions> target, string testId)
+            where TComponent : MudComponentBase
+        {
+            var expected = TestIdHelper.For(testId);
+            return target.FindComponents<TComponent>()
+                .First(component => component.Instance.UserAttributes is not null
+                    && component.Instance.UserAttributes.TryGetValue("data-test-id", out var value)
+                    && string.Equals(value?.ToString(), expected, StringComparison.Ordinal));
         }
 
         [Fact]

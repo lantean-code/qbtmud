@@ -59,8 +59,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             _target.WaitForAssertion(() =>
             {
-                var alert = _target.FindComponent<MudAlert>();
-                alert.Markup.Should().Contain("Invalid username or password.");
+                var alert = FindComponentByTestId<MudAlert>(_target, "LoginError");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Invalid username or password.");
             });
         }
 
@@ -79,8 +79,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             _target.WaitForAssertion(() =>
             {
-                var alert = _target.FindComponent<MudAlert>();
-                alert.Markup.Should().Contain("Requests from this client are currently unavailable.");
+                var alert = FindComponentByTestId<MudAlert>(_target, "LoginError");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Requests from this client are currently unavailable.");
             });
         }
 
@@ -99,8 +99,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             _target.WaitForAssertion(() =>
             {
-                var alert = _target.FindComponent<MudAlert>();
-                alert.Markup.Should().Contain("Unable to communicate with the qBittorrent API.");
+                var alert = FindComponentByTestId<MudAlert>(_target, "LoginError");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Unable to communicate with the qBittorrent API.");
             });
         }
 
@@ -117,9 +117,8 @@ namespace Lantean.QBTMud.Test.Pages
 
         private static async Task SetCredentials(IRenderedComponent<Login> target, string username, string password)
         {
-            var fields = target.FindComponents<MudTextField<string>>();
-            var usernameField = fields.Single(field => field.Instance.Label == "Username");
-            var passwordField = fields.Single(field => field.Instance.Label == "Password");
+            var usernameField = FindComponentByTestId<MudTextField<string>>(target, "Username");
+            var passwordField = FindComponentByTestId<MudTextField<string>>(target, "Password");
 
             await target.InvokeAsync(() => usernameField.Instance.ValueChanged.InvokeAsync(username));
             await target.InvokeAsync(() => passwordField.Instance.ValueChanged.InvokeAsync(password));

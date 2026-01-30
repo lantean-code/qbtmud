@@ -65,7 +65,8 @@
                 <MudButton Variant="Variant.Text"
                            Size="Size.Small"
                            StartIcon="@(ShowSearchForm ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
-                           OnClick="ToggleSearchForm">
+                           OnClick="ToggleSearchForm"
+                           data-test-id="@TestIdHelper.For("ToggleSearchForm")">
                     @(ShowSearchForm ? "Hide" : "Show")
                 </MudButton>
             </MudStack>
@@ -145,7 +146,8 @@
                                                       ShrinkLabel="true"
                                                       Value="@Model.FilterText"
                                                       ValueChanged="OnFilterTextChanged"
-                                                      Immediate="true" />
+                                                      Immediate="true"
+                                                      data-test-id="@TestIdHelper.For("FilterResults")" />
                                     </MudItem>
                                     <MudItem xs="12" md="2">
                                         <MudSelect T="SearchInScope"
@@ -167,7 +169,8 @@
                                                          Min="0"
                                                          Value="@Model.MinimumSeeds"
                                                          ValueChanged="OnMinimumSeedsChanged"
-                                                         Immediate="true" />
+                                                         Immediate="true"
+                                                         data-test-id="@TestIdHelper.For("MinSeeders")" />
                                     </MudItem>
                                     <MudItem xs="12" md="2">
                                         <MudNumericField T="int?"
@@ -177,7 +180,8 @@
                                                          Min="0"
                                                          Value="@Model.MaximumSeeds"
                                                          ValueChanged="OnMaximumSeedsChanged"
-                                                         Immediate="true" />
+                                                         Immediate="true"
+                                                         data-test-id="@TestIdHelper.For("MaxSeeders")" />
                                     </MudItem>
                                 </MudGrid>
                                 <MudGrid Class="mt-2">
@@ -189,7 +193,8 @@
                                                          Min="0"
                                                          Value="@Model.MinimumSize"
                                                          ValueChanged="OnMinimumSizeChanged"
-                                                         Immediate="true" />
+                                                         Immediate="true"
+                                                         data-test-id="@TestIdHelper.For("MinSize")" />
                                     </MudItem>
                                     <MudItem xs="12" md="1">
                                         <MudSelect T="SearchSizeUnit"
@@ -212,7 +217,8 @@
                                                          Min="0"
                                                          Value="@Model.MaximumSize"
                                                          ValueChanged="OnMaximumSizeChanged"
-                                                         Immediate="true" />
+                                                         Immediate="true"
+                                                         data-test-id="@TestIdHelper.For("MaxSize")" />
                                     </MudItem>
                                     <MudItem xs="12" md="1">
                                         <MudSelect T="SearchSizeUnit"
@@ -236,13 +242,19 @@
 
             @if (ShowSearchUnavailableMessage)
             {
-                <MudAlert Severity="Severity.Error" Elevation="0" Class="ml-4 mr-4 mb-2" data-test-id="@TestIdHelper.For("SearchUnavailableAlert")">
+                <MudAlert Severity="Severity.Error"
+                          Elevation="0"
+                          Class="ml-4 mr-4 mb-2"
+                          data-test-id="@TestIdHelper.For("SearchUnavailableAlert")">
                     @SearchUnavailableMessage
                 </MudAlert>
             }
             else if (ShowNoPluginWarning)
             {
-                <MudAlert Severity="Severity.Warning" Elevation="0" Class="ml-4 mr-4 mb-2" data-test-id="@TestIdHelper.For("NoPluginAlert")">
+                <MudAlert Severity="Severity.Warning"
+                          Elevation="0"
+                          Class="ml-4 mr-4 mb-2"
+                          data-test-id="@TestIdHelper.For("NoPluginAlert")">
                     Enable at least one search plugin to run searches.
                 </MudAlert>
             }
@@ -262,7 +274,9 @@
                                 <div class="d-flex align-center">
                                     <MudIcon Icon="@GetJobStatusIcon(job)" Color="@GetJobStatusColor(job)" Size="Size.Small" Class="mr-1" data-test-id="@TestIdHelper.For("JobStatusIcon")" />
                                     <MudText Typo="Typo.body2">@job.Pattern</MudText>
-                                    <MudText Typo="Typo.caption" Class="ml-2" data-test-id="@TestIdHelper.For("JobSummary")" > @GetJobResultSummary(job)</MudText>
+                                    <MudText Typo="Typo.caption"
+                                             Class="ml-2"
+                                             data-test-id="@TestIdHelper.For("JobSummary")">@GetJobResultSummary(job)</MudText>
                                     <MudIconButton Icon="@Icons.Material.Filled.Close"
                                                    Size="Size.Small"
                                                    Color="Color.Inherit"
@@ -290,7 +304,8 @@
                 <MudPaper Elevation="0" Class="ml-4 mr-4 mb-4 pa-6 d-flex justify-center" data-test-id="@TestIdHelper.For("SearchEmptyState")">
                     <MudStack Spacing="1" Class="text-center">
                         <MudIcon Icon="@Icons.Material.Filled.ManageSearch" Color="Color.Info" Size="Size.Large" />
-                        <MudText Typo="Typo.subtitle1">No searches yet</MudText>
+                        <MudText Typo="Typo.subtitle1"
+                                 data-test-id="@TestIdHelper.For("SearchEmptyStateTitle")">No searches yet</MudText>
                         <MudText Typo="Typo.body2" Align="Align.Center">Run a search to start tracking jobs and see results here.</MudText>
                     </MudStack>
                 </MudPaper>

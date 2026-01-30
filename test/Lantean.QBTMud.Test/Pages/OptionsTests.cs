@@ -2,7 +2,6 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
-using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -190,7 +189,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             navigationManager.NavigateTo("http://localhost/other");
 
-            navigationManager.Uri.Should().Be("http://localhost/other");
+            target.WaitForAssertion(() =>
+            {
+                navigationManager.Uri.Should().Be("http://localhost/other");
+            });
             Mock.Get(_dialogWorkflow).Verify(
                 workflow => workflow.ShowConfirmDialog("Unsaved Changed", "Are you sure you want to leave without saving your changes?"),
                 Times.Once);
@@ -348,16 +350,6 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var field = FindSwitch(target, testId);
             await target.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(value));
-        }
-
-        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<Options> target, string testId)
-        {
-            return FindComponentByTestId<FieldSwitch>(target, testId);
-        }
-
-        private static IRenderedComponent<MudIconButton> FindIconButton(IRenderedComponent<Options> component, string icon)
-        {
-            return component.FindComponents<MudIconButton>().Single(button => button.Instance.Icon == icon);
         }
 
         private static Preferences CreatePreferences()

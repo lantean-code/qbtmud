@@ -1304,7 +1304,8 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var row = target.FindComponents<MudTr>().First();
-            row.Markup.Should().Contain("background-color");
+            var style = row.Find("tr").GetAttribute("style");
+            style.Should().Contain("background-color");
         }
 
         [Fact]
@@ -1322,7 +1323,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var row = target.FindComponents<MudTr>().Single();
-            row.Markup.Should().Contain("row-0");
+            row.Find("tr").ClassList.Should().Contain("row-0");
         }
 
         [Fact]
@@ -1345,7 +1346,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var cell = target.FindComponent<TdExtended>();
-            cell.Markup.Should().Contain("func-class");
+            cell.Find("td").ClassList.Should().Contain("func-class");
         }
 
         [Fact]
@@ -1398,7 +1399,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var header = target.FindComponents<MudTh>().Single();
-            header.Markup.Should().NotContain("Icon");
+            header.Find("th").TextContent.Should().NotContain("Icon");
             target.FindComponents<SortLabel>().Should().HaveCount(1);
         }
 
@@ -1556,7 +1557,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             sortEvents.Should().Contain("name");
             directionEvents.Should().Contain(SortDirection.Descending);
 
-            var sortLabel = target.FindComponents<SortLabel>().First(component => component.Markup.Contains("Name", StringComparison.Ordinal));
+            var sortLabel = FindSortLabel(target, "Name");
             sortLabel.Instance.SortDirection.Should().Be(SortDirection.Descending);
         }
 
@@ -1577,11 +1578,13 @@ namespace Lantean.QBTMud.Test.Components.UI
                 });
             });
 
-            target.FindComponents<SortLabel>().Should().NotContain(component => component.Markup.Contains("Name", StringComparison.Ordinal));
+            target.FindComponents<SortLabel>()
+                .Should()
+                .NotContain(component => HasTestId(component, GetSortLabelTestId("Name")));
 
             var rows = target.FindComponents<MudTr>();
-            rows[0].Markup.Should().Contain("Second");
-            rows[1].Markup.Should().Contain("First");
+            rows[0].Find("tr").TextContent.Should().Contain("Second");
+            rows[1].Find("tr").TextContent.Should().Contain("First");
         }
 
         [Fact]
@@ -1605,8 +1608,8 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var rows = target.FindComponents<MudTr>();
-            rows[0].Markup.Should().Contain("First");
-            rows[1].Markup.Should().Contain("Second");
+            rows[0].Find("tr").TextContent.Should().Contain("First");
+            rows[1].Find("tr").TextContent.Should().Contain("Second");
         }
 
         [Fact]
@@ -1671,7 +1674,9 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             var headers = target.FindComponents<MudTh>();
             headers.Should().HaveCount(2);
-            headers.Should().OnlyContain(h => h.Markup.Contains("Name", StringComparison.Ordinal) || h.Markup.Contains("Age", StringComparison.Ordinal));
+            headers.Should().OnlyContain(h =>
+                HasTestId(h, "ColumnHeader-name")
+                || HasTestId(h, "ColumnHeader-age"));
         }
 
         [Fact]
@@ -1797,7 +1802,13 @@ namespace Lantean.QBTMud.Test.Components.UI
 
         private static IRenderedComponent<SortLabel> FindSortLabel(IRenderedComponent<DynamicTable<TestRow>> target, string header)
         {
-            return target.FindComponents<SortLabel>().First(component => component.Markup.Contains(header, StringComparison.Ordinal));
+            return target.FindComponents<SortLabel>()
+                .First(component => HasTestId(component, GetSortLabelTestId(header)));
+        }
+
+        private static string GetSortLabelTestId(string header)
+        {
+            return $"SortLabel-{header.ToLowerInvariant().Replace(' ', '_')}";
         }
 
         private static ColumnDefinition<TestRow>[] CreateColumns()

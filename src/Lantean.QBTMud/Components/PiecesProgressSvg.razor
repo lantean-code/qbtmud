@@ -9,7 +9,10 @@
             <div class="pieces-progress-svg__linear" role="button" tabindex="0" aria-expanded="@_showSvg.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" data-test-id="@TestIdHelper.For("PiecesToggle")" @onclick="ToggleSvg" @onkeydown="HandleLinearKeyDown" @onkeydown:preventDefault="true">
                 <div class="pieces-progress-svg__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
                 <div class="pieces-progress-svg__linear-overlay">
-                    <MudText Typo="Typo.body2" Class="pl-2">@LinearSummary</MudText>
+                    <MudText Typo="Typo.body2"
+                             Class="pl-2"
+                             data-test-id="@TestIdHelper.For("PiecesLinearSummary")"
+                             >@LinearSummary</MudText>
                     <MudIcon Icon="@ToggleIcon" Class="pieces-progress-svg__icon" />
                 </div>
             </div>
@@ -19,7 +22,9 @@
             <MudPaper Class="pieces-progress-svg__surface" Elevation="0">
                 @if (PiecesLoading)
                 {
-                    <MudText Typo="Typo.body2" Class="pieces-progress-svg__empty">@SvgLoadingText</MudText>
+                    <MudText Typo="Typo.body2"
+                             Class="pieces-progress-svg__empty"
+                             data-test-id="@TestIdHelper.For("PiecesLoadingText")">@SvgLoadingText</MudText>
                 }
                 else if (_svgBuilding)
                 {
@@ -30,11 +35,15 @@
                 }
                 else if (PiecesFailed || !HasPieceData)
                 {
-                    <MudText Typo="Typo.body2" Class="pieces-progress-svg__empty">@SvgEmptyText</MudText>
+                    <MudText Typo="Typo.body2"
+                             Class="pieces-progress-svg__empty"
+                             data-test-id="@TestIdHelper.For("PiecesEmptyText")">@SvgEmptyText</MudText>
                 }
                 else if (ColumnsForCurrentBreakpoint == 0)
                 {
-                    <MudText Typo="Typo.body2" Class="pieces-progress-svg__empty">@SvgHiddenText</MudText>
+                    <MudText Typo="Typo.body2"
+                             Class="pieces-progress-svg__empty"
+                             data-test-id="@TestIdHelper.For("PiecesHiddenText")">@SvgHiddenText</MudText>
                 }
                 else
                 {

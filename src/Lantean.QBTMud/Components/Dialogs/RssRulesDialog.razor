@@ -100,7 +100,8 @@
                                 <NestedList>
                                     @foreach (var article in articles)
                                     {
-                                        <MudListItem Text="@article" />
+                                        <MudListItem Text="@article"
+                                                     data-test-id="@TestIdHelper.For($"RssRulesArticle-{article}")" />
                                     }
                                 </NestedList>
                             </MudListItem>

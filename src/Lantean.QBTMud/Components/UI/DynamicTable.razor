@@ -43,10 +43,15 @@
             className = $"{className} table-header-cell--sortable";
         }
         var columnHeader = column.IconOnly ? "" : column.Header;
-        <MudTh Class="@className" Style="@(GetColumnStyle(column))">
+        <MudTh Class="@className" Style="@(GetColumnStyle(column))" data-test-id="@TestIdHelper.For($"ColumnHeader-{column.Id}")">
             @if (column.SortSelector is not null)
             {
-                <SortLabel Class="column-header" SortDirectionChanged="@(c => SetSort(column.Id, c))" SortDirection="@(column.Id == _sortColumn ? _sortDirection : SortDirection.None)">@columnHeader</SortLabel>
+                <SortLabel Class="column-header"
+                           SortDirectionChanged="@(c => SetSort(column.Id, c))"
+                           SortDirection="@(column.Id == _sortColumn ? _sortDirection : SortDirection.None)"
+                           data-test-id="@TestIdHelper.For($"SortLabel-{column.Id}")">
+                    @columnHeader
+                </SortLabel>
             }
             else
             {

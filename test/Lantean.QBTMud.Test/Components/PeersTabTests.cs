@@ -94,7 +94,10 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("title=\"FlagsDescription\"");
+                target.FindAll("span")
+                    .Any(element => string.Equals(element.GetAttribute("title"), "FlagsDescription", StringComparison.Ordinal))
+                    .Should()
+                    .BeTrue();
             });
         }
 
@@ -109,7 +112,10 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().NotContain("title=\"FlagsDescription\"");
+                target.FindAll("span")
+                    .Any(element => string.Equals(element.GetAttribute("title"), "FlagsDescription", StringComparison.Ordinal))
+                    .Should()
+                    .BeFalse();
             });
         }
 

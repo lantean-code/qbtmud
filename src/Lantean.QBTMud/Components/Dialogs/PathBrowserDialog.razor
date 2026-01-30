@@ -10,7 +10,8 @@
                               ValueChanged="@(async (string value) => await PathChanged(value))"
                               Variant="Variant.Outlined"
                               ShrinkLabel="true"
-                              Immediate="true" />
+                              Immediate="true"
+                              data-test-id="@TestIdHelper.For("CurrentPath")" />
             </MudItem>
                 <MudItem xs="12">
                     <MudButtonGroup>
@@ -22,22 +23,27 @@
                     <div class="path-browser-dialog__list">
                         @if (IsLoading)
                         {
-                            <MudProgressLinear Indeterminate="true" />
+                            <MudProgressLinear Indeterminate="true" data-test-id="@TestIdHelper.For("PathBrowserLoading")" />
                         }
                         else if (!string.IsNullOrWhiteSpace(LoadError))
                         {
-                            <MudAlert Severity="Severity.Error">@LoadError</MudAlert>
+                            <MudAlert Severity="Severity.Error"
+                                      data-test-id="@TestIdHelper.For("PathBrowserLoadError")">@LoadError</MudAlert>
                         }
                         else if (_entries.Count == 0)
                         {
-                            <MudText>No items.</MudText>
+                            <MudText data-test-id="@TestIdHelper.For("PathBrowserEmpty")">No items.</MudText>
                         }
                         else
                         {
                             <MudList T="string" Dense="true">
                                 @foreach (var entry in _entries)
                                 {
-                                    <MudListItem T="string" OnClick="@(() => EntryClicked(entry))" Icon="@(entry.IsDirectory? Icons.Material.Filled.Folder : Icons.Material.Filled.InsertDriveFile)" Text="@entry.Name" />
+                                    <MudListItem T="string"
+                                                 OnClick="@(() => EntryClicked(entry))"
+                                                 Icon="@(entry.IsDirectory? Icons.Material.Filled.Folder : Icons.Material.Filled.InsertDriveFile)"
+                                                 Text="@entry.Name"
+                                                 data-test-id="@TestIdHelper.For($"PathBrowserEntry-{entry.Name}")" />
                                 }
                             </MudList>
                         }
@@ -47,6 +53,6 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Disabled="@(!CanSelectFolder)" OnClick="SelectCurrentFolder">Select folder</MudButton>
+        <MudButton Disabled="@(!CanSelectFolder)" OnClick="SelectCurrentFolder" data-test-id="@TestIdHelper.For("SelectFolder")">Select folder</MudButton>
     </DialogActions>
 </MudDialog>

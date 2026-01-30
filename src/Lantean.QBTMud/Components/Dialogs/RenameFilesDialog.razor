@@ -63,7 +63,9 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("RenameFilesClose")">Close</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("RenameFilesSubmit")">@(ReplaceAll ? "Replace all" : "Replace")</MudButton>
+        <MudButton Color="Color.Primary"
+                   OnClick="Submit"
+                   data-test-id="@TestIdHelper.For("RenameFilesSubmit")">@(ReplaceAll ? "Replace all" : "Replace")</MudButton>
     </DialogActions>
 </MudDialog>
 

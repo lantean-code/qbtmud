@@ -332,7 +332,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             capturedRule.TorrentParams.ContentLayout.Should().Be("NoSubfolder");
             capturedRule.AffectedFeeds.Should().ContainSingle(value => value == "http://feed-a");
 
-            dialog.Component.Markup.Should().Contain("ArticleA");
+            FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRulesArticle-ArticleA").Should().NotBeNull();
         }
 
         private void SetupApiClient(Dictionary<string, AutoDownloadingRule> rules)

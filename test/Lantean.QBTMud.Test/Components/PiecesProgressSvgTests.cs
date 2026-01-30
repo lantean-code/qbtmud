@@ -54,7 +54,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderComponent(pieces, loading: true);
 
-            target.Markup.Should().Contain("Loading pieces...");
+            GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLoadingText").Instance.ChildContent).Should().Be("Loading pieces...");
         }
 
         [Fact]
@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("Pieces data unavailable");
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesEmptyText").Instance.ChildContent).Should().Be("Pieces data unavailable.");
             });
         }
 
@@ -85,7 +85,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("Pieces SVG hidden on small screens.");
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesHiddenText").Instance.ChildContent).Should().Be("Pieces SVG hidden on small screens.");
                 target.Markup.Should().NotContain("pieces-progress-svg__grid");
             });
         }
@@ -107,13 +107,16 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public void GIVEN_ToggleRendered_WHEN_Checked_THEN_PreventDefaultIsEnabled()
+        public void GIVEN_KeyboardToggle_WHEN_EnterPressed_THEN_Expands()
         {
             var pieces = Enumerable.Repeat(PieceState.Downloaded, 2).ToList();
 
             var target = RenderComponent(pieces);
 
-            target.Markup.Should().Contain("onkeydown:preventDefault");
+            var toggleElement = FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("[data-test-id=\"PiecesToggle\"]");
+            toggleElement.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+            toggleElement.GetAttribute("aria-expanded").Should().Be("true");
         }
 
         [Fact]
@@ -126,7 +129,7 @@ namespace Lantean.QBTMud.Test.Components
             var toggleElement = FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("[data-test-id=\"PiecesToggle\"]");
             toggleElement.KeyDown(new KeyboardEventArgs { Key = "Escape" });
 
-            target.Markup.Should().Contain("aria-expanded=\"false\"");
+            toggleElement.GetAttribute("aria-expanded").Should().Be("false");
         }
 
         [Fact]
@@ -139,7 +142,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("Pieces data unavailable");
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesEmptyText").Instance.ChildContent).Should().Be("Pieces data unavailable.");
             });
         }
 
@@ -203,9 +206,8 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderComponent(pieces);
 
-            target.Markup.Should().Contain("50% complete");
-            target.Markup.Should().Contain("1 downloaded, 1 in progress");
-            target.Markup.Should().Contain("1 pending");
+            var summary = FindComponentByTestId<MudText>(target, "PiecesLinearSummary");
+            GetChildContentText(summary.Instance.ChildContent).Should().Be("50% complete — 1 downloaded, 1 in progress");
         }
 
         [Fact]

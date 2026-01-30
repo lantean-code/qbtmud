@@ -64,7 +64,10 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderGeneralTab(true, "Hash");
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("Pieces data unavailable"));
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Pieces data unavailable");
+            });
         }
 
         [Fact]
@@ -76,7 +79,10 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderGeneralTab(true, "Hash");
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("Pieces data unavailable"));
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Pieces data unavailable");
+            });
         }
 
         [Fact]
@@ -91,7 +97,10 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderGeneralTab(true, "Hash");
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("Pieces data unavailable"));
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Pieces data unavailable");
+            });
         }
 
         [Fact]
@@ -106,7 +115,10 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderGeneralTab(true, "Hash");
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("downloaded, 1 in progress"));
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("75% complete — 1 downloaded, 1 in progress");
+            });
         }
 
         [Fact]
@@ -123,7 +135,10 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderGeneralTab(true, "Hash");
             await TriggerTimerTickAsync(target);
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("Pieces data unavailable"));
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Pieces data unavailable");
+            });
         }
 
         [Fact]
@@ -140,7 +155,10 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderGeneralTab(true, "Hash");
             await TriggerTimerTickAsync(target);
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("Pieces data unavailable"));
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Pieces data unavailable");
+            });
         }
 
         [Fact]
@@ -158,7 +176,10 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderGeneralTab(true, "Hash");
             await TriggerTimerTickAsync(target);
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("Pieces data unavailable"));
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Pieces data unavailable");
+            });
         }
 
         [Fact]
@@ -176,7 +197,10 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderGeneralTab(true, "Hash");
             await TriggerTimerTickAsync(target);
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("2 downloaded, 0 in progress"));
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("100% complete — 2 downloaded, 0 in progress");
+            });
         }
 
         [Fact]

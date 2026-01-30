@@ -40,7 +40,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             iconClasses.Should().Contain("mud-nav-link-icon");
             iconClasses.Should().Contain("mud-nav-link-icon-default");
 
-            target.Markup.Should().Contain("ChildContent");
+            target.Find(".mud-nav-link-text").TextContent.Should().Contain("ChildContent");
         }
 
         [Fact]

@@ -8,11 +8,17 @@
         }
         if (action.Callback.HasDelegate)
         {
-            <MudMenuItem Icon="@action.Icon" IconColor="@action.Color" OnClick="action.Callback">@action.Text</MudMenuItem>
+            <MudMenuItem Icon="@action.Icon"
+                         IconColor="@action.Color"
+                         OnClick="action.Callback"
+                         data-test-id="@TestIdHelper.For($"Action-{action.Name}")">@action.Text</MudMenuItem>
         }
         else
         {
-            <MudMenuItem Icon="@action.Icon" IconColor="@action.Color" Href="@action.Href">@action.Text</MudMenuItem>
+            <MudMenuItem Icon="@action.Icon"
+                         IconColor="@action.Color"
+                         Href="@action.Href"
+                         data-test-id="@TestIdHelper.For($"Action-{action.Name}")">@action.Text</MudMenuItem>
         }
     }
 
@@ -21,13 +27,15 @@
     <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow"
                  IconColor="Color.Success"
                  Disabled="@(_startAllInProgress || MainData?.LostConnection == true)"
-                 OnClick="StartAllTorrents">
+                 OnClick="StartAllTorrents"
+                 data-test-id="@TestIdHelper.For("StartAllTorrents")">
         Start all torrents
     </MudMenuItem>
     <MudMenuItem Icon="@Icons.Material.Filled.Stop"
                  IconColor="Color.Warning"
                  Disabled="@(_stopAllInProgress || MainData?.LostConnection == true)"
-                 OnClick="StopAllTorrents">
+                 OnClick="StopAllTorrents"
+                 data-test-id="@TestIdHelper.For("StopAllTorrents")">
         Stop all torrents
     </MudMenuItem>
 
@@ -35,28 +43,34 @@
 
     <MudMenuItem Icon="@CustomIcons.Magnet"
                  Disabled="@(_registerMagnetHandlerInProgress)"
-                 OnClick="RegisterMagnetHandler">
+                 OnClick="RegisterMagnetHandler"
+                 data-test-id="@TestIdHelper.For("RegisterMagnetHandler")">
         Register Magnet Handler
     </MudMenuItem>
     <MudMenuItem Icon="@Icons.Material.Filled.Undo"
-                 OnClick="ResetWebUI">
+                 OnClick="ResetWebUI"
+                 data-test-id="@TestIdHelper.For("ResetWebUI")">
         Reset Web UI
     </MudMenuItem>
 
     <MudDivider />
 
     <MudMenuItem Icon="@Icons.Material.Filled.Logout"
-                 OnClick="Logout">
+                 OnClick="Logout"
+                 data-test-id="@TestIdHelper.For("Logout")">
         Logout
     </MudMenuItem>
     <MudMenuItem Icon="@Icons.Material.Filled.ExitToApp"
-                 OnClick="Exit">
+                 OnClick="Exit"
+                 data-test-id="@TestIdHelper.For("Exit")">
         Exit qBittorrent
     </MudMenuItem>
 }
 else
 {
-    <MudNavLink Icon="@Icons.Material.Outlined.Navigation" OnClick="NavigateBack">Torrents</MudNavLink>
+    <MudNavLink Icon="@Icons.Material.Outlined.Navigation"
+                OnClick="NavigateBack"
+                data-test-id="@TestIdHelper.For("NavigateBack")">Torrents</MudNavLink>
     <MudDivider />
     foreach (var action in Actions)
     {
@@ -66,7 +80,10 @@ else
         }
         if (action.Href is not null)
         {
-            <MudNavLink Icon="@action.Icon" IconColor="@action.Color" Href="@action.Href">@action.Text</MudNavLink>
+            <MudNavLink Icon="@action.Icon"
+                        IconColor="@action.Color"
+                        Href="@action.Href"
+                        data-test-id="@TestIdHelper.For($"Action-{action.Name}")">@action.Text</MudNavLink>
         }
     }
 }

@@ -3,7 +3,6 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
-using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -225,11 +224,6 @@ namespace Lantean.QBTMud.Test.Components.Options
         private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<SpeedOptions> target, string testId)
         {
             return FindComponentByTestId<MudNumericField<int>>(target, testId);
-        }
-
-        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<SpeedOptions> target, string testId)
-        {
-            return FindComponentByTestId<FieldSwitch>(target, testId);
         }
 
         private static IRenderedComponent<MudTimePicker> FindTimePicker(IRenderedComponent<SpeedOptions> target, string testId)

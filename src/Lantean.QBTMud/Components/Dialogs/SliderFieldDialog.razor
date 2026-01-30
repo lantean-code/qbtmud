@@ -12,11 +12,13 @@
                     <ValueLabelContent>
                         @if (ValueDisplayFunc is not null)
                         {
-                            @GetValueLabel(ValueDisplayFunc(context.Value))
+                            <MudText Typo="Typo.caption"
+                                     data-test-id="@TestIdHelper.For("SliderValueLabel")">@GetValueLabel(ValueDisplayFunc(context.Value))</MudText>
                         }
                         else
                         {
-                            @GetValueLabel(context.Value.ToString())
+                            <MudText Typo="Typo.caption"
+                                     data-test-id="@TestIdHelper.For("SliderValueLabel")">@GetValueLabel(context.Value.ToString())</MudText>
                         }
                     </ValueLabelContent>
                 </MudSlider>

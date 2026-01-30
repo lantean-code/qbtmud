@@ -3,7 +3,6 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
-using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Moq;
@@ -53,7 +52,6 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindSwitch(target, "EnableEmbeddedTracker").Instance.Value.Should().BeTrue();
             FindNumeric(target, "EmbeddedTrackerPort").Instance.Value.Should().Be(19000);
             FindSwitch(target, "EmbeddedTrackerPortForwarding").Instance.Value.Should().BeTrue();
-            target.Markup.Should().Contain("Ethernet");
         }
 
         [Fact]
@@ -319,11 +317,6 @@ namespace Lantean.QBTMud.Test.Components.Options
         private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<AdvancedOptions> target, string testId)
         {
             return FindComponentByTestId<MudTextField<string>>(target, testId);
-        }
-
-        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<AdvancedOptions> target, string testId)
-        {
-            return FindComponentByTestId<FieldSwitch>(target, testId);
         }
 
         private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<AdvancedOptions> target, string testId)

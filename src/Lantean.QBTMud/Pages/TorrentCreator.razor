@@ -27,7 +27,9 @@
     <div class="content-panel__body">
         @if (!HasTasks)
         {
-            <MudText Class="pa-4">No torrent creation tasks.</MudText>
+            const string emptyStateText = "No torrent creation tasks.";
+            <MudText Class="pa-4"
+                     data-test-id="@TestIdHelper.For("TorrentCreatorEmptyState")">@emptyStateText</MudText>
         }
         else
         {
@@ -52,7 +54,14 @@
             {
                 var status = (string?)context.GetValue();
                 var color = GetStatusColor(status);
-                <MudChip T="string" Color="@color" Variant="Variant.Outlined" Size="Size.Small">@DisplayHelpers.EmptyIfNull(status)</MudChip>;
+                var statusText = DisplayHelpers.EmptyIfNull(status);
+                var task = (TorrentCreationTaskStatus)context.Data;
+                <MudChip T="string"
+                         Color="@color"
+                         Variant="Variant.Outlined"
+                         Size="Size.Small"
+                         Text="@statusText"
+                         data-test-id="@TestIdHelper.For($"TorrentCreatorStatus-{task.TaskId}")">@statusText</MudChip>;
             };
         }
     }
@@ -66,7 +75,12 @@
                 var task = (TorrentCreationTaskStatus)context.Data;
                 var progress = GetProgress(task);
                 var color = progress < 100 ? Color.Success : Color.Info;
-                <MudProgressLinear title="Progress" Color="@color" Value="progress" Class="progress-expand" Size="Size.Large">
+                <MudProgressLinear title="Progress"
+                                   Color="@color"
+                                   Value="progress"
+                                   Class="progress-expand"
+                                   Size="Size.Large"
+                                   data-test-id="@TestIdHelper.For($"TorrentCreatorProgress-{task.TaskId}")">
                     @DisplayHelpers.Percentage((float?)(progress / 100f))
                 </MudProgressLinear>;
             };

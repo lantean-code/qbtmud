@@ -36,8 +36,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync(1);
 
-            dialog.Component.Markup.Should().Contain("1 torrent");
-            dialog.Component.Markup.Should().NotContain("torrents");
+            GetChildContentText(FindComponentByTestId<MudText>(dialog.Component, "DeleteDialogMessage").Instance.ChildContent)
+                .Should()
+                .Be("Are you sure you want to remove 1 torrent from the transfer list?");
         }
 
         [Fact]
@@ -45,7 +46,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync(2);
 
-            dialog.Component.Markup.Should().Contain("2 torrents");
+            GetChildContentText(FindComponentByTestId<MudText>(dialog.Component, "DeleteDialogMessage").Instance.ChildContent)
+                .Should()
+                .Be("Are you sure you want to remove 2 torrents from the transfer list?");
         }
 
         [Fact]

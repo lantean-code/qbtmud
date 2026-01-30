@@ -3,13 +3,13 @@
 
 <MudGrid>
     <MudItem xs="12">
-        <MudSwitch Label="Additional Options" @bind-Value="Expanded" LabelPlacement="Placement.End" />
+        <MudSwitch Label="Additional Options" @bind-Value="Expanded" LabelPlacement="Placement.End" data-test-id="@TestIdHelper.For("AdditionalOptions")" />
     </MudItem>
 </MudGrid>
 <MudCollapse Expanded="Expanded">
     <MudGrid Class="mt-2">
         <MudItem xs="12">
-            <MudSelect T="bool" Label="Torrent management mode" Value="@TorrentManagementMode" ValueChanged="@SetTorrentManagementMode" Variant="Variant.Outlined" ShrinkLabel="true">
+            <MudSelect T="bool" Label="Torrent management mode" Value="@TorrentManagementMode" ValueChanged="@SetTorrentManagementMode" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentManagementMode")">
                 <MudSelectItem Value="@false">Manual</MudSelectItem>
                 <MudSelectItem Value="@true">Automatic</MudSelectItem>
             </MudSelect>
@@ -19,29 +19,31 @@
                               Value="@SavePath"
                               ValueChanged="@(value => SavePathChanged(value ?? string.Empty))"
                               Mode="DirectoryContentMode.Directories"
-                              Disabled="@TorrentManagementMode" />
+                              Disabled="@TorrentManagementMode"
+                              data-test-id="@TestIdHelper.For("SaveFilesLocation")" />
         </MudItem>
         <MudItem xs="12" sm="6">
-            <FieldSwitch Label="Use incomplete save path" Value="@UseDownloadPath" ValueChanged="@SetUseDownloadPath" Disabled="@TorrentManagementMode" />
+            <FieldSwitch Label="Use incomplete save path" Value="@UseDownloadPath" ValueChanged="@SetUseDownloadPath" Disabled="@TorrentManagementMode" data-test-id="@TestIdHelper.For("UseIncompleteSavePath")" />
         </MudItem>
         <MudItem xs="12">
             <PathAutocomplete Label="Incomplete save path"
                               Value="@DownloadPath"
                               ValueChanged="@(value => DownloadPathChanged(value ?? string.Empty))"
                               Mode="DirectoryContentMode.Directories"
-                              Disabled="@DownloadPathDisabled" />
+                              Disabled="@DownloadPathDisabled"
+                              data-test-id="@TestIdHelper.For("IncompleteSavePath")" />
         </MudItem>
         @if (ShowCookieOption)
         {
             <MudItem xs="12">
-                <MudTextField Label="Cookie" @bind-Value="Cookie" Variant="Variant.Outlined" ShrinkLabel="true" />
+                <MudTextField Label="Cookie" @bind-Value="Cookie" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Cookie")" />
             </MudItem>
         }
         <MudItem xs="12">
-            <MudTextField Label="Rename" @bind-Value="RenameTorrent" Variant="Variant.Outlined" ShrinkLabel="true" />
+            <MudTextField Label="Rename" @bind-Value="RenameTorrent" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Rename")" />
         </MudItem>
         <MudItem xs="12">
-            <MudSelect T="string" Label="Category" Value="@Category" ValueChanged="@CategoryChanged" Variant="Variant.Outlined" ShrinkLabel="true" Clearable="true">
+            <MudSelect T="string" Label="Category" Value="@Category" ValueChanged="@CategoryChanged" Variant="Variant.Outlined" ShrinkLabel="true" Clearable="true" data-test-id="@TestIdHelper.For("Category")">
                 <MudSelectItem Value="@string.Empty">None</MudSelectItem>
                 @foreach (var category in CategoryOptions)
                 {
@@ -50,7 +52,7 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <MudSelect T="string" Label="Tags" Variant="Variant.Outlined" ShrinkLabel="true" MultiSelection="true" SelectedValues="@SelectedTags" SelectedValuesChanged="@SelectedTagsChanged" Disabled="@(AvailableTags.Count == 0)">
+            <MudSelect T="string" Label="Tags" Variant="Variant.Outlined" ShrinkLabel="true" MultiSelection="true" SelectedValues="@SelectedTags" SelectedValuesChanged="@SelectedTagsChanged" Disabled="@(AvailableTags.Count == 0)" data-test-id="@TestIdHelper.For("Tags")">
                 @foreach (var tag in AvailableTags)
                 {
                     <MudSelectItem Value="@tag">@tag</MudSelectItem>
@@ -58,39 +60,39 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="Start torrent" @bind-Value="StartTorrent" />
+            <FieldSwitch Label="Start torrent" @bind-Value="StartTorrent" data-test-id="@TestIdHelper.For("StartTorrent")" />
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="Add to top of queue" @bind-Value="AddToTopOfQueue" />
+            <FieldSwitch Label="Add to top of queue" @bind-Value="AddToTopOfQueue" data-test-id="@TestIdHelper.For("AddToTopOfQueue")" />
         </MudItem>
         <MudItem xs="12">
-            <MudSelect T="string" Label="Stop condition" Value="@StopCondition" ValueChanged="@StopConditionChanged" Variant="Variant.Outlined" ShrinkLabel="true">
+            <MudSelect T="string" Label="Stop condition" Value="@StopCondition" ValueChanged="@StopConditionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("StopCondition")">
                 <MudSelectItem Value="@("None")">None</MudSelectItem>
                 <MudSelectItem Value="@("MetadataReceived")">Metadata received</MudSelectItem>
                 <MudSelectItem Value="@("FilesChecked")">Files checked</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="Skip hash check" @bind-Value="SkipHashCheck" />
+            <FieldSwitch Label="Skip hash check" @bind-Value="SkipHashCheck" data-test-id="@TestIdHelper.For("SkipHashCheck")" />
         </MudItem>
         <MudItem xs="12">
-            <MudSelect T="string" Label="Content layout" Value="@ContentLayout" ValueChanged="@ContentLayoutChanged" Variant="Variant.Outlined" ShrinkLabel="true">
+            <MudSelect T="string" Label="Content layout" Value="@ContentLayout" ValueChanged="@ContentLayoutChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ContentLayout")">
                 <MudSelectItem Value="@("Original")">Original</MudSelectItem>
                 <MudSelectItem Value="@("Subfolder")">Create subfolder</MudSelectItem>
                 <MudSelectItem Value="@("NoSubfolder")">Don't create subfolder</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="Download in sequential order" @bind-Value="DownloadInSequentialOrder" />
+            <FieldSwitch Label="Download in sequential order" @bind-Value="DownloadInSequentialOrder" data-test-id="@TestIdHelper.For("DownloadSequentially")" />
         </MudItem>
         <MudItem xs="12">
-            <FieldSwitch Label="Download first and last pieces first" @bind-Value="DownloadFirstAndLastPiecesFirst" />
+            <FieldSwitch Label="Download first and last pieces first" @bind-Value="DownloadFirstAndLastPiecesFirst" data-test-id="@TestIdHelper.For("DownloadFirstLastPieces")" />
         </MudItem>
         <MudItem xs="12" sm="6">
-            <MudNumericField Label="Limit download rate" @bind-Value="DownloadLimit" Variant="Variant.Outlined" ShrinkLabel="true" Min="0" />
+            <MudNumericField Label="Limit download rate" @bind-Value="DownloadLimit" Variant="Variant.Outlined" ShrinkLabel="true" Min="0" data-test-id="@TestIdHelper.For("DownloadLimit")" />
         </MudItem>
         <MudItem xs="12" sm="6">
-            <MudNumericField Label="Limit upload rate" @bind-Value="UploadLimit" Variant="Variant.Outlined" ShrinkLabel="true" Min="0" />
+            <MudNumericField Label="Limit upload rate" @bind-Value="UploadLimit" Variant="Variant.Outlined" ShrinkLabel="true" Min="0" data-test-id="@TestIdHelper.For("UploadLimit")" />
         </MudItem>
         <MudItem xs="12">
             <MudSelect T="ShareLimitMode" Label="Share limit preset" Value="@SelectedShareLimitMode" ValueChanged="@ShareLimitModeChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ShareLimitMode")">
@@ -100,25 +102,25 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4">
-            <FieldSwitch Label="Ratio" Value="@RatioLimitEnabled" ValueChanged="@RatioLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" />
+            <FieldSwitch Label="Ratio" Value="@RatioLimitEnabled" ValueChanged="@RatioLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" data-test-id="@TestIdHelper.For("RatioLimitEnabled")" />
         </MudItem>
         <MudItem xs="12" sm="8">
-            <MudNumericField T="float" Label="Ratio limit" Value="@RatioLimit" ValueChanged="@RatioLimitChanged" Disabled="@(!RatioLimitEnabled || !IsCustomShareLimit)" Min="0" Step="0.1f" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" />
+            <MudNumericField T="float" Label="Ratio limit" Value="@RatioLimit" ValueChanged="@RatioLimitChanged" Disabled="@(!RatioLimitEnabled || !IsCustomShareLimit)" Min="0" Step="0.1f" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RatioLimit")" />
         </MudItem>
         <MudItem xs="12" sm="4">
-            <FieldSwitch Label="Total minutes" Value="@SeedingTimeLimitEnabled" ValueChanged="@SeedingTimeLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" />
+            <FieldSwitch Label="Total minutes" Value="@SeedingTimeLimitEnabled" ValueChanged="@SeedingTimeLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" data-test-id="@TestIdHelper.For("SeedingTimeLimitEnabled")" />
         </MudItem>
         <MudItem xs="12" sm="8">
-            <MudNumericField T="int" Label="Total minutes" Value="@SeedingTimeLimit" ValueChanged="@SeedingTimeLimitChanged" Disabled="@(!SeedingTimeLimitEnabled || !IsCustomShareLimit)" Min="1" Variant="Variant.Outlined" ShrinkLabel="true" />
+            <MudNumericField T="int" Label="Total minutes" Value="@SeedingTimeLimit" ValueChanged="@SeedingTimeLimitChanged" Disabled="@(!SeedingTimeLimitEnabled || !IsCustomShareLimit)" Min="1" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("SeedingTimeLimit")" />
         </MudItem>
         <MudItem xs="12" sm="4">
-            <FieldSwitch Label="Inactive minutes" Value="@InactiveSeedingTimeLimitEnabled" ValueChanged="@InactiveSeedingTimeLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" />
+            <FieldSwitch Label="Inactive minutes" Value="@InactiveSeedingTimeLimitEnabled" ValueChanged="@InactiveSeedingTimeLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" data-test-id="@TestIdHelper.For("InactiveSeedingTimeLimitEnabled")" />
         </MudItem>
         <MudItem xs="12" sm="8">
-            <MudNumericField T="int" Label="Inactive minutes" Value="@InactiveSeedingTimeLimit" ValueChanged="@InactiveSeedingTimeLimitChanged" Disabled="@(!InactiveSeedingTimeLimitEnabled || !IsCustomShareLimit)" Min="1" Variant="Variant.Outlined" ShrinkLabel="true" />
+            <MudNumericField T="int" Label="Inactive minutes" Value="@InactiveSeedingTimeLimit" ValueChanged="@InactiveSeedingTimeLimitChanged" Disabled="@(!InactiveSeedingTimeLimitEnabled || !IsCustomShareLimit)" Min="1" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("InactiveSeedingTimeLimit")" />
         </MudItem>
         <MudItem xs="12">
-            <MudSelect T="ShareLimitAction" Label="Action when limit is reached" Value="@SelectedShareLimitAction" ValueChanged="@ShareLimitActionChanged" Disabled="@(!IsCustomShareLimit)" Variant="Variant.Outlined" ShrinkLabel="true">
+            <MudSelect T="ShareLimitAction" Label="Action when limit is reached" Value="@SelectedShareLimitAction" ValueChanged="@ShareLimitActionChanged" Disabled="@(!IsCustomShareLimit)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ShareLimitAction")">
                 <MudSelectItem Value="@ShareLimitAction.Default">Default</MudSelectItem>
                 <MudSelectItem Value="@ShareLimitAction.Stop">Stop torrent</MudSelectItem>
                 <MudSelectItem Value="@ShareLimitAction.Remove">Remove torrent</MudSelectItem>

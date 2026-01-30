@@ -25,7 +25,9 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = TestContext.Render<TimerStatusPanel>();
 
-            target.Markup.Should().Contain("No timers registered.");
+            GetChildContentText(FindComponentByTestId<MudText>(target, "TimersEmptyMessage").Instance.ChildContent)
+                .Should()
+                .Be("No timers registered.");
 
             target.Dispose();
         }
@@ -219,7 +221,9 @@ namespace Lantean.QBTMud.Test.Components
 
             await target.InvokeAsync(() => closeButton.Find("button").Click());
 
-            target.Markup.Should().Contain("Timers");
+            GetChildContentText(FindComponentByTestId<MudText>(target, "TimersHeader").Instance.ChildContent)
+                .Should()
+                .Be("Timers");
         }
 
         [Fact]
@@ -247,10 +251,10 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = TestContext.Render<TimerStatusPanel>();
 
-            target.Markup.Should().Contain("RunningTimer");
-            target.Markup.Should().Contain("PausedTimer");
-            target.Markup.Should().Contain("FaultedTimer");
-            target.Markup.Should().Contain("StoppedTimer");
+            GetChildContentText(FindComponentByTestId<MudText>(target, "TimerName-RunningTimer").Instance.ChildContent).Should().Be("RunningTimer");
+            GetChildContentText(FindComponentByTestId<MudText>(target, "TimerName-PausedTimer").Instance.ChildContent).Should().Be("PausedTimer");
+            GetChildContentText(FindComponentByTestId<MudText>(target, "TimerName-FaultedTimer").Instance.ChildContent).Should().Be("FaultedTimer");
+            GetChildContentText(FindComponentByTestId<MudText>(target, "TimerName-StoppedTimer").Instance.ChildContent).Should().Be("StoppedTimer");
         }
 
         private static Mock<IManagedTimer> CreateTimer(string name, ManagedTimerState state, TimeSpan interval)

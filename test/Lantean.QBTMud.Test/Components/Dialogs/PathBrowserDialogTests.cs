@@ -36,8 +36,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             dialog.Component.WaitForAssertion(() =>
             {
-                dialog.Component.Markup.Should().Contain("Folder");
-                dialog.Component.Markup.Should().Contain("file.txt");
+                FindComponentByTestId<MudListItem<string>>(dialog.Component, "PathBrowserEntry-Folder").Should().NotBeNull();
+                FindComponentByTestId<MudListItem<string>>(dialog.Component, "PathBrowserEntry-file.txt").Should().NotBeNull();
             });
         }
 
@@ -52,7 +52,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             dialog.Component.WaitForAssertion(() =>
             {
-                dialog.Component.Markup.Should().Contain("Enter a valid path.");
+                GetAlertText(FindComponentByTestId<MudAlert>(dialog.Component, "PathBrowserLoadError"))
+                    .Should()
+                    .Be("Enter a valid path.");
             });
         }
 
@@ -75,7 +77,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             {
                 var pathField = dialog.Component.FindComponent<MudTextField<string>>();
                 pathField.Instance.Value.Should().Be("C:/");
-                dialog.Component.Markup.Should().Contain("file.txt");
+                FindComponentByTestId<MudListItem<string>>(dialog.Component, "PathBrowserEntry-file.txt").Should().NotBeNull();
             });
         }
 
@@ -102,7 +104,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var loadTask = dialog.Component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("D:/"));
             await Task.Delay(350);
 
-            dialog.Component.Markup.Should().Contain("mud-progress-linear");
+            FindComponentByTestId<MudProgressLinear>(dialog.Component, "PathBrowserLoading").Should().NotBeNull();
 
             tcs.SetResult(Array.Empty<string>());
             await loadTask;
@@ -119,7 +121,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             dialog.Component.WaitForAssertion(() =>
             {
-                dialog.Component.Markup.Should().Contain("Enter a valid path.");
+                GetAlertText(FindComponentByTestId<MudAlert>(dialog.Component, "PathBrowserLoadError"))
+                    .Should()
+                    .Be("Enter a valid path.");
             });
         }
 
@@ -302,7 +306,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/Folder", allowFolderSelection: false);
-            var selectButton = FindButton(dialog.Component, "Select folder");
+            var selectButton = FindButton(dialog.Component, "SelectFolder");
 
             await dialog.Component.InvokeAsync(() => selectButton.Instance.OnClick.InvokeAsync());
 
@@ -320,7 +324,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/Folder", allowFolderSelection: true);
-            var selectButton = FindButton(dialog.Component, "Select folder");
+            var selectButton = FindButton(dialog.Component, "SelectFolder");
 
             await dialog.Component.InvokeAsync(() => selectButton.Instance.OnClick.InvokeAsync());
 
@@ -339,7 +343,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(new[] { "C:/file.txt" });
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
-            dialog.Component.WaitForAssertion(() => dialog.Component.Markup.Should().Contain("file.txt"));
+            dialog.Component.WaitForAssertion(() =>
+            {
+                FindComponentByTestId<MudListItem<string>>(dialog.Component, "PathBrowserEntry-file.txt").Should().NotBeNull();
+            });
 
             var listItem = dialog.Component.FindComponents<MudListItem<string>>().Single();
             await dialog.Component.InvokeAsync(() => listItem.Instance.OnClick.InvokeAsync());
@@ -381,7 +388,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             dialog.Component.WaitForAssertion(() =>
             {
-                dialog.Component.Markup.Should().Contain("Folder");
+                FindComponentByTestId<MudListItem<string>>(dialog.Component, "PathBrowserEntry-Folder").Should().NotBeNull();
             });
         }
 
@@ -399,7 +406,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             dialog.Component.WaitForAssertion(() =>
             {
-                dialog.Component.Markup.Should().Contain("file.txt");
+                FindComponentByTestId<MudListItem<string>>(dialog.Component, "PathBrowserEntry-file.txt").Should().NotBeNull();
             });
         }
 
@@ -439,18 +446,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             dialog.Component.WaitForAssertion(() =>
             {
-                dialog.Component.Markup.Should().Contain("Unable to load directory content: Failure");
+                GetAlertText(FindComponentByTestId<MudAlert>(dialog.Component, "PathBrowserLoadError"))
+                    .Should()
+                    .Be("Unable to load directory content: Failure");
             });
         }
 
-        private static IRenderedComponent<MudIconButton> FindIconButton(IRenderedComponent<PathBrowserDialog> component, string icon)
+        private string? GetAlertText(IRenderedComponent<MudAlert> component)
         {
-            return component.FindComponents<MudIconButton>().Single(button => button.Instance.Icon == icon);
-        }
-
-        private static IRenderedComponent<MudButton> FindButton(IRenderedComponent<PathBrowserDialog> component, string label)
-        {
-            return component.FindComponents<MudButton>().Single(button => button.Markup.Contains(label, StringComparison.Ordinal));
+            return GetChildContentText(component.Instance.ChildContent);
         }
 
         private sealed class PathBrowserDialogTestDriver

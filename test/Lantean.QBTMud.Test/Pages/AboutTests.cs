@@ -44,17 +44,19 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_VersionNotProvided_WHEN_Rendered_THEN_ShowsBuildInfoAndVersion()
         {
-            _target.Markup.Should().Contain("qBittorrent Version (64-bit) WebUI");
+            GetChildContentText(FindComponentByTestId<MudText>(_target, "AboutVersionTitle").Instance.ChildContent)
+                .Should()
+                .Be("qBittorrent Version (64-bit) WebUI");
 
             ActivateTab("Software Used");
 
             _target.WaitForAssertion(() =>
             {
-                _target.Markup.Should().Contain("QTVersion");
-                _target.Markup.Should().Contain("LibTorrentVersion");
-                _target.Markup.Should().Contain("BoostVersion");
-                _target.Markup.Should().Contain("OpenSSLVersion");
-                _target.Markup.Should().Contain("ZLibVersion");
+                GetChildContentText(FindComponentByTestId<MudText>(_target, "QtVersion").Instance.ChildContent).Should().Be("QTVersion");
+                GetChildContentText(FindComponentByTestId<MudText>(_target, "LibtorrentVersion").Instance.ChildContent).Should().Be("LibTorrentVersion");
+                GetChildContentText(FindComponentByTestId<MudText>(_target, "BoostVersion").Instance.ChildContent).Should().Be("BoostVersion");
+                GetChildContentText(FindComponentByTestId<MudText>(_target, "OpenSslVersion").Instance.ChildContent).Should().Be("OpenSSLVersion");
+                GetChildContentText(FindComponentByTestId<MudText>(_target, "ZLibVersion").Instance.ChildContent).Should().Be("ZLibVersion");
             });
 
             Mock.Get(_apiClient).Verify(client => client.GetBuildInfo(), Times.Once);
@@ -68,7 +70,9 @@ namespace Lantean.QBTMud.Test.Pages
 
             var target = RenderPage("Version");
 
-            target.Markup.Should().Contain("qBittorrent Version (64-bit) WebUI");
+            GetChildContentText(FindComponentByTestId<MudText>(target, "AboutVersionTitle").Instance.ChildContent)
+                .Should()
+                .Be("qBittorrent Version (64-bit) WebUI");
 
             Mock.Get(_apiClient).Verify(client => client.GetBuildInfo(), Times.Once);
             Mock.Get(_apiClient).Verify(client => client.GetApplicationVersion(), Times.Never);

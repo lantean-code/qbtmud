@@ -2,7 +2,8 @@
 
 <MudPaper Class="pa-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
-        <MudText Typo="Typo.h6">Timers</MudText>
+        <MudText Typo="Typo.h6"
+                 data-test-id="@TestIdHelper.For("TimersHeader")">Timers</MudText>
         <MudTooltip Text="Close">
             <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseDrawerAsync" />
         </MudTooltip>
@@ -10,7 +11,9 @@
 
     @if (Timers.Count == 0)
     {
-        <MudText Class="mt-2" Typo="Typo.body2">No timers registered.</MudText>
+        <MudText Class="mt-2"
+                 Typo="Typo.body2"
+                 data-test-id="@TestIdHelper.For("TimersEmptyMessage")">No timers registered.</MudText>
     }
     else
     {
@@ -20,7 +23,8 @@
                 <MudPaper Class="pa-3" Elevation="1">
                     <MudStack Spacing="1">
                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                            <MudText Typo="Typo.subtitle1">@timer.Name</MudText>
+                            <MudText Typo="Typo.subtitle1"
+                                     data-test-id="@TestIdHelper.For($"TimerName-{timer.Name}")">@timer.Name</MudText>
                             <MudTooltip Text="@GetStateTooltip(timer)">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                     <MudIcon Icon="@GetStateIcon(timer.State)" Color="@GetStateColor(timer.State)" />

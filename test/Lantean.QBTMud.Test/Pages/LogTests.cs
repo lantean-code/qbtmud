@@ -3,6 +3,7 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -282,7 +283,7 @@ namespace Lantean.QBTMud.Test.Pages
 
         private IRenderedComponent<MudSelect<string>> FindCategorySelect()
         {
-            return _target.FindComponents<MudSelect<string>>().Single(select => select.Instance.Label == "Categories");
+            return FindComponentByTestId<MudSelect<string>>(_target, "Categories");
         }
 
         private async Task InvokeSubmitAsync()
@@ -315,6 +316,16 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var handler = GetTickHandler();
             await _target.InvokeAsync(() => handler(CancellationToken.None));
+        }
+
+        private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<LogPage> target, string testId)
+            where TComponent : MudComponentBase
+        {
+            var expected = TestIdHelper.For(testId);
+            return target.FindComponents<TComponent>()
+                .First(component => component.Instance.UserAttributes is not null
+                    && component.Instance.UserAttributes.TryGetValue("data-test-id", out var value)
+                    && string.Equals(value?.ToString(), expected, StringComparison.Ordinal));
         }
 
         private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler()

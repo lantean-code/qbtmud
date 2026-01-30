@@ -50,7 +50,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             table.Instance.Items.Should().NotBeNull();
             table.Instance.Items!.Should().BeEmpty();
 
-            FindButton(component, "RenameFilesSubmit").Markup.Should().Contain("Replace");
+            GetChildContentText(FindButton(component, "RenameFilesSubmit").Instance.ChildContent).Should().Be("Replace");
         }
 
         [Fact]
@@ -444,19 +444,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             return FindComponentByTestId<MudSelect<T>>(component, testId);
         }
 
-        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<RenameFilesDialog> component, string testId)
-        {
-            return FindComponentByTestId<FieldSwitch>(component, testId);
-        }
-
         private static IRenderedComponent<DynamicTable<FileRow>> FindTable(IRenderedComponent<RenameFilesDialog> component)
         {
             return FindComponentByTestId<DynamicTable<FileRow>>(component, "RenameFilesTable");
-        }
-
-        private static IRenderedComponent<MudButton> FindButton(IRenderedComponent<RenameFilesDialog> component, string testId)
-        {
-            return FindComponentByTestId<MudButton>(component, testId);
         }
 
         private static async Task SetTextFieldValue(IRenderedComponent<RenameFilesDialog> component, string testId, string value)

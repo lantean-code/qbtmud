@@ -29,10 +29,17 @@
                                                                 <MudAppBar Bottom="true" Dense="true" Class="app-shell__status-bar">
                                                                     @if (MainData?.LostConnection == true)
                                                                     {
-                                                                        <MudText Class="mx-2 d-none d-sm-flex" Color="Color.Error">qBittorrent client is not reachable</MudText>
+                                                                        const string lostConnectionText = "qBittorrent client is not reachable";
+                                                                        <MudText Class="mx-2 d-none d-sm-flex"
+                                                                                 Color="Color.Error"
+                                                                                 data-test-id="@TestIdHelper.For("Status-LostConnection")">@lostConnectionText</MudText>
                                                                     }
                                                                     <MudSpacer />
-                                                                    <MudText Class="mx-2 d-none d-sm-flex">@DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk, ShowStatusLabels ? "Free space: " : string.Empty)</MudText>
+                                                                    @{
+                                                                        var freeSpaceText = DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk, ShowStatusLabels ? "Free space: " : string.Empty);
+                                                                    }
+                                                                    <MudText Class="mx-2 d-none d-sm-flex"
+                                                                             data-test-id="@TestIdHelper.For("Status-FreeSpace")">@freeSpaceText</MudText>
                                                                     @{
                                                                         var externalIpLabel = Preferences?.StatusBarExternalIp == true
                                                                             ? (ShowStatusLabels ? BuildExternalIpLabel(MainData?.ServerState) : BuildExternalIpValue(MainData?.ServerState))
@@ -41,10 +48,17 @@
                                                                     @if (!string.IsNullOrEmpty(externalIpLabel))
                                                                     {
                                                                         <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
-                                                                        <MudText Class="mx-2 d-none d-sm-flex">@externalIpLabel</MudText>
+                                                                        <MudText Class="mx-2 d-none d-sm-flex"
+                                                                                 data-test-id="@TestIdHelper.For("Status-ExternalIp")">@externalIpLabel</MudText>
                                                                     }
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
-                                                                    <MudText Class="mx-2 d-none d-sm-flex">@(ShowStatusLabels ? $"DHT: {MainData?.ServerState.DHTNodes ?? 0} nodes" : $"DHT: {MainData?.ServerState.DHTNodes ?? 0}")</MudText>
+                                                                    @{
+                                                                        var dhtNodesText = ShowStatusLabels
+                                                                            ? $"DHT: {MainData?.ServerState.DHTNodes ?? 0} nodes"
+                                                                            : $"DHT: {MainData?.ServerState.DHTNodes ?? 0}";
+                                                                    }
+                                                                    <MudText Class="mx-2 d-none d-sm-flex"
+                                                                             data-test-id="@TestIdHelper.For("Status-DhtNodes")">@dhtNodesText</MudText>
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
                                                                     @{
                                                                         var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);

@@ -36,9 +36,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync("Content");
 
-            dialog.Component.Markup.Should().Contain("Content");
-            dialog.Component.Markup.Should().Contain("Cancel");
-            dialog.Component.Markup.Should().Contain("Ok");
+            dialog.Component.Instance.Content.Should().NotBeNull();
+            GetChildContentText(FindComponentByTestId<MudButton>(dialog.Component, "ConfirmCancel").Instance.ChildContent).Should().Be("Cancel");
+            GetChildContentText(FindComponentByTestId<MudButton>(dialog.Component, "ConfirmOk").Instance.ChildContent).Should().Be("Ok");
         }
 
         [Fact]
@@ -46,8 +46,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync("Content", "SuccessText", "CancelText");
 
-            dialog.Component.Markup.Should().Contain("SuccessText");
-            dialog.Component.Markup.Should().Contain("CancelText");
+            GetChildContentText(FindComponentByTestId<MudButton>(dialog.Component, "ConfirmOk").Instance.ChildContent).Should().Be("SuccessText");
+            GetChildContentText(FindComponentByTestId<MudButton>(dialog.Component, "ConfirmCancel").Instance.ChildContent).Should().Be("CancelText");
         }
 
         [Fact]

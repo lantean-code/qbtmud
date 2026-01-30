@@ -3,7 +3,6 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
-using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -151,11 +150,6 @@ namespace Lantean.QBTMud.Test.Components.Options
             """;
 
             return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
-        }
-
-        private static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<RSSOptions> target, string testId)
-        {
-            return FindComponentByTestId<FieldSwitch>(target, testId);
         }
 
         private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<RSSOptions> target, string testId)

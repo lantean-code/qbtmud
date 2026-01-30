@@ -29,7 +29,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent(showCookieOption: true);
             ExpandOptions(component);
 
-            component.FindComponents<MudTextField<string>>().Any(field => field.Instance.Label == "Cookie").Should().BeTrue();
+            component.FindComponents<MudTextField<string>>()
+                .Any(field => HasTestId(field, "Cookie"))
+                .Should().BeTrue();
         }
 
         [Fact]
@@ -40,7 +42,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent(showCookieOption: false);
             ExpandOptions(component);
 
-            component.FindComponents<MudTextField<string>>().Any(field => field.Instance.Label == "Cookie").Should().BeFalse();
+            component.FindComponents<MudTextField<string>>()
+                .Any(field => HasTestId(field, "Cookie"))
+                .Should().BeFalse();
             FindSelect<string>(component, "Tags").Instance.Disabled.Should().BeTrue();
         }
 
@@ -75,21 +79,21 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            FindSelect<bool>(component, "Torrent management mode").Instance.Value.Should().BeFalse();
+            FindSelect<bool>(component, "TorrentManagementMode").Instance.Value.Should().BeFalse();
             GetSavePath(component).Should().Be("SavePath");
             GetUseDownloadPath(component).Should().BeTrue();
             GetDownloadPath(component).Should().Be("TempPath");
-            FindFieldSwitch(component, "Start torrent").Instance.Value.Should().BeFalse();
-            FindFieldSwitch(component, "Add to top of queue").Instance.Value.Should().BeFalse();
-            FindSelect<string>(component, "Stop condition").Instance.Value.Should().Be("StopCondition");
-            FindSelect<string>(component, "Content layout").Instance.Value.Should().Be("ContentLayout");
-            FindFieldSwitch(component, "Ratio").Instance.Value.Should().BeTrue();
-            FindNumericField<float>(component, "Ratio limit").Instance.Value.Should().Be(1.5f);
-            FindFieldSwitch(component, "Total minutes").Instance.Value.Should().BeTrue();
-            FindNumericField<int>(component, "Total minutes").Instance.Value.Should().Be(60);
-            FindFieldSwitch(component, "Inactive minutes").Instance.Value.Should().BeTrue();
-            FindNumericField<int>(component, "Inactive minutes").Instance.Value.Should().Be(120);
-            FindSelect<ClientModels.ShareLimitAction>(component, "Action when limit is reached").Instance.Value.Should().Be(ClientModels.ShareLimitAction.RemoveWithContent);
+            FindFieldSwitch(component, "StartTorrent").Instance.Value.Should().BeFalse();
+            FindFieldSwitch(component, "AddToTopOfQueue").Instance.Value.Should().BeFalse();
+            FindSelect<string>(component, "StopCondition").Instance.Value.Should().Be("StopCondition");
+            FindSelect<string>(component, "ContentLayout").Instance.Value.Should().Be("ContentLayout");
+            FindFieldSwitch(component, "RatioLimitEnabled").Instance.Value.Should().BeTrue();
+            FindNumericField<float>(component, "RatioLimit").Instance.Value.Should().Be(1.5f);
+            FindFieldSwitch(component, "SeedingTimeLimitEnabled").Instance.Value.Should().BeTrue();
+            FindNumericField<int>(component, "SeedingTimeLimit").Instance.Value.Should().Be(60);
+            FindFieldSwitch(component, "InactiveSeedingTimeLimitEnabled").Instance.Value.Should().BeTrue();
+            FindNumericField<int>(component, "InactiveSeedingTimeLimit").Instance.Value.Should().Be(120);
+            FindSelect<ClientModels.ShareLimitAction>(component, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.RemoveWithContent);
             FindSelect<string>(component, "Tags").Instance.Disabled.Should().BeFalse();
         }
 
@@ -126,16 +130,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            FindSelect<bool>(component, "Torrent management mode").Instance.Value.Should().BeTrue();
+            FindSelect<bool>(component, "TorrentManagementMode").Instance.Value.Should().BeTrue();
             GetSavePath(component).Should().Be("SavePath");
             GetUseDownloadPath(component).Should().BeTrue();
             GetDownloadPath(component).Should().Be("TempPath");
 
-            var modeSelect = FindSelect<bool>(component, "Torrent management mode");
+            var modeSelect = FindSelect<bool>(component, "TorrentManagementMode");
             await component.InvokeAsync(() => modeSelect.Instance.ValueChanged.InvokeAsync(true));
             GetSavePath(component).Should().Be("SavePath");
 
-            await SetFieldSwitchValue(component, "Use incomplete save path", false);
+            await SetFieldSwitchValue(component, "UseIncompleteSavePath", false);
             GetUseDownloadPath(component).Should().BeTrue();
 
             var options = component.Instance.GetTorrentOptions();
@@ -157,8 +161,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            await SetFieldSwitchValue(component, "Use incomplete save path", false);
-            await SetFieldSwitchValue(component, "Use incomplete save path", true);
+            await SetFieldSwitchValue(component, "UseIncompleteSavePath", false);
+            await SetFieldSwitchValue(component, "UseIncompleteSavePath", true);
 
             GetDownloadPath(component).Should().BeEmpty();
         }
@@ -292,15 +296,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            await SetTextFieldValue(component, "Save files to location", "ManualSavePath");
+            await SetTextFieldValue(component, "SaveFilesLocation", "ManualSavePath");
             GetSavePath(component).Should().Be("ManualSavePath");
 
-            await SetTextFieldValue(component, "Incomplete save path", string.Empty);
-            await SetFieldSwitchValue(component, "Use incomplete save path", false);
+            await SetTextFieldValue(component, "IncompleteSavePath", string.Empty);
+            await SetFieldSwitchValue(component, "UseIncompleteSavePath", false);
             GetUseDownloadPath(component).Should().BeFalse();
             GetDownloadPath(component).Should().BeEmpty();
 
-            await SetFieldSwitchValue(component, "Use incomplete save path", true);
+            await SetFieldSwitchValue(component, "UseIncompleteSavePath", true);
             GetUseDownloadPath(component).Should().BeTrue();
             GetDownloadPath(component).Should().Be("TempPath");
         }
@@ -318,11 +322,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            await SetTextFieldValue(component, "Incomplete save path", "ManualDownloadPath");
-            await SetFieldSwitchValue(component, "Use incomplete save path", false);
+            await SetTextFieldValue(component, "IncompleteSavePath", "ManualDownloadPath");
+            await SetFieldSwitchValue(component, "UseIncompleteSavePath", false);
 
-            await SetTextFieldValue(component, "Incomplete save path", "UpdatedPath");
-            await SetFieldSwitchValue(component, "Use incomplete save path", true);
+            await SetTextFieldValue(component, "IncompleteSavePath", "UpdatedPath");
+            await SetFieldSwitchValue(component, "UseIncompleteSavePath", true);
 
             GetDownloadPath(component).Should().Be("ManualDownloadPath");
         }
@@ -345,14 +349,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            await SetTextFieldValue(component, "Save files to location", "ManualSavePath");
-            await SetTextFieldValue(component, "Incomplete save path", "ManualDownloadPath");
+            await SetTextFieldValue(component, "SaveFilesLocation", "ManualSavePath");
+            await SetTextFieldValue(component, "IncompleteSavePath", "ManualDownloadPath");
 
-            await SetSelectValue(component, "Torrent management mode", true);
+            await SetSelectValue(component, "TorrentManagementMode", true);
             await SetSelectValue(component, "Category", "Category");
-            await SetTextFieldValue(component, "Save files to location", "AutoPath");
+            await SetTextFieldValue(component, "SaveFilesLocation", "AutoPath");
 
-            await SetSelectValue(component, "Torrent management mode", false);
+            await SetSelectValue(component, "TorrentManagementMode", false);
             GetSavePath(component).Should().Be("ManualSavePath");
             GetDownloadPath(component).Should().Be("ManualDownloadPath");
         }
@@ -393,18 +397,18 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            await SetSelectValue(component, "Share limit preset", AddTorrentOptions.ShareLimitMode.Custom);
-            FindFieldSwitch(component, "Ratio").Instance.Disabled.Should().BeFalse();
+            await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.Custom);
+            FindFieldSwitch(component, "RatioLimitEnabled").Instance.Disabled.Should().BeFalse();
 
-            await SetFieldSwitchValue(component, "Ratio", true);
-            await SetNumericValue(component, "Ratio limit", 2.5f);
-            await SetFieldSwitchValue(component, "Total minutes", true);
-            await SetNumericValue(component, "Total minutes", 60);
-            await SetFieldSwitchValue(component, "Inactive minutes", true);
-            await SetNumericValue(component, "Inactive minutes", 30);
-            await SetSelectValue(component, "Action when limit is reached", ClientModels.ShareLimitAction.Remove);
-            await SetSelectValue(component, "Stop condition", "FilesChecked");
-            await SetSelectValue(component, "Content layout", "Subfolder");
+            await SetFieldSwitchValue(component, "RatioLimitEnabled", true);
+            await SetNumericValue(component, "RatioLimit", 2.5f);
+            await SetFieldSwitchValue(component, "SeedingTimeLimitEnabled", true);
+            await SetNumericValue(component, "SeedingTimeLimit", 60);
+            await SetFieldSwitchValue(component, "InactiveSeedingTimeLimitEnabled", true);
+            await SetNumericValue(component, "InactiveSeedingTimeLimit", 30);
+            await SetSelectValue(component, "ShareLimitAction", ClientModels.ShareLimitAction.Remove);
+            await SetSelectValue(component, "StopCondition", "FilesChecked");
+            await SetSelectValue(component, "ContentLayout", "Subfolder");
 
             var customOptions = component.Instance.GetTorrentOptions();
             customOptions.RatioLimit.Should().Be(2.5f);
@@ -414,11 +418,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             customOptions.StopCondition.Should().Be("FilesChecked");
             customOptions.ContentLayout.Should().Be("Subfolder");
 
-            await SetSelectValue(component, "Share limit preset", AddTorrentOptions.ShareLimitMode.Global);
-            FindFieldSwitch(component, "Ratio").Instance.Value.Should().BeFalse();
-            FindFieldSwitch(component, "Total minutes").Instance.Value.Should().BeFalse();
-            FindFieldSwitch(component, "Inactive minutes").Instance.Value.Should().BeFalse();
-            FindSelect<ClientModels.ShareLimitAction>(component, "Action when limit is reached").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Default);
+            await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.Global);
+            FindFieldSwitch(component, "RatioLimitEnabled").Instance.Value.Should().BeFalse();
+            FindFieldSwitch(component, "SeedingTimeLimitEnabled").Instance.Value.Should().BeFalse();
+            FindFieldSwitch(component, "InactiveSeedingTimeLimitEnabled").Instance.Value.Should().BeFalse();
+            FindSelect<ClientModels.ShareLimitAction>(component, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Default);
 
             var globalOptions = component.Instance.GetTorrentOptions();
             globalOptions.RatioLimit.Should().Be(Limits.GlobalLimit);
@@ -426,7 +430,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             globalOptions.InactiveSeedingTimeLimit.Should().Be(Limits.GlobalLimit);
             globalOptions.ShareLimitAction.Should().Be(ClientModels.ShareLimitAction.Default.ToString());
 
-            await SetSelectValue(component, "Share limit preset", AddTorrentOptions.ShareLimitMode.NoLimit);
+            await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.NoLimit);
 
             var noLimitOptions = component.Instance.GetTorrentOptions();
             noLimitOptions.RatioLimit.Should().Be(Limits.NoLimit);
@@ -445,7 +449,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            await SetSelectValue(component, "Share limit preset", AddTorrentOptions.ShareLimitMode.Custom);
+            await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.Custom);
 
             var options = component.Instance.GetTorrentOptions();
             options.RatioLimit.Should().Be(Limits.NoLimit);
@@ -479,11 +483,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             ExpandOptions(superSeedingComponent);
             ExpandOptions(defaultComponent);
 
-            FindSelect<ClientModels.ShareLimitAction>(stopComponent, "Action when limit is reached").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Stop);
-            FindSelect<ClientModels.ShareLimitAction>(removeComponent, "Action when limit is reached").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Remove);
-            FindSelect<ClientModels.ShareLimitAction>(removeWithContentComponent, "Action when limit is reached").Instance.Value.Should().Be(ClientModels.ShareLimitAction.RemoveWithContent);
-            FindSelect<ClientModels.ShareLimitAction>(superSeedingComponent, "Action when limit is reached").Instance.Value.Should().Be(ClientModels.ShareLimitAction.EnableSuperSeeding);
-            FindSelect<ClientModels.ShareLimitAction>(defaultComponent, "Action when limit is reached").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Default);
+            FindSelect<ClientModels.ShareLimitAction>(stopComponent, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Stop);
+            FindSelect<ClientModels.ShareLimitAction>(removeComponent, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Remove);
+            FindSelect<ClientModels.ShareLimitAction>(removeWithContentComponent, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.RemoveWithContent);
+            FindSelect<ClientModels.ShareLimitAction>(superSeedingComponent, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.EnableSuperSeeding);
+            FindSelect<ClientModels.ShareLimitAction>(defaultComponent, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Default);
         }
 
         [Fact]
@@ -514,78 +518,79 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static void ExpandOptions(IRenderedComponent<AddTorrentOptions> component)
         {
-            var toggle = component.FindComponents<MudSwitch<bool>>().Single(item => item.Instance.Label == "Additional Options");
+            var toggle = FindComponentByTestId<MudSwitch<bool>>(component, "AdditionalOptions");
             toggle.Find("input").Change(true);
         }
 
-        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<AddTorrentOptions> component, string label)
+        private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<AddTorrentOptions> component, string testId)
         {
-            return component.FindComponents<MudSelect<T>>().Single(select => select.Instance.Label == label);
+            return FindComponentByTestId<MudSelect<T>>(component, testId);
         }
 
-        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<AddTorrentOptions> component, string label)
+        private static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<AddTorrentOptions> component, string testId)
         {
-            return component.FindComponents<MudTextField<string>>().Single(field => field.Instance.Label == label);
+            return FindComponentByTestId<MudTextField<string>>(component, testId);
         }
 
-        private static IRenderedComponent<PathAutocomplete>? FindPathAutocomplete(IRenderedComponent<AddTorrentOptions> component, string label)
+        private static IRenderedComponent<PathAutocomplete>? FindPathAutocomplete(IRenderedComponent<AddTorrentOptions> component, string testId)
         {
-            return component.FindComponents<PathAutocomplete>().SingleOrDefault(field => field.Instance.Label == label);
+            return component.FindComponents<PathAutocomplete>()
+                .SingleOrDefault(field => HasTestId(field, testId));
         }
 
-        private static IRenderedComponent<MudNumericField<T>> FindNumericField<T>(IRenderedComponent<AddTorrentOptions> component, string label)
+        private static IRenderedComponent<MudNumericField<T>> FindNumericField<T>(IRenderedComponent<AddTorrentOptions> component, string testId)
         {
-            return component.FindComponents<MudNumericField<T>>().Single(field => field.Instance.Label == label);
+            return FindComponentByTestId<MudNumericField<T>>(component, testId);
         }
 
-        private static IRenderedComponent<FieldSwitch> FindFieldSwitch(IRenderedComponent<AddTorrentOptions> component, string label)
+        private static IRenderedComponent<FieldSwitch> FindFieldSwitch(IRenderedComponent<AddTorrentOptions> component, string testId)
         {
-            return component.FindComponents<FieldSwitch>().Single(field => field.Instance.Label == label);
+            return FindComponentByTestId<FieldSwitch>(component, testId);
         }
 
         private static string? GetSavePath(IRenderedComponent<AddTorrentOptions> component)
         {
-            return FindPathAutocomplete(component, "Save files to location")?.Instance.Value;
+            return FindPathAutocomplete(component, "SaveFilesLocation")?.Instance.Value;
         }
 
         private static string? GetDownloadPath(IRenderedComponent<AddTorrentOptions> component)
         {
-            return FindPathAutocomplete(component, "Incomplete save path")?.Instance.Value;
+            return FindPathAutocomplete(component, "IncompleteSavePath")?.Instance.Value;
         }
 
         private static bool GetUseDownloadPath(IRenderedComponent<AddTorrentOptions> component)
         {
-            return FindFieldSwitch(component, "Use incomplete save path").Instance.Value;
+            return FindFieldSwitch(component, "UseIncompleteSavePath").Instance.Value;
         }
 
-        private static async Task SetSelectValue<T>(IRenderedComponent<AddTorrentOptions> component, string label, T value)
+        private static async Task SetSelectValue<T>(IRenderedComponent<AddTorrentOptions> component, string testId, T value)
         {
-            var select = FindSelect<T>(component, label);
+            var select = FindSelect<T>(component, testId);
             await component.InvokeAsync(() => select.Instance.ValueChanged.InvokeAsync(value));
         }
 
-        private static async Task SetTextFieldValue(IRenderedComponent<AddTorrentOptions> component, string label, string value)
+        private static async Task SetTextFieldValue(IRenderedComponent<AddTorrentOptions> component, string testId, string value)
         {
-            var pathField = FindPathAutocomplete(component, label);
+            var pathField = FindPathAutocomplete(component, testId);
             if (pathField is not null)
             {
                 await component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync(value));
                 return;
             }
 
-            var field = FindTextField(component, label);
+            var field = FindTextField(component, testId);
             await component.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(value));
         }
 
-        private static async Task SetNumericValue<T>(IRenderedComponent<AddTorrentOptions> component, string label, T value)
+        private static async Task SetNumericValue<T>(IRenderedComponent<AddTorrentOptions> component, string testId, T value)
         {
-            var field = FindNumericField<T>(component, label);
+            var field = FindNumericField<T>(component, testId);
             await component.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(value));
         }
 
-        private static async Task SetFieldSwitchValue(IRenderedComponent<AddTorrentOptions> component, string label, bool value)
+        private static async Task SetFieldSwitchValue(IRenderedComponent<AddTorrentOptions> component, string testId, bool value)
         {
-            var field = FindFieldSwitch(component, label);
+            var field = FindFieldSwitch(component, testId);
             await component.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(value));
         }
 

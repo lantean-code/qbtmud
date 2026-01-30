@@ -22,7 +22,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var dialog = await _target.RenderDialogAsync(null);
 
-            dialog.Component.FindComponent<MudAlert>().Markup.Should().Contain("Missing error information.");
+            GetChildContentText(FindComponentByTestId<MudAlert>(dialog.Component, "ExceptionMissingMessage").Instance.ChildContent)
+                .Should()
+                .Be("Missing error information.");
             dialog.Component.FindComponents<MudField>().Should().BeEmpty();
         }
 
@@ -37,9 +39,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync(exception);
 
             dialog.Component.FindComponents<MudField>().Should().HaveCount(3);
-            dialog.Component.Markup.Should().Contain("Message");
-            dialog.Component.Markup.Should().Contain("Source");
-            dialog.Component.Markup.Should().Contain("Stack Trace");
+            GetChildContentText(FindComponentByTestId<MudField>(dialog.Component, "ExceptionMessage").Instance.ChildContent).Should().Be("Message");
+            GetChildContentText(FindComponentByTestId<MudField>(dialog.Component, "ExceptionSource").Instance.ChildContent).Should().Be("Source");
+            GetChildContentText(FindComponentByTestId<MudField>(dialog.Component, "ExceptionStackTrace").Instance.ChildContent)
+                .Should()
+                .Be(exception.StackTrace ?? string.Empty);
         }
 
         [Fact]

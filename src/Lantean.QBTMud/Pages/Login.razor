@@ -15,14 +15,18 @@
                         <MudCardContent Class="pt-0">
                             @if (ApiError is not null)
                             {
-                                <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Dense="true" Class="my-2">@ApiError</MudAlert>
+                                <MudAlert Severity="Severity.Error"
+                                          Variant="Variant.Filled"
+                                          Dense="true"
+                                          Class="my-2"
+                                          data-test-id="@TestIdHelper.For("LoginError")">@ApiError</MudAlert>
                             }
                             <DataAnnotationsValidator />
                             <MudItem xs="12">
-                                <MudTextField Label="Username" @bind-Value="Model.Username" For="@(() => Model.Username)" />
+                                <MudTextField Label="Username" @bind-Value="Model.Username" For="@(() => Model.Username)" data-test-id="@TestIdHelper.For("Username")" />
                             </MudItem>
                             <MudItem xs="12">
-                                <MudTextField Label="Password" @bind-Value="Model.Password" For="@(() => Model.Password)" InputType="InputType.Password" />
+                                <MudTextField Label="Password" @bind-Value="Model.Password" For="@(() => Model.Password)" InputType="InputType.Password" data-test-id="@TestIdHelper.For("Password")" />
                             </MudItem>
                         </MudCardContent>
                         <MudCardActions>

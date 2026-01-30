@@ -29,7 +29,11 @@
                         <div class="d-flex gap-3 align-items-center">
                             <MudImage Src="images/qbittorrent-tray.svg" Fluid ObjectFit="ObjectFit.None"
                                       Alt="QBT" Height="32" Width="32" />
-                            <MudText Typo="Typo.h6">qBittorrent @QBittorrentVersion WebUI</MudText>
+                            @{
+                                var versionText = $"qBittorrent {QBittorrentVersion} WebUI";
+                            }
+                            <MudText Typo="Typo.h6"
+                                     data-test-id="@TestIdHelper.For("AboutVersionTitle")">@versionText</MudText>
                         </div>
 
                         <MudText Typo="Typo.body1">
@@ -1073,35 +1077,40 @@
                     <MudText Typo="Typo.body1">Qt</MudText>
                 </MudItem>
                 <MudItem xs="9">
-                    <MudText Typo="Typo.body1">@QtVersion</MudText>
+                    <MudText Typo="Typo.body1"
+                             data-test-id="@TestIdHelper.For("QtVersion")">@QtVersion</MudText>
                 </MudItem>
 
                 <MudItem xs="3">
                     <MudText Typo="Typo.body1">Libtorrent</MudText>
                 </MudItem>
                 <MudItem xs="9">
-                    <MudText Typo="Typo.body1">@LibtorrentVersion</MudText>
+                    <MudText Typo="Typo.body1"
+                             data-test-id="@TestIdHelper.For("LibtorrentVersion")">@LibtorrentVersion</MudText>
                 </MudItem>
 
                 <MudItem xs="3">
                     <MudText Typo="Typo.body1">Boost</MudText>
                 </MudItem>
                 <MudItem xs="9">
-                    <MudText Typo="Typo.body1">@BoostVersion</MudText>
+                    <MudText Typo="Typo.body1"
+                             data-test-id="@TestIdHelper.For("BoostVersion")">@BoostVersion</MudText>
                 </MudItem>
 
                 <MudItem xs="3">
                     <MudText Typo="Typo.body1">OpenSSL</MudText>
                 </MudItem>
                 <MudItem xs="9">
-                    <MudText Typo="Typo.body1">@OpensslVersion</MudText>
+                    <MudText Typo="Typo.body1"
+                             data-test-id="@TestIdHelper.For("OpenSslVersion")">@OpensslVersion</MudText>
                 </MudItem>
 
                 <MudItem xs="3">
                     <MudText Typo="Typo.body1">zlib</MudText>
                 </MudItem>
                 <MudItem xs="9">
-                    <MudText Typo="Typo.body1">@ZlibVersion</MudText>
+                    <MudText Typo="Typo.body1"
+                             data-test-id="@TestIdHelper.For("ZLibVersion")">@ZlibVersion</MudText>
                 </MudItem>
             </MudGrid>
 

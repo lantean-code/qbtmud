@@ -45,7 +45,7 @@ else if (RenderType == RenderType.Children)
                     <MudDivider />
                 }
 
-                <MudListItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled">@action.Text</MudListItem>
+                <MudListItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled" data-test-id="@TestIdHelper.For($"Action-{action.Name}")">@action.Text</MudListItem>
             }
         </MudList>
     }
@@ -63,7 +63,7 @@ else if (RenderType == RenderType.MenuWithoutActivator)
         <ChildContent>
             @if (PrimaryHash is not null)
             {
-                <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" Disabled="Disabled" Href="@("./details/" + PrimaryHash)">View torrent details</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" Disabled="Disabled" Href="@("./details/" + PrimaryHash)" data-test-id="@TestIdHelper.For("Action-viewDetails")">View torrent details</MudMenuItem>
                 <MudDivider />
             }
             @MenuContents(Actions)
@@ -164,7 +164,7 @@ else if (RenderType == RenderType.MenuItems)
                 <MudDivider />
             }
 
-            <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled" AutoClose="@action.AutoClose">@action.Text</MudMenuItem>
+            <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled" AutoClose="@action.AutoClose" data-test-id="@TestIdHelper.For($"Action-{action.Name}")">@action.Text</MudMenuItem>
         };
     }
 
@@ -191,13 +191,13 @@ else if (RenderType == RenderType.MenuItems)
 
                 if (!action.Children.Any())
                 {
-                    <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled" Class="icon-menu-dense" AutoClose="@action.AutoClose">
+                    <MudMenuItem Icon="@action.Icon" IconColor="action.Color" OnClick="action.Callback" Disabled="Disabled" Class="icon-menu-dense" AutoClose="@action.AutoClose" data-test-id="@TestIdHelper.For($"Action-{action.Name}")">
                         @action.Text
                     </MudMenuItem>
                 }
                 else
                 {
-                    <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopLeft" ActivationEvent="MouseEvent.MouseOver" StartIcon="@action.Icon" IconColor="@action.Color" Label="@action.Text">
+                    <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopLeft" ActivationEvent="MouseEvent.MouseOver" StartIcon="@action.Icon" IconColor="@action.Color" Label="@action.Text" data-test-id="@TestIdHelper.For($"Action-{action.Name}")">
                         @foreach (var childItem in action.Children)
                         {
                             @ChildItem(childItem)

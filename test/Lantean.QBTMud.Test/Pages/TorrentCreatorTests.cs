@@ -61,7 +61,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             var target = RenderPage();
 
-            target.Markup.Should().Contain("No torrent creation tasks.");
+            var emptyState = FindComponentByTestId<MudText>(target, "TorrentCreatorEmptyState");
+            GetChildContentText(emptyState.Instance.ChildContent).Should().Be("No torrent creation tasks.");
         }
 
         [Fact]
@@ -580,8 +581,11 @@ namespace Lantean.QBTMud.Test.Pages
 
             var target = RenderPage();
 
-            target.Markup.Should().Contain("Running");
-            target.Markup.Should().Contain("42%");
+            var status = FindComponentByTestId<MudChip<string>>(target, "TorrentCreatorStatus-TaskId");
+            status.Instance.Text.Should().Be("Running");
+
+            var progress = FindComponentByTestId<MudProgressLinear>(target, "TorrentCreatorProgress-TaskId");
+            progress.Instance.Value.Should().Be(42);
         }
 
         [Fact]
@@ -596,7 +600,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             var target = RenderPage();
 
-            target.Markup.Should().Contain("0%");
+            var progress = FindComponentByTestId<MudProgressLinear>(target, "TorrentCreatorProgress-TaskId");
+            progress.Instance.Value.Should().Be(0);
         }
 
         [Fact]
@@ -611,7 +616,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             var target = RenderPage();
 
-            target.Markup.Should().Contain("100%");
+            var progress = FindComponentByTestId<MudProgressLinear>(target, "TorrentCreatorProgress-TaskId");
+            progress.Instance.Value.Should().Be(100);
         }
 
         [Fact]
@@ -627,8 +633,11 @@ namespace Lantean.QBTMud.Test.Pages
 
             var target = RenderPage();
 
-            target.Markup.Should().Contain("Failed");
-            target.Markup.Should().Contain("Unknown");
+            var failedStatus = FindComponentByTestId<MudChip<string>>(target, "TorrentCreatorStatus-TaskId1");
+            failedStatus.Instance.Text.Should().Be("Failed");
+
+            var unknownStatus = FindComponentByTestId<MudChip<string>>(target, "TorrentCreatorStatus-TaskId2");
+            unknownStatus.Instance.Text.Should().Be("Unknown");
         }
 
         [Fact]
@@ -739,11 +748,6 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(true);
 
             return cancellationToken => handler!.Invoke(cancellationToken);
-        }
-
-        private static IRenderedComponent<MudIconButton> FindIconButton(IRenderedComponent<TorrentCreator> component, string icon)
-        {
-            return component.FindComponents<MudIconButton>().Single(button => button.Instance.Icon == icon);
         }
 
         private static ClientModels.TorrentCreationTaskStatus CreateTask(string taskId, string sourcePath, string status, double? progress)

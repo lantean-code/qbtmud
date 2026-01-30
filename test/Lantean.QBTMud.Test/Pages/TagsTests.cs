@@ -11,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Linq;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -209,11 +208,6 @@ namespace Lantean.QBTMud.Test.Pages
                     parameters.AddCascadingValue(mainData);
                 }
             });
-        }
-
-        private static IRenderedComponent<MudIconButton> FindIconButton(IRenderedComponent<Tags> component, string icon)
-        {
-            return component.FindComponents<MudIconButton>().Single(button => button.Instance.Icon == icon);
         }
     }
 }

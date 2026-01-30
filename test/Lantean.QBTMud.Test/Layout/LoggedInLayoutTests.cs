@@ -262,7 +262,8 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            target.Markup.Should().Contain("qBittorrent client is not reachable");
+            var lostConnection = FindComponentByTestId<MudText>(target, "Status-LostConnection");
+            GetChildContentText(lostConnection.Instance.ChildContent).Should().Be("qBittorrent client is not reachable");
         }
 
         [Fact]
@@ -272,8 +273,11 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, breakpoint: Breakpoint.Lg, orientation: Orientation.Portrait);
 
-            target.Markup.Should().Contain("Free space:");
-            target.Markup.Should().Contain("nodes");
+            var freeSpace = FindComponentByTestId<MudText>(target, "Status-FreeSpace");
+            GetChildContentText(freeSpace.Instance.ChildContent).Should().StartWith("Free space: ");
+
+            var dhtNodes = FindComponentByTestId<MudText>(target, "Status-DhtNodes");
+            GetChildContentText(dhtNodes.Instance.ChildContent).Should().Contain("nodes");
         }
 
         [Fact]
@@ -283,8 +287,11 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
 
-            target.Markup.Should().NotContain("Free space:");
-            target.Markup.Should().NotContain("nodes");
+            var freeSpace = FindComponentByTestId<MudText>(target, "Status-FreeSpace");
+            GetChildContentText(freeSpace.Instance.ChildContent).Should().NotStartWith("Free space: ");
+
+            var dhtNodes = FindComponentByTestId<MudText>(target, "Status-DhtNodes");
+            GetChildContentText(dhtNodes.Instance.ChildContent).Should().NotContain("nodes");
         }
 
         [Fact]
@@ -294,7 +301,8 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Lg, orientation: Orientation.Portrait);
 
-            target.Markup.Should().Contain("External IP: N/A");
+            var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
+            GetChildContentText(externalIp.Instance.ChildContent).Should().Be("External IP: N/A");
         }
 
         [Fact]
@@ -304,7 +312,8 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Lg, orientation: Orientation.Portrait);
 
-            target.Markup.Should().Contain("External IPs: 1.1.1.1, 2.2.2.2");
+            var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
+            GetChildContentText(externalIp.Instance.ChildContent).Should().Be("External IPs: 1.1.1.1, 2.2.2.2");
         }
 
         [Fact]
@@ -314,7 +323,8 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Lg, orientation: Orientation.Portrait);
 
-            target.Markup.Should().Contain("External IP: 1.1.1.1");
+            var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
+            GetChildContentText(externalIp.Instance.ChildContent).Should().Be("External IP: 1.1.1.1");
         }
 
         [Fact]
@@ -324,7 +334,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
 
-            target.Markup.Should().NotContain("External IP");
+            HasComponentWithTestId<MudText>(target, "Status-ExternalIp").Should().BeFalse();
         }
 
         [Fact]
@@ -334,7 +344,8 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
 
-            target.Markup.Should().Contain("1.1.1.1, 2.2.2.2");
+            var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
+            GetChildContentText(externalIp.Instance.ChildContent).Should().Be("1.1.1.1, 2.2.2.2");
         }
 
         [Fact]
@@ -344,7 +355,8 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
 
-            target.Markup.Should().Contain("2.2.2.2");
+            var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
+            GetChildContentText(externalIp.Instance.ChildContent).Should().Be("2.2.2.2");
         }
 
         [Fact]
@@ -994,6 +1006,22 @@ namespace Lantean.QBTMud.Test.Layout
         private static IRenderedComponent<MudTooltip> FindTimerTooltip(IRenderedComponent<LoggedInLayout> target)
         {
             return target.FindComponents<MudTooltip>().Single(t => t.Instance.Text != "Toggle alternative speed limits");
+        }
+
+        private static bool HasComponentWithTestId<TComponent>(IRenderedComponent<LoggedInLayout> target, string testId)
+            where TComponent : MudComponentBase
+        {
+            var expected = TestIdHelper.For(testId);
+            return target.FindComponents<TComponent>().Any(component =>
+            {
+                if (component.Instance.UserAttributes is null)
+                {
+                    return false;
+                }
+
+                return component.Instance.UserAttributes.TryGetValue("data-test-id", out var value)
+                    && string.Equals(value?.ToString(), expected, StringComparison.Ordinal);
+            });
         }
 
         private static IManagedTimer CreateTimer(ManagedTimerState state)

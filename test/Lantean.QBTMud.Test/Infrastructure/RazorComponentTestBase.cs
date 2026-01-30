@@ -1,14 +1,12 @@
 using Bunit;
+using Lantean.QBTMud.Components.UI;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Infrastructure
 {
     public abstract class RazorComponentTestBase<T> : RazorComponentTestBase where T : IComponent
     {
-        protected static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<IComponent> target, string testId) where TComponent : IComponent
-        {
-            return target.FindComponents<TComponent>().First(component => component.FindAll($"[data-test-id='{testId}']").Count > 0);
-        }
     }
 
     public abstract class RazorComponentTestBase : IAsyncDisposable
@@ -16,6 +14,74 @@ namespace Lantean.QBTMud.Test.Infrastructure
         private bool _disposedValue;
 
         internal ComponentTestContext TestContext { get; private set; } = new ComponentTestContext();
+
+        protected string? GetChildContentText(RenderFragment? fragment)
+        {
+            if (fragment is null)
+            {
+                return null;
+            }
+
+            var rendered = TestContext.Render(fragment);
+            return string.Concat(rendered.Nodes.Select(node => node.TextContent)).Trim();
+        }
+
+        protected static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<IComponent> target, string testId)
+            where TComponent : IComponent
+        {
+            return target.FindComponents<TComponent>().First(component =>
+            {
+                if (HasTestId(component, testId))
+                {
+                    return true;
+                }
+
+                var selector = $"[data-test-id='{EscapeSelectorValue(testId)}']";
+                return component.FindAll(selector).Count > 0;
+            });
+        }
+
+        protected static IRenderedComponent<MudIconButton> FindIconButton(IRenderedComponent<IComponent> target, string icon)
+        {
+            return target.FindComponents<MudIconButton>().Single(button => button.Instance.Icon == icon);
+        }
+
+        protected static IRenderedComponent<MudButton> FindButton(IRenderedComponent<IComponent> target, string testId)
+        {
+            return FindComponentByTestId<MudButton>(target, testId);
+        }
+
+        protected static IRenderedComponent<FieldSwitch> FindSwitch(IRenderedComponent<IComponent> target, string testId)
+        {
+            return FindComponentByTestId<FieldSwitch>(target, testId);
+        }
+
+        protected static IRenderedComponent<MudSelect<TValue>> FindSelect<TValue>(IRenderedComponent<IComponent> target, string testId)
+        {
+            return FindComponentByTestId<MudSelect<TValue>>(target, testId);
+        }
+
+        protected static IRenderedComponent<MudTextField<string>> FindTextField(IRenderedComponent<IComponent> target, string testId)
+        {
+            return FindComponentByTestId<MudTextField<string>>(target, testId);
+        }
+
+        protected static IRenderedComponent<MudNumericField<int>> FindNumericField(IRenderedComponent<IComponent> target, string testId)
+        {
+            return FindComponentByTestId<MudNumericField<int>>(target, testId);
+        }
+
+        protected static bool HasTestId<TComponent>(IRenderedComponent<TComponent> component, string testId)
+            where TComponent : IComponent
+        {
+            var selector = $"[data-test-id='{EscapeSelectorValue(testId)}']";
+            return component.FindAll(selector).Count > 0;
+        }
+
+        private static string EscapeSelectorValue(string value)
+        {
+            return value.Replace("\\", "\\\\").Replace("'", "\\'");
+        }
 
         protected virtual ValueTask Dispose(bool disposing)
         {
