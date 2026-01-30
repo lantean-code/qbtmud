@@ -1,19 +1,27 @@
 @inherits SubmittableDialog
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <MudDialog>
     <DialogContent>
         <MudText data-test-id="@TestIdHelper.For("DeleteDialogMessage")">
-            Are you sure you want to remove @Count torrent@(Count == 1 ? "" : "s") from the transfer list?
+            @(
+                Count == 1
+                    ? WebUiLocalizer.Translate(
+                        "HttpServer",
+                        "Are you sure you want to remove %1 from the transfer list?",
+                        $"\"{TorrentName}\"")
+                    : WebUiLocalizer.Translate("HttpServer", "Are you sure you want to remove these %1 torrents from the transfer list?", Count)
+            )
         </MudText>
 
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox Label="Also permanently delete the files" @bind-Value="DeleteFiles" LabelPlacement="Placement.End" data-test-id="@TestIdHelper.For("DeleteFiles")" />
+                <MudCheckBox Label="@WebUiLocalizer.Translate("confirmDeletionDlg", "Also remove the content files")" @bind-Value="DeleteFiles" LabelPlacement="Placement.End" data-test-id="@TestIdHelper.For("DeleteFiles")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("DeleteDialogCancel")">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("DeleteDialogRemove")">Remove</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("DeleteDialogCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("DeleteDialogRemove")">@WebUiLocalizer.Translate("MainWindow", "Remove")</MudButton>
     </DialogActions>
 </MudDialog>

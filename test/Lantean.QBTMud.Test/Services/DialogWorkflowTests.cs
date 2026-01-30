@@ -5,12 +5,14 @@ using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components.Forms;
 using Moq;
 using MudBlazor;
 using MudCategory = Lantean.QBTMud.Models.Category;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
 using QbtCategory = Lantean.QBitTorrentClient.Models.Category;
+using QbtTorrent = Lantean.QBitTorrentClient.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -19,6 +21,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly Mock<IDialogService> _dialogService;
         private readonly Mock<IApiClient> _apiClient;
         private readonly Mock<ISnackbar> _snackbar;
+        private readonly IWebUiLocalizer _webUiLocalizer;
 
         private readonly DialogWorkflow _target;
 
@@ -28,7 +31,13 @@ namespace Lantean.QBTMud.Test.Services
             _apiClient = new Mock<IApiClient>(MockBehavior.Strict);
             _snackbar = new Mock<ISnackbar>();
 
-            _target = new DialogWorkflow(_dialogService.Object, _apiClient.Object, _snackbar.Object);
+            _webUiLocalizer = Mock.Of<IWebUiLocalizer>();
+            var localizerMock = Mock.Get(_webUiLocalizer);
+            localizerMock
+                .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
+                .Returns((string _, string source, object[] __) => source);
+
+            _target = new DialogWorkflow(_dialogService.Object, _apiClient.Object, _snackbar.Object, _webUiLocalizer);
         }
 
         [Fact]
@@ -497,8 +506,11 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent?", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
+            _apiClient
+                .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
+                .ReturnsAsync(new List<QbtTorrent> { new() { Name = "Name" } });
 
             var result = await _target.InvokeDeleteTorrentDialog(true, "Hash");
 
@@ -511,9 +523,12 @@ namespace Lantean.QBTMud.Test.Services
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok(true));
             _dialogService
-                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent?", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
+            _apiClient
+                .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
+                .ReturnsAsync(new List<QbtTorrent> { new() { Name = "Name" } });
             _apiClient
                 .Setup(a => a.DeleteTorrents(null, true, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
                 .Returns(Task.CompletedTask)
@@ -525,6 +540,8 @@ namespace Lantean.QBTMud.Test.Services
             captured.Should().NotBeNull();
             captured!.Any(p => p.Key == nameof(DeleteDialog.Count)).Should().BeTrue();
             captured[nameof(DeleteDialog.Count)].Should().Be(1);
+            captured.Any(p => p.Key == nameof(DeleteDialog.TorrentName)).Should().BeTrue();
+            captured[nameof(DeleteDialog.TorrentName)].Should().Be("Name");
             _apiClient.Verify();
         }
 
@@ -534,7 +551,7 @@ namespace Lantean.QBTMud.Test.Services
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok(false));
             _dialogService
-                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrents?", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
             _apiClient
@@ -548,6 +565,7 @@ namespace Lantean.QBTMud.Test.Services
             captured.Should().NotBeNull();
             captured!.Any(p => p.Key == nameof(DeleteDialog.Count)).Should().BeTrue();
             captured[nameof(DeleteDialog.Count)].Should().Be(2);
+            captured.Any(p => p.Key == nameof(DeleteDialog.TorrentName)).Should().BeFalse();
             _apiClient.Verify();
         }
 

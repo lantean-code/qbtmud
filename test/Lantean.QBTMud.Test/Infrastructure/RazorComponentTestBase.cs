@@ -1,6 +1,9 @@
 using Bunit;
 using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Infrastructure
@@ -13,7 +16,18 @@ namespace Lantean.QBTMud.Test.Infrastructure
     {
         private bool _disposedValue;
 
-        internal ComponentTestContext TestContext { get; private set; } = new ComponentTestContext();
+        internal ComponentTestContext TestContext { get; private set; }
+
+        protected RazorComponentTestBase()
+        {
+            TestContext = new ComponentTestContext();
+            var webUiLocalizer = Mock.Of<IWebUiLocalizer>();
+            var localizerMock = Mock.Get(webUiLocalizer);
+            localizerMock
+                .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
+                .Returns((string _, string source, object[] __) => source);
+            TestContext.Services.AddSingleton(webUiLocalizer);
+        }
 
         protected string? GetChildContentText(RenderFragment? fragment)
         {

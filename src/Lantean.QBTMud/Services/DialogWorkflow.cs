@@ -3,6 +3,7 @@ using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services.Localization;
 using MudBlazor;
 using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 
@@ -51,12 +52,14 @@ namespace Lantean.QBTMud.Services
         private readonly IDialogService _dialogService;
         private readonly IApiClient _apiClient;
         private readonly ISnackbar _snackbar;
+        private readonly IWebUiLocalizer _webUiLocalizer;
 
-        public DialogWorkflow(IDialogService dialogService, IApiClient apiClient, ISnackbar snackbar)
+        public DialogWorkflow(IDialogService dialogService, IApiClient apiClient, ISnackbar snackbar, IWebUiLocalizer webUiLocalizer)
         {
             _dialogService = dialogService;
             _apiClient = apiClient;
             _snackbar = snackbar;
+            _webUiLocalizer = webUiLocalizer;
         }
 
         /// <inheritdoc />
@@ -212,12 +215,36 @@ namespace Lantean.QBTMud.Services
                 return true;
             }
 
+            string? torrentName = null;
+            if (hashes.Length == 1)
+            {
+                try
+                {
+                    var torrents = await _apiClient.GetTorrentList(hashes: hashes[0]);
+                    torrentName = torrents.FirstOrDefault()?.Name;
+                }
+                catch (HttpRequestException)
+                {
+                    torrentName = null;
+                }
+
+                if (string.IsNullOrWhiteSpace(torrentName))
+                {
+                    torrentName = hashes[0];
+                }
+            }
+
             var parameters = new DialogParameters
             {
                 { nameof(DeleteDialog.Count), hashes.Length },
             };
+            if (hashes.Length == 1)
+            {
+                parameters.Add(nameof(DeleteDialog.TorrentName), torrentName);
+            }
 
-            var reference = await _dialogService.ShowAsync<DeleteDialog>($"Remove torrent{(hashes.Length == 1 ? string.Empty : "s")}?", parameters, ConfirmDialogOptions);
+            var dialogTitle = _webUiLocalizer.Translate("confirmDeletionDlg", "Remove torrent(s)");
+            var reference = await _dialogService.ShowAsync<DeleteDialog>(dialogTitle, parameters, ConfirmDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {

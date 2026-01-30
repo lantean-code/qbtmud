@@ -368,3 +368,4 @@ coverage/
 coverage-report/
 TestResults/
 /ref/mudblazor
+/src/Lantean.QBTMud/wwwroot/i18n

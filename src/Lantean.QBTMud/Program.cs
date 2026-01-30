@@ -1,6 +1,7 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
@@ -16,6 +17,10 @@ namespace Lantean.QBTMud
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
             builder.Services.AddMudServices();
+            builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+            builder.Services.AddOptions<WebUiLocalizationOptions>();
+            builder.Services.AddHttpClient("WebUiAssets", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
+            builder.Services.AddScoped<IWebUiLocalizer, WebUiLocalizer>();
 
             Uri baseAddress;
 #if DEBUG
@@ -60,7 +65,9 @@ namespace Lantean.QBTMud
             builder.Logging.SetMinimumLevel(LogLevel.Error);
 #endif
 
-            await builder.Build().RunAsync();
+            var host = builder.Build();
+            await host.Services.GetRequiredService<IWebUiLocalizer>().InitializeAsync();
+            await host.RunAsync();
         }
     }
 }
