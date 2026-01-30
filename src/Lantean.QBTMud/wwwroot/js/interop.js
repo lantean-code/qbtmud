@@ -189,6 +189,25 @@ window.qbt.clearSelection = () => {
 let supportedEvents = new Map();
 let focusInstance = null;
 
+document.addEventListener('keydown', event => {
+    if (shouldIgnoreKeyPress(event)) {
+        return;
+    }
+
+    const key = getKeyWithoutRepeat(event);
+    const references = supportedEvents.get(key);
+    if (!references || references.size === 0) {
+        return;
+    }
+
+    if (focusInstance && !references.has(focusInstance._id)) {
+        return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+});
+
 document.addEventListener('keyup', event => {
     if (shouldIgnoreKeyPress(event)) {
         return;
@@ -268,6 +287,10 @@ function shouldIgnoreKeyPress(event) {
 
 function getKey(keyboardEvent) {
     return keyboardEvent.key + (keyboardEvent.ctrlKey ? '1' : '0') + (keyboardEvent.shiftKey ? '1' : '0') + (keyboardEvent.altKey ? '1' : '0') + (keyboardEvent.metaKey ? '1' : '0') + (keyboardEvent.repeat ? '1' : '0');
+}
+
+function getKeyWithoutRepeat(keyboardEvent) {
+    return keyboardEvent.key + (keyboardEvent.ctrlKey ? '1' : '0') + (keyboardEvent.shiftKey ? '1' : '0') + (keyboardEvent.altKey ? '1' : '0') + (keyboardEvent.metaKey ? '1' : '0') + '0';
 }
 
 function fallbackCopyTextToClipboard(text) {
