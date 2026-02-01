@@ -36,9 +36,11 @@ namespace Lantean.QBTMud
                 .AddHttpMessageHandler<CookieHandler>()
                 .RemoveAllLoggers()
                 .AddLogger<HttpLogger>(wrapHandlersPipeline: true);
+            builder.Services.AddHttpClient("Assets", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
 
             builder.Services.AddScoped<IApiClient, ApiClient>();
             builder.Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
+            builder.Services.AddScoped<IThemeManagerService, ThemeManagerService>();
 
             builder.Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
             builder.Services.AddSingleton<IPeerDataManager, PeerDataManager>();

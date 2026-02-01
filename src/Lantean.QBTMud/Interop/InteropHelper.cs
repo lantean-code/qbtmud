@@ -44,6 +44,17 @@ namespace Lantean.QBTMud.Interop
             await runtime.InvokeVoidAsync("qbt.renderPiecesBar", id, hash, pieces, downloadingColor, haveColor, borderColor);
         }
 
+        /// <summary>
+        /// Loads a Google Fonts stylesheet into the document.
+        /// </summary>
+        /// <param name="runtime">The JavaScript runtime.</param>
+        /// <param name="url">The stylesheet URL to load.</param>
+        /// <param name="id">An optional DOM id for the link element.</param>
+        public static async Task LoadGoogleFont(this IJSRuntime runtime, string url, string? id = null)
+        {
+            await runtime.InvokeVoidAsync("qbt.loadGoogleFont", url, id);
+        }
+
         public static async Task WriteToClipboard(this IJSRuntime runtime, string value)
         {
             try

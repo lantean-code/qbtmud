@@ -1,0 +1,14 @@
+.themes__body {
+    padding: 0;
+}
+
+.theme-row--applied {
+    background: rgba(34, 197, 94, 0.08);
+}
+
+.theme-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}

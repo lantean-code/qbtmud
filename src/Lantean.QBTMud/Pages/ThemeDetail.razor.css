@@ -1,0 +1,18 @@
+.theme-editor__header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.theme-editor__font {
+    max-width: 320px;
+}
+
+.theme-color-group__title {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 700px) {
+}

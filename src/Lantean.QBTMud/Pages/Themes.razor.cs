@@ -1,0 +1,442 @@
+using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Interop;
+using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Theming;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.JSInterop;
+using MudBlazor;
+using MudBlazor.ThemeManager;
+using System.Text;
+using System.Text.Json;
+
+namespace Lantean.QBTMud.Pages
+{
+    public partial class Themes
+    {
+        private const long MaxThemeUploadBytes = 1024 * 1024;
+
+        private readonly Dictionary<string, RenderFragment<RowContext<ThemeCatalogItem>>> _columnRenderFragments = [];
+        private bool _isBusy;
+
+        [Inject]
+        protected IThemeManagerService ThemeManagerService { get; set; } = default!;
+
+        [Inject]
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected ISnackbar Snackbar { get; set; } = default!;
+
+        [Inject]
+        protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [Inject]
+        protected IJSRuntime JSRuntime { get; set; } = default!;
+
+        [CascadingParameter(Name = "DrawerOpen")]
+        public bool DrawerOpen { get; set; }
+
+        protected DynamicTable<ThemeCatalogItem>? Table { get; set; }
+
+        protected IEnumerable<ThemeCatalogItem> ThemeEntries
+        {
+            get { return ThemeManagerService.Themes; }
+        }
+
+        protected bool IsBusy
+        {
+            get { return _isBusy; }
+        }
+
+        protected IEnumerable<ColumnDefinition<ThemeCatalogItem>> Columns
+        {
+            get { return GetColumnDefinitions(); }
+        }
+
+        public Themes()
+        {
+            _columnRenderFragments.Add("Theme", NameColumn);
+            _columnRenderFragments.Add("Actions", ActionsColumn);
+        }
+
+        protected override async Task OnInitializedAsync()
+        {
+            await ThemeManagerService.EnsureInitialized();
+        }
+
+        protected void NavigateBack()
+        {
+            NavigationManager.NavigateToHome();
+        }
+
+        protected async Task ReloadThemes()
+        {
+            if (_isBusy)
+            {
+                return;
+            }
+
+            _isBusy = true;
+            try
+            {
+                await ThemeManagerService.ReloadServerThemes();
+            }
+            finally
+            {
+                _isBusy = false;
+            }
+        }
+
+        protected async Task ApplyTheme(ThemeCatalogItem theme)
+        {
+            if (_isBusy)
+            {
+                return;
+            }
+
+            if (!CanApplyTheme(theme))
+            {
+                return;
+            }
+
+            _isBusy = true;
+            try
+            {
+                await ThemeManagerService.ApplyTheme(theme.Id);
+            }
+            finally
+            {
+                _isBusy = false;
+            }
+        }
+
+        protected async Task DuplicateTheme(ThemeCatalogItem theme)
+        {
+            if (_isBusy)
+            {
+                return;
+            }
+
+            _isBusy = true;
+            try
+            {
+                var defaultName = $"{theme.Name} Copy";
+                var name = await DialogWorkflow.ShowStringFieldDialog("Duplicate Theme", "Name", defaultName);
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    return;
+                }
+
+                var clone = ThemeSerialization.CloneTheme(theme.Theme);
+                var definition = new ThemeDefinition
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Name = name.Trim(),
+                    Theme = clone
+                };
+
+                await ThemeManagerService.SaveLocalTheme(definition);
+                NavigateToDetails(definition.Id);
+            }
+            finally
+            {
+                _isBusy = false;
+            }
+        }
+
+        protected async Task ExportTheme(ThemeCatalogItem theme)
+        {
+            if (_isBusy)
+            {
+                return;
+            }
+
+            _isBusy = true;
+            try
+            {
+                var definition = new ThemeDefinition
+                {
+                    Id = theme.Id,
+                    Name = theme.Name,
+                    Theme = theme.Theme
+                };
+
+                var json = ThemeSerialization.SerializeDefinition(definition, writeIndented: true);
+                var safeName = SanitizeFileName(theme.Name);
+                var dataUrl = BuildJsonDataUrl(json);
+
+                await JSRuntime.FileDownload(dataUrl, $"{safeName}.json");
+            }
+            finally
+            {
+                _isBusy = false;
+            }
+        }
+
+        protected async Task RenameTheme(ThemeCatalogItem theme)
+        {
+            if (_isBusy)
+            {
+                return;
+            }
+
+            if (!CanEditTheme(theme))
+            {
+                return;
+            }
+
+            _isBusy = true;
+            try
+            {
+                var name = await DialogWorkflow.ShowStringFieldDialog("Rename Theme", "Name", theme.Name);
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    return;
+                }
+
+                var definition = new ThemeDefinition
+                {
+                    Id = theme.Id,
+                    Name = name.Trim(),
+                    Theme = theme.Theme
+                };
+
+                await ThemeManagerService.SaveLocalTheme(definition);
+            }
+            finally
+            {
+                _isBusy = false;
+            }
+        }
+
+        protected async Task DeleteTheme(ThemeCatalogItem theme)
+        {
+            if (_isBusy)
+            {
+                return;
+            }
+
+            if (!CanEditTheme(theme))
+            {
+                return;
+            }
+
+            _isBusy = true;
+            try
+            {
+                var confirmed = await DialogWorkflow.ShowConfirmDialog("Delete theme?", $"Delete '{theme.Name}'?");
+                if (!confirmed)
+                {
+                    return;
+                }
+
+                await ThemeManagerService.DeleteLocalTheme(theme.Id);
+            }
+            finally
+            {
+                _isBusy = false;
+            }
+        }
+
+        protected async Task CreateTheme()
+        {
+            var name = await DialogWorkflow.ShowStringFieldDialog("New Theme", "Name", null);
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return;
+            }
+
+            var baseTheme = ThemeManagerService.CurrentTheme?.Theme;
+            if (baseTheme is null)
+            {
+                baseTheme = new ThemeManagerTheme { FontFamily = "Nunito Sans" };
+                ThemeFontHelper.ApplyFont(baseTheme, baseTheme.FontFamily);
+            }
+
+            var clone = ThemeSerialization.CloneTheme(baseTheme);
+            ThemeFontHelper.ApplyFont(clone, clone.FontFamily);
+
+            var definition = new ThemeDefinition
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Name = name.Trim(),
+                Theme = clone
+            };
+
+            await ThemeManagerService.SaveLocalTheme(definition);
+            NavigateToDetails(definition.Id);
+        }
+
+        protected async Task ImportThemes(IReadOnlyList<IBrowserFile> files)
+        {
+            if (_isBusy)
+            {
+                return;
+            }
+
+            if (files.Count == 0)
+            {
+                return;
+            }
+
+            _isBusy = true;
+            try
+            {
+                var file = files[0];
+                await using var stream = file.OpenReadStream(MaxThemeUploadBytes);
+                using var reader = new StreamReader(stream);
+                var json = await reader.ReadToEndAsync();
+
+                var definition = ThemeSerialization.DeserializeDefinition(json);
+                if (definition is null)
+                {
+                    Snackbar.Add("Unable to import theme: invalid JSON.", Severity.Error);
+                    return;
+                }
+
+                var normalized = NormalizeImport(definition, file.Name);
+                await ThemeManagerService.SaveLocalTheme(normalized);
+                NavigateToDetails(normalized.Id);
+            }
+            catch (IOException exception)
+            {
+                Snackbar.Add($"Unable to import theme: {exception.Message}", Severity.Error);
+            }
+            catch (JsonException exception)
+            {
+                Snackbar.Add($"Unable to import theme: {exception.Message}", Severity.Error);
+            }
+            finally
+            {
+                _isBusy = false;
+            }
+        }
+
+        protected Task OpenThemeDetails(TableRowClickEventArgs<ThemeCatalogItem> args)
+        {
+            if (args.Item is null)
+            {
+                return Task.CompletedTask;
+            }
+
+            NavigateToDetails(args.Item.Id);
+            return Task.CompletedTask;
+        }
+
+        protected string? RowClassFunc(ThemeCatalogItem theme, int index)
+        {
+            if (IsThemeApplied(theme))
+            {
+                return "theme-row--applied";
+            }
+
+            return null;
+        }
+
+        protected bool IsThemeApplied(ThemeCatalogItem theme)
+        {
+            return ThemeManagerService.CurrentThemeId == theme.Id;
+        }
+
+        protected bool CanApplyTheme(ThemeCatalogItem theme)
+        {
+            return !IsThemeApplied(theme);
+        }
+
+        protected bool CanEditTheme(ThemeCatalogItem theme)
+        {
+            return !theme.IsReadOnly;
+        }
+
+        private void NavigateToDetails(string themeId)
+        {
+            var escaped = Uri.EscapeDataString(themeId);
+            NavigationManager.NavigateTo($"./themes/{escaped}");
+        }
+
+        private IEnumerable<ColumnDefinition<ThemeCatalogItem>> GetColumnDefinitions()
+        {
+            foreach (var columnDefinition in ColumnsDefinitions)
+            {
+                if (_columnRenderFragments.TryGetValue(columnDefinition.Header, out var fragment))
+                {
+                    columnDefinition.RowTemplate = fragment;
+                }
+
+                yield return columnDefinition;
+            }
+        }
+
+        private ThemeDefinition NormalizeImport(ThemeDefinition definition, string fileName)
+        {
+            var name = string.IsNullOrWhiteSpace(definition.Name)
+                ? Path.GetFileNameWithoutExtension(fileName)
+                : definition.Name.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = "Imported Theme";
+            }
+
+            var id = string.IsNullOrWhiteSpace(definition.Id)
+                ? Guid.NewGuid().ToString("N")
+                : definition.Id.Trim();
+
+            if (ThemeManagerService.Themes.Any(theme => theme.Id == id))
+            {
+                id = Guid.NewGuid().ToString("N");
+            }
+
+            var theme = definition.Theme ?? new ThemeManagerTheme();
+            var fontFamily = string.IsNullOrWhiteSpace(theme.FontFamily) ? "Nunito Sans" : theme.FontFamily;
+            if (!ThemeFontCatalog.TryGetFontUrl(fontFamily, out _))
+            {
+                fontFamily = "Nunito Sans";
+            }
+
+            theme.FontFamily = fontFamily;
+            ThemeFontHelper.ApplyFont(theme, fontFamily);
+
+            return new ThemeDefinition
+            {
+                Id = id,
+                Name = name,
+                Theme = theme
+            };
+        }
+
+        private static string BuildJsonDataUrl(string json)
+        {
+            var escaped = Uri.EscapeDataString(json);
+            return $"data:application/json;charset=utf-8,{escaped}";
+        }
+
+        private static string SanitizeFileName(string name)
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var builder = new StringBuilder(name.Length);
+
+            foreach (var ch in name)
+            {
+                builder.Append(invalidChars.Contains(ch) ? '-' : ch);
+            }
+
+            var sanitized = builder.ToString().Trim();
+            if (string.IsNullOrWhiteSpace(sanitized))
+            {
+                return "theme";
+            }
+
+            return sanitized;
+        }
+
+        public static List<ColumnDefinition<ThemeCatalogItem>> ColumnsDefinitions { get; } =
+        [
+            new ColumnDefinition<ThemeCatalogItem>("Theme", t => t.Name),
+            new ColumnDefinition<ThemeCatalogItem>("Source", t => t.Source.ToString()),
+            new ColumnDefinition<ThemeCatalogItem>("Actions", t => t.Name, tdClass: "no-wrap")
+        ];
+    }
+}

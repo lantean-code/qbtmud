@@ -1,18 +1,26 @@
 using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Layout
 {
-    public partial class MainLayout
+    public partial class MainLayout : IDisposable
     {
         private const string _isDarkModeStorageKey = "MainLayout.IsDarkMode";
         private const string _drawerOpenStorageKey = "MainLayout.DrawerOpen";
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
+
+        [Inject]
+        protected IThemeManagerService ThemeManagerService { get; set; } = default!;
+
+        [Inject]
+        protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
@@ -32,6 +40,9 @@ namespace Lantean.QBTMud.Layout
         protected MudThemeProvider MudThemeProvider { get; set; } = default!;
 
         private int _lastErrorCount;
+        private bool _pendingThemeUpdate;
+        private string? _pendingFontFamily;
+        private bool _themeInitialized;
 
         private Menu Menu { get; set; } = default!;
 
@@ -42,6 +53,12 @@ namespace Lantean.QBTMud.Layout
         public MainLayout()
         {
             Theme = QbtMudThemeFactory.CreateDefaultTheme();
+        }
+
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+            ThemeManagerService.ThemeChanged += OnThemeChanged;
         }
 
         protected EventCallback<bool> DrawerOpenChangedCallback => EventCallback.Factory.Create<bool>(this, SetDrawerOpenAsync);
@@ -93,7 +110,15 @@ namespace Lantean.QBTMud.Layout
                 IsDarkMode = isDarkMode ?? true;
 
                 await MudThemeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChanged);
+                await ThemeManagerService.EnsureInitialized();
+                _themeInitialized = true;
                 StateHasChanged();
+            }
+
+            if (_pendingThemeUpdate && _themeInitialized)
+            {
+                _pendingThemeUpdate = false;
+                await LoadPendingFontAsync();
             }
         }
 
@@ -122,6 +147,11 @@ namespace Lantean.QBTMud.Layout
         {
             IsDarkMode = value;
             await LocalStorage.SetItemAsync(_isDarkModeStorageKey, value);
+        }
+
+        public void Dispose()
+        {
+            ThemeManagerService.ThemeChanged -= OnThemeChanged;
         }
 
         private void BreakpointChanged(Breakpoint value)
@@ -169,6 +199,30 @@ namespace Lantean.QBTMud.Layout
             }
 
             return InvokeAsync(StateHasChanged);
+        }
+
+        private void OnThemeChanged(object? sender, Models.ThemeChangedEventArgs args)
+        {
+            Theme = args.Theme;
+            _pendingFontFamily = args.FontFamily;
+            _pendingThemeUpdate = true;
+            StateHasChanged();
+        }
+
+        private async Task LoadPendingFontAsync()
+        {
+            if (string.IsNullOrWhiteSpace(_pendingFontFamily))
+            {
+                return;
+            }
+
+            if (!ThemeFontCatalog.TryGetFontUrl(_pendingFontFamily, out var url))
+            {
+                return;
+            }
+
+            var fontId = ThemeFontCatalog.BuildFontId(_pendingFontFamily);
+            await JSRuntime.LoadGoogleFont(url, fontId);
         }
     }
 }

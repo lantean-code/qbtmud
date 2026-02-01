@@ -10,6 +10,29 @@ window.qbt.triggerFileDownload = (url, fileName) => {
     anchorElement.remove();
 }
 
+window.qbt.loadGoogleFont = (url, id) => {
+    if (!url) {
+        return;
+    }
+
+    if (id) {
+        const existing = document.getElementById(id);
+        if (existing) {
+            return;
+        }
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = url;
+
+    if (id) {
+        link.id = id;
+    }
+
+    document.head.appendChild(link);
+}
+
 window.qbt.getBoundingClientRect = (selector) => {
     const element = getElementBySelector(selector);
 
