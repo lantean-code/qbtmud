@@ -10,6 +10,10 @@
             <MudDivider Vertical="true" />
             @if (!IsLoading && Theme is not null)
             {
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                               title="Preview"
+                               OnClick="ShowPreview"
+                               Disabled="@IsBusy" />
                 <MudIconButton Icon="@Icons.Material.Outlined.Undo"
                                title="Reset"
                                OnClick="ResetEdits"
@@ -17,12 +21,12 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.Save"
                                title="Save"
                                OnClick="SaveEdits"
-                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy)" />
+                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy || HasNameError)" />
                 <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle"
                                Color="Color.Success"
                                title="Save & apply"
                                OnClick="SaveAndApplyEdits"
-                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy)" />
+                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy || HasNameError)" />
             }
         </MudToolBar>
     </div>
@@ -64,12 +68,22 @@
                             </MudAlert>
                         }
 
+                        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Name</MudText>
+                        <MudTextField T="string"
+                                      Value="EditorName"
+                                      ValueChanged="NameChanged"
+                                      Immediate="true"
+                                      Disabled="@(!CanEditTheme || IsBusy)"
+                                      Error="@HasNameError"
+                                      ErrorText="@NameError" />
+
                         <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Font</MudText>
                         <MudAutocomplete T="string"
                                          Value="EditorFont"
                                          ValueChanged="FontChanged"
                                          SearchFunc="SearchFonts"
                                          Dense="true"
+                                         MaxItems="50"
                                          Immediate="true"
                                          Strict="false"
                                          CoerceText="true"
@@ -77,14 +91,14 @@
                                          Disabled="@(!CanEditTheme || IsBusy)"
                                          Error="@HasFontError"
                                          ErrorText="@FontError"
-                                         Class="theme-editor__font" />
-
-                        @if (HasChanges && CanEditTheme)
-                        {
-                            <MudAlert Severity="Severity.Warning" Class="mt-3">
-                                Unsaved changes.
-                            </MudAlert>
-                        }
+                                         Class="theme-editor__font">
+                            <ItemTemplate>
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.body2" Style="@GetFontPreviewStyle(context)">@context</MudText>
+                                    <MudText Typo="Typo.caption" Style="@GetFontPreviewStyle(context)">Aa Bb Cc 123</MudText>
+                                </MudStack>
+                            </ItemTemplate>
+                        </MudAutocomplete>
                     </MudContainer>
                 </MudTabPanel>
                 <MudTabPanel Text="Dark Colors">

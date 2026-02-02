@@ -25,6 +25,9 @@ namespace Lantean.QBTMud.Pages
         protected IThemeManagerService ThemeManagerService { get; set; } = default!;
 
         [Inject]
+        protected IThemeFontCatalog ThemeFontCatalog { get; set; } = default!;
+
+        [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]

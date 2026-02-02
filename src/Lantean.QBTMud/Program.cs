@@ -1,6 +1,7 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
@@ -40,6 +41,7 @@ namespace Lantean.QBTMud
 
             builder.Services.AddScoped<IApiClient, ApiClient>();
             builder.Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
+            builder.Services.AddSingleton<IThemeFontCatalog, ThemeFontCatalog>();
             builder.Services.AddScoped<IThemeManagerService, ThemeManagerService>();
 
             builder.Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();

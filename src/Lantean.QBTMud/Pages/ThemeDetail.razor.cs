@@ -70,14 +70,20 @@ namespace Lantean.QBTMud.Pages
 
         private ThemeCatalogItem? _theme;
         private ThemeManagerTheme? _editorTheme;
+        private string _editorName = string.Empty;
         private string _editorFont = string.Empty;
+        private string? _nameError;
         private string? _fontError;
         private bool _hasChanges;
         private bool _isBusy;
         private bool _isLoading;
+        private readonly HashSet<string> _loadedFonts = new(StringComparer.OrdinalIgnoreCase);
 
         [Inject]
         protected IThemeManagerService ThemeManagerService { get; set; } = default!;
+
+        [Inject]
+        protected IThemeFontCatalog ThemeFontCatalog { get; set; } = default!;
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
@@ -96,6 +102,9 @@ namespace Lantean.QBTMud.Pages
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
+
+        [CascadingParameter(Name = "IsDarkMode")]
+        public bool IsDarkMode { get; set; }
 
         protected ThemeCatalogItem? Theme
         {
@@ -132,9 +141,24 @@ namespace Lantean.QBTMud.Pages
             get { return !string.IsNullOrWhiteSpace(_fontError); }
         }
 
+        protected bool HasNameError
+        {
+            get { return !string.IsNullOrWhiteSpace(_nameError); }
+        }
+
         protected string FontError
         {
             get { return _fontError ?? string.Empty; }
+        }
+
+        protected string NameError
+        {
+            get { return _nameError ?? string.Empty; }
+        }
+
+        protected string EditorName
+        {
+            get { return _editorName; }
         }
 
         protected string EditorFont
@@ -298,6 +322,34 @@ namespace Lantean.QBTMud.Pages
             await SaveEditsInternal(true);
         }
 
+        protected async Task ShowPreview()
+        {
+            if (_theme is null)
+            {
+                return;
+            }
+
+            var previewTheme = _editorTheme?.Theme ?? _theme.Theme.Theme;
+            await DialogWorkflow.ShowThemePreviewDialog(previewTheme, IsDarkMode);
+        }
+
+        protected Task NameChanged(string value)
+        {
+            _editorName = value;
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                _nameError = "Name is required.";
+            }
+            else
+            {
+                _nameError = null;
+            }
+
+            _hasChanges = true;
+            return Task.CompletedTask;
+        }
+
         protected Task FontChanged(string value)
         {
             if (_editorTheme is null)
@@ -326,7 +378,7 @@ namespace Lantean.QBTMud.Pages
                 fonts = fonts.Where(font => font.Contains(value, StringComparison.OrdinalIgnoreCase));
             }
 
-            return Task.FromResult(fonts);
+            return LoadFontPreviews(fonts, cancellationToken);
         }
 
         protected MudColor GetPaletteColor(ThemePaletteColor colorType, bool useDarkPalette)
@@ -348,6 +400,16 @@ namespace Lantean.QBTMud.Pages
 
             ThemePaletteHelper.SetColor(_editorTheme, colorType, value.ToString(), useDarkPalette);
             _hasChanges = true;
+        }
+
+        protected string GetFontPreviewStyle(string fontFamily)
+        {
+            if (string.IsNullOrWhiteSpace(fontFamily))
+            {
+                return string.Empty;
+            }
+
+            return $"font-family: '{fontFamily}', var(--mud-typography-default-family);";
         }
 
         protected bool IsThemeApplied(ThemeCatalogItem theme)
@@ -408,12 +470,18 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(_editorName))
+            {
+                _nameError = "Name is required.";
+                return;
+            }
+
             await RunBusy(async () =>
             {
                 var definition = new ThemeDefinition
                 {
                     Id = _theme.Id,
-                    Name = _theme.Name,
+                    Name = _editorName.Trim(),
                     Theme = _editorTheme
                 };
 
@@ -449,6 +517,7 @@ namespace Lantean.QBTMud.Pages
         {
             _theme = theme;
             _editorTheme = ThemeSerialization.CloneTheme(theme.Theme);
+            _editorName = theme.Name;
 
             var fontFamily = string.IsNullOrWhiteSpace(_editorTheme.FontFamily) ? "Nunito Sans" : _editorTheme.FontFamily;
             if (!ThemeFontCatalog.TryGetFontUrl(fontFamily, out _))
@@ -458,6 +527,7 @@ namespace Lantean.QBTMud.Pages
 
             ThemeFontHelper.ApplyFont(_editorTheme, fontFamily);
             _editorFont = fontFamily;
+            _nameError = null;
             _fontError = null;
             _hasChanges = false;
         }
@@ -466,6 +536,30 @@ namespace Lantean.QBTMud.Pages
         {
             var escaped = Uri.EscapeDataString(themeId);
             NavigationManager.NavigateTo($"./themes/{escaped}");
+        }
+
+        private async Task<IEnumerable<string>> LoadFontPreviews(IEnumerable<string> fonts, CancellationToken cancellationToken)
+        {
+            var results = fonts.ToList();
+            foreach (var font in results)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (_loadedFonts.Contains(font))
+                {
+                    continue;
+                }
+
+                if (!ThemeFontCatalog.TryGetFontUrl(font, out var url))
+                {
+                    continue;
+                }
+
+                _loadedFonts.Add(font);
+                var fontId = ThemeFontCatalog.BuildFontId(font);
+                await JSRuntime.LoadGoogleFont(url, fontId);
+            }
+
+            return results;
         }
 
         private static string BuildJsonDataUrl(string json)

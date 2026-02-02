@@ -20,6 +20,9 @@ namespace Lantean.QBTMud.Layout
         protected IThemeManagerService ThemeManagerService { get; set; } = default!;
 
         [Inject]
+        protected IThemeFontCatalog ThemeFontCatalog { get; set; } = default!;
+
+        [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [CascadingParameter]

@@ -1,0 +1,89 @@
+@using Lantean.QBTMud.Components.UI
+@using MudBlazor.Utilities
+
+<MudDialog ContentClass="theme-preview-dialog__content"
+           ContentStyle="width: min(1800px, calc(100vw - 4rem)); height: calc(100vh - 4rem);">
+    <DialogContent>
+        <MudThemeProvider Theme="PreviewTheme"
+                          IsDarkMode="@_isDarkMode"
+                          ObserveSystemThemeChange="false" />
+        <div class="theme-preview theme-preview-scope">
+            <div class="theme-preview__appbar">
+                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" />
+                <MudText Typo="Typo.subtitle1">qBittorrent Web UI</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@DarkModeIcon"
+                               Color="Color.Inherit"
+                               title="@DarkModeTooltip"
+                               OnClick="ToggleDarkMode" />
+                <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" />
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="Close" />
+            </div>
+            <div class="theme-preview__body">
+                <div class="theme-preview__sidebar">
+                    <MudNavMenu Dense="true">
+                        <CustomNavLink Icon="@Icons.Material.Outlined.Navigation"
+                                       OnClick="HandleNavClick">Torrents</CustomNavLink>
+                        <MudDivider />
+                        <CustomNavLink Icon="@Icons.Material.Filled.PieChart"
+                                       OnClick="HandleNavClick">Statistics</CustomNavLink>
+                        <CustomNavLink Icon="@Icons.Material.Filled.ShowChart"
+                                       OnClick="HandleNavClick">Speed</CustomNavLink>
+                        <CustomNavLink Icon="@Icons.Material.Filled.Search"
+                                       OnClick="HandleNavClick">Search</CustomNavLink>
+                        <CustomNavLink Icon="@Icons.Material.Filled.RssFeed"
+                                       OnClick="HandleNavClick">RSS</CustomNavLink>
+                        <MudDivider />
+                        <CustomNavLink Icon="@Icons.Material.Filled.Palette"
+                                       Active="true"
+                                       OnClick="HandleNavClick">Theme Manager</CustomNavLink>
+                        <CustomNavLink Icon="@Icons.Material.Filled.Settings"
+                                       OnClick="HandleNavClick">Settings</CustomNavLink>
+                    </MudNavMenu>
+                </div>
+                <div class="theme-preview__content">
+                    <MudText Typo="Typo.h6">Preview</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3">This is a quick snapshot of how the UI colors and typography feel.</MudText>
+
+                    <MudPaper Class="theme-preview__card">
+                        <MudText Typo="Typo.subtitle2">Quick actions</MudText>
+                        <MudStack Row="true" Spacing="1" Class="mt-2">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow">Start</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Stop">Stop</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Delete">Delete</MudButton>
+                        </MudStack>
+                    </MudPaper>
+
+                    <MudPaper Class="theme-preview__card">
+                        <MudText Typo="Typo.subtitle2">Status chips</MudText>
+                        <MudStack Row="true" Spacing="1" Class="mt-2">
+                            <MudChip T="string" Color="Color.Success" Variant="Variant.Filled">Downloading</MudChip>
+                            <MudChip T="string" Color="Color.Info" Variant="Variant.Filled">Seeding</MudChip>
+                            <MudChip T="string" Color="Color.Warning" Variant="Variant.Filled">Paused</MudChip>
+                        </MudStack>
+                    </MudPaper>
+
+                    <MudPaper Class="theme-preview__card">
+                        <MudText Typo="Typo.subtitle2">Progress</MudText>
+                        <MudProgressLinear Value="62" Color="Color.Primary" Class="mt-2" />
+                        <MudProgressLinear Value="35" Color="Color.Info" Class="mt-2" />
+                    </MudPaper>
+                </div>
+            </div>
+            <div class="theme-preview__footer">
+                <MudSpacer />
+                <MudText Typo="Typo.caption" Class="mx-2">Free space: 1.28 TB</MudText>
+                <MudDivider Vertical="true" />
+                <MudText Typo="Typo.caption" Class="mx-2">External IP: 127.0.0.1</MudText>
+                <MudDivider Vertical="true" />
+                <MudText Typo="Typo.caption" Class="mx-2">DHT: 684 nodes</MudText>
+                <MudDivider Vertical="true" />
+                <MudIcon Class="ml-2" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Success" />
+                <MudText Typo="Typo.caption" Class="mr-2">1.5 GB/s (178 TB)</MudText>
+                <MudDivider Vertical="true" />
+                <MudIcon Class="ml-2" Icon="@Icons.Material.Filled.KeyboardDoubleArrowUp" Color="Color.Info" />
+                <MudText Typo="Typo.caption" Class="mr-2">427 MB/s (229 TB)</MudText>
+            </div>
+        </div>
+    </DialogContent>
+</MudDialog>

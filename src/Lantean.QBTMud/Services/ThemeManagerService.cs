@@ -16,6 +16,7 @@ namespace Lantean.QBTMud.Services
 
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILocalStorageService _localStorage;
+        private readonly IThemeFontCatalog _themeFontCatalog;
         private readonly List<ThemeDefinition> _localThemes = [];
         private readonly List<ThemeCatalogItem> _serverThemes = [];
         private readonly List<ThemeCatalogItem> _themes = [];
@@ -30,10 +31,14 @@ namespace Lantean.QBTMud.Services
         /// </summary>
         /// <param name="httpClientFactory">The HTTP client factory for loading server assets.</param>
         /// <param name="localStorage">The local storage service.</param>
-        public ThemeManagerService(IHttpClientFactory httpClientFactory, ILocalStorageService localStorage)
+        public ThemeManagerService(
+            IHttpClientFactory httpClientFactory,
+            ILocalStorageService localStorage,
+            IThemeFontCatalog themeFontCatalog)
         {
             _httpClientFactory = httpClientFactory;
             _localStorage = localStorage;
+            _themeFontCatalog = themeFontCatalog;
         }
 
         /// <summary>
@@ -83,6 +88,8 @@ namespace Lantean.QBTMud.Services
             {
                 return;
             }
+
+            await _themeFontCatalog.EnsureInitialized();
 
             await LoadLocalThemes();
             await LoadServerThemes();
@@ -349,14 +356,14 @@ namespace Lantean.QBTMud.Services
             _themesView = _themes.ToList();
         }
 
-        private static ThemeDefinition NormalizeDefinition(ThemeDefinition definition)
+        private ThemeDefinition NormalizeDefinition(ThemeDefinition definition)
         {
             var name = string.IsNullOrWhiteSpace(definition.Name) ? "Untitled Theme" : definition.Name.Trim();
             var id = string.IsNullOrWhiteSpace(definition.Id) ? Guid.NewGuid().ToString("N") : definition.Id.Trim();
             var theme = definition.Theme ?? new ThemeManagerTheme();
 
             var fontFamily = string.IsNullOrWhiteSpace(theme.FontFamily) ? "Nunito Sans" : theme.FontFamily;
-            if (!ThemeFontCatalog.TryGetFontUrl(fontFamily, out _))
+            if (!_themeFontCatalog.TryGetFontUrl(fontFamily, out _))
             {
                 fontFamily = "Nunito Sans";
             }
