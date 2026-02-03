@@ -2,7 +2,7 @@
 
 <MudOverlay @bind-Visible="_isOpen" AutoClose="true" />
 
-<div class="theme-color-item">
+<div class="theme-color-item" @attributes="AdditionalAttributes">
     <div class="theme-color-item__row mud-list-item-clickable mud-ripple @(Disabled ? "theme-color-item__row--disabled" : string.Empty) @(_isOpen ? "theme-color-item__row--open" : string.Empty)" @onclick="ToggleOpen">
         <div class="theme-color-item__swatch" style="--theme-color:@SwatchColor">
             <div class="theme-color-item__swatch-fill"></div>

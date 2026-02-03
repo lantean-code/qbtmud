@@ -1,4 +1,5 @@
 @using Lantean.QBTMud.Components.UI
+@using Lantean.QBTMud.Helpers
 @using MudBlazor.Utilities
 
 <MudDialog ContentClass="theme-preview-dialog__content"
@@ -9,15 +10,16 @@
                           ObserveSystemThemeChange="false" />
         <div class="theme-preview theme-preview-scope">
             <div class="theme-preview__appbar">
-                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" />
+                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" data-test-id="@TestIdHelper.For("ThemePreviewMenu")" />
                 <MudText Typo="Typo.subtitle1">qBittorrent Web UI</MudText>
                 <MudSpacer />
                 <MudIconButton Icon="@DarkModeIcon"
                                Color="Color.Inherit"
                                title="@DarkModeTooltip"
-                               OnClick="ToggleDarkMode" />
-                <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" />
-                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="Close" />
+                               OnClick="ToggleDarkMode"
+                               data-test-id="@TestIdHelper.For("ThemePreviewToggleMode")" />
+                <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" data-test-id="@TestIdHelper.For("ThemePreviewOptions")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="Close" data-test-id="@TestIdHelper.For("ThemePreviewClose")" />
             </div>
             <div class="theme-preview__body">
                 <div class="theme-preview__sidebar">

@@ -36,8 +36,9 @@ namespace Lantean.QBTMud.Test.Components
             });
 
             var menuItems = target.FindComponents<MudMenuItem>();
-            menuItems.Should().HaveCount(18);
+            menuItems.Should().HaveCount(19);
             menuItems.Any(item => HasTestId(item, "Action-speed")).Should().BeTrue();
+            menuItems.Any(item => HasTestId(item, "Action-themes")).Should().BeTrue();
             snackbarMock.Invocations.Should().BeEmpty();
             apiClientMock.VerifyNoOtherCalls();
         }

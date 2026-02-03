@@ -11,6 +11,9 @@ namespace Lantean.QBTMud.Components
         [Parameter]
         public string Name { get; set; } = string.Empty;
 
+        [Parameter(CaptureUnmatchedValues = true)]
+        public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
         [Parameter]
         public MudColor Color { get; set; } = new("#000000");
 

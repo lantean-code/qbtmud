@@ -4,7 +4,7 @@
 <div class="content-panel theme-detail">
     <div class="content-panel__toolbar">
         <MudToolBar Gutters="false" Dense="true">
-            <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to themes" />
+            <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to themes" data-test-id="@TestIdHelper.For("ThemeDetailBack")" />
             <MudDivider Vertical="true" />
             <MudText Class="px-5 no-wrap">@ThemeTitle</MudText>
             <MudDivider Vertical="true" />
@@ -13,20 +13,24 @@
                 <MudIconButton Icon="@Icons.Material.Filled.Visibility"
                                title="Preview"
                                OnClick="ShowPreview"
-                               Disabled="@IsBusy" />
+                               Disabled="@IsBusy"
+                               data-test-id="@TestIdHelper.For("ThemeDetailPreview")" />
                 <MudIconButton Icon="@Icons.Material.Outlined.Undo"
                                title="Reset"
                                OnClick="ResetEdits"
-                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy)" />
+                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy)"
+                               data-test-id="@TestIdHelper.For("ThemeDetailReset")" />
                 <MudIconButton Icon="@Icons.Material.Outlined.Save"
                                title="Save"
                                OnClick="SaveEdits"
-                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy || HasNameError)" />
+                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy || HasNameError)"
+                               data-test-id="@TestIdHelper.For("ThemeDetailSave")" />
                 <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle"
                                Color="Color.Success"
                                title="Save & apply"
                                OnClick="SaveAndApplyEdits"
-                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy || HasNameError)" />
+                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy || HasNameError)"
+                               data-test-id="@TestIdHelper.For("ThemeDetailSaveApply")" />
             }
         </MudToolBar>
     </div>
@@ -35,14 +39,14 @@
         @if (IsLoading)
         {
             <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="content-panel__container pa-4">
-                <MudText>Loading theme…</MudText>
+                <MudText data-test-id="@TestIdHelper.For("ThemeDetailLoading")">Loading theme…</MudText>
             </MudContainer>
         }
         else if (Theme is null)
         {
             <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="content-panel__container pa-4">
-                <MudText>Theme not found.</MudText>
-                <MudButton Class="mt-4" OnClick="NavigateBack">Back to themes</MudButton>
+                <MudText data-test-id="@TestIdHelper.For("ThemeDetailMissing")">Theme not found.</MudText>
+                <MudButton Class="mt-4" OnClick="NavigateBack" data-test-id="@TestIdHelper.For("ThemeDetailMissingBack")">Back to themes</MudButton>
             </MudContainer>
         }
         else
@@ -53,17 +57,17 @@
                         <div class="theme-editor__header">
                             @if (IsThemeApplied(Theme))
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">Applied</MudChip>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("ThemeDetailApplied")">Applied</MudChip>
                             }
                             @if (Theme.IsReadOnly)
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">Bundled</MudChip>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("ThemeDetailBundled")">Bundled</MudChip>
                             }
                         </div>
 
                         @if (Theme.IsReadOnly)
                         {
-                            <MudAlert Severity="Severity.Info" Class="mt-4">
+                            <MudAlert Severity="Severity.Info" Class="mt-4" data-test-id="@TestIdHelper.For("ThemeDetailBundledAlert")">
                                 Bundled themes are read-only. Duplicate this theme to edit it.
                             </MudAlert>
                         }
@@ -75,7 +79,8 @@
                                       Immediate="true"
                                       Disabled="@(!CanEditTheme || IsBusy)"
                                       Error="@HasNameError"
-                                      ErrorText="@NameError" />
+                                      ErrorText="@NameError"
+                                      data-test-id="@TestIdHelper.For("ThemeDetailName")" />
 
                         <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Font</MudText>
                         <MudAutocomplete T="string"
@@ -91,7 +96,8 @@
                                          Disabled="@(!CanEditTheme || IsBusy)"
                                          Error="@HasFontError"
                                          ErrorText="@FontError"
-                                         Class="theme-editor__font">
+                                         Class="theme-editor__font"
+                                         data-test-id="@TestIdHelper.For("ThemeDetailFont")">
                             <ItemTemplate>
                                 <MudStack Spacing="0">
                                     <MudText Typo="Typo.body2" Style="@GetFontPreviewStyle(context)">@context</MudText>
@@ -114,7 +120,8 @@
                                                         Color="@GetPaletteColor(item.Color, true)"
                                                         ColorChanged="@(value => UpdatePaletteColor(item.Color, value, true))"
                                                         Disabled="@(!CanEditTheme || IsBusy)"
-                                                        ColorPickerView="ColorPickerView.Spectrum" />
+                                                        ColorPickerView="ColorPickerView.Spectrum"
+                                                        data-test-id="@TestIdHelper.For($"ThemeDetailDark-{item.Color}")" />
                                     </MudItem>
                                 }
                             </MudGrid>
@@ -134,7 +141,8 @@
                                                         Color="@GetPaletteColor(item.Color, false)"
                                                         ColorChanged="@(value => UpdatePaletteColor(item.Color, value, false))"
                                                         Disabled="@(!CanEditTheme || IsBusy)"
-                                                        ColorPickerView="ColorPickerView.Spectrum" />
+                                                        ColorPickerView="ColorPickerView.Spectrum"
+                                                        data-test-id="@TestIdHelper.For($"ThemeDetailLight-{item.Color}")" />
                                     </MudItem>
                                 }
                             </MudGrid>

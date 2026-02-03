@@ -1,0 +1,301 @@
+using AwesomeAssertions;
+using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Test.Infrastructure;
+using Lantean.QBTMud.Theming;
+using Moq;
+using MudBlazor.ThemeManager;
+using System.Net;
+using System.Text.Json;
+
+namespace Lantean.QBTMud.Test.Services
+{
+    public sealed class ThemeManagerServiceTests
+    {
+        private const string LocalThemesStorageKey = "ThemeManager.LocalThemes";
+        private const string SelectedThemeStorageKey = "ThemeManager.SelectedThemeId";
+        private const string ThemeIndexPath = "/themes/index.json";
+
+        private readonly TestLocalStorageService _localStorage;
+        private readonly IThemeFontCatalog _fontCatalog;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ThemeManagerService _target;
+
+        public ThemeManagerServiceTests()
+        {
+            _localStorage = new TestLocalStorageService();
+            _fontCatalog = Mock.Of<IThemeFontCatalog>();
+            _httpClientFactory = Mock.Of<IHttpClientFactory>();
+            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog);
+        }
+
+        [Fact]
+        public async Task GIVEN_ServerThemes_WHEN_Initialized_THEN_AppliesFirstThemeAndRaisesEvent()
+        {
+            var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
+            SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
+                ("/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(themeJson)
+                }));
+            SetupFontCatalogValid("Nunito Sans");
+
+            ThemeChangedEventArgs? captured = null;
+            _target.ThemeChanged += (_, args) => captured = args;
+
+            await _target.EnsureInitialized();
+
+            _target.Themes.Should().ContainSingle(theme => theme.Id == "ThemeId");
+            _target.CurrentThemeId.Should().Be("ThemeId");
+            _target.CurrentFontFamily.Should().Be("Nunito Sans");
+            captured.Should().NotBeNull();
+            captured!.ThemeId.Should().Be("ThemeId");
+            captured.FontFamily.Should().Be("Nunito Sans");
+        }
+
+        [Fact]
+        public async Task GIVEN_StoredThemeId_WHEN_Initialized_THEN_AppliesStoredTheme()
+        {
+            await _localStorage.SetItemAsync(SelectedThemeStorageKey, "ThemeId");
+            var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
+            SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
+                ("/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(themeJson)
+                }));
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.CurrentThemeId.Should().Be("ThemeId");
+        }
+
+        [Fact]
+        public async Task GIVEN_NoThemes_WHEN_Initialized_THEN_UsesFallbackTheme()
+        {
+            SetupHttpClient(new HttpResponseMessage(HttpStatusCode.NotFound));
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.Themes.Should().BeEmpty();
+            _target.CurrentThemeId.Should().Be("default");
+        }
+
+        [Fact]
+        public async Task GIVEN_InvalidThemeId_WHEN_Applied_THEN_DoesNotChangeCurrentTheme()
+        {
+            var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
+            SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
+                ("/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(themeJson)
+                }));
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            await _target.ApplyTheme("Missing");
+
+            _target.CurrentThemeId.Should().Be("ThemeId");
+        }
+
+        [Fact]
+        public async Task GIVEN_InvalidDefinition_WHEN_Saved_THEN_NormalizesNameAndFont()
+        {
+            SetupHttpClient(CreateIndexResponse());
+            SetupFontCatalogInvalid();
+
+            var theme = new ThemeManagerTheme
+            {
+                FontFamily = "Invalid!"
+            };
+            var definition = new ThemeDefinition
+            {
+                Id = " ",
+                Name = " ",
+                Theme = theme
+            };
+
+            await _target.SaveLocalTheme(definition);
+
+            _target.Themes.Should().ContainSingle(themeItem =>
+                themeItem.Name == "Untitled Theme"
+                && themeItem.Theme.FontFamily == "Nunito Sans");
+
+            var stored = await _localStorage.GetItemAsync<List<ThemeDefinition>>(LocalThemesStorageKey);
+            stored.Should().NotBeNull();
+            stored!.Should().ContainSingle(item => item.Name == "Untitled Theme" && item.Theme.FontFamily == "Nunito Sans");
+        }
+
+        [Fact]
+        public async Task GIVEN_CurrentThemeDeleted_WHEN_Removed_THEN_AppliesNextTheme()
+        {
+            var themeJson = CreateThemeJson("ServerId", "Name", "Nunito Sans");
+            SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
+                ("/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(themeJson)
+                }));
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            var localDefinition = new ThemeDefinition
+            {
+                Id = "LocalId",
+                Name = "Local",
+                Theme = new ThemeManagerTheme { FontFamily = "Nunito Sans" }
+            };
+
+            await _target.SaveLocalTheme(localDefinition);
+            await _target.ApplyTheme("LocalId");
+
+            await _target.DeleteLocalTheme("LocalId");
+
+            _target.CurrentThemeId.Should().Be("ServerId");
+        }
+
+        [Fact]
+        public async Task GIVEN_NotInitialized_WHEN_ReloadServerThemes_THEN_InitializesCatalog()
+        {
+            var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
+            SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
+                ("/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(themeJson)
+                }));
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.ReloadServerThemes();
+
+            _target.Themes.Should().ContainSingle(theme => theme.Id == "ThemeId");
+        }
+
+        [Fact]
+        public async Task GIVEN_RemovedServerTheme_WHEN_Reloaded_THEN_ClearsCurrentThemeId()
+        {
+            var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
+            var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
+            {
+                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { "/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(themeJson) } }
+            });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            handler.SetResponses(new Dictionary<string, HttpResponseMessage>
+            {
+                { ThemeIndexPath, CreateIndexResponse() }
+            });
+
+            await _target.ReloadServerThemes();
+
+            _target.CurrentThemeId.Should().BeNull();
+        }
+
+        private static string CreateThemeJson(string id, string name, string fontFamily)
+        {
+            var theme = new ThemeManagerTheme
+            {
+                FontFamily = fontFamily
+            };
+            ThemeFontHelper.ApplyFont(theme, fontFamily);
+            var definition = new ThemeDefinition
+            {
+                Id = id,
+                Name = name,
+                Theme = theme
+            };
+
+            return ThemeSerialization.SerializeDefinition(definition, false);
+        }
+
+        private static HttpResponseMessage CreateIndexResponse(params string[] entries)
+        {
+            var json = JsonSerializer.Serialize(entries.ToList(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json)
+            };
+        }
+
+        private void SetupFontCatalogValid(string fontFamily)
+        {
+            Mock.Get(_fontCatalog)
+                .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var url = "Url";
+            Mock.Get(_fontCatalog)
+                .Setup(catalog => catalog.TryGetFontUrl(It.IsAny<string>(), out url))
+                .Returns(true);
+        }
+
+        private void SetupFontCatalogInvalid()
+        {
+            Mock.Get(_fontCatalog)
+                .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var url = string.Empty;
+            Mock.Get(_fontCatalog)
+                .Setup(catalog => catalog.TryGetFontUrl(It.IsAny<string>(), out url))
+                .Returns(false);
+        }
+
+        private void SetupHttpClient(HttpResponseMessage indexResponse, params (string Path, HttpResponseMessage Response)[] responses)
+        {
+            var responseMap = new Dictionary<string, HttpResponseMessage>
+            {
+                { ThemeIndexPath, indexResponse }
+            };
+
+            foreach (var response in responses)
+            {
+                responseMap["/" + response.Path.TrimStart('/')] = response.Response;
+            }
+
+            var handler = new ThemeMessageHandler(responseMap);
+            SetupHttpClient(handler);
+        }
+
+        private void SetupHttpClient(ThemeMessageHandler handler)
+        {
+            Mock.Get(_httpClientFactory)
+                .Setup(factory => factory.CreateClient("Assets"))
+                .Returns(new HttpClient(handler)
+                {
+                    BaseAddress = new Uri("http://localhost/")
+                });
+        }
+
+        private sealed class ThemeMessageHandler : HttpMessageHandler
+        {
+            private IDictionary<string, HttpResponseMessage> _responses;
+
+            public ThemeMessageHandler(IDictionary<string, HttpResponseMessage> responses)
+            {
+                _responses = responses;
+            }
+
+            public void SetResponses(IDictionary<string, HttpResponseMessage> responses)
+            {
+                _responses = responses;
+            }
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+                if (_responses.TryGetValue(path, out var response))
+                {
+                    return Task.FromResult(response);
+                }
+
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+            }
+        }
+    }
+}

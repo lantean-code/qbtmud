@@ -8,7 +8,6 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.ThemeManager;
 using MudBlazor.Utilities;
-using System.Text;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -131,11 +130,6 @@ namespace Lantean.QBTMud.Pages
             get { return _theme is not null && !_theme.IsReadOnly; }
         }
 
-        protected bool CanApplyTheme
-        {
-            get { return _theme is not null && !IsThemeApplied(_theme); }
-        }
-
         protected bool HasFontError
         {
             get { return !string.IsNullOrWhiteSpace(_fontError); }
@@ -185,116 +179,6 @@ namespace Lantean.QBTMud.Pages
         protected void NavigateBack()
         {
             NavigationManager.NavigateTo("./themes");
-        }
-
-        protected async Task ApplyTheme()
-        {
-            if (_theme is null)
-            {
-                return;
-            }
-
-            await RunBusy(async () => await ThemeManagerService.ApplyTheme(_theme.Id));
-        }
-
-        protected async Task DuplicateTheme()
-        {
-            if (_theme is null)
-            {
-                return;
-            }
-
-            await RunBusy(async () =>
-            {
-                var defaultName = $"{_theme.Name} Copy";
-                var name = await DialogWorkflow.ShowStringFieldDialog("Duplicate Theme", "Name", defaultName);
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    return;
-                }
-
-                var clone = ThemeSerialization.CloneTheme(_theme.Theme);
-                var definition = new ThemeDefinition
-                {
-                    Id = Guid.NewGuid().ToString("N"),
-                    Name = name.Trim(),
-                    Theme = clone
-                };
-
-                await ThemeManagerService.SaveLocalTheme(definition);
-                NavigateToDetails(definition.Id);
-            });
-        }
-
-        protected async Task ExportTheme()
-        {
-            if (_theme is null)
-            {
-                return;
-            }
-
-            await RunBusy(async () =>
-            {
-                var definition = new ThemeDefinition
-                {
-                    Id = _theme.Id,
-                    Name = _theme.Name,
-                    Theme = _theme.Theme
-                };
-
-                var json = ThemeSerialization.SerializeDefinition(definition, writeIndented: true);
-                var safeName = SanitizeFileName(_theme.Name);
-                var dataUrl = BuildJsonDataUrl(json);
-
-                await JSRuntime.FileDownload(dataUrl, $"{safeName}.json");
-            });
-        }
-
-        protected async Task RenameTheme()
-        {
-            if (!CanEditTheme || _theme is null)
-            {
-                return;
-            }
-
-            await RunBusy(async () =>
-            {
-                var name = await DialogWorkflow.ShowStringFieldDialog("Rename Theme", "Name", _theme.Name);
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    return;
-                }
-
-                var definition = new ThemeDefinition
-                {
-                    Id = _theme.Id,
-                    Name = name.Trim(),
-                    Theme = _theme.Theme
-                };
-
-                await ThemeManagerService.SaveLocalTheme(definition);
-                await RefreshTheme();
-            });
-        }
-
-        protected async Task DeleteTheme()
-        {
-            if (!CanEditTheme || _theme is null)
-            {
-                return;
-            }
-
-            await RunBusy(async () =>
-            {
-                var confirmed = await DialogWorkflow.ShowConfirmDialog("Delete theme?", $"Delete '{_theme.Name}'?");
-                if (!confirmed)
-                {
-                    return;
-                }
-
-                await ThemeManagerService.DeleteLocalTheme(_theme.Id);
-                NavigateBack();
-            });
         }
 
         protected void ResetEdits()
@@ -532,12 +416,6 @@ namespace Lantean.QBTMud.Pages
             _hasChanges = false;
         }
 
-        private void NavigateToDetails(string themeId)
-        {
-            var escaped = Uri.EscapeDataString(themeId);
-            NavigationManager.NavigateTo($"./themes/{escaped}");
-        }
-
         private async Task<IEnumerable<string>> LoadFontPreviews(IEnumerable<string> fonts, CancellationToken cancellationToken)
         {
             var results = fonts.ToList();
@@ -562,29 +440,5 @@ namespace Lantean.QBTMud.Pages
             return results;
         }
 
-        private static string BuildJsonDataUrl(string json)
-        {
-            var escaped = Uri.EscapeDataString(json);
-            return $"data:application/json;charset=utf-8,{escaped}";
-        }
-
-        private static string SanitizeFileName(string name)
-        {
-            var invalidChars = Path.GetInvalidFileNameChars();
-            var builder = new StringBuilder(name.Length);
-
-            foreach (var ch in name)
-            {
-                builder.Append(invalidChars.Contains(ch) ? '-' : ch);
-            }
-
-            var sanitized = builder.ToString().Trim();
-            if (string.IsNullOrWhiteSpace(sanitized))
-            {
-                return "theme";
-            }
-
-            return sanitized;
-        }
     }
 }

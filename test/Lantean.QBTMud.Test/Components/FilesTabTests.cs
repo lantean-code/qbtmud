@@ -234,7 +234,7 @@ namespace Lantean.QBTMud.Test.Components
             target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
 
             var row = target.WaitForElement($"[data-test-id=\"{TestIdHelper.For("Row-Files-root_file1.txt")}\"]");
-            row.TriggerEvent("oncontextmenu", new MouseEventArgs());
+            await target.InvokeAsync(() => row.TriggerEvent("oncontextmenu", new MouseEventArgs()));
 
             var contextRename = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("ContextMenuRename")}\"]");
             await _popoverProvider!.InvokeAsync(() => contextRename.Click());
@@ -340,11 +340,11 @@ namespace Lantean.QBTMud.Test.Components
             await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
-            await target.InvokeAsync(() => toggle.Find("button").Click());
+            await target.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
 
             target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
 
-            await target.InvokeAsync(() => toggle.Find("button").Click());
+            await target.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
 
             target.WaitForAssertion(() => target.Markup.Should().NotContain("file1.txt"));
         }
