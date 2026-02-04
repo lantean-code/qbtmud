@@ -1,5 +1,5 @@
+using Lantean.QBTMud.Models;
 using MudBlazor;
-using MudBlazor.ThemeManager;
 using MudBlazor.Utilities;
 
 namespace Lantean.QBTMud.Theming
@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Theming
         /// <param name="colorType">The palette color to read.</param>
         /// <param name="useDarkPalette">Whether to read from the dark palette.</param>
         /// <returns>The palette color value.</returns>
-        public static MudColor GetColor(ThemeManagerTheme theme, ThemePaletteColor colorType, bool useDarkPalette)
+        public static MudColor GetColor(ThemeDefinition theme, ThemePaletteColor colorType, bool useDarkPalette)
         {
             var palette = useDarkPalette ? (Palette)theme.Theme.PaletteDark : theme.Theme.PaletteLight;
             return GetPaletteColor(palette, colorType);
@@ -29,7 +29,7 @@ namespace Lantean.QBTMud.Theming
         /// <param name="colorType">The palette color to update.</param>
         /// <param name="colorValue">The color value to apply.</param>
         /// <param name="useDarkPalette">Whether to update the dark palette.</param>
-        public static void SetColor(ThemeManagerTheme theme, ThemePaletteColor colorType, string colorValue, bool useDarkPalette)
+        public static void SetColor(ThemeDefinition theme, ThemePaletteColor colorType, string colorValue, bool useDarkPalette)
         {
             var palette = useDarkPalette ? (Palette)theme.Theme.PaletteDark : theme.Theme.PaletteLight;
             SetPaletteColor(palette, colorType, colorValue);

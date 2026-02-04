@@ -1,7 +1,7 @@
 using AwesomeAssertions;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Theming;
 using MudBlazor;
-using MudBlazor.ThemeManager;
 using MudBlazor.Utilities;
 
 namespace Lantean.QBTMud.Test.Theming
@@ -96,9 +96,12 @@ namespace Lantean.QBTMud.Test.Theming
                 .BeTrue();
         }
 
-        private static ThemeManagerTheme CreateTheme()
+        private static ThemeDefinition CreateTheme()
         {
-            var theme = new ThemeManagerTheme();
+            var theme = new ThemeDefinition
+            {
+                Theme = new MudTheme()
+            };
             var light = new PaletteLight();
             var dark = new PaletteDark();
 

@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
 using MudBlazor;
-using MudBlazor.ThemeManager;
 using System.Text;
 using System.Text.Json;
 
@@ -133,16 +132,12 @@ namespace Lantean.QBTMud.Pages
                     return;
                 }
 
-                var clone = ThemeSerialization.CloneTheme(theme.Theme);
-                var definition = new ThemeDefinition
-                {
-                    Id = Guid.NewGuid().ToString("N"),
-                    Name = name.Trim(),
-                    Theme = clone
-                };
+                var clone = ThemeSerialization.CloneDefinition(theme.Theme);
+                clone.Id = Guid.NewGuid().ToString("N");
+                clone.Name = name.Trim();
 
-                await ThemeManagerService.SaveLocalTheme(definition);
-                NavigateToDetails(definition.Id);
+                await ThemeManagerService.SaveLocalTheme(clone);
+                NavigateToDetails(clone.Id);
             }
             finally
             {
@@ -160,12 +155,9 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                var definition = new ThemeDefinition
-                {
-                    Id = theme.Id,
-                    Name = theme.Name,
-                    Theme = theme.Theme
-                };
+                var definition = ThemeSerialization.CloneDefinition(theme.Theme);
+                definition.Id = theme.Id;
+                definition.Name = theme.Name;
 
                 var json = ThemeSerialization.SerializeDefinition(definition, writeIndented: true);
                 var safeName = SanitizeFileName(theme.Name);
@@ -200,12 +192,9 @@ namespace Lantean.QBTMud.Pages
                     return;
                 }
 
-                var definition = new ThemeDefinition
-                {
-                    Id = theme.Id,
-                    Name = name.Trim(),
-                    Theme = theme.Theme
-                };
+                var definition = ThemeSerialization.CloneDefinition(theme.Theme);
+                definition.Id = theme.Id;
+                definition.Name = name.Trim();
 
                 await ThemeManagerService.SaveLocalTheme(definition);
             }
@@ -255,22 +244,18 @@ namespace Lantean.QBTMud.Pages
             var baseTheme = ThemeManagerService.CurrentTheme?.Theme;
             if (baseTheme is null)
             {
-                baseTheme = new ThemeManagerTheme { FontFamily = "Nunito Sans" };
+                baseTheme = new ThemeDefinition { FontFamily = "Nunito Sans" };
                 ThemeFontHelper.ApplyFont(baseTheme, baseTheme.FontFamily);
             }
 
-            var clone = ThemeSerialization.CloneTheme(baseTheme);
+            var clone = ThemeSerialization.CloneDefinition(baseTheme);
             ThemeFontHelper.ApplyFont(clone, clone.FontFamily);
 
-            var definition = new ThemeDefinition
-            {
-                Id = Guid.NewGuid().ToString("N"),
-                Name = name.Trim(),
-                Theme = clone
-            };
+            clone.Id = Guid.NewGuid().ToString("N");
+            clone.Name = name.Trim();
 
-            await ThemeManagerService.SaveLocalTheme(definition);
-            NavigateToDetails(definition.Id);
+            await ThemeManagerService.SaveLocalTheme(clone);
+            NavigateToDetails(clone.Id);
         }
 
         protected async Task ImportThemes(IReadOnlyList<IBrowserFile> files)
@@ -392,21 +377,28 @@ namespace Lantean.QBTMud.Pages
                 id = Guid.NewGuid().ToString("N");
             }
 
-            var theme = definition.Theme ?? new ThemeManagerTheme();
-            var fontFamily = string.IsNullOrWhiteSpace(theme.FontFamily) ? "Nunito Sans" : theme.FontFamily;
+            var theme = definition.Theme ?? new MudTheme();
+            var fontFamily = string.IsNullOrWhiteSpace(definition.FontFamily) ? "Nunito Sans" : definition.FontFamily;
             if (!ThemeFontCatalog.TryGetFontUrl(fontFamily, out _))
             {
                 fontFamily = "Nunito Sans";
             }
 
-            theme.FontFamily = fontFamily;
-            ThemeFontHelper.ApplyFont(theme, fontFamily);
+            definition.FontFamily = fontFamily;
+            ThemeFontHelper.ApplyFont(definition, fontFamily);
 
             return new ThemeDefinition
             {
                 Id = id,
                 Name = name,
-                Theme = theme
+                Theme = theme,
+                RTL = definition.RTL,
+                FontFamily = definition.FontFamily,
+                DefaultBorderRadius = definition.DefaultBorderRadius,
+                DefaultElevation = definition.DefaultElevation,
+                AppBarElevation = definition.AppBarElevation,
+                DrawerElevation = definition.DrawerElevation,
+                DrawerClipMode = definition.DrawerClipMode
             };
         }
 

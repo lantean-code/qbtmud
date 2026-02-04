@@ -1,6 +1,7 @@
 using AwesomeAssertions;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Theming;
-using MudBlazor.ThemeManager;
+using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Theming
 {
@@ -9,9 +10,10 @@ namespace Lantean.QBTMud.Test.Theming
         [Fact]
         public void GIVEN_WhitespaceFont_WHEN_Applied_THEN_DoesNotModifyTheme()
         {
-            var theme = new ThemeManagerTheme
+            var theme = new ThemeDefinition
             {
-                FontFamily = "FontFamily"
+                FontFamily = "FontFamily",
+                Theme = new MudTheme()
             };
             var original = theme.FontFamily;
 
@@ -23,9 +25,10 @@ namespace Lantean.QBTMud.Test.Theming
         [Fact]
         public void GIVEN_FontFamily_WHEN_Applied_THEN_TypographyUpdated()
         {
-            var theme = new ThemeManagerTheme
+            var theme = new ThemeDefinition
             {
-                FontFamily = "FontFamily"
+                FontFamily = "FontFamily",
+                Theme = new MudTheme()
             };
 
             ThemeFontHelper.ApplyFont(theme, "Nunito Sans");

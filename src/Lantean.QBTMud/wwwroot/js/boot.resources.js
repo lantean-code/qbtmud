@@ -26,6 +26,40 @@
         warnedFailure: false
     };
 
+    function applyBootstrapTheme() {
+        try {
+            const rawBootstrapMode = localStorage.getItem("ThemeManager.BootstrapIsDark");
+            const rawIsDark = localStorage.getItem("MainLayout.IsDarkMode");
+            const isDark = parseBoolean(rawBootstrapMode ?? rawIsDark);
+            const css = localStorage.getItem(isDark ? "ThemeManager.BootstrapCss.Dark" : "ThemeManager.BootstrapCss.Light")
+                ?? localStorage.getItem("ThemeManager.BootstrapCss");
+            if (!css) {
+                return;
+            }
+
+            const existing = document.getElementById("qbt-bootstrap-theme");
+            if (existing) {
+                existing.textContent = css;
+                return;
+            }
+
+            const style = document.createElement("style");
+            style.id = "qbt-bootstrap-theme";
+            style.textContent = css;
+            document.body.appendChild(style);
+        } catch {
+        }
+    }
+
+    function parseBoolean(value) {
+        if (!value) {
+            return false;
+        }
+
+        const normalized = value.trim().toLowerCase();
+        return normalized === "true";
+    }
+
     function ensureTrailingSlash(value) {
         if (!value) {
             return "";
@@ -97,8 +131,8 @@
                     .catch(error => {
                         logCdnFailure(`CDN fetch failed for ${cdnUrl}. Falling back to local assets.`, error);
                         state.cdnFailed = true;
-                    return defaultUri;
-                });
+                        return defaultUri;
+                    });
             }
         });
 
@@ -173,6 +207,8 @@
                 }
             });
     }
+
+    applyBootstrapTheme();
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", startBlazor);

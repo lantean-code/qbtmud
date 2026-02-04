@@ -1,7 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Theming;
-using MudBlazor.ThemeManager;
+using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Theming
 {
@@ -14,10 +14,8 @@ namespace Lantean.QBTMud.Test.Theming
             {
                 Id = "Id",
                 Name = "Name",
-                Theme = new ThemeManagerTheme
-                {
-                    FontFamily = "FontFamily"
-                }
+                FontFamily = "FontFamily",
+                Theme = new MudTheme()
             };
 
             var indented = ThemeSerialization.SerializeDefinition(definition, true);
@@ -42,10 +40,8 @@ namespace Lantean.QBTMud.Test.Theming
             {
                 Id = "Id",
                 Name = "Name",
-                Theme = new ThemeManagerTheme
-                {
-                    FontFamily = "FontFamily"
-                }
+                FontFamily = "FontFamily",
+                Theme = new MudTheme()
             };
 
             var json = ThemeSerialization.SerializeDefinition(definition, false);
@@ -55,23 +51,24 @@ namespace Lantean.QBTMud.Test.Theming
             result.Should().NotBeNull();
             result!.Id.Should().Be("Id");
             result.Name.Should().Be("Name");
-            result.Theme.FontFamily.Should().Be("FontFamily");
+            result.FontFamily.Should().Be("FontFamily");
         }
 
         [Fact]
-        public void GIVEN_Theme_WHEN_Cloned_THEN_ReturnsDeepCopy()
+        public void GIVEN_Definition_WHEN_Cloned_THEN_ReturnsDeepCopy()
         {
-            var theme = new ThemeManagerTheme
+            var definition = new ThemeDefinition
             {
-                FontFamily = "FontFamily"
+                FontFamily = "FontFamily",
+                Theme = new MudTheme()
             };
-            theme.Theme.PaletteLight.Primary = "#123456";
+            definition.Theme.PaletteLight.Primary = "#123456";
 
-            var clone = ThemeSerialization.CloneTheme(theme);
+            var clone = ThemeSerialization.CloneDefinition(definition);
 
-            clone.Should().NotBeSameAs(theme);
+            clone.Should().NotBeSameAs(definition);
             clone.FontFamily.Should().Be("FontFamily");
-            clone.Theme.PaletteLight.Primary.ToString().Should().Be(theme.Theme.PaletteLight.Primary.ToString());
+            clone.Theme.PaletteLight.Primary.ToString().Should().Be(definition.Theme.PaletteLight.Primary.ToString());
         }
     }
 }

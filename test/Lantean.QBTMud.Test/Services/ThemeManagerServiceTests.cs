@@ -4,7 +4,7 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Lantean.QBTMud.Theming;
 using Moq;
-using MudBlazor.ThemeManager;
+using MudBlazor;
 using System.Net;
 using System.Text.Json;
 
@@ -106,15 +106,12 @@ namespace Lantean.QBTMud.Test.Services
             SetupHttpClient(CreateIndexResponse());
             SetupFontCatalogInvalid();
 
-            var theme = new ThemeManagerTheme
-            {
-                FontFamily = "Invalid!"
-            };
             var definition = new ThemeDefinition
             {
                 Id = " ",
                 Name = " ",
-                Theme = theme
+                FontFamily = "Invalid!",
+                Theme = new MudTheme()
             };
 
             await _target.SaveLocalTheme(definition);
@@ -125,7 +122,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var stored = await _localStorage.GetItemAsync<List<ThemeDefinition>>(LocalThemesStorageKey);
             stored.Should().NotBeNull();
-            stored!.Should().ContainSingle(item => item.Name == "Untitled Theme" && item.Theme.FontFamily == "Nunito Sans");
+            stored!.Should().ContainSingle(item => item.Name == "Untitled Theme" && item.FontFamily == "Nunito Sans");
         }
 
         [Fact]
@@ -145,7 +142,8 @@ namespace Lantean.QBTMud.Test.Services
             {
                 Id = "LocalId",
                 Name = "Local",
-                Theme = new ThemeManagerTheme { FontFamily = "Nunito Sans" }
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
             };
 
             await _target.SaveLocalTheme(localDefinition);
@@ -198,17 +196,14 @@ namespace Lantean.QBTMud.Test.Services
 
         private static string CreateThemeJson(string id, string name, string fontFamily)
         {
-            var theme = new ThemeManagerTheme
-            {
-                FontFamily = fontFamily
-            };
-            ThemeFontHelper.ApplyFont(theme, fontFamily);
             var definition = new ThemeDefinition
             {
                 Id = id,
                 Name = name,
-                Theme = theme
+                FontFamily = fontFamily,
+                Theme = new MudTheme()
             };
+            ThemeFontHelper.ApplyFont(definition, fontFamily);
 
             return ThemeSerialization.SerializeDefinition(definition, false);
         }

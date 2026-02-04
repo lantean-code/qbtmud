@@ -6,7 +6,6 @@ using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-using MudBlazor.ThemeManager;
 using MudBlazor.Utilities;
 
 namespace Lantean.QBTMud.Pages
@@ -68,7 +67,7 @@ namespace Lantean.QBTMud.Pages
         ];
 
         private ThemeCatalogItem? _theme;
-        private ThemeManagerTheme? _editorTheme;
+        private ThemeDefinition? _editorTheme;
         private string _editorName = string.Empty;
         private string _editorFont = string.Empty;
         private string? _nameError;
@@ -366,7 +365,14 @@ namespace Lantean.QBTMud.Pages
                 {
                     Id = _theme.Id,
                     Name = _editorName.Trim(),
-                    Theme = _editorTheme
+                    Theme = _editorTheme.Theme,
+                    RTL = _editorTheme.RTL,
+                    FontFamily = _editorTheme.FontFamily,
+                    DefaultBorderRadius = _editorTheme.DefaultBorderRadius,
+                    DefaultElevation = _editorTheme.DefaultElevation,
+                    AppBarElevation = _editorTheme.AppBarElevation,
+                    DrawerElevation = _editorTheme.DrawerElevation,
+                    DrawerClipMode = _editorTheme.DrawerClipMode
                 };
 
                 await ThemeManagerService.SaveLocalTheme(definition);
@@ -400,7 +406,7 @@ namespace Lantean.QBTMud.Pages
         private void SetTheme(ThemeCatalogItem theme)
         {
             _theme = theme;
-            _editorTheme = ThemeSerialization.CloneTheme(theme.Theme);
+            _editorTheme = ThemeSerialization.CloneDefinition(theme.Theme);
             _editorName = theme.Name;
 
             var fontFamily = string.IsNullOrWhiteSpace(_editorTheme.FontFamily) ? "Nunito Sans" : _editorTheme.FontFamily;
@@ -439,6 +445,5 @@ namespace Lantean.QBTMud.Pages
 
             return results;
         }
-
     }
 }

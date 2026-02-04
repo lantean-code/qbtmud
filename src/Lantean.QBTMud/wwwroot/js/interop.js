@@ -33,6 +33,13 @@ window.qbt.loadGoogleFont = (url, id) => {
     document.head.appendChild(link);
 }
 
+window.qbt.removeBootstrapTheme = () => {
+    const style = document.getElementById("qbt-bootstrap-theme");
+    if (style) {
+        style.remove();
+    }
+}
+
 window.qbt.getBoundingClientRect = (selector) => {
     const element = getElementBySelector(selector);
 

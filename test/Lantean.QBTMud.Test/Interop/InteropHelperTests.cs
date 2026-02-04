@@ -165,5 +165,13 @@ namespace Lantean.QBTMud.Test.Interop
 
             _target.LastIdentifier.Should().Be("qbt.clearSelection");
         }
+
+        [Fact]
+        public async Task GIVEN_BootstrapTheme_WHEN_RemoveInvoked_THEN_InvokesRuntime()
+        {
+            await _target.RemoveBootstrapTheme();
+
+            _target.LastIdentifier.Should().Be("qbt.removeBootstrapTheme");
+        }
     }
 }

@@ -12,6 +12,9 @@ namespace Lantean.QBTMud.Layout
     {
         private const string _isDarkModeStorageKey = "MainLayout.IsDarkMode";
         private const string _drawerOpenStorageKey = "MainLayout.DrawerOpen";
+        private const string _bootstrapThemeCssLightStorageKey = "ThemeManager.BootstrapCss.Light";
+        private const string _bootstrapThemeCssDarkStorageKey = "ThemeManager.BootstrapCss.Dark";
+        private const string _bootstrapThemeIsDarkStorageKey = "ThemeManager.BootstrapIsDark";
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
@@ -44,6 +47,9 @@ namespace Lantean.QBTMud.Layout
 
         private int _lastErrorCount;
         private bool _pendingThemeUpdate;
+        private bool _pendingBootstrapThemeUpdate;
+        private bool _pendingBootstrapThemeRemoval;
+        private bool _bootstrapThemeRemoved;
         private string? _pendingFontFamily;
         private bool _themeInitialized;
 
@@ -62,6 +68,15 @@ namespace Lantean.QBTMud.Layout
         {
             base.OnInitialized();
             ThemeManagerService.ThemeChanged += OnThemeChanged;
+        }
+
+        protected override async Task OnInitializedAsync()
+        {
+            var isDarkMode = await LocalStorage.GetItemAsync<bool?>(_isDarkModeStorageKey);
+            IsDarkMode = isDarkMode ?? true;
+
+            await ThemeManagerService.EnsureInitialized();
+            _themeInitialized = true;
         }
 
         protected EventCallback<bool> DrawerOpenChangedCallback => EventCallback.Factory.Create<bool>(this, SetDrawerOpenAsync);
@@ -109,12 +124,7 @@ namespace Lantean.QBTMud.Layout
                     DrawerOpen = CurrentBreakpoint > Breakpoint.Sm;
                 }
 
-                var isDarkMode = await LocalStorage.GetItemAsync<bool?>(_isDarkModeStorageKey);
-                IsDarkMode = isDarkMode ?? true;
-
                 await MudThemeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChanged);
-                await ThemeManagerService.EnsureInitialized();
-                _themeInitialized = true;
                 StateHasChanged();
             }
 
@@ -123,11 +133,26 @@ namespace Lantean.QBTMud.Layout
                 _pendingThemeUpdate = false;
                 await LoadPendingFontAsync();
             }
+
+            if (_pendingBootstrapThemeUpdate && _themeInitialized)
+            {
+                _pendingBootstrapThemeUpdate = false;
+                await PersistBootstrapThemeAsync();
+            }
+
+            if (_pendingBootstrapThemeRemoval && _themeInitialized && !_bootstrapThemeRemoved)
+            {
+                _pendingBootstrapThemeRemoval = false;
+                _bootstrapThemeRemoved = true;
+                await JSRuntime.RemoveBootstrapTheme();
+            }
         }
 
         protected Task OnSystemDarkModeChanged(bool value)
         {
             IsDarkMode = value;
+            _pendingBootstrapThemeUpdate = true;
+            StateHasChanged();
             return Task.CompletedTask;
         }
 
@@ -149,6 +174,7 @@ namespace Lantean.QBTMud.Layout
         protected async Task DarkModeChanged(bool value)
         {
             IsDarkMode = value;
+            _pendingBootstrapThemeUpdate = true;
             await LocalStorage.SetItemAsync(_isDarkModeStorageKey, value);
         }
 
@@ -209,6 +235,8 @@ namespace Lantean.QBTMud.Layout
             Theme = args.Theme;
             _pendingFontFamily = args.FontFamily;
             _pendingThemeUpdate = true;
+            _pendingBootstrapThemeUpdate = true;
+            _pendingBootstrapThemeRemoval = true;
             StateHasChanged();
         }
 
@@ -226,6 +254,16 @@ namespace Lantean.QBTMud.Layout
 
             var fontId = ThemeFontCatalog.BuildFontId(_pendingFontFamily);
             await JSRuntime.LoadGoogleFont(url, fontId);
+        }
+
+        private async Task PersistBootstrapThemeAsync()
+        {
+            var lightCss = ThemeCssBuilder.BuildCssVariables(Theme, false);
+            var darkCss = ThemeCssBuilder.BuildCssVariables(Theme, true);
+
+            await LocalStorage.SetItemAsStringAsync(_bootstrapThemeCssLightStorageKey, lightCss);
+            await LocalStorage.SetItemAsStringAsync(_bootstrapThemeCssDarkStorageKey, darkCss);
+            await LocalStorage.SetItemAsync(_bootstrapThemeIsDarkStorageKey, IsDarkMode);
         }
     }
 }

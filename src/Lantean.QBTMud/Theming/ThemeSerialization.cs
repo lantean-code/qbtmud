@@ -1,5 +1,4 @@
 using Lantean.QBTMud.Models;
-using MudBlazor.ThemeManager;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Theming
@@ -40,14 +39,14 @@ namespace Lantean.QBTMud.Theming
         }
 
         /// <summary>
-        /// Creates a deep clone of a <see cref="ThemeManagerTheme"/> instance.
+        /// Creates a deep clone of a <see cref="ThemeDefinition"/> instance.
         /// </summary>
-        /// <param name="theme">The theme to clone.</param>
-        /// <returns>A deep copy of the theme.</returns>
-        public static ThemeManagerTheme CloneTheme(ThemeManagerTheme theme)
+        /// <param name="definition">The theme definition to clone.</param>
+        /// <returns>A deep copy of the theme definition.</returns>
+        public static ThemeDefinition CloneDefinition(ThemeDefinition definition)
         {
-            var json = JsonSerializer.Serialize(theme, _defaultOptions);
-            return JsonSerializer.Deserialize<ThemeManagerTheme>(json, _defaultOptions) ?? new ThemeManagerTheme();
+            var json = JsonSerializer.Serialize(definition, _defaultOptions);
+            return JsonSerializer.Deserialize<ThemeDefinition>(json, _defaultOptions) ?? new ThemeDefinition();
         }
 
         private static JsonSerializerOptions CreateOptions(bool writeIndented)

@@ -14,8 +14,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System;
-using System.Linq;
 
 namespace Lantean.QBTMud.Test.Layout
 {
@@ -42,6 +40,8 @@ namespace Lantean.QBTMud.Test.Layout
             Mock.Get(_themeManagerService)
                 .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
+
+            TestContext.JSInterop.SetupVoid("qbt.removeBootstrapTheme", _ => true).SetVoidResult();
         }
 
         [Fact]
@@ -95,6 +95,24 @@ namespace Lantean.QBTMud.Test.Layout
             target.WaitForAssertion(() =>
             {
                 TestContext.JSInterop.Invocations.Count(inv => inv.Identifier == "qbt.loadGoogleFont").Should().Be(0);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeChanged_WHEN_Rendered_THEN_PersistsBootstrapThemeCss()
+        {
+            var target = RenderLayout();
+
+            await target.InvokeAsync(() => RaiseThemeChanged(new MudTheme(), "FontFamily", "ThemeId"));
+
+            target.WaitForAssertion(() =>
+            {
+                var snapshot = _localStorage.Snapshot();
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Light");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Dark");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapIsDark");
+                snapshot["ThemeManager.BootstrapCss.Light"].Should().BeOfType<string>().Which.Should().NotBeNullOrWhiteSpace();
+                snapshot["ThemeManager.BootstrapCss.Dark"].Should().BeOfType<string>().Which.Should().NotBeNullOrWhiteSpace();
             });
         }
 
@@ -196,6 +214,25 @@ namespace Lantean.QBTMud.Test.Layout
 
             var stored = await _localStorage.GetItemAsync<bool?>("MainLayout.IsDarkMode");
             stored.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_MenuDarkModeChanged_WHEN_Invoked_THEN_PersistsBootstrapThemeCss()
+        {
+            var target = RenderLayout(CreateProbeBody());
+            var menu = target.FindComponent<Menu>();
+
+            await target.InvokeAsync(() => menu.Instance.DarkModeChanged.InvokeAsync(false));
+
+            target.WaitForAssertion(() =>
+            {
+                var snapshot = _localStorage.Snapshot();
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Light");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Dark");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapIsDark");
+                snapshot["ThemeManager.BootstrapCss.Light"].Should().BeOfType<string>().Which.Should().NotBeNullOrWhiteSpace();
+                snapshot["ThemeManager.BootstrapCss.Dark"].Should().BeOfType<string>().Which.Should().NotBeNullOrWhiteSpace();
+            });
         }
 
         [Fact]

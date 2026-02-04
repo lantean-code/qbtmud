@@ -1,4 +1,4 @@
-using MudBlazor.ThemeManager;
+using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Theming
 {
@@ -12,7 +12,7 @@ namespace Lantean.QBTMud.Theming
         /// </summary>
         /// <param name="theme">The theme to update.</param>
         /// <param name="fontFamily">The font family to apply.</param>
-        public static void ApplyFont(ThemeManagerTheme theme, string fontFamily)
+        public static void ApplyFont(ThemeDefinition theme, string fontFamily)
         {
             if (string.IsNullOrWhiteSpace(fontFamily))
             {

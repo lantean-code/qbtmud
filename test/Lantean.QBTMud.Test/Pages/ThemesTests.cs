@@ -14,7 +14,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using MudBlazor.ThemeManager;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Pages
@@ -351,7 +350,8 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 Id = "ThemeId",
                 Name = "Name",
-                Theme = new ThemeManagerTheme { FontFamily = "Nunito Sans" }
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
             };
             var json = JsonSerializer.Serialize(definition, new JsonSerializerOptions(JsonSerializerDefaults.Web));
             var file = new TestBrowserFile("theme.json", json);
@@ -396,7 +396,8 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 Id = "ThemeId",
                 Name = " ",
-                Theme = new ThemeManagerTheme { FontFamily = "Nunito Sans" }
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
             };
             var json = JsonSerializer.Serialize(definition, new JsonSerializerOptions(JsonSerializerDefaults.Web));
             var file = new TestBrowserFile(" .json", json);
@@ -425,7 +426,8 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 Id = "ThemeId",
                 Name = "Name",
-                Theme = new ThemeManagerTheme { FontFamily = "Nunito Sans" }
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
             };
             var json = JsonSerializer.Serialize(definition, new JsonSerializerOptions(JsonSerializerDefaults.Web));
             var file = new TestBrowserFile("theme.json", json);
@@ -453,7 +455,8 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 Id = "ThemeId",
                 Name = "Name",
-                Theme = new ThemeManagerTheme { FontFamily = "Invalid" }
+                FontFamily = "Invalid",
+                Theme = new MudTheme()
             };
             var json = JsonSerializer.Serialize(definition, new JsonSerializerOptions(JsonSerializerDefaults.Web));
             var file = new TestBrowserFile("theme.json", json);
@@ -474,7 +477,7 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
 
             saved.Should().NotBeNull();
-            saved!.Theme.FontFamily.Should().Be("Nunito Sans");
+            saved!.FontFamily.Should().Be("Nunito Sans");
         }
 
         [Fact]
@@ -585,7 +588,7 @@ namespace Lantean.QBTMud.Test.Pages
 
         private static ThemeCatalogItem CreateTheme(string id, string name, ThemeSource source)
         {
-            return new ThemeCatalogItem(id, name, new ThemeManagerTheme { FontFamily = "Nunito Sans" }, source, null);
+            return new ThemeCatalogItem(id, name, new ThemeDefinition { FontFamily = "Nunito Sans", Theme = new MudTheme() }, source, null);
         }
 
         private void SetupFontCatalogValid()

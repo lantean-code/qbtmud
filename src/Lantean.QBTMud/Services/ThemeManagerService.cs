@@ -1,6 +1,5 @@
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Theming;
-using MudBlazor.ThemeManager;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Services
@@ -229,7 +228,7 @@ namespace Lantean.QBTMud.Services
             var fallbackTheme = new ThemeCatalogItem(
                 "default",
                 "Default",
-                new ThemeManagerTheme(),
+                new ThemeDefinition(),
                 ThemeSource.Server,
                 null);
             ApplyThemeInternal(fallbackTheme);
@@ -237,14 +236,14 @@ namespace Lantean.QBTMud.Services
 
         private void ApplyThemeInternal(ThemeCatalogItem theme)
         {
-            var themeManagerTheme = theme.Theme;
-            ThemeFontHelper.ApplyFont(themeManagerTheme, themeManagerTheme.FontFamily);
+            var definition = theme.Theme;
+            ThemeFontHelper.ApplyFont(definition, definition.FontFamily);
 
             _currentTheme = theme;
             _currentThemeId = theme.Id;
-            _currentFontFamily = themeManagerTheme.FontFamily;
+            _currentFontFamily = definition.FontFamily;
 
-            ThemeChanged?.Invoke(this, new ThemeChangedEventArgs(themeManagerTheme.Theme, _currentFontFamily, _currentThemeId));
+            ThemeChanged?.Invoke(this, new ThemeChangedEventArgs(definition.Theme, _currentFontFamily, _currentThemeId));
         }
 
         private async Task LoadLocalThemes()
@@ -329,7 +328,7 @@ namespace Lantean.QBTMud.Services
                 }
 
                 definition = NormalizeDefinition(definition);
-                _serverThemes.Add(new ThemeCatalogItem(definition.Id, definition.Name, definition.Theme, ThemeSource.Server, path));
+                _serverThemes.Add(new ThemeCatalogItem(definition.Id, definition.Name, definition, ThemeSource.Server, path));
             }
         }
 
@@ -339,7 +338,7 @@ namespace Lantean.QBTMud.Services
 
             foreach (var theme in _localThemes)
             {
-                _themes.Add(new ThemeCatalogItem(theme.Id, theme.Name, theme.Theme, ThemeSource.Local, null));
+                _themes.Add(new ThemeCatalogItem(theme.Id, theme.Name, theme, ThemeSource.Local, null));
             }
 
             var localIds = _themes.Select(theme => theme.Id).ToHashSet(StringComparer.Ordinal);
@@ -360,22 +359,29 @@ namespace Lantean.QBTMud.Services
         {
             var name = string.IsNullOrWhiteSpace(definition.Name) ? "Untitled Theme" : definition.Name.Trim();
             var id = string.IsNullOrWhiteSpace(definition.Id) ? Guid.NewGuid().ToString("N") : definition.Id.Trim();
-            var theme = definition.Theme ?? new ThemeManagerTheme();
+            var theme = definition.Theme ?? new MudBlazor.MudTheme();
 
-            var fontFamily = string.IsNullOrWhiteSpace(theme.FontFamily) ? "Nunito Sans" : theme.FontFamily;
+            var fontFamily = string.IsNullOrWhiteSpace(definition.FontFamily) ? "Nunito Sans" : definition.FontFamily;
             if (!_themeFontCatalog.TryGetFontUrl(fontFamily, out _))
             {
                 fontFamily = "Nunito Sans";
             }
 
-            theme.FontFamily = fontFamily;
-            ThemeFontHelper.ApplyFont(theme, fontFamily);
+            definition.FontFamily = fontFamily;
+            ThemeFontHelper.ApplyFont(definition, fontFamily);
 
             return new ThemeDefinition
             {
                 Id = id,
                 Name = name,
-                Theme = theme
+                Theme = theme,
+                RTL = definition.RTL,
+                FontFamily = definition.FontFamily,
+                DefaultBorderRadius = definition.DefaultBorderRadius,
+                DefaultElevation = definition.DefaultElevation,
+                AppBarElevation = definition.AppBarElevation,
+                DrawerElevation = definition.DrawerElevation,
+                DrawerClipMode = definition.DrawerClipMode
             };
         }
     }

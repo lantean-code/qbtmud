@@ -8,17 +8,11 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using MudBlazor.ThemeManager;
 using MudBlazor.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -308,7 +302,12 @@ namespace Lantean.QBTMud.Test.Pages
         {
             SetupFontCatalog(new[] { "Nunito Sans" });
 
-            var theme = new ThemeCatalogItem("ThemeId", "Name", new ThemeManagerTheme { FontFamily = "Invalid" }, ThemeSource.Local, null);
+            var theme = new ThemeCatalogItem(
+                "ThemeId",
+                "Name",
+                new ThemeDefinition { FontFamily = "Invalid", Theme = new MudTheme() },
+                ThemeSource.Local,
+                null);
             var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
 
             var fontField = FindComponentByTestId<MudAutocomplete<string>>(target, "ThemeDetailFont");
@@ -331,7 +330,7 @@ namespace Lantean.QBTMud.Test.Pages
 
         private static ThemeCatalogItem CreateTheme(string id, string name, ThemeSource source)
         {
-            return new ThemeCatalogItem(id, name, new ThemeManagerTheme { FontFamily = "Nunito Sans" }, source, null);
+            return new ThemeCatalogItem(id, name, new ThemeDefinition { FontFamily = "Nunito Sans", Theme = new MudTheme() }, source, null);
         }
 
         private void SetupFontCatalog(IEnumerable<string> fonts)

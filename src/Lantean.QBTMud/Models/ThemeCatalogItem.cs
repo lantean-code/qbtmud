@@ -1,5 +1,3 @@
-using MudBlazor.ThemeManager;
-
 namespace Lantean.QBTMud.Models
 {
     /// <summary>
@@ -15,7 +13,7 @@ namespace Lantean.QBTMud.Models
         /// <param name="theme">The theme configuration.</param>
         /// <param name="source">The theme source.</param>
         /// <param name="sourcePath">The source path for server-provided themes.</param>
-        public ThemeCatalogItem(string id, string name, ThemeManagerTheme theme, ThemeSource source, string? sourcePath)
+        public ThemeCatalogItem(string id, string name, ThemeDefinition theme, ThemeSource source, string? sourcePath)
         {
             Id = id;
             Name = name;
@@ -37,7 +35,7 @@ namespace Lantean.QBTMud.Models
         /// <summary>
         /// Gets or sets the theme configuration.
         /// </summary>
-        public ThemeManagerTheme Theme { get; set; }
+        public ThemeDefinition Theme { get; set; }
 
         /// <summary>
         /// Gets the theme source.

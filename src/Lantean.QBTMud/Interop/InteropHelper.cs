@@ -125,5 +125,14 @@ namespace Lantean.QBTMud.Interop
         {
             await runtime.InvokeVoidAsync("qbt.clearSelection");
         }
+
+        /// <summary>
+        /// Removes the bootstrap theme style element if present.
+        /// </summary>
+        /// <param name="runtime">The JavaScript runtime.</param>
+        public static async Task RemoveBootstrapTheme(this IJSRuntime runtime)
+        {
+            await runtime.InvokeVoidAsync("qbt.removeBootstrapTheme");
+        }
     }
 }
