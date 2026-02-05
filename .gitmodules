@@ -1,0 +1,3 @@
+[submodule "external/qBittorrent"]
+	path = external/qBittorrent
+	url = https://github.com/qbittorrent/qBittorrent.git

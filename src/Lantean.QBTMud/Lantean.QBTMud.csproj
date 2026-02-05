@@ -37,8 +37,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <WebUiTranslationsMode></WebUiTranslationsMode>
-    <WebUiTranslationsSource>$(MSBuildThisFileDirectory)../ref/qBittorrent/src/webui/www/translations</WebUiTranslationsSource>
+    <WebUiTranslationsMode Condition="'$(WebUiTranslationsMode)'==''">en</WebUiTranslationsMode>
+    <WebUiTranslationsSource>$(MSBuildThisFileDirectory)../external/qBittorrent/src/webui/www/translations</WebUiTranslationsSource>
     <WebUiTranslationsOutput>$(MSBuildThisFileDirectory)wwwroot/i18n</WebUiTranslationsOutput>
   </PropertyGroup>
   
