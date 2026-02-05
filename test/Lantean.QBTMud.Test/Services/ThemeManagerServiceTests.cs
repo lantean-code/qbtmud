@@ -16,6 +16,8 @@ namespace Lantean.QBTMud.Test.Services
         private const string SelectedThemeStorageKey = "ThemeManager.SelectedThemeId";
         private const string ThemeIndexPath = "/themes/index.json";
 
+        private static readonly HttpResponseMessage _notFoundResponseMessage = new HttpResponseMessage(HttpStatusCode.NotFound);
+
         private readonly TestLocalStorageService _localStorage;
         private readonly IThemeFontCatalog _fontCatalog;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -67,7 +69,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_NoThemes_WHEN_Initialized_THEN_UsesFallbackTheme()
         {
-            SetupHttpClient(new HttpResponseMessage(HttpStatusCode.NotFound));
+            SetupHttpClient(_notFoundResponseMessage);
             SetupFontCatalogValid("Nunito Sans");
 
             await _target.EnsureInitialized();
@@ -281,7 +283,7 @@ namespace Lantean.QBTMud.Test.Services
                 var path = request.RequestUri?.AbsolutePath ?? string.Empty;
                 var response = _responses.TryGetValue(path, out var value)
                     ? value
-                    : new HttpResponseMessage(HttpStatusCode.NotFound);
+                    : _notFoundResponseMessage;
                 return Task.FromResult(response);
             }
         }
