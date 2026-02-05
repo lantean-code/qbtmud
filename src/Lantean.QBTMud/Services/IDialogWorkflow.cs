@@ -190,5 +190,12 @@ namespace Lantean.QBTMud.Helpers
         /// </summary>
         /// <returns><c>true</c> when changes were made; otherwise, <c>false</c>.</returns>
         Task<bool> ShowSearchPluginsDialog();
+
+        /// <summary>
+        /// Shows a theme preview dialog.
+        /// </summary>
+        /// <param name="theme">The theme to preview.</param>
+        /// <param name="isDarkMode">Whether to start the preview in dark mode.</param>
+        Task ShowThemePreviewDialog(MudBlazor.MudTheme theme, bool isDarkMode);
     }
 }

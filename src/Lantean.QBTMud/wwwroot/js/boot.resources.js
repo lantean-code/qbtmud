@@ -26,6 +26,40 @@
         warnedFailure: false
     };
 
+    function applyBootstrapTheme() {
+        try {
+            const rawBootstrapMode = localStorage.getItem("ThemeManager.BootstrapIsDark");
+            const rawIsDark = localStorage.getItem("MainLayout.IsDarkMode");
+            const isDark = parseBoolean(rawBootstrapMode ?? rawIsDark);
+            const css = localStorage.getItem(isDark ? "ThemeManager.BootstrapCss.Dark" : "ThemeManager.BootstrapCss.Light")
+                ?? localStorage.getItem("ThemeManager.BootstrapCss");
+            if (!css) {
+                return;
+            }
+
+            const existing = document.getElementById("qbt-bootstrap-theme");
+            if (existing) {
+                existing.textContent = css;
+                return;
+            }
+
+            const style = document.createElement("style");
+            style.id = "qbt-bootstrap-theme";
+            style.textContent = css;
+            document.body.appendChild(style);
+        } catch {
+        }
+    }
+
+    function parseBoolean(value) {
+        if (!value) {
+            return false;
+        }
+
+        const normalized = value.trim().toLowerCase();
+        return normalized === "true";
+    }
+
     function ensureTrailingSlash(value) {
         if (!value) {
             return "";
@@ -97,8 +131,8 @@
                     .catch(error => {
                         logCdnFailure(`CDN fetch failed for ${cdnUrl}. Falling back to local assets.`, error);
                         state.cdnFailed = true;
-                    return defaultUri;
-                });
+                        return defaultUri;
+                    });
             }
         });
 
@@ -108,58 +142,23 @@
     function setupLoadingProgress(startPromise) {
         const root = document.documentElement;
         let intervalId = 0;
-        let lastPercent = 0;
-        let displayedPercent = 0;
-        let lastUpdate = performance.now();
-        let startCompleted = false;
-        let startingMode = false;
-
-        function normalizeText(value, fallback) {
-            if (!value) {
-                return fallback;
-            }
-
-            const trimmed = value.trim();
-            return trimmed.length > 0 ? trimmed : fallback;
-        }
 
         function updateProgress() {
             const computed = getComputedStyle(root);
             const rawPercent = computed.getPropertyValue("--blazor-load-percentage");
             const rawText = computed.getPropertyValue("--blazor-load-percentage-text");
-            const percentValue = Number.parseFloat(rawPercent);
-            const now = performance.now();
 
-            if (Number.isFinite(percentValue) && percentValue > lastPercent) {
-                lastPercent = Math.min(percentValue, 100);
-                displayedPercent = Math.min(lastPercent, 99);
-                lastUpdate = now;
-                startingMode = false;
-            } else if (!startCompleted && !startingMode && now - lastUpdate > 700) {
-                displayedPercent = 100;
-                startingMode = true;
-            } else if (!startCompleted && displayedPercent < 99 && now - lastUpdate > 400) {
-                displayedPercent = Math.min(displayedPercent + 1, 99);
-            }
+            const startingText = typeof rawText === "string" && rawText.toLowerCase().includes("starting");
 
-            if (displayedPercent > 0 || Number.isFinite(percentValue)) {
-                root.style.setProperty("--qbt-load-percentage", `${displayedPercent}%`);
-                if (startCompleted || startingMode || lastPercent >= 100 || displayedPercent >= 99) {
-                    root.style.setProperty("--qbt-load-percentage-text", "\"Starting...\"");
-                } else {
-                    root.style.setProperty("--qbt-load-percentage-text", normalizeText(rawText, "\"Loading\""));
-                }
-            }
+            root.style.setProperty("--qbt-load-percentage", `${rawPercent}`);
+            root.style.setProperty("--qbt-load-percentage-text", startingText ? "\"Starting...\"" : (rawText || ""));
         }
 
-        intervalId = window.setInterval(updateProgress, 120);
+        intervalId = window.setInterval(updateProgress, 5);
         updateProgress();
 
         startPromise
             .then(() => {
-                startCompleted = true;
-                displayedPercent = 100;
-                startingMode = true;
                 if (intervalId) {
                     window.clearInterval(intervalId);
                 }
@@ -173,6 +172,8 @@
                 }
             });
     }
+
+    applyBootstrapTheme();
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", startBlazor);

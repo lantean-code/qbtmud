@@ -1,0 +1,24 @@
+@using MudBlazor.Utilities
+
+<MudOverlay @bind-Visible="_isOpen" AutoClose="true" />
+
+<div class="theme-color-item" @attributes="AdditionalAttributes">
+    <div class="theme-color-item__row mud-list-item-clickable mud-ripple @(Disabled ? "theme-color-item__row--disabled" : string.Empty) @(_isOpen ? "theme-color-item__row--open" : string.Empty)" @onclick="ToggleOpen">
+        <div class="theme-color-item__swatch" style="--theme-color:@SwatchColor">
+            <div class="theme-color-item__swatch-fill"></div>
+        </div>
+        <div class="theme-color-item__meta">
+            <MudText Typo="Typo.body2" Class="theme-color-item__name">@Name</MudText>
+            <MudText Typo="Typo.caption" Class="theme-color-item__value">@SwatchLabel</MudText>
+        </div>
+    </div>
+    <MudPopover Open="@_isOpen" Elevation="12" Square="true" TransformOrigin="Origin.TopCenter" AnchorOrigin="Origin.BottomCenter">
+        <MudColorPicker Class="theme-color-item__picker"
+                        PickerVariant="PickerVariant.Static"
+                        Elevation="0"
+                        Disabled="@Disabled"
+                        Value="@Color"
+                        ValueChanged="OnColorChanged"
+                        ColorPickerView="@ColorPickerView" />
+    </MudPopover>
+</div>

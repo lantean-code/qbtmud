@@ -1,0 +1,155 @@
+@page "/themes/{ThemeId}"
+@layout OtherLayout
+
+<div class="content-panel theme-detail">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to themes" data-test-id="@TestIdHelper.For("ThemeDetailBack")" />
+            <MudDivider Vertical="true" />
+            <MudText Class="px-5 no-wrap">@ThemeTitle</MudText>
+            <MudDivider Vertical="true" />
+            @if (!IsLoading && Theme is not null)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                               title="Preview"
+                               OnClick="ShowPreview"
+                               Disabled="@IsBusy"
+                               data-test-id="@TestIdHelper.For("ThemeDetailPreview")" />
+                <MudIconButton Icon="@Icons.Material.Outlined.Undo"
+                               title="Reset"
+                               OnClick="ResetEdits"
+                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy)"
+                               data-test-id="@TestIdHelper.For("ThemeDetailReset")" />
+                <MudIconButton Icon="@Icons.Material.Outlined.Save"
+                               title="Save"
+                               OnClick="SaveEdits"
+                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy || HasNameError)"
+                               data-test-id="@TestIdHelper.For("ThemeDetailSave")" />
+                <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle"
+                               Color="Color.Success"
+                               title="Save & apply"
+                               OnClick="SaveAndApplyEdits"
+                               Disabled="@(!HasChanges || !CanEditTheme || IsBusy || HasNameError)"
+                               data-test-id="@TestIdHelper.For("ThemeDetailSaveApply")" />
+            }
+        </MudToolBar>
+    </div>
+
+    <div class="content-panel__body">
+        @if (IsLoading)
+        {
+            <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="content-panel__container pa-4">
+                <MudText data-test-id="@TestIdHelper.For("ThemeDetailLoading")">Loading theme…</MudText>
+            </MudContainer>
+        }
+        else if (Theme is null)
+        {
+            <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="content-panel__container pa-4">
+                <MudText data-test-id="@TestIdHelper.For("ThemeDetailMissing")">Theme not found.</MudText>
+                <MudButton Class="mt-4" OnClick="NavigateBack" data-test-id="@TestIdHelper.For("ThemeDetailMissingBack")">Back to themes</MudButton>
+            </MudContainer>
+        }
+        else
+        {
+            <MudTabs Elevation="2" ApplyEffectsToContainer="true" Border="true">
+                <MudTabPanel Text="Details">
+                    <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="details-tab-contents theme-detail__tab-contents pa-4">
+                        <div class="theme-editor__header">
+                            @if (IsThemeApplied(Theme))
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("ThemeDetailApplied")">Applied</MudChip>
+                            }
+                            @if (Theme.IsReadOnly)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" data-test-id="@TestIdHelper.For("ThemeDetailBundled")">Bundled</MudChip>
+                            }
+                        </div>
+
+                        @if (Theme.IsReadOnly)
+                        {
+                            <MudAlert Severity="Severity.Info" Class="mt-4" data-test-id="@TestIdHelper.For("ThemeDetailBundledAlert")">
+                                Bundled themes are read-only. Duplicate this theme to edit it.
+                            </MudAlert>
+                        }
+
+                        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Name</MudText>
+                        <MudTextField T="string"
+                                      Value="EditorName"
+                                      ValueChanged="NameChanged"
+                                      Immediate="true"
+                                      Disabled="@(!CanEditTheme || IsBusy)"
+                                      Error="@HasNameError"
+                                      ErrorText="@NameError"
+                                      data-test-id="@TestIdHelper.For("ThemeDetailName")" />
+
+                        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Font</MudText>
+                        <MudAutocomplete T="string"
+                                         Value="EditorFont"
+                                         ValueChanged="FontChanged"
+                                         SearchFunc="SearchFonts"
+                                         Dense="true"
+                                         MaxItems="50"
+                                         Immediate="true"
+                                         Strict="false"
+                                         CoerceText="true"
+                                         CoerceValue="true"
+                                         Disabled="@(!CanEditTheme || IsBusy)"
+                                         Error="@HasFontError"
+                                         ErrorText="@FontError"
+                                         Class="theme-editor__font"
+                                         data-test-id="@TestIdHelper.For("ThemeDetailFont")">
+                            <ItemTemplate>
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.body2" Style="@GetFontPreviewStyle(context)">@context</MudText>
+                                    <MudText Typo="Typo.caption" Style="@GetFontPreviewStyle(context)">Aa Bb Cc 123</MudText>
+                                </MudStack>
+                            </ItemTemplate>
+                        </MudAutocomplete>
+                    </MudContainer>
+                </MudTabPanel>
+                <MudTabPanel Text="Dark Colors">
+                    <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="details-tab-contents theme-detail__tab-contents pa-4">
+                        @foreach (var group in ColorGroups)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="theme-color-group__title">@group.Title</MudText>
+                            <MudGrid Spacing="2">
+                                @foreach (var item in group.Items)
+                                {
+                                    <MudItem xs="12" sm="6" md="4" lg="3">
+                                        <ThemeColorItem Name="@item.Name"
+                                                        Color="@GetPaletteColor(item.Color, true)"
+                                                        ColorChanged="@(value => UpdatePaletteColor(item.Color, value, true))"
+                                                        Disabled="@(!CanEditTheme || IsBusy)"
+                                                        ColorPickerView="ColorPickerView.Spectrum"
+                                                        data-test-id="@TestIdHelper.For($"ThemeDetailDark-{item.Color}")" />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                    </MudContainer>
+                </MudTabPanel>
+                <MudTabPanel Text="Light Colors">
+                    <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="details-tab-contents theme-detail__tab-contents pa-4">
+                        @foreach (var group in ColorGroups)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="theme-color-group__title">@group.Title</MudText>
+                            <MudGrid Spacing="2">
+                                @foreach (var item in group.Items)
+                                {
+                                    <MudItem xs="12" sm="6" md="4" lg="3">
+                                        <ThemeColorItem Name="@item.Name"
+                                                        Color="@GetPaletteColor(item.Color, false)"
+                                                        ColorChanged="@(value => UpdatePaletteColor(item.Color, value, false))"
+                                                        Disabled="@(!CanEditTheme || IsBusy)"
+                                                        ColorPickerView="ColorPickerView.Spectrum"
+                                                        data-test-id="@TestIdHelper.For($"ThemeDetailLight-{item.Color}")" />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                    </MudContainer>
+                </MudTabPanel>
+            </MudTabs>
+        }
+    </div>
+</div>

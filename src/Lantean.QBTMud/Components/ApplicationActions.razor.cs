@@ -89,6 +89,7 @@ namespace Lantean.QBTMud.Components
                 new("tags", "Tag Manager", Icons.Material.Filled.Label, Color.Default, "./tags", separatorBefore: true),
                 new("categories", "Category Manager", Icons.Material.Filled.List, Color.Default, "./categories"),
                 new("cookies", "Cookie Manager", Icons.Material.Filled.Cookie, Color.Default, "./cookies"),
+                new("themes", "Theme Manager", Icons.Material.Filled.Palette, Color.Default, "./themes"),
                 new("settings", "Settings", Icons.Material.Filled.Settings, Color.Default, "./settings", separatorBefore: true),
                 new("darkMode", "Switch to dark mode", Icons.Material.Filled.DarkMode, Color.Info, EventCallback.Factory.Create(this, ToggleDarkMode)),
                 new("about", "About", Icons.Material.Filled.Info, Color.Default, "./about"),

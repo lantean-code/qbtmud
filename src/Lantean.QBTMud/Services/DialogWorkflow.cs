@@ -642,6 +642,33 @@ namespace Lantean.QBTMud.Services
             return dialogResult.Data is bool changed && changed;
         }
 
+        /// <summary>
+        /// Shows a theme preview dialog.
+        /// </summary>
+        /// <param name="theme">The theme to preview.</param>
+        /// <param name="isDarkMode">Whether to start the preview in dark mode.</param>
+        public async Task ShowThemePreviewDialog(MudTheme theme, bool isDarkMode)
+        {
+            if (theme is null)
+            {
+                throw new ArgumentNullException(nameof(theme));
+            }
+
+            var parameters = new DialogParameters
+            {
+                { nameof(ThemePreviewDialog.Theme), theme },
+                { nameof(ThemePreviewDialog.IsDarkMode), isDarkMode }
+            };
+            var options = FullScreenDialogOptions with
+            {
+                FullScreen = false,
+                NoHeader = true,
+                FullWidth = false
+            };
+
+            await _dialogService.ShowAsync<ThemePreviewDialog>("Theme Preview", parameters, options);
+        }
+
         private void ShowAddTorrentSnackbarMessage(QBitTorrentClient.Models.AddTorrentResult result)
         {
             var fragments = new List<string>(3);

@@ -10,6 +10,36 @@ window.qbt.triggerFileDownload = (url, fileName) => {
     anchorElement.remove();
 }
 
+window.qbt.loadGoogleFont = (url, id) => {
+    if (!url) {
+        return;
+    }
+
+    if (id) {
+        const existing = document.getElementById(id);
+        if (existing) {
+            return;
+        }
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = url;
+
+    if (id) {
+        link.id = id;
+    }
+
+    document.head.appendChild(link);
+}
+
+window.qbt.removeBootstrapTheme = () => {
+    const style = document.getElementById("qbt-bootstrap-theme");
+    if (style) {
+        style.remove();
+    }
+}
+
 window.qbt.getBoundingClientRect = (selector) => {
     const element = getElementBySelector(selector);
 
@@ -189,6 +219,25 @@ window.qbt.clearSelection = () => {
 let supportedEvents = new Map();
 let focusInstance = null;
 
+document.addEventListener('keydown', event => {
+    if (shouldIgnoreKeyPress(event)) {
+        return;
+    }
+
+    const key = getKeyWithoutRepeat(event);
+    const references = supportedEvents.get(key);
+    if (!references || references.size === 0) {
+        return;
+    }
+
+    if (focusInstance && !references.has(focusInstance._id)) {
+        return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+});
+
 document.addEventListener('keyup', event => {
     if (shouldIgnoreKeyPress(event)) {
         return;
@@ -268,6 +317,10 @@ function shouldIgnoreKeyPress(event) {
 
 function getKey(keyboardEvent) {
     return keyboardEvent.key + (keyboardEvent.ctrlKey ? '1' : '0') + (keyboardEvent.shiftKey ? '1' : '0') + (keyboardEvent.altKey ? '1' : '0') + (keyboardEvent.metaKey ? '1' : '0') + (keyboardEvent.repeat ? '1' : '0');
+}
+
+function getKeyWithoutRepeat(keyboardEvent) {
+    return keyboardEvent.key + (keyboardEvent.ctrlKey ? '1' : '0') + (keyboardEvent.shiftKey ? '1' : '0') + (keyboardEvent.altKey ? '1' : '0') + (keyboardEvent.metaKey ? '1' : '0') + '0';
 }
 
 function fallbackCopyTextToClipboard(text) {

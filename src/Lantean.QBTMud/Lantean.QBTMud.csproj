@@ -106,7 +106,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.2" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
     <PackageReference Include="MudBlazor" Version="8.15.0" />
-    <PackageReference Include="MudBlazor.ThemeManager" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>

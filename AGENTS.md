@@ -24,6 +24,8 @@
   - `dotnet build  --artifacts-path=/tmp/artifacts/qbtmud`
 - Run tests:
   - `dotnet test --artifacts-path=/tmp/artifacts/qbtmud`
+- After each set of changes:
+  - Run `dotnet test --artifacts-path=/tmp/artifacts/qbtmud`.
 
 ## Coding and test standards
 - Source code rules and generation constraints live in `./src/AGENTS.md` (authoritative for code style, design, docs).

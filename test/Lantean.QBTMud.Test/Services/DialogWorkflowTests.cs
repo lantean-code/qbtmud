@@ -1308,6 +1308,42 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_NullTheme_WHEN_ShowThemePreviewDialog_THEN_Throws()
+        {
+            Func<Task> act = async () => await _target.ShowThemePreviewDialog(null!, true);
+
+            await act.Should().ThrowAsync<ArgumentNullException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_Theme_WHEN_ShowThemePreviewDialog_THEN_ShowsDialog()
+        {
+            DialogParameters? captured = null;
+            DialogOptions? capturedOptions = null;
+            var reference = new Mock<IDialogReference>();
+            _dialogService
+                .Setup(s => s.ShowAsync<ThemePreviewDialog>("Theme Preview", It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()))
+                .Callback<string, DialogParameters, DialogOptions>((_, parameters, options) =>
+                {
+                    captured = parameters;
+                    capturedOptions = options;
+                })
+                .ReturnsAsync(reference.Object);
+
+            var theme = new MudTheme();
+
+            await _target.ShowThemePreviewDialog(theme, true);
+
+            captured.Should().NotBeNull();
+            captured![nameof(ThemePreviewDialog.Theme)].Should().BeSameAs(theme);
+            captured[nameof(ThemePreviewDialog.IsDarkMode)].Should().Be(true);
+            capturedOptions.Should().NotBeNull();
+            capturedOptions!.FullScreen.Should().BeFalse();
+            capturedOptions.NoHeader.Should().BeTrue();
+            capturedOptions.FullWidth.Should().BeFalse();
+        }
+
+        [Fact]
         public async Task GIVEN_PathBrowserSelection_WHEN_ShowPathBrowserDialog_THEN_ShouldReturnSelectedPath()
         {
             DialogParameters? captured = null;

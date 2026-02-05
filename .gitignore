@@ -363,9 +363,9 @@ MigrationBackup/
 FodyWeavers.xsd
 /output
 
-/refs/
 coverage/
 coverage-report/
 TestResults/
-/ref/mudblazor
+/refs/
+/ref/
 /src/Lantean.QBTMud/wwwroot/i18n
