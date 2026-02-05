@@ -1,0 +1,798 @@
+{
+  "id": "qbtmud-default",
+  "name": "qbtmud Default",
+  "theme": {
+    "paletteLight": {
+      "black": {
+        "r": 39,
+        "g": 44,
+        "b": 52,
+        "a": 255
+      },
+      "white": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "primary": {
+        "r": 89,
+        "g": 74,
+        "b": 226,
+        "a": 255
+      },
+      "primaryContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "secondary": {
+        "r": 255,
+        "g": 64,
+        "b": 129,
+        "a": 255
+      },
+      "secondaryContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "tertiary": {
+        "r": 30,
+        "g": 200,
+        "b": 165,
+        "a": 255
+      },
+      "tertiaryContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "info": {
+        "r": 33,
+        "g": 150,
+        "b": 243,
+        "a": 255
+      },
+      "infoContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "success": {
+        "r": 0,
+        "g": 200,
+        "b": 83,
+        "a": 255
+      },
+      "successContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "warning": {
+        "r": 255,
+        "g": 152,
+        "b": 0,
+        "a": 255
+      },
+      "warningContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "error": {
+        "r": 244,
+        "g": 67,
+        "b": 54,
+        "a": 255
+      },
+      "errorContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "dark": {
+        "r": 66,
+        "g": 66,
+        "b": 66,
+        "a": 255
+      },
+      "darkContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "textPrimary": {
+        "r": 66,
+        "g": 66,
+        "b": 66,
+        "a": 255
+      },
+      "textSecondary": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 137
+      },
+      "textDisabled": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 96
+      },
+      "actionDefault": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 137
+      },
+      "actionDisabled": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 66
+      },
+      "actionDisabledBackground": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 30
+      },
+      "background": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "backgroundGray": {
+        "r": 245,
+        "g": 245,
+        "b": 245,
+        "a": 255
+      },
+      "surface": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "drawerBackground": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "drawerText": {
+        "r": 66,
+        "g": 66,
+        "b": 66,
+        "a": 255
+      },
+      "drawerIcon": {
+        "r": 97,
+        "g": 97,
+        "b": 97,
+        "a": 255
+      },
+      "appbarBackground": {
+        "r": 89,
+        "g": 74,
+        "b": 226,
+        "a": 255
+      },
+      "appbarText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "linesDefault": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 30
+      },
+      "linesInputs": {
+        "r": 189,
+        "g": 189,
+        "b": 189,
+        "a": 255
+      },
+      "tableLines": {
+        "r": 224,
+        "g": 224,
+        "b": 224,
+        "a": 255
+      },
+      "tableStriped": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 5
+      },
+      "tableHover": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 10
+      },
+      "divider": {
+        "r": 224,
+        "g": 224,
+        "b": 224,
+        "a": 255
+      },
+      "dividerLight": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 204
+      },
+      "skeleton": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 28
+      },
+      "primaryDarken": "rgb(62,44,221)",
+      "primaryLighten": "rgb(118,106,231)",
+      "secondaryDarken": "rgb(255,31,105)",
+      "secondaryLighten": "rgb(255,102,153)",
+      "tertiaryDarken": "rgb(25,169,140)",
+      "tertiaryLighten": "rgb(42,223,187)",
+      "infoDarken": "rgb(12,128,223)",
+      "infoLighten": "rgb(71,167,245)",
+      "successDarken": "rgb(0,163,68)",
+      "successLighten": "rgb(0,235,98)",
+      "warningDarken": "rgb(214,129,0)",
+      "warningLighten": "rgb(255,167,36)",
+      "errorDarken": "rgb(242,28,13)",
+      "errorLighten": "rgb(246,96,85)",
+      "darkDarken": "rgb(46,46,46)",
+      "darkLighten": "rgb(87,87,87)",
+      "borderOpacity": 1,
+      "hoverOpacity": 0.06,
+      "rippleOpacity": 0.1,
+      "rippleOpacitySecondary": 0.2,
+      "grayDefault": "#9E9E9E",
+      "grayLight": "#BDBDBD",
+      "grayLighter": "#E0E0E0",
+      "grayDark": "#757575",
+      "grayDarker": "#616161",
+      "overlayDark": "rgba(33,33,33,0.4980392156862745)",
+      "overlayLight": "rgba(255,255,255,0.4980392156862745)"
+    },
+    "paletteDark": {
+      "black": {
+        "r": 39,
+        "g": 39,
+        "b": 47,
+        "a": 255
+      },
+      "primary": {
+        "r": 59,
+        "g": 130,
+        "b": 246,
+        "a": 255
+      },
+      "info": {
+        "r": 56,
+        "g": 189,
+        "b": 248,
+        "a": 255
+      },
+      "success": {
+        "r": 45,
+        "g": 212,
+        "b": 191,
+        "a": 255
+      },
+      "warning": {
+        "r": 251,
+        "g": 191,
+        "b": 36,
+        "a": 255
+      },
+      "error": {
+        "r": 248,
+        "g": 113,
+        "b": 113,
+        "a": 255
+      },
+      "dark": {
+        "r": 39,
+        "g": 39,
+        "b": 47,
+        "a": 255
+      },
+      "textPrimary": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 229
+      },
+      "textSecondary": {
+        "r": 159,
+        "g": 182,
+        "b": 204,
+        "a": 209
+      },
+      "textDisabled": {
+        "r": 159,
+        "g": 182,
+        "b": 204,
+        "a": 127
+      },
+      "actionDefault": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 183
+      },
+      "actionDisabled": {
+        "r": 159,
+        "g": 182,
+        "b": 204,
+        "a": 127
+      },
+      "actionDisabledBackground": {
+        "r": 6,
+        "g": 11,
+        "b": 20,
+        "a": 153
+      },
+      "background": {
+        "r": 11,
+        "g": 19,
+        "b": 35,
+        "a": 255
+      },
+      "backgroundGray": {
+        "r": 39,
+        "g": 39,
+        "b": 47,
+        "a": 255
+      },
+      "surface": {
+        "r": 17,
+        "g": 24,
+        "b": 39,
+        "a": 255
+      },
+      "drawerBackground": {
+        "r": 11,
+        "g": 19,
+        "b": 35,
+        "a": 255
+      },
+      "drawerText": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 209
+      },
+      "drawerIcon": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 183
+      },
+      "appbarBackground": {
+        "r": 17,
+        "g": 24,
+        "b": 39,
+        "a": 255
+      },
+      "appbarText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 178
+      },
+      "linesDefault": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 30
+      },
+      "linesInputs": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 51
+      },
+      "tableLines": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 30
+      },
+      "tableStriped": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 10
+      },
+      "divider": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 30
+      },
+      "dividerLight": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 15
+      },
+      "skeleton": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 28
+      },
+      "white": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "primaryContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "secondary": {
+        "r": 255,
+        "g": 64,
+        "b": 129,
+        "a": 255
+      },
+      "secondaryContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "tertiary": {
+        "r": 30,
+        "g": 200,
+        "b": 165,
+        "a": 255
+      },
+      "tertiaryContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "infoContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "successContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "warningContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "errorContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "darkContrastText": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "tableHover": {
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 20
+      },
+      "primaryDarken": "rgb(21,107,244)",
+      "primaryLighten": "rgb(99,156,248)",
+      "secondaryDarken": "rgb(255,31,105)",
+      "secondaryLighten": "rgb(255,102,153)",
+      "tertiaryDarken": "rgb(25,169,140)",
+      "tertiaryLighten": "rgb(42,223,187)",
+      "infoDarken": "rgb(19,178,246)",
+      "infoLighten": "rgb(98,204,249)",
+      "successDarken": "rgb(36,178,159)",
+      "successLighten": "rgb(73,218,198)",
+      "warningDarken": "rgb(245,177,5)",
+      "warningLighten": "rgb(251,201,75)",
+      "errorDarken": "rgb(247,80,80)",
+      "errorLighten": "rgb(250,148,148)",
+      "darkDarken": "rgb(23,23,28)",
+      "darkLighten": "rgb(56,56,67)",
+      "borderOpacity": 1,
+      "hoverOpacity": 0.06,
+      "rippleOpacity": 0.1,
+      "rippleOpacitySecondary": 0.2,
+      "grayDefault": "#9E9E9E",
+      "grayLight": "#BDBDBD",
+      "grayLighter": "#E0E0E0",
+      "grayDark": "#757575",
+      "grayDarker": "#616161",
+      "overlayDark": "rgba(33,33,33,0.4980392156862745)",
+      "overlayLight": "rgba(255,255,255,0.4980392156862745)"
+    },
+    "shadows": {
+      "elevation": [
+        "none",
+        "0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12)",
+        "0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12)",
+        "0px 3px 3px -2px rgba(0,0,0,0.2),0px 3px 4px 0px rgba(0,0,0,0.14),0px 1px 8px 0px rgba(0,0,0,0.12)",
+        "0px 2px 4px -1px rgba(0,0,0,0.2),0px 4px 5px 0px rgba(0,0,0,0.14),0px 1px 10px 0px rgba(0,0,0,0.12)",
+        "0px 3px 5px -1px rgba(0,0,0,0.2),0px 5px 8px 0px rgba(0,0,0,0.14),0px 1px 14px 0px rgba(0,0,0,0.12)",
+        "0px 3px 5px -1px rgba(0,0,0,0.2),0px 6px 10px 0px rgba(0,0,0,0.14),0px 1px 18px 0px rgba(0,0,0,0.12)",
+        "0px 4px 5px -2px rgba(0,0,0,0.2),0px 7px 10px 1px rgba(0,0,0,0.14),0px 2px 16px 1px rgba(0,0,0,0.12)",
+        "0px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
+        "0px 5px 6px -3px rgba(0,0,0,0.2),0px 9px 12px 1px rgba(0,0,0,0.14),0px 3px 16px 2px rgba(0,0,0,0.12)",
+        "0px 6px 6px -3px rgba(0,0,0,0.2),0px 10px 14px 1px rgba(0,0,0,0.14),0px 4px 18px 3px rgba(0,0,0,0.12)",
+        "0px 6px 7px -4px rgba(0,0,0,0.2),0px 11px 15px 1px rgba(0,0,0,0.14),0px 4px 20px 3px rgba(0,0,0,0.12)",
+        "0px 7px 8px -4px rgba(0,0,0,0.2),0px 12px 17px 2px rgba(0,0,0,0.14),0px 5px 22px 4px rgba(0,0,0,0.12)",
+        "0px 7px 8px -4px rgba(0,0,0,0.2),0px 13px 19px 2px rgba(0,0,0,0.14),0px 5px 24px 4px rgba(0,0,0,0.12)",
+        "0px 7px 9px -4px rgba(0,0,0,0.2),0px 14px 21px 2px rgba(0,0,0,0.14),0px 5px 26px 4px rgba(0,0,0,0.12)",
+        "0px 8px 9px -5px rgba(0,0,0,0.2),0px 15px 22px 2px rgba(0,0,0,0.14),0px 6px 28px 5px rgba(0,0,0,0.12)",
+        "0px 8px 10px -5px rgba(0,0,0,0.2),0px 16px 24px 2px rgba(0,0,0,0.14),0px 6px 30px 5px rgba(0,0,0,0.12)",
+        "0px 8px 11px -5px rgba(0,0,0,0.2),0px 17px 26px 2px rgba(0,0,0,0.14),0px 6px 32px 5px rgba(0,0,0,0.12)",
+        "0px 9px 11px -5px rgba(0,0,0,0.2),0px 18px 28px 2px rgba(0,0,0,0.14),0px 7px 34px 6px rgba(0,0,0,0.12)",
+        "0px 9px 12px -6px rgba(0,0,0,0.2),0px 19px 29px 2px rgba(0,0,0,0.14),0px 7px 36px 6px rgba(0,0,0,0.12)",
+        "0px 10px 13px -6px rgba(0,0,0,0.2),0px 20px 31px 3px rgba(0,0,0,0.14),0px 8px 38px 7px rgba(0,0,0,0.12)",
+        "0px 10px 13px -6px rgba(0,0,0,0.2),0px 21px 33px 3px rgba(0,0,0,0.14),0px 8px 40px 7px rgba(0,0,0,0.12)",
+        "0px 10px 14px -6px rgba(0,0,0,0.2),0px 22px 35px 3px rgba(0,0,0,0.14),0px 8px 42px 7px rgba(0,0,0,0.12)",
+        "0px 11px 14px -7px rgba(0,0,0,0.2),0px 23px 36px 3px rgba(0,0,0,0.14),0px 9px 44px 8px rgba(0,0,0,0.12)",
+        "0px 11px 15px -7px rgba(0,0,0,0.2),0px 24px 38px 3px rgba(0,0,0,0.14),0px 9px 46px 8px rgba(0,0,0,0.12)",
+        "0 5px 5px -3px rgba(0,0,0,.06), 0 8px 10px 1px rgba(0,0,0,.042), 0 3px 14px 2px rgba(0,0,0,.036)"
+      ]
+    },
+    "typography": {
+      "default": {
+        "$type": "DefaultTypography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "400",
+        "fontSize": ".875rem",
+        "lineHeight": "1.43",
+        "letterSpacing": ".01071em",
+        "textTransform": "none"
+      },
+      "h1": {
+        "$type": "H1Typography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "300",
+        "fontSize": "6rem",
+        "lineHeight": "1.167",
+        "letterSpacing": "-.01562em",
+        "textTransform": "none"
+      },
+      "h2": {
+        "$type": "H2Typography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "300",
+        "fontSize": "3.75rem",
+        "lineHeight": "1.2",
+        "letterSpacing": "-.00833em",
+        "textTransform": "none"
+      },
+      "h3": {
+        "$type": "H3Typography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "400",
+        "fontSize": "3rem",
+        "lineHeight": "1.167",
+        "letterSpacing": "0",
+        "textTransform": "none"
+      },
+      "h4": {
+        "$type": "H4Typography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "400",
+        "fontSize": "2.125rem",
+        "lineHeight": "1.235",
+        "letterSpacing": ".00735em",
+        "textTransform": "none"
+      },
+      "h5": {
+        "$type": "H5Typography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "400",
+        "fontSize": "1.5rem",
+        "lineHeight": "1.334",
+        "letterSpacing": "0",
+        "textTransform": "none"
+      },
+      "h6": {
+        "$type": "H6Typography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "500",
+        "fontSize": "1.25rem",
+        "lineHeight": "1.6",
+        "letterSpacing": ".0075em",
+        "textTransform": "none"
+      },
+      "subtitle1": {
+        "$type": "Subtitle1Typography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "400",
+        "fontSize": "1rem",
+        "lineHeight": "1.75",
+        "letterSpacing": ".00938em",
+        "textTransform": "none"
+      },
+      "subtitle2": {
+        "$type": "Subtitle2Typography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "500",
+        "fontSize": ".875rem",
+        "lineHeight": "1.57",
+        "letterSpacing": ".00714em",
+        "textTransform": "none"
+      },
+      "body1": {
+        "$type": "Body1Typography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "400",
+        "fontSize": "1rem",
+        "lineHeight": "1.5",
+        "letterSpacing": ".00938em",
+        "textTransform": "none"
+      },
+      "body2": {
+        "$type": "Body2Typography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "400",
+        "fontSize": ".875rem",
+        "lineHeight": "1.43",
+        "letterSpacing": ".01071em",
+        "textTransform": "none"
+      },
+      "button": {
+        "$type": "ButtonTypography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "500",
+        "fontSize": ".875rem",
+        "lineHeight": "1.75",
+        "letterSpacing": ".02857em",
+        "textTransform": "uppercase"
+      },
+      "caption": {
+        "$type": "CaptionTypography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "400",
+        "fontSize": ".75rem",
+        "lineHeight": "1.66",
+        "letterSpacing": ".03333em",
+        "textTransform": "none"
+      },
+      "overline": {
+        "$type": "OverlineTypography",
+        "fontFamily": [
+          "Nunito Sans",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "fontWeight": "400",
+        "fontSize": ".75rem",
+        "lineHeight": "2.66",
+        "letterSpacing": ".08333em",
+        "textTransform": "none"
+      }
+    },
+    "layoutProperties": {
+      "defaultBorderRadius": "4px",
+      "drawerMiniWidthLeft": "56px",
+      "drawerMiniWidthRight": "56px",
+      "drawerWidthLeft": "240px",
+      "drawerWidthRight": "240px",
+      "appbarHeight": "64px"
+    },
+    "zIndex": {
+      "drawer": 1100,
+      "popover": 1200,
+      "appBar": 1300,
+      "dialog": 1400,
+      "snackbar": 1500,
+      "tooltip": 1600
+    },
+    "pseudoCss": {
+      "scope": ":root"
+    }
+  },
+  "rtl": false,
+  "fontFamily": "Nunito Sans",
+  "defaultBorderRadius": 4,
+  "defaultElevation": 1,
+  "appBarElevation": 25,
+  "drawerElevation": 2,
+  "drawerClipMode": 0
+}
