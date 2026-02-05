@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Lantean.QBTMud.Test.Infrastructure;
 using Lantean.QBTMud.Theming;
 using Moq;
 using System.Net;
@@ -43,12 +44,7 @@ namespace Lantean.QBTMud.Test.Theming
             {
                 Content = new StringContent("[]")
             });
-            var factory = new Mock<IHttpClientFactory>(MockBehavior.Strict);
-            factory.Setup(f => f.CreateClient("Assets")).Returns(new HttpClient(handler)
-            {
-                BaseAddress = new Uri("http://localhost/")
-            });
-            var target = new ThemeFontCatalog(factory.Object);
+            var target = CreateCatalog(handler);
 
             await target.EnsureInitialized();
             await target.EnsureInitialized();
@@ -123,12 +119,7 @@ namespace Lantean.QBTMud.Test.Theming
                 cts.Cancel();
                 throw new OperationCanceledException(cts.Token);
             });
-            var factory = new Mock<IHttpClientFactory>(MockBehavior.Strict);
-            factory.Setup(f => f.CreateClient("Assets")).Returns(new HttpClient(handler)
-            {
-                BaseAddress = new Uri("http://localhost/")
-            });
-            var target = new ThemeFontCatalog(factory.Object);
+            var target = CreateCatalog(handler);
 
             await target.EnsureInitialized(cts.Token);
 
@@ -140,12 +131,7 @@ namespace Lantean.QBTMud.Test.Theming
         {
             var tcs = new TaskCompletionSource<HttpResponseMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
             var handler = new BlockingHandler(() => tcs.Task);
-            var factory = new Mock<IHttpClientFactory>(MockBehavior.Strict);
-            factory.Setup(f => f.CreateClient("Assets")).Returns(new HttpClient(handler)
-            {
-                BaseAddress = new Uri("http://localhost/")
-            });
-            var target = new ThemeFontCatalog(factory.Object);
+            var target = CreateCatalog(handler);
 
             var first = target.EnsureInitialized();
             var second = target.EnsureInitialized();
@@ -206,11 +192,13 @@ namespace Lantean.QBTMud.Test.Theming
         private static ThemeFontCatalog CreateCatalog(Func<HttpRequestMessage, HttpResponseMessage> responder)
         {
             var handler = new CountingHandler(responder);
+            return CreateCatalog(handler);
+        }
+
+        private static ThemeFontCatalog CreateCatalog(HttpMessageHandler handler)
+        {
             var factory = new Mock<IHttpClientFactory>(MockBehavior.Strict);
-            factory.Setup(f => f.CreateClient("Assets")).Returns(new HttpClient(handler)
-            {
-                BaseAddress = new Uri("http://localhost/")
-            });
+            factory.Setup(f => f.CreateClient("Assets")).Returns(TestHttpClientFactory.CreateClient(handler));
             return new ThemeFontCatalog(factory.Object);
         }
 

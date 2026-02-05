@@ -363,8 +363,8 @@ MigrationBackup/
 FodyWeavers.xsd
 /output
 
-/refs/
 coverage/
 coverage-report/
 TestResults/
-/ref/mudblazor
+/refs/
+/ref/

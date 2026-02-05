@@ -367,6 +367,7 @@ namespace Lantean.QBTMud.Services
                 fontFamily = "Nunito Sans";
             }
 
+            definition.Theme = theme;
             definition.FontFamily = fontFamily;
             ThemeFontHelper.ApplyFont(definition, fontFamily);
 

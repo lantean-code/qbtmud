@@ -34,10 +34,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
             SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
-                ("/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(themeJson)
-                }));
+                CreateThemeResponse("themes/theme-one.json", themeJson));
             SetupFontCatalogValid("Nunito Sans");
 
             ThemeChangedEventArgs? captured = null;
@@ -59,10 +56,7 @@ namespace Lantean.QBTMud.Test.Services
             await _localStorage.SetItemAsync(SelectedThemeStorageKey, "ThemeId");
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
             SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
-                ("/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(themeJson)
-                }));
+                CreateThemeResponse("themes/theme-one.json", themeJson));
             SetupFontCatalogValid("Nunito Sans");
 
             await _target.EnsureInitialized();
@@ -87,10 +81,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
             SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
-                ("/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(themeJson)
-                }));
+                CreateThemeResponse("themes/theme-one.json", themeJson));
             SetupFontCatalogValid("Nunito Sans");
 
             await _target.EnsureInitialized();
@@ -130,10 +121,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var themeJson = CreateThemeJson("ServerId", "Name", "Nunito Sans");
             SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
-                ("/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(themeJson)
-                }));
+                CreateThemeResponse("themes/theme-one.json", themeJson));
             SetupFontCatalogValid("Nunito Sans");
 
             await _target.EnsureInitialized();
@@ -159,10 +147,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
             SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
-                ("/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(themeJson)
-                }));
+                CreateThemeResponse("themes/theme-one.json", themeJson));
             SetupFontCatalogValid("Nunito Sans");
 
             await _target.ReloadServerThemes();
@@ -177,7 +162,7 @@ namespace Lantean.QBTMud.Test.Services
             var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
             {
                 { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
-                { "/themes/theme-one.json", new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(themeJson) } }
+                { "/themes/theme-one.json", CreateThemeHttpResponse(themeJson) }
             });
             SetupHttpClient(handler);
             SetupFontCatalogValid("Nunito Sans");
@@ -206,6 +191,19 @@ namespace Lantean.QBTMud.Test.Services
             ThemeFontHelper.ApplyFont(definition, fontFamily);
 
             return ThemeSerialization.SerializeDefinition(definition, false);
+        }
+
+        private static (string Path, HttpResponseMessage Response) CreateThemeResponse(string path, string themeJson)
+        {
+            return (path, CreateThemeHttpResponse(themeJson));
+        }
+
+        private static HttpResponseMessage CreateThemeHttpResponse(string themeJson)
+        {
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(themeJson)
+            };
         }
 
         private static HttpResponseMessage CreateIndexResponse(params string[] entries)
@@ -261,10 +259,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_httpClientFactory)
                 .Setup(factory => factory.CreateClient("Assets"))
-                .Returns(new HttpClient(handler)
-                {
-                    BaseAddress = new Uri("http://localhost/")
-                });
+                .Returns(TestHttpClientFactory.CreateClient(handler));
         }
 
         private sealed class ThemeMessageHandler : HttpMessageHandler
@@ -284,12 +279,10 @@ namespace Lantean.QBTMud.Test.Services
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 var path = request.RequestUri?.AbsolutePath ?? string.Empty;
-                if (_responses.TryGetValue(path, out var response))
-                {
-                    return Task.FromResult(response);
-                }
-
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+                var response = _responses.TryGetValue(path, out var value)
+                    ? value
+                    : new HttpResponseMessage(HttpStatusCode.NotFound);
+                return Task.FromResult(response);
             }
         }
     }
