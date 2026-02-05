@@ -220,14 +220,7 @@ namespace Lantean.QBTMud.Pages
         {
             _editorName = value;
 
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                _nameError = "Name is required.";
-            }
-            else
-            {
-                _nameError = null;
-            }
+            _nameError = string.IsNullOrWhiteSpace(value) ? "Name is required." : null;
 
             _hasChanges = true;
             return Task.CompletedTask;
