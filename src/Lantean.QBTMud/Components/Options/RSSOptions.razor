@@ -3,19 +3,19 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">RSS Reader</MudText>
+            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "RSS Reader")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Enable fetching RSS feeds" Value="RssProcessingEnabled" ValueChanged="RssProcessingEnabledChanged" data-test-id="@TestIdHelper.For("RssProcessingEnabled")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable fetching RSS feeds")" Value="RssProcessingEnabled" ValueChanged="RssProcessingEnabledChanged" data-test-id="@TestIdHelper.For("RssProcessingEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Feeds refresh interval" Value="RssRefreshInterval" ValueChanged="RssRefreshIntervalChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="min" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RssRefreshInterval")" />
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Feeds refresh interval:")" Value="RssRefreshInterval" ValueChanged="RssRefreshIntervalChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "min")" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RssRefreshInterval")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Maximum number of articles per feed" Value="RssMaxArticlesPerFeed" ValueChanged="RssMaxArticlesPerFeedChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RssMaxArticlesPerFeed")" />
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Maximum number of articles per feed:")" Value="RssMaxArticlesPerFeed" ValueChanged="RssMaxArticlesPerFeedChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RssMaxArticlesPerFeed")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -24,16 +24,16 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">RSS Torrent Auto Downloader</MudText>
+            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "RSS Torrent Auto Downloader")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Enable auto downloading of RSS torrents" Value="RssAutoDownloadingEnabled" ValueChanged="RssAutoDownloadingEnabledChanged" data-test-id="@TestIdHelper.For("RssAutoDownloadingEnabled")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable auto downloading of RSS torrents")" Value="RssAutoDownloadingEnabled" ValueChanged="RssAutoDownloadingEnabledChanged" data-test-id="@TestIdHelper.For("RssAutoDownloadingEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudButton OnClick="OpenRssRulesDialog" Variant="Variant.Filled">Edit auto downloading rules</MudButton>
+                <MudButton OnClick="OpenRssRulesDialog" Variant="Variant.Filled">@WebUiLocalizer.Translate("OptionsDialog", "Edit auto downloading rules...")</MudButton>
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -42,16 +42,16 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">RSS Smart Episode Filter</MudText>
+            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "RSS Smart Episode Filter")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Download REPACK/PROPER episodes" Value="RssDownloadRepackProperEpisodes" ValueChanged="RssDownloadRepackProperEpisodesChanged" data-test-id="@TestIdHelper.For("RssDownloadRepackProperEpisodes")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Download REPACK/PROPER episodes")" Value="RssDownloadRepackProperEpisodes" ValueChanged="RssDownloadRepackProperEpisodesChanged" data-test-id="@TestIdHelper.For("RssDownloadRepackProperEpisodes")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Filters" Value="RssSmartEpisodeFilters" ValueChanged="RssSmartEpisodeFiltersChanged" Lines="5" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RssSmartEpisodeFilters")" />
+                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Filters:")" Value="RssSmartEpisodeFilters" ValueChanged="RssSmartEpisodeFiltersChanged" Lines="5" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("RssSmartEpisodeFilters")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

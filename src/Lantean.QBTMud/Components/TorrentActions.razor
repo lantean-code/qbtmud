@@ -63,7 +63,7 @@ else if (RenderType == RenderType.MenuWithoutActivator)
         <ChildContent>
             @if (PrimaryHash is not null)
             {
-                <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" Disabled="Disabled" Href="@("./details/" + PrimaryHash)" data-test-id="@TestIdHelper.For("Action-viewDetails")">View torrent details</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" Disabled="Disabled" Href="@("./details/" + PrimaryHash)" data-test-id="@TestIdHelper.For("Action-viewDetails")">@TranslateApp("View torrent details")</MudMenuItem>
                 <MudDivider />
             }
             @MenuContents(Actions)
@@ -172,7 +172,7 @@ else if (RenderType == RenderType.MenuItems)
     {
         return __builder =>
         {
-            <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="Actions" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" ActivationEvent="MouseEvent.LeftClick" OpenChanged="ActionsMenuOpenChanged">
+            <MudMenu ListClass="unselectable" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Label="@TranslateApp("Actions")" EndIcon="@Icons.Material.Filled.ArrowDropDown" @ref="ActionsMenu" Disabled="@(!Hashes.Any())" ActivationEvent="MouseEvent.LeftClick" OpenChanged="ActionsMenuOpenChanged">
                 @MenuContents(actions)
             </MudMenu>
         };

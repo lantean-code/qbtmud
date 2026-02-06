@@ -1,9 +1,12 @@
 using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Components.Options
 {
     public partial class BehaviourOptions : Options
     {
+        protected string? Locale { get; set; }
+
         protected bool ConfirmTorrentDeletion { get; set; }
 
         protected bool StatusBarExternalIp { get; set; }
@@ -24,6 +27,14 @@ namespace Lantean.QBTMud.Components.Options
 
         protected bool PerformanceWarning { get; set; }
 
+        protected IReadOnlyList<WebUiLanguageCatalogItem> LanguageOptions { get; private set; } = Array.Empty<WebUiLanguageCatalogItem>();
+
+        protected override async Task OnInitializedAsync()
+        {
+            await WebUiLanguageCatalog.EnsureInitialized();
+            LanguageOptions = WebUiLanguageCatalog.Languages;
+        }
+
         protected override bool SetOptions()
         {
             if (Preferences is null)
@@ -31,6 +42,7 @@ namespace Lantean.QBTMud.Components.Options
                 return false;
             }
 
+            Locale = string.IsNullOrWhiteSpace(Preferences.Locale) ? "en" : Preferences.Locale;
             ConfirmTorrentDeletion = Preferences.ConfirmTorrentDeletion;
             StatusBarExternalIp = Preferences.StatusBarExternalIp;
             FileLogEnabled = Preferences.FileLogEnabled;
@@ -43,6 +55,13 @@ namespace Lantean.QBTMud.Components.Options
             PerformanceWarning = Preferences.PerformanceWarning;
 
             return true;
+        }
+
+        protected async Task LocaleChanged(string value)
+        {
+            Locale = value;
+            UpdatePreferences.Locale = value;
+            await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
         protected async Task ConfirmTorrentDeletionChanged(bool value)

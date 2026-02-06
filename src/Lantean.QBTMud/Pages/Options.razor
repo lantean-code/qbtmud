@@ -1,5 +1,6 @@
 @page "/settings"
 @layout OtherLayout
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <NavigationLock ConfirmExternalNavigation="@(UpdatePreferences is not null)" OnBeforeInternalNavigation="ValidateExit" />
 
@@ -11,7 +12,7 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">Settings</MudText>
+            <MudText Class="px-5 no-wrap">@WebUiLocalizer.Translate("OptionsDialog", "Options")</MudText>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="@(LostConnection || UpdatePreferences is null)" />
             <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(LostConnection || UpdatePreferences is null)" />
@@ -20,42 +21,42 @@
 
     <div class="content-panel__body">
         <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true">
-            <MudTabPanel Text="Behaviour">
+            <MudTabPanel Text="@WebUiLocalizer.Translate("OptionsDialog", "Behavior")">
                 <div class="options-tab-contents">
                     <BehaviourOptions @ref="BehaviourOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
-            <MudTabPanel Text="Downloads">
+            <MudTabPanel Text="@WebUiLocalizer.Translate("OptionsDialog", "Downloads")">
                 <div class="options-tab-contents">
                     <DownloadsOptions @ref="DownloadsOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
-            <MudTabPanel Text="Connection">
+            <MudTabPanel Text="@WebUiLocalizer.Translate("OptionsDialog", "Connection")">
                 <div class="options-tab-contents">
                     <ConnectionOptions @ref="ConnectionOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
-            <MudTabPanel Text="Speed">
+            <MudTabPanel Text="@WebUiLocalizer.Translate("OptionsDialog", "Speed")">
                 <div class="options-tab-contents">
                     <SpeedOptions @ref="SpeedOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
-            <MudTabPanel Text="BitTorrent">
+            <MudTabPanel Text="@WebUiLocalizer.Translate("OptionsDialog", "BitTorrent")">
                 <div class="options-tab-contents">
                     <BitTorrentOptions @ref="BitTorrentOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
-            <MudTabPanel Text="RSS">
+            <MudTabPanel Text="@WebUiLocalizer.Translate("OptionsDialog", "RSS")">
                 <div class="options-tab-contents">
                     <RSSOptions @ref="RSSOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
-            <MudTabPanel Text="Web UI">
+            <MudTabPanel Text="@WebUiLocalizer.Translate("OptionsDialog", "WebUI")">
                 <div class="options-tab-contents">
                     <WebUIOptions @ref="WebUIOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>
             </MudTabPanel>
-            <MudTabPanel Text="Advanced">
+            <MudTabPanel Text="@WebUiLocalizer.Translate("OptionsDialog", "Advanced")">
                 <div class="options-tab-contents">
                     <AdvancedOptions @ref="AdvancedOptions" Preferences="Preferences" UpdatePreferences="@UpdatePreferences" PreferencesChanged="PreferencesChanged" />
                 </div>

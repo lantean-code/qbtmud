@@ -24,5 +24,10 @@ namespace Lantean.QBTMud.Services.Localization
         /// Gets or sets the filename for the alias map.
         /// </summary>
         public string AliasFileName { get; set; } = "webui_aliases.json";
+
+        /// <summary>
+        /// Gets or sets the filename for the language catalog index.
+        /// </summary>
+        public string LanguagesFileName { get; set; } = "webui_languages.json";
     }
 }

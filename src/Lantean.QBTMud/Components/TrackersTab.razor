@@ -1,22 +1,22 @@
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-    <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddTracker">Add trackers</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddTracker">@TranslateTrackersAddition("Add trackers")</MudMenuItem>
     @if (ContextMenuItem is not null)
     {
-        <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="EditTrackerToolbar">Edit tracker URL</MudMenuItem>
-        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveTrackerContextMenu">Remove tracker</MudMenuItem>
-        <MudMenuItem Icon="@Icons.Material.Filled.FolderCopy" IconColor="Color.Info" OnClick="CopyTrackerUrlContextMenu">Copy tracker url</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="EditTrackerToolbar">@TranslateTrackerList("Edit tracker URL...")</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveTrackerContextMenu">@TranslateTrackerList("Remove tracker")</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.FolderCopy" IconColor="Color.Info" OnClick="CopyTrackerUrlContextMenu">@TranslateTrackerList("Copy tracker URL")</MudMenuItem>
     }
 </MudMenu>
 
 <div class="content-panel">
     <div class="content-panel__toolbar">
         <MudToolBar Gutters="false" Dense="true">
-            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddTracker">Add trackers</MudIconButton>
-            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" OnClick="EditTrackerToolbar" Disabled="@(SelectedItem is null)">Edit tracker URL</MudIconButton>
-            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="RemoveTrackerToolbar" Disabled="@(SelectedItem is null)">Remove tracker</MudIconButton>
-            <MudIconButton Icon="@Icons.Material.Filled.FolderCopy" Color="Color.Info" OnClick="CopyTrackerUrlToolbar" Disabled="@(SelectedItem is null)">Copy tracker url</MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddTracker">@TranslateTrackersAddition("Add trackers")</MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" OnClick="EditTrackerToolbar" Disabled="@(SelectedItem is null)">@TranslateTrackerList("Edit tracker URL...")</MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="RemoveTrackerToolbar" Disabled="@(SelectedItem is null)">@TranslateTrackerList("Remove tracker")</MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.FolderCopy" Color="Color.Info" OnClick="CopyTrackerUrlToolbar" Disabled="@(SelectedItem is null)">@TranslateTrackerList("Copy tracker URL")</MudIconButton>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
+            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="@TranslateApp("Choose Columns")" />
         </MudToolBar>
     </div>
 

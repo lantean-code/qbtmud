@@ -1,6 +1,5 @@
 @page "/rss"
 @layout OtherLayout
-
 <div class="content-panel">
     <div class="content-panel__toolbar">
         <MudToolBar Gutters="false" Dense="true">
@@ -9,13 +8,13 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">RSS</MudText>
+            <MudText Class="px-5 no-wrap">@WebUiLocalizer.Translate("MainWindow", "RSS")</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" Disabled="@IsClientDisconnected" title="New subscription" />
-            <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="Mark items read" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="RefreshAllFeeds" Disabled="@IsClientDisconnected" title="Update all" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" Disabled="@IsClientDisconnected" title="@WebUiLocalizer.Translate("RSSWidget", "New subscription")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="@WebUiLocalizer.Translate("RSSWidget", "Mark items read")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="RefreshAllFeeds" Disabled="@IsClientDisconnected" title="@WebUiLocalizer.Translate("RSSWidget", "Update all")" />
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="Edit auto downloading rules" />
+            <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="@WebUiLocalizer.Translate("RSSWidget", "RSS Downloader...")" />
         </MudToolBar>
     </div>
 
@@ -29,23 +28,23 @@
                      PopoverClass="unselectable">
                 @if (ContextCanUpdate)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="UpdateContextUpdate">Update</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="UpdateContextUpdate">@WebUiLocalizer.Translate("RSSWidget", "Update")</MudMenuItem>
                 }
                 @if (ContextCanMarkRead)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.MarkEmailRead" IconColor="Color.Info" OnClick="UpdateContextMarkRead">Mark items read</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.MarkEmailRead" IconColor="Color.Info" OnClick="UpdateContextMarkRead">@WebUiLocalizer.Translate("RSSWidget", "Mark items read")</MudMenuItem>
                 }
                 @if (ContextCanRename)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" IconColor="Color.Info" OnClick="UpdateContextRename">Rename…</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" IconColor="Color.Info" OnClick="UpdateContextRename">@WebUiLocalizer.Translate("RSSWidget", "Rename...")</MudMenuItem>
                 }
                 @if (ContextCanEditUrl)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="UpdateContextEditUrl">Edit feed URL…</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="UpdateContextEditUrl">@WebUiLocalizer.Translate("RSSWidget", "Edit feed URL...")</MudMenuItem>
                 }
                 @if (ContextCanDelete)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="UpdateContextDelete">Delete</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="UpdateContextDelete">@WebUiLocalizer.Translate("RSSWidget", "Delete")</MudMenuItem>
                 }
                 @if (ContextCanAddSubscription || ContextCanAddFolder || ContextCanUpdateAll)
                 {
@@ -53,20 +52,20 @@
                 }
                 @if (ContextCanAddSubscription)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Outlined.Subscriptions" IconColor="Color.Info" OnClick="UpdateContextAddSubscription">New subscription…</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Outlined.Subscriptions" IconColor="Color.Info" OnClick="UpdateContextAddSubscription">@WebUiLocalizer.Translate("RSSWidget", "New subscription...")</MudMenuItem>
                 }
                 @if (ContextCanAddFolder)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="UpdateContextAddFolder">New folder…</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="UpdateContextAddFolder">@WebUiLocalizer.Translate("RSSWidget", "New folder...")</MudMenuItem>
                 }
                 @if (ContextCanUpdateAll)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Outlined.Update" IconColor="Color.Info" OnClick="RefreshAllFeeds">Update all</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Outlined.Update" IconColor="Color.Info" OnClick="RefreshAllFeeds">@WebUiLocalizer.Translate("RSSWidget", "Update all feeds")</MudMenuItem>
                 }
                 @if (ContextCanCopyUrl)
                 {
                     <MudDivider />
-                    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="UpdateContextCopyUrl">Copy feed URL</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="UpdateContextCopyUrl">@WebUiLocalizer.Translate("RSSWidget", "Copy feed URL")</MudMenuItem>
                 }
             </MudMenu>
 
@@ -134,11 +133,11 @@
                                     </CardHeaderContent>
                                     <CardHeaderActions>
                                         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense>
-                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="Download">Download</MudMenuItem>
-                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="Download">Open torrent URL</MudMenuItem>
+                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="@WebUiLocalizer.Translate("RSSWidget", "Download torrent")">@WebUiLocalizer.Translate("RSSWidget", "Download torrent")</MudMenuItem>
+                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="@WebUiLocalizer.Translate("RSSWidget", "Open link")">@WebUiLocalizer.Translate("RSSWidget", "Open link")</MudMenuItem>
                                             @if (!string.IsNullOrWhiteSpace(Article.Link))
                                             {
-                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link">Open news URL</MudMenuItem>
+                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link">@WebUiLocalizer.Translate("RSSWidget", "Open news URL")</MudMenuItem>
                                             }
                                         </MudMenu>
                                     </CardHeaderActions>
@@ -238,11 +237,11 @@
                                                     </CardHeaderContent>
                                                     <CardHeaderActions>
                                                         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense>
-                                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="Download">Download</MudMenuItem>
-                                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="Download">Open torrent URL</MudMenuItem>
+                                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="@WebUiLocalizer.Translate("RSSWidget", "Download torrent")">@WebUiLocalizer.Translate("RSSWidget", "Download torrent")</MudMenuItem>
+                                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="@WebUiLocalizer.Translate("RSSWidget", "Open link")">@WebUiLocalizer.Translate("RSSWidget", "Open link")</MudMenuItem>
                                                             @if (!string.IsNullOrWhiteSpace(Article.Link))
                                                             {
-                                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link">Open news URL</MudMenuItem>
+                                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link">@WebUiLocalizer.Translate("RSSWidget", "Open news URL")</MudMenuItem>
                                                             }
                                                         </MudMenu>
                                                     </CardHeaderActions>

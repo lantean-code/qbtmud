@@ -1,5 +1,6 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -20,6 +21,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         protected string? SelectedRuleName { get; set; }
 
@@ -197,7 +201,10 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected async Task AddRule()
         {
-            var ruleName = await DialogWorkflow.ShowStringFieldDialog("Add Rule", "Name", null);
+            var ruleName = await DialogWorkflow.ShowStringFieldDialog(
+                WebUiLocalizer.Translate("AutomatedRssDownloader", "New rule name"),
+                WebUiLocalizer.Translate("AutomatedRssDownloader", "Please type the name of the new download rule."),
+                null);
             if (ruleName is null)
             {
                 return;

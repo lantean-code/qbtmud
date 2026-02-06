@@ -32,6 +32,9 @@
 - Unit test rules live in `./test/AGENTS.md` (authoritative for test structure, naming, mocks, coverage).
 - If rules conflict, the deeper file (closer to the change) wins; otherwise, follow both.
 
+## Line endings
+- Use CRLF line terminators for any files you write or modify.
+
 ## How to work in this repo (for agents)
 1. Read this file, then the relevant folder `AGENTS.md` (e.g., `src` or `test`).
 2. When referencing MudBlazor or qBittorrent source:

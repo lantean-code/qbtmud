@@ -1,5 +1,6 @@
 @inherits SubmittableDialog
 @using Lantean.QBTMud.Helpers
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <MudDialog>
     <DialogContent>
@@ -11,7 +12,7 @@
                                    Color="Color.Primary"
                                    StartIcon="@Icons.Material.Filled.CloudUpload"
                                    data-test-id="@TestIdHelper.For("AddTorrentFileChoose")">
-                            Choose files
+                            @WebUiLocalizer.Translate("AddNewTorrentDialog", "Select .torrent files")
                         </MudButton>
                     </ActivatorContent>
                 </MudFileUpload>
@@ -21,7 +22,7 @@
                 {
                     <MudCard Elevation="3" Class="mb-3" data-test-id="@TestIdHelper.For("AddTorrentFileList")">
                         <MudCardHeader Class="pb-0">
-                            Selected Torrent Files (@Files.Count)
+                            @($"{WebUiLocalizer.Translate("AddNewTorrentDialog", "Select .torrent files")} ({Files.Count})")
                         </MudCardHeader>
                         <MudCardContent>
                             <MudList T="string">
@@ -49,7 +50,7 @@
         <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="true" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTorrentFileClose")">Close</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTorrentFileSubmit")">Upload Torrents</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTorrentFileClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTorrentFileSubmit")">@WebUiLocalizer.Translate("HttpServer", "Upload Torrents")</MudButton>
     </DialogActions>
 </MudDialog>

@@ -404,7 +404,7 @@ namespace Lantean.QBTMud.Components.Options
             }
             if (ScanDirs.ContainsKey(key))
             {
-                return "A folder with this path already exists";
+                return WebUiLocalizer.Translate("AppDownloadsOptions", "A folder with this path already exists");
             }
 
             return null;

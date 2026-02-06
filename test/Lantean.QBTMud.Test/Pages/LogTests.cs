@@ -86,8 +86,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             var func = select.Instance.MultiSelectionTextFunc!;
             func.Invoke(new List<string?> { "Normal", "Info", "Warning", "Critical" }).Should().Be("All");
-            func.Invoke(new List<string?> { "Normal" }).Should().Be("Normal");
-            func.Invoke(new List<string?> { "Normal", "Warning" }).Should().Be("2 selected");
+            func.Invoke(new List<string?> { "Normal" }).Should().Be("Normal Messages");
+            func.Invoke(new List<string?> { "Normal", "Warning" }).Should().Be("2 items");
         }
 
         [Fact]

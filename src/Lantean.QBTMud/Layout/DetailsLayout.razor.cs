@@ -1,6 +1,7 @@
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -19,6 +20,9 @@ namespace Lantean.QBTMud.Layout
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -172,7 +176,7 @@ namespace Lantean.QBTMud.Layout
                 return [];
             }
 
-            var sortSelector = TorrentList.ColumnsDefinitions.Find(t => t.Id == SortColumn)?.SortSelector ?? (t => t.Name);
+            var sortSelector = TorrentList.BuildColumnsDefinitions(WebUiLocalizer).FirstOrDefault(t => t.Id == SortColumn)?.SortSelector ?? (t => t.Name);
             return Torrents.OrderByDirection(SortDirection, sortSelector).ToList();
         }
     }

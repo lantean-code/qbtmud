@@ -1,5 +1,3 @@
-using Lantean.QBTMud.Resources;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using System.Globalization;
 using System.Net;
@@ -23,7 +21,6 @@ namespace Lantean.QBTMud.Services.Localization
 
         private readonly HttpClient _httpClient;
         private readonly ILogger<WebUiLocalizer> _logger;
-        private readonly IStringLocalizer<AppStrings> _fallbackLocalizer;
         private readonly WebUiLocalizationOptions _options;
         private readonly SemaphoreSlim _initLock;
         private Dictionary<string, string> _aliases;
@@ -41,12 +38,10 @@ namespace Lantean.QBTMud.Services.Localization
         public WebUiLocalizer(
             IHttpClientFactory httpClientFactory,
             ILogger<WebUiLocalizer> logger,
-            IStringLocalizer<AppStrings> fallbackLocalizer,
             IOptions<WebUiLocalizationOptions> options)
         {
             _httpClient = httpClientFactory.CreateClient("WebUiAssets");
             _logger = logger;
-            _fallbackLocalizer = fallbackLocalizer;
             _options = options.Value;
             _initLock = new SemaphoreSlim(1, 1);
             _aliases = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -101,24 +96,7 @@ namespace Lantean.QBTMud.Services.Localization
                 return FormatTranslation(translation, formatArguments, source);
             }
 
-            return FormatTranslation(ResolveFallbackTranslation(key, source), formatArguments, source);
-        }
-
-        private string ResolveFallbackTranslation(string key, string source)
-        {
-            var localized = _fallbackLocalizer[key];
-            if (!localized.ResourceNotFound)
-            {
-                return localized.Value;
-            }
-
-            localized = _fallbackLocalizer[source];
-            if (!localized.ResourceNotFound)
-            {
-                return localized.Value;
-            }
-
-            return source;
+            return FormatTranslation(source, formatArguments, source);
         }
 
         private async Task LoadAliasesAsync(CancellationToken cancellationToken)

@@ -131,18 +131,28 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_ColumnsDefinitions_WHEN_Requested_THEN_ContainsExpectedColumns()
         {
-            var columns = TorrentCreator.ColumnsDefinitions;
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentCreationTasks())
+                .ReturnsAsync(new[] { CreateTask("TaskId", "SourcePath", "Running", 50) });
+            var target = RenderPage();
+            var table = target.FindComponent<DynamicTable<ClientModels.TorrentCreationTaskStatus>>();
+            var columns = table.Instance.ColumnDefinitions;
 
             columns.Should().ContainSingle(column => column.Header == "Name");
             columns.Should().ContainSingle(column => column.Header == "Torrent File" && column.Enabled == false);
-            columns.Should().ContainSingle(column => column.Header == "Error" && column.Enabled == false);
+            columns.Should().ContainSingle(column => column.Header == "Error Message" && column.Enabled == false);
             columns.Should().ContainSingle(column => column.Header == "Actions" && column.Width == 140);
         }
 
         [Fact]
         public void GIVEN_ColumnSortSelectors_WHEN_Invoked_THEN_ReturnExpectedValues()
         {
-            var columns = TorrentCreator.ColumnsDefinitions;
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentCreationTasks())
+                .ReturnsAsync(new[] { CreateTask("TaskId", "SourcePath", "Running", 50) });
+            var target = RenderPage();
+            var table = target.FindComponent<DynamicTable<ClientModels.TorrentCreationTaskStatus>>();
+            var columns = table.Instance.ColumnDefinitions;
             var taskWithValues = new ClientModels.TorrentCreationTaskStatus(
                 "TaskId",
                 "SourcePath",
@@ -214,22 +224,22 @@ namespace Lantean.QBTMud.Test.Pages
                         valueWithNulls.Should().Be(string.Empty);
                         break;
 
-                    case "Added":
+                    case "Added On":
                         valueWithValues.Should().Be("TimeAdded");
                         valueWithNulls.Should().Be(string.Empty);
                         break;
 
-                    case "Started":
+                    case "Started On":
                         valueWithValues.Should().Be("TimeStarted");
                         valueWithNulls.Should().Be(string.Empty);
                         break;
 
-                    case "Finished":
+                    case "Completed On":
                         valueWithValues.Should().Be("TimeFinished");
                         valueWithNulls.Should().Be(string.Empty);
                         break;
 
-                    case "Error":
+                    case "Error Message":
                         valueWithValues.Should().Be("ErrorMessage");
                         valueWithNulls.Should().Be(string.Empty);
                         break;
@@ -450,7 +460,7 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_snackbar).Verify(
-                snackbar => snackbar.Add("Unable to create torrent: Failure", Severity.Error, It.IsAny<Action<SnackbarOptions>>()),
+                snackbar => snackbar.Add("Unable to create torrent. Failure", Severity.Error, It.IsAny<Action<SnackbarOptions>>()),
                 Times.Once);
         }
 

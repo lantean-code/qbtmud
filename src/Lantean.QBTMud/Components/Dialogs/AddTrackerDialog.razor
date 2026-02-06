@@ -1,11 +1,12 @@
 @inherits SubmittableDialog
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <MudDialog>
     <DialogContent>
         <table width="100%">
             <tbody>
                 <tr>
-                    <td style="width: 100%"><MudTextField T="string" Label="Tracker" Value="@Tracker" ValueChanged="SetTracker" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddTrackerInput")" /></td>
+                    <td style="width: 100%"><MudTextField T="string" Label="@WebUiLocalizer.Translate("TrackerListWidget", "Tracker URL:")" Value="@Tracker" ValueChanged="SetTracker" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddTrackerInput")" /></td>
                     <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddTracker" data-test-id="@TestIdHelper.For("AddTrackerAdd")" /></td>
                 </tr>
                 @foreach (var tracker in Trackers)
@@ -20,7 +21,7 @@
         </table>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTrackerCancel")">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTrackerSave")">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTrackerCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTrackerSave")">@WebUiLocalizer.Translate("HttpServer", "Add")</MudButton>
     </DialogActions>
 </MudDialog>

@@ -11,8 +11,8 @@
 <div class="content-panel">
     <div class="content-panel__toolbar content-panel__toolbar--scroll">
         <MudToolBar Gutters="false" Dense="true">
-            <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="Add torrent link" />
-            <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="Add torrent file" />
+            <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="@WebUiLocalizer.Translate("MainWindow", "Add Torrent Link...")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="@WebUiLocalizer.Translate("MainWindow", "Add Torrent File...")" />
             <MudDivider Vertical="true" />
             <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrentsHashes()" Torrents="MainData.Torrents" Preferences="Preferences" Tags="@MainData.Tags" Categories="@MainData.Categories" />
             <MudDivider Vertical="true" />
@@ -20,11 +20,11 @@
             <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
             <MudSpacer />
             <MudSelect T="TorrentFilterField" @bind-Value="SearchField" @bind-Value:after="OnSearchFieldChanged" Dense="true" Class="mt-0 mr-2 filter-field-select" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                <MudSelectItem Value="TorrentFilterField.Name">Name</MudSelectItem>
-                <MudSelectItem Value="TorrentFilterField.SavePath">Save path</MudSelectItem>
+                <MudSelectItem Value="TorrentFilterField.Name">@WebUiLocalizer.Translate("TransferListModel", "Name")</MudSelectItem>
+                <MudSelectItem Value="TorrentFilterField.SavePath">@WebUiLocalizer.Translate("TransferListModel", "Save path")</MudSelectItem>
             </MudSelect>
             <MudCheckBox T="bool" @bind-Value="UseRegex" @bind-Value:after="OnUseRegexChanged" Label="Regex" Class="mt-0 mr-2" />
-            <MudTextField Value="SearchText" TextChanged="SearchTextChanged" Immediate="true" DebounceInterval="1000" Placeholder="Filter torrent list" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Error="@(UseRegex && !IsRegexValid)" ErrorText="@SearchErrorText"></MudTextField>
+            <MudTextField Value="SearchText" TextChanged="SearchTextChanged" Immediate="true" DebounceInterval="1000" Placeholder="@WebUiLocalizer.Translate("MainWindow", "Filter torrent list...")" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Error="@(UseRegex && !IsRegexValid)" ErrorText="@SearchErrorText"></MudTextField>
         </MudToolBar>
     </div>
     <div class="content-panel__body">
@@ -50,31 +50,4 @@
     </div>
 </div>
 
-@code {
-    private static RenderFragment<RowContext<Torrent>> ProgressBarColumn
-    {
-        get
-        {
-            return context => __builder =>
-            {
-                var value = (float?)context.GetValue();
-                var color = value < 1 ? Color.Success : Color.Info;
-                <MudProgressLinear title="Progress" Color="@color" Value="@((value ?? 0) * 100)" Class="progress-expand" Size="Size.Large">
-                    @DisplayHelpers.Percentage(value)
-                </MudProgressLinear>;
-            };
-        }
-    }
-
-    private static RenderFragment<RowContext<Torrent>> IconColumn
-    {
-        get
-        {
-            return context => __builder =>
-            {
-                var (icon, color) = DisplayHelpers.GetStateIcon((string?)context.GetValue());
-                <MudIcon Icon="@icon" Color="@color" />
-            };
-        }
-    }
-}
+ 

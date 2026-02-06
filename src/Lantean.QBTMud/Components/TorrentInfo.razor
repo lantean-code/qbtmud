@@ -15,7 +15,7 @@
     @{
         var value = Torrent.Progress;
         var progressColor = value < 1 ? Color.Success : Color.Info;
-        <MudProgressLinear title="Progress" Color="@(progressColor)" Value="@((value) * 100)" Class="progress-expand" Size="Size.Large">
+        <MudProgressLinear title="@TranslateTransferListModel("Progress")" Color="@(progressColor)" Value="@((value) * 100)" Class="progress-expand" Size="Size.Large">
             @DisplayHelpers.Percentage(value)
         </MudProgressLinear>
         ;

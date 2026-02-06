@@ -35,45 +35,53 @@ namespace Lantean.QBTMud.Components.Options
         protected bool IpFilterTrackers { get; private set; }
         protected string? BannedIPs { get; private set; }
 
-        protected Func<int, string?> MaxConnectValidation = value =>
+        protected Func<int, string?> MaxConnectValidation => MaxConnectValidationFunc;
+
+        protected Func<int, string?> MaxConnecPerTorrentValidation => MaxConnecPerTorrentValidationFunc;
+
+        protected Func<int, string?> MaxUploadsValidation => MaxUploadsValidationFunc;
+
+        protected Func<int, string?> MaxUploadsPerTorrentValidation => MaxUploadsPerTorrentValidationFunc;
+
+        private string? MaxConnectValidationFunc(int value)
         {
             if (value < 0)
             {
-                return "Maximum number of connections limit must be greater than 0 or disabled.";
+                return WebUiLocalizer.Translate("HttpServer", "Maximum number of connections limit must be greater than 0 or disabled.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> MaxConnecPerTorrentValidation = value =>
+        private string? MaxConnecPerTorrentValidationFunc(int value)
         {
             if (value < 0)
             {
-                return "Maximum number of connections per torrent limit must be greater than 0 or disabled.";
+                return WebUiLocalizer.Translate("HttpServer", "Maximum number of connections per torrent limit must be greater than 0 or disabled.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> MaxUploadsValidation = value =>
+        private string? MaxUploadsValidationFunc(int value)
         {
             if (value < 0)
             {
-                return "Global number of upload slots limit must be greater than 0 or disabled.";
+                return WebUiLocalizer.Translate("HttpServer", "Global number of upload slots limit must be greater than 0 or disabled.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> MaxUploadsPerTorrentValidation = value =>
+        private string? MaxUploadsPerTorrentValidationFunc(int value)
         {
             if (value < 0)
             {
-                return "Maximum number of upload slots per torrent limit must be greater than 0 or disabled.";
+                return WebUiLocalizer.Translate("HttpServer", "Maximum number of upload slots per torrent limit must be greater than 0 or disabled.");
             }
 
             return null;
-        };
+        }
 
         protected override bool SetOptions()
         {

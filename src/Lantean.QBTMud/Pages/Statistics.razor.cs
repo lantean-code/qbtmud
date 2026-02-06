@@ -1,5 +1,6 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -12,6 +13,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected IDialogService DialogService { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;

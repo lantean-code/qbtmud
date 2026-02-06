@@ -1,5 +1,6 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -7,11 +8,16 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class SearchPluginsDialog
     {
+        private const string AppContext = "AppTemp";
+
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -49,7 +55,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             catch (Exception exception)
             {
-                Snackbar.Add($"Failed to load search plugins: {exception.Message}", Severity.Error);
+                Snackbar.Add(TranslateApp("Failed to load search plugins: %1", exception.Message), Severity.Error);
             }
             finally
             {
@@ -66,7 +72,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            var success = await RunOperation(() => ApiClient.InstallSearchPlugins(source), "Plugin install queued.", true);
+            var success = await RunOperation(() => ApiClient.InstallSearchPlugins(source), TranslateApp("Plugin install queued."), true);
             if (success)
             {
                 InstallUrl = string.Empty;
@@ -81,7 +87,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            var success = await RunOperation(() => ApiClient.InstallSearchPlugins(source), "Plugin install queued.", true);
+            var success = await RunOperation(() => ApiClient.InstallSearchPlugins(source), TranslateApp("Plugin install queued."), true);
             if (success)
             {
                 InstallLocalPath = string.Empty;
@@ -96,7 +102,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var names = SelectedPluginNames.ToArray();
-            await RunOperation(() => ApiClient.EnableSearchPlugins(names), $"Enabled {names.Length} plugin(s).");
+            await RunOperation(() => ApiClient.EnableSearchPlugins(names), TranslateApp("Enabled %1 plugin(s).", names.Length));
         }
 
         protected async Task DisableSelected()
@@ -107,7 +113,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var names = SelectedPluginNames.ToArray();
-            await RunOperation(() => ApiClient.DisableSearchPlugins(names), $"Disabled {names.Length} plugin(s).");
+            await RunOperation(() => ApiClient.DisableSearchPlugins(names), TranslateApp("Disabled %1 plugin(s).", names.Length));
         }
 
         protected async Task UninstallSelected()
@@ -118,7 +124,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var names = SelectedPluginNames.ToArray();
-            await RunOperation(() => ApiClient.UninstallSearchPlugins(names), $"Removed {names.Length} plugin(s).");
+            await RunOperation(() => ApiClient.UninstallSearchPlugins(names), TranslateApp("Removed %1 plugin(s).", names.Length));
         }
 
         protected async Task UpdateAll()
@@ -128,7 +134,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            await RunOperation(() => ApiClient.UpdateSearchPlugins(), "Plugin update queued.");
+            await RunOperation(() => ApiClient.UpdateSearchPlugins(), TranslateApp("Plugin update queued."));
         }
 
         protected async Task TogglePlugin(SearchPlugin plugin, bool enable)
@@ -145,7 +151,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 enable
                     ? () => ApiClient.EnableSearchPlugins(plugin.Name)
                     : () => ApiClient.DisableSearchPlugins(plugin.Name),
-                enable ? $"Enabled {plugin.FullName}." : $"Disabled {plugin.FullName}.",
+                enable ? TranslateApp("Enabled %1.", plugin.FullName) : TranslateApp("Disabled %1.", plugin.FullName),
                 false);
 
             if (!success)
@@ -198,7 +204,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             // qBittorrent's search/plugins API does not expose the last update timestamp,
             // so we display a placeholder until the client model is extended.
-            return "Not available";
+            return TranslateApp("Not available");
         }
 
         protected void CloseDialog()
@@ -222,11 +228,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add($"Search plugin operation failed: {exception.Message}", Severity.Error);
+                Snackbar.Add(TranslateApp("Search plugin operation failed: %1", exception.Message), Severity.Error);
             }
             catch (InvalidOperationException exception)
             {
-                Snackbar.Add($"Search plugin operation failed: {exception.Message}", Severity.Error);
+                Snackbar.Add(TranslateApp("Search plugin operation failed: %1", exception.Message), Severity.Error);
             }
             finally
             {
@@ -234,6 +240,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             return false;
+        }
+
+        private string TranslateApp(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate(AppContext, source, arguments);
         }
     }
 }

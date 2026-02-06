@@ -366,7 +366,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            var icon = target.FindComponents<MudIcon>().Single(i => i.Instance.Title == "firewalled");
+            var icon = target.FindComponents<MudIcon>().Single(i => i.Instance.Title == "Connection status: Firewalled");
             icon.Instance.Icon.Should().Be(Icons.Material.Outlined.SignalWifiStatusbarConnectedNoInternet4);
             icon.Instance.Color.Should().Be(Color.Warning);
         }
@@ -378,7 +378,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            var icon = target.FindComponents<MudIcon>().Single(i => i.Instance.Title == "connected");
+            var icon = target.FindComponents<MudIcon>().Single(i => i.Instance.Title == "Connection status: Connected");
             icon.Instance.Icon.Should().Be(Icons.Material.Outlined.SignalWifi4Bar);
             icon.Instance.Color.Should().Be(Color.Success);
         }
@@ -447,7 +447,7 @@ namespace Lantean.QBTMud.Test.Layout
             await target.InvokeAsync(() => button.Find("button").Click());
 
             mainData.ServerState.UseAltSpeedLimits.Should().BeTrue();
-            _snackbarMock.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Alternative speed limits enabled.");
+            _snackbarMock.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Alternative speed limits: On");
         }
 
         [Fact]
@@ -465,7 +465,7 @@ namespace Lantean.QBTMud.Test.Layout
             await target.InvokeAsync(() => button.Find("button").Click());
 
             mainData.ServerState.UseAltSpeedLimits.Should().BeFalse();
-            _snackbarMock.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Alternative speed limits disabled.");
+            _snackbarMock.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Alternative speed limits: Off");
         }
 
         [Fact]
@@ -1020,7 +1020,8 @@ namespace Lantean.QBTMud.Test.Layout
 
         private static IRenderedComponent<MudTooltip> FindTimerTooltip(IRenderedComponent<LoggedInLayout> target)
         {
-            return target.FindComponents<MudTooltip>().Single(t => t.Instance.Text != "Toggle alternative speed limits");
+            return target.FindComponents<MudTooltip>()
+                .Single(t => !(t.Instance.Text ?? string.Empty).StartsWith("Alternative speed limits:", StringComparison.Ordinal));
         }
 
         private static bool HasComponentWithTestId<TComponent>(IRenderedComponent<LoggedInLayout> target, string testId)

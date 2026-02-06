@@ -1,5 +1,6 @@
 @typeparam T
 @inherits SubmittableDialog
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <MudDialog>
     <DialogContent>
@@ -10,7 +11,7 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("NumericFieldCancel")">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("NumericFieldSave")">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("NumericFieldCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("NumericFieldSave")">@WebUiLocalizer.Translate("HttpServer", "Save")</MudButton>
     </DialogActions>
 </MudDialog>

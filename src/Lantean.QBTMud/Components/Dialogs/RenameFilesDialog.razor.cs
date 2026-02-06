@@ -2,6 +2,7 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using System.Collections.ObjectModel;
@@ -14,10 +15,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected static readonly Dictionary<AppliesTo, string> AppliesToItems = Enum.GetValues<AppliesTo>().ToDictionary(v => v, v => v.GetDescriptionAttributeOrDefault());
 
-        private readonly Dictionary<string, RenderFragment<RowContext<FileRow>>> _columnRenderFragments = [];
-
         private string? _sortColumn;
         private SortDirection _sortDirection;
+        private IReadOnlyList<ColumnDefinition<FileRow>>? _columnDefinitions;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -27,6 +27,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -41,12 +44,6 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IEnumerable<FileRow> Files => GetFiles();
 
         protected HashSet<string> ExpandedNodes { get; set; } = [];
-
-        public RenameFilesDialog()
-        {
-            _columnRenderFragments.Add("Name", NameColumn);
-            //_columnRenderFragments.Add("Replacement", ReplacementColumn);
-        }
 
         private ReadOnlyCollection<FileRow> GetFiles()
         {
@@ -221,7 +218,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private Func<FileRow, object?> GetSortSelector()
         {
-            var sortSelector = ColumnsDefinitions.Find(c => c.Id == _sortColumn)?.SortSelector;
+            var sortSelector = GetColumnDefinitions().FirstOrDefault(c => c.Id == _sortColumn)?.SortSelector;
 
             return sortSelector ?? (i => i.Name);
         }
@@ -449,24 +446,29 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected IEnumerable<ColumnDefinition<FileRow>> Columns => GetColumnDefinitions();
 
-        private IEnumerable<ColumnDefinition<FileRow>> GetColumnDefinitions()
+        private IReadOnlyList<ColumnDefinition<FileRow>> GetColumnDefinitions()
         {
-            foreach (var columnDefinition in ColumnsDefinitions)
-            {
-                if (_columnRenderFragments.TryGetValue(columnDefinition.Header, out var fragment))
-                {
-                    columnDefinition.RowTemplate = fragment;
-                }
+            _columnDefinitions ??= BuildColumnDefinitions();
 
-                yield return columnDefinition;
-            }
+            return _columnDefinitions;
         }
 
-        public static List<ColumnDefinition<FileRow>> ColumnsDefinitions { get; } =
-        [
-            ColumnDefinitionHelper.CreateColumnDefinition("Name", c => c.Name, NameColumn, width: 400, initialDirection: SortDirection.Ascending, classFunc: c => c.IsFolder ? "px-0 pt-0 pb-2" : "pa-2"),
-            ColumnDefinitionHelper.CreateColumnDefinition<FileRow>("Replacement", c => c.NewName),
-        ];
+        private IReadOnlyList<ColumnDefinition<FileRow>> BuildColumnDefinitions()
+        {
+            return
+            [
+                ColumnDefinitionHelper.CreateColumnDefinition(
+                    WebUiLocalizer.Translate("TrackerListWidget", "Original"),
+                    c => c.Name,
+                    NameColumn,
+                    width: 400,
+                    initialDirection: SortDirection.Ascending,
+                    classFunc: c => c.IsFolder ? "px-0 pt-0 pb-2" : "pa-2"),
+                ColumnDefinitionHelper.CreateColumnDefinition<FileRow>(
+                    WebUiLocalizer.Translate("TrackerListWidget", "Renamed"),
+                    c => c.NewName),
+            ];
+        }
 
         private sealed class MultiRenamePreferences
         {

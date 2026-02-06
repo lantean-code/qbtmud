@@ -93,7 +93,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             FindNumericField<int>(component, "SeedingTimeLimit").Instance.Value.Should().Be(60);
             FindFieldSwitch(component, "InactiveSeedingTimeLimitEnabled").Instance.Value.Should().BeTrue();
             FindNumericField<int>(component, "InactiveSeedingTimeLimit").Instance.Value.Should().Be(120);
-            FindSelect<ClientModels.ShareLimitAction>(component, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.RemoveWithContent);
             FindSelect<string>(component, "Tags").Instance.Disabled.Should().BeFalse();
         }
 
@@ -406,7 +405,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetNumericValue(component, "SeedingTimeLimit", 60);
             await SetFieldSwitchValue(component, "InactiveSeedingTimeLimitEnabled", true);
             await SetNumericValue(component, "InactiveSeedingTimeLimit", 30);
-            await SetSelectValue(component, "ShareLimitAction", ClientModels.ShareLimitAction.Remove);
             await SetSelectValue(component, "StopCondition", "FilesChecked");
             await SetSelectValue(component, "ContentLayout", "Subfolder");
 
@@ -414,7 +412,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             customOptions.RatioLimit.Should().Be(2.5f);
             customOptions.SeedingTimeLimit.Should().Be(60);
             customOptions.InactiveSeedingTimeLimit.Should().Be(30);
-            customOptions.ShareLimitAction.Should().Be(ClientModels.ShareLimitAction.Remove.ToString());
             customOptions.StopCondition.Should().Be("FilesChecked");
             customOptions.ContentLayout.Should().Be("Subfolder");
 
@@ -422,13 +419,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             FindFieldSwitch(component, "RatioLimitEnabled").Instance.Value.Should().BeFalse();
             FindFieldSwitch(component, "SeedingTimeLimitEnabled").Instance.Value.Should().BeFalse();
             FindFieldSwitch(component, "InactiveSeedingTimeLimitEnabled").Instance.Value.Should().BeFalse();
-            FindSelect<ClientModels.ShareLimitAction>(component, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Default);
 
             var globalOptions = component.Instance.GetTorrentOptions();
             globalOptions.RatioLimit.Should().Be(Limits.GlobalLimit);
             globalOptions.SeedingTimeLimit.Should().Be(Limits.GlobalLimit);
             globalOptions.InactiveSeedingTimeLimit.Should().Be(Limits.GlobalLimit);
-            globalOptions.ShareLimitAction.Should().Be(ClientModels.ShareLimitAction.Default.ToString());
 
             await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.NoLimit);
 
@@ -436,7 +431,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             noLimitOptions.RatioLimit.Should().Be(Limits.NoLimit);
             noLimitOptions.SeedingTimeLimit.Should().Be(Limits.NoLimit);
             noLimitOptions.InactiveSeedingTimeLimit.Should().Be(Limits.NoLimit);
-            noLimitOptions.ShareLimitAction.Should().Be(ClientModels.ShareLimitAction.Default.ToString());
         }
 
         [Fact]
@@ -455,39 +449,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             options.RatioLimit.Should().Be(Limits.NoLimit);
             options.SeedingTimeLimit.Should().Be(Limits.NoLimit);
             options.InactiveSeedingTimeLimit.Should().Be(Limits.NoLimit);
-            options.ShareLimitAction.Should().Be(ClientModels.ShareLimitAction.Default.ToString());
-        }
-
-        [Fact]
-        public void GIVEN_PreferenceShareLimitActions_WHEN_Rendered_THEN_Mapped()
-        {
-            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetAllCategories()).ReturnsAsync(new Dictionary<string, ClientModels.Category>());
-            apiClientMock.Setup(c => c.GetAllTags()).ReturnsAsync(Array.Empty<string>());
-            apiClientMock.SetupSequence(c => c.GetApplicationPreferences())
-                .ReturnsAsync(CreatePreferences(maxRatioAct: 0))
-                .ReturnsAsync(CreatePreferences(maxRatioAct: 1))
-                .ReturnsAsync(CreatePreferences(maxRatioAct: 2))
-                .ReturnsAsync(CreatePreferences(maxRatioAct: 3))
-                .ReturnsAsync(CreatePreferences(maxRatioAct: 9));
-
-            var stopComponent = _target.RenderComponent();
-            var removeComponent = _target.RenderComponent();
-            var removeWithContentComponent = _target.RenderComponent();
-            var superSeedingComponent = _target.RenderComponent();
-            var defaultComponent = _target.RenderComponent();
-
-            ExpandOptions(stopComponent);
-            ExpandOptions(removeComponent);
-            ExpandOptions(removeWithContentComponent);
-            ExpandOptions(superSeedingComponent);
-            ExpandOptions(defaultComponent);
-
-            FindSelect<ClientModels.ShareLimitAction>(stopComponent, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Stop);
-            FindSelect<ClientModels.ShareLimitAction>(removeComponent, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Remove);
-            FindSelect<ClientModels.ShareLimitAction>(removeWithContentComponent, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.RemoveWithContent);
-            FindSelect<ClientModels.ShareLimitAction>(superSeedingComponent, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.EnableSuperSeeding);
-            FindSelect<ClientModels.ShareLimitAction>(defaultComponent, "ShareLimitAction").Instance.Value.Should().Be(ClientModels.ShareLimitAction.Default);
         }
 
         [Fact]

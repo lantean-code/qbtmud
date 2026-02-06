@@ -60,7 +60,7 @@ namespace Lantean.QBTMud.Test.Pages
             _target.WaitForAssertion(() =>
             {
                 var alert = FindComponentByTestId<MudAlert>(_target, "LoginError");
-                GetChildContentText(alert.Instance.ChildContent).Should().Be("Invalid username or password.");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Invalid Username or Password.");
             });
         }
 
@@ -100,7 +100,7 @@ namespace Lantean.QBTMud.Test.Pages
             _target.WaitForAssertion(() =>
             {
                 var alert = FindComponentByTestId<MudAlert>(_target, "LoginError");
-                GetChildContentText(alert.Instance.ChildContent).Should().Be("Unable to communicate with the qBittorrent API.");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Unable to log in, server is probably unreachable.");
             });
         }
 

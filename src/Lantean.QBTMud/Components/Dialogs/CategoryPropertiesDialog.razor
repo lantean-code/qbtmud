@@ -1,25 +1,26 @@
 @inherits SubmittableDialog
 @using Lantean.QBitTorrentClient.Models
 @using Lantean.QBTMud.Components.UI
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <MudDialog>
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField Label="Category" @bind-Value="Category" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryPropertiesCategory")" />
+                <MudTextField Label="@WebUiLocalizer.Translate("TransferListWidget", "Category:")" @bind-Value="Category" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryPropertiesCategory")" />
             </MudItem>
             <MudItem xs="12">
-                <PathAutocomplete Label="Save Path"
+                <PathAutocomplete Label="@WebUiLocalizer.Translate("TransferListWidget", "Save path:")"
                                   @bind-Value="SavePath"
                                   Required="true"
-                                  RequiredErrorText="Save path is required."
+                                  RequiredErrorText="@WebUiLocalizer.Translate("TorrentsController", "Save path is empty")"
                                   Mode="DirectoryContentMode.Directories"
                                   data-test-id="@TestIdHelper.For("CategoryPropertiesSavePath")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("CategoryPropertiesCancel")">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("CategoryPropertiesSave")">Add</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("CategoryPropertiesCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("CategoryPropertiesSave")">@WebUiLocalizer.Translate("Category", "OK")</MudButton>
     </DialogActions>
 </MudDialog>

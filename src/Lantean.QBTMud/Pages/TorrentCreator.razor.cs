@@ -5,6 +5,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
@@ -17,10 +18,10 @@ namespace Lantean.QBTMud.Pages
 
         private static readonly StringComparison StatusComparison = StringComparison.OrdinalIgnoreCase;
 
-        private readonly Dictionary<string, RenderFragment<RowContext<TorrentCreationTaskStatus>>> _columnRenderFragments = [];
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private IReadOnlyList<TorrentCreationTaskStatus> _tasks = [];
+        private IReadOnlyList<ColumnDefinition<TorrentCreationTaskStatus>>? _columnsDefinitions;
         private bool _disposedValue;
         private bool _isLoading;
 
@@ -38,6 +39,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -63,13 +67,6 @@ namespace Lantean.QBTMud.Pages
         protected IEnumerable<TorrentCreationTaskStatus> Tasks
         {
             get { return _tasks; }
-        }
-
-        public TorrentCreator()
-        {
-            _columnRenderFragments.Add("Status", StatusColumn);
-            _columnRenderFragments.Add("Progress", ProgressColumn);
-            _columnRenderFragments.Add("Actions", ActionsColumn);
         }
 
         public async ValueTask DisposeAsync()
@@ -102,7 +99,9 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task OpenCreateDialog()
         {
-            var reference = await DialogService.ShowAsync<CreateTorrentDialog>("Create Torrent", DialogWorkflow.FormDialogOptions);
+            var reference = await DialogService.ShowAsync<CreateTorrentDialog>(
+                WebUiLocalizer.Translate("TorrentCreator", "Create New Torrent"),
+                DialogWorkflow.FormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -116,7 +115,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add($"Unable to create torrent: {exception.Message}", Severity.Error);
+                Snackbar.Add($"{WebUiLocalizer.Translate("TorrentCreator", "Unable to create torrent.")} {exception.Message}", Severity.Error);
                 return;
             }
 
@@ -157,22 +156,8 @@ namespace Lantean.QBTMud.Pages
 
         protected IEnumerable<ColumnDefinition<TorrentCreationTaskStatus>> Columns
         {
-            get { return GetColumnDefinitions(); }
+            get { return _columnsDefinitions ??= BuildColumnsDefinitions(); }
         }
-
-        public static List<ColumnDefinition<TorrentCreationTaskStatus>> ColumnsDefinitions { get; } =
-        [
-            new ColumnDefinition<TorrentCreationTaskStatus>("Status", t => t.Status ?? string.Empty),
-            new ColumnDefinition<TorrentCreationTaskStatus>("Progress", t => t.Progress ?? 0.0, tdClass: "table-progress"),
-            new ColumnDefinition<TorrentCreationTaskStatus>("Name", t => ResolveFileName(t)),
-            new ColumnDefinition<TorrentCreationTaskStatus>("Source Path", t => t.SourcePath),
-            new ColumnDefinition<TorrentCreationTaskStatus>("Torrent File", t => t.TorrentFilePath ?? string.Empty) { Enabled = false },
-            new ColumnDefinition<TorrentCreationTaskStatus>("Added", t => t.TimeAdded ?? string.Empty) { Enabled = false },
-            new ColumnDefinition<TorrentCreationTaskStatus>("Started", t => t.TimeStarted ?? string.Empty) { Enabled = false },
-            new ColumnDefinition<TorrentCreationTaskStatus>("Finished", t => t.TimeFinished ?? string.Empty) { Enabled = false },
-            new ColumnDefinition<TorrentCreationTaskStatus>("Error", t => t.ErrorMessage ?? string.Empty) { Enabled = false },
-            new ColumnDefinition<TorrentCreationTaskStatus>("Actions", t => t.TaskId) { Width = 140 }
-        ];
 
         protected virtual async Task DisposeAsync(bool disposing)
         {
@@ -193,19 +178,6 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        private IEnumerable<ColumnDefinition<TorrentCreationTaskStatus>> GetColumnDefinitions()
-        {
-            foreach (var columnDefinition in ColumnsDefinitions)
-            {
-                if (_columnRenderFragments.TryGetValue(columnDefinition.Header, out var fragment))
-                {
-                    columnDefinition.RowTemplate = fragment;
-                }
-
-                yield return columnDefinition;
-            }
-        }
-
         private async Task RefreshTasksAsync()
         {
             if (MainData?.LostConnection == true)
@@ -218,11 +190,11 @@ namespace Lantean.QBTMud.Pages
             _isLoading = true;
             try
             {
-                _tasks = await ApiClient.GetTorrentCreationTasks();
+                _tasks = await ApiClient.GetTorrentCreationTasks() ?? [];
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add($"Unable to load torrent creation tasks: {exception.Message}", Severity.Error);
+                Snackbar.Add($"{WebUiLocalizer.Translate("TorrentCreator", "Unable to load torrent creation tasks")}: {exception.Message}", Severity.Error);
             }
             finally
             {
@@ -270,6 +242,23 @@ namespace Lantean.QBTMud.Pages
         {
             return string.Equals(status, "Finished", StatusComparison) ||
                 string.Equals(status, "Failed", StatusComparison);
+        }
+
+        private string GetStatusDisplayText(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                return string.Empty;
+            }
+
+            return status switch
+            {
+                "Running" => WebUiLocalizer.Translate("TorrentCreator", "Running"),
+                "Finished" => WebUiLocalizer.Translate("TorrentCreator", "Finished"),
+                "Failed" => WebUiLocalizer.Translate("TorrentCreator", "Failed"),
+                "Queued" => WebUiLocalizer.Translate("TorrentCreator", "Queued"),
+                _ => status
+            };
         }
 
         private static bool CanDownload(TorrentCreationTaskStatus task)
@@ -360,6 +349,32 @@ namespace Lantean.QBTMud.Pages
             }
 
             return string.IsNullOrWhiteSpace(fileName) ? null : fileName;
+        }
+
+        private IReadOnlyList<ColumnDefinition<TorrentCreationTaskStatus>> BuildColumnsDefinitions()
+        {
+            var statusLabel = WebUiLocalizer.Translate("TorrentCreator", "Status");
+            var progressLabel = WebUiLocalizer.Translate("TorrentCreator", "Progress");
+            var nameLabel = WebUiLocalizer.Translate("TransferListModel", "Name");
+            var sourcePathLabel = WebUiLocalizer.Translate("TorrentCreator", "Source Path");
+            var addedOnLabel = WebUiLocalizer.Translate("TorrentCreator", "Added On");
+            var startedOnLabel = WebUiLocalizer.Translate("TorrentCreator", "Started On");
+            var completedOnLabel = WebUiLocalizer.Translate("TorrentCreator", "Completed On");
+            var errorLabel = WebUiLocalizer.Translate("TorrentCreator", "Error Message");
+
+            return
+            [
+                new ColumnDefinition<TorrentCreationTaskStatus>(statusLabel, t => t.Status ?? string.Empty, StatusColumn),
+                new ColumnDefinition<TorrentCreationTaskStatus>(progressLabel, t => t.Progress ?? 0.0, ProgressColumn, tdClass: "table-progress"),
+                new ColumnDefinition<TorrentCreationTaskStatus>(nameLabel, t => ResolveFileName(t)),
+                new ColumnDefinition<TorrentCreationTaskStatus>(sourcePathLabel, t => t.SourcePath),
+                new ColumnDefinition<TorrentCreationTaskStatus>("Torrent File", t => t.TorrentFilePath ?? string.Empty) { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(addedOnLabel, t => t.TimeAdded ?? string.Empty) { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(startedOnLabel, t => t.TimeStarted ?? string.Empty) { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(completedOnLabel, t => t.TimeFinished ?? string.Empty) { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(errorLabel, t => t.ErrorMessage ?? string.Empty) { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>("Actions", t => t.TaskId, ActionsColumn) { Width = 140 }
+            ];
         }
     }
 }

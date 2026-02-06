@@ -170,7 +170,7 @@ namespace Lantean.QBTMud.Test.Pages
             });
 
             var emptyStateTitle = FindComponentByTestId<MudText>(target, "SearchEmptyStateTitle");
-            GetChildContentText(emptyStateTitle.Instance.ChildContent).Should().Be("No searches yet");
+            GetChildContentText(emptyStateTitle.Instance.ChildContent).Should().Be("Start a search above.");
         }
 
         [Fact]
@@ -590,7 +590,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 var emptyStateTitle = FindComponentByTestId<MudText>(target, "SearchEmptyStateTitle");
-                GetChildContentText(emptyStateTitle.Instance.ChildContent).Should().Be("No searches yet");
+                GetChildContentText(emptyStateTitle.Instance.ChildContent).Should().Be("Start a search above.");
             });
 
             apiMock.Verify(client => client.StopSearch(jobId), Times.Once());

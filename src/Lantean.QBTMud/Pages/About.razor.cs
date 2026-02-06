@@ -27,6 +27,8 @@ namespace Lantean.QBTMud.Pages
 
         protected string? ZlibVersion { get; private set; }
 
+        protected int? Bitness { get; private set; }
+
         protected string? QBittorrentVersion { get; private set; }
 
         protected void NavigateBack()
@@ -47,7 +49,8 @@ namespace Lantean.QBTMud.Pages
             BoostVersion = info.BoostVersion;
             OpensslVersion = info.OpenSSLVersion;
             ZlibVersion = info.ZLibVersion;
-            QBittorrentVersion = $"{Version} ({info.Bitness}-bit)";
+            QBittorrentVersion = Version;
+            Bitness = info.Bitness;
         }
     }
 }

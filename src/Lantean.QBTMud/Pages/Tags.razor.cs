@@ -3,6 +3,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -23,6 +24,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -55,7 +59,10 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task AddTag()
         {
-            var tag = await DialogWorkflow.ShowStringFieldDialog("Add Tag", "Tag", null);
+            var tag = await DialogWorkflow.ShowStringFieldDialog(
+                WebUiLocalizer.Translate("TagFilterWidget", "New Tag"),
+                WebUiLocalizer.Translate("TagFilterWidget", "Tag:"),
+                null);
 
             if (tag is null)
             {
@@ -86,10 +93,15 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        public static List<ColumnDefinition<string>> ColumnsDefinitions { get; } =
-        [
-            new ColumnDefinition<string>("Id", l => l),
-            new ColumnDefinition<string>("Actions", l => l)
-        ];
+        private List<ColumnDefinition<string>> ColumnsDefinitions => BuildColumnsDefinitions();
+
+        private List<ColumnDefinition<string>> BuildColumnsDefinitions()
+        {
+            return
+            [
+                new ColumnDefinition<string>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l),
+                new ColumnDefinition<string>("Actions", l => l)
+            ];
+        }
     }
 }

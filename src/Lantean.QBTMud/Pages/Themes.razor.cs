@@ -3,6 +3,7 @@ using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -37,6 +38,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -125,8 +129,8 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                var defaultName = $"{theme.Name} Copy";
-                var name = await DialogWorkflow.ShowStringFieldDialog("Duplicate Theme", "Name", defaultName);
+                var defaultName = Translate("%1 Copy", theme.Name);
+                var name = await DialogWorkflow.ShowStringFieldDialog(Translate("Duplicate Theme"), Translate("Name"), defaultName);
                 if (string.IsNullOrWhiteSpace(name))
                 {
                     return;
@@ -186,7 +190,7 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                var name = await DialogWorkflow.ShowStringFieldDialog("Rename Theme", "Name", theme.Name);
+                var name = await DialogWorkflow.ShowStringFieldDialog(Translate("Rename Theme"), Translate("Name"), theme.Name);
                 if (string.IsNullOrWhiteSpace(name))
                 {
                     return;
@@ -219,7 +223,7 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                var confirmed = await DialogWorkflow.ShowConfirmDialog("Delete theme?", $"Delete '{theme.Name}'?");
+                var confirmed = await DialogWorkflow.ShowConfirmDialog(Translate("Delete theme?"), Translate("Delete '%1'?", theme.Name));
                 if (!confirmed)
                 {
                     return;
@@ -235,7 +239,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task CreateTheme()
         {
-            var name = await DialogWorkflow.ShowStringFieldDialog("New Theme", "Name", null);
+            var name = await DialogWorkflow.ShowStringFieldDialog(Translate("New Theme"), Translate("Name"), null);
             if (string.IsNullOrWhiteSpace(name))
             {
                 return;
@@ -281,7 +285,7 @@ namespace Lantean.QBTMud.Pages
                 var definition = ThemeSerialization.DeserializeDefinition(json);
                 if (definition is null)
                 {
-                    Snackbar.Add("Unable to import theme: invalid JSON.", Severity.Error);
+                    Snackbar.Add(Translate("Unable to import theme: invalid JSON."), Severity.Error);
                     return;
                 }
 
@@ -291,11 +295,11 @@ namespace Lantean.QBTMud.Pages
             }
             catch (IOException exception)
             {
-                Snackbar.Add($"Unable to import theme: {exception.Message}", Severity.Error);
+                Snackbar.Add(Translate("Unable to import theme: %1", exception.Message), Severity.Error);
             }
             catch (JsonException exception)
             {
-                Snackbar.Add($"Unable to import theme: {exception.Message}", Severity.Error);
+                Snackbar.Add(Translate("Unable to import theme: %1", exception.Message), Severity.Error);
             }
             finally
             {
@@ -354,6 +358,7 @@ namespace Lantean.QBTMud.Pages
                     columnDefinition.RowTemplate = fragment;
                 }
 
+                columnDefinition.DisplayHeader = Translate(columnDefinition.Header);
                 yield return columnDefinition;
             }
         }
@@ -365,7 +370,7 @@ namespace Lantean.QBTMud.Pages
                 : definition.Name.Trim();
             if (string.IsNullOrWhiteSpace(name))
             {
-                name = "Imported Theme";
+                name = Translate("Imported Theme");
             }
 
             var id = string.IsNullOrWhiteSpace(definition.Id)
@@ -402,13 +407,7 @@ namespace Lantean.QBTMud.Pages
             };
         }
 
-        private static string BuildJsonDataUrl(string json)
-        {
-            var escaped = Uri.EscapeDataString(json);
-            return $"data:application/json;charset=utf-8,{escaped}";
-        }
-
-        private static string SanitizeFileName(string name)
+        private string SanitizeFileName(string name)
         {
             var invalidChars = Path.GetInvalidFileNameChars();
             var builder = new StringBuilder(name.Length);
@@ -421,10 +420,21 @@ namespace Lantean.QBTMud.Pages
             var sanitized = builder.ToString().Trim();
             if (string.IsNullOrWhiteSpace(sanitized))
             {
-                return "theme";
+                return Translate("theme");
             }
 
             return sanitized;
+        }
+
+        private string Translate(string value, params object[] args)
+        {
+            return WebUiLocalizer.Translate("AppThemes", value, args);
+        }
+
+        private static string BuildJsonDataUrl(string json)
+        {
+            var escaped = Uri.EscapeDataString(json);
+            return $"data:application/json;charset=utf-8,{escaped}";
         }
 
         public static List<ColumnDefinition<ThemeCatalogItem>> ColumnsDefinitions { get; } =

@@ -8,6 +8,7 @@ namespace WebUiTranslationsConverter
     {
         private const string FilePrefix = "webui_";
         private const string FileExtension = ".ts";
+        private const string LanguagesFileName = "webui_languages.json";
 
         private static readonly JsonSerializerOptions _options = new JsonSerializerOptions
         {
@@ -46,6 +47,8 @@ namespace WebUiTranslationsConverter
                 return 1;
             }
 
+            var locales = CollectLocales(files);
+
             foreach (var file in files)
             {
                 var locale = GetLocale(file);
@@ -60,6 +63,8 @@ namespace WebUiTranslationsConverter
                 WriteJson(outputFile, translations);
                 Console.WriteLine($"Generated {outputFile} ({translations.Count} entries)");
             }
+
+            WriteLanguagesManifest(Path.Combine(options.OutputPath, LanguagesFileName), locales);
 
             return 0;
         }
@@ -207,11 +212,40 @@ namespace WebUiTranslationsConverter
             return data;
         }
 
+        private static List<string> CollectLocales(IEnumerable<string> files)
+        {
+            var locales = new List<string>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var file in files)
+            {
+                var locale = GetLocale(file);
+                if (string.IsNullOrWhiteSpace(locale))
+                {
+                    continue;
+                }
+
+                if (seen.Add(locale))
+                {
+                    locales.Add(locale);
+                }
+            }
+
+            return locales;
+        }
+
         private static void WriteJson(string outputPath, Dictionary<string, string> data)
         {
             var ordered = new SortedDictionary<string, string>(data, StringComparer.Ordinal);
             var json = JsonSerializer.Serialize(ordered, _options);
             File.WriteAllText(outputPath, json);
+        }
+
+        private static void WriteLanguagesManifest(string outputPath, List<string> locales)
+        {
+            var json = JsonSerializer.Serialize(locales, _options);
+            File.WriteAllText(outputPath, json);
+            Console.WriteLine($"Generated {outputPath} ({locales.Count} locales)");
         }
 
         private enum ConversionMode

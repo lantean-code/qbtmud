@@ -5,6 +5,7 @@ using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
@@ -14,12 +15,17 @@ namespace Lantean.QBTMud.Components
 {
     public partial class TrackersTab : IAsyncDisposable
     {
+        private const string _trackerListContext = "TrackerListWidget";
+        private const string _trackersAdditionContext = "TrackersAdditionDialog";
+        private const string _appContext = "AppTrackersTab";
+
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
 
         private string? _sortColumn;
         private SortDirection _sortDirection;
+        private IReadOnlyList<ColumnDefinition<TorrentTracker>>? _columnDefinitions;
 
         private const string _toolbar = nameof(_toolbar);
         private const string _context = nameof(_context);
@@ -47,6 +53,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         protected IReadOnlyList<TorrentTracker>? TrackerList { get; set; }
 
@@ -97,7 +106,7 @@ namespace Lantean.QBTMud.Components
 
         private Func<TorrentTracker, object?> GetSortSelector()
         {
-            var sortSelector = ColumnsDefinitions.Find(c => c.Id == _sortColumn)?.SortSelector;
+            var sortSelector = GetColumnDefinitions().FirstOrDefault(c => c.Id == _sortColumn)?.SortSelector;
 
             return sortSelector ?? (i => i.Url);
         }
@@ -195,7 +204,11 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await DialogWorkflow.InvokeStringFieldDialog("Edit Tracker", "Tracker URL", tracker.Url, async value => await ApiClient.EditTracker(Hash, tracker.Url, value));
+            await DialogWorkflow.InvokeStringFieldDialog(
+                TranslateTrackerList("Tracker editing"),
+                TranslateTrackerList("Tracker URL:"),
+                tracker.Url,
+                async value => await ApiClient.EditTracker(Hash, tracker.Url, value));
         }
 
         protected Task RemoveTrackerToolbar()
@@ -277,19 +290,53 @@ namespace Lantean.QBTMud.Components
             return ManagedTimerTickResult.Continue;
         }
 
-        protected IEnumerable<ColumnDefinition<TorrentTracker>> Columns => ColumnsDefinitions;
+        protected IEnumerable<ColumnDefinition<TorrentTracker>> Columns => GetColumnDefinitions();
 
-        public static List<ColumnDefinition<TorrentTracker>> ColumnsDefinitions { get; } =
-        [
-            new ColumnDefinition<TorrentTracker>("Tier", w => w.Tier, w => w.Tier > 0 ? w.Tier.ToString() : ""),
-            new ColumnDefinition<TorrentTracker>("URL", w => w.Url),
-            new ColumnDefinition<TorrentTracker>("Status", w => w.Status),
-            new ColumnDefinition<TorrentTracker>("Peers", w => w.Peers),
-            new ColumnDefinition<TorrentTracker>("Seeds", w => w.Seeds),
-            new ColumnDefinition<TorrentTracker>("Leeches", w => w.Leeches),
-            new ColumnDefinition<TorrentTracker>("Times Downloaded", w => w.Downloads),
-            new ColumnDefinition<TorrentTracker>("Message", w => w.Message),
-        ];
+        private IReadOnlyList<ColumnDefinition<TorrentTracker>> GetColumnDefinitions()
+        {
+            _columnDefinitions ??= BuildColumnDefinitions();
+
+            return _columnDefinitions;
+        }
+
+        private IReadOnlyList<ColumnDefinition<TorrentTracker>> BuildColumnDefinitions()
+        {
+            var tierLabel = TranslateTrackerList("Tier");
+            var urlLabel = TranslateTrackerList("URL/Announce Endpoint");
+            var statusLabel = TranslateTrackerList("Status");
+            var peersLabel = TranslateTrackerList("Peers");
+            var seedsLabel = TranslateTrackerList("Seeds");
+            var leechesLabel = TranslateTrackerList("Leeches");
+            var timesDownloadedLabel = TranslateTrackerList("Times Downloaded");
+            var messageLabel = TranslateTrackerList("Message");
+
+            return
+            [
+                new ColumnDefinition<TorrentTracker>(tierLabel, w => w.Tier, w => w.Tier > 0 ? w.Tier.ToString() : string.Empty),
+                new ColumnDefinition<TorrentTracker>(urlLabel, w => w.Url),
+                new ColumnDefinition<TorrentTracker>(statusLabel, w => w.Status),
+                new ColumnDefinition<TorrentTracker>(peersLabel, w => w.Peers),
+                new ColumnDefinition<TorrentTracker>(seedsLabel, w => w.Seeds),
+                new ColumnDefinition<TorrentTracker>(leechesLabel, w => w.Leeches),
+                new ColumnDefinition<TorrentTracker>(timesDownloadedLabel, w => w.Downloads),
+                new ColumnDefinition<TorrentTracker>(messageLabel, w => w.Message),
+            ];
+        }
+
+        private string TranslateTrackerList(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate(_trackerListContext, source, arguments);
+        }
+
+        private string TranslateTrackersAddition(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate(_trackersAdditionContext, source, arguments);
+        }
+
+        private string TranslateApp(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate(_appContext, source, arguments);
+        }
 
         protected virtual async Task DisposeAsync(bool disposing)
         {

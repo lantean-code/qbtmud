@@ -2,6 +2,7 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using System.Net;
 
@@ -9,9 +10,12 @@ namespace Lantean.QBTMud.Components
 {
     public partial class WebSeedsTab : IAsyncDisposable
     {
+        private const string _httpServerContext = "HttpServer";
+
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
+        private IReadOnlyList<ColumnDefinition<WebSeed>>? _columnDefinitions;
 
         [Parameter]
         public bool Active { get; set; }
@@ -30,6 +34,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         protected IReadOnlyList<WebSeed>? WebSeeds { get; set; }
 
@@ -111,11 +118,23 @@ namespace Lantean.QBTMud.Components
             await InvokeAsync(StateHasChanged);
         }
 
-        protected IEnumerable<ColumnDefinition<WebSeed>> Columns => ColumnsDefinitions;
+        protected IEnumerable<ColumnDefinition<WebSeed>> Columns => GetColumnDefinitions();
 
-        public static List<ColumnDefinition<WebSeed>> ColumnsDefinitions { get; } =
-        [
-            new ColumnDefinition<WebSeed>("URL", w => w.Url, w => w.Url),
-        ];
+        private IReadOnlyList<ColumnDefinition<WebSeed>> GetColumnDefinitions()
+        {
+            _columnDefinitions ??= BuildColumnDefinitions();
+
+            return _columnDefinitions;
+        }
+
+        private IReadOnlyList<ColumnDefinition<WebSeed>> BuildColumnDefinitions()
+        {
+            var urlLabel = WebUiLocalizer.Translate(_httpServerContext, "URL");
+
+            return
+            [
+                new ColumnDefinition<WebSeed>(urlLabel, w => w.Url, w => w.Url),
+            ];
+        }
     }
 }

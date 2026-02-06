@@ -42,41 +42,47 @@ namespace Lantean.QBTMud.Components.Options
         protected string? DyndnsUsername { get; private set; }
         protected string? DyndnsPassword { get; private set; }
 
-        protected Func<int, string?> WebUiPortValidation = value =>
-        {
-            if (value < 1 || value > MaxPortValue)
-            {
-                return "The port used for the Web UI must be between 1 and 65535.";
-            }
-
-            return null;
-        };
+        protected Func<int, string?> WebUiPortValidation => WebUiPortValidationFunc;
 
         protected Func<string?, string?> WebUiHttpsCertPathValidation => WebUiHttpsCertPathValidationFunc;
 
         protected Func<string?, string?> WebUiHttpsKeyPathValidation => WebUiHttpsKeyPathValidationFunc;
 
-        protected Func<string?, string?> WebUiUsernameValidation = value =>
+        protected Func<string?, string?> WebUiUsernameValidation => WebUiUsernameValidationFunc;
+
+        protected Func<string?, string?> WebUiPasswordValidation => WebUiPasswordValidationFunc;
+
+        protected Func<string?, string?> AlternativeWebuiPathValidation => AlternativeWebuiPathValidationFunc;
+
+        private string? WebUiPortValidationFunc(int value)
+        {
+            if (value < 1 || value > MaxPortValue)
+            {
+                return WebUiLocalizer.Translate("HttpServer", "The port used for the WebUI must be between 1 and 65535.");
+            }
+
+            return null;
+        }
+
+        private string? WebUiUsernameValidationFunc(string? value)
         {
             if (value is null || value.Length < 3)
             {
-                return "The Web UI username must be at least 3 characters long.";
+                return WebUiLocalizer.Translate("OptionsDialog", "The WebUI username must be at least 3 characters long.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<string?, string?> WebUiPasswordValidation = value =>
+        private string? WebUiPasswordValidationFunc(string? value)
         {
             if (value is null || value.Length < 6)
             {
-                return "The Web UI password must be at least 6 characters long.";
+                return WebUiLocalizer.Translate("OptionsDialog", "The WebUI password must be at least 6 characters long.");
             }
 
             return null;
-        };
-
-        protected Func<string?, string?> AlternativeWebuiPathValidation => AlternativeWebuiPathValidationFunc;
+        }
 
         protected string? WebUiHttpsCertPathValidationFunc(string? value)
         {
@@ -90,7 +96,7 @@ namespace Lantean.QBTMud.Components.Options
                 return null;
             }
 
-            return "HTTPS certificate should not be empty.";
+            return WebUiLocalizer.Translate("OptionsDialog", "HTTPS certificate should not be empty.");
         }
 
         protected string? WebUiHttpsKeyPathValidationFunc(string? value)
@@ -105,7 +111,7 @@ namespace Lantean.QBTMud.Components.Options
                 return null;
             }
 
-            return "HTTPS key should not be empty.";
+            return WebUiLocalizer.Translate("OptionsDialog", "HTTPS key should not be empty.");
         }
 
         protected string? AlternativeWebuiPathValidationFunc(string? value)
@@ -120,7 +126,7 @@ namespace Lantean.QBTMud.Components.Options
                 return null;
             }
 
-            return "The alternative Web UI files location cannot be blank.";
+            return WebUiLocalizer.Translate("OptionsDialog", "The alternative WebUI files location cannot be blank.");
         }
 
         protected override bool SetOptions()

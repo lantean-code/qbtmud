@@ -3,8 +3,8 @@
 <MudPaper Class="pa-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
         <MudText Typo="Typo.h6"
-                 data-test-id="@TestIdHelper.For("TimersHeader")">Timers</MudText>
-        <MudTooltip Text="Close">
+                 data-test-id="@TestIdHelper.For("TimersHeader")">@TranslateApp("Timers")</MudText>
+        <MudTooltip Text="@TranslateApp("Close")">
             <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="CloseDrawerAsync" />
         </MudTooltip>
     </MudStack>
@@ -13,7 +13,7 @@
     {
         <MudText Class="mt-2"
                  Typo="Typo.body2"
-                 data-test-id="@TestIdHelper.For("TimersEmptyMessage")">No timers registered.</MudText>
+                 data-test-id="@TestIdHelper.For("TimersEmptyMessage")">@TranslateApp("No timers registered.")</MudText>
     }
     else
     {
@@ -28,7 +28,7 @@
                             <MudTooltip Text="@GetStateTooltip(timer)">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                     <MudIcon Icon="@GetStateIcon(timer.State)" Color="@GetStateColor(timer.State)" />
-                                    <MudText Typo="Typo.body2">@timer.State</MudText>
+                                    <MudText Typo="Typo.body2">@GetStateLabel(timer.State)</MudText>
                                 </MudStack>
                             </MudTooltip>
                         </MudStack>
@@ -37,7 +37,7 @@
 
                         <MudStack Spacing="0">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                <MudText Typo="Typo.caption" Class="text-uppercase">Interval</MudText>
+                                <MudText Typo="Typo.caption" Class="text-uppercase">@TranslateApp("Interval")</MudText>
                                 <MudText Typo="Typo.body2">@FormatInterval(timer.Interval)</MudText>
                             </MudStack>
                         </MudStack>
@@ -50,19 +50,19 @@
                             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd">
                                 @if (timer.State == ManagedTimerState.Running)
                                 {
-                                    <MudTooltip Text="Pause">
+                                    <MudTooltip Text="@TranslateApp("Pause")">
                                         <MudIconButton Icon="@Icons.Material.Filled.PauseCircle" Color="Color.Warning" OnClick="() => PauseAsync(timer)" />
                                     </MudTooltip>
                                 }
                                 else if (timer.State == ManagedTimerState.Paused)
                                 {
-                                    <MudTooltip Text="Resume">
+                                    <MudTooltip Text="@TranslateApp("Resume")">
                                         <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" OnClick="() => ResumeAsync(timer)" />
                                     </MudTooltip>
                                 }
                                 else if (timer.State == ManagedTimerState.Stopped)
                                 {
-                                    <MudTooltip Text="Start">
+                                    <MudTooltip Text="@TranslateApp("Start")">
                                         <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Success" OnClick="() => RestartAsync(timer)" />
                                     </MudTooltip>
                                 }

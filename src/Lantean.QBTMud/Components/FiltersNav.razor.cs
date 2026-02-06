@@ -510,6 +510,79 @@ namespace Lantean.QBTMud.Components
             return MainData.StatusState.ToDictionary(d => d.Key, d => d.Value.Count);
         }
 
+        private string GetStatusDisplayName(string status, int count)
+        {
+            if (!Enum.TryParse<Lantean.QBTMud.Models.Status>(status, out var parsed))
+            {
+                return status;
+            }
+
+            return parsed switch
+            {
+                Lantean.QBTMud.Models.Status.All => WebUiLocalizer.Translate("StatusFilterWidget", "All (%1)", count),
+                Lantean.QBTMud.Models.Status.Downloading => WebUiLocalizer.Translate("StatusFilterWidget", "Downloading (%1)", count),
+                Lantean.QBTMud.Models.Status.Seeding => WebUiLocalizer.Translate("StatusFilterWidget", "Seeding (%1)", count),
+                Lantean.QBTMud.Models.Status.Completed => WebUiLocalizer.Translate("StatusFilterWidget", "Completed (%1)", count),
+                Lantean.QBTMud.Models.Status.Stopped => WebUiLocalizer.Translate("StatusFilterWidget", "Stopped (%1)", count),
+                Lantean.QBTMud.Models.Status.Active => WebUiLocalizer.Translate("StatusFilterWidget", "Active (%1)", count),
+                Lantean.QBTMud.Models.Status.Inactive => WebUiLocalizer.Translate("StatusFilterWidget", "Inactive (%1)", count),
+                Lantean.QBTMud.Models.Status.Stalled => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled (%1)", count),
+                Lantean.QBTMud.Models.Status.StalledUploading => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled Uploading (%1)", count),
+                Lantean.QBTMud.Models.Status.StalledDownloading => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled Downloading (%1)", count),
+                Lantean.QBTMud.Models.Status.Checking => WebUiLocalizer.Translate("StatusFilterWidget", "Checking (%1)", count),
+                Lantean.QBTMud.Models.Status.Errored => WebUiLocalizer.Translate("StatusFilterWidget", "Errored (%1)", count),
+                _ => status
+            };
+        }
+
+        private string GetCategoryDisplayName(string category)
+        {
+            if (string.Equals(category, FilterHelper.CATEGORY_ALL, StringComparison.Ordinal))
+            {
+                return WebUiLocalizer.Translate("CategoryFilterModel", "All");
+            }
+
+            if (string.Equals(category, FilterHelper.CATEGORY_UNCATEGORIZED, StringComparison.Ordinal))
+            {
+                return WebUiLocalizer.Translate("CategoryFilterModel", "Uncategorized");
+            }
+
+            return category;
+        }
+
+        private string GetTagDisplayName(string tag)
+        {
+            if (string.Equals(tag, FilterHelper.TAG_ALL, StringComparison.Ordinal))
+            {
+                return WebUiLocalizer.Translate("TagFilterModel", "All");
+            }
+
+            if (string.Equals(tag, FilterHelper.TAG_UNTAGGED, StringComparison.Ordinal))
+            {
+                return WebUiLocalizer.Translate("TagFilterModel", "Untagged");
+            }
+
+            return tag;
+        }
+
+        private string GetTrackerDisplayName(TrackerFilterItem tracker)
+        {
+            if (!tracker.IsSynthetic)
+            {
+                return tracker.DisplayName;
+            }
+
+            return tracker.Key switch
+            {
+                FilterHelper.TRACKER_ALL => WebUiLocalizer.Translate("TrackerFiltersList", "All"),
+                FilterHelper.TRACKER_TRACKERLESS => WebUiLocalizer.Translate("TrackerFiltersList", "Trackerless"),
+                FilterHelper.TRACKER_ERROR => WebUiLocalizer.Translate("TrackerFiltersList", "Tracker error"),
+                FilterHelper.TRACKER_WARNING => WebUiLocalizer.Translate("TrackerFiltersList", "Warning"),
+                FilterHelper.TRACKER_ANNOUNCE_ERROR => WebUiLocalizer.Translate("TrackerFiltersList", "Other error"),
+                _ => tracker.DisplayName
+            };
+        }
+
         private List<string> GetAffectedTorrentHashes(string type)
         {
             if (MainData is null)
@@ -588,6 +661,18 @@ namespace Lantean.QBTMud.Components
         }
 
         private sealed record TrackerFilterItem(string Key, string DisplayName, int Count, bool IsSynthetic, IReadOnlyList<string> Urls);
+
+        private static string GetFilterContext(string type)
+        {
+            return type switch
+            {
+                _statusType => "StatusFilterWidget",
+                _categoryType => "CategoryFilterWidget",
+                _tagType => "TagFilterWidget",
+                _trackerType => "TrackerFiltersList",
+                _ => string.Empty
+            };
+        }
 
         private static string GetHostName(string tracker)
         {

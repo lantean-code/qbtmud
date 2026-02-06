@@ -2,6 +2,7 @@ using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -95,6 +96,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+
         [Parameter]
         public string ThemeId { get; set; } = string.Empty;
 
@@ -161,7 +165,7 @@ namespace Lantean.QBTMud.Pages
 
         protected string ThemeTitle
         {
-            get { return _theme?.Name ?? "Theme Details"; }
+            get { return _theme?.Name ?? Translate("Theme Details"); }
         }
 
         protected IReadOnlyList<(string Title, IReadOnlyList<(string Name, ThemePaletteColor Color)> Items)> ColorGroups
@@ -220,7 +224,7 @@ namespace Lantean.QBTMud.Pages
         {
             _editorName = value;
 
-            _nameError = string.IsNullOrWhiteSpace(value) ? "Name is required." : null;
+            _nameError = string.IsNullOrWhiteSpace(value) ? Translate("Name is required.") : null;
 
             _hasChanges = true;
             return Task.CompletedTask;
@@ -235,7 +239,7 @@ namespace Lantean.QBTMud.Pages
 
             if (!ThemeFontCatalog.TryGetFontUrl(value, out _))
             {
-                _fontError = "Select a valid Google font family.";
+                _fontError = Translate("Select a valid Google font family.");
                 return Task.CompletedTask;
             }
 
@@ -348,7 +352,7 @@ namespace Lantean.QBTMud.Pages
 
             if (string.IsNullOrWhiteSpace(_editorName))
             {
-                _nameError = "Name is required.";
+                _nameError = Translate("Name is required.");
                 return;
             }
 
@@ -437,6 +441,11 @@ namespace Lantean.QBTMud.Pages
             }
 
             return results;
+        }
+
+        private string Translate(string value)
+        {
+            return WebUiLocalizer.Translate("AppThemeDetail", value);
         }
     }
 }

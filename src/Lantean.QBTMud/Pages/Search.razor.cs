@@ -4,6 +4,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
@@ -21,17 +22,6 @@ namespace Lantean.QBTMud.Pages
         private const string _searchPreferencesStorageKey = "Search.Preferences";
         private const string _searchJobsStorageKey = "Search.Jobs";
 
-        private static readonly IReadOnlyList<(SearchSizeUnit Unit, string Label)> _sizeUnitOptions =
-        [
-            (SearchSizeUnit.Bytes, "Bytes"),
-            (SearchSizeUnit.Kibibytes, "KiB"),
-            (SearchSizeUnit.Mebibytes, "MiB"),
-            (SearchSizeUnit.Gibibytes, "GiB"),
-            (SearchSizeUnit.Tebibytes, "TiB"),
-            (SearchSizeUnit.Pebibytes, "PiB"),
-            (SearchSizeUnit.Exbibytes, "EiB"),
-        ];
-
         private IReadOnlyList<SearchPlugin>? _plugins;
         private readonly List<SearchJobViewModel> _jobs = [];
         private readonly CancellationTokenSource _timerCancellationToken = new();
@@ -44,6 +34,7 @@ namespace Lantean.QBTMud.Pages
         private SearchPreferences _preferences = new();
         private bool _preferencesLoaded;
         private Dictionary<int, SearchJobMetadata> _jobMetadata = [];
+        private IReadOnlyList<(SearchSizeUnit Unit, string Label)>? _sizeUnitOptions;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -68,6 +59,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         public MainUiData? MainData { get; set; }
@@ -140,7 +134,7 @@ namespace Lantean.QBTMud.Pages
 
         protected bool HasContextResult => _contextMenuResult is not null;
 
-        protected IReadOnlyList<(SearchSizeUnit Unit, string Label)> SizeUnitOptionsList => _sizeUnitOptions;
+        protected IReadOnlyList<(SearchSizeUnit Unit, string Label)> SizeUnitOptionsList => _sizeUnitOptions ??= BuildSizeUnitOptions();
 
         protected bool ShowAdvancedFilters { get; set; }
 
@@ -321,15 +315,23 @@ namespace Lantean.QBTMud.Pages
 
         private IReadOnlyList<ColumnDefinition<SearchResult>> BuildColumns()
         {
+            var nameLabel = WebUiLocalizer.Translate("SearchResultsTable", "Name");
+            var sizeLabel = WebUiLocalizer.Translate("SearchResultsTable", "Size");
+            var seedersLabel = WebUiLocalizer.Translate("SearchResultsTable", "Seeders");
+            var leechersLabel = WebUiLocalizer.Translate("SearchResultsTable", "Leechers");
+            var engineLabel = WebUiLocalizer.Translate("SearchResultsTable", "Engine");
+            var engineUrlLabel = WebUiLocalizer.Translate("SearchResultsTable", "Engine URL");
+            var publishedLabel = WebUiLocalizer.Translate("SearchResultsTable", "Published On");
+
             return new List<ColumnDefinition<SearchResult>>
             {
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Name", r => r.FileName ?? string.Empty, NameColumnTemplate, width: 320),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Size", r => r.FileSize, r => DisplayHelpers.Size(r.FileSize), width: 120),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Seeders", r => r.Seeders, width: 90),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Leechers", r => r.Leechers, width: 90),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Engine", r => r.EngineName ?? string.Empty, width: 150),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Site", r => r.SiteUrl ?? string.Empty, SiteColumnTemplate, width: 220),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Published", r => r.PublishedOn ?? 0, PublishedColumnTemplate, width: 150),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(nameLabel, r => r.FileName ?? string.Empty, NameColumnTemplate, width: 320),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(sizeLabel, r => r.FileSize, r => DisplayHelpers.Size(r.FileSize), width: 120),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(seedersLabel, r => r.Seeders, width: 90),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(leechersLabel, r => r.Leechers, width: 90),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(engineLabel, r => r.EngineName ?? string.Empty, width: 150),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(engineUrlLabel, r => r.SiteUrl ?? string.Empty, SiteColumnTemplate, width: 220),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(publishedLabel, r => r.PublishedOn ?? 0, PublishedColumnTemplate, width: 150),
                 ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Actions", r => r.FileUrl ?? string.Empty, ActionColumnTemplate, width: 120, tdClass: "no-wrap")
             }.AsReadOnly();
         }
@@ -430,7 +432,7 @@ namespace Lantean.QBTMud.Pages
                 return $"{visible}/{total}";
             }
 
-            return $"{visible} results";
+            return $"{visible} {WebUiLocalizer.Translate("SearchEngineWidget", "Results")}";
         }
 
         protected Task StopActiveJob()
@@ -488,7 +490,7 @@ namespace Lantean.QBTMud.Pages
             {
                 return new Dictionary<string, string>
                 {
-                    [SearchForm.AllCategoryId] = "All categories"
+                    [SearchForm.AllCategoryId] = WebUiLocalizer.Translate("SearchEngineWidget", "All categories")
                 };
             }
 
@@ -514,7 +516,7 @@ namespace Lantean.QBTMud.Pages
                 .DistinctBy(category => category.Id)
                 .ToDictionary(category => category.Id, category => category.Name);
 
-            categories[SearchForm.AllCategoryId] = "All categories";
+            categories[SearchForm.AllCategoryId] = WebUiLocalizer.Translate("SearchEngineWidget", "All categories");
 
             return categories;
         }
@@ -892,6 +894,20 @@ namespace Lantean.QBTMud.Pages
                 return "All enabled plugins";
             }
             return string.Join(", ", selectedPlugins);
+        }
+
+        private IReadOnlyList<(SearchSizeUnit Unit, string Label)> BuildSizeUnitOptions()
+        {
+            return new List<(SearchSizeUnit Unit, string Label)>
+            {
+                (SearchSizeUnit.Bytes, WebUiLocalizer.Translate("misc", "B")),
+                (SearchSizeUnit.Kibibytes, WebUiLocalizer.Translate("misc", "KiB")),
+                (SearchSizeUnit.Mebibytes, WebUiLocalizer.Translate("misc", "MiB")),
+                (SearchSizeUnit.Gibibytes, WebUiLocalizer.Translate("misc", "GiB")),
+                (SearchSizeUnit.Tebibytes, WebUiLocalizer.Translate("misc", "TiB")),
+                (SearchSizeUnit.Pebibytes, WebUiLocalizer.Translate("misc", "PiB")),
+                (SearchSizeUnit.Exbibytes, WebUiLocalizer.Translate("misc", "EiB"))
+            }.AsReadOnly();
         }
 
         private async Task OnCategoryChanged(string value)

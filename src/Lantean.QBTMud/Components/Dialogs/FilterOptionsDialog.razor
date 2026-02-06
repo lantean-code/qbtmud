@@ -1,5 +1,6 @@
 @typeparam T
 @inherits SubmittableDialog
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <MudDialog ContentStyle="mix-width: 400px">
     <DialogContent>
@@ -7,18 +8,18 @@
             @foreach (var definition in FilterDefinitions ?? [])
             {
                 <MudItem xs="4">
-                    <MudField Label="Column">@definition.Column</MudField>
+                    <MudField Label="@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Column")">@definition.Column</MudField>
                 </MudItem>
                 <MudItem xs="3">
-                    <MudSelect Label="Operator" T="string" Value="@definition.Operator" ValueChanged="@(v => DefinitionOperatorChanged(definition, v))" data-test-id="@TestIdHelper.For($"FilterOperator-{definition.Column}")">
+                    <MudSelect Label="@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Operator")" T="string" Value="@definition.Operator" ValueChanged="@(v => DefinitionOperatorChanged(definition, v))" data-test-id="@TestIdHelper.For($"FilterOperator-{definition.Column}")">
                         @foreach (var op in Filter.FilterOperator.GetOperatorByDataType(definition.ColumnType))
                         {
-                            <MudSelectItem T="string" Value="op">@op</MudSelectItem>
+                            <MudSelectItem T="string" Value="op">@WebUiLocalizer.Translate("AppFilterOptionsDialog", op)</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="4">
-                    <MudTextField Label="Value" T="object" Value="@definition.Value" ValueChanged="@(v => DefinitionValueChanged(definition, v))" data-test-id="@TestIdHelper.For($"FilterValue-{definition.Column}")" />
+                    <MudTextField Label="@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Value")" T="object" Value="@definition.Value" ValueChanged="@(v => DefinitionValueChanged(definition, v))" data-test-id="@TestIdHelper.For($"FilterValue-{definition.Column}")" />
                 </MudItem>
                 <MudItem xs="1">
                     <MudIconButton OnClick="@(e => RemoveDefinition(definition))" Icon="@Icons.Material.Outlined.Remove" data-test-id="@TestIdHelper.For($"FilterRemove-{definition.Column}")" />
@@ -26,7 +27,7 @@
                 <MudDivider />
             }
             <MudItem xs="4">
-                <MudSelect Label="Column" T="string" ValueChanged="ColumnChanged" data-test-id="@TestIdHelper.For("FilterNewColumn")">
+                <MudSelect Label="@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Column")" T="string" ValueChanged="ColumnChanged" data-test-id="@TestIdHelper.For("FilterNewColumn")">
                     @foreach (var propertyName in GetAvailablePropertyNames())
                     {
                         <MudSelectItem T="string" Value="@propertyName" />
@@ -34,22 +35,22 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="3">
-                <MudSelect Label="Operator" T="string" ValueChanged="OperatorChanged" data-test-id="@TestIdHelper.For("FilterNewOperator")">
+                <MudSelect Label="@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Operator")" T="string" ValueChanged="OperatorChanged" data-test-id="@TestIdHelper.For("FilterNewOperator")">
                     @if (ColumnType is null)
                     {
-                        <MudSelectItem T="string" Value="@("")">Please select a column.</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("")">@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Please select a column.")</MudSelectItem>
                     }
                     else
                     {
                         foreach (var op in Filter.FilterOperator.GetOperatorByDataType(ColumnType))
                         {
-                            <MudSelectItem T="string" Value="op">@op</MudSelectItem>
+                            <MudSelectItem T="string" Value="op">@WebUiLocalizer.Translate("AppFilterOptionsDialog", op)</MudSelectItem>
                         }
                     }
                 </MudSelect>
             </MudItem>
             <MudItem xs="4">
-                <MudTextField Label="Value" T="string" ValueChanged="ValueChanged" data-test-id="@TestIdHelper.For("FilterNewValue")" />
+                <MudTextField Label="@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Value")" T="string" ValueChanged="ValueChanged" data-test-id="@TestIdHelper.For("FilterNewValue")" />
             </MudItem>
             <MudItem xs="1">
                 <MudIconButton OnClick="AddDefinition" Icon="@Icons.Material.Outlined.Add" data-test-id="@TestIdHelper.For("FilterAdd")" />
@@ -57,7 +58,7 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("FilterCancel")">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("FilterSave")">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("FilterCancel")">@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Cancel")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("FilterSave")">@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Save")</MudButton>
     </DialogActions>
 </MudDialog>

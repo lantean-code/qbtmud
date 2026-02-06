@@ -11,6 +11,15 @@ namespace Lantean.QBTMud.Services
 {
     public sealed class DialogWorkflow : IDialogWorkflow
     {
+        private const string AddNewTorrentDialogContext = "AddNewTorrentDialog";
+        private const string AppContext = "App";
+        private const string ConfirmRecheckContext = "confirmRecheckDialog";
+        private const string DownloadFromUrlContext = "downloadFromURL";
+        private const string PeersAdditionContext = "PeersAdditionDialog";
+        private const string SpeedLimitContext = "SpeedLimit";
+        private const string TrackersAdditionContext = "TrackersAdditionDialog";
+        private const string TransferListContext = "TransferListWidget";
+
         private const long MaxFileSize = 4194304;
 
         public static readonly DialogOptions ConfirmDialogOptions = new()
@@ -76,7 +85,7 @@ namespace Lantean.QBTMud.Services
                 parameters.Add(nameof(CategoryPropertiesDialog.SavePath), initialSavePath);
             }
 
-            var reference = await _dialogService.ShowAsync<CategoryPropertiesDialog>("Add Category", parameters, NonBlurFormDialogOptions);
+            var reference = await _dialogService.ShowAsync<CategoryPropertiesDialog>(_webUiLocalizer.Translate("TransferListWidget", "New Category"), parameters, NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -92,7 +101,9 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task InvokeAddTorrentFileDialog()
         {
-            var result = await _dialogService.ShowAsync<AddTorrentFileDialog>("Upload local torrent", FormDialogOptions);
+            var result = await _dialogService.ShowAsync<AddTorrentFileDialog>(
+                _webUiLocalizer.Translate(AddNewTorrentDialogContext, "Add torrent"),
+                FormDialogOptions);
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -116,7 +127,7 @@ namespace Lantean.QBTMud.Services
                 catch (Exception exception)
                 {
                     await DisposeStreamsAsync(streams);
-                    _snackbar.Add($"Unable to read \"{file.Name}\": {exception.Message}", Severity.Error);
+                    _snackbar.Add(TranslateApp("Unable to read \"%1\": %2", file.Name, exception.Message), Severity.Error);
                     return;
                 }
             }
@@ -131,7 +142,7 @@ namespace Lantean.QBTMud.Services
             }
             catch (HttpRequestException)
             {
-                _snackbar.Add("Unable to add torrent. Please try again.", Severity.Error);
+                _snackbar.Add(TranslateApp("Unable to add torrent. Please try again."), Severity.Error);
                 return;
             }
             finally
@@ -176,7 +187,10 @@ namespace Lantean.QBTMud.Services
                 { nameof(AddTorrentLinkDialog.Url), url },
             };
 
-            var result = await _dialogService.ShowAsync<AddTorrentLinkDialog>("Download from URLs", parameters, FormDialogOptions);
+            var result = await _dialogService.ShowAsync<AddTorrentLinkDialog>(
+                _webUiLocalizer.Translate(DownloadFromUrlContext, "Download from URLs"),
+                parameters,
+                FormDialogOptions);
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -194,7 +208,7 @@ namespace Lantean.QBTMud.Services
             }
             catch (HttpRequestException)
             {
-                _snackbar.Add("Unable to add torrent. Please try again.", Severity.Error);
+                _snackbar.Add(TranslateApp("Unable to add torrent. Please try again."), Severity.Error);
                 return;
             }
 
@@ -266,8 +280,10 @@ namespace Lantean.QBTMud.Services
 
             if (confirmTorrentRecheck)
             {
-                var content = $"Are you sure you want to recheck the selected torrent{(hashArray.Length == 1 ? string.Empty : "s")}?";
-                var confirmed = await ShowConfirmDialog("Force recheck", content);
+                var content = _webUiLocalizer.Translate(ConfirmRecheckContext, "Are you sure you want to recheck the selected torrent(s)?");
+                var confirmed = await ShowConfirmDialog(
+                    _webUiLocalizer.Translate(ConfirmRecheckContext, "Recheck confirmation"),
+                    content);
                 if (!confirmed)
                 {
                     return;
@@ -290,12 +306,15 @@ namespace Lantean.QBTMud.Services
                 { nameof(SliderFieldDialog<long>.Value), rate / 1024 },
                 { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
                 { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
-                { nameof(SliderFieldDialog<long>.Label), "Download rate limit" },
+                { nameof(SliderFieldDialog<long>.Label), _webUiLocalizer.Translate(SpeedLimitContext, "Download limit:") },
                 { nameof(SliderFieldDialog<long>.Adornment), Adornment.End },
-                { nameof(SliderFieldDialog<long>.AdornmentText), "KiB/s" },
+                { nameof(SliderFieldDialog<long>.AdornmentText), _webUiLocalizer.Translate(SpeedLimitContext, "KiB/s") },
             };
 
-            var result = await _dialogService.ShowAsync<SliderFieldDialog<long>>("Download Rate", parameters, FormDialogOptions);
+            var result = await _dialogService.ShowAsync<SliderFieldDialog<long>>(
+                _webUiLocalizer.Translate(TransferListContext, "Torrent Download Speed Limiting"),
+                parameters,
+                FormDialogOptions);
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -316,7 +335,7 @@ namespace Lantean.QBTMud.Services
                 { nameof(CategoryPropertiesDialog.SavePath), category?.SavePath },
             };
 
-            var reference = await _dialogService.ShowAsync<CategoryPropertiesDialog>("Edit Category", parameters, NonBlurFormDialogOptions);
+            var reference = await _dialogService.ShowAsync<CategoryPropertiesDialog>(_webUiLocalizer.Translate("TransferListWidget", "Edit Category"), parameters, NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -337,13 +356,16 @@ namespace Lantean.QBTMud.Services
                 { nameof(RenameFilesDialog.Hash), hash },
             };
 
-            await _dialogService.ShowAsync<RenameFilesDialog>("Rename Files", parameters, FullScreenDialogOptions);
+            await _dialogService.ShowAsync<RenameFilesDialog>(
+                _webUiLocalizer.Translate(TransferListContext, "Renaming"),
+                parameters,
+                FullScreenDialogOptions);
         }
 
         /// <inheritdoc />
         public async Task InvokeRssRulesDialog()
         {
-            await _dialogService.ShowAsync<RssRulesDialog>("Edit Rss Auto Downloading Rules", FullScreenDialogOptions);
+            await _dialogService.ShowAsync<RssRulesDialog>(_webUiLocalizer.Translate("AutomatedRssDownloader", "Rss Downloader"), FullScreenDialogOptions);
         }
 
         /// <inheritdoc />
@@ -377,7 +399,7 @@ namespace Lantean.QBTMud.Services
                 { nameof(ShareRatioDialog.CurrentValue), referenceValue },
             };
 
-            var result = await _dialogService.ShowAsync<ShareRatioDialog>("Share ratio", parameters, FormDialogOptions);
+            var result = await _dialogService.ShowAsync<ShareRatioDialog>(_webUiLocalizer.Translate("UpDownRatioDialog", "Torrent Upload/Download Ratio Limiting"), parameters, FormDialogOptions);
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -426,12 +448,15 @@ namespace Lantean.QBTMud.Services
                 { nameof(SliderFieldDialog<long>.Value), rate / 1024 },
                 { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
                 { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
-                { nameof(SliderFieldDialog<long>.Label), "Upload rate limit" },
+                { nameof(SliderFieldDialog<long>.Label), _webUiLocalizer.Translate(SpeedLimitContext, "Upload limit:") },
                 { nameof(SliderFieldDialog<long>.Adornment), Adornment.End },
-                { nameof(SliderFieldDialog<long>.AdornmentText), "KiB/s" },
+                { nameof(SliderFieldDialog<long>.AdornmentText), _webUiLocalizer.Translate(SpeedLimitContext, "KiB/s") },
             };
 
-            var result = await _dialogService.ShowAsync<SliderFieldDialog<long>>("Upload Rate", parameters, FormDialogOptions);
+            var result = await _dialogService.ShowAsync<SliderFieldDialog<long>>(
+                _webUiLocalizer.Translate(TransferListContext, "Torrent Upload Speed Limiting"),
+                parameters,
+                FormDialogOptions);
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -445,7 +470,9 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task<HashSet<QBitTorrentClient.Models.PeerId>?> ShowAddPeersDialog()
         {
-            var reference = await _dialogService.ShowAsync<AddPeerDialog>("Add Peer", NonBlurFormDialogOptions);
+            var reference = await _dialogService.ShowAsync<AddPeerDialog>(
+                _webUiLocalizer.Translate(PeersAdditionContext, "Add Peers"),
+                NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -458,7 +485,9 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task<HashSet<string>?> ShowAddTagsDialog()
         {
-            var reference = await _dialogService.ShowAsync<AddTagDialog>("Add Tags", NonBlurFormDialogOptions);
+            var reference = await _dialogService.ShowAsync<AddTagDialog>(
+                _webUiLocalizer.Translate(TransferListContext, "Add tags"),
+                NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -471,7 +500,9 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task<HashSet<string>?> ShowAddTrackersDialog()
         {
-            var reference = await _dialogService.ShowAsync<AddTrackerDialog>("Add Tracker", NonBlurFormDialogOptions);
+            var reference = await _dialogService.ShowAsync<AddTrackerDialog>(
+                _webUiLocalizer.Translate(TrackersAdditionContext, "Add trackers"),
+                NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -496,7 +527,10 @@ namespace Lantean.QBTMud.Services
                 { nameof(ColumnOptionsDialog<T>.Order), order },
             };
 
-            var reference = await _dialogService.ShowAsync<ColumnOptionsDialog<T>>("Column Options", parameters, FormDialogOptions);
+            var reference = await _dialogService.ShowAsync<ColumnOptionsDialog<T>>(
+                _webUiLocalizer.Translate("AppColumnOptionsDialog", "Choose Columns"),
+                parameters,
+                FormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -559,7 +593,10 @@ namespace Lantean.QBTMud.Services
                 { nameof(FilterOptionsDialog<T>.FilterDefinitions), propertyFilterDefinitions },
             };
 
-            var result = await _dialogService.ShowAsync<FilterOptionsDialog<T>>("Filters", parameters, FormDialogOptions);
+            var result = await _dialogService.ShowAsync<FilterOptionsDialog<T>>(
+                _webUiLocalizer.Translate("AppFilterOptionsDialog", "Filters"),
+                parameters,
+                FormDialogOptions);
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -632,7 +669,7 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task<bool> ShowSearchPluginsDialog()
         {
-            var reference = await _dialogService.ShowAsync<SearchPluginsDialog>("Search plugins", FullScreenDialogOptions);
+            var reference = await _dialogService.ShowAsync<SearchPluginsDialog>(_webUiLocalizer.Translate("PluginSelectDlg", "Search plugins"), FullScreenDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
             {
@@ -666,7 +703,7 @@ namespace Lantean.QBTMud.Services
                 FullWidth = false
             };
 
-            await _dialogService.ShowAsync<ThemePreviewDialog>("Theme Preview", parameters, options);
+            await _dialogService.ShowAsync<ThemePreviewDialog>(_webUiLocalizer.Translate("AppThemePreviewDialog", "Theme Preview"), parameters, options);
         }
 
         private void ShowAddTorrentSnackbarMessage(QBitTorrentClient.Models.AddTorrentResult result)
@@ -676,11 +713,13 @@ namespace Lantean.QBTMud.Services
             {
                 if (result.SupportsAsync)
                 {
-                    fragments.Add($"Added {result.SuccessCount} torrent{(result.SuccessCount == 1 ? string.Empty : "s")}");
+                    fragments.Add(result.SuccessCount == 1
+                        ? TranslateApp("Added %1 torrent", result.SuccessCount)
+                        : TranslateApp("Added %1 torrents", result.SuccessCount));
                 }
                 else
                 {
-                    fragments.Add("Added torrent(s)");
+                    fragments.Add(TranslateApp("Added torrent(s)"));
                 }
             }
 
@@ -689,11 +728,13 @@ namespace Lantean.QBTMud.Services
                 string failureMessage;
                 if (result.SupportsAsync)
                 {
-                    failureMessage = $"failed to add {result.FailureCount} torrent{(result.FailureCount == 1 ? string.Empty : "s")}";
+                    failureMessage = result.FailureCount == 1
+                        ? TranslateApp("failed to add %1 torrent", result.FailureCount)
+                        : TranslateApp("failed to add %1 torrents", result.FailureCount);
                 }
                 else
                 {
-                    failureMessage = "failed to add torrent(s)";
+                    failureMessage = TranslateApp("failed to add torrent(s)");
                 }
 
                 if (fragments.Count == 0)
@@ -706,12 +747,14 @@ namespace Lantean.QBTMud.Services
 
             if (result.SupportsAsync && result.PendingCount > 0)
             {
-                fragments.Add($"Pending {result.PendingCount} torrent{(result.PendingCount == 1 ? string.Empty : "s")}");
+                fragments.Add(result.PendingCount == 1
+                    ? TranslateApp("Pending %1 torrent", result.PendingCount)
+                    : TranslateApp("Pending %1 torrents", result.PendingCount));
             }
 
             if (fragments.Count == 0)
             {
-                fragments.Add("No torrents processed");
+                fragments.Add(TranslateApp("No torrents processed"));
             }
 
             var message = string.Join(" and ", fragments) + '.';
@@ -731,6 +774,11 @@ namespace Lantean.QBTMud.Services
             }
 
             _snackbar.Add(message, severity);
+        }
+
+        private string TranslateApp(string source, params object[] arguments)
+        {
+            return _webUiLocalizer.Translate(AppContext, source, arguments);
         }
 
         private static QBitTorrentClient.Models.AddTorrentParams CreateAddTorrentParams(TorrentOptions options)

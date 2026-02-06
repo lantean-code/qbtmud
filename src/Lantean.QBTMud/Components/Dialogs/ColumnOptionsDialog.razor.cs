@@ -1,4 +1,5 @@
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -22,6 +23,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [Parameter]
         public Dictionary<string, int> Order { get; set; } = [];
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         protected HashSet<string> SelectedColumnsInternal { get; set; } = [];
 
@@ -190,7 +194,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (value.Value <= 0)
             {
-                return "auto";
+                return Translate("auto");
             }
 
             return value.Value.ToString();
@@ -218,6 +222,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             Submit();
 
             return Task.CompletedTask;
+        }
+
+        private string Translate(string value)
+        {
+            return WebUiLocalizer.Translate("AppColumnOptionsDialog", value);
         }
     }
 }

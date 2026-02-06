@@ -2,6 +2,7 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
@@ -102,6 +103,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected IClipboardService ClipboardService { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         public MainData? MainData { get; set; }
@@ -204,7 +208,7 @@ namespace Lantean.QBTMud.Pages
             var count = node.UnreadCount;
             if (node.IsUnread)
             {
-                return $"Unread ({count})";
+                return $"{WebUiLocalizer.Translate("FeedListWidget", "Unread")} ({count})";
             }
 
             return count > 0
@@ -454,7 +458,13 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            var newPath = await DialogWorkflow.ShowStringFieldDialog("Rename RSS item", "New name", _contextNode.Path);
+            var title = _contextNode.IsFolder
+                ? WebUiLocalizer.Translate("RSSWidget", "Please choose a folder name")
+                : WebUiLocalizer.Translate("RSSWidget", "Please choose a new name for this RSS feed");
+            var label = _contextNode.IsFolder
+                ? WebUiLocalizer.Translate("RSSWidget", "Folder name:")
+                : WebUiLocalizer.Translate("RSSWidget", "New feed name:");
+            var newPath = await DialogWorkflow.ShowStringFieldDialog(title, label, _contextNode.Path);
             if (string.IsNullOrWhiteSpace(newPath) || newPath == _contextNode.Path)
             {
                 return;
@@ -479,7 +489,10 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            var newUrl = await DialogWorkflow.ShowStringFieldDialog("Edit feed URL", "Feed URL", _contextNode.Feed.Url);
+            var newUrl = await DialogWorkflow.ShowStringFieldDialog(
+                WebUiLocalizer.Translate("RSSWidget", "Edit feed URL..."),
+                WebUiLocalizer.Translate("RSSWidget", "Feed URL:"),
+                _contextNode.Feed.Url);
             if (string.IsNullOrWhiteSpace(newUrl) || string.Equals(newUrl, _contextNode.Feed.Url, StringComparison.Ordinal))
             {
                 return;
@@ -503,7 +516,9 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            var confirmed = await DialogWorkflow.ShowConfirmDialog("Remove item?", $"Remove \"{_contextNode.Name}\"?");
+            var confirmed = await DialogWorkflow.ShowConfirmDialog(
+                WebUiLocalizer.Translate("RSSWidget", "Deletion confirmation"),
+                $"Remove \"{_contextNode.Name}\"?");
             if (!confirmed)
             {
                 return;
@@ -539,7 +554,10 @@ namespace Lantean.QBTMud.Pages
             }
 
             var parentPath = DetermineParentPathForNewFolder(_contextNode);
-            var folderName = await DialogWorkflow.ShowStringFieldDialog("RSS folder", "Folder name", null);
+            var folderName = await DialogWorkflow.ShowStringFieldDialog(
+                WebUiLocalizer.Translate("RSSWidget", "Please choose a folder name"),
+                WebUiLocalizer.Translate("RSSWidget", "Folder name:"),
+                null);
             if (string.IsNullOrWhiteSpace(folderName))
             {
                 return;
@@ -604,7 +622,10 @@ namespace Lantean.QBTMud.Pages
 
         private async Task AddSubscriptionAtNode(RssTreeNode? node)
         {
-            var url = await DialogWorkflow.ShowStringFieldDialog("RSS Feed URL", "Feed URL", null);
+            var url = await DialogWorkflow.ShowStringFieldDialog(
+                WebUiLocalizer.Translate("RSSWidget", "Please type a RSS feed URL"),
+                WebUiLocalizer.Translate("RSSWidget", "Feed URL:"),
+                null);
             if (string.IsNullOrWhiteSpace(url))
             {
                 return;

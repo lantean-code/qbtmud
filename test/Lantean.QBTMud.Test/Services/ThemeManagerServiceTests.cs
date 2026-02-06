@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Lantean.QBTMud.Theming;
 using Moq;
@@ -21,6 +22,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly TestLocalStorageService _localStorage;
         private readonly IThemeFontCatalog _fontCatalog;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IWebUiLocalizer _webUiLocalizer;
         private readonly ThemeManagerService _target;
 
         public ThemeManagerServiceTests()
@@ -28,7 +30,11 @@ namespace Lantean.QBTMud.Test.Services
             _localStorage = new TestLocalStorageService();
             _fontCatalog = Mock.Of<IThemeFontCatalog>();
             _httpClientFactory = Mock.Of<IHttpClientFactory>();
-            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog);
+            _webUiLocalizer = Mock.Of<IWebUiLocalizer>();
+            Mock.Get(_webUiLocalizer)
+                .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
+                .Returns((string _, string source, object[] _) => source);
+            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog, _webUiLocalizer);
         }
 
         [Fact]

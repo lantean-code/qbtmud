@@ -1,4 +1,5 @@
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Theming;
 using System.Text.Json;
 
@@ -9,6 +10,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class ThemeManagerService : IThemeManagerService
     {
+        private const string AppContext = "App";
         private const string LocalThemesStorageKey = "ThemeManager.LocalThemes";
         private const string SelectedThemeStorageKey = "ThemeManager.SelectedThemeId";
         private const string ThemeIndexPath = "themes/index.json";
@@ -16,6 +18,7 @@ namespace Lantean.QBTMud.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILocalStorageService _localStorage;
         private readonly IThemeFontCatalog _themeFontCatalog;
+        private readonly IWebUiLocalizer _webUiLocalizer;
         private readonly List<ThemeDefinition> _localThemes = [];
         private readonly List<ThemeCatalogItem> _serverThemes = [];
         private readonly List<ThemeCatalogItem> _themes = [];
@@ -33,11 +36,13 @@ namespace Lantean.QBTMud.Services
         public ThemeManagerService(
             IHttpClientFactory httpClientFactory,
             ILocalStorageService localStorage,
-            IThemeFontCatalog themeFontCatalog)
+            IThemeFontCatalog themeFontCatalog,
+            IWebUiLocalizer webUiLocalizer)
         {
             _httpClientFactory = httpClientFactory;
             _localStorage = localStorage;
             _themeFontCatalog = themeFontCatalog;
+            _webUiLocalizer = webUiLocalizer;
         }
 
         /// <summary>
@@ -227,7 +232,7 @@ namespace Lantean.QBTMud.Services
 
             var fallbackTheme = new ThemeCatalogItem(
                 "default",
-                "Default",
+                TranslateApp("Default"),
                 new ThemeDefinition(),
                 ThemeSource.Server,
                 null);
@@ -357,7 +362,7 @@ namespace Lantean.QBTMud.Services
 
         private ThemeDefinition NormalizeDefinition(ThemeDefinition definition)
         {
-            var name = string.IsNullOrWhiteSpace(definition.Name) ? "Untitled Theme" : definition.Name.Trim();
+            var name = string.IsNullOrWhiteSpace(definition.Name) ? TranslateApp("Untitled Theme") : definition.Name.Trim();
             var id = string.IsNullOrWhiteSpace(definition.Id) ? Guid.NewGuid().ToString("N") : definition.Id.Trim();
             var theme = definition.Theme ?? new MudBlazor.MudTheme();
 
@@ -384,6 +389,11 @@ namespace Lantean.QBTMud.Services
                 DrawerElevation = definition.DrawerElevation,
                 DrawerClipMode = definition.DrawerClipMode
             };
+        }
+
+        private string TranslateApp(string source, params object[] arguments)
+        {
+            return _webUiLocalizer.Translate(AppContext, source, arguments);
         }
     }
 }

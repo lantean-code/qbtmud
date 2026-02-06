@@ -54,12 +54,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
-        public void GIVEN_ColumnsDefinitions_WHEN_Accessed_THEN_DefaultsAvailable()
+        public async Task GIVEN_ColumnsDefinitions_WHEN_Rendered_THEN_DefaultsAvailable()
         {
-            var columns = RenameFilesDialog.ColumnsDefinitions;
+            TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
+
+            var dialog = await _target.RenderDialogAsync(null);
+            var table = FindTable(dialog.Component);
+            var columns = table.Instance.ColumnDefinitions.ToList();
 
             columns.Should().HaveCount(2);
-            columns.Select(c => c.Header).Should().Contain(new[] { "Name", "Replacement" });
+            columns.Select(c => c.Header).Should().Contain(new[] { "Original", "Renamed" });
         }
 
         [Fact]

@@ -23,7 +23,7 @@ namespace Lantean.QBTMud.Components
         private bool _filesDirty = true;
 
         private List<PropertyFilterDefinition<ContentItem>>? _filterDefinitions;
-        private readonly Dictionary<string, RenderFragment<RowContext<ContentItem>>> _columnRenderFragments = [];
+        private IReadOnlyList<ColumnDefinition<ContentItem>>? _columnDefinitions;
 
         private string? _previousHash;
         private string? _sortColumn;
@@ -72,12 +72,6 @@ namespace Lantean.QBTMud.Components
         private MudMenu? ContextMenu { get; set; }
 
         private MudTextField<string>? SearchInput { get; set; }
-
-        public FilesTab()
-        {
-            _columnRenderFragments.Add("Name", NameColumn);
-            _columnRenderFragments.Add("Priority", PriorityColumn);
-        }
 
         protected async Task ColumnOptions()
         {
@@ -313,7 +307,11 @@ namespace Lantean.QBTMud.Components
             {
                 var contentItem = contentItems[0];
                 var name = contentItem.GetFileName();
-                await DialogWorkflow.InvokeStringFieldDialog("Rename", "New name", name, async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
+                await DialogWorkflow.InvokeStringFieldDialog(
+                    WebUiLocalizer.Translate("TorrentContentTreeView", "Renaming"),
+                    WebUiLocalizer.Translate("TorrentContentTreeView", "New name:"),
+                    name,
+                    async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
             }
             else
             {
@@ -360,7 +358,7 @@ namespace Lantean.QBTMud.Components
 
         private Func<ContentItem, object?> GetSortSelector()
         {
-            var sortSelector = ColumnsDefinitions.Find(c => c.Id == _sortColumn)?.SortSelector;
+            var sortSelector = GetColumnDefinitions().FirstOrDefault(c => c.Id == _sortColumn)?.SortSelector;
 
             return sortSelector ?? (i => i.Name);
         }
@@ -607,17 +605,11 @@ namespace Lantean.QBTMud.Components
 
         protected IEnumerable<ColumnDefinition<ContentItem>> Columns => GetColumnDefinitions();
 
-        private IEnumerable<ColumnDefinition<ContentItem>> GetColumnDefinitions()
+        private IReadOnlyList<ColumnDefinition<ContentItem>> GetColumnDefinitions()
         {
-            foreach (var columnDefinition in ColumnsDefinitions)
-            {
-                if (_columnRenderFragments.TryGetValue(columnDefinition.Header, out var fragment))
-                {
-                    columnDefinition.RowTemplate = fragment;
-                }
+            _columnDefinitions ??= BuildColumnDefinitions();
 
-                yield return columnDefinition;
-            }
+            return _columnDefinitions;
         }
 
         private static string CreateKey(ContentItem item)
@@ -625,14 +617,30 @@ namespace Lantean.QBTMud.Components
             return item.Name.Replace("/", "_");
         }
 
-        public static List<ColumnDefinition<ContentItem>> ColumnsDefinitions { get; } =
-        [
-            ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>("Name", c => c.Name, width: 400, initialDirection: SortDirection.Ascending, classFunc: c => c.IsFolder ? "pa-0" : "pa-2"),
-            ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>("Total Size", c => c.Size, c => DisplayHelpers.Size(c.Size)),
-            ColumnDefinitionHelper.CreateColumnDefinition("Progress", c => c.Progress, ProgressBarColumn, tdClass: "table-progress pl-2 pr-2"),
-            ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>("Priority", c => c.Priority, tdClass: "table-select pa-0"),
-            ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>("Remaining", c => c.Remaining, c => DisplayHelpers.Size(c.Remaining)),
-            ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>("Availability", c => c.Availability, c => c.Availability.ToString("0.00")),
-        ];
+        private IReadOnlyList<ColumnDefinition<ContentItem>> BuildColumnDefinitions()
+        {
+            var nameLabel = WebUiLocalizer.Translate("TransferListModel", "Name");
+            var totalSizeLabel = WebUiLocalizer.Translate("TransferListModel", "Total Size");
+            var progressLabel = WebUiLocalizer.Translate("TransferListModel", "Progress");
+            var priorityLabel = WebUiLocalizer.Translate("PropertiesWidget", "Priority");
+            var remainingLabel = WebUiLocalizer.Translate("TransferListModel", "Remaining");
+            var availabilityLabel = WebUiLocalizer.Translate("TransferListModel", "Availability");
+
+            return
+            [
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(
+                    nameLabel,
+                    c => c.Name,
+                    NameColumn,
+                    width: 400,
+                    initialDirection: SortDirection.Ascending,
+                    classFunc: c => c.IsFolder ? "pa-0" : "pa-2"),
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(totalSizeLabel, c => c.Size, c => DisplayHelpers.Size(c.Size)),
+                ColumnDefinitionHelper.CreateColumnDefinition(progressLabel, c => c.Progress, ProgressBarColumn, tdClass: "table-progress pl-2 pr-2"),
+                ColumnDefinitionHelper.CreateColumnDefinition(priorityLabel, c => c.Priority, PriorityColumn, tdClass: "table-select pa-0"),
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(remainingLabel, c => c.Remaining, c => DisplayHelpers.Size(c.Remaining)),
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(availabilityLabel, c => c.Availability, c => c.Availability.ToString("0.00")),
+            ];
+        }
     }
 }

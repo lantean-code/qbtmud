@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Test.Services
             var localizerMock = Mock.Get(_webUiLocalizer);
             localizerMock
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
-                .Returns((string _, string source, object[] __) => source);
+                .Returns((string _, string source, object[] arguments) => FormatLocalizerString(source, arguments));
 
             _target = new DialogWorkflow(_dialogService.Object, _apiClient.Object, _snackbar.Object, _webUiLocalizer);
         }
@@ -45,7 +45,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Ok(new MudCategory("Name", "SavePath")));
             _dialogService
-                .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("Add Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
+                .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("New Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
             _apiClient
                 .Setup(a => a.AddCategory("Name", "SavePath"))
@@ -64,7 +64,7 @@ namespace Lantean.QBTMud.Test.Services
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("Add Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
+                .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("New Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
 
@@ -83,7 +83,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("Add Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
+                .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("New Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
             var result = await _target.InvokeAddCategoryDialog();
@@ -118,7 +118,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             _dialogService
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Upload local torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             AddTorrentParams? captured = null;
@@ -178,7 +178,7 @@ namespace Lantean.QBTMud.Test.Services
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             _dialogService
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Upload local torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeAddTorrentFileDialog();
@@ -208,7 +208,7 @@ namespace Lantean.QBTMud.Test.Services
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             _dialogService
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Upload local torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             _apiClient
@@ -246,7 +246,7 @@ namespace Lantean.QBTMud.Test.Services
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object, fileThree.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             _dialogService
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Upload local torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             AddTorrentParams? captured = null;
@@ -301,7 +301,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Upload local torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeAddTorrentFileDialog();
@@ -317,7 +317,7 @@ namespace Lantean.QBTMud.Test.Services
             var fileOptions = new AddTorrentFileOptions(Array.Empty<IBrowserFile>(), options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             _dialogService
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Upload local torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             _apiClient
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
@@ -603,7 +603,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<ConfirmDialog>("Force recheck", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .Setup(s => s.ShowAsync<ConfirmDialog>("Recheck confirmation", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.ForceRecheckAsync(new[] { "Hash" }, true);
@@ -616,7 +616,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Ok(true));
             _dialogService
-                .Setup(s => s.ShowAsync<ConfirmDialog>("Force recheck", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .Setup(s => s.ShowAsync<ConfirmDialog>("Recheck confirmation", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             _apiClient
                 .Setup(a => a.RecheckTorrents(null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
@@ -633,7 +633,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Ok(true));
             _dialogService
-                .Setup(s => s.ShowAsync<ConfirmDialog>("Force recheck", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .Setup(s => s.ShowAsync<ConfirmDialog>("Recheck confirmation", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             _apiClient
                 .Setup(a => a.RecheckTorrents(null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "Other" }))))
@@ -650,7 +650,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Ok(3L));
             _dialogService
-                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Download Rate", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Download Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             _apiClient
                 .Setup(a => a.SetTorrentDownloadLimit(3072, null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
@@ -667,7 +667,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Download Rate", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Download Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeDownloadRateDialog(2048, new[] { "Hash" });
@@ -681,7 +681,7 @@ namespace Lantean.QBTMud.Test.Services
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Download Rate", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Download Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
 
@@ -702,7 +702,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Ok(4L));
             _dialogService
-                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Upload Rate", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Upload Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             _apiClient
                 .Setup(a => a.SetTorrentUploadLimit(4096, null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
@@ -719,7 +719,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Upload Rate", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Upload Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeUploadRateDialog(1024, new[] { "Hash" });
@@ -733,7 +733,7 @@ namespace Lantean.QBTMud.Test.Services
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Upload Rate", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Upload Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
 
@@ -804,7 +804,7 @@ namespace Lantean.QBTMud.Test.Services
             DialogParameters? captured = null;
             var reference = new Mock<IDialogReference>();
             _dialogService
-                .Setup(s => s.ShowAsync<RenameFilesDialog>("Rename Files", It.IsAny<DialogParameters>(), DialogWorkflow.FullScreenDialogOptions))
+                .Setup(s => s.ShowAsync<RenameFilesDialog>("Renaming", It.IsAny<DialogParameters>(), DialogWorkflow.FullScreenDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference.Object);
 
@@ -820,7 +820,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = new Mock<IDialogReference>();
             _dialogService
-                .Setup(s => s.ShowAsync<RssRulesDialog>("Edit Rss Auto Downloading Rules", DialogWorkflow.FullScreenDialogOptions))
+                .Setup(s => s.ShowAsync<RssRulesDialog>("Rss Downloader", DialogWorkflow.FullScreenDialogOptions))
                 .ReturnsAsync(reference.Object)
                 .Verifiable();
 
@@ -856,7 +856,7 @@ namespace Lantean.QBTMud.Test.Services
                 ShareLimitAction = ShareLimitAction.Remove
             }));
             _dialogService
-                .Setup(s => s.ShowAsync<ShareRatioDialog>("Share ratio", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
             _apiClient
@@ -897,7 +897,7 @@ namespace Lantean.QBTMud.Test.Services
                 ShareLimitAction = ShareLimitAction.Remove
             }));
             _dialogService
-                .Setup(s => s.ShowAsync<ShareRatioDialog>("Share ratio", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
             _apiClient
@@ -918,7 +918,7 @@ namespace Lantean.QBTMud.Test.Services
             var torrents = new[] { CreateTorrent("Hash", 2F, 3, 4F, ShareLimitAction.Stop) };
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<ShareRatioDialog>("Share ratio", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeShareRatioDialog(torrents);
@@ -968,7 +968,7 @@ namespace Lantean.QBTMud.Test.Services
             var peers = new HashSet<PeerId> { new PeerId("Host", 1) };
             var reference = CreateReference(DialogResult.Ok(peers));
             _dialogService
-                .Setup(s => s.ShowAsync<AddPeerDialog>("Add Peer", DialogWorkflow.NonBlurFormDialogOptions))
+                .Setup(s => s.ShowAsync<AddPeerDialog>("Add Peers", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowAddPeersDialog();
@@ -981,7 +981,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<AddPeerDialog>("Add Peer", DialogWorkflow.NonBlurFormDialogOptions))
+                .Setup(s => s.ShowAsync<AddPeerDialog>("Add Peers", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowAddPeersDialog();
@@ -995,7 +995,7 @@ namespace Lantean.QBTMud.Test.Services
             var tags = new HashSet<string> { "Tag" };
             var reference = CreateReference(DialogResult.Ok(tags));
             _dialogService
-                .Setup(s => s.ShowAsync<AddTagDialog>("Add Tags", DialogWorkflow.NonBlurFormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTagDialog>("Add tags", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowAddTagsDialog();
@@ -1008,7 +1008,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<AddTagDialog>("Add Tags", DialogWorkflow.NonBlurFormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTagDialog>("Add tags", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowAddTagsDialog();
@@ -1022,7 +1022,7 @@ namespace Lantean.QBTMud.Test.Services
             var trackers = new HashSet<string> { "Tracker" };
             var reference = CreateReference(DialogResult.Ok(trackers));
             _dialogService
-                .Setup(s => s.ShowAsync<AddTrackerDialog>("Add Tracker", DialogWorkflow.NonBlurFormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTrackerDialog>("Add trackers", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowAddTrackersDialog();
@@ -1035,7 +1035,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<AddTrackerDialog>("Add Tracker", DialogWorkflow.NonBlurFormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTrackerDialog>("Add trackers", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowAddTrackersDialog();
@@ -1052,7 +1052,7 @@ namespace Lantean.QBTMud.Test.Services
             var order = new Dictionary<string, int> { { "Header", 0 } };
             var reference = CreateReference(DialogResult.Ok((selected, widths, order)));
             _dialogService
-                .Setup(s => s.ShowAsync<ColumnOptionsDialog<string>>("Column Options", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<ColumnOptionsDialog<string>>("Choose Columns", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowColumnsOptionsDialog(columns.ToList(), selected, widths, order);
@@ -1068,7 +1068,7 @@ namespace Lantean.QBTMud.Test.Services
             var columns = new[] { new ColumnDefinition<string>("Header", value => value) };
             var reference = CreateReference(DialogResult.Cancel());
             _dialogService
-                .Setup(s => s.ShowAsync<ColumnOptionsDialog<string>>("Column Options", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<ColumnOptionsDialog<string>>("Choose Columns", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowColumnsOptionsDialog(columns.ToList(), new HashSet<string>(), new Dictionary<string, int?>(), new Dictionary<string, int>());
@@ -1512,6 +1512,24 @@ namespace Lantean.QBTMud.Test.Services
                 isPrivate: false,
                 shareLimitAction,
                 comment: string.Empty);
+        }
+
+        private static string FormatLocalizerString(string source, object[] arguments)
+        {
+            if (arguments is null || arguments.Length == 0)
+            {
+                return source;
+            }
+
+            var result = source;
+            for (var i = 0; i < arguments.Length; i++)
+            {
+                var token = $"%{i + 1}";
+                var value = arguments[i]?.ToString() ?? string.Empty;
+                result = result.Replace(token, value);
+            }
+
+            return result;
         }
 
         private sealed class TrackingStream : MemoryStream

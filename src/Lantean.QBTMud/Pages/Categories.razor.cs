@@ -3,6 +3,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 
 namespace Lantean.QBTMud.Pages
@@ -22,6 +23,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -81,11 +85,16 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        public static List<ColumnDefinition<Category>> ColumnsDefinitions { get; } =
-        [
-            new ColumnDefinition<Category>("Name", l => l.Name),
-            new ColumnDefinition<Category>("Save path", l => l.SavePath),
-            new ColumnDefinition<Category>("Actions", l => l)
-        ];
+        private List<ColumnDefinition<Category>> ColumnsDefinitions => BuildColumnsDefinitions();
+
+        private List<ColumnDefinition<Category>> BuildColumnsDefinitions()
+        {
+            return
+            [
+                new ColumnDefinition<Category>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l.Name),
+                new ColumnDefinition<Category>(WebUiLocalizer.Translate("TransferListModel", "Save path"), l => l.SavePath),
+                new ColumnDefinition<Category>("Actions", l => l)
+            ];
+        }
     }
 }

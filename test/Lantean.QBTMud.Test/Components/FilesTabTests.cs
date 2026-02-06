@@ -193,14 +193,14 @@ namespace Lantean.QBTMud.Test.Components
             var files = CreateFiles("root/file1.txt");
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
             _dialogWorkflowMock
-                .Setup(d => d.InvokeStringFieldDialog("Rename", "New name", "file1.txt", It.IsAny<Func<string, Task>>()))
+                .Setup(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()))
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
-            await target.InvokeAsync(() => toggle.Find("button").Click());
+            await target.InvokeAsync(() => toggle.Find("button").ClickAsync());
 
             target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
 
@@ -212,7 +212,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _dialogWorkflowMock.Verify(d => d.InvokeStringFieldDialog("Rename", "New name", "file1.txt", It.IsAny<Func<string, Task>>()), Times.Once);
+                _dialogWorkflowMock.Verify(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()), Times.Once);
             });
         }
 
@@ -222,7 +222,7 @@ namespace Lantean.QBTMud.Test.Components
             var files = CreateFiles("root/file1.txt");
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
             _dialogWorkflowMock
-                .Setup(d => d.InvokeStringFieldDialog("Rename", "New name", "file1.txt", It.IsAny<Func<string, Task>>()))
+                .Setup(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()))
                 .Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
@@ -237,11 +237,11 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => row.TriggerEvent("oncontextmenu", new MouseEventArgs()));
 
             var contextRename = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("ContextMenuRename")}\"]");
-            await _popoverProvider!.InvokeAsync(() => contextRename.Click());
+            await target.InvokeAsync(() => contextRename.Click());
 
             target.WaitForAssertion(() =>
             {
-                _dialogWorkflowMock.Verify(d => d.InvokeStringFieldDialog("Rename", "New name", "file1.txt", It.IsAny<Func<string, Task>>()), Times.Once);
+                _dialogWorkflowMock.Verify(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()), Times.Once);
             });
         }
 
@@ -542,7 +542,7 @@ namespace Lantean.QBTMud.Test.Components
             await TriggerTimerTickAsync(target);
 
             var folderPriority = FindComponentByTestId<MudSelect<UiPriority>>(target, "Priority-Folder");
-            await target.InvokeAsync(() => folderPriority.Instance.ValueChanged.InvokeAsync(UiPriority.Maximum));
+            await target.InvokeAsync(async () => await folderPriority.Instance.ValueChanged.InvokeAsync(UiPriority.Maximum));
 
             _apiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1, 2 })), ClientPriority.Maximum), Times.Once);
         }
@@ -600,7 +600,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var menu = FindComponentByTestId<MudMenu>(target, "NormalPriorityMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
-            await target.InvokeAsync(() => menuActivator.Find("button").Click());
+            await target.InvokeAsync(() => menuActivator.Find("button").ClickAsync());
 
             var availabilityItem = _popoverProvider!.WaitForElement($"[data-test-id=\"{TestIdHelper.For("NormalPriorityLessThan80")}\"]");
             await _popoverProvider!.InvokeAsync(() => availabilityItem.Click());

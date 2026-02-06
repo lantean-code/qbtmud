@@ -4,6 +4,7 @@ using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
@@ -12,6 +13,9 @@ namespace Lantean.QBTMud.Components
 {
     public partial class TorrentActions : IAsyncDisposable
     {
+        private const string _transferListContext = "TransferListWidget";
+        private const string _appContext = "AppTorrentActions";
+
         private bool _disposedValue;
         private bool _deleteShortcutRegistered;
 
@@ -40,6 +44,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected IKeyboardService KeyboardService { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -82,42 +89,42 @@ namespace Lantean.QBTMud.Components
         {
             _actions =
             [
-                new("start", "Start", Icons.Material.Filled.PlayArrow, Color.Success, CreateCallback(Start)),
-                new("stop", "Stop", Icons.Material.Filled.Stop, Color.Warning, CreateCallback(Stop)),
-                new("forceStart", "Force start", Icons.Material.Filled.Forward, Color.Warning, CreateCallback(ForceStart)),
-                new("delete", "Remove", Icons.Material.Filled.Delete, Color.Error, CreateCallback(Remove), separatorBefore: true),
-                new("setLocation", "Set location", Icons.Material.Filled.MyLocation, Color.Info, CreateCallback(SetLocation), separatorBefore: true),
-                new("rename", "Rename", Icons.Material.Filled.DriveFileRenameOutline, Color.Info, CreateCallback(Rename)),
-                new("renameFiles", "Rename files", Icons.Material.Filled.DriveFileRenameOutline, Color.Warning, CreateCallback(RenameFiles)),
-                new("category", "Category", Icons.Material.Filled.List, Color.Info, CreateCallback(ShowCategories)),
-                new("tags", "Tags", Icons.Material.Filled.Label, Color.Info, CreateCallback(ShowTags)),
-                new("autoTorrentManagement", "Automatic Torrent Management", Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleAutoTMM), autoClose: false),
-                new("downloadLimit", "Limit download rate", Icons.Material.Filled.KeyboardDoubleArrowDown, Color.Success, CreateCallback(LimitDownloadRate), separatorBefore: true),
-                new("uploadLimit", "Limit upload rate", Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Warning, CreateCallback(LimitUploadRate)),
-                new("shareRatio", "Limit share ratio", Icons.Material.Filled.Percent, Color.Info, CreateCallback(LimitShareRatio)),
-                new("superSeeding", "Super seeding mode", Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleSuperSeeding), autoClose: false),
-                new("sequentialDownload", "Download in sequential order", Icons.Material.Filled.Check, Color.Info, CreateCallback(DownloadSequential), separatorBefore: true, autoClose: false),
-                new("firstLastPiecePrio", "Download first and last pieces first", Icons.Material.Filled.Check, Color.Info, CreateCallback(DownloadFirstLast), autoClose : false),
-                new("forceRecheck", "Force recheck", Icons.Material.Filled.Loop, Color.Info, CreateCallback(ForceRecheck), separatorBefore: true),
-                new("forceReannounce", "Force reannounce", Icons.Material.Filled.BroadcastOnHome, Color.Info, CreateCallback(ForceReannounce)),
-                new("queue", "Queue", Icons.Material.Filled.Queue, Color.Transparent,
+                new("start", TranslateTransferList("Start"), Icons.Material.Filled.PlayArrow, Color.Success, CreateCallback(Start)),
+                new("stop", TranslateTransferList("Stop"), Icons.Material.Filled.Stop, Color.Warning, CreateCallback(Stop)),
+                new("forceStart", TranslateTransferList("Force Start"), Icons.Material.Filled.Forward, Color.Warning, CreateCallback(ForceStart)),
+                new("delete", TranslateTransferList("Remove"), Icons.Material.Filled.Delete, Color.Error, CreateCallback(Remove), separatorBefore: true),
+                new("setLocation", TranslateTransferList("Set location..."), Icons.Material.Filled.MyLocation, Color.Info, CreateCallback(SetLocation), separatorBefore: true),
+                new("rename", TranslateTransferList("Rename..."), Icons.Material.Filled.DriveFileRenameOutline, Color.Info, CreateCallback(Rename)),
+                new("renameFiles", TranslateTransferList("Rename Files..."), Icons.Material.Filled.DriveFileRenameOutline, Color.Warning, CreateCallback(RenameFiles)),
+                new("category", TranslateTransferList("Category"), Icons.Material.Filled.List, Color.Info, CreateCallback(ShowCategories)),
+                new("tags", TranslateTransferList("Tags"), Icons.Material.Filled.Label, Color.Info, CreateCallback(ShowTags)),
+                new("autoTorrentManagement", TranslateTransferList("Automatic Torrent Management"), Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleAutoTMM), autoClose: false),
+                new("downloadLimit", TranslateTransferList("Limit download rate..."), Icons.Material.Filled.KeyboardDoubleArrowDown, Color.Success, CreateCallback(LimitDownloadRate), separatorBefore: true),
+                new("uploadLimit", TranslateTransferList("Limit upload rate..."), Icons.Material.Filled.KeyboardDoubleArrowUp, Color.Warning, CreateCallback(LimitUploadRate)),
+                new("shareRatio", TranslateTransferList("Limit share ratio..."), Icons.Material.Filled.Percent, Color.Info, CreateCallback(LimitShareRatio)),
+                new("superSeeding", TranslateTransferList("Super seeding mode"), Icons.Material.Filled.Check, Color.Info, CreateCallback(ToggleSuperSeeding), autoClose: false),
+                new("sequentialDownload", TranslateTransferList("Download in sequential order"), Icons.Material.Filled.Check, Color.Info, CreateCallback(DownloadSequential), separatorBefore: true, autoClose: false),
+                new("firstLastPiecePrio", TranslateTransferList("Download first and last pieces first"), Icons.Material.Filled.Check, Color.Info, CreateCallback(DownloadFirstLast), autoClose : false),
+                new("forceRecheck", TranslateTransferList("Force recheck"), Icons.Material.Filled.Loop, Color.Info, CreateCallback(ForceRecheck), separatorBefore: true),
+                new("forceReannounce", TranslateTransferList("Force reannounce"), Icons.Material.Filled.BroadcastOnHome, Color.Info, CreateCallback(ForceReannounce)),
+                new("queue", TranslateTransferList("Queue"), Icons.Material.Filled.Queue, Color.Transparent,
                 [
-                    new("queueTop", "Move to top", Icons.Material.Filled.VerticalAlignTop, Color.Inherit, CreateCallback(MoveToTop)),
-                    new("queueUp", "Move up", Icons.Material.Filled.ArrowUpward, Color.Inherit, CreateCallback(MoveUp)),
-                    new("queueDown", "Move down", Icons.Material.Filled.ArrowDownward, Color.Inherit, CreateCallback(MoveDown)),
-                    new("queueBottom", "Move to bottom", Icons.Material.Filled.VerticalAlignBottom, Color.Inherit, CreateCallback(MoveToBottom)),
+                    new("queueTop", TranslateTransferList("Move to top"), Icons.Material.Filled.VerticalAlignTop, Color.Inherit, CreateCallback(MoveToTop)),
+                    new("queueUp", TranslateTransferList("Move up"), Icons.Material.Filled.ArrowUpward, Color.Inherit, CreateCallback(MoveUp)),
+                    new("queueDown", TranslateTransferList("Move down"), Icons.Material.Filled.ArrowDownward, Color.Inherit, CreateCallback(MoveDown)),
+                    new("queueBottom", TranslateTransferList("Move to bottom"), Icons.Material.Filled.VerticalAlignBottom, Color.Inherit, CreateCallback(MoveToBottom)),
                 ], separatorBefore: true),
-                new("copy", "Copy", Icons.Material.Filled.FolderCopy, Color.Info,
+                new("copy", TranslateTransferList("Copy"), Icons.Material.Filled.FolderCopy, Color.Info,
                 [
-                    new("copyName", "Name", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Name))),
-                    new("copyHashv1", "Info hash v1", Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV1))),
-                    new("copyHashv2", "Info hash v2", Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV2))),
-                    new("copyMagnet", "Magnet link", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.MagnetUri))),
-                    new("copyId", "Torrent ID", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Hash))),
-                    new("copyComment", "Comment", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Comment))),
-                    new("copyContentPath", "Content path", Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.ContentPath))),
+                    new("copyName", TranslateTransferList("Name"), Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Name))),
+                    new("copyHashv1", TranslateTransferList("Info hash v1"), Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV1))),
+                    new("copyHashv2", TranslateTransferList("Info hash v2"), Icons.Material.Filled.Tag, Color.Info, CreateCallback(() => Copy(t => t.InfoHashV2))),
+                    new("copyMagnet", TranslateTransferList("Magnet link"), Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.MagnetUri))),
+                    new("copyId", TranslateTransferList("Torrent ID"), Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Hash))),
+                    new("copyComment", TranslateTransferList("Comment"), Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.Comment))),
+                    new("copyContentPath", TranslateTransferList("Content Path"), Icons.Material.Filled.TextFields, Color.Info, CreateCallback(() => Copy(t => t.ContentPath))),
                 ]),
-                new("export", "Export", Icons.Material.Filled.SaveAlt, Color.Info, CreateCallback(Export)),
+                new("export", TranslateTransferList("Export .torrent"), Icons.Material.Filled.SaveAlt, Color.Info, CreateCallback(Export)),
             ];
         }
 
@@ -186,19 +193,19 @@ namespace Lantean.QBTMud.Components
         protected async Task Stop()
         {
             await ApiClient.StopTorrents(hashes: Hashes.ToArray());
-            Snackbar.Add("Torrent stopped.");
+            Snackbar.Add(TranslateApp("Torrent stopped."));
         }
 
         protected async Task Start()
         {
             await ApiClient.StartTorrents(hashes: Hashes.ToArray());
-            Snackbar.Add("Torrent started.");
+            Snackbar.Add(TranslateApp("Torrent started."));
         }
 
         protected async Task ForceStart()
         {
             await ApiClient.SetForceStart(true, null, Hashes.ToArray());
-            Snackbar.Add("Torrent force started.");
+            Snackbar.Add(TranslateApp("Torrent force started."));
         }
 
         protected async Task Remove()
@@ -275,7 +282,11 @@ namespace Lantean.QBTMud.Components
                 savePath = torrent.SavePath;
             }
 
-            await DialogWorkflow.InvokeStringFieldDialog("Set Location", "Location", savePath, v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
+            await DialogWorkflow.InvokeStringFieldDialog(
+                TranslateTransferList("Set location"),
+                TranslateTransferList("Location:"),
+                savePath,
+                v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
         }
 
         protected async Task Rename()
@@ -286,7 +297,11 @@ namespace Lantean.QBTMud.Components
             {
                 name = torrent.Name;
             }
-            await DialogWorkflow.InvokeStringFieldDialog("Rename", "Name", name, v => ApiClient.SetTorrentName(v, hash));
+            await DialogWorkflow.InvokeStringFieldDialog(
+                TranslateTransferList("Rename"),
+                TranslateTransferList("New name:"),
+                name,
+                v => ApiClient.SetTorrentName(v, hash));
         }
 
         protected async Task RenameFiles()
@@ -448,7 +463,10 @@ namespace Lantean.QBTMud.Components
                 { nameof(ManageTagsDialog.Hashes), Hashes }
             };
 
-            await DialogService.ShowAsync<ManageTagsDialog>("Manage Torrent Tags", parameters, global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
+            await DialogService.ShowAsync<ManageTagsDialog>(
+                TranslateApp("Manage Torrent Tags"),
+                parameters,
+                global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
         }
 
         protected async Task ShowCategories()
@@ -458,7 +476,10 @@ namespace Lantean.QBTMud.Components
                 { nameof(ManageCategoriesDialog.Hashes), Hashes }
             };
 
-            await DialogService.ShowAsync<ManageCategoriesDialog>("Manage Torrent Categories", parameters, global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
+            await DialogService.ShowAsync<ManageCategoriesDialog>(
+                TranslateApp("Manage Torrent Categories"),
+                parameters,
+                global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
         }
 
         protected async Task DownloadSequential()
@@ -665,20 +686,20 @@ namespace Lantean.QBTMud.Components
 
             if (actionStates.TryGetValue("start", out ActionState? startActionState))
             {
-                startActionState.TextOverride = "Start";
+                startActionState.TextOverride = TranslateTransferList("Start");
             }
             else
             {
-                actionStates["start"] = new ActionState { TextOverride = "Start" };
+                actionStates["start"] = new ActionState { TextOverride = TranslateTransferList("Start") };
             }
 
             if (actionStates.TryGetValue("stop", out ActionState? stopActionState))
             {
-                stopActionState.TextOverride = "Stop";
+                stopActionState.TextOverride = TranslateTransferList("Stop");
             }
             else
             {
-                actionStates["stop"] = new ActionState { TextOverride = "Stop" };
+                actionStates["stop"] = new ActionState { TextOverride = TranslateTransferList("Stop") };
             }
 
             if (!allAreAutoTmm && thereAreAutoTmm)
@@ -1045,6 +1066,16 @@ namespace Lantean.QBTMud.Components
             {
                 return EventCallback.Factory.Create(this, action);
             }
+        }
+
+        private string TranslateTransferList(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate(_transferListContext, source, arguments);
+        }
+
+        private string TranslateApp(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate(_appContext, source, arguments);
         }
 
         public async ValueTask DisposeAsync()
