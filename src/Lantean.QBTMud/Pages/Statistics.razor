@@ -15,66 +15,88 @@
     </div>
 
     <div class="content-panel__body">
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="details-tab-contents content-panel__container">
-            <MudText Typo="Typo.subtitle2" Class="pt-6">@WebUiLocalizer.Translate("StatsDialog", "User statistics")</MudText>
-            <MudGrid>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "All-time upload:")"
-                              data-test-id="@TestIdHelper.For("AllTimeUploaded")">@DisplayHelpers.Size(ServerState?.AllTimeUploaded)</MudField>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "All-time download:")"
-                              data-test-id="@TestIdHelper.For("AllTimeDownloaded")">@DisplayHelpers.Size(ServerState?.AllTimeDownloaded)</MudField>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "All-time share ratio:")"
-                              data-test-id="@TestIdHelper.For("AllTimeShareRatio")">@DisplayHelpers.EmptyIfNull(ServerState?.GlobalRatio, format: "0.00")</MudField>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Session waste:")"
-                              data-test-id="@TestIdHelper.For("SessionWaste")">@DisplayHelpers.Size(ServerState?.TotalWastedSession)</MudField>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Connected peers:")"
-                              data-test-id="@TestIdHelper.For("ConnectedPeers")">@DisplayHelpers.EmptyIfNull(ServerState?.TotalPeerConnections)</MudField>
-                </MudItem>
-            </MudGrid>
+        <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("StatsDialog", "User statistics")</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Class="pt-0">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "All-time upload:")"
+                                  data-test-id="@TestIdHelper.For("AllTimeUploaded")">@DisplayHelpers.Size(ServerState?.AllTimeUploaded)</MudField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "All-time download:")"
+                                  data-test-id="@TestIdHelper.For("AllTimeDownloaded")">@DisplayHelpers.Size(ServerState?.AllTimeDownloaded)</MudField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "All-time share ratio:")"
+                                  data-test-id="@TestIdHelper.For("AllTimeShareRatio")">@DisplayHelpers.EmptyIfNull(ServerState?.GlobalRatio, format: "0.00")</MudField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Session waste:")"
+                                  data-test-id="@TestIdHelper.For("SessionWaste")">@DisplayHelpers.Size(ServerState?.TotalWastedSession)</MudField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Connected peers:")"
+                                  data-test-id="@TestIdHelper.For("ConnectedPeers")">@DisplayHelpers.EmptyIfNull(ServerState?.TotalPeerConnections)</MudField>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
 
-            <MudText Typo="Typo.subtitle2" Class="pt-6">@WebUiLocalizer.Translate("StatsDialog", "Cache statistics")</MudText>
-            <MudGrid>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Read cache hits:")"
-                              data-test-id="@TestIdHelper.For("ReadCacheHits")">@DisplayHelpers.Percentage(ServerState?.ReadCacheHits)</MudField>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Total buffer size:")"
-                              data-test-id="@TestIdHelper.For("TotalBufferSize")">@DisplayHelpers.Size(ServerState?.TotalBuffersSize)</MudField>
-                </MudItem>
-            </MudGrid>
+        <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("StatsDialog", "Cache statistics")</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Class="pt-0">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Read cache hits:")"
+                                  data-test-id="@TestIdHelper.For("ReadCacheHits")">@DisplayHelpers.Percentage(ServerState?.ReadCacheHits)</MudField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Total buffer size:")"
+                                  data-test-id="@TestIdHelper.For("TotalBufferSize")">@DisplayHelpers.Size(ServerState?.TotalBuffersSize)</MudField>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
 
-            <MudText Typo="Typo.subtitle2" Class="pt-6">@WebUiLocalizer.Translate("StatsDialog", "Performance statistics")</MudText>
-            <MudGrid>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Write cache overload:")"
-                              data-test-id="@TestIdHelper.For("WriteCacheOverload")">@DisplayHelpers.Percentage(ServerState?.WriteCacheOverload)</MudField>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Read cache overload:")"
-                              data-test-id="@TestIdHelper.For("ReadCacheOverload")">@DisplayHelpers.Percentage(ServerState?.ReadCacheOverload)</MudField>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Queued I/O jobs:")"
-                              data-test-id="@TestIdHelper.For("QueuedIoJobs")">@DisplayHelpers.EmptyIfNull(ServerState?.QueuedIOJobs)</MudField>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Average time in queue:")"
-                              data-test-id="@TestIdHelper.For("AverageTimeQueue")">@DisplayHelpers.EmptyIfNull(ServerState?.AverageTimeQueue, suffix: "ms")</MudField>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Total queued size:")"
-                              data-test-id="@TestIdHelper.For("TotalQueuedSize")">@DisplayHelpers.Size(ServerState?.TotalQueuedSize)</MudField>
-                </MudItem>
-            </MudGrid>
-        </MudContainer>
+        <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("StatsDialog", "Performance statistics")</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Class="pt-0">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Write cache overload:")"
+                                  data-test-id="@TestIdHelper.For("WriteCacheOverload")">@DisplayHelpers.Percentage(ServerState?.WriteCacheOverload)</MudField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Read cache overload:")"
+                                  data-test-id="@TestIdHelper.For("ReadCacheOverload")">@DisplayHelpers.Percentage(ServerState?.ReadCacheOverload)</MudField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Queued I/O jobs:")"
+                                  data-test-id="@TestIdHelper.For("QueuedIoJobs")">@DisplayHelpers.EmptyIfNull(ServerState?.QueuedIOJobs)</MudField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Average time in queue:")"
+                                  data-test-id="@TestIdHelper.For("AverageTimeQueue")">@DisplayHelpers.EmptyIfNull(ServerState?.AverageTimeQueue, suffix: "ms")</MudField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudField Label="@WebUiLocalizer.Translate("StatsDialog", "Total queued size:")"
+                                  data-test-id="@TestIdHelper.For("TotalQueuedSize")">@DisplayHelpers.Size(ServerState?.TotalQueuedSize)</MudField>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
     </div>
 </div>

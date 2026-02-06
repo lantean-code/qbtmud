@@ -92,7 +92,7 @@
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "When ratio reaches")" Value="MaxRatioEnabled" ValueChanged="MaxRatioEnabledChanged" data-test-id="@TestIdHelper.For("MaxRatioEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="float" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(!MaxRatioEnabled)" Min="0" Max="9998" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxRatioValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxRatio")" />
+                <MudNumericField T="float" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(!MaxRatioEnabled)" Min="0" Max="9998" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxRatioValidation" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("MaxRatio")" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "When total seeding time reaches")" Value="MaxSeedingTimeEnabled" ValueChanged="MaxSeedingTimeEnabledChanged" data-test-id="@TestIdHelper.For("MaxSeedingTimeEnabled")" />

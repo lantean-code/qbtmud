@@ -467,7 +467,7 @@ namespace Lantean.QBTMud.Pages
                 builder.OpenComponent<MudProgressLinear>(0);
                 builder.AddAttribute(1, "title", title);
                 builder.AddAttribute(2, nameof(MudProgressLinear.Color), color);
-                builder.AddAttribute(3, nameof(MudProgressLinear.Value), (value ?? 0) * 100);
+                builder.AddAttribute(3, nameof(MudProgressLinear.Value), (double)(value ?? 0) * 100);
                 builder.AddAttribute(4, nameof(MudProgressLinear.Class), "progress-expand");
                 builder.AddAttribute(5, nameof(MudProgressLinear.Size), Size.Large);
                 builder.AddAttribute(6, nameof(MudProgressLinear.ChildContent), (RenderFragment)(childBuilder =>
