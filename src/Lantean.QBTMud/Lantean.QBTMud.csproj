@@ -99,6 +99,15 @@
     <Exec Condition="Exists('$(WebUiTranslationsSource)')" Command="dotnet run --project $(MSBuildThisFileDirectory)../tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj -- --source &quot;$(WebUiTranslationsSource)&quot; --output &quot;$(WebUiTranslationsOutput)&quot; --mode $(WebUiTranslationsMode)" />
   </Target>
 
+  <Target Name="IncludeGeneratedWebUiTranslations" AfterTargets="GenerateWebUiTranslations" BeforeTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <Content Include="wwwroot/i18n/*.json">
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <TargetPath>wwwroot/i18n/%(Filename)%(Extension)</TargetPath>
+      </Content>
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <PackageReference Include="BlazorFlags" Version="1.0.0" />
     <PackageReference Include="ByteSize" Version="2.1.2" />
