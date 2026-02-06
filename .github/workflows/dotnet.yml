@@ -157,7 +157,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: qbt-mud-v${{ env.VERSION_SAFE }}-en.zip
+          asset_path: output/qbt-mud-v${{ env.VERSION_SAFE }}-en.zip
           asset_name: qbt-mud-v${{ env.VERSION_SAFE }}-en.zip
           asset_content_type: application/zip
         env:
@@ -168,7 +168,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: qbt-mud-v${{ env.VERSION_SAFE }}-intl.zip
+          asset_path: output/qbt-mud-v${{ env.VERSION_SAFE }}-intl.zip
           asset_name: qbt-mud-v${{ env.VERSION_SAFE }}-intl.zip
           asset_content_type: application/zip
         env:
