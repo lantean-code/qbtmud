@@ -38,7 +38,7 @@
 
   <PropertyGroup>
     <WebUiTranslationsMode Condition="'$(WebUiTranslationsMode)'==''">en</WebUiTranslationsMode>
-    <WebUiTranslationsSource>$(MSBuildThisFileDirectory)../external/qBittorrent/src/webui/www/translations</WebUiTranslationsSource>
+    <WebUiTranslationsSource>$(MSBuildThisFileDirectory)../../external/qBittorrent/src/webui/www/translations</WebUiTranslationsSource>
     <WebUiTranslationsOutput>$(MSBuildThisFileDirectory)wwwroot/i18n</WebUiTranslationsOutput>
   </PropertyGroup>
   
@@ -93,13 +93,10 @@
     <WriteLinesToFile File="$(ReleaseAotPayloadRoot)/README.txt" Lines="@(_CdnReadmeLines)" Overwrite="true" />
   </Target>
 
-  <Target Name="GenerateWebUiTranslations" BeforeTargets="Build" Condition="'$(WebUiTranslationsMode)' != ''">
+  <Target Name="GenerateWebUiTranslations" BeforeTargets="ResolveStaticWebAssets" Condition="'$(WebUiTranslationsMode)' != ''">
     <Message Text="Generating WebUI translations ($(WebUiTranslationsMode)) from $(WebUiTranslationsSource)" Importance="high" />
     <Warning Condition="!Exists('$(WebUiTranslationsSource)')" Text="WebUI translations source path not found: $(WebUiTranslationsSource). Run 'git submodule update --init --recursive'." />
-    <Exec Condition="Exists('$(WebUiTranslationsSource)')" Command="dotnet run --project $(MSBuildThisFileDirectory)../tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj -- --source &quot;$(WebUiTranslationsSource)&quot; --output &quot;$(WebUiTranslationsOutput)&quot; --mode $(WebUiTranslationsMode)" />
-  </Target>
-
-  <Target Name="IncludeGeneratedWebUiTranslations" AfterTargets="GenerateWebUiTranslations" BeforeTargets="ComputeFilesToPublish">
+    <Exec Condition="Exists('$(WebUiTranslationsSource)')" Command="dotnet run --project $(MSBuildThisFileDirectory)../../tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj -- --source &quot;$(WebUiTranslationsSource)&quot; --output &quot;$(WebUiTranslationsOutput)&quot; --mode $(WebUiTranslationsMode)" />
     <ItemGroup>
       <Content Include="wwwroot/i18n/*.json">
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
