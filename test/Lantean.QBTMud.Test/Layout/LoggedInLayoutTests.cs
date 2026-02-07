@@ -243,7 +243,7 @@ namespace Lantean.QBTMud.Test.Layout
         public async Task GIVEN_Unauthenticated_WHEN_Initialized_THEN_NavigatesToLoginAndShowsProgress()
         {
             DisposeDefaultTarget();
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, "magnet:?xt=urn:btih:ABC");
+            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, "magnet:?xt=urn:btih:ABC", Xunit.TestContext.Current.CancellationToken);
 
             _apiClientMock.Setup(c => c.CheckAuthState()).ReturnsAsync(false);
 
@@ -251,7 +251,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             _navigationManager.LastNavigationUri.Should().Be("login");
             target.FindComponent<MudProgressLinear>().Should().NotBeNull();
-            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey);
+            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
         }
 
@@ -683,11 +683,11 @@ namespace Lantean.QBTMud.Test.Layout
         [InlineData("http://example.com/file.txt")]
         public async Task GIVEN_InvalidPendingDownload_WHEN_Initialized_THEN_Removed(string pending)
         {
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, pending);
+            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, pending, Xunit.TestContext.Current.CancellationToken);
 
             RenderLayout(new List<IManagedTimer>());
 
-            var stored = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey);
+            var stored = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
 
             stored.Should().BeNull();
         }
@@ -696,11 +696,11 @@ namespace Lantean.QBTMud.Test.Layout
         public async Task GIVEN_PendingDownloadTooLong_WHEN_Initialized_THEN_Removed()
         {
             var pending = new string('a', 8200);
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, pending);
+            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, pending, Xunit.TestContext.Current.CancellationToken);
 
             RenderLayout(new List<IManagedTimer>());
 
-            var stored = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey);
+            var stored = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
 
             stored.Should().BeNull();
         }
@@ -711,15 +711,15 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             var magnet = "magnet:?xt=urn:btih:ABC";
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, magnet);
+            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
 
             _dialogWorkflowMock.Setup(d => d.InvokeAddTorrentLinkDialog(magnet)).Returns(Task.CompletedTask);
 
             RenderLayout(new List<IManagedTimer>());
 
             _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog(magnet), Times.Once);
-            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey);
-            var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(LastProcessedDownloadStorageKey);
+            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(LastProcessedDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
             lastProcessed.Should().Be(magnet);
         }
@@ -730,15 +730,15 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             var link = "http://example.com/file.torrent";
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, link);
+            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, link, Xunit.TestContext.Current.CancellationToken);
 
             _dialogWorkflowMock.Setup(d => d.InvokeAddTorrentLinkDialog(link)).Returns(Task.CompletedTask);
 
             RenderLayout(new List<IManagedTimer>());
 
             _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog(link), Times.Once);
-            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey);
-            var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(LastProcessedDownloadStorageKey);
+            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(LastProcessedDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
             lastProcessed.Should().Be(link);
         }
@@ -749,14 +749,14 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             var magnet = "magnet:?xt=urn:btih:ABC";
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, magnet);
-            await TestContext.SessionStorage.SetItemAsync(LastProcessedDownloadStorageKey, magnet);
+            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.SessionStorage.SetItemAsync(LastProcessedDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
 
             RenderLayout(new List<IManagedTimer>());
 
             _navigationManager.LastNavigationUri.Should().Be("./");
             _navigationManager.ForceLoad.Should().BeTrue();
-            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey);
+            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
         }
 
@@ -816,7 +816,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             var magnet = "magnet:?xt=urn:btih:ABC";
-            await TestContext.SessionStorage.SetItemAsync(LastProcessedDownloadStorageKey, magnet);
+            await TestContext.SessionStorage.SetItemAsync(LastProcessedDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
             _navigationManager.SetUri("http://localhost/#download=magnet:?xt=urn:btih:ABC");
 
             RenderLayout(new List<IManagedTimer>());

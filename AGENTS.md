@@ -19,6 +19,7 @@
 ## Build, test, publish
 - Prerequisites: .NET 10 SDK (use the version pinned by `global.json` if present).
   - Agents must verify the pinned SDK is available in the current environment; if `dotnet --info` does not list the required version, install it (e.g., via `dotnet-install.sh`) before running restore/build/test commands.
+  - Agents must include `--artifacts-path=/tmp/artifacts/qbtmud` on all `dotnet` commands (including `dotnet format`).
 - Restore & build:
   - `dotnet restore --artifacts-path=/tmp/artifacts/qbtmud`
   - `dotnet build  --artifacts-path=/tmp/artifacts/qbtmud`

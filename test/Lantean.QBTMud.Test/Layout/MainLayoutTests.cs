@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.AddSingleton<ILocalStorageService>(_localStorage);
 
             Mock.Get(_themeManagerService)
-                .Setup(service => service.EnsureInitialized())
+                .Setup(service => (service.EnsureInitialized()))
                 .Returns(Task.CompletedTask);
 
             TestContext.JSInterop.SetupVoid("qbt.removeBootstrapTheme", _ => true).SetVoidResult();
@@ -119,8 +119,8 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public async Task GIVEN_StoredSettings_WHEN_Rendered_THEN_UsesStoredValues()
         {
-            await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true);
-            await _localStorage.SetItemAsync("MainLayout.IsDarkMode", false);
+            await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true, Xunit.TestContext.Current.CancellationToken);
+            await _localStorage.SetItemAsync("MainLayout.IsDarkMode", false, Xunit.TestContext.Current.CancellationToken);
 
             var target = RenderLayout(CreateProbeBody());
             var probe = target.FindComponent<DrawerProbe>();
@@ -128,14 +128,14 @@ namespace Lantean.QBTMud.Test.Layout
             target.WaitForAssertion(() => probe.Instance.DrawerOpen.Should().BeTrue());
             target.FindComponent<MudThemeProvider>().Instance.IsDarkMode.Should().BeFalse();
 
-            Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+            Mock.Get(_themeManagerService).Verify(service => (service.EnsureInitialized()), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_DrawerOpenStoredFalse_WHEN_Rendered_THEN_UsesBreakpointDefault()
         {
-            await _localStorage.SetItemAsync("MainLayout.DrawerOpen", false);
-            await _localStorage.SetItemAsync("MainLayout.IsDarkMode", true);
+            await _localStorage.SetItemAsync("MainLayout.DrawerOpen", false, Xunit.TestContext.Current.CancellationToken);
+            await _localStorage.SetItemAsync("MainLayout.IsDarkMode", true, Xunit.TestContext.Current.CancellationToken);
 
             var target = RenderLayout(CreateProbeBody());
             var probe = target.FindComponent<DrawerProbe>();
@@ -147,7 +147,7 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public async Task GIVEN_MenuClicked_WHEN_ToggleDrawerInvoked_THEN_UpdatesStorage()
         {
-            await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true);
+            await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true, Xunit.TestContext.Current.CancellationToken);
 
             var target = RenderLayout(CreateProbeBody());
             var probe = target.FindComponent<DrawerProbe>();
@@ -159,14 +159,14 @@ namespace Lantean.QBTMud.Test.Layout
             await target.InvokeAsync(() => menuButton.Instance.OnClick.InvokeAsync());
 
             probe.Instance.DrawerOpen.Should().BeFalse();
-            var stored = await _localStorage.GetItemAsync<bool?>("MainLayout.DrawerOpen");
+            var stored = await _localStorage.GetItemAsync<bool?>("MainLayout.DrawerOpen", Xunit.TestContext.Current.CancellationToken);
             stored.Should().BeFalse();
         }
 
         [Fact]
         public async Task GIVEN_DrawerOpenChangedCallback_WHEN_ValueUnchanged_THEN_StateUnchanged()
         {
-            await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true);
+            await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true, Xunit.TestContext.Current.CancellationToken);
 
             var target = RenderLayout(CreateProbeBody());
             var probe = target.FindComponent<DrawerProbe>();
@@ -212,7 +212,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             await target.InvokeAsync(() => menu.Instance.DarkModeChanged.InvokeAsync(false));
 
-            var stored = await _localStorage.GetItemAsync<bool?>("MainLayout.IsDarkMode");
+            var stored = await _localStorage.GetItemAsync<bool?>("MainLayout.IsDarkMode", Xunit.TestContext.Current.CancellationToken);
             stored.Should().BeFalse();
         }
 
@@ -294,7 +294,7 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public async Task GIVEN_BreakpointChanged_WHEN_SmallScreen_THEN_DrawerCloses()
         {
-            await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true);
+            await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true, Xunit.TestContext.Current.CancellationToken);
 
             var target = RenderLayout(CreateProbeBody());
             var probe = target.FindComponent<DrawerProbe>();

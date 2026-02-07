@@ -126,19 +126,17 @@ namespace Lantean.QBTMud.Test.Infrastructure
             return result;
         }
 
-        protected virtual ValueTask Dispose(bool disposing)
+        protected virtual async ValueTask Dispose(bool disposing)
         {
             if (!_disposedValue)
             {
                 if (disposing)
                 {
-                    TestContext.Dispose();
+                    await TestContext.DisposeAsync();
                 }
 
                 _disposedValue = true;
             }
-
-            return ValueTask.CompletedTask;
         }
 
         public async ValueTask DisposeAsync()

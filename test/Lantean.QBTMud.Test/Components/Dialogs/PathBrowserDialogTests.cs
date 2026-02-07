@@ -102,7 +102,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var pathField = dialog.Component.FindComponent<MudTextField<string>>();
 
             var loadTask = dialog.Component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("D:/"));
-            await Task.Delay(350);
+            await Task.Delay(350, Xunit.TestContext.Current.CancellationToken);
 
             FindComponentByTestId<MudProgressLinear>(dialog.Component, "PathBrowserLoading").Should().NotBeNull();
 
@@ -143,7 +143,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await dialog.Component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("B/"));
             await dialog.Component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("C/"));
 
-            await Task.Delay(350);
+            await Task.Delay(350, Xunit.TestContext.Current.CancellationToken);
 
             var invocations = Mock.Get(_apiClient).Invocations;
             var lastPathInvocation = invocations.Last(invocation => invocation.Arguments.Count > 0 && invocation.Arguments[0] is string);

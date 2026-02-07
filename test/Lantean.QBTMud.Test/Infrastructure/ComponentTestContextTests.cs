@@ -17,9 +17,9 @@ namespace Lantean.QBTMud.Test.Infrastructure
         [Fact]
         public async Task GIVEN_LocalStorageStub_WHEN_RoundTrippingValues_THEN_ShouldReturnStoredValue()
         {
-            await _target.LocalStorage.SetItemAsync("Number", 42);
+            await _target.LocalStorage.SetItemAsync("Number", 42, Xunit.TestContext.Current.CancellationToken);
 
-            var value = await _target.LocalStorage.GetItemAsync<int>("Number");
+            var value = await _target.LocalStorage.GetItemAsync<int>("Number", Xunit.TestContext.Current.CancellationToken);
             value.Should().Be(42);
         }
 

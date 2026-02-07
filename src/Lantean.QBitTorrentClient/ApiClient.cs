@@ -591,7 +591,7 @@ namespace Lantean.QBitTorrentClient
 
         public async Task<AddTorrentResult> AddTorrent(AddTorrentParams addTorrentParams)
         {
-            var content = new MultipartFormDataContent();
+            using var content = new MultipartFormDataContent();
 
             if (addTorrentParams.Urls?.Any() == true)
             {
