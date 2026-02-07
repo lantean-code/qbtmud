@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using System.Globalization;
 using System.Net;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -174,7 +175,7 @@ namespace Lantean.QBTMud.Services.Localization
 
             _translations = new Dictionary<string, string>(loaded, StringComparer.Ordinal);
             _overrides = new Dictionary<string, string>(overrides, StringComparer.Ordinal);
-            _loadedLocale = loadedLocale;
+            _loadedLocale = CultureInfo.CurrentUICulture.Name;
         }
 
         private static Dictionary<string, string>? TryLoadEmbeddedEnglish()
@@ -216,7 +217,7 @@ namespace Lantean.QBTMud.Services.Localization
             {
                 throw;
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 _logger.LogWarning(ex, "Failed to request translation file {Path}.", relativePath);
                 return null;
@@ -302,6 +303,7 @@ namespace Lantean.QBTMud.Services.Localization
             if (!string.IsNullOrWhiteSpace(current.Name))
             {
                 candidates.Add(current.Name);
+                candidates.Add(current.Name.Replace("-", "_", StringComparison.Ordinal));
             }
 
             if (!string.IsNullOrWhiteSpace(current.TwoLetterISOLanguageName))

@@ -53,11 +53,6 @@ namespace Lantean.QBTMud.Services.Localization
         /// <inheritdoc />
         public async Task EnsureInitialized(CancellationToken cancellationToken = default)
         {
-            if (_initialized)
-            {
-                return;
-            }
-
             await _initLock.WaitAsync(cancellationToken);
             try
             {
@@ -89,7 +84,7 @@ namespace Lantean.QBTMud.Services.Localization
             {
                 throw;
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 _logger.LogWarning(ex, "Failed to request language catalog {Path}.", path);
                 return [];

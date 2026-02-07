@@ -684,7 +684,7 @@ namespace Lantean.QBTMud.Layout
 
             if (hasV4 && hasV6)
             {
-                return WebUiLocalizer.Translate("HttpServer", "External IPs: %1, %2", v4 ?? string.Empty, v6 ?? string.Empty);
+                return WebUiLocalizer.Translate("HttpServer", "External IPs: %1, %2", v4, v6);
             }
 
             return WebUiLocalizer.Translate("HttpServer", "External IP: %1%2", v4 ?? string.Empty, v6 ?? string.Empty);

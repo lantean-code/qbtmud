@@ -59,12 +59,14 @@ namespace WebUiTranslationsConverter
                 }
 
                 var translations = LoadTranslations(file);
-                var outputFile = Path.Combine(options.OutputPath, $"webui_{locale}.json");
+                var outputFileName = $"webui_{locale}.json";
+                var outputFile = BuildOutputFilePath(options.OutputPath, outputFileName);
                 WriteJson(outputFile, translations);
                 Console.WriteLine($"Generated {outputFile} ({translations.Count} entries)");
             }
 
-            WriteLanguagesManifest(Path.Combine(options.OutputPath, LanguagesFileName), locales);
+            var languagesManifestPath = BuildOutputFilePath(options.OutputPath, LanguagesFileName);
+            WriteLanguagesManifest(languagesManifestPath, locales);
 
             return 0;
         }
@@ -216,15 +218,12 @@ namespace WebUiTranslationsConverter
         {
             var locales = new List<string>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var mappedLocales = files
+                .Select(GetLocale)
+                .Where(locale => !string.IsNullOrWhiteSpace(locale));
 
-            foreach (var file in files)
+            foreach (var locale in mappedLocales)
             {
-                var locale = GetLocale(file);
-                if (string.IsNullOrWhiteSpace(locale))
-                {
-                    continue;
-                }
-
                 if (seen.Add(locale))
                 {
                     locales.Add(locale);
@@ -239,6 +238,12 @@ namespace WebUiTranslationsConverter
             var ordered = new SortedDictionary<string, string>(data, StringComparer.Ordinal);
             var json = JsonSerializer.Serialize(ordered, _options);
             File.WriteAllText(outputPath, json);
+        }
+
+        private static string BuildOutputFilePath(string outputDirectory, string fileName)
+        {
+            var safeFileName = Path.GetFileName(fileName);
+            return Path.Combine(outputDirectory, safeFileName);
         }
 
         private static void WriteLanguagesManifest(string outputPath, List<string> locales)

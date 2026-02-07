@@ -139,8 +139,8 @@ namespace Lantean.QBTMud.Test.Pages
             var columns = table.Instance.ColumnDefinitions;
 
             columns.Should().ContainSingle(column => column.Header == "Name");
-            columns.Should().ContainSingle(column => column.Header == "Torrent File" && column.Enabled == false);
-            columns.Should().ContainSingle(column => column.Header == "Error Message" && column.Enabled == false);
+            columns.Should().ContainSingle(column => column.Header == "Torrent File" && !column.Enabled);
+            columns.Should().ContainSingle(column => column.Header == "Error Message" && !column.Enabled);
             columns.Should().ContainSingle(column => column.Header == "Actions" && column.Width == 140);
         }
 
