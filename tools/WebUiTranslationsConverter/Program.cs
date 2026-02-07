@@ -221,13 +221,11 @@ namespace WebUiTranslationsConverter
             var mappedLocales = files
                 .Select(GetLocale)
                 .Where(locale => !string.IsNullOrWhiteSpace(locale));
+            var uniqueLocales = mappedLocales.Where(locale => seen.Add(locale));
 
-            foreach (var locale in mappedLocales)
+            foreach (var locale in uniqueLocales)
             {
-                if (seen.Add(locale))
-                {
-                    locales.Add(locale);
-                }
+                locales.Add(locale);
             }
 
             return locales;
