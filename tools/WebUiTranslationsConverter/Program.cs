@@ -243,6 +243,14 @@ namespace WebUiTranslationsConverter
         private static string BuildOutputFilePath(string outputDirectory, string fileName)
         {
             var safeFileName = Path.GetFileName(fileName);
+
+            // Ensure the file name is not treated as an absolute/rooted path so that
+            // Path.Combine does not ignore the outputDirectory argument.
+            if (Path.IsPathRooted(safeFileName))
+            {
+                safeFileName = safeFileName.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }
+
             return Path.Combine(outputDirectory, safeFileName);
         }
 
