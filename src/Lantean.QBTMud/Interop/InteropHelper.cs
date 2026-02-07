@@ -68,10 +68,11 @@ namespace Lantean.QBTMud.Interop
         /// </summary>
         /// <param name="runtime">The JavaScript runtime.</param>
         /// <param name="templateUrl">The handler template URL.</param>
+        /// <param name="handlerName">The display name for the handler registration.</param>
         /// <returns>The registration result.</returns>
-        public static async Task<MagnetRegistrationResult> RegisterMagnetHandler(this IJSRuntime runtime, string templateUrl)
+        public static async Task<MagnetRegistrationResult> RegisterMagnetHandler(this IJSRuntime runtime, string templateUrl, string handlerName)
         {
-            return await runtime.InvokeAsync<MagnetRegistrationResult>("qbt.registerMagnetHandler", templateUrl);
+            return await runtime.InvokeAsync<MagnetRegistrationResult>("qbt.registerMagnetHandler", templateUrl, handlerName);
         }
 
         /// <summary>

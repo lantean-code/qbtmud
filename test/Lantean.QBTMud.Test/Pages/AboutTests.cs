@@ -46,7 +46,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             GetChildContentText(FindComponentByTestId<MudText>(_target, "AboutVersionTitle").Instance.ChildContent)
                 .Should()
-                .Be("qBittorrent Version (64-bit) WebUI");
+                .Be("qBittorrent Version WebUI (64-bit)");
 
             ActivateTab("Software Used");
 
@@ -72,7 +72,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             GetChildContentText(FindComponentByTestId<MudText>(target, "AboutVersionTitle").Instance.ChildContent)
                 .Should()
-                .Be("qBittorrent Version (64-bit) WebUI");
+                .Be("qBittorrent Version WebUI (64-bit)");
 
             Mock.Get(_apiClient).Verify(client => client.GetBuildInfo(), Times.Once);
             Mock.Get(_apiClient).Verify(client => client.GetApplicationVersion(), Times.Never);

@@ -118,11 +118,11 @@ namespace Lantean.QBTMud.Test.Interop
             };
             _target.EnqueueResult(expected);
 
-            var result = await _target.RegisterMagnetHandler("TemplateUrl");
+            var result = await _target.RegisterMagnetHandler("TemplateUrl", "HandlerName");
 
             result.Should().BeSameAs(expected);
             _target.LastIdentifier.Should().Be("qbt.registerMagnetHandler");
-            _target.LastArguments.Should().ContainSingle().Which.Should().Be("TemplateUrl");
+            _target.LastArguments.Should().ContainInOrder("TemplateUrl", "HandlerName");
         }
 
         [Fact]

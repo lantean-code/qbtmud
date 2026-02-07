@@ -41,6 +41,9 @@
 ## Clarification Policy
 
 - Do not make assumptions. If any referenced code or behavior is unclear, ask for clarification before writing tests.
+
+## Line endings
+- Use CRLF line terminators for any files you write or modify.
 ## Test Execution
 
 - After each set of changes, follow the test execution instructions in `AGENTS.md`.

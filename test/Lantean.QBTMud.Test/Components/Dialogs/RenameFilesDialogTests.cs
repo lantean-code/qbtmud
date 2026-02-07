@@ -54,19 +54,23 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
-        public void GIVEN_ColumnsDefinitions_WHEN_Accessed_THEN_DefaultsAvailable()
+        public async Task GIVEN_ColumnsDefinitions_WHEN_Rendered_THEN_DefaultsAvailable()
         {
-            var columns = RenameFilesDialog.ColumnsDefinitions;
+            TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
+
+            var dialog = await _target.RenderDialogAsync(null);
+            var table = FindTable(dialog.Component);
+            var columns = table.Instance.ColumnDefinitions.ToList();
 
             columns.Should().HaveCount(2);
-            columns.Select(c => c.Header).Should().Contain(new[] { "Name", "Replacement" });
+            columns.Select(c => c.Header).Should().Contain(new[] { "Original", "Renamed" });
         }
 
         [Fact]
         public async Task GIVEN_RememberedPreferencesAndHierarchy_WHEN_Rendered_THEN_PopulatesStateAndFlattensTree()
         {
             var preferencesJson = "{\"rememberPreferences\":true,\"search\":\"Search\",\"useRegex\":true,\"matchAllOccurrences\":true,\"caseSensitive\":true,\"replace\":\"Replacement\",\"appliesTo\":2,\"includeFiles\":false,\"includeFolders\":true,\"fileEnumerationStart\":5,\"replaceAll\":true}";
-            await TestContext.LocalStorage.SetItemAsStringAsync(PreferencesKey, preferencesJson);
+            await TestContext.LocalStorage.SetItemAsStringAsync(PreferencesKey, preferencesJson, Xunit.TestContext.Current.CancellationToken);
 
             var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
             apiClientMock.Setup(c => c.GetTorrentContents("Hash", It.IsAny<int[]>())).ReturnsAsync(Array.Empty<FileData>());
@@ -135,7 +139,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             FindTextField(component, "RenameFilesSearch").Instance.Value.Should().Be("Search");
             FindSwitch(component, "RenameFilesRemember").Instance.Value.Should().BeTrue();
 
-            var json = await TestContext.LocalStorage.GetItemAsStringAsync(PreferencesKey);
+            var json = await TestContext.LocalStorage.GetItemAsStringAsync(PreferencesKey, Xunit.TestContext.Current.CancellationToken);
             json.Should().NotBeNull();
 
             using var document = JsonDocument.Parse(json!);
@@ -154,7 +158,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_RememberPreferencesDisabled_WHEN_OptionChanged_THEN_PreferencesCleared()
         {
-            await TestContext.LocalStorage.SetItemAsStringAsync(PreferencesKey, "{\"rememberPreferences\":true}");
+            await TestContext.LocalStorage.SetItemAsStringAsync(PreferencesKey, "{\"rememberPreferences\":true}", Xunit.TestContext.Current.CancellationToken);
             TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
 
             var dialog = await _target.RenderDialogAsync(null);
@@ -163,7 +167,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSwitchValue(component, "RenameFilesRemember", false);
             await SetSwitchValue(component, "RenameFilesUseRegex", true);
 
-            var json = await TestContext.LocalStorage.GetItemAsStringAsync(PreferencesKey);
+            var json = await TestContext.LocalStorage.GetItemAsStringAsync(PreferencesKey, Xunit.TestContext.Current.CancellationToken);
             json.Should().BeNull();
         }
 

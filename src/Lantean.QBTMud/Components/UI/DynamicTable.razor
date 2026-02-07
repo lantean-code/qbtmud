@@ -42,7 +42,7 @@
         {
             className = $"{className} table-header-cell--sortable";
         }
-        var columnHeader = column.IconOnly ? "" : column.Header;
+        var columnHeader = column.IconOnly ? "" : column.DisplayHeader;
         <MudTh Class="@className" Style="@(GetColumnStyle(column))" data-test-id="@TestIdHelper.For($"ColumnHeader-{column.Id}")">
             @if (column.SortSelector is not null)
             {
@@ -64,7 +64,7 @@
     @foreach (var column in GetColumns())
     {
         <TdExtended
-            DataLabel="@column.Header"
+            DataLabel="@column.DisplayHeader"
             Class="@(GetColumnClass(column, context))"
             Style="@(GetColumnStyle(column))"
             OnLongPress="@(c => OnLongPressInternal(c, context))"

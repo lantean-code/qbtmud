@@ -309,7 +309,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 CloseOnEscapeKey = false,
             };
 
-            var reference = await dialogService.ShowAsync<ShareRatioDialog>("Share ratio", parameters, options);
+            var reference = await dialogService.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", parameters, options);
 
             var dialog = provider.FindComponent<MudDialog>();
             var component = provider.FindComponent<ShareRatioDialog>();

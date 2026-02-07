@@ -343,12 +343,12 @@ namespace Lantean.QBTMud.Test.Services
             return args is not null && args.Length == 1;
         }
 
-        public Task InitializeAsync()
+        public ValueTask InitializeAsync()
         {
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
         }
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             _jsRuntime
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(

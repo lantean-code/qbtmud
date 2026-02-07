@@ -1,19 +1,19 @@
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-    <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddPeer">Add peer</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.AddCircle" IconColor="Color.Info" OnClick="AddPeer">@TranslatePeerList("Add peers...")</MudMenuItem>
     @if (ContextMenuItem is not null)
     {
-        <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="CopyPeerContextMenu">Copy IP:port</MudMenuItem>
-        <MudMenuItem Icon="@Icons.Material.Filled.DisabledByDefault" IconColor="Color.Info" OnClick="BanPeerContextMenu">Ban peer</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="CopyPeerContextMenu">@TranslatePeerList("Copy IP:port")</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.DisabledByDefault" IconColor="Color.Info" OnClick="BanPeerContextMenu">@TranslatePeerList("Ban peer permanently")</MudMenuItem>
     }
 </MudMenu>
 
 <div class="content-panel">
     <div class="content-panel__toolbar">
         <MudToolBar Gutters="false" Dense="true">
-            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddPeer">Add peer</MudIconButton>
-            <MudIconButton Icon="@Icons.Material.Filled.DisabledByDefault" Color="Color.Error" OnClick="BanPeerToolbar" Disabled="@(SelectedItem is null)">Ban peer</MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddPeer">@TranslatePeerList("Add peers...")</MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.DisabledByDefault" Color="Color.Error" OnClick="BanPeerToolbar" Disabled="@(SelectedItem is null)">@TranslatePeerList("Ban peer permanently")</MudIconButton>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" />
+            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="@TranslateApp("Choose Columns")" />
         </MudToolBar>
     </div>
 

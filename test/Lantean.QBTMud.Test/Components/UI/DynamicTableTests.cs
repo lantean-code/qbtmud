@@ -570,7 +570,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var tableId = "NoSelectionChange";
             var selectionKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSelection.{tableId}";
-            await TestContext.LocalStorage.SetItemAsync(selectionKey, new HashSet<string>());
+            await TestContext.LocalStorage.SetItemAsync(selectionKey, new HashSet<string>(), Xunit.TestContext.Current.CancellationToken);
 
             var selectionEvents = new List<HashSet<string>>();
 
@@ -595,10 +595,10 @@ namespace Lantean.QBTMud.Test.Components.UI
             var columnWidthsKey = $"DynamicTable{typeof(TestRow).Name}.ColumnWidths.{tableId}";
             var columnOrderKey = $"DynamicTable{typeof(TestRow).Name}.ColumnOrder.{tableId}";
 
-            await TestContext.LocalStorage.SetItemAsync(columnSelectionKey, new HashSet<string>(new[] { "score", "age" }, StringComparer.Ordinal));
-            await TestContext.LocalStorage.SetItemAsStringAsync(columnSortKey, "{\"SortColumn\":\"age\",\"SortDirection\":2}");
-            await TestContext.LocalStorage.SetItemAsync(columnWidthsKey, new Dictionary<string, int?> { ["age"] = 120, ["score"] = 90 });
-            await TestContext.LocalStorage.SetItemAsync(columnOrderKey, new Dictionary<string, int> { ["score"] = 0, ["age"] = 1 });
+            await TestContext.LocalStorage.SetItemAsync(columnSelectionKey, new HashSet<string>(new[] { "score", "age" }, StringComparer.Ordinal), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(columnSortKey, "{\"SortColumn\":\"age\",\"SortDirection\":2}", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(columnWidthsKey, new Dictionary<string, int?> { ["age"] = 120, ["score"] = 90 }, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(columnOrderKey, new Dictionary<string, int> { ["score"] = 0, ["age"] = 1 }, Xunit.TestContext.Current.CancellationToken);
 
             var selectedColumnsChanges = new List<HashSet<string>>();
             var sortColumnChanges = new List<string?>();
@@ -650,7 +650,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 { "age", 2 }
             };
 
-            await TestContext.LocalStorage.SetItemAsync(columnOrderKey, columnOrder);
+            await TestContext.LocalStorage.SetItemAsync(columnOrderKey, columnOrder, Xunit.TestContext.Current.CancellationToken);
 
             var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
             {
@@ -735,7 +735,7 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             sortColumnEvents.Count.Should().Be(initialColumnEvents);
             sortDirectionEvents.Count.Should().Be(initialDirectionEvents);
-            var storedSort = await TestContext.LocalStorage.GetItemAsync<object>($"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}");
+            var storedSort = await TestContext.LocalStorage.GetItemAsync<object>($"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}", Xunit.TestContext.Current.CancellationToken);
             storedSort.Should().BeNull();
         }
 
@@ -845,7 +845,7 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             var snapshot = TestContext.LocalStorage.Snapshot();
             var widthsKey = snapshot.Keys.Single(k => k.Contains("ColumnWidths", StringComparison.Ordinal));
-            var storedWidths = await TestContext.LocalStorage.GetItemAsync<Dictionary<string, int?>>(widthsKey);
+            var storedWidths = await TestContext.LocalStorage.GetItemAsync<Dictionary<string, int?>>(widthsKey, Xunit.TestContext.Current.CancellationToken);
             storedWidths.Should().BeEquivalentTo(changedWidths);
             dialogWorkflowMock.VerifyAll();
         }
@@ -1183,7 +1183,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var snapshot = TestContext.LocalStorage.Snapshot();
             snapshot.Keys.Should().Contain(k => k.Contains("ColumnOrder", StringComparison.Ordinal));
             var orderKey = snapshot.Keys.Single(k => k.Contains("ColumnOrder", StringComparison.Ordinal));
-            var storedOrder = await TestContext.LocalStorage.GetItemAsync<Dictionary<string, int>>(orderKey);
+            var storedOrder = await TestContext.LocalStorage.GetItemAsync<Dictionary<string, int>>(orderKey, Xunit.TestContext.Current.CancellationToken);
             storedOrder.Should().BeEquivalentTo(changedOrder);
             dialogWorkflowMock.VerifyAll();
         }
@@ -1253,7 +1253,7 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             var cell = target.FindComponents<TdExtended>().First().Find("td");
             await target.InvokeAsync(() => cell.TriggerEventAsync("onlongpress", new LongPressEventArgs()));
-            await Task.Delay(1500);
+            await (Task.Delay(1500, Xunit.TestContext.Current.CancellationToken));
 
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.TriggerEventAsync("onclick", new MouseEventArgs()));
@@ -1483,7 +1483,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var tableId = "VisibleDefaultSort";
             var selectionKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSelection.{tableId}";
-            await TestContext.LocalStorage.SetItemAsync(selectionKey, new HashSet<string>(new[] { "age", "score" }, StringComparer.Ordinal));
+            await TestContext.LocalStorage.SetItemAsync(selectionKey, new HashSet<string>(new[] { "age", "score" }, StringComparer.Ordinal), Xunit.TestContext.Current.CancellationToken);
 
             var columns = CreateColumns();
             var sortEvents = new List<string?>();
@@ -1508,7 +1508,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var tableId = "HiddenSort";
             var sortKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}";
-            await TestContext.LocalStorage.SetItemAsStringAsync(sortKey, "{\"SortColumn\":\"name\",\"SortDirection\":1}");
+            await TestContext.LocalStorage.SetItemAsStringAsync(sortKey, "{\"SortColumn\":\"name\",\"SortDirection\":1}", Xunit.TestContext.Current.CancellationToken);
 
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             dialogWorkflowMock
@@ -1528,7 +1528,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
 
             sortEvents.Should().Contain("age");
-            var storedSort = await TestContext.LocalStorage.GetItemAsStringAsync(sortKey);
+            var storedSort = await TestContext.LocalStorage.GetItemAsStringAsync(sortKey, Xunit.TestContext.Current.CancellationToken);
             storedSort.Should().Contain("\"sortColumn\":\"age\"");
         }
 
@@ -1592,7 +1592,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var tableId = "MissingSort";
             var sortKey = $"DynamicTable{typeof(TestRow).Name}.ColumnSort.{tableId}";
-            await TestContext.LocalStorage.SetItemAsStringAsync(sortKey, "{\"SortColumn\":\"missing\",\"SortDirection\":2}");
+            await TestContext.LocalStorage.SetItemAsStringAsync(sortKey, "{\"SortColumn\":\"missing\",\"SortDirection\":2}", Xunit.TestContext.Current.CancellationToken);
 
             var items = new List<TestRow>
             {

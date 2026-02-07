@@ -20,7 +20,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             _jsRuntime.EnqueueResult(null);
 
-            var result = await _target.GetItemAsync<string>("Missing");
+            var result = await _target.GetItemAsync<string>("Missing", Xunit.TestContext.Current.CancellationToken);
 
             result.Should().BeNull();
             _jsRuntime.LastIdentifier.Should().Be("localStorage.getItem");
@@ -32,7 +32,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             _jsRuntime.EnqueueResult("5");
 
-            var result = await _target.GetItemAsync<int>("Count");
+            var result = await _target.GetItemAsync<int>("Count", Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(5);
             _jsRuntime.LastIdentifier.Should().Be("localStorage.getItem");
@@ -44,7 +44,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             _jsRuntime.EnqueueResult("StatusValue");
 
-            var result = await _target.GetItemAsStringAsync("Status");
+            var result = await _target.GetItemAsStringAsync("Status", Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be("StatusValue");
             _jsRuntime.LastIdentifier.Should().Be("localStorage.getItem");
@@ -56,7 +56,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var payload = new SamplePayload("Name", 1);
 
-            await _target.SetItemAsync("Payload", payload);
+            await _target.SetItemAsync("Payload", payload, Xunit.TestContext.Current.CancellationToken);
 
             _jsRuntime.LastIdentifier.Should().Be("localStorage.setItem");
             _jsRuntime.LastArguments.Should().NotBeNull();
@@ -68,7 +68,7 @@ namespace Lantean.QBTMud.Test.Services
             jsonValue.Should().Contain("\"sortColumn\":\"Name\"");
             jsonValue.Should().Contain("\"sortDirection\":1");
 
-            await _target.RemoveItemAsync("Payload");
+            await _target.RemoveItemAsync("Payload", Xunit.TestContext.Current.CancellationToken);
 
             _jsRuntime.LastIdentifier.Should().Be("localStorage.removeItem");
             _jsRuntime.LastArguments.Should().BeEquivalentTo(new object?[] { "Payload" });
@@ -77,7 +77,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_RawString_WHEN_SetItemAsStringAsync_THEN_WritesPlainValue()
         {
-            await _target.SetItemAsStringAsync("Status", "StatusValue");
+            await _target.SetItemAsStringAsync("Status", "StatusValue", Xunit.TestContext.Current.CancellationToken);
 
             _jsRuntime.LastIdentifier.Should().Be("localStorage.setItem");
             _jsRuntime.LastArguments.Should().BeEquivalentTo(new object?[] { "Status", "StatusValue" });

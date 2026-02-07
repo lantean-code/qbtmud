@@ -86,9 +86,9 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_ActionColumnSortSelectorNull_WHEN_ActionClicked_THEN_UsesRowData()
         {
-            var column = Categories.ColumnsDefinitions.Single(definition => definition.Header == "Actions");
-            var originalSelector = column.SortSelector;
-            column.SortSelector = _ => null;
+            IRenderedComponent<Categories>? target = null;
+            Func<Category, object?>? originalSelector = null;
+            ColumnDefinition<Category>? column = null;
 
             try
             {
@@ -96,10 +96,15 @@ namespace Lantean.QBTMud.Test.Pages
                     .Setup(client => client.RemoveCategories("Category"))
                     .Returns(Task.CompletedTask);
 
-                var target = RenderPage(new Dictionary<string, Category>
+                target = RenderPage(new Dictionary<string, Category>
                 {
                     { "Category", new Category("Category", "SavePath") }
                 });
+
+                var table = target.FindComponent<DynamicTable<Category>>();
+                column = table.Instance.ColumnDefinitions.Single(definition => definition.Header == "Actions");
+                originalSelector = column.SortSelector;
+                column.SortSelector = _ => null;
 
                 var editButton = FindIconButton(target, Icons.Material.Filled.Edit);
                 await target.InvokeAsync(() => editButton.Instance.OnClick.InvokeAsync());
@@ -112,7 +117,10 @@ namespace Lantean.QBTMud.Test.Pages
             }
             finally
             {
-                column.SortSelector = originalSelector;
+                if (column is not null && originalSelector is not null)
+                {
+                    column.SortSelector = originalSelector;
+                }
             }
         }
 
@@ -168,7 +176,9 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_ColumnDefinitions_WHEN_Requested_THEN_ContainsExpectedColumns()
         {
-            var columns = Categories.ColumnsDefinitions;
+            var target = RenderPage();
+            var table = target.FindComponent<DynamicTable<Category>>();
+            var columns = table.Instance.ColumnDefinitions;
 
             columns.Should().ContainSingle(column => column.Header == "Name");
             columns.Should().ContainSingle(column => column.Header == "Save path");

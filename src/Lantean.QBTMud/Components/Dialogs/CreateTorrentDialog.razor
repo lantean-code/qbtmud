@@ -7,26 +7,26 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <PathAutocomplete Label="Source path"
+                <PathAutocomplete Label="@Translate("Source path")"
                                   Value="@_sourcePath"
                                   ValueChanged="OnSourcePathChanged"
                                   Required="true"
                                   ForceValidation="@_forceSourcePathValidation"
-                                  RequiredErrorText="Source path is required."
+                                  RequiredErrorText="@Translate("Source path is required.")"
                                   Mode="DirectoryContentMode.All"
                                   AutoFocus="true"
                                   data-test-id="@TestIdHelper.For("SourcePath")" />
             </MudItem>
             <MudItem xs="12">
-                <PathAutocomplete Label="Torrent file path (optional)"
+                <PathAutocomplete Label="@Translate("Torrent file path (optional)")"
                                   @bind-Value="_torrentFilePath"
                                   Mode="DirectoryContentMode.Directories"
-                                  HelperText="Leave empty to download from the task list."
+                                  HelperText="@Translate("Leave empty to download from the task list.")"
                                   data-test-id="@TestIdHelper.For("TorrentFilePath")" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="int?" Label="Piece size" @bind-Value="_pieceSize" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("PieceSize")">
-                    <MudSelectItem T="int?" Value="@((int?)null)">Automatic</MudSelectItem>
+                <MudSelect T="int?" Label="@Translate("Piece size")" @bind-Value="_pieceSize" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("PieceSize")">
+                    <MudSelectItem T="int?" Value="@((int?)null)">@Translate("Automatic")</MudSelectItem>
                     @foreach (var option in PieceSizeOptions)
                     {
                         <MudSelectItem T="int?" Value="@((int?)option)">@DisplayHelpers.Size(option)</MudSelectItem>
@@ -34,15 +34,15 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <FieldSwitch Label="Private torrent" @bind-Value="_isPrivate" data-test-id="@TestIdHelper.For("PrivateTorrent")" />
+                <FieldSwitch Label="@Translate("Private torrent")" @bind-Value="_isPrivate" data-test-id="@TestIdHelper.For("PrivateTorrent")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Start seeding immediately" @bind-Value="_startSeeding" data-test-id="@TestIdHelper.For("StartSeeding")" />
+                <FieldSwitch Label="@Translate("Start seeding immediately")" @bind-Value="_startSeeding" data-test-id="@TestIdHelper.For("StartSeeding")" />
             </MudItem>
             @if (SupportsTorrentFormat)
             {
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="string" Label="Torrent format" @bind-Value="_torrentFormat" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentFormat")">
+                    <MudSelect T="string" Label="@Translate("Torrent format")" @bind-Value="_torrentFormat" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentFormat")">
                         <MudSelectItem Value="@("v2")">V2</MudSelectItem>
                         <MudSelectItem Value="@("hybrid")">Hybrid</MudSelectItem>
                         <MudSelectItem Value="@("v1")">V1</MudSelectItem>
@@ -52,48 +52,48 @@
             else
             {
                 <MudItem xs="12" sm="6">
-                    <FieldSwitch Label="Optimize alignment" @bind-Value="_optimizeAlignment" data-test-id="@TestIdHelper.For("OptimizeAlignment")" />
+                    <FieldSwitch Label="@Translate("Optimize alignment")" @bind-Value="_optimizeAlignment" data-test-id="@TestIdHelper.For("OptimizeAlignment")" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudNumericField T="int"
-                                     Label="Padded file size limit (KiB)"
+                                     Label="@Translate("Padded file size limit (KiB)")"
                                      @bind-Value="_paddedFileSizeLimitKiB"
                                      Variant="Variant.Outlined"
                                      ShrinkLabel="true"
                                      Min="-1"
                                      Disabled="@(!_optimizeAlignment)"
-                                     HelperText="-1 disables padding"
+                                     HelperText="@Translate("-1 disables padding")"
                                      data-test-id="@TestIdHelper.For("PaddedFileSizeLimit")" />
                 </MudItem>
             }
             <MudItem xs="12">
-                <MudTextField Label="Tracker URLs"
+                <MudTextField Label="@Translate("Tracker URLs")"
                               @bind-Value="_trackers"
                               Lines="4"
                               Variant="Variant.Outlined"
                               ShrinkLabel="true"
-                              HelperText="Enter one URL per line."
+                              HelperText="@Translate("Enter one URL per line.")"
                               data-test-id="@TestIdHelper.For("TrackerUrls")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField Label="Web seed URLs"
+                <MudTextField Label="@Translate("Web seed URLs")"
                               @bind-Value="_urlSeeds"
                               Lines="4"
                               Variant="Variant.Outlined"
                               ShrinkLabel="true"
-                              HelperText="Enter one URL per line."
+                              HelperText="@Translate("Enter one URL per line.")"
                               data-test-id="@TestIdHelper.For("WebSeedUrls")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField Label="Comments" @bind-Value="_comment" Lines="3" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Comments")" />
+                <MudTextField Label="@Translate("Comments")" @bind-Value="_comment" Lines="3" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Comments")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField Label="Source" @bind-Value="_source" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Source")" />
+                <MudTextField Label="@Translate("Source")" @bind-Value="_source" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Source")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("CreateTorrentClose")">Close</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("CreateTorrentSubmit")">Create</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("CreateTorrentClose")">@Translate("Close")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("CreateTorrentSubmit")">@Translate("Create")</MudButton>
     </DialogActions>
 </MudDialog>

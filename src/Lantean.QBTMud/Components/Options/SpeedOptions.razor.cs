@@ -15,45 +15,53 @@ namespace Lantean.QBTMud.Components.Options
         protected TimeSpan ScheduleTo { get; private set; }
         protected int SchedulerDays { get; private set; }
 
-        protected Func<int, string?> UpLimitValidation = value =>
+        protected Func<int, string?> UpLimitValidation => UpLimitValidationFunc;
+
+        protected Func<int, string?> DlLimitValidation => DlLimitValidationFunc;
+
+        protected Func<int, string?> AltUpLimitValidation => AltUpLimitValidationFunc;
+
+        protected Func<int, string?> AltDlLimitValidation => AltDlLimitValidationFunc;
+
+        private string? UpLimitValidationFunc(int value)
         {
             if (value < 0)
             {
-                return "Global upload rate limit must be greater than 0 or disabled.";
+                return WebUiLocalizer.Translate("HttpServer", "Global upload rate limit must be greater than 0 or disabled.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> DlLimitValidation = value =>
+        private string? DlLimitValidationFunc(int value)
         {
             if (value < 0)
             {
-                return "Global download rate limit must be greater than 0 or disabled.";
+                return WebUiLocalizer.Translate("HttpServer", "Global download rate limit must be greater than 0 or disabled.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> AltUpLimitValidation = value =>
+        private string? AltUpLimitValidationFunc(int value)
         {
             if (value < 0)
             {
-                return "Alternative upload rate limit must be greater than 0 or disabled.";
+                return WebUiLocalizer.Translate("HttpServer", "Alternative upload rate limit must be greater than 0 or disabled.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> AltDlLimitValidation = value =>
+        private string? AltDlLimitValidationFunc(int value)
         {
             if (value < 0)
             {
-                return "Alternative download rate limit must be greater than 0 or disabled.";
+                return WebUiLocalizer.Translate("HttpServer", "Alternative download rate limit must be greater than 0 or disabled.");
             }
 
             return null;
-        };
+        }
 
         protected override bool SetOptions()
         {

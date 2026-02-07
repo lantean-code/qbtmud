@@ -368,3 +368,7 @@ coverage-report/
 TestResults/
 /refs/
 /ref/
+/src/Lantean.QBTMud/wwwroot/i18n/*.json
+!/src/Lantean.QBTMud/wwwroot/i18n/webui_en.json
+!/src/Lantean.QBTMud/wwwroot/i18n/webui_aliases.json
+!/src/Lantean.QBTMud/wwwroot/i18n/webui_overrides_en.json

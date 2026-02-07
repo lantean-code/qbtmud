@@ -74,7 +74,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await _target.InvokeAsync(() => select.Instance.SelectedValuesChanged.InvokeAsync(values));
 
-            var stored = await TestContext.LocalStorage.GetItemAsync<IEnumerable<string>>(SelectedTypesStorageKey);
+            var stored = await TestContext.LocalStorage.GetItemAsync<IEnumerable<string>>(SelectedTypesStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().BeEquivalentTo(values);
         }
 
@@ -86,8 +86,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             var func = select.Instance.MultiSelectionTextFunc!;
             func.Invoke(new List<string?> { "Normal", "Info", "Warning", "Critical" }).Should().Be("All");
-            func.Invoke(new List<string?> { "Normal" }).Should().Be("Normal");
-            func.Invoke(new List<string?> { "Normal", "Warning" }).Should().Be("2 selected");
+            func.Invoke(new List<string?> { "Normal" }).Should().Be("Normal Messages");
+            func.Invoke(new List<string?> { "Normal", "Warning" }).Should().Be("2 items");
         }
 
         [Fact]
@@ -232,7 +232,7 @@ namespace Lantean.QBTMud.Test.Pages
             var values = new[] { "Info", "Critical" };
 
             await using var localContext = new ComponentTestContext();
-            await localContext.LocalStorage.SetItemAsync(SelectedTypesStorageKey, values);
+            await localContext.LocalStorage.SetItemAsync(SelectedTypesStorageKey, values, Xunit.TestContext.Current.CancellationToken);
 
             var apiClientMock = new Mock<IApiClient>();
             apiClientMock

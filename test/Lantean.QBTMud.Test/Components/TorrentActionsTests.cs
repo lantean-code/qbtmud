@@ -71,8 +71,8 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseSnackbarMock();
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             dialogWorkflowMock.Setup(d => d.InvokeDeleteTorrentDialog(false, Hashes("Hash"))).ReturnsAsync(true);
-            dialogWorkflowMock.Setup(d => d.InvokeStringFieldDialog("Set Location", "Location", "SavePath", It.IsAny<Func<string, Task>>())).Returns<string, string, string?, Func<string, Task>>((_, _, _, cb) => cb("SavePath"));
-            dialogWorkflowMock.Setup(d => d.InvokeStringFieldDialog("Rename", "Name", "Name", It.IsAny<Func<string, Task>>())).Returns<string, string, string?, Func<string, Task>>((_, _, _, cb) => cb("Name"));
+            dialogWorkflowMock.Setup(d => d.InvokeStringFieldDialog("Set location", "Location:", "SavePath", It.IsAny<Func<string, Task>>())).Returns<string, string, string?, Func<string, Task>>((_, _, _, cb) => cb("SavePath"));
+            dialogWorkflowMock.Setup(d => d.InvokeStringFieldDialog("Rename", "New name:", "Name", It.IsAny<Func<string, Task>>())).Returns<string, string, string?, Func<string, Task>>((_, _, _, cb) => cb("Name"));
             dialogWorkflowMock.Setup(d => d.InvokeRenameFilesDialog("Hash")).Returns(Task.CompletedTask);
 
             var navigation = TestContext.Services.GetRequiredService<NavigationManager>();

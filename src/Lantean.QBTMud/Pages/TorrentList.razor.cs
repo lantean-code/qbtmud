@@ -3,6 +3,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
@@ -36,6 +37,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         public ISnackbar Snackbar { get; set; } = default!;
+
+        [Inject]
+        public IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
@@ -94,6 +98,7 @@ namespace Lantean.QBTMud.Pages
         private Task? _locationChangeRenderTask;
 
         private bool _toolbarButtonsEnabled;
+        private IReadOnlyList<ColumnDefinition<Torrent>>? _columnsDefinitions;
 
         protected override void OnInitialized()
         {
@@ -364,47 +369,126 @@ namespace Lantean.QBTMud.Pages
 
         protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions.Where(c => c.Id != "#" || Preferences?.QueueingEnabled == true);
 
-        public static List<ColumnDefinition<Torrent>> ColumnsDefinitions { get; } =
-        [
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("#", t => t.Priority),
-            ColumnDefinitionHelper.CreateColumnDefinition("Icon", t => t.State, IconColumn, iconOnly: true, width: 25, tdClass: "table-icon"),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Name", t => t.Name, width: 400),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Size", t => t.Size, t => DisplayHelpers.Size(t.Size)),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Total Size", t => t.TotalSize, t => DisplayHelpers.Size(t.TotalSize), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition("Done", t => t.Progress, ProgressBarColumn, tdClass: "table-progress"),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Status", t => t.State, t => DisplayHelpers.State(t.State)),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Seeds", t => t.NumberSeeds),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Peers", t => t.NumberLeeches),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Down Speed", t => t.DownloadSpeed, t => DisplayHelpers.Speed(t.DownloadSpeed)),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Up Speed", t => t.UploadSpeed, t => DisplayHelpers.Speed(t.UploadSpeed)),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("ETA", t => t.EstimatedTimeOfArrival, t => DisplayHelpers.Duration(t.EstimatedTimeOfArrival)),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Ratio", t => t.Ratio, t => t.Ratio.ToString("0.00")),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Popularity", t => t.Popularity, t => t.Popularity.ToString("0.00")),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Category", t => t.Category),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Tags", t => t.Tags, t => string.Join(", ", t.Tags)),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Added On", t => t.AddedOn, t => DisplayHelpers.DateTime(t.AddedOn)),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Completed On", t => t.CompletionOn, t => DisplayHelpers.DateTime(t.CompletionOn), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Tracker", t => t.Tracker, enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Down Limit", t => t.DownloadLimit, t => DisplayHelpers.Size(t.DownloadLimit), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Up Limit", t => t.UploadLimit, t => DisplayHelpers.Size(t.UploadLimit), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Downloaded", t => t.Downloaded, t => DisplayHelpers.Size(t.Downloaded), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Uploaded", t => t.Uploaded, t => DisplayHelpers.Size(t.Uploaded), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Session Download", t => t.DownloadedSession, t => DisplayHelpers.Size(t.DownloadedSession), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Session Upload", t => t.UploadedSession, t => DisplayHelpers.Size(t.UploadedSession), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Remaining", t => t.AmountLeft, t => DisplayHelpers.Size(t.AmountLeft), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Time Active", t => t.TimeActive, t => DisplayHelpers.Duration(t.TimeActive), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Save path", t => t.SavePath, enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Completed", t => t.Completed, t => DisplayHelpers.Size(t.Completed), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Ratio Limit", t => t.RatioLimit, t => DisplayHelpers.RatioLimit(t.RatioLimit), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Last Seen Complete", t => t.SeenComplete, t => DisplayHelpers.DateTime(t.SeenComplete), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Last Activity", t => t.LastActivity, t => DisplayHelpers.DateTime(t.LastActivity), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Availability", t => t.Availability, t => t.Availability.ToString("0.##"), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Incomplete Save Path", t => t.DownloadPath, t => DisplayHelpers.EmptyIfNull(t.DownloadPath), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Info Hash v1", t => t.InfoHashV1, t => DisplayHelpers.EmptyIfNull(t.InfoHashV1), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Info Hash v2", t => t.InfoHashV2, t => DisplayHelpers.EmptyIfNull(t.InfoHashV2), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Reannounce In", t => t.Reannounce, t => DisplayHelpers.Duration(t.Reannounce), enabled: false),
-            ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("Private", t => t.IsPrivate, t => DisplayHelpers.Bool(t.IsPrivate), enabled: false),
-        ];
+        private IReadOnlyList<ColumnDefinition<Torrent>> ColumnsDefinitions => _columnsDefinitions ??= BuildColumnsDefinitions(WebUiLocalizer);
+
+        internal static IReadOnlyList<ColumnDefinition<Torrent>> BuildColumnsDefinitions(IWebUiLocalizer localizer)
+        {
+            var progressColumn = CreateProgressBarColumn(localizer);
+            var iconColumn = CreateIconColumn();
+            var statusIconLabel = localizer.Translate("TransferListModel", "Status Icon");
+            var nameLabel = localizer.Translate("TransferListModel", "Name");
+            var sizeLabel = localizer.Translate("TransferListModel", "Size");
+            var totalSizeLabel = localizer.Translate("TransferListModel", "Total Size");
+            var progressLabel = localizer.Translate("TransferListModel", "Progress");
+            var statusLabel = localizer.Translate("TransferListModel", "Status");
+            var seedsLabel = localizer.Translate("TransferListModel", "Seeds");
+            var peersLabel = localizer.Translate("TransferListModel", "Peers");
+            var downSpeedLabel = localizer.Translate("TransferListModel", "Down Speed");
+            var upSpeedLabel = localizer.Translate("TransferListModel", "Up Speed");
+            var etaLabel = localizer.Translate("TransferListModel", "ETA");
+            var ratioLabel = localizer.Translate("TransferListModel", "Ratio");
+            var popularityLabel = localizer.Translate("TransferListModel", "Popularity");
+            var categoryLabel = localizer.Translate("TransferListModel", "Category");
+            var tagsLabel = localizer.Translate("TransferListModel", "Tags");
+            var addedOnLabel = localizer.Translate("TransferListModel", "Added On");
+            var completedOnLabel = localizer.Translate("TransferListModel", "Completed On");
+            var trackerLabel = localizer.Translate("TransferListModel", "Tracker");
+            var downLimitLabel = localizer.Translate("TransferListModel", "Down Limit");
+            var upLimitLabel = localizer.Translate("TransferListModel", "Up Limit");
+            var downloadedLabel = localizer.Translate("TransferListModel", "Downloaded");
+            var uploadedLabel = localizer.Translate("TransferListModel", "Uploaded");
+            var sessionDownloadLabel = localizer.Translate("TransferListModel", "Session Download");
+            var sessionUploadLabel = localizer.Translate("TransferListModel", "Session Upload");
+            var remainingLabel = localizer.Translate("TransferListModel", "Remaining");
+            var timeActiveLabel = localizer.Translate("TransferListModel", "Time Active");
+            var savePathLabel = localizer.Translate("TransferListModel", "Save path");
+            var completedLabel = localizer.Translate("TransferListModel", "Completed");
+            var ratioLimitLabel = localizer.Translate("TransferListModel", "Ratio Limit");
+            var lastSeenLabel = localizer.Translate("TransferListModel", "Last Seen Complete");
+            var lastActivityLabel = localizer.Translate("TransferListModel", "Last Activity");
+            var availabilityLabel = localizer.Translate("TransferListModel", "Availability");
+            var incompleteSavePathLabel = localizer.Translate("TransferListModel", "Incomplete Save Path");
+            var infoHashV1Label = localizer.Translate("TransferListModel", "Info Hash v1");
+            var infoHashV2Label = localizer.Translate("TransferListModel", "Info Hash v2");
+            var reannounceLabel = localizer.Translate("TransferListModel", "Reannounce In");
+            var privateLabel = localizer.Translate("TransferListModel", "Private");
+
+            return new List<ColumnDefinition<Torrent>>
+            {
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>("#", t => t.Priority),
+                ColumnDefinitionHelper.CreateColumnDefinition(statusIconLabel, t => t.State, iconColumn, iconOnly: true, width: 25, tdClass: "table-icon"),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(nameLabel, t => t.Name, width: 400),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(sizeLabel, t => t.Size, t => DisplayHelpers.Size(t.Size)),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(totalSizeLabel, t => t.TotalSize, t => DisplayHelpers.Size(t.TotalSize), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition(progressLabel, t => t.Progress, progressColumn, tdClass: "table-progress"),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(statusLabel, t => t.State, t => DisplayHelpers.State(t.State)),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(seedsLabel, t => t.NumberSeeds),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(peersLabel, t => t.NumberLeeches),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(downSpeedLabel, t => t.DownloadSpeed, t => DisplayHelpers.Speed(t.DownloadSpeed)),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(upSpeedLabel, t => t.UploadSpeed, t => DisplayHelpers.Speed(t.UploadSpeed)),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(etaLabel, t => t.EstimatedTimeOfArrival, t => DisplayHelpers.Duration(t.EstimatedTimeOfArrival)),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(ratioLabel, t => t.Ratio, t => t.Ratio.ToString("0.00")),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(popularityLabel, t => t.Popularity, t => t.Popularity.ToString("0.00")),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(categoryLabel, t => t.Category),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(tagsLabel, t => t.Tags, t => string.Join(", ", t.Tags)),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(addedOnLabel, t => t.AddedOn, t => DisplayHelpers.DateTime(t.AddedOn)),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(completedOnLabel, t => t.CompletionOn, t => DisplayHelpers.DateTime(t.CompletionOn), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(trackerLabel, t => t.Tracker, enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(downLimitLabel, t => t.DownloadLimit, t => DisplayHelpers.Size(t.DownloadLimit), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(upLimitLabel, t => t.UploadLimit, t => DisplayHelpers.Size(t.UploadLimit), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(downloadedLabel, t => t.Downloaded, t => DisplayHelpers.Size(t.Downloaded), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(uploadedLabel, t => t.Uploaded, t => DisplayHelpers.Size(t.Uploaded), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(sessionDownloadLabel, t => t.DownloadedSession, t => DisplayHelpers.Size(t.DownloadedSession), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(sessionUploadLabel, t => t.UploadedSession, t => DisplayHelpers.Size(t.UploadedSession), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(remainingLabel, t => t.AmountLeft, t => DisplayHelpers.Size(t.AmountLeft), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(timeActiveLabel, t => t.TimeActive, t => DisplayHelpers.Duration(t.TimeActive), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(savePathLabel, t => t.SavePath, enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(completedLabel, t => t.Completed, t => DisplayHelpers.Size(t.Completed), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(ratioLimitLabel, t => t.RatioLimit, t => DisplayHelpers.RatioLimit(t.RatioLimit), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(lastSeenLabel, t => t.SeenComplete, t => DisplayHelpers.DateTime(t.SeenComplete), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(lastActivityLabel, t => t.LastActivity, t => DisplayHelpers.DateTime(t.LastActivity), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(availabilityLabel, t => t.Availability, t => t.Availability.ToString("0.##"), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(incompleteSavePathLabel, t => t.DownloadPath, t => DisplayHelpers.EmptyIfNull(t.DownloadPath), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(infoHashV1Label, t => t.InfoHashV1, t => DisplayHelpers.EmptyIfNull(t.InfoHashV1), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(infoHashV2Label, t => t.InfoHashV2, t => DisplayHelpers.EmptyIfNull(t.InfoHashV2), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(reannounceLabel, t => t.Reannounce, t => DisplayHelpers.Duration(t.Reannounce), enabled: false),
+                ColumnDefinitionHelper.CreateColumnDefinition<Torrent>(privateLabel, t => t.IsPrivate, t => DisplayHelpers.Bool(t.IsPrivate), enabled: false)
+            }.AsReadOnly();
+        }
+
+        private static RenderFragment<RowContext<Torrent>> CreateProgressBarColumn(IWebUiLocalizer localizer)
+        {
+            var title = localizer.Translate("TransferListModel", "Progress");
+            return context => builder =>
+            {
+                var value = (float?)context.GetValue();
+                var color = value < 1 ? Color.Success : Color.Info;
+
+                builder.OpenComponent<MudProgressLinear>(0);
+                builder.AddAttribute(1, "title", title);
+                builder.AddAttribute(2, nameof(MudProgressLinear.Color), color);
+                builder.AddAttribute(3, nameof(MudProgressLinear.Value), (double)(value ?? 0) * 100);
+                builder.AddAttribute(4, nameof(MudProgressLinear.Class), "progress-expand");
+                builder.AddAttribute(5, nameof(MudProgressLinear.Size), Size.Large);
+                builder.AddAttribute(6, nameof(MudProgressLinear.ChildContent), (RenderFragment)(childBuilder =>
+                {
+                    childBuilder.AddContent(7, DisplayHelpers.Percentage(value));
+                }));
+                builder.CloseComponent();
+            };
+        }
+
+        private static RenderFragment<RowContext<Torrent>> CreateIconColumn()
+        {
+            return context => builder =>
+            {
+                var (icon, color) = DisplayHelpers.GetStateIcon((string?)context.GetValue());
+                builder.OpenComponent<MudIcon>(0);
+                builder.AddAttribute(1, nameof(MudIcon.Icon), icon);
+                builder.AddAttribute(2, nameof(MudIcon.Color), color);
+                builder.CloseComponent();
+            };
+        }
 
         public async ValueTask DisposeAsync()
         {

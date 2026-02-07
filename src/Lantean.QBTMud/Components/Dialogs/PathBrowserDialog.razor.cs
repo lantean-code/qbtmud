@@ -1,5 +1,6 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -16,6 +17,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -121,7 +125,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (string.IsNullOrWhiteSpace(_currentPath))
             {
                 _entries.Clear();
-                _loadError = "Enter a valid path.";
+                _loadError = Translate("Enter a valid path.");
                 return;
             }
 
@@ -154,7 +158,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             catch (Exception exception)
             {
                 _entries.Clear();
-                _loadError = $"Unable to load directory content: {exception.Message}";
+                _loadError = Translate("Unable to load directory content: %1", exception.Message);
             }
             finally
             {
@@ -237,5 +241,10 @@ namespace Lantean.QBTMud.Components.Dialogs
         }
 
         private sealed record PathBrowseEntry(string Path, string Name, bool IsDirectory);
+
+        private string Translate(string value, params object[] args)
+        {
+            return WebUiLocalizer.Translate("AppPathBrowserDialog", value, args);
+        }
     }
 }

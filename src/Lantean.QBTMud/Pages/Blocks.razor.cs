@@ -4,6 +4,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
@@ -35,6 +36,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -181,16 +185,23 @@ namespace Lantean.QBTMud.Pages
             return ManagedTimerTickResult.Continue;
         }
 
-        protected IEnumerable<ColumnDefinition<PeerLog>> Columns => ColumnsDefinitions;
+        protected IEnumerable<ColumnDefinition<PeerLog>> Columns => BuildColumns();
 
-        public static List<ColumnDefinition<PeerLog>> ColumnsDefinitions { get; } =
-        [
-            new ColumnDefinition<PeerLog>("Id", l => l.Id),
-            new ColumnDefinition<PeerLog>("Message", l => l.IPAddress),
-            new ColumnDefinition<PeerLog>("Timestamp", l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp)),
-            new ColumnDefinition<PeerLog>("Blocked", l => l.Blocked ? "Blocked" : "Banned"),
-            new ColumnDefinition<PeerLog>("Reason", l => l.Reason),
-        ];
+        private List<ColumnDefinition<PeerLog>> BuildColumns()
+        {
+            return
+            [
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "IP"), l => l.IPAddress),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp)),
+                new ColumnDefinition<PeerLog>(
+                    WebUiLocalizer.Translate("ExecutionLogWidget", "Blocked"),
+                    l => l.Blocked
+                        ? WebUiLocalizer.Translate("ExecutionLogWidget", "Blocked")
+                        : WebUiLocalizer.Translate("ExecutionLogWidget", "Banned")),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Reason"), l => l.Reason),
+            ];
+        }
 
         private void TrimResults()
         {

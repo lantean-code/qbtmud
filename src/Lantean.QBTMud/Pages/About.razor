@@ -1,5 +1,6 @@
 @page "/about"
 @layout OtherLayout
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <div class="content-panel">
     <div class="content-panel__toolbar">
@@ -9,17 +10,17 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">About</MudText>
+            <MudText Class="px-5 no-wrap">@WebUiLocalizer.Translate("AboutDialog", "About")</MudText>
         </MudToolBar>
     </div>
 
     <div class="content-panel__body">
         <MudTabs Elevation="2" ApplyEffectsToContainer="true">
-            <MudTabPanel Text="About">
+            <MudTabPanel Text="@WebUiLocalizer.Translate("AboutDialog", "About")">
                 <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 content-panel__container options-tab-contents">
             <MudGrid Class="mt-0 mb-4">
                 <MudItem xs="12" sm="3" md="2" lg="2" xl="1" Class="d-flex justify-center">
-                    <MudImage Src="images/mascot.png" Alt="Mascot" Class="ma-6"
+                    <MudImage Src="images/mascot.png" Alt="@WebUiLocalizer.Translate("AboutDialog", "qBittorrent Mascot")" Class="ma-6"
                               Fluid ObjectFit="ObjectFit.None" ObjectPosition="ObjectPosition.LeftTop"
                               Height="162" Width="94" />
                 </MudItem>
@@ -27,37 +28,44 @@
                 <MudItem xs="12" sm="9" md="10" lg="10" xl="11">
                     <div class="d-flex flex-column gap-2">
                         <div class="d-flex gap-3 align-items-center">
-                            <MudImage Src="images/qbittorrent-tray.svg" Fluid ObjectFit="ObjectFit.None"
-                                      Alt="QBT" Height="32" Width="32" />
+                            <MudImage Src="images/qbittorrent-tray.svg" Fluid ObjectFit="ObjectFit.Fill"
+                                      Alt="@WebUiLocalizer.Translate("AboutDialog", "qBittorrent icon")" Height="32" Width="32" />
                             @{
-                                var versionText = $"qBittorrent {QBittorrentVersion} WebUI";
+                                var webUiLabel = WebUiLocalizer.Translate("OptionsDialog", "WebUI");
+                                var versionText = string.IsNullOrWhiteSpace(QBittorrentVersion)
+                                    ? $"qBittorrent {webUiLabel}"
+                                    : $"qBittorrent {QBittorrentVersion} {webUiLabel}";
+                                if (Bitness is not null)
+                                {
+                                    versionText = $"{versionText} ({Bitness}-bit)";
+                                }
                             }
                             <MudText Typo="Typo.h6"
                                      data-test-id="@TestIdHelper.For("AboutVersionTitle")">@versionText</MudText>
                         </div>
 
                         <MudText Typo="Typo.body1">
-                            An advanced BitTorrent client programmed in C++, based on Qt toolkit and libtorrent-rasterbar.
+                            @WebUiLocalizer.Translate("AboutDialog", "An advanced BitTorrent client programmed in C++, based on Qt toolkit and libtorrent-rasterbar.")
                         </MudText>
 
                         <MudText Typo="Typo.body1">Copyright © 2006-@DateTime.UtcNow.Year The qBittorrent project</MudText>
 
                         <div class="d-flex flex-wrap">
-                            <MudText Typo="Typo.body1" Class="fw-bold">Home Page: </MudText>
+                            <MudText Typo="Typo.body1" Class="fw-bold">@WebUiLocalizer.Translate("AboutDialog", "Home Page:") </MudText>
                             <MudLink Href="https://www.qbittorrent.org" Target="_blank" Class="ms-2">
                                 https://www.qbittorrent.org
                             </MudLink>
                         </div>
 
                         <div class="d-flex flex-wrap">
-                            <MudText Typo="Typo.body1" Class="fw-bold">Bug Tracker: </MudText>
+                            <MudText Typo="Typo.body1" Class="fw-bold">@WebUiLocalizer.Translate("AboutDialog", "Bug Tracker:") </MudText>
                             <MudLink Href="https://bugs.qbittorrent.org" Target="_blank" Class="ms-2">
                                 https://bugs.qbittorrent.org
                             </MudLink>
                         </div>
 
                         <div class="d-flex flex-wrap">
-                            <MudText Typo="Typo.body1" Class="fw-bold">Forum: </MudText>
+                            <MudText Typo="Typo.body1" Class="fw-bold">@WebUiLocalizer.Translate("AboutDialog", "Forum:") </MudText>
                             <MudLink Href="https://forum.qbittorrent.org" Target="_blank" Class="ms-2">
                                 https://forum.qbittorrent.org
                             </MudLink>
@@ -67,47 +75,47 @@
             </MudGrid>
         </MudContainer>
     </MudTabPanel>
-    <MudTabPanel Text="Authors">
+    <MudTabPanel Text="@WebUiLocalizer.Translate("AboutDialog", "Authors")">
         <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 options-tab-contents">
-            <MudText Typo="Typo.h5" Class="py-1">Current maintainer</MudText>
+            <MudText Typo="Typo.h5" Class="py-1">@WebUiLocalizer.Translate("AboutDialog", "Current maintainer")</MudText>
 
             <MudGrid Class="mt-0 mb-4">
                 <MudItem xs="12" md="2">
-                    <MudText Typo="Typo.h6">Name</MudText>
+                    <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("AboutDialog", "Name:")</MudText>
                 </MudItem>
                 <MudItem xs="12" md="10">
                     <MudText Typo="Typo.body1">Sledgehammer999</MudText>
                 </MudItem>
                 <MudItem xs="12" md="2">
-                    <MudText Typo="Typo.h6">Nationality</MudText>
+                    <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("AboutDialog", "Nationality:")</MudText>
                 </MudItem>
                 <MudItem xs="12" md="10">
-                    <MudText Typo="Typo.body1">Greece</MudText>
+                    <MudText Typo="Typo.body1">@WebUiLocalizer.Translate("AboutDialog", "Greece")</MudText>
                 </MudItem>
                 <MudItem xs="12" md="2">
-                    <MudText Typo="Typo.h6">E-mail</MudText>
+                    <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("AboutDialog", "E-mail:")</MudText>
                 </MudItem>
                 <MudItem xs="12" md="10">
                     <MudLink Href="mailto:sledgehammer999@qbittorrent.org">sledgehammer999@qbittorrent.org</MudLink>
                 </MudItem>
             </MudGrid>
 
-            <MudText Typo="Typo.h5" Class="py-1">Original author</MudText>
+            <MudText Typo="Typo.h5" Class="py-1">@WebUiLocalizer.Translate("HttpServer", "Original author")</MudText>
             <MudGrid Class="mt-0 mb-4">
                 <MudItem xs="12" md="2">
-                    <MudText Typo="Typo.h6">Name</MudText>
+                    <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("AboutDialog", "Name:")</MudText>
                 </MudItem>
                 <MudItem xs="12" md="10">
                     <MudText Typo="Typo.body1">Christophe Dumez</MudText>
                 </MudItem>
                 <MudItem xs="12" md="2">
-                    <MudText Typo="Typo.h6">Nationality</MudText>
+                    <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("AboutDialog", "Nationality:")</MudText>
                 </MudItem>
                 <MudItem xs="12" md="10">
-                    <MudText Typo="Typo.body1">France</MudText>
+                    <MudText Typo="Typo.body1">@WebUiLocalizer.Translate("AboutDialog", "France")</MudText>
                 </MudItem>
                 <MudItem xs="12" md="2">
-                    <MudText Typo="Typo.h6">E-mail</MudText>
+                    <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("AboutDialog", "E-mail:")</MudText>
                 </MudItem>
                 <MudItem xs="12" md="10">
                     <MudLink Href="mailto:chris@qbittorrent.org">chris@qbittorrent.org</MudLink>
@@ -115,7 +123,7 @@
             </MudGrid>
         </MudContainer>
     </MudTabPanel>
-    <MudTabPanel Text="Special Thanks">
+    <MudTabPanel Text="@WebUiLocalizer.Translate("AboutDialog", "Special Thanks")">
         <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 options-tab-contents">
             <MudText Typo="Typo.body1" Class="py-1">I would first like to thank sourceforge.net for hosting qBittorrent project and for their support.</MudText>
             <MudText Typo="Typo.body1" Class="py-1">I am pleased that people from all over the world are contributing to qBittorrent: Ishan Arora (India), Arnaud Demaizière (France) and Stephanos Antaris (Greece). Their help is greatly appreciated</MudText>
@@ -125,7 +133,7 @@
             <MudText Typo="Typo.body1" Class="py-1">Thanks to all contributors on <MudLink Target="https://github.com/qbittorrent/qBittorrent/graphs/contributors" Href="https://github.com/qbittorrent/qBittorrent/graphs/contributors">GitHub</MudLink>.</MudText>
         </MudContainer>
     </MudTabPanel>
-    <MudTabPanel Text="Translators">
+    <MudTabPanel Text="@WebUiLocalizer.Translate("AboutDialog", "Translators")">
         <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 options-tab-contents">
             <MudText Typo="Typo.body1" Class="py-1">
                 I would like to thank the people who volunteered to translate qBittorrent.<br>
@@ -175,7 +183,7 @@
             <MudText Typo="Typo.body1" Class="py-1">Please contact me if you would like to translate qBittorrent into your own language.</MudText>
         </MudContainer>
     </MudTabPanel>
-    <MudTabPanel Text="License">
+    <MudTabPanel Text="@WebUiLocalizer.Translate("AboutDialog", "License")">
         <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 options-tab-contents">
             <MudText Typo="Typo.body1" Class="py-1">
                 The qBittorrent source code is licensed under the GNU General Public License, version 2 or (at your option) any later version (GPLv2+).
@@ -1068,9 +1076,9 @@
             </MudText>
         </MudContainer>
     </MudTabPanel>
-    <MudTabPanel Text="Software Used">
+    <MudTabPanel Text="@WebUiLocalizer.Translate("AboutDialog", "Software Used")">
         <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="mt-3 mb-3 options-tab-contents">
-            <MudText Typo="Typo.body1" Class="py-1">qBittorrent was built with the following libraries:</MudText>
+            <MudText Typo="Typo.body1" Class="py-1">@WebUiLocalizer.Translate("AboutDialog", "qBittorrent was built with the following libraries:")</MudText>
 
             <MudGrid Class="mt-1 mb-4">
                 <MudItem xs="3">
@@ -1114,7 +1122,7 @@
                 </MudItem>
             </MudGrid>
 
-            <MudText Typo="Typo.body1" Class="py-1">The free IP to Country Lite database by DB-IP is used for resolving the countries of peers. The database is licensed under the Creative Commons Attribution 4.0 International License (<MudLink Target="https://db-ip.com/" Href="https://db-ip.com/" rel="noopener ">https://db-ip.com/</MudLink>)</MudText>
+            <MudText Typo="Typo.body1" Class="py-1">@WebUiLocalizer.Translate("AboutDialog", "The free IP to Country Lite database by DB-IP is used for resolving the countries of peers. The database is licensed under the Creative Commons Attribution 4.0 International License") (<MudLink Target="https://db-ip.com/" Href="https://db-ip.com/" rel="noopener ">https://db-ip.com/</MudLink>)</MudText>
         </MudContainer>
     </MudTabPanel>
 </MudTabs>

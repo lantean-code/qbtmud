@@ -1,13 +1,14 @@
 @inherits SubmittableDialog
 @using Lantean.QBTMud.Helpers
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <MudDialog>
     <DialogContent>
         <table width="100%">
             <tbody>
                 <tr>
-                    <td style="width: 70%"><MudTextField T="string" Label="IP" Value="@IP" ValueChanged="SetIP" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddPeerIp")" /></td>
-                    <td style="width: 30%"><MudNumericField T="int?" Label="Port" Value="@Port" ValueChanged="SetPort" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddPeerPort")" /></td>
+                    <td style="width: 70%"><MudTextField T="string" Label="@WebUiLocalizer.Translate("PeerListWidget", "IP")" Value="@IP" ValueChanged="SetIP" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddPeerIp")" /></td>
+                    <td style="width: 30%"><MudNumericField T="int?" Label="@WebUiLocalizer.Translate("PeerListWidget", "Port")" Value="@Port" ValueChanged="SetPort" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddPeerPort")" /></td>
                     <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddTracker" data-test-id="@TestIdHelper.For("AddPeerAdd")" /></td>
                 </tr>
                 @foreach (var peer in Peers)
@@ -22,7 +23,7 @@
         </table>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddPeerCancel")">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddPeerSave")">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddPeerCancel")">@WebUiLocalizer.Translate("PeersAdditionDialog", "Cancel")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddPeerSave")">@WebUiLocalizer.Translate("PeersAdditionDialog", "Ok")</MudButton>
     </DialogActions>
 </MudDialog>

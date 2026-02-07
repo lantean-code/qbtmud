@@ -6,18 +6,18 @@
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
-                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" data-test-id="@TestIdHelper.For("ThemesBack")" />
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="@Translate("Back to torrent list")" data-test-id="@TestIdHelper.For("ThemesBack")" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">Themes</MudText>
+            <MudText Class="px-5 no-wrap">@Translate("Themes")</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="CreateTheme" title="New theme" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesCreate")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="CreateTheme" title="@Translate("New theme")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesCreate")" />
             <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="ImportThemes" Accept=".json" MaximumFileCount="1" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesImportUpload")">
                 <ActivatorContent>
-                    <MudIconButton Icon="@Icons.Material.Filled.FileUpload" title="Import theme" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesImport")" />
+                    <MudIconButton Icon="@Icons.Material.Filled.FileUpload" title="@Translate("Import theme")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesImport")" />
                 </ActivatorContent>
             </MudFileUpload>
-            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadThemes" title="Reload server themes" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesReload")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadThemes" title="@Translate("Reload server themes")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesReload")" />
             <MudSpacer />
         </MudToolBar>
     </div>
@@ -48,11 +48,11 @@
                     <MudText Typo="Typo.body2">@theme.Name</MudText>
                     @if (IsThemeApplied(theme))
                     {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">Applied</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">@Translate("Applied")</MudChip>
                     }
                     @if (theme.IsReadOnly)
                     {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">Bundled</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">@Translate("Bundled")</MudChip>
                     }
                 </div>;
             };
@@ -70,28 +70,28 @@
                     <MudButtonGroup>
                         <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
                                        Color="Color.Primary"
-                                       title="Apply"
+                                       title="@Translate("Apply")"
                                        OnClick="@(e => ApplyTheme(theme))"
                                        Disabled="@(!CanApplyTheme(theme) || IsBusy)"
                                        data-test-id="@TestIdHelper.For($"ThemeApply-{theme.Id}")" />
                         <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
-                                       title="Duplicate"
+                                       title="@Translate("Duplicate")"
                                        OnClick="@(e => DuplicateTheme(theme))"
                                        Disabled="@IsBusy"
                                        data-test-id="@TestIdHelper.For($"ThemeDuplicate-{theme.Id}")" />
                         <MudIconButton Icon="@Icons.Material.Filled.FileDownload"
-                                       title="Export"
+                                       title="@Translate("Export")"
                                        OnClick="@(e => ExportTheme(theme))"
                                        Disabled="@IsBusy"
                                        data-test-id="@TestIdHelper.For($"ThemeExport-{theme.Id}")" />
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                       title="Rename"
+                                       title="@Translate("Rename")"
                                        OnClick="@(e => RenameTheme(theme))"
                                        Disabled="@(!CanEditTheme(theme) || IsBusy)"
                                        data-test-id="@TestIdHelper.For($"ThemeRename-{theme.Id}")" />
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Color="Color.Error"
-                                       title="Delete"
+                                       title="@Translate("Delete")"
                                        OnClick="@(e => DeleteTheme(theme))"
                                        Disabled="@(!CanEditTheme(theme) || IsBusy)"
                                        data-test-id="@TestIdHelper.For($"ThemeDelete-{theme.Id}")" />

@@ -1,5 +1,6 @@
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -56,7 +57,7 @@ namespace Lantean.QBTMud.Pages
         private ChartOptions _chartOptions = new();
         private AxisChartOptions _axisOptions = new();
         private TimeSpan _timeLabelSpacing = TimeSpan.FromMinutes(5);
-        private string _lastUpdatedText = "n/a";
+        private string _lastUpdatedText = string.Empty;
         private UnitScale _currentUnit = MebiBytesPerSecond;
 
         [Inject]
@@ -64,6 +65,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         public MainData? MainData { get; set; }
@@ -144,7 +148,7 @@ namespace Lantean.QBTMud.Pages
                 MatchBoundsToSize = true
             };
 
-            _lastUpdatedText = SpeedHistoryService.LastUpdatedUtc?.ToLocalTime().ToString("G") ?? "n/a";
+            _lastUpdatedText = SpeedHistoryService.LastUpdatedUtc?.ToLocalTime().ToString("G") ?? Translate("n/a");
         }
 
         private (int DownloadSegmentCount, int UploadSegmentCount, bool HasBounds) BuildChartData(IReadOnlyList<SpeedPoint> downloadSamples, IReadOnlyList<SpeedPoint> uploadSamples)
@@ -165,7 +169,7 @@ namespace Lantean.QBTMud.Pages
                 {
                     seriesList.Add(new TimeSeriesChartSeries
                     {
-                        Name = "Download",
+                        Name = Translate("Download"),
                         Data = segment,
                         LineDisplayType = LineDisplayType.Line
                     });
@@ -178,7 +182,7 @@ namespace Lantean.QBTMud.Pages
                 {
                     seriesList.Add(new TimeSeriesChartSeries
                     {
-                        Name = "Upload",
+                        Name = Translate("Upload"),
                         Data = segment,
                         LineDisplayType = LineDisplayType.Line
                     });
@@ -259,14 +263,19 @@ namespace Lantean.QBTMud.Pages
             return BytesPerSecond;
         }
 
-        private static string FormatBytesPerSecond(double value, UnitScale unit)
+        private string FormatBytesPerSecond(double value, UnitScale unit)
         {
             var scaled = value / unit.Factor;
             var format = scaled >= 100 ? "0" : "0.0";
-            return $"{scaled.ToString(format)} {unit.Label}";
+            return $"{scaled.ToString(format)} {Translate(unit.Label)}";
         }
 
         private sealed record UnitScale(double Factor, string Label);
+
+        private string Translate(string value)
+        {
+            return WebUiLocalizer.Translate("AppSpeed", value);
+        }
 
         private static TimeSpan GetPeriodDuration(SpeedPeriod period)
         {

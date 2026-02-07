@@ -1,6 +1,7 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
@@ -16,6 +17,9 @@ namespace Lantean.QBTMud.Components.UI
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [Parameter]
         public string? Label { get; set; }
@@ -33,7 +37,7 @@ namespace Lantean.QBTMud.Components.UI
         public bool Required { get; set; }
 
         [Parameter]
-        public string RequiredErrorText { get; set; } = "Required.";
+        public string? RequiredErrorText { get; set; }
 
         [Parameter]
         public bool ForceValidation { get; set; }
@@ -95,6 +99,19 @@ namespace Lantean.QBTMud.Components.UI
             get { return ShowBrowseButton ? Icons.Material.Filled.FolderOpen : null; }
         }
 
+        protected string ResolvedRequiredErrorText
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(RequiredErrorText))
+                {
+                    return RequiredErrorText!;
+                }
+
+                return WebUiLocalizer.Translate("AppPathAutocomplete", "Required.");
+            }
+        }
+
         protected async Task HandleBlur(FocusEventArgs focusEventArgs)
         {
             _touched = true;
@@ -122,9 +139,7 @@ namespace Lantean.QBTMud.Components.UI
                 return;
             }
 
-            var title = string.IsNullOrWhiteSpace(BrowseDialogTitle)
-                ? "Browse"
-                : BrowseDialogTitle!;
+            var title = ResolveBrowseDialogTitle();
 
             var selectedPath = await DialogWorkflow.ShowPathBrowserDialog(title, Value, Mode, AllowFolderSelection);
             if (string.IsNullOrWhiteSpace(selectedPath))
@@ -133,6 +148,16 @@ namespace Lantean.QBTMud.Components.UI
             }
 
             await OnValueChanged(selectedPath);
+        }
+
+        private string ResolveBrowseDialogTitle()
+        {
+            if (!string.IsNullOrWhiteSpace(BrowseDialogTitle))
+            {
+                return BrowseDialogTitle!;
+            }
+
+            return WebUiLocalizer.Translate("AppPathAutocomplete", "Browse");
         }
 
         private async Task<IReadOnlyList<string>> SearchPaths(string value, DirectoryContentMode mode, CancellationToken cancellationToken)

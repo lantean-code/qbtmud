@@ -239,7 +239,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 PaddedFileSizeLimit = 2048
             };
 
-            await TestContext.LocalStorage.SetItemAsync(StorageKey, state);
+            await TestContext.LocalStorage.SetItemAsync(StorageKey, state, Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfo())
                 .ReturnsAsync(CreateBuildInfo("2.0.0"));
@@ -361,7 +361,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
             await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
 
-            var stored = await TestContext.LocalStorage.GetItemAsync<TorrentCreationFormState>(StorageKey);
+            var stored = await TestContext.LocalStorage.GetItemAsync<TorrentCreationFormState>(StorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
             stored!.SourcePath.Should().Be("C:/Source");
             stored.TorrentFilePath.Should().Be("C:/Out");

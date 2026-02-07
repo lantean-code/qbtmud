@@ -1,5 +1,6 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using System.Net;
@@ -13,6 +14,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         protected LoginForm Model { get; set; } = new LoginForm();
 
@@ -33,7 +37,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.BadRequest)
             {
-                ApiError = "Invalid username or password.";
+                ApiError = WebUiLocalizer.Translate("Login", "Invalid Username or Password.");
             }
             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
             {
@@ -41,7 +45,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch
             {
-                ApiError = "Unable to communicate with the qBittorrent API.";
+                ApiError = WebUiLocalizer.Translate("Login", "Unable to log in, server is probably unreachable.");
             }
         }
     }

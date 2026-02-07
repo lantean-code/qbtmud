@@ -16,7 +16,7 @@ namespace Lantean.QBitTorrentClient.Test
         {
             using var content = _target.ToFormUrlEncodedContent();
 
-            var payload = await content.ReadAsStringAsync();
+            var payload = await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken);
 
             payload.Should().Be(string.Empty);
             _target.GetParameters().Count.Should().Be(0);
@@ -28,7 +28,7 @@ namespace Lantean.QBitTorrentClient.Test
             _target.Add("first", "one");
 
             using var content = _target.ToFormUrlEncodedContent();
-            var payload = await content.ReadAsStringAsync();
+            var payload = await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken);
 
             payload.Should().Be("first=one");
 
@@ -44,7 +44,7 @@ namespace Lantean.QBitTorrentClient.Test
             _target.Add("a", "1").Add("b", "2").Add("c", "3");
 
             using var content = _target.ToFormUrlEncodedContent();
-            var payload = await content.ReadAsStringAsync();
+            var payload = await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken);
 
             payload.Should().Be("a=1&b=2&c=3");
 
@@ -64,7 +64,7 @@ namespace Lantean.QBitTorrentClient.Test
             _target.Add("a b", "c+d&=");
 
             using var content = _target.ToFormUrlEncodedContent();
-            var payload = await content.ReadAsStringAsync();
+            var payload = await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken);
 
             ((payload.StartsWith("a%20b=") || payload.StartsWith("a+b="))).Should().BeTrue();
             payload.EndsWith("c%2Bd%26%3D").Should().BeTrue();
@@ -83,7 +83,7 @@ namespace Lantean.QBitTorrentClient.Test
             _target.GetParameters().Count.Should().Be(1);
 
             using var content = _target.ToFormUrlEncodedContent();
-            var payload = await content.ReadAsStringAsync();
+            var payload = await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken);
 
             payload.Should().Be("key=value");
         }
@@ -97,7 +97,7 @@ namespace Lantean.QBitTorrentClient.Test
             _target.GetParameters().Count.Should().Be(0);
 
             using var content = _target.ToFormUrlEncodedContent();
-            var payload = await content.ReadAsStringAsync();
+            var payload = await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken);
 
             payload.Should().Be(string.Empty);
         }
@@ -112,7 +112,7 @@ namespace Lantean.QBitTorrentClient.Test
             _target.GetParameters().Count.Should().Be(0);
 
             using var content = _target.ToFormUrlEncodedContent();
-            var payload = await content.ReadAsStringAsync();
+            var payload = await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken);
 
             payload.Should().Be(string.Empty);
         }
@@ -130,7 +130,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("42");
 
             using var content = _target.ToFormUrlEncodedContent();
-            var payload = await content.ReadAsStringAsync();
+            var payload = await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken);
 
             payload.Should().Be("count=42");
         }
@@ -168,7 +168,7 @@ namespace Lantean.QBitTorrentClient.Test
             observed[1].Value.Should().Be("2");
 
             using var content = builder.ToFormUrlEncodedContent();
-            var payload = await content.ReadAsStringAsync();
+            var payload = await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken);
 
             payload.Should().Be("a=1&b=2");
         }

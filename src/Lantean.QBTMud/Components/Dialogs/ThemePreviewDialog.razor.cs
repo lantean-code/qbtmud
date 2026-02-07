@@ -1,3 +1,4 @@
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
@@ -20,6 +21,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [CascadingParameter]
         protected IMudDialogInstance MudDialog { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [Parameter]
         public MudTheme? Theme { get; set; }
@@ -51,7 +55,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected string DarkModeTooltip
         {
-            get { return _isDarkMode ? "Switch to light preview" : "Switch to dark preview"; }
+            get { return _isDarkMode ? Translate("Switch to light preview") : Translate("Switch to dark preview"); }
         }
 
         protected void Close()
@@ -78,6 +82,11 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             var json = JsonSerializer.Serialize(theme, _previewThemeOptions);
             return JsonSerializer.Deserialize<MudTheme>(json, _previewThemeOptions) ?? new MudTheme();
+        }
+
+        private string Translate(string value)
+        {
+            return WebUiLocalizer.Translate("AppThemePreviewDialog", value);
         }
     }
 }

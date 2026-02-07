@@ -1,6 +1,10 @@
 using Bunit;
 using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Infrastructure
@@ -13,7 +17,28 @@ namespace Lantean.QBTMud.Test.Infrastructure
     {
         private bool _disposedValue;
 
-        internal ComponentTestContext TestContext { get; private set; } = new ComponentTestContext();
+        internal ComponentTestContext TestContext { get; private set; }
+
+        protected RazorComponentTestBase()
+        {
+            TestContext = new ComponentTestContext();
+            var webUiLocalizer = Mock.Of<IWebUiLocalizer>();
+            var localizerMock = Mock.Get(webUiLocalizer);
+            localizerMock
+                .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
+                .Returns((string _, string source, object[] arguments) => FormatLocalizerString(source, arguments));
+            TestContext.Services.AddSingleton(webUiLocalizer);
+
+            var languageCatalog = Mock.Of<IWebUiLanguageCatalog>();
+            var languageCatalogMock = Mock.Get(languageCatalog);
+            languageCatalogMock
+                .Setup(catalog => catalog.Languages)
+                .Returns(new List<WebUiLanguageCatalogItem> { new("en", "English") });
+            languageCatalogMock
+                .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            TestContext.Services.AddSingleton(languageCatalog);
+        }
 
         protected string? GetChildContentText(RenderFragment? fragment)
         {
@@ -83,19 +108,35 @@ namespace Lantean.QBTMud.Test.Infrastructure
             return value.Replace("\\", "\\\\").Replace("'", "\\'");
         }
 
-        protected virtual ValueTask Dispose(bool disposing)
+        private static string FormatLocalizerString(string source, object[] arguments)
+        {
+            if (arguments is null || arguments.Length == 0)
+            {
+                return source;
+            }
+
+            var result = source;
+            for (var i = 0; i < arguments.Length; i++)
+            {
+                var token = $"%{i + 1}";
+                var value = arguments[i]?.ToString() ?? string.Empty;
+                result = result.Replace(token, value);
+            }
+
+            return result;
+        }
+
+        protected virtual async ValueTask Dispose(bool disposing)
         {
             if (!_disposedValue)
             {
                 if (disposing)
                 {
-                    TestContext.Dispose();
+                    await TestContext.DisposeAsync();
                 }
 
                 _disposedValue = true;
             }
-
-            return ValueTask.CompletedTask;
         }
 
         public async ValueTask DisposeAsync()

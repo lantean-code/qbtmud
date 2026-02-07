@@ -2,6 +2,7 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -54,6 +55,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
 
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
 
@@ -101,7 +105,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (string.IsNullOrWhiteSpace(sourcePath))
             {
                 _forceSourcePathValidation = true;
-                Snackbar?.Add("Source path is required.", Severity.Warning);
+                Snackbar?.Add(Translate("Source path is required."), Severity.Warning);
                 return null;
             }
 
@@ -149,7 +153,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             catch (Exception exception)
             {
-                Snackbar?.Add($"Unable to load saved torrent creator settings: {exception.Message}", Severity.Warning);
+                Snackbar?.Add(Translate("Unable to load saved torrent creator settings: %1", exception.Message), Severity.Warning);
                 return;
             }
 
@@ -292,6 +296,11 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             var firstSegment = numeric.Split('.', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
             return int.TryParse(firstSegment, out major);
+        }
+
+        private string Translate(string value, params object[] args)
+        {
+            return WebUiLocalizer.Translate("AppCreateTorrentDialog", value, args);
         }
     }
 }

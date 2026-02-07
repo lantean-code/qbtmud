@@ -15,14 +15,15 @@ namespace Lantean.QBTMud.Components
 
         private bool _showCanvas;
         private string _linearBarStyle = string.Empty;
-        private string _linearSummary = "Pieces data unavailable";
-        private string _linearTooltip = "Pieces data unavailable";
+        private string _linearSummary = string.Empty;
+        private string _linearTooltip = string.Empty;
         private string _linearAriaLabel = string.Empty;
-        private string _canvasEmptyText = "Pieces data unavailable";
-        private string _canvasHiddenText = "Pieces visualisation is hidden on small screens.";
+        private string _canvasEmptyText = string.Empty;
+        private string _canvasHiddenText = string.Empty;
         private string _canvasAriaLabel = string.Empty;
         private int[] _pieceStates = Array.Empty<int>();
         private bool _shouldRedraw = true;
+        private const string AppContext = "AppPiecesProgressCanvas";
 
         [Parameter]
         [EditorRequired]
@@ -34,6 +35,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         public IJSRuntime JSRuntime { get; set; } = default!;
+
+        [Inject]
+        public Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "IsDarkMode")]
         public bool IsDarkMode { get; set; }
@@ -158,9 +162,9 @@ namespace Lantean.QBTMud.Components
             if (Pieces.Count == 0)
             {
                 _linearBarStyle = $"background-color: {PendingColor};";
-                _linearSummary = "Pieces data unavailable";
-                _linearTooltip = "Pieces data unavailable";
-                _linearAriaLabel = $"Pieces progress unavailable for torrent {Hash}.";
+                _linearSummary = TranslateApp("Pieces data unavailable");
+                _linearTooltip = TranslateApp("Pieces data unavailable");
+                _linearAriaLabel = TranslateApp("Pieces progress unavailable for torrent %1.", Hash);
                 return;
             }
 
@@ -192,20 +196,21 @@ namespace Lantean.QBTMud.Components
             var percentComplete = Pieces.Count == 0
                 ? 0
                 : ((downloadedCount + (downloadingCount * 0.5)) / Pieces.Count) * 100.0;
-            _linearSummary = CreateInvariant(
-                "{0:0.#}% complete — {1} downloaded, {2} in progress",
-                percentComplete,
+            var percentCompleteText = percentComplete.ToString("0.#", CultureInfo.InvariantCulture);
+            _linearSummary = TranslateApp(
+                "%1% complete — %2 downloaded, %3 in progress",
+                percentCompleteText,
                 downloadedCount,
                 downloadingCount);
-            _linearTooltip = CreateInvariant(
-                "Downloaded: {0}\nDownloading: {1}\nPending: {2}",
+            _linearTooltip = TranslateApp(
+                "Downloaded: %1\nDownloading: %2\nPending: %3",
                 downloadedCount,
                 downloadingCount,
                 pendingCount);
-            _linearAriaLabel = CreateInvariant(
-                "Pieces progress for torrent {0}: {1:0.#}% complete. {2} downloaded, {3} downloading, {4} pending. Toggle canvas view.",
+            _linearAriaLabel = TranslateApp(
+                "Pieces progress for torrent %1: %2% complete. %3 downloaded, %4 downloading, %5 pending. Toggle canvas view.",
                 Hash,
-                percentComplete,
+                percentCompleteText,
                 downloadedCount,
                 downloadingCount,
                 pendingCount);
@@ -215,20 +220,20 @@ namespace Lantean.QBTMud.Components
         {
             if (Pieces.Count == 0)
             {
-                _canvasEmptyText = "Pieces data unavailable.";
-                _canvasAriaLabel = $"Pieces canvas unavailable for torrent {Hash}.";
+                _canvasEmptyText = TranslateApp("Pieces data unavailable.");
+                _canvasAriaLabel = TranslateApp("Pieces canvas unavailable for torrent %1.", Hash);
                 return;
             }
 
             var columns = ColumnsForCurrentBreakpoint;
             if (columns == 0)
             {
-                _canvasHiddenText = "Pieces canvas hidden on small screens.";
+                _canvasHiddenText = TranslateApp("Pieces canvas hidden on small screens.");
             }
 
             _canvasEmptyText = string.Empty;
-            _canvasAriaLabel = CreateInvariant(
-                "Pieces canvas for torrent {0}. Rendering {1} pieces with {2} columns.",
+            _canvasAriaLabel = TranslateApp(
+                "Pieces canvas for torrent %1. Rendering %2 pieces with %3 columns.",
                 Hash,
                 Pieces.Count,
                 Math.Max(1, columns));
@@ -320,13 +325,9 @@ namespace Lantean.QBTMud.Components
             return (double)value / total * 100.0;
         }
 
-        private static string CreateInvariant(string format, params object?[] arguments)
+        private string TranslateApp(string source, params object[] arguments)
         {
-            var formatted = string.Format(CultureInfo.InvariantCulture, format, arguments);
-            return string.Create(
-                formatted.Length,
-                formatted,
-                static (span, state) => state.AsSpan().CopyTo(span));
+            return WebUiLocalizer.Translate(AppContext, source, arguments);
         }
     }
 }

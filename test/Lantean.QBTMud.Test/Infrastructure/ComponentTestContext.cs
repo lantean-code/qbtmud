@@ -1,7 +1,9 @@
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -86,6 +88,23 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddScoped<ISpeedHistoryService, SpeedHistoryService>();
 
             Services.AddTransient<IKeyboardService, KeyboardService>();
+
+            var webUiLocalizer = Mock.Of<IWebUiLocalizer>();
+            var localizerMock = Mock.Get(webUiLocalizer);
+            localizerMock
+                .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
+                .Returns((string _, string source, object[] __) => source);
+            Services.AddSingleton(webUiLocalizer);
+
+            var languageCatalog = Mock.Of<IWebUiLanguageCatalog>();
+            var languageCatalogMock = Mock.Get(languageCatalog);
+            languageCatalogMock
+                .Setup(catalog => catalog.Languages)
+                .Returns(new List<WebUiLanguageCatalogItem> { new("en", "English") });
+            languageCatalogMock
+                .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            Services.AddSingleton(languageCatalog);
         }
 
         public TestLocalStorageService LocalStorage => _localStorage;

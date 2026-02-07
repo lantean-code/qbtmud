@@ -30,7 +30,7 @@
                 {
                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Class="pieces-progress-svg__empty" data-test-id="@TestIdHelper.For("PiecesSpinner")">
                         <MudProgressCircular Color="Color.Info" Indeterminate="true" Size="Size.Large" />
-                        <MudText Typo="Typo.body2" Class="ml-4">Rendering pieces...</MudText>
+                        <MudText Typo="Typo.body2" Class="ml-4">@TranslateApp("Rendering pieces...")</MudText>
                     </MudStack>
                 }
                 else if (PiecesFailed || !HasPieceData)

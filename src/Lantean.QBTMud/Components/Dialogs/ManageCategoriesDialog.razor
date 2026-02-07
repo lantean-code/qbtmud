@@ -1,10 +1,12 @@
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+
 <MudDialog>
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
                 <MudList T="string">
-                    <MudListItem Icon="@Icons.Material.Filled.Add" IconColor="Color.Info" OnClick="AddCategory" data-test-id="@TestIdHelper.For("CategoryAdd")">Add</MudListItem>
-                    <MudListItem Icon="@Icons.Material.Filled.Remove" IconColor="Color.Error" OnClick="RemoveCategory" data-test-id="@TestIdHelper.For("CategoryRemove")">Remove</MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.Add" IconColor="Color.Info" OnClick="AddCategory" data-test-id="@TestIdHelper.For("CategoryAdd")">@WebUiLocalizer.Translate("TransferListWidget", "New...")</MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.Remove" IconColor="Color.Error" OnClick="RemoveCategory" data-test-id="@TestIdHelper.For("CategoryRemove")">@WebUiLocalizer.Translate("TransferListWidget", "Reset")</MudListItem>
                     <MudDivider />
                     @foreach (var category in Categories)
                     {

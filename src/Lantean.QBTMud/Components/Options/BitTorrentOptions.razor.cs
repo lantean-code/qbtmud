@@ -26,95 +26,113 @@ namespace Lantean.QBTMud.Components.Options
         protected bool AddTrackersEnabled { get; private set; }
         protected string? AddTrackers { get; private set; }
 
-        protected Func<int, string?> MaxActiveDownloadsValidation = value =>
+        protected Func<int, string?> MaxActiveDownloadsValidation => MaxActiveDownloadsValidationFunc;
+
+        protected Func<int, string?> MaxActiveUploadsValidation => MaxActiveUploadsValidationFunc;
+
+        protected Func<int, string?> MaxActiveTorrentsValidation => MaxActiveTorrentsValidationFunc;
+
+        protected Func<int, string?> SlowTorrentDlRateThresholdValidation => SlowTorrentDlRateThresholdValidationFunc;
+
+        protected Func<int, string?> SlowTorrentUlRateThresholdValidation => SlowTorrentUlRateThresholdValidationFunc;
+
+        protected Func<int, string?> SlowTorrentInactiveTimerValidation => SlowTorrentInactiveTimerValidationFunc;
+
+        protected Func<int, string?> MaxRatioValidation => MaxRatioValidationFunc;
+
+        protected Func<int, string?> MaxSeedingTimeValidation => MaxSeedingTimeValidationFunc;
+
+        protected Func<int, string?> MaxInactiveSeedingTimeValidation => MaxInactiveSeedingTimeValidationFunc;
+
+        private string? MaxActiveDownloadsValidationFunc(int value)
         {
             if (value < -1)
             {
-                return "Maximum active downloads must be greater than -1.";
+                return WebUiLocalizer.Translate("HttpServer", "Maximum active downloads must be greater than -1.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> MaxActiveUploadsValidation = value =>
+        private string? MaxActiveUploadsValidationFunc(int value)
         {
             if (value < -1)
             {
-                return "Maximum active uploads must be greater than -1.";
+                return WebUiLocalizer.Translate("HttpServer", "Maximum active uploads must be greater than -1.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> MaxActiveTorrentsValidation = value =>
+        private string? MaxActiveTorrentsValidationFunc(int value)
         {
             if (value < -1)
             {
-                return "Maximum active torrents must be greater than -1.";
+                return WebUiLocalizer.Translate("HttpServer", "Maximum active torrents must be greater than -1.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> SlowTorrentDlRateThresholdValidation = value =>
+        private string? SlowTorrentDlRateThresholdValidationFunc(int value)
         {
             if (value < 1)
             {
-                return "Download rate threshold must be greater than 0.";
+                return WebUiLocalizer.Translate("HttpServer", "Download rate threshold must be greater than 0.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> SlowTorrentUlRateThresholdValidation = value =>
+        private string? SlowTorrentUlRateThresholdValidationFunc(int value)
         {
             if (value < 1)
             {
-                return "Upload rate threshold must be greater than 0.";
+                return WebUiLocalizer.Translate("HttpServer", "Upload rate threshold must be greater than 0.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> SlowTorrentInactiveTimerValidation = value =>
+        private string? SlowTorrentInactiveTimerValidationFunc(int value)
         {
             if (value < 1)
             {
-                return "Torrent inactivity timer must be greater than 0.";
+                return WebUiLocalizer.Translate("HttpServer", "Torrent inactivity timer must be greater than 0.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> MaxRatioValidation = value =>
+        private string? MaxRatioValidationFunc(int value)
         {
             if (value < 0 || value > 9998)
             {
-                return "Share ratio limit must be between 0 and 9998.";
+                return WebUiLocalizer.Translate("AppBitTorrentOptions", "Share ratio limit must be between 0 and 9998.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> MaxSeedingTimeValidation = value =>
+        private string? MaxSeedingTimeValidationFunc(int value)
         {
             if (value < 0 || value > 525600)
             {
-                return "Seeding time limit must be between 0 and 525600 minutes.";
+                return WebUiLocalizer.Translate("AppBitTorrentOptions", "Seeding time limit must be between 0 and 525600 minutes.");
             }
 
             return null;
-        };
+        }
 
-        protected Func<int, string?> MaxInactiveSeedingTimeValidation = value =>
+        private string? MaxInactiveSeedingTimeValidationFunc(int value)
         {
             if (value < 0 || value > 525600)
             {
-                return "Seeding time limit must be between 0 and 525600 minutes.";
+                return WebUiLocalizer.Translate("AppBitTorrentOptions", "Seeding time limit must be between 0 and 525600 minutes.");
             }
 
             return null;
-        };
+        }
 
         protected override bool SetOptions()
         {

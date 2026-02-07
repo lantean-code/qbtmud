@@ -1,3 +1,5 @@
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+
 <MudDialog>
     <DialogContent>
         <MudGrid>
@@ -6,22 +8,22 @@
                 <MudItem xs="12">
                     <MudAlert Severity="Severity.Error"
                               data-test-id="@TestIdHelper.For("ExceptionMissingMessage")">
-                        Missing error information.
+                        @WebUiLocalizer.Translate("AppExceptionDialog", "Missing error information.")
                     </MudAlert>
                 </MudItem>
             }
             else
             {
                 <MudItem xs="12">
-                    <MudField Label="Message"
+                    <MudField Label="@WebUiLocalizer.Translate("AppExceptionDialog", "Message")"
                               data-test-id="@TestIdHelper.For("ExceptionMessage")">@Exception.Message</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Source"
+                    <MudField Label="@WebUiLocalizer.Translate("AppExceptionDialog", "Source")"
                               data-test-id="@TestIdHelper.For("ExceptionSource")">@Exception.Source</MudField>
                 </MudItem>
                 <MudItem xs="12">
-                    <MudField Label="Stack Trace"
+                    <MudField Label="@WebUiLocalizer.Translate("AppExceptionDialog", "Stack Trace")"
                               data-test-id="@TestIdHelper.For("ExceptionStackTrace")">
                         <pre class="overflow">
                             @Exception.StackTrace
@@ -33,6 +35,6 @@
         
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Close" data-test-id="@TestIdHelper.For("ExceptionClose")">Close</MudButton>
+        <MudButton OnClick="Close" data-test-id="@TestIdHelper.For("ExceptionClose")">@WebUiLocalizer.Translate("AppExceptionDialog", "Close")</MudButton>
     </DialogActions>
 </MudDialog>

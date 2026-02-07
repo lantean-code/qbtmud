@@ -1,7 +1,7 @@
 @inherits LayoutComponentBase
 @layout MainLayout
 
-<PageTitle>qBittorrent @Version Web UI</PageTitle>
+<PageTitle>@BuildPageTitle()</PageTitle>
 
 @if (!IsAuthenticated)
 {
@@ -29,14 +29,17 @@
                                                                 <MudAppBar Bottom="true" Dense="true" Class="app-shell__status-bar">
                                                                     @if (MainData?.LostConnection == true)
                                                                     {
-                                                                        const string lostConnectionText = "qBittorrent client is not reachable";
+                                                                        var lostConnectionText = WebUiLocalizer.Translate("HttpServer", "qBittorrent client is not reachable");
                                                                         <MudText Class="mx-2 d-none d-sm-flex"
                                                                                  Color="Color.Error"
                                                                                  data-test-id="@TestIdHelper.For("Status-LostConnection")">@lostConnectionText</MudText>
                                                                     }
                                                                     <MudSpacer />
                                                                     @{
-                                                                        var freeSpaceText = DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk, ShowStatusLabels ? "Free space: " : string.Empty);
+                                                                        var freeSpaceValue = DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk);
+                                                                        var freeSpaceText = ShowStatusLabels
+                                                                            ? WebUiLocalizer.Translate("HttpServer", "Free space: %1", freeSpaceValue)
+                                                                            : freeSpaceValue;
                                                                     }
                                                                     <MudText Class="mx-2 d-none d-sm-flex"
                                                                              data-test-id="@TestIdHelper.For("Status-FreeSpace")">@freeSpaceText</MudText>
@@ -53,23 +56,25 @@
                                                                     }
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
                                                                     @{
+                                                                        var dhtNodesValue = MainData?.ServerState.DHTNodes ?? 0;
                                                                         var dhtNodesText = ShowStatusLabels
-                                                                            ? $"DHT: {MainData?.ServerState.DHTNodes ?? 0} nodes"
-                                                                            : $"DHT: {MainData?.ServerState.DHTNodes ?? 0}";
+                                                                            ? WebUiLocalizer.Translate("StatusBar", "DHT: %1 nodes", dhtNodesValue)
+                                                                            : dhtNodesValue.ToString();
                                                                     }
                                                                     <MudText Class="mx-2 d-none d-sm-flex"
                                                                              data-test-id="@TestIdHelper.For("Status-DhtNodes")">@dhtNodesText</MudText>
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
                                                                     @{
                                                                         var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);
+                                                                        var connectionTitle = BuildConnectionStatusTitle(MainData?.ServerState.ConnectionStatus);
                                                                     }
-                                                                    <MudIcon Class="mx-1" Icon="@icon" Color="@colour" Title="@MainData?.ServerState.ConnectionStatus" />
+                                                                    <MudIcon Class="mx-1" Icon="@icon" Color="@colour" Title="@connectionTitle" />
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
                                                                     <MudTooltip Text="@BuildTimerTooltip()">
                                                                         <MudIconButton Class="mx-1" Icon="@GetTimerStatusIcon()" Color="@GetTimerStatusColor()" OnClick="ToggleTimerDrawerAsync" />
                                                                     </MudTooltip>
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
-                                                                    <MudTooltip Text="Toggle alternative speed limits">
+                                                                    <MudTooltip Text="@BuildAlternativeSpeedLimitsTooltip()">
                                                                         <MudIconButton Class="@($"mx-1{((MainData?.ServerState.UseAltSpeedLimits ?? false) ? " app-shell__alt-speed-enabled" : string.Empty)}")"
                                                                                        Icon="@Icons.Material.Outlined.Speed"
                                                                                        Color="@((MainData?.ServerState.UseAltSpeedLimits ?? false) ? Color.Error : Color.Success)"

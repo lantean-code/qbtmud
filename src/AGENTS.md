@@ -64,6 +64,9 @@
 - Only one type per file; the file name must match the type.
   - Exception: multiple generic variants of the same type may share a file if small and strongly related.
 
+## Line endings
+- Use CRLF line terminators for any files you write or modify.
+
 ## Enforcement
 - Generate C# code that follows these standards exactly.
 - If existing code does not follow these rules, call it out explicitly before proceeding.

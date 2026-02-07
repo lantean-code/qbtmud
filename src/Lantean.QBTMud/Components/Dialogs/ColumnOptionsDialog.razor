@@ -16,7 +16,7 @@
                         <MudCheckBox T="bool" ValueChanged="@(c => SetSelected(c, column.Id))" Label="@column.Header" LabelPlacement="Placement.End" Value="@(SelectedColumnsInternal.Contains(column.Id))" data-test-id="@TestIdHelper.For($"Column-{column.Id}")" />
                     </MudItem>
                     <MudItem xs="3">
-                        <MudTextField T="string" Value="@(GetValue(column.Width, column.Id))" ValueChanged="@(c => SetWidth(c, column.Id))" Label="Width" Variant="Variant.Text" HelperText="px" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.WidthNormal" OnAdornmentClick="@(c => SetWidth("auto", column.Id))" data-test-id="@TestIdHelper.For($"Width-{column.Id}")" />
+                        <MudTextField T="string" Value="@(GetValue(column.Width, column.Id))" ValueChanged="@(c => SetWidth(c, column.Id))" Label="@Translate("Width")" Variant="Variant.Text" HelperText="@Translate("px")" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.WidthNormal" OnAdornmentClick="@(c => SetWidth(Translate("auto"), column.Id))" data-test-id="@TestIdHelper.For($"Width-{column.Id}")" />
                     </MudItem>
                     <MudItem xs="1">
                         <MudIconButton Icon="@Icons.Material.Outlined.KeyboardArrowUp" Disabled="@(index == 0)" OnClick="@(e => MoveUp(index))" data-test-id="@TestIdHelper.For($"Up-{column.Id}")" />
@@ -29,7 +29,7 @@
         </MudCard>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("ColumnOptionsCancel")">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("ColumnOptionsSave")">Save</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("ColumnOptionsCancel")">@Translate("Cancel")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("ColumnOptionsSave")">@Translate("Save")</MudButton>
     </DialogActions>
 </MudDialog>

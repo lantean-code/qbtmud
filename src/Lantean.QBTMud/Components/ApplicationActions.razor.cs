@@ -4,6 +4,7 @@ using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
@@ -35,6 +36,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
 
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+
         [Parameter]
         public bool IsMenu { get; set; }
 
@@ -61,7 +65,9 @@ namespace Lantean.QBTMud.Components
                 {
                     if (action.Name == "darkMode")
                     {
-                        var text = $"Switch to {(IsDarkMode ? "light" : "dark")} mode";
+                        var text = IsDarkMode
+                            ? WebUiLocalizer.Translate("AppApplicationActions", "Switch to light mode")
+                            : WebUiLocalizer.Translate("AppApplicationActions", "Switch to dark mode");
                         var color = IsDarkMode ? Color.Info : Color.Inherit;
                         yield return new UIAction(action.Name, text, action.Icon, color, action.Callback);
                         continue;
@@ -79,20 +85,20 @@ namespace Lantean.QBTMud.Components
         {
             _actions =
             [
-                new("statistics", "Statistics", Icons.Material.Filled.PieChart, Color.Default, "./statistics"),
-                new("speed", "Speed", Icons.Material.Filled.ShowChart, Color.Default, "./speed"),
-                new("search", "Search", Icons.Material.Filled.Search, Color.Default, "./search", separatorBefore: true),
-                new("rss", "RSS", Icons.Material.Filled.RssFeed, Color.Default, "./rss"),
-                new("torrentCreator", "Torrent Creator", Icons.Material.Filled.CreateNewFolder, Color.Default, "./torrent-creator"),
-                new("log", "Execution Log", Icons.Material.Filled.List, Color.Default, "./log", separatorBefore: true),
-                new("blocks", "Blocked IPs", Icons.Material.Filled.DisabledByDefault, Color.Default, "./blocks"),
-                new("tags", "Tag Manager", Icons.Material.Filled.Label, Color.Default, "./tags", separatorBefore: true),
-                new("categories", "Category Manager", Icons.Material.Filled.List, Color.Default, "./categories"),
-                new("cookies", "Cookie Manager", Icons.Material.Filled.Cookie, Color.Default, "./cookies"),
-                new("themes", "Theme Manager", Icons.Material.Filled.Palette, Color.Default, "./themes"),
-                new("settings", "Settings", Icons.Material.Filled.Settings, Color.Default, "./settings", separatorBefore: true),
-                new("darkMode", "Switch to dark mode", Icons.Material.Filled.DarkMode, Color.Info, EventCallback.Factory.Create(this, ToggleDarkMode)),
-                new("about", "About", Icons.Material.Filled.Info, Color.Default, "./about"),
+                new("statistics", WebUiLocalizer.Translate("MainWindow", "Statistics"), Icons.Material.Filled.PieChart, Color.Default, "./statistics"),
+                new("speed", WebUiLocalizer.Translate("AppApplicationActions", "Speed"), Icons.Material.Filled.ShowChart, Color.Default, "./speed"),
+                new("search", WebUiLocalizer.Translate("MainWindow", "Search"), Icons.Material.Filled.Search, Color.Default, "./search", separatorBefore: true),
+                new("rss", WebUiLocalizer.Translate("MainWindow", "RSS"), Icons.Material.Filled.RssFeed, Color.Default, "./rss"),
+                new("torrentCreator", WebUiLocalizer.Translate("MainWindow", "Torrent Creator"), Icons.Material.Filled.CreateNewFolder, Color.Default, "./torrent-creator"),
+                new("log", WebUiLocalizer.Translate("MainWindow", "Execution Log"), Icons.Material.Filled.List, Color.Default, "./log", separatorBefore: true),
+                new("blocks", WebUiLocalizer.Translate("ExecutionLogWidget", "Blocked IPs"), Icons.Material.Filled.DisabledByDefault, Color.Default, "./blocks"),
+                new("tags", WebUiLocalizer.Translate("AppApplicationActions", "Tag Manager"), Icons.Material.Filled.Label, Color.Default, "./tags", separatorBefore: true),
+                new("categories", WebUiLocalizer.Translate("AppApplicationActions", "Category Manager"), Icons.Material.Filled.List, Color.Default, "./categories"),
+                new("cookies", WebUiLocalizer.Translate("AppApplicationActions", "Cookie Manager"), Icons.Material.Filled.Cookie, Color.Default, "./cookies"),
+                new("themes", WebUiLocalizer.Translate("AppApplicationActions", "Theme Manager"), Icons.Material.Filled.Palette, Color.Default, "./themes"),
+                new("settings", WebUiLocalizer.Translate("MainWindow", "Options..."), Icons.Material.Filled.Settings, Color.Default, "./settings", separatorBefore: true),
+                new("darkMode", WebUiLocalizer.Translate("AppApplicationActions", "Switch to dark mode"), Icons.Material.Filled.DarkMode, Color.Info, EventCallback.Factory.Create(this, ToggleDarkMode)),
+                new("about", WebUiLocalizer.Translate("MainWindow", "About"), Icons.Material.Filled.Info, Color.Default, "./about"),
             ];
         }
 
@@ -115,7 +121,10 @@ namespace Lantean.QBTMud.Components
 
         protected async Task Logout()
         {
-            await DialogWorkflow.ShowConfirmDialog("Logout?", "Are you sure you want to logout?", async () =>
+            await DialogWorkflow.ShowConfirmDialog(
+                WebUiLocalizer.Translate("AppApplicationActions", "Logout?"),
+                WebUiLocalizer.Translate("AppApplicationActions", "Are you sure you want to logout?"),
+                async () =>
             {
                 await ApiClient.Logout();
                 await SpeedHistoryService.ClearAsync();
@@ -126,7 +135,10 @@ namespace Lantean.QBTMud.Components
 
         protected async Task Exit()
         {
-            await DialogWorkflow.ShowConfirmDialog("Quit?", "Are you sure you want to exit qBittorrent?", ApiClient.Shutdown);
+            await DialogWorkflow.ShowConfirmDialog(
+                WebUiLocalizer.Translate("AppApplicationActions", "Quit?"),
+                WebUiLocalizer.Translate("AppApplicationActions", "Are you sure you want to exit qBittorrent?"),
+                ApiClient.Shutdown);
         }
 
         protected async Task ToggleDarkMode()
@@ -152,34 +164,35 @@ namespace Lantean.QBTMud.Components
             try
             {
                 var templateUrl = BuildMagnetHandlerTemplateUrl();
-                var result = await JSRuntime.RegisterMagnetHandler(templateUrl);
+                var handlerName = WebUiLocalizer.Translate("AppApplicationActions", "qBittorrent WebUI magnet handler");
+                var result = await JSRuntime.RegisterMagnetHandler(templateUrl, handlerName);
 
                 var status = (result.Status ?? string.Empty).ToLowerInvariant();
                 switch (status)
                 {
                     case "success":
-                        Snackbar?.Add("Magnet handler registered. Magnet links will now open in qBittorrent WebUI.", Severity.Success);
+                        Snackbar?.Add(WebUiLocalizer.Translate("AppApplicationActions", "Magnet handler registered. Magnet links will now open in qBittorrent WebUI."), Severity.Success);
                         break;
 
                     case "insecure":
-                        Snackbar?.Add("Access this WebUI over HTTPS to register the magnet handler.", Severity.Warning);
+                        Snackbar?.Add(WebUiLocalizer.Translate("AppApplicationActions", "Access this WebUI over HTTPS to register the magnet handler."), Severity.Warning);
                         break;
 
                     case "unsupported":
-                        Snackbar?.Add("This browser does not support registering magnet handlers.", Severity.Warning);
+                        Snackbar?.Add(WebUiLocalizer.Translate("AppApplicationActions", "This browser does not support registering magnet handlers."), Severity.Warning);
                         break;
 
                     default:
                         var message = string.IsNullOrWhiteSpace(result.Message)
-                            ? "Unable to register the magnet handler."
-                            : $"Unable to register the magnet handler: {result.Message}";
+                            ? WebUiLocalizer.Translate("AppApplicationActions", "Unable to register the magnet handler.")
+                            : WebUiLocalizer.Translate("AppApplicationActions", "Unable to register the magnet handler: %1", result.Message);
                         Snackbar?.Add(message, Severity.Error);
                         break;
                 }
             }
             catch (JSException exception)
             {
-                Snackbar?.Add($"Unable to register the magnet handler: {exception.Message}", Severity.Error);
+                Snackbar?.Add(WebUiLocalizer.Translate("AppApplicationActions", "Unable to register the magnet handler: %1", exception.Message), Severity.Error);
             }
             finally
             {
@@ -196,7 +209,7 @@ namespace Lantean.QBTMud.Components
 
             if (MainData?.LostConnection == true)
             {
-                Snackbar?.Add("qBittorrent client is not reachable.", Severity.Warning);
+                Snackbar?.Add(WebUiLocalizer.Translate("HttpServer", "qBittorrent client is not reachable"), Severity.Warning);
                 return;
             }
 
@@ -204,11 +217,11 @@ namespace Lantean.QBTMud.Components
             try
             {
                 await ApiClient.StartAllTorrents();
-                Snackbar?.Add("All torrents started.", Severity.Success);
+                Snackbar?.Add(WebUiLocalizer.Translate("AppApplicationActions", "All torrents started."), Severity.Success);
             }
             catch (HttpRequestException)
             {
-                Snackbar?.Add($"Unable to start torrents.", Severity.Error);
+                Snackbar?.Add(WebUiLocalizer.Translate("HttpServer", "Unable to start torrents."), Severity.Error);
             }
             finally
             {
@@ -225,7 +238,7 @@ namespace Lantean.QBTMud.Components
 
             if (MainData?.LostConnection == true)
             {
-                Snackbar?.Add("qBittorrent client is not reachable.", Severity.Warning);
+                Snackbar?.Add(WebUiLocalizer.Translate("HttpServer", "qBittorrent client is not reachable"), Severity.Warning);
                 return;
             }
 
@@ -233,11 +246,11 @@ namespace Lantean.QBTMud.Components
             try
             {
                 await ApiClient.StopAllTorrents();
-                Snackbar?.Add("All torrents stopped.", Severity.Info);
+                Snackbar?.Add(WebUiLocalizer.Translate("AppApplicationActions", "All torrents stopped."), Severity.Info);
             }
             catch (HttpRequestException)
             {
-                Snackbar?.Add($"Unable to stop torrents.", Severity.Error);
+                Snackbar?.Add(WebUiLocalizer.Translate("HttpServer", "Unable to stop torrents."), Severity.Error);
             }
             finally
             {

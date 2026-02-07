@@ -1,4 +1,5 @@
 using Lantean.QBTMud.Components.Dialogs;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -8,6 +9,9 @@ namespace Lantean.QBTMud.Components
     {
         [Inject]
         protected IDialogService DialogService { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -22,7 +26,10 @@ namespace Lantean.QBTMud.Components
                 { nameof(ExceptionDialog.Exception), exception }
             };
 
-            await DialogService.ShowAsync<ExceptionDialog>("Error Details", parameters, global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
+            await DialogService.ShowAsync<ExceptionDialog>(
+                WebUiLocalizer.Translate("AppErrorDisplay", "Error Details"),
+                parameters,
+                global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
         }
 
         protected async Task ClearErrors()

@@ -5,7 +5,7 @@
         <div class="path-browser-dialog__content">
             <MudGrid>
                 <MudItem xs="12">
-                <MudTextField Label="Current path"
+                <MudTextField Label="@Translate("Current path")"
                               Value="_currentPath"
                               ValueChanged="@(async (string value) => await PathChanged(value))"
                               Variant="Variant.Outlined"
@@ -15,8 +15,8 @@
             </MudItem>
                 <MudItem xs="12">
                     <MudButtonGroup>
-                        <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Disabled="@(!CanNavigateUp)" OnClick="NavigateUp" title="Up" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Disabled="@IsLoading" OnClick="Reload" title="Refresh" />
+                        <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Disabled="@(!CanNavigateUp)" OnClick="NavigateUp" title="@Translate("Up")" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Disabled="@IsLoading" OnClick="Reload" title="@Translate("Refresh")" />
                     </MudButtonGroup>
                 </MudItem>
                 <MudItem xs="12">
@@ -32,7 +32,7 @@
                         }
                         else if (_entries.Count == 0)
                         {
-                            <MudText data-test-id="@TestIdHelper.For("PathBrowserEmpty")">No items.</MudText>
+                            <MudText data-test-id="@TestIdHelper.For("PathBrowserEmpty")">@Translate("No items.")</MudText>
                         }
                         else
                         {
@@ -53,6 +53,6 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Disabled="@(!CanSelectFolder)" OnClick="SelectCurrentFolder" data-test-id="@TestIdHelper.For("SelectFolder")">Select folder</MudButton>
+        <MudButton Disabled="@(!CanSelectFolder)" OnClick="SelectCurrentFolder" data-test-id="@TestIdHelper.For("SelectFolder")">@Translate("Select folder")</MudButton>
     </DialogActions>
 </MudDialog>

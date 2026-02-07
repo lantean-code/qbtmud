@@ -1,7 +1,6 @@
 @page "/login"
 @layout MainLayout
-
-<PageTitle>Login</PageTitle>
+<PageTitle>@WebUiLocalizer.Translate("Login", "Login")</PageTitle>
 
 <MudMainContent>
     <MudContainer Fixed MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
@@ -10,7 +9,7 @@
                 <MudItem xs="12">
                     <MudCard>
                         <MudCardHeader>
-                            <MudText Typo="Typo.h6">Login</MudText>
+                            <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("Login", "Login")</MudText>
                         </MudCardHeader>
                         <MudCardContent Class="pt-0">
                             @if (ApiError is not null)
@@ -23,15 +22,15 @@
                             }
                             <DataAnnotationsValidator />
                             <MudItem xs="12">
-                                <MudTextField Label="Username" @bind-Value="Model.Username" For="@(() => Model.Username)" data-test-id="@TestIdHelper.For("Username")" />
+                                <MudTextField Label="@WebUiLocalizer.Translate("Login", "Username")" @bind-Value="Model.Username" For="@(() => Model.Username)" data-test-id="@TestIdHelper.For("Username")" />
                             </MudItem>
                             <MudItem xs="12">
-                                <MudTextField Label="Password" @bind-Value="Model.Password" For="@(() => Model.Password)" InputType="InputType.Password" data-test-id="@TestIdHelper.For("Password")" />
+                                <MudTextField Label="@WebUiLocalizer.Translate("Login", "Password")" @bind-Value="Model.Password" For="@(() => Model.Password)" InputType="InputType.Password" data-test-id="@TestIdHelper.For("Password")" />
                             </MudItem>
                         </MudCardContent>
                         <MudCardActions>
                             <MudItem xs="12">
-                                <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit">Login</MudButton>
+                                <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit">@WebUiLocalizer.Translate("Login", "Login")</MudButton>
                             </MudItem>
                         </MudCardActions>
                     </MudCard>

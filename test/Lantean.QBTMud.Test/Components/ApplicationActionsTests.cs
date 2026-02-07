@@ -432,6 +432,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var invocation = TestContext.JSInterop.Invocations.Single(i => i.Identifier == "qbt.registerMagnetHandler");
             invocation.Arguments.First().Should().Be("http://localhost/#download=%s");
+            invocation.Arguments[1].Should().Be("qBittorrent WebUI magnet handler");
         }
 
         [Fact]

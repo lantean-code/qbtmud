@@ -1,19 +1,20 @@
 @inherits SubmittableDialog
 @using Lantean.QBTMud.Helpers
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <MudDialog>
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
                 <MudFocusTrap>
-                    <MudTextField @ref="UrlsTextField" Label="Urls" Lines="10" @bind-Value="Urls" Variant="Variant.Outlined" ShrinkLabel="true" AutoFocus="true" data-test-id="@TestIdHelper.For("AddTorrentLinkUrls")" />
+                    <MudTextField @ref="UrlsTextField" Label="@WebUiLocalizer.Translate("AddNewTorrentDialog", "Add torrent links")" Lines="10" @bind-Value="Urls" Variant="Variant.Outlined" ShrinkLabel="true" AutoFocus="true" data-test-id="@TestIdHelper.For("AddTorrentLinkUrls")" />
                 </MudFocusTrap>
             </MudItem>
         </MudGrid>
         <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="false" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTorrentLinkClose")">Close</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTorrentLinkSubmit")">Upload Torrents</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTorrentLinkClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTorrentLinkSubmit")">@WebUiLocalizer.Translate("downloadFromURL", "Download")</MudButton>
     </DialogActions>
 </MudDialog>

@@ -7,6 +7,7 @@ namespace Lantean.QBTMud.Components
     public partial class TimerStatusPanel : IAsyncDisposable
     {
         private const int PollIntervalMilliseconds = 1000;
+        private const string AppContext = "AppTimerStatusPanel";
 
         private readonly object _syncLock = new();
         private CancellationTokenSource? _pollingCancellationTokenSource;
@@ -21,6 +22,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected IPeriodicTimerFactory PeriodicTimerFactory { get; set; } = default!;
+
+        [Inject]
+        protected Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "TimerDrawerOpen")]
         public bool TimerDrawerOpen { get; set; }
@@ -104,14 +108,14 @@ namespace Lantean.QBTMud.Components
             return localTime.ToString(format);
         }
 
-        private static string GetStateTooltip(IManagedTimer timer)
+        private string GetStateTooltip(IManagedTimer timer)
         {
             if (timer.State == ManagedTimerState.Faulted && timer.LastFault is not null)
             {
-                return $"Faulted: {timer.LastFault.Message}";
+                return TranslateApp("Faulted: %1", timer.LastFault.Message);
             }
 
-            return timer.State.ToString();
+            return GetStateLabel(timer.State);
         }
 
         private static string GetStateIcon(ManagedTimerState state)
@@ -138,14 +142,28 @@ namespace Lantean.QBTMud.Components
             };
         }
 
-        private static string GetTickLabel(IManagedTimer timer)
+        private string GetTickLabel(IManagedTimer timer)
         {
-            return timer.State == ManagedTimerState.Running ? "Next tick" : "Last tick";
+            return timer.State == ManagedTimerState.Running
+                ? TranslateApp("Next tick")
+                : TranslateApp("Last tick");
         }
 
         private static DateTimeOffset? GetTickTimestamp(IManagedTimer timer)
         {
             return timer.State == ManagedTimerState.Running ? timer.NextTickUtc : timer.LastTickUtc;
+        }
+
+        private string GetStateLabel(ManagedTimerState state)
+        {
+            return state switch
+            {
+                ManagedTimerState.Running => TranslateApp("Running"),
+                ManagedTimerState.Paused => TranslateApp("Paused"),
+                ManagedTimerState.Faulted => TranslateApp("Faulted"),
+                ManagedTimerState.Stopped => TranslateApp("Stopped"),
+                _ => TranslateApp("Running")
+            };
         }
 
         private void StartPolling()
@@ -199,6 +217,11 @@ namespace Lantean.QBTMud.Components
             {
                 // Cancellation is expected when polling stops.
             }
+        }
+
+        private string TranslateApp(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate(AppContext, source, arguments);
         }
     }
 }

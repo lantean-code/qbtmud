@@ -22,10 +22,10 @@ namespace Lantean.QBTMud.Components
         private int _heatmapColumns = MinimumHeatmapColumns;
         private int _piecesPerCell = 1;
         private string _linearBarStyle = string.Empty;
-        private string _linearSummary = "Pieces data unavailable";
-        private string _linearTooltip = "Pieces data unavailable";
+        private string _linearSummary = string.Empty;
+        private string _linearTooltip = string.Empty;
         private string _linearAriaLabel = string.Empty;
-        private string _heatmapEmptyText = "Pieces data unavailable";
+        private string _heatmapEmptyText = string.Empty;
         private string _heatmapAriaLabel = string.Empty;
         private IReadOnlyList<IReadOnlyList<HeatmapCellViewModel>> _heatmapRows = Array.Empty<IReadOnlyList<HeatmapCellViewModel>>();
         private IReadOnlyList<LegendItem> _legendItems = Array.Empty<LegendItem>();
@@ -37,6 +37,7 @@ namespace Lantean.QBTMud.Components
         private string _pendingThemeSignature = string.Empty;
         private string _cachedHash = string.Empty;
         private string _pendingHash = string.Empty;
+        private const string AppContext = "AppPiecesProgressNew";
 
         [Parameter]
         [EditorRequired]
@@ -51,6 +52,9 @@ namespace Lantean.QBTMud.Components
 
         [CascadingParameter]
         public MudTheme Theme { get; set; } = default!;
+
+        [Inject]
+        public Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         protected string LinearBarStyle => _linearBarStyle;
 
@@ -175,9 +179,9 @@ namespace Lantean.QBTMud.Components
             if (Pieces.Count == 0)
             {
                 _linearBarStyle = $"background-color: {PendingColor};";
-                _linearSummary = "Pieces data unavailable";
-                _linearTooltip = "Pieces data unavailable";
-                _linearAriaLabel = $"Pieces progress unavailable for torrent {Hash}.";
+                _linearSummary = TranslateApp("Pieces data unavailable");
+                _linearTooltip = TranslateApp("Pieces data unavailable");
+                _linearAriaLabel = TranslateApp("Pieces progress unavailable for torrent %1.", Hash);
                 return;
             }
 
@@ -208,20 +212,21 @@ namespace Lantean.QBTMud.Components
             var percentComplete = Pieces.Count == 0
                 ? 0
                 : ((downloadedCount + (downloadingCount * 0.5)) / Pieces.Count) * 100.0;
-            _linearSummary = CreateInvariant(
-                "{0:0.#}% complete — {1} downloaded, {2} in progress",
-                percentComplete,
+            var percentCompleteText = percentComplete.ToString("0.#", CultureInfo.InvariantCulture);
+            _linearSummary = TranslateApp(
+                "%1% complete — %2 downloaded, %3 in progress",
+                percentCompleteText,
                 downloadedCount,
                 downloadingCount);
-            _linearTooltip = CreateInvariant(
-                "Downloaded: {0}\nDownloading: {1}\nPending: {2}",
+            _linearTooltip = TranslateApp(
+                "Downloaded: %1\nDownloading: %2\nPending: %3",
                 downloadedCount,
                 downloadingCount,
                 pendingCount);
-            _linearAriaLabel = CreateInvariant(
-                "Pieces progress for torrent {0}: {1:0.#}% complete. {2} downloaded, {3} downloading, {4} pending. Toggle heatmap view.",
+            _linearAriaLabel = TranslateApp(
+                "Pieces progress for torrent %1: %2% complete. %3 downloaded, %4 downloading, %5 pending. Toggle heatmap view.",
                 Hash,
-                percentComplete,
+                percentCompleteText,
                 downloadedCount,
                 downloadingCount,
                 pendingCount);
@@ -232,8 +237,8 @@ namespace Lantean.QBTMud.Components
             if (Pieces.Count == 0)
             {
                 _heatmapRows = Array.Empty<IReadOnlyList<HeatmapCellViewModel>>();
-                _heatmapEmptyText = "Heatmap unavailable without piece data.";
-                _heatmapAriaLabel = $"Pieces heatmap unavailable for torrent {Hash}.";
+                _heatmapEmptyText = TranslateApp("Heatmap unavailable without piece data.");
+                _heatmapAriaLabel = TranslateApp("Pieces heatmap unavailable for torrent %1.", Hash);
                 return;
             }
 
@@ -267,7 +272,7 @@ namespace Lantean.QBTMud.Components
 
             _heatmapRows = rows;
             _heatmapEmptyText = string.Empty;
-            _heatmapAriaLabel = $"Pieces heatmap for torrent {Hash}.";
+            _heatmapAriaLabel = TranslateApp("Pieces heatmap for torrent %1.", Hash);
         }
 
         private IReadOnlyList<PieceState> CollectCellPieces(int startIndex, int piecesPerCell)
@@ -287,9 +292,9 @@ namespace Lantean.QBTMud.Components
         {
             _legendItems = new[]
             {
-                new LegendItem("pieces-progress-new__legend-swatch--downloaded", "Downloaded"),
-                new LegendItem("pieces-progress-new__legend-swatch--downloading", "Downloading"),
-                new LegendItem("pieces-progress-new__legend-swatch--pending", "Not downloaded")
+                new LegendItem("pieces-progress-new__legend-swatch--downloaded", TranslateApp("Downloaded")),
+                new LegendItem("pieces-progress-new__legend-swatch--downloading", TranslateApp("Downloading")),
+                new LegendItem("pieces-progress-new__legend-swatch--pending", TranslateApp("Not downloaded"))
             };
         }
 
@@ -395,7 +400,7 @@ namespace Lantean.QBTMud.Components
             };
         }
 
-        private static string BuildHeatmapTooltip(int startIndex, IReadOnlyList<PieceState> states)
+        private string BuildHeatmapTooltip(int startIndex, IReadOnlyList<PieceState> states)
         {
             if (states.Count == 0)
             {
@@ -404,8 +409,8 @@ namespace Lantean.QBTMud.Components
 
             if (states.Count == 1)
             {
-                return CreateInvariant(
-                    "Piece #{0}: {1}",
+                return TranslateApp(
+                    "Piece #%1: %2",
                     startIndex + 1,
                     DescribePieceState(states[0]));
             }
@@ -418,8 +423,8 @@ namespace Lantean.QBTMud.Components
                     builder.Append('\n');
                 }
 
-                builder.Append(CreateInvariant(
-                    "Piece #{0}: {1}",
+                builder.Append(TranslateApp(
+                    "Piece #%1: %2",
                     startIndex + index + 1,
                     DescribePieceState(states[index])));
             }
@@ -427,13 +432,13 @@ namespace Lantean.QBTMud.Components
             return builder.ToString();
         }
 
-        private static string DescribePieceState(PieceState state)
+        private string DescribePieceState(PieceState state)
         {
             return state switch
             {
-                PieceState.Downloaded => "Downloaded",
-                PieceState.Downloading => "Downloading",
-                _ => "Not downloaded"
+                PieceState.Downloaded => TranslateApp("Downloaded"),
+                PieceState.Downloading => TranslateApp("Downloading"),
+                _ => TranslateApp("Not downloaded")
             };
         }
 
@@ -539,13 +544,9 @@ namespace Lantean.QBTMud.Components
 
         protected sealed record LegendItem(string CssClass, string Label);
 
-        private static string CreateInvariant(string format, params object?[] arguments)
+        private string TranslateApp(string source, params object[] arguments)
         {
-            var formatted = string.Format(CultureInfo.InvariantCulture, format, arguments);
-            return string.Create(
-                formatted.Length,
-                formatted,
-                static (span, state) => state.AsSpan().CopyTo(span));
+            return WebUiLocalizer.Translate(AppContext, source, arguments);
         }
     }
 }

@@ -8,6 +8,7 @@ namespace Lantean.QBTMud.Models
         public ColumnDefinition(string header, Func<T, object?> sortSelector, Func<T, string>? formatter = null, string? tdClass = null, int? width = null)
         {
             Header = header;
+            DisplayHeader = header;
             SortSelector = sortSelector;
             Formatter = formatter;
             Class = tdClass;
@@ -19,6 +20,7 @@ namespace Lantean.QBTMud.Models
         public ColumnDefinition(string header, Func<T, object?> sortSelector, RenderFragment<RowContext<T>> rowTemplate, Func<T, string>? formatter = null, string? tdClass = null, int? width = null)
         {
             Header = header;
+            DisplayHeader = header;
             SortSelector = sortSelector;
             RowTemplate = rowTemplate;
             Formatter = formatter;
@@ -29,6 +31,8 @@ namespace Lantean.QBTMud.Models
         public string Id => Header.ToLowerInvariant().Replace(' ', '_');
 
         public string Header { get; set; }
+
+        public string DisplayHeader { get; set; }
 
         public Func<T, object?> SortSelector { get; set; }
 
@@ -50,7 +54,7 @@ namespace Lantean.QBTMud.Models
 
         public RowContext<T> GetRowContext(T data)
         {
-            return new RowContext<T>(Header, data, Formatter is null ? SortSelector : Formatter);
+            return new RowContext<T>(DisplayHeader, data, Formatter is null ? SortSelector : Formatter);
         }
     }
 }

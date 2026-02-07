@@ -3,6 +3,7 @@ using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
@@ -43,6 +44,9 @@ namespace Lantean.QBTMud.Layout
 
         [Inject]
         protected ISessionStorageService SessionStorage { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [Inject]
         protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
@@ -632,12 +636,19 @@ namespace Lantean.QBTMud.Layout
             };
         }
 
+        private string BuildPageTitle()
+        {
+            var webUiLabel = WebUiLocalizer.Translate("OptionsDialog", "WebUI");
+            var versionPart = string.IsNullOrWhiteSpace(Version) ? string.Empty : $" {Version}";
+            return $"qBittorrent{versionPart} {webUiLabel}";
+        }
+
         private string BuildTimerTooltip()
         {
             var timers = TimerRegistry.GetTimers();
             if (timers.Count == 0)
             {
-                return "No timers registered.";
+                return WebUiLocalizer.Translate("AppTimerStatusPanel", "No timers registered.");
             }
 
             var running = timers.Count(timer => timer.State == ManagedTimerState.Running);
@@ -645,10 +656,16 @@ namespace Lantean.QBTMud.Layout
             var stopped = timers.Count(timer => timer.State == ManagedTimerState.Stopped);
             var faulted = timers.Count(timer => timer.State == ManagedTimerState.Faulted);
 
-            return $"Timers: {running} running, {paused} paused, {stopped} stopped, {faulted} faulted";
+            return WebUiLocalizer.Translate(
+                "AppTimerStatusPanel",
+                "Timers: %1 running, %2 paused, %3 stopped, %4 faulted",
+                running,
+                paused,
+                stopped,
+                faulted);
         }
 
-        private static string? BuildExternalIpLabel(ServerState? serverState)
+        private string? BuildExternalIpLabel(ServerState? serverState)
         {
             if (serverState is null)
             {
@@ -662,16 +679,15 @@ namespace Lantean.QBTMud.Layout
 
             if (!hasV4 && !hasV6)
             {
-                return "External IP: N/A";
+                return WebUiLocalizer.Translate("HttpServer", "External IP: N/A");
             }
 
             if (hasV4 && hasV6)
             {
-                return $"External IPs: {v4}, {v6}";
+                return WebUiLocalizer.Translate("HttpServer", "External IPs: %1, %2", v4, v6);
             }
 
-            var address = hasV4 ? v4 : v6;
-            return $"External IP: {address}";
+            return WebUiLocalizer.Translate("HttpServer", "External IP: %1%2", v4 ?? string.Empty, v6 ?? string.Empty);
         }
 
         private static string? BuildExternalIpValue(ServerState? serverState)
@@ -707,6 +723,34 @@ namespace Lantean.QBTMud.Layout
             var dataSuffix = string.IsNullOrEmpty(dataText) ? string.Empty : $" ({dataText})";
 
             return $"{speedText}{limitText}{dataSuffix}";
+        }
+
+        private string BuildAlternativeSpeedLimitsTooltip()
+        {
+            return BuildAlternativeSpeedLimitsStatusMessage(MainData?.ServerState.UseAltSpeedLimits ?? false);
+        }
+
+        private string BuildAlternativeSpeedLimitsStatusMessage(bool isEnabled)
+        {
+            return WebUiLocalizer.Translate(
+                "MainWindow",
+                isEnabled ? "Alternative speed limits: On" : "Alternative speed limits: Off");
+        }
+
+        private string? BuildConnectionStatusTitle(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                return null;
+            }
+
+            return status switch
+            {
+                "connected" => WebUiLocalizer.Translate("MainWindow", "Connection status: Connected"),
+                "firewalled" => WebUiLocalizer.Translate("MainWindow", "Connection status: Firewalled"),
+                "disconnected" => WebUiLocalizer.Translate("MainWindow", "Connection status: Disconnected"),
+                _ => status
+            };
         }
 
         private Task RecordSpeedSampleAsync(ServerState? serverState, CancellationToken cancellationToken)
@@ -801,11 +845,13 @@ namespace Lantean.QBTMud.Layout
                     MainData.ServerState.UseAltSpeedLimits = isEnabled;
                 }
 
-                Snackbar?.Add(isEnabled ? "Alternative speed limits enabled." : "Alternative speed limits disabled.", Severity.Info);
+                Snackbar?.Add(BuildAlternativeSpeedLimitsStatusMessage(isEnabled), Severity.Info);
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"Unable to toggle alternative speed limits: {exception.Message}", Severity.Error);
+                Snackbar?.Add(
+                    WebUiLocalizer.Translate("AppLoggedInLayout", "Unable to toggle alternative speed limits: %1", exception.Message),
+                    Severity.Error);
             }
             finally
             {

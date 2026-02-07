@@ -1,6 +1,5 @@
 @page "/categories"
 @layout OtherLayout
-
 <div class="content-panel">
     <div class="content-panel__toolbar">
         <MudToolBar Gutters="false" Dense="true">
@@ -9,9 +8,9 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">Categories</MudText>
+            <MudText Class="px-5 no-wrap">@WebUiLocalizer.Translate("TransferListFiltersWidget", "Categories")</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Filled.PlaylistAdd" OnClick="AddCategory" title="Add Category" />
+            <MudIconButton Icon="@Icons.Material.Filled.PlaylistAdd" OnClick="AddCategory" title="@WebUiLocalizer.Translate("CategoryFilterWidget", "New Category")" />
         </MudToolBar>
     </div>
 

@@ -3,6 +3,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
@@ -38,6 +39,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -83,19 +87,19 @@ namespace Lantean.QBTMud.Pages
             await LocalStorage.SetItemAsync(_selectedTypesStorageKey, Model.SelectedTypes);
         }
 
-        protected static string GenerateSelectedText(List<string> values)
+        protected string GenerateSelectedText(List<string> values)
         {
             if (values.Count == 4)
             {
-                return "All";
+                return WebUiLocalizer.Translate("ExecutionLogWidget", "All");
             }
 
             if (values.Count == 1)
             {
-                return values[0];
+                return GetLogLevelLabel(values[0]);
             }
 
-            return $"{values.Count} selected";
+            return $"{values.Count} {WebUiLocalizer.Translate("ExecutionLogWidget", "items")}";
         }
 
         protected Task Submit(EditContext editContext)
@@ -218,15 +222,30 @@ namespace Lantean.QBTMud.Pages
             return ManagedTimerTickResult.Continue;
         }
 
-        protected IEnumerable<ColumnDefinition<QBitTorrentClient.Models.Log>> Columns => ColumnsDefinitions;
+        protected IEnumerable<ColumnDefinition<QBitTorrentClient.Models.Log>> Columns => BuildColumns();
 
-        public static List<ColumnDefinition<QBitTorrentClient.Models.Log>> ColumnsDefinitions { get; } =
-        [
-            new ColumnDefinition<QBitTorrentClient.Models.Log>("Id", l => l.Id),
-            new ColumnDefinition<QBitTorrentClient.Models.Log>("Message", l => l.Message),
-            new ColumnDefinition<QBitTorrentClient.Models.Log>("Timestamp", l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp)),
-            new ColumnDefinition<QBitTorrentClient.Models.Log>("Log type", l => l.Type),
-        ];
+        private List<ColumnDefinition<QBitTorrentClient.Models.Log>> BuildColumns()
+        {
+            return
+            [
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Message"), l => l.Message),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp)),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Log Type"), l => l.Type),
+            ];
+        }
+
+        private string GetLogLevelLabel(string value)
+        {
+            return value switch
+            {
+                "Normal" => WebUiLocalizer.Translate("ExecutionLogWidget", "Normal Messages"),
+                "Info" => WebUiLocalizer.Translate("ExecutionLogWidget", "Information Messages"),
+                "Warning" => WebUiLocalizer.Translate("ExecutionLogWidget", "Warning Messages"),
+                "Critical" => WebUiLocalizer.Translate("ExecutionLogWidget", "Critical Messages"),
+                _ => value
+            };
+        }
 
         private void TrimResults()
         {

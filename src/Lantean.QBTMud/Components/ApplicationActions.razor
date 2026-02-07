@@ -29,14 +29,14 @@
                  Disabled="@(_startAllInProgress || MainData?.LostConnection == true)"
                  OnClick="StartAllTorrents"
                  data-test-id="@TestIdHelper.For("StartAllTorrents")">
-        Start all torrents
+        @WebUiLocalizer.Translate("MainWindow", "Start All")
     </MudMenuItem>
     <MudMenuItem Icon="@Icons.Material.Filled.Stop"
                  IconColor="Color.Warning"
                  Disabled="@(_stopAllInProgress || MainData?.LostConnection == true)"
                  OnClick="StopAllTorrents"
                  data-test-id="@TestIdHelper.For("StopAllTorrents")">
-        Stop all torrents
+        @WebUiLocalizer.Translate("MainWindow", "Stop All")
     </MudMenuItem>
 
     <MudDivider />
@@ -45,12 +45,12 @@
                  Disabled="@(_registerMagnetHandlerInProgress)"
                  OnClick="RegisterMagnetHandler"
                  data-test-id="@TestIdHelper.For("RegisterMagnetHandler")">
-        Register Magnet Handler
+        @WebUiLocalizer.Translate("AppApplicationActions", "Register Magnet Handler")
     </MudMenuItem>
     <MudMenuItem Icon="@Icons.Material.Filled.Undo"
                  OnClick="ResetWebUI"
                  data-test-id="@TestIdHelper.For("ResetWebUI")">
-        Reset Web UI
+        @WebUiLocalizer.Translate("AppApplicationActions", "Reset Web UI")
     </MudMenuItem>
 
     <MudDivider />
@@ -58,19 +58,19 @@
     <MudMenuItem Icon="@Icons.Material.Filled.Logout"
                  OnClick="Logout"
                  data-test-id="@TestIdHelper.For("Logout")">
-        Logout
+        @WebUiLocalizer.Translate("HttpServer", "Logout")
     </MudMenuItem>
     <MudMenuItem Icon="@Icons.Material.Filled.ExitToApp"
                  OnClick="Exit"
                  data-test-id="@TestIdHelper.For("Exit")">
-        Exit qBittorrent
+        @WebUiLocalizer.Translate("HttpServer", "Exit qBittorrent")
     </MudMenuItem>
 }
 else
 {
     <MudNavLink Icon="@Icons.Material.Outlined.Navigation"
                 OnClick="NavigateBack"
-                data-test-id="@TestIdHelper.For("NavigateBack")">Torrents</MudNavLink>
+                data-test-id="@TestIdHelper.For("NavigateBack")">@WebUiLocalizer.Translate("AppApplicationActions", "Torrents")</MudNavLink>
     <MudDivider />
     foreach (var action in Actions)
     {

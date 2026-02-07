@@ -24,7 +24,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("true");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("flag=true");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("flag=true");
         }
 
         [Fact]
@@ -38,7 +38,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("false");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("flag=false");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("flag=false");
         }
 
         [Fact]
@@ -52,7 +52,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("123");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("count=123");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("count=123");
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("9223372036854775807");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("size=9223372036854775807");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("size=9223372036854775807");
         }
 
         [Fact]
@@ -82,7 +82,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("946684800");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("epoch=946684800");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("epoch=946684800");
         }
 
         [Fact]
@@ -98,7 +98,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("946684800000");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("epochMs=946684800000");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("epochMs=946684800000");
         }
 
         [Fact]
@@ -114,7 +114,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be(expected);
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be($"ratio={expected}");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be($"ratio={expected}");
         }
 
         [Fact]
@@ -128,7 +128,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("7");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("b=7");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("b=7");
         }
 
         [Fact]
@@ -142,7 +142,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("5");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("day=5");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("day=5");
         }
 
         [Fact]
@@ -158,7 +158,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("all");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("list=all");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("list=all");
         }
 
         [Fact]
@@ -172,7 +172,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("a|b c|d|e");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("list=a%7Cb+c%7Cd%7Ce");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("list=a%7Cb+c%7Cd%7Ce");
         }
 
         [Fact]
@@ -186,7 +186,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be(string.Empty);
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("list=");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("list=");
         }
 
         [Fact]
@@ -200,7 +200,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("a|b c|d|e");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("ids=a%7Cb+c%7Cd%7Ce");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("ids=a%7Cb+c%7Cd%7Ce");
         }
 
         [Fact]
@@ -214,7 +214,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[0].Value.Should().Be("1,2,3");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("items=1%2C2%2C3");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("items=1%2C2%2C3");
         }
 
         [Fact]
@@ -240,7 +240,7 @@ namespace Lantean.QBitTorrentClient.Test
             parameters[3].Value.Should().Be("7");
 
             using var content = _target.ToFormUrlEncodedContent();
-            (await content.ReadAsStringAsync()).Should().Be("flag=true&count=2&epoch=946684800&b=7");
+            (await content.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("flag=true&count=2&epoch=946684800&b=7");
         }
     }
 }

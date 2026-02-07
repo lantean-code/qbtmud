@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             dialog.Component.Instance.Content.Should().NotBeNull();
             GetChildContentText(FindComponentByTestId<MudButton>(dialog.Component, "ConfirmCancel").Instance.ChildContent).Should().Be("Cancel");
-            GetChildContentText(FindComponentByTestId<MudButton>(dialog.Component, "ConfirmOk").Instance.ChildContent).Should().Be("Ok");
+            GetChildContentText(FindComponentByTestId<MudButton>(dialog.Component, "ConfirmOk").Instance.ChildContent).Should().Be("OK");
         }
 
         [Fact]

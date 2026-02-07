@@ -1,16 +1,15 @@
 @page "/speed"
 @layout OtherLayout
-
 <div class="content-panel">
     <div class="content-panel__toolbar">
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
-                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="@Translate("Back to torrent list")" />
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
-            <MudText Class="pl-5 no-wrap">Speed</MudText>
+            <MudText Class="pl-5 no-wrap">@Translate("Speed")</MudText>
         </MudToolBar>
     </div>
 
@@ -29,13 +28,13 @@
                                     data-test-id="@TestIdHelper.For("PeriodToggleGroup")">
                         @foreach (var option in PeriodOptions)
                         {
-                            <MudToggleItem Value="option.Period" data-test-id="@TestIdHelper.For($"PeriodToggle-{option.Period}")">@option.Label</MudToggleItem>
+                            <MudToggleItem Value="option.Period" data-test-id="@TestIdHelper.For($"PeriodToggle-{option.Period}")">@Translate(option.Label)</MudToggleItem>
                         }
                     </MudToggleGroup>
                     <MudSpacer />
                     <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-                        <MudSwitch T="bool" Value="@_includeDownload" ValueChanged="ToggleDownload" Color="Color.Success" Label="Download" data-test-id="@TestIdHelper.For("DownloadToggle")" />
-                        <MudSwitch T="bool" Value="@_includeUpload" ValueChanged="ToggleUpload" Color="Color.Info" Label="Upload" data-test-id="@TestIdHelper.For("UploadToggle")" />
+                        <MudSwitch T="bool" Value="@_includeDownload" ValueChanged="ToggleDownload" Color="Color.Success" Label="@Translate("Download")" data-test-id="@TestIdHelper.For("DownloadToggle")" />
+                        <MudSwitch T="bool" Value="@_includeUpload" ValueChanged="ToggleUpload" Color="Color.Info" Label="@Translate("Upload")" data-test-id="@TestIdHelper.For("UploadToggle")" />
                     </MudStack>
                 </MudStack>
             </MudPaper>
@@ -43,7 +42,7 @@
             @if (_series.Count == 0)
             {
                 <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
-                    No speed data yet. Keep this tab open to accumulate history.
+                    @Translate("No speed data yet. Keep this tab open to accumulate history.")
                 </MudAlert>
             }
             else
@@ -60,7 +59,7 @@
                                         Class="speed-chart"
                                         data-test-id="@TestIdHelper.For("SpeedChart")" />
                     <MudText Typo="Typo.caption" Class="mt-2">
-                        Last updated: @_lastUpdatedText
+                        @Translate("Last updated:") @_lastUpdatedText
                     </MudText>
                 </MudPaper>
             }

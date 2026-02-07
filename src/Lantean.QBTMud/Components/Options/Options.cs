@@ -1,10 +1,14 @@
 using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 
 namespace Lantean.QBTMud.Components.Options
 {
     public abstract class Options : ComponentBase
     {
+        private const string HttpServerContext = "HttpServer";
+        private const string AppContext = "App";
+
         private bool _preferencesRead;
 
         protected const int MinPortValue = 1024;
@@ -23,25 +27,12 @@ namespace Lantean.QBTMud.Components.Options
         [EditorRequired]
         public EventCallback<UpdatePreferences> PreferencesChanged { get; set; }
 
-        protected Func<int, string?> PortNonNegativeValidation = (port) =>
-        {
-            if (port < MinNonNegativePortValue || port > MaxPortValue)
-            {
-                return $"The port used for incoming connections must be between {MinNonNegativePortValue} and {MaxPortValue}.";
-            }
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
-            return null;
-        };
+        protected Func<int, string?> PortNonNegativeValidation => ValidatePortNonNegative;
 
-        protected Func<int, string?> PortValidation = (port) =>
-        {
-            if (port < MinPortValue || port > MaxPortValue)
-            {
-                return $"The port used for incoming connections must be between {MinPortValue} and {MaxPortValue}.";
-            }
-
-            return null;
-        };
+        protected Func<int, string?> PortValidation => ValidatePort;
 
         public async Task ResetAsync()
         {
@@ -63,5 +54,25 @@ namespace Lantean.QBTMud.Components.Options
         }
 
         protected abstract bool SetOptions();
+
+        private string? ValidatePortNonNegative(int port)
+        {
+            if (port < MinNonNegativePortValue || port > MaxPortValue)
+            {
+                return WebUiLocalizer.Translate(HttpServerContext, "The port used for incoming connections must be between 0 and 65535.");
+            }
+
+            return null;
+        }
+
+        private string? ValidatePort(int port)
+        {
+            if (port < MinPortValue || port > MaxPortValue)
+            {
+                return WebUiLocalizer.Translate(AppContext, "The port used for incoming connections must be between %1 and %2.", MinPortValue, MaxPortValue);
+            }
+
+            return null;
+        }
     }
 }

@@ -19,9 +19,13 @@ namespace Lantean.QBTMud.Components
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool? _showFlags;
+        private IReadOnlyList<ColumnDefinition<Peer>>? _columnDefinitions;
+        private string? _countryColumnId;
 
         private const string _toolbar = nameof(_toolbar);
         private const string _context = nameof(_context);
+        private const string _peerListContext = "PeerListWidget";
+        private const string _appContext = "AppPeersTab";
 
         [Parameter, EditorRequired]
         public string Hash { get; set; } = "";
@@ -52,6 +56,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
+
+        [Inject]
+        protected Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         protected PeerList? PeerList { get; set; }
 
@@ -168,7 +175,7 @@ namespace Lantean.QBTMud.Components
             }
 
             await ClipboardService.WriteToClipboard($"{peer.IPAddress}:{peer.Port}");
-            Snackbar.Add("Peer copied to clipboard.", Severity.Info);
+            Snackbar.Add(TranslateApp("Peer copied to clipboard."), Severity.Info);
         }
 
         protected async Task ShowContextMenu(Peer? peer, EventArgs eventArgs)
@@ -249,11 +256,12 @@ namespace Lantean.QBTMud.Components
             return ManagedTimerTickResult.Continue;
         }
 
-        protected IEnumerable<ColumnDefinition<Peer>> Columns => ColumnsDefinitions;
+        protected IEnumerable<ColumnDefinition<Peer>> Columns => GetColumnDefinitions();
 
         protected bool FilterColumns(ColumnDefinition<Peer> column)
         {
-            if (column.Id == "country/region")
+            var countryColumnId = _countryColumnId ?? "country/region";
+            if (string.Equals(column.Id, countryColumnId, StringComparison.Ordinal))
             {
                 return ShowFlags;
             }
@@ -261,22 +269,48 @@ namespace Lantean.QBTMud.Components
             return true;
         }
 
-        public static List<ColumnDefinition<Peer>> ColumnsDefinitions { get; } =
-        [
-            new ColumnDefinition<Peer>("Country/Region", p => p.Country, CountryColumnTemplate),
-            new ColumnDefinition<Peer>("IP", p => p.IPAddress),
-            new ColumnDefinition<Peer>("Port", p => p.Port),
-            new ColumnDefinition<Peer>("Connection", p => p.Connection),
-            new ColumnDefinition<Peer>("Flags", p => p.Flags, FlagsColumnTemplate),
-            new ColumnDefinition<Peer>("Client", p => p.Client),
-            new ColumnDefinition<Peer>("Progress", p => p.Progress, p => DisplayHelpers.Percentage(p.Progress)),
-            new ColumnDefinition<Peer>("Download Speed", p => p.DownloadSpeed, p => DisplayHelpers.Speed(p.DownloadSpeed)),
-            new ColumnDefinition<Peer>("Upload Speed", p => p.UploadSpeed, p => DisplayHelpers.Speed(p.UploadSpeed)),
-            new ColumnDefinition<Peer>("Downloaded", p => p.Downloaded, p => @DisplayHelpers.Size(p.Downloaded)),
-            new ColumnDefinition<Peer>("Uploaded", p => p.Uploaded, p => @DisplayHelpers.Size(p.Uploaded)),
-            new ColumnDefinition<Peer>("Relevance", p => p.Relevance, p => @DisplayHelpers.Percentage(p.Relevance)),
-            new ColumnDefinition<Peer>("Files", p => p.Files),
-        ];
+        private IReadOnlyList<ColumnDefinition<Peer>> GetColumnDefinitions()
+        {
+            _columnDefinitions ??= BuildColumnDefinitions();
+
+            return _columnDefinitions;
+        }
+
+        private IReadOnlyList<ColumnDefinition<Peer>> BuildColumnDefinitions()
+        {
+            var countryLabel = TranslatePeerList("Country/Region");
+            var ipLabel = TranslatePeerList("IP/Address");
+            var portLabel = TranslatePeerList("Port");
+            var connectionLabel = TranslatePeerList("Connection");
+            var flagsLabel = TranslatePeerList("Flags");
+            var clientLabel = TranslatePeerList("Client");
+            var progressLabel = TranslatePeerList("Progress");
+            var downSpeedLabel = TranslatePeerList("Down Speed");
+            var upSpeedLabel = TranslatePeerList("Up Speed");
+            var downloadedLabel = TranslatePeerList("Downloaded");
+            var uploadedLabel = TranslatePeerList("Uploaded");
+            var relevanceLabel = TranslatePeerList("Relevance");
+            var filesLabel = TranslatePeerList("Files");
+
+            _countryColumnId = CreateColumnId(countryLabel);
+
+            return
+            [
+                new ColumnDefinition<Peer>(countryLabel, p => p.Country, CountryColumnTemplate),
+                new ColumnDefinition<Peer>(ipLabel, p => p.IPAddress),
+                new ColumnDefinition<Peer>(portLabel, p => p.Port),
+                new ColumnDefinition<Peer>(connectionLabel, p => p.Connection),
+                new ColumnDefinition<Peer>(flagsLabel, p => p.Flags, FlagsColumnTemplate),
+                new ColumnDefinition<Peer>(clientLabel, p => p.Client),
+                new ColumnDefinition<Peer>(progressLabel, p => p.Progress, p => DisplayHelpers.Percentage(p.Progress)),
+                new ColumnDefinition<Peer>(downSpeedLabel, p => p.DownloadSpeed, p => DisplayHelpers.Speed(p.DownloadSpeed)),
+                new ColumnDefinition<Peer>(upSpeedLabel, p => p.UploadSpeed, p => DisplayHelpers.Speed(p.UploadSpeed)),
+                new ColumnDefinition<Peer>(downloadedLabel, p => p.Downloaded, p => DisplayHelpers.Size(p.Downloaded)),
+                new ColumnDefinition<Peer>(uploadedLabel, p => p.Uploaded, p => DisplayHelpers.Size(p.Uploaded)),
+                new ColumnDefinition<Peer>(relevanceLabel, p => p.Relevance, p => DisplayHelpers.Percentage(p.Relevance)),
+                new ColumnDefinition<Peer>(filesLabel, p => p.Files),
+            ];
+        }
 
         private static RenderFragment<RowContext<Peer>> FlagsColumnTemplate => context => builder =>
         {
@@ -356,6 +390,21 @@ namespace Lantean.QBTMud.Components
             }
 
             return Enum.IsDefined(country);
+        }
+
+        private static string CreateColumnId(string header)
+        {
+            return header.ToLowerInvariant().Replace(' ', '_');
+        }
+
+        private string TranslatePeerList(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate(_peerListContext, source, arguments);
+        }
+
+        private string TranslateApp(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate(_appContext, source, arguments);
         }
 
         protected virtual async Task DisposeAsync(bool disposing)

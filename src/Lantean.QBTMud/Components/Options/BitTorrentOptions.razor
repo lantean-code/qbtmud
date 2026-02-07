@@ -3,32 +3,32 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">Privacy</MudText>
+            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Privacy")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Enable DHT (decentralized network) to find more peers" Value="Dht" ValueChanged="DhtChanged" data-test-id="@TestIdHelper.For("Dht")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable DHT (decentralized network) to find more peers")" Value="Dht" ValueChanged="DhtChanged" data-test-id="@TestIdHelper.For("Dht")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Enable Peer Exchange (PeX) to find more peers" Value="Pex" ValueChanged="PexChanged" data-test-id="@TestIdHelper.For("Pex")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable Peer Exchange (PeX) to find more peers")" Value="Pex" ValueChanged="PexChanged" data-test-id="@TestIdHelper.For("Pex")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="Enable Local Peer Discovery to find more peers" Value="Lsd" ValueChanged="LsdChanged" data-test-id="@TestIdHelper.For("Lsd")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable Local Peer Discovery to find more peers")" Value="Lsd" ValueChanged="LsdChanged" data-test-id="@TestIdHelper.For("Lsd")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Label="Encryption mode" Value="Encryption" ValueChanged="EncryptionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Encryption")">
-                    <MudSelectItem Value="0">Allow encryption</MudSelectItem>
-                    <MudSelectItem Value="1">Require encryption</MudSelectItem>
-                    <MudSelectItem Value="2">Disable encryption</MudSelectItem>
+                <MudSelect T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Encryption mode:")" Value="Encryption" ValueChanged="EncryptionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Encryption")">
+                    <MudSelectItem Value="0">@WebUiLocalizer.Translate("OptionsDialog", "Allow encryption")</MudSelectItem>
+                    <MudSelectItem Value="1">@WebUiLocalizer.Translate("OptionsDialog", "Require encryption")</MudSelectItem>
+                    <MudSelectItem Value="2">@WebUiLocalizer.Translate("OptionsDialog", "Disable encryption")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="6">
-                <FieldSwitch Label="Enable anonymous mode" Value="AnonymousMode" ValueChanged="AnonymousModeChanged" data-test-id="@TestIdHelper.For("AnonymousMode")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable anonymous mode")" Value="AnonymousMode" ValueChanged="AnonymousModeChanged" data-test-id="@TestIdHelper.For("AnonymousMode")" />
             </MudItem>
             <MudItem xs="6">
-                <MudLink Href="https://github.com/qbittorrent/qBittorrent/wiki/Anonymous-Mode" Underline="Underline.Always" Target="https://github.com/qbittorrent/qBittorrent/wiki/Anonymous-Mode">More information</MudLink>
+                <MudLink Href="https://github.com/qbittorrent/qBittorrent/wiki/Anonymous-Mode" Underline="Underline.Always" Target="https://github.com/qbittorrent/qBittorrent/wiki/Anonymous-Mode">@WebUiLocalizer.Translate("HttpServer", "More information")</MudLink>
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -38,43 +38,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="Max active checking torrents" Value="MaxActiveCheckingTorrents" ValueChanged="MaxActiveCheckingTorrentsChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveCheckingTorrents")" />
-            </MudItem>
-        </MudGrid>
-    </MudCardContent>
-</MudCard>
-
-<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
-    <MudCardHeader>
-        <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">Torrent Queueing</MudText>
-        </CardHeaderContent>
-    </MudCardHeader>
-    <MudCardContent Class="pt-0">
-        <MudGrid>
-            <MudItem xs="12">
-                <FieldSwitch Label="Queueing enabled" Value="QueueingEnabled" ValueChanged="QueueingEnabledChanged" data-test-id="@TestIdHelper.For("QueueingEnabled")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudNumericField T="int" Label="Maximum active downloads" Value="MaxActiveDownloads" ValueChanged="MaxActiveDownloadsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveDownloadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveDownloads")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudNumericField T="int" Label="Maximum active uploads" Value="MaxActiveUploads" ValueChanged="MaxActiveUploadsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveUploadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveUploads")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudNumericField T="int" Label="Maximum active torrents" Value="MaxActiveTorrents" ValueChanged="MaxActiveTorrentsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveTorrentsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveTorrents")" />
-            </MudItem>
-            <MudItem xs="12">
-                <FieldSwitch Label="Do not count slow torrents in these limits" Value="DontCountSlowTorrents" ValueChanged="DontCountSlowTorrentsChanged" Disabled="@(!QueueingEnabled)" data-test-id="@TestIdHelper.For("DontCountSlowTorrents")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudNumericField T="int" Label="Download rate threshold" Value="SlowTorrentDlRateThreshold" ValueChanged="SlowTorrentDlRateThresholdChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="KiB/s" Validation="SlowTorrentDlRateThresholdValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SlowTorrentDlRateThreshold")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudNumericField T="int" Label="Upload rate threshold" Value="SlowTorrentUlRateThreshold" ValueChanged="SlowTorrentUlRateThresholdChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="KiB/s" Validation="SlowTorrentUlRateThresholdValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SlowTorrentUlRateThreshold")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudNumericField T="int" Label="Torrent inactivity timer" Value="SlowTorrentInactiveTimer" ValueChanged="SlowTorrentInactiveTimerChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="KiB/s" Validation="SlowTorrentInactiveTimerValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SlowTorrentInactiveTimer")" />
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Max active checking torrents:")" Value="MaxActiveCheckingTorrents" ValueChanged="MaxActiveCheckingTorrentsChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveCheckingTorrents")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -83,35 +47,71 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">Seeding Limits</MudText>
+            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Torrent Queueing")</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Torrent Queueing")" Value="QueueingEnabled" ValueChanged="QueueingEnabledChanged" data-test-id="@TestIdHelper.For("QueueingEnabled")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Maximum active downloads:")" Value="MaxActiveDownloads" ValueChanged="MaxActiveDownloadsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveDownloadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveDownloads")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Maximum active uploads:")" Value="MaxActiveUploads" ValueChanged="MaxActiveUploadsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveUploadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveUploads")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Maximum active torrents:")" Value="MaxActiveTorrents" ValueChanged="MaxActiveTorrentsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveTorrentsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveTorrents")" />
+            </MudItem>
+            <MudItem xs="12">
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Do not count slow torrents in these limits")" Value="DontCountSlowTorrents" ValueChanged="DontCountSlowTorrentsChanged" Disabled="@(!QueueingEnabled)" data-test-id="@TestIdHelper.For("DontCountSlowTorrents")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Download rate threshold:")" Value="SlowTorrentDlRateThreshold" ValueChanged="SlowTorrentDlRateThresholdChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "KiB/s")" Validation="SlowTorrentDlRateThresholdValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SlowTorrentDlRateThreshold")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Upload rate threshold:")" Value="SlowTorrentUlRateThreshold" ValueChanged="SlowTorrentUlRateThresholdChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "KiB/s")" Validation="SlowTorrentUlRateThresholdValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SlowTorrentUlRateThreshold")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Torrent inactivity timer:")" Value="SlowTorrentInactiveTimer" ValueChanged="SlowTorrentInactiveTimerChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "seconds")" Validation="SlowTorrentInactiveTimerValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SlowTorrentInactiveTimer")" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Seeding Limits")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="3">
-                <FieldSwitch Label="When ratio reaches" Value="MaxRatioEnabled" ValueChanged="MaxRatioEnabledChanged" data-test-id="@TestIdHelper.For("MaxRatioEnabled")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "When ratio reaches")" Value="MaxRatioEnabled" ValueChanged="MaxRatioEnabledChanged" data-test-id="@TestIdHelper.For("MaxRatioEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="float" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(!MaxRatioEnabled)" Min="0" Max="9998" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxRatioValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxRatio")" />
+                <MudNumericField T="float" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(!MaxRatioEnabled)" Min="0" Max="9998" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxRatioValidation" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("MaxRatio")" />
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="When total seeding time reaches" Value="MaxSeedingTimeEnabled" ValueChanged="MaxSeedingTimeEnabledChanged" data-test-id="@TestIdHelper.For("MaxSeedingTimeEnabled")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "When total seeding time reaches")" Value="MaxSeedingTimeEnabled" ValueChanged="MaxSeedingTimeEnabledChanged" data-test-id="@TestIdHelper.For("MaxSeedingTimeEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Label="minutes" Value="MaxSeedingTime" ValueChanged="MaxSeedingTimeChanged" Disabled="@(!MaxSeedingTimeEnabled)" Min="0" Max="525600" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="minutes" Validation="MaxSeedingTimeValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxSeedingTime")" />
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Value="MaxSeedingTime" ValueChanged="MaxSeedingTimeChanged" Disabled="@(!MaxSeedingTimeEnabled)" Min="0" Max="525600" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Validation="MaxSeedingTimeValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxSeedingTime")" />
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="When inactive seeding time reaches" Value="MaxInactiveSeedingTimeEnabled" ValueChanged="MaxInactiveSeedingTimeEnabledChanged" data-test-id="@TestIdHelper.For("MaxInactiveSeedingTimeEnabled")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "When inactive seeding time reaches")" Value="MaxInactiveSeedingTimeEnabled" ValueChanged="MaxInactiveSeedingTimeEnabledChanged" data-test-id="@TestIdHelper.For("MaxInactiveSeedingTimeEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Label="minutes" Value="MaxInactiveSeedingTime" ValueChanged="MaxInactiveSeedingTimeChanged" Disabled="@(!MaxInactiveSeedingTimeEnabled)" Min="0" Max="525600" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxInactiveSeedingTimeValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxInactiveSeedingTime")" />
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Value="MaxInactiveSeedingTime" ValueChanged="MaxInactiveSeedingTimeChanged" Disabled="@(!MaxInactiveSeedingTimeEnabled)" Min="0" Max="525600" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxInactiveSeedingTimeValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxInactiveSeedingTime")" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="int" Value="MaxRatioAct" ValueChanged="MaxRatioActChanged" Disabled="@(!MaxRatioEnabled && !MaxSeedingTimeEnabled && !MaxInactiveSeedingTimeEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("MaxRatioAct")">
-                    <MudSelectItem Value="0">Stop torrent</MudSelectItem>
-                    <MudSelectItem Value="1">Remove torrent</MudSelectItem>
-                    <MudSelectItem Value="2">Remove torrent and its files</MudSelectItem>
-                    <MudSelectItem Value="3">Enable super seeding for torrent</MudSelectItem>
+                    <MudSelectItem Value="0">@WebUiLocalizer.Translate("OptionsDialog", "Stop torrent")</MudSelectItem>
+                    <MudSelectItem Value="1">@WebUiLocalizer.Translate("OptionsDialog", "Remove torrent")</MudSelectItem>
+                    <MudSelectItem Value="2">@WebUiLocalizer.Translate("OptionsDialog", "Remove torrent and its files")</MudSelectItem>
+                    <MudSelectItem Value="3">@WebUiLocalizer.Translate("OptionsDialog", "Enable super seeding for torrent")</MudSelectItem>
                 </MudSelect>
             </MudItem>
         </MudGrid>
@@ -121,16 +121,16 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">Seeding Limits</MudText>
+            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Seeding Limits")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="Automatically add these trackers to new downloads" Value="AddTrackersEnabled" ValueChanged="AddTrackersEnabledChanged" data-test-id="@TestIdHelper.For("AddTrackersEnabled")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Automatically append these trackers to new downloads:")" Value="AddTrackersEnabled" ValueChanged="AddTrackersEnabledChanged" data-test-id="@TestIdHelper.For("AddTrackersEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="Trackers" Value="AddTrackers" ValueChanged="AddTrackersChanged" Lines="5" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AddTrackers")" />
+                <MudTextField T="string" Label="@WebUiLocalizer.Translate("PropTabBar", "Trackers")" Value="AddTrackers" ValueChanged="AddTrackersChanged" Lines="5" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AddTrackers")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

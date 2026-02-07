@@ -78,8 +78,6 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected int InactiveSeedingTimeLimit { get; set; } = 1440;
 
-        protected ShareLimitAction SelectedShareLimitAction { get; set; } = ShareLimitAction.Default;
-
         protected bool IsCustomShareLimit => SelectedShareLimitMode == ShareLimitMode.Custom;
 
         protected override async Task OnInitializedAsync()
@@ -127,8 +125,6 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 InactiveSeedingTimeLimit = preferences.MaxInactiveSeedingTime;
             }
-            SelectedShareLimitAction = MapShareLimitAction(preferences.MaxRatioAct);
-
             if (TorrentManagementMode)
             {
                 ApplyAutomaticPaths();
@@ -231,7 +227,6 @@ namespace Lantean.QBTMud.Components.Dialogs
                 RatioLimitEnabled = false;
                 SeedingTimeLimitEnabled = false;
                 InactiveSeedingTimeLimitEnabled = false;
-                SelectedShareLimitAction = ShareLimitAction.Default;
             }
         }
 
@@ -265,11 +260,6 @@ namespace Lantean.QBTMud.Components.Dialogs
             InactiveSeedingTimeLimit = value;
         }
 
-        protected void ShareLimitActionChanged(ShareLimitAction value)
-        {
-            SelectedShareLimitAction = value;
-        }
-
         public TorrentOptions GetTorrentOptions()
         {
             var options = new TorrentOptions(
@@ -298,21 +288,18 @@ namespace Lantean.QBTMud.Components.Dialogs
                     options.RatioLimit = Limits.GlobalLimit;
                     options.SeedingTimeLimit = Limits.GlobalLimit;
                     options.InactiveSeedingTimeLimit = Limits.GlobalLimit;
-                    options.ShareLimitAction = ShareLimitAction.Default.ToString();
                     break;
 
                 case ShareLimitMode.NoLimit:
                     options.RatioLimit = Limits.NoLimit;
                     options.SeedingTimeLimit = Limits.NoLimit;
                     options.InactiveSeedingTimeLimit = Limits.NoLimit;
-                    options.ShareLimitAction = ShareLimitAction.Default.ToString();
                     break;
 
                 case ShareLimitMode.Custom:
                     options.RatioLimit = RatioLimitEnabled ? RatioLimit : Limits.NoLimit;
                     options.SeedingTimeLimit = SeedingTimeLimitEnabled ? SeedingTimeLimit : Limits.NoLimit;
                     options.InactiveSeedingTimeLimit = InactiveSeedingTimeLimitEnabled ? InactiveSeedingTimeLimit : Limits.NoLimit;
-                    options.ShareLimitAction = SelectedShareLimitAction.ToString();
                     break;
             }
 
@@ -409,18 +396,6 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             return _categoryLookup.TryGetValue(Category, out var option) ? option : null;
-        }
-
-        private static ShareLimitAction MapShareLimitAction(int preferenceValue)
-        {
-            return preferenceValue switch
-            {
-                0 => ShareLimitAction.Stop,
-                1 => ShareLimitAction.Remove,
-                2 => ShareLimitAction.RemoveWithContent,
-                3 => ShareLimitAction.EnableSuperSeeding,
-                _ => ShareLimitAction.Default
-            };
         }
 
         protected internal enum ShareLimitMode

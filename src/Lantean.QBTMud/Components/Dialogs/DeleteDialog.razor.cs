@@ -12,6 +12,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Parameter]
         public int Count { get; set; }
 
+        [Parameter]
+        public string? TorrentName { get; set; }
+
         protected bool DeleteFiles { get; set; }
 
         protected void Cancel()

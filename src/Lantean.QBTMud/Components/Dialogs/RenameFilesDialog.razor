@@ -4,43 +4,43 @@
             <MudItem xs="4">
                 <MudGrid>
                     <MudItem xs="12">
-                        <FieldSwitch Label="Remember Multi-Rename settings" Value="RememberMultiRenameSettings" ValueChanged="RememberMultiRenameSettingsChanged" data-test-id="@TestIdHelper.For("RenameFilesRemember")" />
+                        <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Remember Multi-Rename settings")" Value="RememberMultiRenameSettings" ValueChanged="RememberMultiRenameSettingsChanged" data-test-id="@TestIdHelper.For("RenameFilesRemember")" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudTextField T="string" Label="Search files" Value="Search" ValueChanged="SearchChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesSearch")" />
+                        <MudTextField T="string" Label="@WebUiLocalizer.Translate("PropertiesWidget", "Search Files")" Value="Search" ValueChanged="SearchChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesSearch")" />
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <FieldSwitch Label="Use regular expressions" Value="UseRegex" ValueChanged="UseRegexChanged" data-test-id="@TestIdHelper.For("RenameFilesUseRegex")" />
+                        <FieldSwitch Label="@WebUiLocalizer.Translate("PropertiesWidget", "Use regular expressions")" Value="UseRegex" ValueChanged="UseRegexChanged" data-test-id="@TestIdHelper.For("RenameFilesUseRegex")" />
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <FieldSwitch Label="Match all occurrences" Value="MatchAllOccurrences" ValueChanged="MatchAllOccurrencesChanged" data-test-id="@TestIdHelper.For("RenameFilesMatchAll")" />
+                        <FieldSwitch Label="@WebUiLocalizer.Translate("PropertiesWidget", "Match all occurrences")" Value="MatchAllOccurrences" ValueChanged="MatchAllOccurrencesChanged" data-test-id="@TestIdHelper.For("RenameFilesMatchAll")" />
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <FieldSwitch Label="Case sensitive" Value="CaseSensitive" ValueChanged="CaseSensitiveChanged" data-test-id="@TestIdHelper.For("RenameFilesCaseSensitive")" />
+                        <FieldSwitch Label="@WebUiLocalizer.Translate("PropertiesWidget", "Case sensitive")" Value="CaseSensitive" ValueChanged="CaseSensitiveChanged" data-test-id="@TestIdHelper.For("RenameFilesCaseSensitive")" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudTextField T="string" Label="Replacement" Value="Replacement" ValueChanged="ReplacementChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesReplacement")" />
+                        <MudTextField T="string" Label="@WebUiLocalizer.Translate("PropertiesWidget", "Replacement Input")" Value="Replacement" ValueChanged="ReplacementChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesReplacement")" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudSelect T="AppliesTo" Label="Applies to" Value="AppliesToValue" ValueChanged="AppliesToChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesAppliesTo")">
-                            <MudSelectItem T="AppliesTo" Value="AppliesTo.FilenameExtension">Filename + Extension</MudSelectItem>
-                            <MudSelectItem T="AppliesTo" Value="AppliesTo.Filename">Filename</MudSelectItem>
-                            <MudSelectItem T="AppliesTo" Value="AppliesTo.Extension">Extension</MudSelectItem>
+                        <MudSelect T="AppliesTo" Label="@WebUiLocalizer.Translate("PropertiesWidget", "Apply to which filename part")" Value="AppliesToValue" ValueChanged="AppliesToChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesAppliesTo")">
+                            <MudSelectItem T="AppliesTo" Value="AppliesTo.FilenameExtension">@WebUiLocalizer.Translate("PropertiesWidget", "Filename + Extension")</MudSelectItem>
+                            <MudSelectItem T="AppliesTo" Value="AppliesTo.Filename">@WebUiLocalizer.Translate("PropertiesWidget", "Filename")</MudSelectItem>
+                            <MudSelectItem T="AppliesTo" Value="AppliesTo.Extension">@WebUiLocalizer.Translate("PropertiesWidget", "Extension")</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <FieldSwitch Label="Include files" Value="IncludeFiles" ValueChanged="IncludeFilesChanged" data-test-id="@TestIdHelper.For("RenameFilesIncludeFiles")" />
+                        <FieldSwitch Label="@WebUiLocalizer.Translate("PropertiesWidget", "Include files")" Value="IncludeFiles" ValueChanged="IncludeFilesChanged" data-test-id="@TestIdHelper.For("RenameFilesIncludeFiles")" />
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <FieldSwitch Label="Include folders" Value="IncludeFolders" ValueChanged="IncludeFoldersChanged" data-test-id="@TestIdHelper.For("RenameFilesIncludeFolders")" />
+                        <FieldSwitch Label="@WebUiLocalizer.Translate("PropertiesWidget", "Include folders")" Value="IncludeFolders" ValueChanged="IncludeFoldersChanged" data-test-id="@TestIdHelper.For("RenameFilesIncludeFolders")" />
                     </MudItem>
                     <MudItem xs="12" lg="4">
-                        <MudNumericField T="int" Label="Enumerate files" Value="FileEnumerationStart" ValueChanged="FileEnumerationStartChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesEnumerate")" />
+                        <MudNumericField T="int" Label="@WebUiLocalizer.Translate("PropertiesWidget", "Enumerate Files")" Value="FileEnumerationStart" ValueChanged="FileEnumerationStartChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesEnumerate")" />
                     </MudItem>
                     <MudItem xs="12">
-                        <MudSelect T="bool" Label="Replace type" Value="ReplaceAll" ValueChanged="ReplaceAllChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesReplaceType")">
-                            <MudSelectItem T="bool" Value="false">Replace</MudSelectItem>
-                            <MudSelectItem T="bool" Value="true">Replace all</MudSelectItem>
+                        <MudSelect T="bool" Label="@WebUiLocalizer.Translate("PropertiesWidget", "Replace option")" Value="ReplaceAll" ValueChanged="ReplaceAllChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RenameFilesReplaceType")">
+                            <MudSelectItem T="bool" Value="false">@WebUiLocalizer.Translate("PropertiesWidget", "Replace")</MudSelectItem>
+                            <MudSelectItem T="bool" Value="true">@WebUiLocalizer.Translate("PropertiesWidget", "Replace All")</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                 </MudGrid>
@@ -62,10 +62,10 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("RenameFilesClose")">Close</MudButton>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("RenameFilesClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
         <MudButton Color="Color.Primary"
                    OnClick="Submit"
-                   data-test-id="@TestIdHelper.For("RenameFilesSubmit")">@(ReplaceAll ? "Replace all" : "Replace")</MudButton>
+                   data-test-id="@TestIdHelper.For("RenameFilesSubmit")">@(ReplaceAll ? WebUiLocalizer.Translate("PropertiesWidget", "Replace All") : WebUiLocalizer.Translate("PropertiesWidget", "Replace"))</MudButton>
     </DialogActions>
 </MudDialog>
 

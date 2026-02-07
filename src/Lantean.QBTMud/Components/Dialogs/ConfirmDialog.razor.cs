@@ -1,4 +1,5 @@
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -9,14 +10,30 @@ namespace Lantean.QBTMud.Components.Dialogs
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
 
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+
         [Parameter]
         public string Content { get; set; } = default!;
 
         [Parameter]
-        public string? SuccessText { get; set; } = "Ok";
+        public string? SuccessText { get; set; }
 
         [Parameter]
-        public string? CancelText { get; set; } = "Cancel";
+        public string? CancelText { get; set; }
+
+        protected override void OnInitialized()
+        {
+            if (string.IsNullOrWhiteSpace(CancelText))
+            {
+                CancelText = WebUiLocalizer.Translate("MainWindow", "Cancel");
+            }
+
+            if (string.IsNullOrWhiteSpace(SuccessText))
+            {
+                SuccessText = WebUiLocalizer.Translate("HttpServer", "OK");
+            }
+        }
 
         protected void Cancel()
         {

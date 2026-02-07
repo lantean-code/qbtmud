@@ -35,6 +35,12 @@
     <AotCdnBaseUrl></AotCdnBaseUrl>
     <RequireAotCdnBase Condition="'$(RequireAotCdnBase)'==''">true</RequireAotCdnBase>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <WebUiTranslationsMode Condition="'$(WebUiTranslationsMode)'==''">en</WebUiTranslationsMode>
+    <WebUiTranslationsSource>$(MSBuildThisFileDirectory)../../external/qBittorrent/src/webui/www/translations</WebUiTranslationsSource>
+    <WebUiTranslationsOutput>$(MSBuildThisFileDirectory)wwwroot/i18n</WebUiTranslationsOutput>
+  </PropertyGroup>
   
   <!-- AOT build toggles this on -->
   <PropertyGroup Condition="'$(Configuration)'=='ReleaseAOT'">
@@ -87,6 +93,30 @@
     <WriteLinesToFile File="$(ReleaseAotPayloadRoot)/README.txt" Lines="@(_CdnReadmeLines)" Overwrite="true" />
   </Target>
 
+  <Target Name="GenerateWebUiTranslations" BeforeTargets="Publish;ResolveStaticWebAssets" Condition="'$(WebUiTranslationsMode)' != ''">
+    <Message Text="Generating WebUI translations ($(WebUiTranslationsMode)) from $(WebUiTranslationsSource)" Importance="high" />
+    <Warning Condition="!Exists('$(WebUiTranslationsSource)')" Text="WebUI translations source path not found: $(WebUiTranslationsSource). Run 'git submodule update --init --recursive'." />
+    <Exec Condition="Exists('$(WebUiTranslationsSource)')" Command="dotnet run --project $(MSBuildThisFileDirectory)../../tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj -- --source &quot;$(WebUiTranslationsSource)&quot; --output &quot;$(WebUiTranslationsOutput)&quot; --mode $(WebUiTranslationsMode)" />
+    <ItemGroup>
+      <Content Include="wwwroot/i18n/*.json">
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <TargetPath>wwwroot/i18n/%(Filename)%(Extension)</TargetPath>
+      </Content>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopyGeneratedWebUiTranslationsToPublish" AfterTargets="Publish" Condition="'$(WebUiTranslationsMode)' != '' and '$(PublishDir)' != ''">
+    <ItemGroup>
+      <_GeneratedWebUiTranslationFiles Include="$(WebUiTranslationsOutput)/webui_*.json" />
+      <_GeneratedWebUiTranslationFiles Include="$(WebUiTranslationsOutput)/webui_languages.json" />
+    </ItemGroup>
+    <MakeDir Directories="$(PublishDir)wwwroot/i18n" />
+    <Copy SourceFiles="@(_GeneratedWebUiTranslationFiles)"
+          DestinationFiles="@(_GeneratedWebUiTranslationFiles->'$(PublishDir)wwwroot/i18n/%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="Exists('%(Identity)')" />
+  </Target>
+
   <ItemGroup>
     <PackageReference Include="BlazorFlags" Version="1.0.0" />
     <PackageReference Include="ByteSize" Version="2.1.2" />
@@ -94,6 +124,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.2" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
     <PackageReference Include="MudBlazor" Version="8.15.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="wwwroot/i18n/webui_en.json" />
   </ItemGroup>
 
   <ItemGroup>

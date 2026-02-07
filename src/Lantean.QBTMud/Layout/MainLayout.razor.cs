@@ -1,6 +1,7 @@
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -28,6 +29,9 @@ namespace Lantean.QBTMud.Layout
         [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
 
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
 
@@ -39,7 +43,7 @@ namespace Lantean.QBTMud.Layout
 
         protected EnhancedErrorBoundary? ErrorBoundary { get; set; }
 
-        protected string AppBarTitle => UseShortTitle ? "qBittorrent" : "qBittorrent Web UI";
+        protected string AppBarTitle => UseShortTitle ? "qBittorrent" : BuildFullTitle();
 
         protected bool IsDarkMode { get; set; }
 
@@ -62,6 +66,16 @@ namespace Lantean.QBTMud.Layout
         public MainLayout()
         {
             Theme = QbtMudThemeFactory.CreateDefaultTheme();
+        }
+
+        protected string BuildPageTitle()
+        {
+            return BuildFullTitle();
+        }
+
+        private string BuildFullTitle()
+        {
+            return WebUiLocalizer.Translate("Login", "qBittorrent WebUI");
         }
 
         protected override void OnInitialized()

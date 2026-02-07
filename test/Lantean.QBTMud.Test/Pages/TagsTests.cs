@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_AddClicked_WHEN_DialogCanceled_THEN_SkipsApiCalls()
         {
             Mock.Get(_dialogWorkflow)
-                .Setup(workflow => workflow.ShowStringFieldDialog("Add Tag", "Tag", null))
+                .Setup(workflow => workflow.ShowStringFieldDialog("New Tag", "Tag:", null))
                 .ReturnsAsync((string?)null);
 
             var addButton = FindIconButton(_target, Icons.Material.Filled.NewLabel);
@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_AddClicked_WHEN_TagExists_THEN_SkipsCreate()
         {
             Mock.Get(_dialogWorkflow)
-                .Setup(workflow => workflow.ShowStringFieldDialog("Add Tag", "Tag", null))
+                .Setup(workflow => workflow.ShowStringFieldDialog("New Tag", "Tag:", null))
                 .ReturnsAsync("Tag");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAllTags())
@@ -70,7 +70,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_AddClicked_WHEN_NewTag_THEN_CreatesTag()
         {
             Mock.Get(_dialogWorkflow)
-                .Setup(workflow => workflow.ShowStringFieldDialog("Add Tag", "Tag", null))
+                .Setup(workflow => workflow.ShowStringFieldDialog("New Tag", "Tag:", null))
                 .ReturnsAsync("Tag");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAllTags())
@@ -113,13 +113,16 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_ActionColumnSortSelectorNull_WHEN_DeleteClicked_THEN_UsesRowData()
         {
-            var column = Tags.ColumnsDefinitions.Single(definition => definition.Header == "Actions");
-            var originalSelector = column.SortSelector;
-            column.SortSelector = _ => null;
-
+            IRenderedComponent<Tags>? target = null;
+            Func<string, object?>? originalSelector = null;
+            ColumnDefinition<string>? column = null;
             try
             {
-                var target = RenderPage(new List<string> { "Tag" });
+                target = RenderPage(new List<string> { "Tag" });
+                var table = target.FindComponent<DynamicTable<string>>();
+                column = table.Instance.ColumnDefinitions.Single(definition => definition.Header == "Actions");
+                originalSelector = column.SortSelector;
+                column.SortSelector = _ => null;
 
                 var deleteButton = FindIconButton(target, Icons.Material.Filled.Delete);
 
@@ -129,23 +132,30 @@ namespace Lantean.QBTMud.Test.Pages
             }
             finally
             {
-                column.SortSelector = originalSelector;
+                if (column is not null && originalSelector is not null)
+                {
+                    column.SortSelector = originalSelector;
+                }
             }
         }
 
         [Fact]
         public void GIVEN_ColumnDefinitions_WHEN_Requested_THEN_ContainsExpectedColumns()
         {
-            var columns = Tags.ColumnsDefinitions;
+            var target = RenderPage();
+            var table = target.FindComponent<DynamicTable<string>>();
+            var columns = table.Instance.ColumnDefinitions;
 
-            columns.Should().ContainSingle(column => column.Header == "Id");
+            columns.Should().ContainSingle(column => column.Header == "Name");
             columns.Should().ContainSingle(column => column.Header == "Actions");
         }
 
         [Fact]
         public void GIVEN_ColumnSortSelectors_WHEN_Invoked_THEN_ReturnExpectedValues()
         {
-            var columns = Tags.ColumnsDefinitions;
+            var target = RenderPage();
+            var table = target.FindComponent<DynamicTable<string>>();
+            var columns = table.Instance.ColumnDefinitions;
 
             foreach (var column in columns)
             {

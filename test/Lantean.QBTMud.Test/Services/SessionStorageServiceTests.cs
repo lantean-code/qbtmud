@@ -20,7 +20,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             _jsRuntime.EnqueueResult("\"Session\"");
 
-            var result = await _target.GetItemAsync<string>("Key");
+            var result = await _target.GetItemAsync<string>("Key", Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be("Session");
             _jsRuntime.LastIdentifier.Should().Be("sessionStorage.getItem");
@@ -32,7 +32,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var payload = new SamplePayload("Column", 2);
 
-            await _target.SetItemAsync("Payload", payload);
+            await _target.SetItemAsync("Payload", payload, Xunit.TestContext.Current.CancellationToken);
 
             _jsRuntime.LastIdentifier.Should().Be("sessionStorage.setItem");
             _jsRuntime.LastArguments.Should().NotBeNull();
@@ -44,7 +44,7 @@ namespace Lantean.QBTMud.Test.Services
             jsonValue.Should().Contain("\"sortColumn\":\"Column\"");
             jsonValue.Should().Contain("\"sortDirection\":2");
 
-            await _target.RemoveItemAsync("Payload");
+            await _target.RemoveItemAsync("Payload", Xunit.TestContext.Current.CancellationToken);
 
             _jsRuntime.LastIdentifier.Should().Be("sessionStorage.removeItem");
             _jsRuntime.LastArguments.Should().BeEquivalentTo(new object?[] { "Payload" });

@@ -9,25 +9,27 @@ namespace Lantean.QBTMud.Test.Theming
 {
     public sealed class ThemeFontCatalogTests
     {
+        private static readonly string[] _fonts = new[]
+        {
+            "Nunito Sans",
+            "Open Sans",
+            "open sans",
+            "Roboto-Flex",
+            "Invalid!",
+            " "
+        };
+
         [Fact]
         public async Task GIVEN_ValidCatalog_WHEN_Initialized_THEN_NormalizesFontsAndResolvesUrl()
         {
-            var json = JsonSerializer.Serialize(new[]
-            {
-                "Nunito Sans",
-                "Open Sans",
-                "open sans",
-                "Roboto-Flex",
-                "Invalid!",
-                " "
-            }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            var json = JsonSerializer.Serialize(_fonts, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
             var target = CreateCatalog(request => new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(json)
             });
 
-            await target.EnsureInitialized();
+            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
 
             target.SuggestedFonts.Should().Equal("Nunito Sans", "Open Sans", "Roboto-Flex");
 
@@ -46,8 +48,8 @@ namespace Lantean.QBTMud.Test.Theming
             });
             var target = CreateCatalog(handler);
 
-            await target.EnsureInitialized();
-            await target.EnsureInitialized();
+            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
+            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
 
             handler.CallCount.Should().Be(1);
         }
@@ -59,7 +61,7 @@ namespace Lantean.QBTMud.Test.Theming
             factory.Setup(f => f.CreateClient("Assets")).Throws<InvalidOperationException>();
             var target = new ThemeFontCatalog(factory.Object);
 
-            await target.EnsureInitialized();
+            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
 
             target.SuggestedFonts.Should().BeEmpty();
         }
@@ -69,7 +71,7 @@ namespace Lantean.QBTMud.Test.Theming
         {
             var target = CreateCatalog(_ => new HttpResponseMessage(HttpStatusCode.BadRequest));
 
-            await target.EnsureInitialized();
+            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
 
             target.SuggestedFonts.Should().BeEmpty();
         }
@@ -82,7 +84,7 @@ namespace Lantean.QBTMud.Test.Theming
                 Content = new StringContent("not-json")
             });
 
-            await target.EnsureInitialized();
+            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
 
             target.SuggestedFonts.Should().BeEmpty();
         }
@@ -95,7 +97,7 @@ namespace Lantean.QBTMud.Test.Theming
                 Content = new StringContent("null")
             });
 
-            await target.EnsureInitialized();
+            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
 
             target.SuggestedFonts.Should().BeEmpty();
         }
@@ -105,7 +107,7 @@ namespace Lantean.QBTMud.Test.Theming
         {
             var target = CreateCatalog(_ => throw new HttpRequestException("Request"));
 
-            await target.EnsureInitialized();
+            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
 
             target.SuggestedFonts.Should().BeEmpty();
         }
@@ -133,8 +135,8 @@ namespace Lantean.QBTMud.Test.Theming
             var handler = new BlockingHandler(() => tcs.Task);
             var target = CreateCatalog(handler);
 
-            var first = target.EnsureInitialized();
-            var second = target.EnsureInitialized();
+            var first = (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
+            var second = (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
 
             tcs.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
             {

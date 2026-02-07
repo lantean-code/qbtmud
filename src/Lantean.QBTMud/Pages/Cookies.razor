@@ -1,5 +1,6 @@
 @page "/cookies"
 @layout OtherLayout
+@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
 
 <div class="content-panel">
     <div class="content-panel__toolbar">
@@ -10,23 +11,23 @@
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
-            <MudText Class="px-5 no-wrap">Cookie Manager</MudText>
+            <MudText Class="px-5 no-wrap">@WebUiLocalizer.Translate("CookiesDialog", "Manage Cookies")</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddCookie" title="Add Cookie" Disabled="IsBusy" />
+            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddCookie" title="@WebUiLocalizer.Translate("CookiesDialog", "Add Cookie")" Disabled="IsBusy" />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Reload" title="Refresh" Disabled="IsBusy" />
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Filled.DeleteSweep" OnClick="ClearAll" Disabled="@(IsBusy || !HasCookies)" title="Clear" />
-            <MudIconButton Icon="@Icons.Material.Filled.Save" OnClick="Save" Disabled="@(IsBusy || !HasCookies)" title="Save" />
+            <MudIconButton Icon="@Icons.Material.Filled.DeleteSweep" OnClick="ClearAll" Disabled="@(IsBusy || !HasCookies)" title="@WebUiLocalizer.Translate("ExecutionLogWidget", "Clear")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Save" OnClick="Save" Disabled="@(IsBusy || !HasCookies)" title="@WebUiLocalizer.Translate("HttpServer", "Save")" />
         </MudToolBar>
     </div>
     <div class="content-panel__body">
         <MudTable T="CookieEntry" Items="CookieEntries" Dense="true" Hover="true" Bordered="true">
             <HeaderContent>
-                <MudTh>Domain</MudTh>
-                <MudTh>Path</MudTh>
-                <MudTh>Name</MudTh>
-                <MudTh>Value</MudTh>
-                <MudTh>Expiration</MudTh>
+                <MudTh>@WebUiLocalizer.Translate("CookiesDialog", "Domain")</MudTh>
+                <MudTh>@WebUiLocalizer.Translate("CookiesDialog", "Path")</MudTh>
+                <MudTh>@WebUiLocalizer.Translate("CookiesDialog", "Name")</MudTh>
+                <MudTh>@WebUiLocalizer.Translate("CookiesDialog", "Value")</MudTh>
+                <MudTh>@WebUiLocalizer.Translate("CookiesDialog", "Expiration Date")</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -65,7 +66,7 @@
                                    Color="Color.Error"
                                    Disabled="@IsBusy"
                                    OnClick="@(() => RemoveCookie(context))"
-                                   title="Remove" />
+                                   title="@WebUiLocalizer.Translate("CookiesDialog", "Remove")" />
                 </MudTd>
             </RowTemplate>
             <NoRecordsContent>

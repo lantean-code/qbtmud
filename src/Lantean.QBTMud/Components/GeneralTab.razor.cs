@@ -8,6 +8,8 @@ namespace Lantean.QBTMud.Components
 {
     public partial class GeneralTab : IAsyncDisposable
     {
+        private const string PropertiesContext = "PropertiesWidget";
+
         private readonly bool _refreshEnabled = true;
 
         private readonly CancellationTokenSource _timerCancellationToken = new();
@@ -34,6 +36,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
+
+        [Inject]
+        protected Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
         protected IReadOnlyList<PieceState> Pieces { get; set; } = [];
 
@@ -192,6 +197,27 @@ namespace Lantean.QBTMud.Components
             _piecesLoading = false;
             _piecesFailed = true;
             Pieces = [];
+        }
+
+        private string TranslateProperties(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate(PropertiesContext, source, arguments);
+        }
+
+        private string FormatWithDetail(string? value, string? detail, string formatKey)
+        {
+            var valueText = value ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(valueText))
+            {
+                return string.Empty;
+            }
+
+            if (string.IsNullOrWhiteSpace(detail))
+            {
+                return valueText;
+            }
+
+            return TranslateProperties(formatKey, valueText, detail);
         }
     }
 }

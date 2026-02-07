@@ -85,7 +85,7 @@ window.qbt.open = (url, target) => {
     window.open(url, target);
 }
 
-window.qbt.registerMagnetHandler = (templateUrl) => {
+window.qbt.registerMagnetHandler = (templateUrl, handlerName) => {
     if (typeof navigator.registerProtocolHandler !== "function") {
         if (window.location.protocol !== "https:") {
             return { status: "insecure" };
@@ -95,7 +95,7 @@ window.qbt.registerMagnetHandler = (templateUrl) => {
     }
 
     try {
-        navigator.registerProtocolHandler("magnet", templateUrl, "qBittorrent WebUI magnet handler");
+        navigator.registerProtocolHandler("magnet", templateUrl, handlerName);
         return { status: "success" };
     } catch (error) {
         if (window.location.protocol !== "https:") {
