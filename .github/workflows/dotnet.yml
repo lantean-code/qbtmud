@@ -69,13 +69,13 @@ jobs:
           fi
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore --artifacts-path=/tmp/artifacts/qbtmud
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build --configuration Release --no-restore --artifacts-path=/tmp/artifacts/qbtmud
 
       - name: Run Tests with Coverage
-        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory TestResults
+        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory TestResults --artifacts-path=/tmp/artifacts/qbtmud
 
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
@@ -90,13 +90,46 @@ jobs:
           name: coverage-report
           path: coverage-report
 
+      - name: Clean Generated WebUI Translation JSON
+        if: steps.release_channel.outputs.channel != 'none'
+        shell: bash
+        run: |
+          find src/Lantean.QBTMud/wwwroot/i18n -maxdepth 1 -type f -name 'webui_*.json' \
+            ! -name 'webui_aliases.json' \
+            ! -name 'webui_en.json' \
+            ! -name 'webui_overrides_en.json' -delete
+          rm -f src/Lantean.QBTMud/wwwroot/i18n/webui_languages.json
+
       - name: Publish (English)
         if: steps.release_channel.outputs.channel != 'none'
-        run: dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output/en
+        run: dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output/en --artifacts-path=/tmp/artifacts/qbtmud
+
+      - name: Clean Generated WebUI Translation JSON (Before International)
+        if: steps.release_channel.outputs.channel != 'none'
+        shell: bash
+        run: |
+          find src/Lantean.QBTMud/wwwroot/i18n -maxdepth 1 -type f -name 'webui_*.json' \
+            ! -name 'webui_aliases.json' \
+            ! -name 'webui_en.json' \
+            ! -name 'webui_overrides_en.json' -delete
+          rm -f src/Lantean.QBTMud/wwwroot/i18n/webui_languages.json
 
       - name: Publish (International)
         if: steps.release_channel.outputs.channel != 'none'
-        run: dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output/intl /p:WebUiTranslationsMode=all
+        run: dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output/intl --artifacts-path=/tmp/artifacts/qbtmud /p:WebUiTranslationsMode=all
+
+      - name: Validate International Locale Payload
+        if: steps.release_channel.outputs.channel != 'none'
+        shell: bash
+        run: |
+          count=$(find output/intl/wwwroot/i18n -maxdepth 1 -type f -name 'webui_*.json' ! -name 'webui_aliases.json' ! -name 'webui_overrides_en.json' | wc -l)
+          echo "International locale file count: $count"
+          if [ "$count" -le 1 ]; then
+            echo "::error::International publish does not include multiple locales."
+            find output/intl/wwwroot/i18n -maxdepth 1 -type f -name '*.json' | sort
+            exit 1
+          fi
+
 
       - name: Prepare Release ZIP (English)
         if: steps.release_channel.outputs.channel != 'none'
