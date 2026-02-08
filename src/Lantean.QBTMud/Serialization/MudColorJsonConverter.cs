@@ -109,4 +109,3 @@ namespace Lantean.QBTMud.Serialization
         }
     }
 }
-

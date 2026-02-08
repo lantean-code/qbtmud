@@ -327,5 +327,22 @@
   "AppTemp|Enabled %1.": "Enabled %1.",
   "AppTemp|Disabled %1.": "Disabled %1.",
   "AppTemp|Not available": "Not available",
-  "AppTemp|Search plugin operation failed: %1": "Search plugin operation failed: %1"
+  "AppTemp|Search plugin operation failed: %1": "Search plugin operation failed: %1",
+  "AppWelcomeWizard|Welcome": "Welcome",
+  "AppWelcomeWizard|Thanks for using qbtmud. Choose your language to get started.": "Thanks for using qbtmud. Choose your language to get started.",
+  "AppWelcomeWizard|Changing language updates qBittorrent preferences and applies immediately in this session.": "Changing language updates qBittorrent preferences and applies immediately in this session.",
+  "AppWelcomeWizard|Choose a theme. It will apply immediately so you can preview it.": "Choose a theme. It will apply immediately so you can preview it.",
+  "AppWelcomeWizard|Pick your theme colors. Changes apply right away so you can preview them before finishing.": "Pick your theme colors. Changes apply right away so you can preview them before finishing.",
+  "AppWelcomeWizard|Colors are applied to both light and dark palettes.": "Colors are applied to both light and dark palettes.",
+  "AppWelcomeWizard|Done": "Done",
+  "AppWelcomeWizard|You're all set.": "You're all set.",
+  "AppWelcomeWizard|For more settings, open Options from the sidebar.": "For more settings, open Options from the sidebar.",
+  "AppWelcomeWizard|App controls are in the 3-dots menu at the top right.": "App controls are in the 3-dots menu at the top right.",
+  "AppWelcomeWizard|Back": "Back",
+  "AppWelcomeWizard|Next": "Next",
+  "AppWelcomeWizard|Finish": "Finish",
+  "AppWelcomeWizard|Unable to save welcome wizard completion: %1": "Unable to save welcome wizard completion: %1",
+  "AppWelcomeWizard|Unable to save theme changes: %1": "Unable to save theme changes: %1",
+  "AppWelcomeWizard|Unable to apply theme: %1": "Unable to apply theme: %1",
+  "AppWelcomeWizard|Unable to update language: %1": "Unable to update language: %1"
 }

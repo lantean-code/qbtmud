@@ -1,5 +1,6 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -41,6 +42,12 @@ namespace Lantean.QBTMud.Layout
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IDialogService DialogService { get; set; } = default!;
+
+        [Inject]
+        protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [Inject]
         protected ISessionStorageService SessionStorage { get; set; } = default!;
@@ -118,6 +125,7 @@ namespace Lantean.QBTMud.Layout
         private string? _pendingDownloadLink;
         private Task? _locationChangeTask;
         private bool _navigationHandlerAttached;
+        private bool _welcomeWizardLaunched;
 
         protected bool ShowStatusLabels => (CurrentBreakpoint > Breakpoint.Md && CurrentOrientation == Orientation.Portrait) || (CurrentBreakpoint > Breakpoint.Lg && CurrentOrientation == Orientation.Landscape);
 
@@ -218,6 +226,37 @@ namespace Lantean.QBTMud.Layout
             {
                 _locationChangeTask = null;
             }
+
+            if (!_welcomeWizardLaunched && IsAuthenticated && Preferences is not null)
+            {
+                _welcomeWizardLaunched = true;
+                await ShowWelcomeWizardIfNeededAsync();
+            }
+        }
+
+        private async Task ShowWelcomeWizardIfNeededAsync()
+        {
+            var completed = await LocalStorage.GetItemAsync<bool?>(WelcomeWizardStorageKeys.Completed);
+            if (completed.GetValueOrDefault())
+            {
+                return;
+            }
+
+            var parameters = new DialogParameters
+            {
+                { nameof(WelcomeWizardDialog.InitialLocale), Preferences?.Locale }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseOnEscapeKey = false,
+                BackdropClick = false,
+                NoHeader = true,
+                FullWidth = true,
+                MaxWidth = MaxWidth.Medium
+            };
+
+            await DialogService.ShowAsync<WelcomeWizardDialog>(title: null, parameters, options);
         }
 
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)

@@ -64,6 +64,11 @@
 - Only one type per file; the file name must match the type.
   - Exception: multiple generic variants of the same type may share a file if small and strongly related.
 
+### Localization (Copy)
+- Any user-facing copy (labels, button text, tooltips, empty states, alerts, errors) must be localized.
+- When replicating qBittorrent WebUI functionality, prefer using qBittorrent's existing language keys and text via `IWebUiLocalizer.Translate(context, source, ...)` so translations come from the bundled WebUI language files.
+- For qbtmud-specific copy that does not exist in qBittorrent's WebUI language files, add the English source to `src/Lantean.QBTMud/wwwroot/i18n/webui_overrides_en.json` and reference it via `IWebUiLocalizer.Translate(...)` using a stable context/source pair (do not hardcode strings in Razor/C#).
+
 ## Line endings
 - Use CRLF line terminators for any files you write or modify.
 

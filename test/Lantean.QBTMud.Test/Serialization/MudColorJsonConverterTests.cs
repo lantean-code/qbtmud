@@ -120,4 +120,3 @@ namespace Lantean.QBTMud.Test.Serialization
         }
     }
 }
-
