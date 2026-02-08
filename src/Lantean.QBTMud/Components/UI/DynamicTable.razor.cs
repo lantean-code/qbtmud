@@ -928,7 +928,8 @@ namespace Lantean.QBTMud.Components.UI
 
         private static bool DictionaryEqual<TKey, TValue>(Dictionary<TKey, TValue> left, Dictionary<TKey, TValue> right) where TKey : notnull
         {
-            return left.Keys.Count == right.Keys.Count && left.Keys.All(k => right.ContainsKey(k) && Equals(left[k], right[k]));
+            return left.Keys.Count == right.Keys.Count &&
+                   left.Keys.All(k => right.TryGetValue(k, out var rightValue) && Equals(left[k], rightValue));
         }
 
         private static string? GetColumnStyle(ColumnDefinition<T> column)
