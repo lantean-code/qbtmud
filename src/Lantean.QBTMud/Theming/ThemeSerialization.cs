@@ -1,4 +1,5 @@
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Serialization;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Theming
@@ -56,6 +57,8 @@ namespace Lantean.QBTMud.Theming
                 PropertyNameCaseInsensitive = true,
                 WriteIndented = writeIndented
             };
+
+            options.Converters.Add(new MudColorJsonConverter());
 
             return options;
         }
