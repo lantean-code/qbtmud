@@ -1,5 +1,9 @@
 using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using System.Globalization;
 
@@ -7,18 +11,82 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class WelcomeWizardDialog
     {
+        private int _activeIndex;
+        private WebUiLanguageCatalogItem? _selectedLanguage;
+        private string? _selectedLocale;
+        private string? _selectedThemeId;
+        private IReadOnlyList<WebUiLanguageCatalogItem> _languageOptions = Array.Empty<WebUiLanguageCatalogItem>();
+        private IReadOnlyList<ThemeCatalogItem> _themeOptions = Array.Empty<ThemeCatalogItem>();
+
+        private string SelectedLanguageName => _selectedLanguage?.DisplayName ?? string.Empty;
+
+        private string SelectedThemeName => _themeOptions.FirstOrDefault(item => string.Equals(item.Id, _selectedThemeId, StringComparison.Ordinal))?.Name ?? string.Empty;
+
+        [CascadingParameter]
+        private IMudDialogInstance MudDialog { get; set; } = default!;
+
+        [Parameter]
+        public string? InitialLocale { get; set; }
+
         protected override async Task OnInitializedAsync()
         {
             await WebUiLanguageCatalog.EnsureInitialized();
             _languageOptions = WebUiLanguageCatalog.Languages;
 
-            _selectedLocale = string.IsNullOrWhiteSpace(InitialLocale) ? "en" : InitialLocale.Trim();
+            var locale = WebUiLocaleSelection.ResolveLocale(InitialLocale, _languageOptions);
+            _selectedLanguage = _languageOptions.FirstOrDefault(item => string.Equals(item.Code, locale, StringComparison.OrdinalIgnoreCase))
+                ?? _languageOptions.FirstOrDefault();
+            _selectedLocale = _selectedLanguage?.Code;
 
             await ThemeManagerService.EnsureInitialized();
             _themeOptions = ThemeManagerService.Themes;
             _selectedThemeId = ThemeManagerService.CurrentThemeId ?? _themeOptions.FirstOrDefault()?.Id;
 
             _activeIndex = 0;
+        }
+
+        private string? GetLanguageDisplayName(string? locale)
+        {
+            if (string.IsNullOrWhiteSpace(locale))
+            {
+                return locale;
+            }
+
+            for (var i = 0; i < _languageOptions.Count; i++)
+            {
+                var candidate = _languageOptions[i];
+                if (string.Equals(candidate.Code, locale, StringComparison.OrdinalIgnoreCase))
+                {
+                    return candidate.DisplayName;
+                }
+            }
+
+            return locale;
+        }
+
+        private string? GetThemeDisplayName(string? themeId)
+        {
+            if (string.IsNullOrWhiteSpace(themeId))
+            {
+                return themeId;
+            }
+
+            for (var i = 0; i < _themeOptions.Count; i++)
+            {
+                var theme = _themeOptions[i];
+                if (string.Equals(theme.Id, themeId, StringComparison.Ordinal))
+                {
+                    return theme.Name;
+                }
+            }
+
+            return themeId;
+        }
+
+        private async Task OnOpenOptionsClicked(MouseEventArgs args)
+        {
+            await Finish();
+            NavigationManager.NavigateTo("/settings");
         }
 
         private void NextStep()
@@ -35,6 +103,23 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 _activeIndex--;
             }
+        }
+
+        private Task OnBackClicked(MouseEventArgs args)
+        {
+            PreviousStep();
+            return Task.CompletedTask;
+        }
+
+        private Task OnNextClicked(MouseEventArgs args)
+        {
+            NextStep();
+            return Task.CompletedTask;
+        }
+
+        private Task OnFinishClicked(MouseEventArgs args)
+        {
+            return Finish();
         }
 
         private async Task Finish()
@@ -69,7 +154,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
         }
 
-        private async Task OnLocaleChanged(string value)
+        private async Task OnLocaleChanged(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -77,15 +162,17 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             _selectedLocale = value;
+            _selectedLanguage = _languageOptions.FirstOrDefault(item => string.Equals(item.Code, value, StringComparison.OrdinalIgnoreCase));
+            var locale = value;
 
             try
             {
                 await ApiClient.SetApplicationPreferences(new UpdatePreferences
                 {
-                    Locale = value
+                    Locale = locale
                 });
 
-                ApplyCulture(value);
+                ApplyCulture(locale);
                 await WebUiLocalizer.InitializeAsync();
 
                 await InvokeAsync(StateHasChanged);

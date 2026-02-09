@@ -1,0 +1,74 @@
+.welcome-wizard-dialog__layout {
+    display: flex;
+    flex-direction: column;
+    height: min(680px, calc(100vh - 160px));
+}
+
+    .welcome-wizard-dialog__layout ::deep .mud-stepper {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .welcome-wizard-dialog__layout ::deep .mud-stepper-nav {
+        flex: 0 0 auto;
+    }
+
+    .welcome-wizard-dialog__layout ::deep .mud-stepper-content {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+    }
+
+    .welcome-wizard-dialog__layout ::deep .mud-stepper-actions {
+        flex: 0 0 auto;
+        margin-top: auto;
+    }
+
+.welcome-wizard-dialog__card {
+    overflow: hidden;
+}
+
+.welcome-wizard-dialog__card-hero {
+    padding: 24px 24px 20px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.03), transparent 55%);
+}
+
+.welcome-wizard-dialog__card-hero--language {
+    background: radial-gradient(800px 240px at 50% -10%, rgba(2, 136, 209, 0.18), transparent 60%), linear-gradient(180deg, rgba(0, 0, 0, 0.03), transparent 55%);
+}
+
+.welcome-wizard-dialog__card-hero--theme {
+    background: radial-gradient(800px 240px at 50% -10%, rgba(25, 118, 210, 0.18), transparent 60%), linear-gradient(180deg, rgba(0, 0, 0, 0.03), transparent 55%);
+}
+
+.welcome-wizard-dialog__card-avatar {
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.15);
+}
+
+.welcome-wizard-dialog__card-subtitle {
+    max-width: 52ch;
+}
+
+.welcome-wizard-dialog__done {
+    overflow: hidden;
+}
+
+.welcome-wizard-dialog__done-hero {
+    padding: 24px 24px 20px;
+    background: radial-gradient(800px 240px at 50% -10%, rgba(76, 175, 80, 0.18), transparent 60%), linear-gradient(180deg, rgba(0, 0, 0, 0.03), transparent 55%);
+}
+
+.welcome-wizard-dialog__done-avatar {
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.15);
+}
+
+.welcome-wizard-dialog__done-subtitle {
+    max-width: 46ch;
+}
+
+.welcome-wizard-dialog__next-cell {
+    display: flex;
+    height: 100%;
+}
