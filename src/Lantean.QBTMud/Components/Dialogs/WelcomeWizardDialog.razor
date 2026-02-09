@@ -2,14 +2,6 @@
 @using Lantean.QBTMud.Services.Localization
 @using Lantean.QBTMud.Helpers
 
-@inject Lantean.QBitTorrentClient.IApiClient ApiClient
-@inject IWebUiLanguageCatalog WebUiLanguageCatalog
-@inject IWebUiLocalizer WebUiLocalizer
-@inject Lantean.QBTMud.Services.ILocalStorageService LocalStorage
-@inject Lantean.QBTMud.Services.IThemeManagerService ThemeManagerService
-@inject MudBlazor.ISnackbar Snackbar
-@inject NavigationManager NavigationManager
-
 <MudDialog ContentClass="welcome-wizard-dialog__content">
     <DialogContent>
         <div class="welcome-wizard-dialog__layout">

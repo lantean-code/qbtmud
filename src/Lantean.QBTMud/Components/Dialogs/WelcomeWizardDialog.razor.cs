@@ -11,6 +11,27 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class WelcomeWizardDialog
     {
+        [Inject]
+        protected QBitTorrentClient.IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLanguageCatalog WebUiLanguageCatalog { get; set; } = default!;
+
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected ILocalStorageService LocalStorage { get; set; } = default!;
+
+        [Inject]
+        protected IThemeManagerService ThemeManagerService { get; set; } = default!;
+
+        [Inject]
+        protected ISnackbar Snackbar { get; set; } = default!;
+
+        [Inject]
+        protected NavigationManager NavigationManager { get; set; } = default!;
+
         private int _activeIndex;
         private WebUiLanguageCatalogItem? _selectedLanguage;
         private string? _selectedLocale;
