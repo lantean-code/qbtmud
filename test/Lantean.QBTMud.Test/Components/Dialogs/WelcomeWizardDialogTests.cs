@@ -158,6 +158,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
 
+            var previousCurrentCulture = CultureInfo.CurrentCulture;
+            var previousCurrentUiCulture = CultureInfo.CurrentUICulture;
             var previousCulture = CultureInfo.DefaultThreadCurrentCulture;
             var previousUiCulture = CultureInfo.DefaultThreadCurrentUICulture;
 
@@ -167,6 +169,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             }
             finally
             {
+                CultureInfo.CurrentCulture = previousCurrentCulture;
+                CultureInfo.CurrentUICulture = previousCurrentUiCulture;
                 CultureInfo.DefaultThreadCurrentCulture = previousCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = previousUiCulture;
             }
@@ -203,6 +207,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
 
+            var previousCurrentCulture = CultureInfo.CurrentCulture;
+            var previousCurrentUiCulture = CultureInfo.CurrentUICulture;
             var previousCulture = CultureInfo.DefaultThreadCurrentCulture;
             var previousUiCulture = CultureInfo.DefaultThreadCurrentUICulture;
 
@@ -212,6 +218,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             }
             finally
             {
+                CultureInfo.CurrentCulture = previousCurrentCulture;
+                CultureInfo.CurrentUICulture = previousCurrentUiCulture;
                 CultureInfo.DefaultThreadCurrentCulture = previousCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = previousUiCulture;
             }

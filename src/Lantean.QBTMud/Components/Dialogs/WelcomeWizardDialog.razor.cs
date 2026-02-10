@@ -4,8 +4,11 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 using MudBlazor;
 using System.Globalization;
+using System.Text.Json;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -31,6 +34,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [Inject]
+        protected ILogger<WelcomeWizardDialog> Logger { get; set; } = default!;
 
         private int _activeIndex;
         private WebUiLanguageCatalogItem? _selectedLanguage;
@@ -150,8 +156,23 @@ namespace Lantean.QBTMud.Components.Dialogs
                 await LocalStorage.SetItemAsync(WelcomeWizardStorageKeys.Completed, true);
                 MudDialog.Close(DialogResult.Ok(true));
             }
-            catch (Exception ex)
+            catch (OperationCanceledException)
             {
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                Logger.LogWarning(ex, "Unable to save welcome wizard completion due to invalid operation: {Message}.", ex.Message);
+                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to save welcome wizard completion: %1", ex.Message), Severity.Error);
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "Unable to save welcome wizard completion due to JS exception: {Message}.", ex.Message);
+                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to save welcome wizard completion: %1", ex.Message), Severity.Error);
+            }
+            catch (JsonException ex)
+            {
+                Logger.LogWarning(ex, "Unable to save welcome wizard completion due to JSON exception: {Message}.", ex.Message);
                 Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to save welcome wizard completion: %1", ex.Message), Severity.Error);
             }
         }
@@ -169,8 +190,23 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 await ThemeManagerService.ApplyTheme(value);
             }
-            catch (Exception ex)
+            catch (OperationCanceledException)
             {
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to invalid operation: {Message}.", value, ex.Message);
+                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to apply theme: %1", ex.Message), Severity.Error);
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to JS exception: {Message}.", value, ex.Message);
+                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to apply theme: %1", ex.Message), Severity.Error);
+            }
+            catch (JsonException ex)
+            {
+                Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to JSON exception: {Message}.", value, ex.Message);
                 Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to apply theme: %1", ex.Message), Severity.Error);
             }
         }
@@ -204,7 +240,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
         }
 
-        private static void ApplyCulture(string locale)
+        private void ApplyCulture(string locale)
         {
             var normalized = NormalizeLocaleForCulture(locale);
             if (string.IsNullOrWhiteSpace(normalized))
@@ -215,11 +251,14 @@ namespace Lantean.QBTMud.Components.Dialogs
             try
             {
                 var culture = CultureInfo.GetCultureInfo(normalized);
+                CultureInfo.CurrentCulture = culture;
+                CultureInfo.CurrentUICulture = culture;
                 CultureInfo.DefaultThreadCurrentCulture = culture;
                 CultureInfo.DefaultThreadCurrentUICulture = culture;
             }
-            catch (CultureNotFoundException)
+            catch (CultureNotFoundException ex)
             {
+                Logger.LogWarning(ex, "Unable to apply culture {Locale}.", normalized);
             }
         }
 
