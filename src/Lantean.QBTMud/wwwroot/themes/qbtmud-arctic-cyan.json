@@ -1,7 +1,7 @@
 {
-  "id": "qbtmud-nordic-frost",
-  "name": "Nordic Frost",
-  "description": "Cool blues and icy neutrals inspired by Nordic palettes.",
+  "id": "qbtmud-arctic-cyan",
+  "name": "Arctic Cyan",
+  "description": "Crisp cyan accents over cool, muted grays.",
   "theme": {
     "paletteLight": {
       "black": {
@@ -17,9 +17,9 @@
         "a": 255
       },
       "primary": {
-        "r": 94,
-        "g": 129,
-        "b": 172,
+        "r": 6,
+        "g": 182,
+        "b": 212,
         "a": 255
       },
       "primaryContrastText": {
@@ -29,9 +29,9 @@
         "a": 255
       },
       "secondary": {
-        "r": 136,
-        "g": 192,
-        "b": 208,
+        "r": 59,
+        "g": 130,
+        "b": 246,
         "a": 255
       },
       "secondaryContrastText": {
@@ -41,9 +41,9 @@
         "a": 255
       },
       "tertiary": {
-        "r": 143,
-        "g": 188,
-        "b": 187,
+        "r": 100,
+        "g": 116,
+        "b": 139,
         "a": 255
       },
       "tertiaryContrastText": {
@@ -185,9 +185,9 @@
         "a": 255
       },
       "appbarBackground": {
-        "r": 94,
-        "g": 129,
-        "b": 172,
+        "r": 6,
+        "g": 182,
+        "b": 212,
         "a": 255
       },
       "appbarText": {
@@ -264,9 +264,9 @@
         "a": 255
       },
       "primary": {
-        "r": 129,
-        "g": 161,
-        "b": 193,
+        "r": 34,
+        "g": 211,
+        "b": 238,
         "a": 255
       },
       "info": {
@@ -438,9 +438,9 @@
         "a": 255
       },
       "secondary": {
-        "r": 136,
-        "g": 192,
-        "b": 208,
+        "r": 96,
+        "g": 165,
+        "b": 250,
         "a": 255
       },
       "secondaryContrastText": {
@@ -450,9 +450,9 @@
         "a": 255
       },
       "tertiary": {
-        "r": 143,
-        "g": 188,
-        "b": 187,
+        "r": 148,
+        "g": 163,
+        "b": 184,
         "a": 255
       },
       "tertiaryContrastText": {

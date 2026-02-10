@@ -81,6 +81,16 @@
                                       ErrorText="@NameError"
                                       data-test-id="@TestIdHelper.For("ThemeDetailName")" />
 
+                        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">@Translate("Description")</MudText>
+                        <MudTextField T="string"
+                                      Value="EditorDescription"
+                                      ValueChanged="DescriptionChanged"
+                                      Immediate="true"
+                                      Lines="3"
+                                      AutoGrow="true"
+                                      Disabled="@(!CanEditTheme || IsBusy)"
+                                      data-test-id="@TestIdHelper.For("ThemeDetailDescription")" />
+
                         <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">@Translate("Font")</MudText>
                         <MudAutocomplete T="string"
                                          Value="EditorFont"

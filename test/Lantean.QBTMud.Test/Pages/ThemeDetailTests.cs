@@ -185,11 +185,15 @@ namespace Lantean.QBTMud.Test.Pages
             var nameField = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName");
             await target.InvokeAsync(() => nameField.Instance.ValueChanged.InvokeAsync("Updated"));
 
+            var descriptionField = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailDescription");
+            await target.InvokeAsync(() => descriptionField.Instance.ValueChanged.InvokeAsync("Updated Description"));
+
             var saveButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
             await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
 
             saved.Should().NotBeNull();
             saved!.Name.Should().Be("Updated");
+            saved.Description.Should().Be("Updated Description");
         }
 
         [Fact]
@@ -330,7 +334,7 @@ namespace Lantean.QBTMud.Test.Pages
 
         private static ThemeCatalogItem CreateTheme(string id, string name, ThemeSource source)
         {
-            return new ThemeCatalogItem(id, name, new ThemeDefinition { FontFamily = "Nunito Sans", Theme = new MudTheme() }, source, null);
+            return new ThemeCatalogItem(id, name, new ThemeDefinition { Description = "Description", FontFamily = "Nunito Sans", Theme = new MudTheme() }, source, null);
         }
 
         private void SetupFontCatalog(IEnumerable<string> fonts)

@@ -12,3 +12,36 @@
     gap: 0.5rem;
     flex-wrap: wrap;
 }
+
+.theme-description-cell {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    white-space: normal;
+    max-width: 52rem;
+}
+
+.theme-colors-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.theme-colors-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.theme-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid var(--mud-palette-lines-default);
+    box-sizing: border-box;
+}
+
+.themes ::deep .mud-button-group-root .mud-button-root:disabled {
+    border-color: rgba(var(--mud-palette-text-primary-rgb), var(--mud-palette-border-opacity)) !important;
+}

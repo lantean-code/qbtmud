@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
 using MudBlazor;
+using MudBlazor.Utilities;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
@@ -65,7 +67,9 @@ namespace Lantean.QBTMud.Pages
         public Themes()
         {
             _columnRenderFragments.Add("Theme", NameColumn);
+            _columnRenderFragments.Add("Description", DescriptionColumn);
             _columnRenderFragments.Add("Actions", ActionsColumn);
+            _columnRenderFragments.Add("Colors", ColorsColumn);
         }
 
         protected override async Task OnInitializedAsync()
@@ -257,6 +261,7 @@ namespace Lantean.QBTMud.Pages
 
             clone.Id = Guid.NewGuid().ToString("N");
             clone.Name = name.Trim();
+            clone.Description = string.Empty;
 
             await ThemeManagerService.SaveLocalTheme(clone);
             NavigateToDetails(clone.Id);
@@ -383,6 +388,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             var theme = definition.Theme ?? new MudTheme();
+            var description = string.IsNullOrWhiteSpace(definition.Description) ? string.Empty : definition.Description.Trim();
             var fontFamily = string.IsNullOrWhiteSpace(definition.FontFamily) ? "Nunito Sans" : definition.FontFamily;
             if (!ThemeFontCatalog.TryGetFontUrl(fontFamily, out _))
             {
@@ -396,6 +402,7 @@ namespace Lantean.QBTMud.Pages
             {
                 Id = id,
                 Name = name,
+                Description = description,
                 Theme = theme,
                 RTL = definition.RTL,
                 FontFamily = definition.FontFamily,
@@ -437,10 +444,24 @@ namespace Lantean.QBTMud.Pages
             return $"data:application/json;charset=utf-8,{escaped}";
         }
 
+        private static string GetSwatchStyle(ThemeCatalogItem theme, ThemePaletteColor colorType, bool useDarkPalette)
+        {
+            var color = ThemePaletteHelper.GetColor(theme.Theme, colorType, useDarkPalette);
+            return $"background-color: {ToCssRgba(color)};";
+        }
+
+        private static string ToCssRgba(MudColor color)
+        {
+            var alpha = color.A / 255d;
+            return $"rgba({color.R},{color.G},{color.B},{alpha.ToString(CultureInfo.InvariantCulture)})";
+        }
+
         public static List<ColumnDefinition<ThemeCatalogItem>> ColumnsDefinitions { get; } =
         [
             new ColumnDefinition<ThemeCatalogItem>("Theme", t => t.Name),
+            new ColumnDefinition<ThemeCatalogItem>("Description", t => t.Theme.Description),
             new ColumnDefinition<ThemeCatalogItem>("Source", t => t.Source.ToString()),
+            new ColumnDefinition<ThemeCatalogItem>("Colors", t => t.Name, tdClass: "no-wrap", width: 160),
             new ColumnDefinition<ThemeCatalogItem>("Actions", t => t.Name, tdClass: "no-wrap")
         ];
     }

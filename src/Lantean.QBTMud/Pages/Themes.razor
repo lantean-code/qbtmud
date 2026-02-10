@@ -1,5 +1,6 @@
 @page "/themes"
 @layout OtherLayout
+@using Lantean.QBTMud.Theming
 
 <div class="content-panel themes">
     <div class="content-panel__toolbar">
@@ -59,6 +60,49 @@
         }
     }
 
+    private RenderFragment<RowContext<ThemeCatalogItem>> DescriptionColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var theme = context.Data;
+                var description = theme.Theme.Description;
+                if (string.IsNullOrWhiteSpace(description))
+                {
+                    return;
+                }
+
+                <MudText Typo="Typo.caption" Class="theme-description-cell">@description</MudText>;
+            };
+        }
+    }
+
+    private RenderFragment<RowContext<ThemeCatalogItem>> ColorsColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var theme = context.Data;
+                <div class="theme-colors-cell">
+                    <div class="theme-colors-row" title="@Translate("Light Colors")">
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Background, false)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Surface, false)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Primary, false)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Secondary, false)"></span>
+                    </div>
+                    <div class="theme-colors-row theme-colors-row--dark" title="@Translate("Dark Colors")">
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Background, true)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Surface, true)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Primary, true)"></span>
+                        <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Secondary, true)"></span>
+                    </div>
+                </div>;
+            };
+        }
+    }
+
     private RenderFragment<RowContext<ThemeCatalogItem>> ActionsColumn
     {
         get
@@ -67,7 +111,7 @@
             {
                 var theme = context.Data;
                 <div class="no-wrap" @onclick:stopPropagation="true">
-                    <MudButtonGroup>
+                    <MudButtonGroup Variant="Variant.Outlined">
                         <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
                                        Color="Color.Primary"
                                        title="@Translate("Apply")"

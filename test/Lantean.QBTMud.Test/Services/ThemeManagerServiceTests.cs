@@ -109,6 +109,7 @@ namespace Lantean.QBTMud.Test.Services
             {
                 Id = " ",
                 Name = " ",
+                Description = " Description ",
                 FontFamily = "Invalid!",
                 Theme = new MudTheme()
             };
@@ -117,11 +118,12 @@ namespace Lantean.QBTMud.Test.Services
 
             _target.Themes.Should().ContainSingle(themeItem =>
                 themeItem.Name == "Untitled Theme"
-                && themeItem.Theme.FontFamily == "Nunito Sans");
+                && themeItem.Theme.FontFamily == "Nunito Sans"
+                && themeItem.Theme.Description == "Description");
 
             var stored = await _localStorage.GetItemAsync<List<ThemeDefinition>>(LocalThemesStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
-            stored!.Should().ContainSingle(item => item.Name == "Untitled Theme" && item.FontFamily == "Nunito Sans");
+            stored!.Should().ContainSingle(item => item.Name == "Untitled Theme" && item.FontFamily == "Nunito Sans" && item.Description == "Description");
         }
 
         [Fact]
@@ -185,6 +187,35 @@ namespace Lantean.QBTMud.Test.Services
             await _target.ReloadServerThemes();
 
             _target.CurrentThemeId.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_ConcurrentEnsureInitializedCalls_WHEN_BlockedOnFontCatalog_THEN_InvokesFontCatalogOnce()
+        {
+            SetupHttpClient(CreateIndexResponse());
+
+            var gate = new TaskCompletionSource<bool>();
+            var callCount = 0;
+            Mock.Get(_fontCatalog)
+                .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    Interlocked.Increment(ref callCount);
+                    return gate.Task;
+                });
+
+            var url = "Url";
+            Mock.Get(_fontCatalog)
+                .Setup(catalog => catalog.TryGetFontUrl(It.IsAny<string>(), out url))
+                .Returns(true);
+
+            var first = _target.EnsureInitialized();
+            var second = _target.EnsureInitialized();
+
+            callCount.Should().Be(1);
+
+            gate.SetResult(true);
+            await Task.WhenAll(first, second);
         }
 
         private static string CreateThemeJson(string id, string name, string fontFamily)

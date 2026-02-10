@@ -1,6 +1,7 @@
 {
   "id": "qbtmud-slate-ocean",
   "name": "Slate Ocean",
+  "description": "Slate neutrals with ocean blues for a balanced look.",
   "theme": {
     "paletteLight": {
       "black": {

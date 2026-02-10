@@ -15,6 +15,7 @@ namespace Lantean.QBTMud.Services
         private const string SelectedThemeStorageKey = "ThemeManager.SelectedThemeId";
         private const string ThemeIndexPath = "themes/index.json";
 
+        private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILocalStorageService _localStorage;
         private readonly IThemeFontCatalog _themeFontCatalog;
@@ -93,14 +94,27 @@ namespace Lantean.QBTMud.Services
                 return;
             }
 
-            await _themeFontCatalog.EnsureInitialized();
+            await _initializationSemaphore.WaitAsync();
+            try
+            {
+                if (_initialized)
+                {
+                    return;
+                }
 
-            await LoadLocalThemes();
-            await LoadServerThemes();
-            RebuildCatalog();
-            await ApplyInitialTheme();
+                await _themeFontCatalog.EnsureInitialized();
 
-            _initialized = true;
+                await LoadLocalThemes();
+                await LoadServerThemes();
+                RebuildCatalog();
+                await ApplyInitialTheme();
+
+                _initialized = true;
+            }
+            finally
+            {
+                _initializationSemaphore.Release();
+            }
         }
 
         /// <summary>
@@ -364,6 +378,7 @@ namespace Lantean.QBTMud.Services
         {
             var name = string.IsNullOrWhiteSpace(definition.Name) ? TranslateApp("Untitled Theme") : definition.Name.Trim();
             var id = string.IsNullOrWhiteSpace(definition.Id) ? Guid.NewGuid().ToString("N") : definition.Id.Trim();
+            var description = string.IsNullOrWhiteSpace(definition.Description) ? string.Empty : definition.Description.Trim();
             var theme = definition.Theme ?? new MudBlazor.MudTheme();
 
             var fontFamily = string.IsNullOrWhiteSpace(definition.FontFamily) ? "Nunito Sans" : definition.FontFamily;
@@ -374,12 +389,14 @@ namespace Lantean.QBTMud.Services
 
             definition.Theme = theme;
             definition.FontFamily = fontFamily;
+            definition.Description = description;
             ThemeFontHelper.ApplyFont(definition, fontFamily);
 
             return new ThemeDefinition
             {
                 Id = id,
                 Name = name,
+                Description = description,
                 Theme = theme,
                 RTL = definition.RTL,
                 FontFamily = definition.FontFamily,

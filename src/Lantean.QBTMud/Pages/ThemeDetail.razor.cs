@@ -70,6 +70,7 @@ namespace Lantean.QBTMud.Pages
         private ThemeCatalogItem? _theme;
         private ThemeDefinition? _editorTheme;
         private string _editorName = string.Empty;
+        private string _editorDescription = string.Empty;
         private string _editorFont = string.Empty;
         private string? _nameError;
         private string? _fontError;
@@ -163,6 +164,11 @@ namespace Lantean.QBTMud.Pages
             get { return _editorFont; }
         }
 
+        protected string EditorDescription
+        {
+            get { return _editorDescription; }
+        }
+
         protected string ThemeTitle
         {
             get { return _theme?.Name ?? Translate("Theme Details"); }
@@ -226,6 +232,13 @@ namespace Lantean.QBTMud.Pages
 
             _nameError = string.IsNullOrWhiteSpace(value) ? Translate("Name is required.") : null;
 
+            _hasChanges = true;
+            return Task.CompletedTask;
+        }
+
+        protected Task DescriptionChanged(string value)
+        {
+            _editorDescription = value;
             _hasChanges = true;
             return Task.CompletedTask;
         }
@@ -362,6 +375,7 @@ namespace Lantean.QBTMud.Pages
                 {
                     Id = _theme.Id,
                     Name = _editorName.Trim(),
+                    Description = string.IsNullOrWhiteSpace(_editorDescription) ? string.Empty : _editorDescription.Trim(),
                     Theme = _editorTheme.Theme,
                     RTL = _editorTheme.RTL,
                     FontFamily = _editorTheme.FontFamily,
@@ -405,6 +419,7 @@ namespace Lantean.QBTMud.Pages
             _theme = theme;
             _editorTheme = ThemeSerialization.CloneDefinition(theme.Theme);
             _editorName = theme.Name;
+            _editorDescription = _editorTheme.Description;
 
             var fontFamily = string.IsNullOrWhiteSpace(_editorTheme.FontFamily) ? "Nunito Sans" : _editorTheme.FontFamily;
             if (!ThemeFontCatalog.TryGetFontUrl(fontFamily, out _))

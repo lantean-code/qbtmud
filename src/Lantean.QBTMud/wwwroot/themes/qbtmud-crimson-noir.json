@@ -1,6 +1,7 @@
 {
   "id": "qbtmud-crimson-noir",
   "name": "Crimson Noir",
+  "description": "Bold crimson with noir backgrounds and magenta highlights.",
   "theme": {
     "paletteLight": {
       "black": {

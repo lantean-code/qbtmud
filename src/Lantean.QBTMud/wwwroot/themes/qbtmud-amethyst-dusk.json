@@ -1,13 +1,13 @@
 {
-  "id": "qbtmud-nordic-frost",
-  "name": "Nordic Frost",
-  "description": "Cool blues and icy neutrals inspired by Nordic palettes.",
+  "id": "qbtmud-amethyst-dusk",
+  "name": "Amethyst Dusk",
+  "description": "Amethyst primary with cyan and fuchsia accents.",
   "theme": {
     "paletteLight": {
       "black": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 39,
+        "g": 44,
+        "b": 52,
         "a": 255
       },
       "white": {
@@ -17,9 +17,9 @@
         "a": 255
       },
       "primary": {
-        "r": 94,
-        "g": 129,
-        "b": 172,
+        "r": 124,
+        "g": 58,
+        "b": 237,
         "a": 255
       },
       "primaryContrastText": {
@@ -29,9 +29,9 @@
         "a": 255
       },
       "secondary": {
-        "r": 136,
-        "g": 192,
-        "b": 208,
+        "r": 6,
+        "g": 182,
+        "b": 212,
         "a": 255
       },
       "secondaryContrastText": {
@@ -41,9 +41,9 @@
         "a": 255
       },
       "tertiary": {
-        "r": 143,
-        "g": 188,
-        "b": 187,
+        "r": 217,
+        "g": 70,
+        "b": 239,
         "a": 255
       },
       "tertiaryContrastText": {
@@ -53,9 +53,9 @@
         "a": 255
       },
       "info": {
-        "r": 94,
-        "g": 129,
-        "b": 172,
+        "r": 33,
+        "g": 150,
+        "b": 243,
         "a": 255
       },
       "infoContrastText": {
@@ -65,9 +65,9 @@
         "a": 255
       },
       "success": {
-        "r": 163,
-        "g": 190,
-        "b": 140,
+        "r": 0,
+        "g": 200,
+        "b": 83,
         "a": 255
       },
       "successContrastText": {
@@ -77,9 +77,9 @@
         "a": 255
       },
       "warning": {
-        "r": 235,
-        "g": 203,
-        "b": 139,
+        "r": 255,
+        "g": 152,
+        "b": 0,
         "a": 255
       },
       "warningContrastText": {
@@ -89,9 +89,9 @@
         "a": 255
       },
       "error": {
-        "r": 191,
-        "g": 97,
-        "b": 106,
+        "r": 244,
+        "g": 67,
+        "b": 54,
         "a": 255
       },
       "errorContrastText": {
@@ -101,9 +101,9 @@
         "a": 255
       },
       "dark": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 66,
+        "g": 66,
+        "b": 66,
         "a": 255
       },
       "darkContrastText": {
@@ -113,51 +113,51 @@
         "a": 255
       },
       "textPrimary": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 66,
+        "g": 66,
+        "b": 66,
         "a": 255
       },
       "textSecondary": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
-        "a": 178
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 137
       },
       "textDisabled": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
-        "a": 128
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 96
       },
       "actionDefault": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
-        "a": 138
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 137
       },
       "actionDisabled": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 0,
+        "g": 0,
+        "b": 0,
         "a": 66
       },
       "actionDisabledBackground": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
-        "a": 31
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 30
       },
       "background": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
+        "r": 255,
+        "g": 255,
+        "b": 255,
         "a": 255
       },
       "backgroundGray": {
-        "r": 229,
-        "g": 233,
-        "b": 240,
+        "r": 245,
+        "g": 245,
+        "b": 245,
         "a": 255
       },
       "surface": {
@@ -167,83 +167,99 @@
         "a": 255
       },
       "drawerBackground": {
-        "r": 229,
-        "g": 233,
-        "b": 240,
+        "r": 255,
+        "g": 255,
+        "b": 255,
         "a": 255
       },
       "drawerText": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 66,
+        "g": 66,
+        "b": 66,
         "a": 255
       },
       "drawerIcon": {
-        "r": 76,
-        "g": 86,
-        "b": 106,
+        "r": 97,
+        "g": 97,
+        "b": 97,
         "a": 255
       },
       "appbarBackground": {
-        "r": 94,
-        "g": 129,
-        "b": 172,
+        "r": 124,
+        "g": 58,
+        "b": 237,
         "a": 255
       },
       "appbarText": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
+        "r": 255,
+        "g": 255,
+        "b": 255,
         "a": 255
       },
       "linesDefault": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
-        "a": 31
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 30
       },
       "linesInputs": {
-        "r": 160,
-        "g": 167,
-        "b": 181,
+        "r": 189,
+        "g": 189,
+        "b": 189,
         "a": 255
       },
       "tableLines": {
-        "r": 216,
-        "g": 222,
-        "b": 233,
+        "r": 224,
+        "g": 224,
+        "b": 224,
         "a": 255
       },
       "tableStriped": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
-        "a": 10
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 5
       },
       "tableHover": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
-        "a": 20
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 10
       },
       "divider": {
-        "r": 216,
-        "g": 222,
-        "b": 233,
+        "r": 224,
+        "g": 224,
+        "b": 224,
         "a": 255
       },
       "dividerLight": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 0,
+        "g": 0,
+        "b": 0,
         "a": 204
       },
       "skeleton": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 0,
+        "g": 0,
+        "b": 0,
         "a": 28
       },
+      "primaryDarken": "rgb(62,44,221)",
+      "primaryLighten": "rgb(118,106,231)",
+      "secondaryDarken": "rgb(255,31,105)",
+      "secondaryLighten": "rgb(255,102,153)",
+      "tertiaryDarken": "rgb(25,169,140)",
+      "tertiaryLighten": "rgb(42,223,187)",
+      "infoDarken": "rgb(12,128,223)",
+      "infoLighten": "rgb(71,167,245)",
+      "successDarken": "rgb(0,163,68)",
+      "successLighten": "rgb(0,235,98)",
+      "warningDarken": "rgb(214,129,0)",
+      "warningLighten": "rgb(255,167,36)",
+      "errorDarken": "rgb(242,28,13)",
+      "errorLighten": "rgb(246,96,85)",
+      "darkDarken": "rgb(46,46,46)",
+      "darkLighten": "rgb(87,87,87)",
       "borderOpacity": 1,
       "hoverOpacity": 0.06,
       "rippleOpacity": 0.1,
@@ -258,166 +274,166 @@
     },
     "paletteDark": {
       "black": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 39,
+        "g": 39,
+        "b": 47,
         "a": 255
       },
       "primary": {
-        "r": 129,
-        "g": 161,
-        "b": 193,
+        "r": 167,
+        "g": 139,
+        "b": 250,
         "a": 255
       },
       "info": {
-        "r": 94,
-        "g": 129,
-        "b": 172,
+        "r": 56,
+        "g": 189,
+        "b": 248,
         "a": 255
       },
       "success": {
-        "r": 163,
-        "g": 190,
-        "b": 140,
+        "r": 45,
+        "g": 212,
+        "b": 191,
         "a": 255
       },
       "warning": {
-        "r": 235,
-        "g": 203,
-        "b": 139,
+        "r": 251,
+        "g": 191,
+        "b": 36,
         "a": 255
       },
       "error": {
-        "r": 191,
-        "g": 97,
-        "b": 106,
+        "r": 248,
+        "g": 113,
+        "b": 113,
         "a": 255
       },
       "dark": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 39,
+        "g": 39,
+        "b": 47,
         "a": 255
       },
       "textPrimary": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
+        "r": 226,
+        "g": 236,
+        "b": 247,
         "a": 229
       },
       "textSecondary": {
-        "r": 216,
-        "g": 222,
-        "b": 233,
-        "a": 200
+        "r": 159,
+        "g": 182,
+        "b": 204,
+        "a": 209
       },
       "textDisabled": {
-        "r": 216,
-        "g": 222,
-        "b": 233,
-        "a": 120
+        "r": 159,
+        "g": 182,
+        "b": 204,
+        "a": 127
       },
       "actionDefault": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
-        "a": 178
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 183
       },
       "actionDisabled": {
-        "r": 216,
-        "g": 222,
-        "b": 233,
-        "a": 89
+        "r": 159,
+        "g": 182,
+        "b": 204,
+        "a": 127
       },
       "actionDisabledBackground": {
-        "r": 0,
-        "g": 0,
-        "b": 0,
+        "r": 6,
+        "g": 11,
+        "b": 20,
         "a": 153
       },
       "background": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 11,
+        "g": 19,
+        "b": 35,
         "a": 255
       },
       "backgroundGray": {
-        "r": 59,
-        "g": 66,
-        "b": 82,
+        "r": 39,
+        "g": 39,
+        "b": 47,
         "a": 255
       },
       "surface": {
-        "r": 59,
-        "g": 66,
-        "b": 82,
+        "r": 17,
+        "g": 24,
+        "b": 39,
         "a": 255
       },
       "drawerBackground": {
-        "r": 46,
-        "g": 52,
-        "b": 64,
+        "r": 11,
+        "g": 19,
+        "b": 35,
         "a": 255
       },
       "drawerText": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
-        "a": 229
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 209
       },
       "drawerIcon": {
-        "r": 216,
-        "g": 222,
-        "b": 233,
-        "a": 204
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 183
       },
       "appbarBackground": {
-        "r": 59,
-        "g": 66,
-        "b": 82,
+        "r": 17,
+        "g": 24,
+        "b": 39,
         "a": 255
       },
       "appbarText": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
-        "a": 229
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 178
       },
       "linesDefault": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
-        "a": 31
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 30
       },
       "linesInputs": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
+        "r": 226,
+        "g": 236,
+        "b": 247,
         "a": 51
       },
       "tableLines": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
-        "a": 31
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 30
       },
       "tableStriped": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
+        "r": 226,
+        "g": 236,
+        "b": 247,
         "a": 10
       },
       "divider": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
-        "a": 31
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 30
       },
       "dividerLight": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
-        "a": 20
+        "r": 226,
+        "g": 236,
+        "b": 247,
+        "a": 15
       },
       "skeleton": {
         "r": 255,
@@ -438,9 +454,9 @@
         "a": 255
       },
       "secondary": {
-        "r": 136,
-        "g": 192,
-        "b": 208,
+        "r": 34,
+        "g": 211,
+        "b": 238,
         "a": 255
       },
       "secondaryContrastText": {
@@ -450,9 +466,9 @@
         "a": 255
       },
       "tertiary": {
-        "r": 143,
-        "g": 188,
-        "b": 187,
+        "r": 232,
+        "g": 121,
+        "b": 249,
         "a": 255
       },
       "tertiaryContrastText": {
@@ -492,11 +508,27 @@
         "a": 255
       },
       "tableHover": {
-        "r": 236,
-        "g": 239,
-        "b": 244,
+        "r": 226,
+        "g": 236,
+        "b": 247,
         "a": 20
       },
+      "primaryDarken": "rgb(21,107,244)",
+      "primaryLighten": "rgb(99,156,248)",
+      "secondaryDarken": "rgb(255,31,105)",
+      "secondaryLighten": "rgb(255,102,153)",
+      "tertiaryDarken": "rgb(25,169,140)",
+      "tertiaryLighten": "rgb(42,223,187)",
+      "infoDarken": "rgb(19,178,246)",
+      "infoLighten": "rgb(98,204,249)",
+      "successDarken": "rgb(36,178,159)",
+      "successLighten": "rgb(73,218,198)",
+      "warningDarken": "rgb(245,177,5)",
+      "warningLighten": "rgb(251,201,75)",
+      "errorDarken": "rgb(247,80,80)",
+      "errorLighten": "rgb(250,148,148)",
+      "darkDarken": "rgb(23,23,28)",
+      "darkLighten": "rgb(56,56,67)",
       "borderOpacity": 1,
       "hoverOpacity": 0.06,
       "rippleOpacity": 0.1,
@@ -758,7 +790,7 @@
     }
   },
   "rtl": false,
-  "fontFamily": "Inter",
+  "fontFamily": "Nunito Sans",
   "defaultBorderRadius": 4,
   "defaultElevation": 1,
   "appBarElevation": 25,

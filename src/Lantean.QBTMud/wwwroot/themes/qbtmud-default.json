@@ -1,6 +1,7 @@
 {
   "id": "qbtmud-default",
   "name": "qbtmud Default",
+  "description": "Bright accents with a clean, modern base.",
   "theme": {
     "paletteLight": {
       "black": {

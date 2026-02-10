@@ -18,6 +18,11 @@ namespace Lantean.QBTMud.Models
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
+        /// Gets the optional description of the theme.
+        /// </summary>
+        public string Description { get; set; } = string.Empty;
+
+        /// <summary>
         /// Gets or sets the theme configuration.
         /// </summary>
         public MudTheme Theme { get; set; } = new();

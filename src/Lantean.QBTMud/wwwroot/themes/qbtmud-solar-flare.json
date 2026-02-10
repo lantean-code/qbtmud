@@ -1,6 +1,7 @@
 {
   "id": "qbtmud-solar-flare",
   "name": "Solar Flare",
+  "description": "Warm oranges and amber tones with high contrast.",
   "theme": {
     "paletteLight": {
       "black": {

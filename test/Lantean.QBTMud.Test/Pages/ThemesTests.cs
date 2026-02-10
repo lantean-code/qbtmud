@@ -113,6 +113,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             saved.Should().NotBeNull();
             saved!.Name.Should().Be("Name");
+            saved.Description.Should().BeEmpty();
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/themes/");
         }
 
@@ -350,6 +351,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 Id = "ThemeId",
                 Name = "Name",
+                Description = " Description ",
                 FontFamily = "Nunito Sans",
                 Theme = new MudTheme()
             };
@@ -370,6 +372,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             saved.Should().NotBeNull();
             saved!.Name.Should().Be("Name");
+            saved.Description.Should().Be("Description");
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/themes/");
         }
 
@@ -564,14 +567,16 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
 
-            Themes.ColumnsDefinitions.Should().HaveCount(3);
+            Themes.ColumnsDefinitions.Should().HaveCount(5);
             Themes.ColumnsDefinitions.Select(definition => definition.Header)
                 .Should()
-                .Equal("Theme", "Source", "Actions");
+                .Equal("Theme", "Description", "Source", "Colors", "Actions");
 
             Themes.ColumnsDefinitions[0].SortSelector(theme).Should().Be("Name");
-            Themes.ColumnsDefinitions[1].SortSelector(theme).Should().Be(ThemeSource.Local.ToString());
-            Themes.ColumnsDefinitions[2].SortSelector(theme).Should().Be("Name");
+            Themes.ColumnsDefinitions[1].SortSelector(theme).Should().Be("Description");
+            Themes.ColumnsDefinitions[2].SortSelector(theme).Should().Be(ThemeSource.Local.ToString());
+            Themes.ColumnsDefinitions[3].SortSelector(theme).Should().Be("Name");
+            Themes.ColumnsDefinitions[4].SortSelector(theme).Should().Be("Name");
         }
 
         private IRenderedComponent<Themes> RenderPage(List<ThemeCatalogItem> themes, bool drawerOpen = true)
@@ -588,7 +593,7 @@ namespace Lantean.QBTMud.Test.Pages
 
         private static ThemeCatalogItem CreateTheme(string id, string name, ThemeSource source)
         {
-            return new ThemeCatalogItem(id, name, new ThemeDefinition { FontFamily = "Nunito Sans", Theme = new MudTheme() }, source, null);
+            return new ThemeCatalogItem(id, name, new ThemeDefinition { Description = "Description", FontFamily = "Nunito Sans", Theme = new MudTheme() }, source, null);
         }
 
         private void SetupFontCatalogValid()
