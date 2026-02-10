@@ -16,6 +16,7 @@ namespace Lantean.QBTMud.Layout
         private const string _bootstrapThemeCssLightStorageKey = "ThemeManager.BootstrapCss.Light";
         private const string _bootstrapThemeCssDarkStorageKey = "ThemeManager.BootstrapCss.Dark";
         private const string _bootstrapThemeIsDarkStorageKey = "ThemeManager.BootstrapIsDark";
+        private const string _bootstrapThemeFontFamilyStorageKey = "ThemeManager.BootstrapFontFamily";
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
@@ -56,6 +57,7 @@ namespace Lantean.QBTMud.Layout
         private bool _bootstrapThemeRemoved;
         private string? _pendingFontFamily;
         private bool _themeInitialized;
+        private bool _hasAppliedTheme;
 
         private Menu Menu { get; set; } = default!;
 
@@ -90,6 +92,7 @@ namespace Lantean.QBTMud.Layout
             IsDarkMode = isDarkMode ?? true;
 
             await ThemeManagerService.EnsureInitialized();
+            EnsureThemeApplied();
             _themeInitialized = true;
         }
 
@@ -251,7 +254,24 @@ namespace Lantean.QBTMud.Layout
             _pendingThemeUpdate = true;
             _pendingBootstrapThemeUpdate = true;
             _pendingBootstrapThemeRemoval = true;
+            _hasAppliedTheme = true;
             StateHasChanged();
+        }
+
+        private void EnsureThemeApplied()
+        {
+            if (_hasAppliedTheme)
+            {
+                return;
+            }
+
+            var current = ThemeManagerService.CurrentTheme;
+            if (current is null)
+            {
+                return;
+            }
+
+            OnThemeChanged(this, new Models.ThemeChangedEventArgs(current.Theme.Theme, ThemeManagerService.CurrentFontFamily, current.Id));
         }
 
         private async Task LoadPendingFontAsync()
@@ -278,6 +298,12 @@ namespace Lantean.QBTMud.Layout
             await LocalStorage.SetItemAsStringAsync(_bootstrapThemeCssLightStorageKey, lightCss);
             await LocalStorage.SetItemAsStringAsync(_bootstrapThemeCssDarkStorageKey, darkCss);
             await LocalStorage.SetItemAsync(_bootstrapThemeIsDarkStorageKey, IsDarkMode);
+
+            var fontFamily = ThemeManagerService.CurrentFontFamily;
+            if (!string.IsNullOrWhiteSpace(fontFamily))
+            {
+                await LocalStorage.SetItemAsStringAsync(_bootstrapThemeFontFamilyStorageKey, fontFamily);
+            }
         }
     }
 }

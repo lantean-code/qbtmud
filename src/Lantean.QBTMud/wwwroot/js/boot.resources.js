@@ -26,6 +26,32 @@
         warnedFailure: false
     };
 
+    function applyBootstrapFont() {
+        try {
+            const rawFontFamily = localStorage.getItem("ThemeManager.BootstrapFontFamily");
+            const fontFamily = normalizeStorageString(rawFontFamily);
+            if (!isValidFontFamily(fontFamily)) {
+                return;
+            }
+
+            const fontId = buildFontId(fontFamily);
+            if (fontId && document.getElementById(fontId)) {
+                return;
+            }
+
+            const url = buildGoogleFontUrl(fontFamily);
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.href = url;
+            if (fontId) {
+                link.id = fontId;
+            }
+
+            document.head.appendChild(link);
+        } catch {
+        }
+    }
+
     function applyBootstrapTheme() {
         try {
             const rawBootstrapMode = localStorage.getItem("ThemeManager.BootstrapIsDark");
@@ -58,6 +84,52 @@
 
         const normalized = value.trim().toLowerCase();
         return normalized === "true";
+    }
+
+    function normalizeStorageString(value) {
+        if (!value) {
+            return "";
+        }
+
+        // BrowserStorageService stores JSON for SetItemAsync, while SetItemAsStringAsync stores raw strings.
+        // This normalizes either representation to a plain string value.
+        const trimmed = value.trim();
+        if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                return typeof parsed === "string" ? parsed.trim() : "";
+            } catch {
+                return trimmed.substring(1, trimmed.length - 1).trim();
+            }
+        }
+
+        return trimmed;
+    }
+
+    function isValidFontFamily(value) {
+        if (!value) {
+            return false;
+        }
+
+        // Matches ThemeFontCatalog's font family validation to prevent injection.
+        return /^[a-zA-Z0-9][a-zA-Z0-9\\s\\-]*$/.test(value);
+    }
+
+    function buildFontId(fontFamily) {
+        if (!fontFamily) {
+            return "qbt-font-default";
+        }
+
+        const normalized = fontFamily.trim().toLowerCase().split("").map(ch => {
+            return /[a-z0-9]/.test(ch) ? ch : "-";
+        }).join("");
+
+        return `qbt-font-${normalized}`;
+    }
+
+    function buildGoogleFontUrl(fontFamily) {
+        const encoded = encodeURIComponent(fontFamily).replace(/%20/g, "+");
+        return `https://fonts.googleapis.com/css2?family=${encoded}&display=swap`;
     }
 
     function ensureTrailingSlash(value) {
@@ -173,6 +245,7 @@
             });
     }
 
+    applyBootstrapFont();
     applyBootstrapTheme();
 
     if (document.readyState === "loading") {

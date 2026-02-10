@@ -49,6 +49,7 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
             builder.Services.AddSingleton<IThemeFontCatalog, ThemeFontCatalog>();
             builder.Services.AddScoped<IThemeManagerService, ThemeManagerService>();
+            builder.Services.AddScoped<IAppWarmupService, AppWarmupService>();
 
             builder.Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
             builder.Services.AddSingleton<IPeerDataManager, PeerDataManager>();
@@ -71,7 +72,7 @@ namespace Lantean.QBTMud
 #endif
 
             var host = builder.Build();
-            await host.Services.GetRequiredService<IWebUiLocalizer>().InitializeAsync();
+            await host.Services.GetRequiredService<IAppWarmupService>().WarmupAsync();
             await host.RunAsync();
         }
     }
