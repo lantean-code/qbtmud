@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Layout;
 using Lantean.QBTMud.Models;
@@ -22,6 +23,7 @@ namespace Lantean.QBTMud.Test.Layout
     {
         private const string PendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
         private const string LastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
+        private const string WelcomeWizardCompletedStorageKey = "WelcomeWizard.Completed.v1";
 
         private readonly IApiClient _apiClient;
         private readonly Mock<IApiClient> _apiClientMock;
@@ -37,6 +39,8 @@ namespace Lantean.QBTMud.Test.Layout
         private readonly Mock<IManagedTimer> _refreshTimerMock;
         private readonly IDialogWorkflow _dialogWorkflow;
         private readonly Mock<IDialogWorkflow> _dialogWorkflowMock;
+        private readonly IDialogService _dialogService;
+        private readonly Mock<IDialogService> _dialogServiceMock;
         private readonly ISnackbar _snackbar;
         private readonly Mock<ISnackbar> _snackbarMock;
         private readonly TestNavigationManager _navigationManager;
@@ -80,6 +84,15 @@ namespace Lantean.QBTMud.Test.Layout
             _dialogWorkflow = Mock.Of<IDialogWorkflow>();
             _dialogWorkflowMock = Mock.Get(_dialogWorkflow);
 
+            _dialogService = Mock.Of<IDialogService>();
+            _dialogServiceMock = Mock.Get(_dialogService);
+            _dialogServiceMock
+                .Setup(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()))
+                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+
             _snackbar = Mock.Of<ISnackbar>();
             _snackbarMock = Mock.Get(_snackbar);
 
@@ -89,6 +102,7 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
             TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
             TestContext.Services.RemoveAll(typeof(IDialogWorkflow));
+            TestContext.Services.RemoveAll(typeof(IDialogService));
             TestContext.Services.RemoveAll(typeof(ISnackbar));
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.AddSingleton(_dataManager);
@@ -96,9 +110,48 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.AddSingleton(_managedTimerFactory);
             TestContext.Services.AddSingleton(_timerRegistry);
             TestContext.Services.AddSingleton(_dialogWorkflow);
+            TestContext.Services.AddSingleton(_dialogService);
             TestContext.Services.AddSingleton(_snackbar);
 
             _target = RenderLayout(new List<IManagedTimer>());
+        }
+
+        [Fact]
+        public void GIVEN_WelcomeWizardIncomplete_WHEN_Rendered_THEN_ShowsWizardDialog()
+        {
+            DisposeDefaultTarget();
+            _dialogServiceMock.Invocations.Clear();
+
+            TestContext.LocalStorage.RemoveItemAsync(WelcomeWizardCompletedStorageKey, Xunit.TestContext.Current.CancellationToken);
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.WaitForAssertion(() =>
+            {
+                _dialogServiceMock.Verify(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()), Times.Once);
+            });
+        }
+
+        [Fact]
+        public void GIVEN_WelcomeWizardCompleted_WHEN_Rendered_THEN_DoesNotShowWizardDialog()
+        {
+            DisposeDefaultTarget();
+            _dialogServiceMock.Invocations.Clear();
+
+            TestContext.LocalStorage.SetItemAsync(WelcomeWizardCompletedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.WaitForAssertion(() =>
+            {
+                _dialogServiceMock.Verify(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()), Times.Never);
+            });
         }
 
         [Fact]

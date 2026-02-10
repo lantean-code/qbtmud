@@ -1,6 +1,6 @@
+using Lantean.QBTMud.Serialization;
 using Microsoft.JSInterop;
 using System.Text.Json;
-using Lantean.QBTMud.Serialization;
 
 namespace Lantean.QBTMud.Services
 {

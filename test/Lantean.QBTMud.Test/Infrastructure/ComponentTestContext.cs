@@ -55,6 +55,8 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddSingleton<ISessionStorageService>(_sessionStorage);
             Services.AddSingleton<IClipboardService>(_clipboard);
 
+            _localStorage.SetItemAsync(WelcomeWizardStorageKeys.Completed, true);
+
             // Message handlers used by your HttpClient pipeline
             Services.AddTransient<CookieHandler>();
             Services.AddScoped<HttpLogger>();

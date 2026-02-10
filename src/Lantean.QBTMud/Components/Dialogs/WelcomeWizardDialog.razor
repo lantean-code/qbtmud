@@ -1,0 +1,193 @@
+@using Lantean.QBTMud.Models
+@using Lantean.QBTMud.Services.Localization
+@using Lantean.QBTMud.Helpers
+
+<MudDialog ContentClass="welcome-wizard-dialog__content">
+    <DialogContent>
+        <div class="welcome-wizard-dialog__layout">
+            <MudText Typo="Typo.h6" Class="mb-2">@WebUiLocalizer.Translate("AppWelcomeWizard", "Welcome")</MudText>
+
+            <MudStepper @bind-ActiveIndex="_activeIndex" NonLinear="true" CenterLabels="true">
+                <ChildContent>
+                    <MudStep Title="@WebUiLocalizer.Translate("OptionsDialog", "Language")">
+                        <MudPaper Outlined="true" Class="welcome-wizard-dialog__card">
+                            <div class="welcome-wizard-dialog__card-hero welcome-wizard-dialog__card-hero--language">
+                                <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                                    <MudAvatar Color="Color.Info" Variant="Variant.Filled" Size="Size.Large" Class="welcome-wizard-dialog__card-avatar">
+                                        <MudIcon Icon="@Icons.Material.Filled.Language" />
+                                    </MudAvatar>
+
+                                    <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("OptionsDialog", "Language")</MudText>
+                                    <MudText Typo="Typo.body2" Align="Align.Center" Class="welcome-wizard-dialog__card-subtitle">
+                                        @WebUiLocalizer.Translate("AppWelcomeWizard", "Thanks for using qbtmud. Choose your language to get started.")
+                                    </MudText>
+                                </MudStack>
+                            </div>
+
+                            <MudDivider />
+
+                            <div class="pa-4">
+                                <MudSelect T="string"
+                                           Label="@WebUiLocalizer.Translate("OptionsDialog", "User interface language:")"
+                                           Value="_selectedLocale"
+                                           ValueChanged="OnLocaleChanged"
+                                           ToStringFunc="GetLanguageDisplayName"
+                                           Variant="Variant.Outlined"
+                                           ShrinkLabel="true"
+                                           Dense="true"
+                                           data-test-id="@TestIdHelper.For("WelcomeWizardLanguageSelect")">
+                                    @foreach (var language in _languageOptions)
+                                    {
+                                        <MudSelectItem Value="@language.Code">@language.DisplayName</MudSelectItem>
+                                    }
+                                </MudSelect>
+
+                                <MudAlert Severity="Severity.Info" Class="mt-4">
+                                    @WebUiLocalizer.Translate("AppWelcomeWizard", "Changing language updates qBittorrent preferences and applies immediately in this session.")
+                                </MudAlert>
+                            </div>
+                        </MudPaper>
+                    </MudStep>
+
+                    <MudStep Title="@WebUiLocalizer.Translate("AppThemes", "Theme")">
+                        <MudPaper Outlined="true" Class="welcome-wizard-dialog__card">
+                            <div class="welcome-wizard-dialog__card-hero welcome-wizard-dialog__card-hero--theme">
+                                <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                                    <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large" Class="welcome-wizard-dialog__card-avatar">
+                                        <MudIcon Icon="@Icons.Material.Filled.Palette" />
+                                    </MudAvatar>
+
+                                    <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("AppThemes", "Theme")</MudText>
+                                    <MudText Typo="Typo.body2" Align="Align.Center" Class="welcome-wizard-dialog__card-subtitle">
+                                        @WebUiLocalizer.Translate("AppWelcomeWizard", "Choose a theme. It will apply immediately so you can preview it.")
+                                    </MudText>
+                                </MudStack>
+                            </div>
+
+                            <MudDivider />
+
+                            <div class="pa-4">
+                                <MudSelect T="string"
+                                           Label="@WebUiLocalizer.Translate("AppThemes", "Theme")"
+                                           Value="_selectedThemeId"
+                                           ValueChanged="OnThemeChanged"
+                                           ToStringFunc="GetThemeDisplayName"
+                                           Variant="Variant.Outlined"
+                                           ShrinkLabel="true"
+                                           Dense="true"
+                                           data-test-id="@TestIdHelper.For("WelcomeWizardThemeSelect")">
+                                    @foreach (var theme in _themeOptions)
+                                    {
+                                        <MudSelectItem Value="@theme.Id">@theme.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </div>
+                        </MudPaper>
+                    </MudStep>
+
+                    <MudStep Title="@WebUiLocalizer.Translate("AppWelcomeWizard", "Done")">
+                        <MudPaper Outlined="true" Class="welcome-wizard-dialog__done">
+                            <div class="welcome-wizard-dialog__done-hero">
+                                <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                                    <MudAvatar Color="Color.Success" Variant="Variant.Filled" Size="Size.Large" Class="welcome-wizard-dialog__done-avatar">
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                                    </MudAvatar>
+
+                                    <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("AppWelcomeWizard", "Setup complete")</MudText>
+                                    <MudText Typo="Typo.body2" Align="Align.Center" Class="welcome-wizard-dialog__done-subtitle">
+                                        @WebUiLocalizer.Translate("AppWelcomeWizard", "Your preferences are saved. You can change them anytime.")
+                                    </MudText>
+
+                                    <MudStack Row="true" Wrap="Wrap.Wrap" Justify="Justify.Center" Spacing="1">
+                                        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Info">
+                                            @WebUiLocalizer.Translate("AppWelcomeWizard", "Language: %1", SelectedLanguageName)
+                                        </MudChip>
+                                        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary">
+                                            @WebUiLocalizer.Translate("AppWelcomeWizard", "Theme: %1", SelectedThemeName)
+                                        </MudChip>
+                                    </MudStack>
+                                </MudStack>
+                            </div>
+
+                            <MudDivider />
+
+                            <div class="pa-4">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">@WebUiLocalizer.Translate("AppWelcomeWizard", "Next steps")</MudText>
+                                <MudGrid Spacing="2">
+                                    <MudItem xs="12" sm="6">
+                                        <div class="welcome-wizard-dialog__next-cell">
+                                            <MudPaper Outlined="true" Class="pa-3" Style="height: 100%; width: 100%;">
+                                                <MudStack Spacing="1">
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                                        <MudIcon Icon="@Icons.Material.Outlined.Settings" />
+                                                        <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Options")</MudText>
+                                                    </MudStack>
+                                                    <MudText Typo="Typo.body2">
+                                                        @WebUiLocalizer.Translate("AppWelcomeWizard", "Open Options from the sidebar to configure the app.")
+                                                    </MudText>
+                                                    <MudButton Variant="Variant.Filled"
+                                                               Color="Color.Primary"
+                                                               StartIcon="@Icons.Material.Outlined.Settings"
+                                                               OnClick="OnOpenOptionsClicked"
+                                                               data-test-id="@TestIdHelper.For("WelcomeWizardOpenOptions")">
+                                                        @WebUiLocalizer.Translate("AppWelcomeWizard", "Open Options")
+                                                    </MudButton>
+                                                </MudStack>
+                                            </MudPaper>
+                                        </div>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="6">
+                                        <div class="welcome-wizard-dialog__next-cell">
+                                            <MudPaper Outlined="true" Class="pa-3" Style="height: 100%; width: 100%;">
+                                                <MudStack Spacing="1">
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                                        <MudIcon Icon="@Icons.Material.Filled.MoreVert" />
+                                                        <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("AppWelcomeWizard", "App menu")</MudText>
+                                                    </MudStack>
+                                                    <MudText Typo="Typo.body2">
+                                                        @WebUiLocalizer.Translate("AppWelcomeWizard", "Use the 3-dots menu at the top right for quick actions.")
+                                                    </MudText>
+                                                </MudStack>
+                                            </MudPaper>
+                                        </div>
+                                    </MudItem>
+                                </MudGrid>
+                            </div>
+                        </MudPaper>
+                    </MudStep>
+                </ChildContent>
+
+                <ActionContent Context="stepper">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="w-100">
+                        <MudButton Variant="Variant.Text"
+                                   Disabled="@(_activeIndex == 0)"
+                                   OnClick="OnBackClicked"
+                                   data-test-id="@TestIdHelper.For("WelcomeWizardBack")">
+                            @WebUiLocalizer.Translate("AppWelcomeWizard", "Back")
+                        </MudButton>
+
+                        @if (_activeIndex < 2)
+                        {
+                            <MudButton Color="Color.Primary"
+                                       Variant="Variant.Filled"
+                                       OnClick="OnNextClicked"
+                                       data-test-id="@TestIdHelper.For("WelcomeWizardNext")">
+                                @WebUiLocalizer.Translate("AppWelcomeWizard", "Next")
+                            </MudButton>
+                        }
+                        else
+                        {
+                            <MudButton Color="Color.Success"
+                                       Variant="Variant.Filled"
+                                       OnClick="OnFinishClicked"
+                                       data-test-id="@TestIdHelper.For("WelcomeWizardFinish")">
+                                @WebUiLocalizer.Translate("AppWelcomeWizard", "Finish")
+                            </MudButton>
+                        }
+                    </MudStack>
+                </ActionContent>
+            </MudStepper>
+        </div>
+    </DialogContent>
+</MudDialog>
+
