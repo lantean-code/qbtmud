@@ -153,7 +153,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_UnsavedChanges_WHEN_NavigationCanceled_THEN_StaysOnPage()
         {
             Mock.Get(_dialogWorkflow)
-                .Setup(workflow => workflow.ShowConfirmDialog("Unsaved Changed", "Are you sure you want to leave without saving your changes?"))
+                .Setup(workflow => workflow.ShowConfirmDialog("Unsaved Changes", "Are you sure you want to leave without saving your changes?"))
                 .ReturnsAsync(false);
 
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
@@ -168,7 +168,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             navigationManager.Uri.Should().Be("http://localhost/settings");
             Mock.Get(_dialogWorkflow).Verify(
-                workflow => workflow.ShowConfirmDialog("Unsaved Changed", "Are you sure you want to leave without saving your changes?"),
+                workflow => workflow.ShowConfirmDialog("Unsaved Changes", "Are you sure you want to leave without saving your changes?"),
                 Times.Once);
         }
 
@@ -176,7 +176,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_UnsavedChanges_WHEN_NavigationConfirmed_THEN_Navigates()
         {
             Mock.Get(_dialogWorkflow)
-                .Setup(workflow => workflow.ShowConfirmDialog("Unsaved Changed", "Are you sure you want to leave without saving your changes?"))
+                .Setup(workflow => workflow.ShowConfirmDialog("Unsaved Changes", "Are you sure you want to leave without saving your changes?"))
                 .ReturnsAsync(true);
 
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
@@ -194,7 +194,7 @@ namespace Lantean.QBTMud.Test.Pages
                 navigationManager.Uri.Should().Be("http://localhost/other");
             });
             Mock.Get(_dialogWorkflow).Verify(
-                workflow => workflow.ShowConfirmDialog("Unsaved Changed", "Are you sure you want to leave without saving your changes?"),
+                workflow => workflow.ShowConfirmDialog("Unsaved Changes", "Are you sure you want to leave without saving your changes?"),
                 Times.Once);
         }
 

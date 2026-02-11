@@ -72,7 +72,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             var exit = await DialogWorkflow.ShowConfirmDialog(
-                "Unsaved Changed",
+                "Unsaved Changes",
                 "Are you sure you want to leave without saving your changes?");
 
             if (!exit)
