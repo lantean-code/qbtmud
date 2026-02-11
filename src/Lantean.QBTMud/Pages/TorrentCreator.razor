@@ -99,7 +99,7 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                    Color="Color.Error"
                                    OnClick="@(async () => await DeleteTask(task))"
-                                   title="Delete task" />
+                                   title="@WebUiLocalizer.Translate("TorrentCreator", "Remove Task")" />
                 </MudButtonGroup>;
             };
         }
