@@ -33,7 +33,7 @@
         {
             return context => __builder =>
             {
-                <MudButtonGroup>
+                <MudButtonGroup Variant="Variant.Outlined">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" OnClick="@(e => EditCategory(context.Data.Name))" />
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(e => DeleteCategory(context.Data.Name))" />
                 </MudButtonGroup>

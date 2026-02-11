@@ -60,6 +60,9 @@ namespace Lantean.QBTMud.Components.UI
         public bool SelectOnRowClick { get; set; }
 
         [Parameter]
+        public bool HighlightSelectedItem { get; set; }
+
+        [Parameter]
         public EventCallback<TableRowClickEventArgs<T>> OnRowClick { get; set; }
 
         [Parameter]
@@ -468,7 +471,7 @@ namespace Lantean.QBTMud.Components.UI
             {
                 style += " cursor: pointer;";
             }
-            if (SelectOnRowClick && IsItemSelected(item))
+            if ((SelectOnRowClick || HighlightSelectedItem) && IsItemSelected(item))
             {
                 if (IsDarkMode)
                 {

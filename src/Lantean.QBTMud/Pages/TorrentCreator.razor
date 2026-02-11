@@ -90,15 +90,15 @@
             return context => __builder =>
             {
                 var task = context.Data;
-                <MudButtonGroup>
-                <MudIconButton Icon="@Icons.Material.Filled.Download"
-                               Color="Color.Primary"
-                               Disabled="@(!CanDownload(task))"
-                               OnClick="@(async () => await DownloadTask(task))"
-                               title="@WebUiLocalizer.Translate("TorrentCreator", "Download Torrent")" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                               Color="Color.Error"
-                               OnClick="@(async () => await DeleteTask(task))"
+                <MudButtonGroup Variant="Variant.Outlined">
+                    <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                   Color="Color.Primary"
+                                   Disabled="@(!CanDownload(task))"
+                                   OnClick="@(async () => await DownloadTask(task))"
+                                   title="@WebUiLocalizer.Translate("TorrentCreator", "Download Torrent")" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   OnClick="@(async () => await DeleteTask(task))"
                                    title="Delete task" />
                 </MudButtonGroup>;
             };

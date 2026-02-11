@@ -14,7 +14,7 @@
                               data-test-id="@TestIdHelper.For("CurrentPath")" />
             </MudItem>
                 <MudItem xs="12">
-                    <MudButtonGroup>
+                    <MudButtonGroup Variant="Variant.Outlined">
                         <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Disabled="@(!CanNavigateUp)" OnClick="NavigateUp" title="@Translate("Up")" />
                         <MudIconButton Icon="@Icons.Material.Filled.Refresh" Disabled="@IsLoading" OnClick="Reload" title="@Translate("Refresh")" />
                     </MudButtonGroup>
