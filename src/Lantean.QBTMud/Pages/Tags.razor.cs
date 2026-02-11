@@ -104,8 +104,8 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<string>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l),
-                new ColumnDefinition<string>("Actions", l => l)
+                new ColumnDefinition<string>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l, id: "id"),
+                new ColumnDefinition<string>("Actions", l => l, id: "actions")
             ];
         }
     }

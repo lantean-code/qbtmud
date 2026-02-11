@@ -463,10 +463,12 @@ namespace Lantean.QBTMud.Components.Dialogs
                     NameColumn,
                     width: 400,
                     initialDirection: SortDirection.Ascending,
-                    classFunc: c => c.IsFolder ? "px-0 pt-0 pb-2" : "pa-2"),
+                    classFunc: c => c.IsFolder ? "px-0 pt-0 pb-2" : "pa-2",
+                    id: "original"),
                 ColumnDefinitionHelper.CreateColumnDefinition<FileRow>(
                     WebUiLocalizer.Translate("TrackerListWidget", "Renamed"),
-                    c => c.NewName),
+                    c => c.NewName,
+                    id: "renamed"),
             ];
         }
 

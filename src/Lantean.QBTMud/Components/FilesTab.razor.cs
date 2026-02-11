@@ -634,12 +634,13 @@ namespace Lantean.QBTMud.Components
                     NameColumn,
                     width: 400,
                     initialDirection: SortDirection.Ascending,
-                    classFunc: c => c.IsFolder ? "pa-0" : "pa-2"),
-                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(totalSizeLabel, c => c.Size, c => DisplayHelpers.Size(c.Size)),
-                ColumnDefinitionHelper.CreateColumnDefinition(progressLabel, c => c.Progress, ProgressBarColumn, tdClass: "table-progress pl-2 pr-2"),
-                ColumnDefinitionHelper.CreateColumnDefinition(priorityLabel, c => c.Priority, PriorityColumn, tdClass: "table-select pa-0"),
-                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(remainingLabel, c => c.Remaining, c => DisplayHelpers.Size(c.Remaining)),
-                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(availabilityLabel, c => c.Availability, c => c.Availability.ToString("0.00")),
+                    classFunc: c => c.IsFolder ? "pa-0" : "pa-2",
+                    id: "name"),
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(totalSizeLabel, c => c.Size, c => DisplayHelpers.Size(c.Size), id: "total_size"),
+                ColumnDefinitionHelper.CreateColumnDefinition(progressLabel, c => c.Progress, ProgressBarColumn, tdClass: "table-progress pl-2 pr-2", id: "progress"),
+                ColumnDefinitionHelper.CreateColumnDefinition(priorityLabel, c => c.Priority, PriorityColumn, tdClass: "table-select pa-0", id: "priority"),
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(remainingLabel, c => c.Remaining, c => DisplayHelpers.Size(c.Remaining), id: "remaining"),
+                ColumnDefinitionHelper.CreateColumnDefinition<ContentItem>(availabilityLabel, c => c.Availability, c => c.Availability.ToString("0.00"), id: "availability"),
             ];
         }
     }

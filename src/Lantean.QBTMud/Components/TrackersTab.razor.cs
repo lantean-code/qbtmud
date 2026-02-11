@@ -312,14 +312,14 @@ namespace Lantean.QBTMud.Components
 
             return
             [
-                new ColumnDefinition<TorrentTracker>(tierLabel, w => w.Tier, w => w.Tier > 0 ? w.Tier.ToString() : string.Empty),
-                new ColumnDefinition<TorrentTracker>(urlLabel, w => w.Url),
-                new ColumnDefinition<TorrentTracker>(statusLabel, w => w.Status),
-                new ColumnDefinition<TorrentTracker>(peersLabel, w => w.Peers),
-                new ColumnDefinition<TorrentTracker>(seedsLabel, w => w.Seeds),
-                new ColumnDefinition<TorrentTracker>(leechesLabel, w => w.Leeches),
-                new ColumnDefinition<TorrentTracker>(timesDownloadedLabel, w => w.Downloads),
-                new ColumnDefinition<TorrentTracker>(messageLabel, w => w.Message),
+                new ColumnDefinition<TorrentTracker>(tierLabel, w => w.Tier, w => w.Tier > 0 ? w.Tier.ToString() : string.Empty, id: "tier"),
+                new ColumnDefinition<TorrentTracker>(urlLabel, w => w.Url, id: "url"),
+                new ColumnDefinition<TorrentTracker>(statusLabel, w => w.Status, id: "status"),
+                new ColumnDefinition<TorrentTracker>(peersLabel, w => w.Peers, id: "peers"),
+                new ColumnDefinition<TorrentTracker>(seedsLabel, w => w.Seeds, id: "seeds"),
+                new ColumnDefinition<TorrentTracker>(leechesLabel, w => w.Leeches, id: "leeches"),
+                new ColumnDefinition<TorrentTracker>(timesDownloadedLabel, w => w.Downloads, id: "times_downloaded"),
+                new ColumnDefinition<TorrentTracker>(messageLabel, w => w.Message, id: "message"),
             ];
         }
 

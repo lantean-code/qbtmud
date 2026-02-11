@@ -325,14 +325,14 @@ namespace Lantean.QBTMud.Pages
 
             return new List<ColumnDefinition<SearchResult>>
             {
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(nameLabel, r => r.FileName ?? string.Empty, NameColumnTemplate, width: 320),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(sizeLabel, r => r.FileSize, r => DisplayHelpers.Size(r.FileSize), width: 120),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(seedersLabel, r => r.Seeders, width: 90),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(leechersLabel, r => r.Leechers, width: 90),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(engineLabel, r => r.EngineName ?? string.Empty, width: 150),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(engineUrlLabel, r => r.SiteUrl ?? string.Empty, SiteColumnTemplate, width: 220),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(publishedLabel, r => r.PublishedOn ?? 0, PublishedColumnTemplate, width: 150),
-                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Actions", r => r.FileUrl ?? string.Empty, ActionColumnTemplate, width: 120, tdClass: "no-wrap")
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(nameLabel, r => r.FileName ?? string.Empty, NameColumnTemplate, width: 320, id: "name"),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(sizeLabel, r => r.FileSize, r => DisplayHelpers.Size(r.FileSize), width: 120, id: "size"),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(seedersLabel, r => r.Seeders, width: 90, id: "seeders"),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(leechersLabel, r => r.Leechers, width: 90, id: "leechers"),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(engineLabel, r => r.EngineName ?? string.Empty, width: 150, id: "engine"),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(engineUrlLabel, r => r.SiteUrl ?? string.Empty, SiteColumnTemplate, width: 220, id: "engine_url"),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>(publishedLabel, r => r.PublishedOn ?? 0, PublishedColumnTemplate, width: 150, id: "published_on"),
+                ColumnDefinitionHelper.CreateColumnDefinition<SearchResult>("Actions", r => r.FileUrl ?? string.Empty, ActionColumnTemplate, width: 120, tdClass: "no-wrap", id: "actions")
             }.AsReadOnly();
         }
 

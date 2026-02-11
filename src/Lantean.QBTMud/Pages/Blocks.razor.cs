@@ -191,15 +191,16 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id),
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "IP"), l => l.IPAddress),
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp)),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "IP"), l => l.IPAddress, id: "message"),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
                 new ColumnDefinition<PeerLog>(
                     WebUiLocalizer.Translate("ExecutionLogWidget", "Blocked"),
                     l => l.Blocked
                         ? WebUiLocalizer.Translate("ExecutionLogWidget", "Blocked")
-                        : WebUiLocalizer.Translate("ExecutionLogWidget", "Banned")),
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Reason"), l => l.Reason),
+                        : WebUiLocalizer.Translate("ExecutionLogWidget", "Banned"),
+                    id: "blocked"),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Reason"), l => l.Reason, id: "reason"),
             ];
         }
 

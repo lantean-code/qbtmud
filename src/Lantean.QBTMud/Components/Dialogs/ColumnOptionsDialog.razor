@@ -29,6 +29,8 @@
         </MudCard>
     </DialogContent>
     <DialogActions>
+        <MudButton OnClick="ResetOrder" data-test-id="@TestIdHelper.For("ColumnOptionsResetOrder")">@Translate("Reset order")</MudButton>
+        <MudSpacer />
         <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("ColumnOptionsCancel")">@Translate("Cancel")</MudButton>
         <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("ColumnOptionsSave")">@Translate("Save")</MudButton>
     </DialogActions>

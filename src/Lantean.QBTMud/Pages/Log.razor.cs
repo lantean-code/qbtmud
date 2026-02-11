@@ -228,10 +228,10 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id),
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Message"), l => l.Message),
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp)),
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Log Type"), l => l.Type),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Message"), l => l.Message, id: "message"),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Log Type"), l => l.Type, id: "log_type"),
             ];
         }
 

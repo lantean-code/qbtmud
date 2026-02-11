@@ -180,6 +180,18 @@ namespace Lantean.QBTMud.Components.Dialogs
             StateHasChanged();
         }
 
+        protected void ResetOrder()
+        {
+            OrderInternal.Clear();
+
+            for (var i = 0; i < Columns.Count; i++)
+            {
+                OrderInternal[Columns[i].Id] = i;
+            }
+
+            StateHasChanged();
+        }
+
         protected string GetValue(int? value, string columnId)
         {
             if (WidthsInternal.TryGetValue(columnId, out var newWidth))

@@ -41,6 +41,7 @@
   "AppColumnOptionsDialog|Width": "Width",
   "AppColumnOptionsDialog|px": "px",
   "AppColumnOptionsDialog|auto": "auto",
+  "AppColumnOptionsDialog|Reset order": "Reset order",
   "AppColumnOptionsDialog|Cancel": "Cancel",
   "AppColumnOptionsDialog|Save": "Save",
   "AppCreateTorrentDialog|Source path": "Source path",
