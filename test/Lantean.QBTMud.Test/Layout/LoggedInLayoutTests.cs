@@ -419,7 +419,10 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            var icon = target.FindComponents<MudIcon>().Single(i => i.Instance.Title == "Connection status: Firewalled");
+            var tooltip = FindComponentByTestId<MudTooltip>(target, "Status-ConnectionTooltip");
+            tooltip.Instance.Text.Should().Be("Connection status: Firewalled");
+
+            var icon = FindComponentByTestId<MudIcon>(target, "Status-ConnectionIcon");
             icon.Instance.Icon.Should().Be(Icons.Material.Outlined.SignalWifiStatusbarConnectedNoInternet4);
             icon.Instance.Color.Should().Be(Color.Warning);
         }
@@ -431,7 +434,10 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            var icon = target.FindComponents<MudIcon>().Single(i => i.Instance.Title == "Connection status: Connected");
+            var tooltip = FindComponentByTestId<MudTooltip>(target, "Status-ConnectionTooltip");
+            tooltip.Instance.Text.Should().Be("Connection status: Connected");
+
+            var icon = FindComponentByTestId<MudIcon>(target, "Status-ConnectionIcon");
             icon.Instance.Icon.Should().Be(Icons.Material.Outlined.SignalWifi4Bar);
             icon.Instance.Color.Should().Be(Color.Success);
         }
@@ -443,7 +449,10 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            var icon = target.FindComponents<MudIcon>().Single(i => i.Instance.Title == "offline");
+            var tooltip = FindComponentByTestId<MudTooltip>(target, "Status-ConnectionTooltip");
+            tooltip.Instance.Text.Should().Be("offline");
+
+            var icon = FindComponentByTestId<MudIcon>(target, "Status-ConnectionIcon");
             icon.Instance.Icon.Should().Be(Icons.Material.Outlined.SignalWifiOff);
             icon.Instance.Color.Should().Be(Color.Error);
         }
@@ -1074,7 +1083,12 @@ namespace Lantean.QBTMud.Test.Layout
         private static IRenderedComponent<MudTooltip> FindTimerTooltip(IRenderedComponent<LoggedInLayout> target)
         {
             return target.FindComponents<MudTooltip>()
-                .Single(t => !(t.Instance.Text ?? string.Empty).StartsWith("Alternative speed limits:", StringComparison.Ordinal));
+                .Single(t =>
+                {
+                    var text = t.Instance.Text ?? string.Empty;
+                    return text == "No timers registered."
+                        || text.StartsWith("Timers:", StringComparison.Ordinal);
+                });
         }
 
         private static bool HasComponentWithTestId<TComponent>(IRenderedComponent<LoggedInLayout> target, string testId)

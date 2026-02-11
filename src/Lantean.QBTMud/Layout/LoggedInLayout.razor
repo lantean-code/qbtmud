@@ -68,7 +68,9 @@
                                                                         var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);
                                                                         var connectionTitle = BuildConnectionStatusTitle(MainData?.ServerState.ConnectionStatus);
                                                                     }
-                                                                    <MudIcon Class="mx-1" Icon="@icon" Color="@colour" Title="@connectionTitle" />
+                                                                    <MudTooltip Text="@connectionTitle" data-test-id="@TestIdHelper.For("Status-ConnectionTooltip")">
+                                                                        <MudIcon Class="mx-1" Icon="@icon" Color="@colour" data-test-id="@TestIdHelper.For("Status-ConnectionIcon")" />
+                                                                    </MudTooltip>
                                                                     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
                                                                     <MudTooltip Text="@BuildTimerTooltip()">
                                                                         <MudIconButton Class="mx-1" Icon="@GetTimerStatusIcon()" Color="@GetTimerStatusColor()" OnClick="ToggleTimerDrawerAsync" />
