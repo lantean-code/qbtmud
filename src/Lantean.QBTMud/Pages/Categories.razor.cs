@@ -47,6 +47,11 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateToHome();
         }
 
+        protected void Reload()
+        {
+            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+        }
+
         protected async Task DeleteCategory(string? name)
         {
             if (name is null)

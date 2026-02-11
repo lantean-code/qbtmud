@@ -55,17 +55,6 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_NoCookies_WHEN_Rendered_THEN_ShowsEmptyState()
-        {
-            var target = RenderPage(Array.Empty<ApplicationCookie>());
-
-            var emptyState = FindComponentByTestId<MudText>(target, "CookiesEmptyState");
-
-            emptyState.Instance.ChildContent.Should().NotBeNull();
-            GetChildContentText(emptyState.Instance.ChildContent).Should().Be("No cookies defined.");
-        }
-
-        [Fact]
         public void GIVEN_LoadCookiesFails_WHEN_Initialized_THEN_ShowsError()
         {
             Mock.Get(_apiClient)

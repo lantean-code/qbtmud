@@ -57,6 +57,19 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_RefreshClicked_WHEN_Invoked_THEN_ReloadsCurrentPage()
+        {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/categories");
+
+            var refreshButton = FindIconButton(_target, Icons.Material.Filled.Refresh);
+
+            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().Be("http://localhost/categories");
+        }
+
+        [Fact]
         public void GIVEN_CategoryProvided_WHEN_Rendered_THEN_ShowsTableItem()
         {
             var target = RenderPage(new Dictionary<string, Category>

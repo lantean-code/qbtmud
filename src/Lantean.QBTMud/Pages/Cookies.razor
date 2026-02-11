@@ -18,11 +18,6 @@
         </MudToolBar>
     </div>
     <div class="content-panel__body">
-        @if (!HasCookies && !IsBusy)
-        {
-            <MudText Class="pa-4" data-test-id="@TestIdHelper.For("CookiesEmptyState")">@Translate("No cookies defined.")</MudText>
-        }
-
         <DynamicTable @ref="Table"
                       TableId="Cookies"
                       T="CookieRow"

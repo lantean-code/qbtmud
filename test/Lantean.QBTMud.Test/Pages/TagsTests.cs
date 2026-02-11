@@ -178,6 +178,19 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_RefreshClicked_WHEN_Invoked_THEN_ReloadsCurrentPage()
+        {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/tags");
+
+            var refreshButton = FindIconButton(_target, Icons.Material.Filled.Refresh);
+
+            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().Be("http://localhost/tags");
+        }
+
+        [Fact]
         public void GIVEN_DrawerOpen_WHEN_Rendered_THEN_HidesBackButton()
         {
             var target = RenderPage(drawerOpen: true);
