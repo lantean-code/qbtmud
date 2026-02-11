@@ -126,7 +126,7 @@
                                                         @WebUiLocalizer.Translate("AppWelcomeWizard", "Open Options from the sidebar to configure the app.")
                                                     </MudText>
                                                     <MudButton Variant="Variant.Filled"
-                                                               Color="Color.Primary"
+                                                               Color="Color.Default"
                                                                StartIcon="@Icons.Material.Outlined.Settings"
                                                                OnClick="OnOpenOptionsClicked"
                                                                data-test-id="@TestIdHelper.For("WelcomeWizardOpenOptions")">
@@ -159,7 +159,8 @@
 
                 <ActionContent Context="stepper">
                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="w-100">
-                        <MudButton Variant="Variant.Text"
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Default"
                                    Disabled="@(_activeIndex == 0)"
                                    OnClick="OnBackClicked"
                                    data-test-id="@TestIdHelper.For("WelcomeWizardBack")">
@@ -168,7 +169,7 @@
 
                         @if (_activeIndex < 2)
                         {
-                            <MudButton Color="Color.Primary"
+                            <MudButton Color="Color.Default"
                                        Variant="Variant.Filled"
                                        OnClick="OnNextClicked"
                                        data-test-id="@TestIdHelper.For("WelcomeWizardNext")">

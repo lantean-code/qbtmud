@@ -5,9 +5,12 @@
         @Content
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel"
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Default"
+                   OnClick="Cancel"
                    data-test-id="@TestIdHelper.For("ConfirmCancel")">@CancelText</MudButton>
-        <MudButton Color="Color.Primary"
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Success"
                    OnClick="Submit"
                    data-test-id="@TestIdHelper.For("ConfirmOk")">@SuccessText</MudButton>
     </DialogActions>

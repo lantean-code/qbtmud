@@ -53,6 +53,6 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Disabled="@(!CanSelectFolder)" OnClick="SelectCurrentFolder" data-test-id="@TestIdHelper.For("SelectFolder")">@Translate("Select folder")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" Disabled="@(!CanSelectFolder)" OnClick="SelectCurrentFolder" data-test-id="@TestIdHelper.For("SelectFolder")">@Translate("Select folder")</MudButton>
     </DialogActions>
 </MudDialog>

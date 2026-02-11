@@ -58,7 +58,7 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("FilterCancel")">@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Cancel")</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("FilterSave")">@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Save")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("FilterCancel")">@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("FilterSave")">@WebUiLocalizer.Translate("AppFilterOptionsDialog", "Save")</MudButton>
     </DialogActions>
 </MudDialog>

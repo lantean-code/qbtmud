@@ -23,7 +23,7 @@
         </table>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddPeerCancel")">@WebUiLocalizer.Translate("PeersAdditionDialog", "Cancel")</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddPeerSave")">@WebUiLocalizer.Translate("PeersAdditionDialog", "Ok")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("AddPeerCancel")">@WebUiLocalizer.Translate("PeersAdditionDialog", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("AddPeerSave")">@WebUiLocalizer.Translate("PeersAdditionDialog", "Ok")</MudButton>
     </DialogActions>
 </MudDialog>
