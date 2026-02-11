@@ -9,7 +9,6 @@ using Lantean.QBTMud.Test.Infrastructure;
 using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -60,6 +59,45 @@ namespace Lantean.QBTMud.Test.Pages
             var table = target.FindComponent<DynamicTable<ThemeCatalogItem>>();
 
             table.Instance.Items.Should().ContainSingle(item => item.Id == "ThemeId");
+        }
+
+        [Fact]
+        public void GIVEN_CurrentThemeApplied_WHEN_Rendered_THEN_SelectsAppliedThemeInTable()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeA", "Theme A", ThemeSource.Local),
+                CreateTheme("ThemeB", "Theme B", ThemeSource.Local)
+            };
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.CurrentThemeId)
+                .Returns("ThemeB");
+
+            var target = RenderPage(themes);
+
+            var table = target.FindComponent<DynamicTable<ThemeCatalogItem>>();
+
+            table.Instance.SelectedItem.Should().NotBeNull();
+            table.Instance.SelectedItem!.Id.Should().Be("ThemeB");
+            table.Instance.HighlightSelectedItem.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_NoCurrentTheme_WHEN_Rendered_THEN_DoesNotSelectThemeInTable()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeA", "Theme A", ThemeSource.Local)
+            };
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.CurrentThemeId)
+                .Returns((string?)null);
+
+            var target = RenderPage(themes);
+
+            var table = target.FindComponent<DynamicTable<ThemeCatalogItem>>();
+
+            table.Instance.SelectedItem.Should().BeNull();
         }
 
         [Fact]
@@ -484,24 +522,22 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_RowClicked_WHEN_OnRowClickInvoked_THEN_NavigatesToDetails()
+        public async Task GIVEN_DetailsClicked_WHEN_Invoked_THEN_NavigatesToDetails()
         {
             var themes = new List<ThemeCatalogItem>
             {
                 CreateTheme("ThemeId", "Name", ThemeSource.Local)
             };
             var target = RenderPage(themes);
-            var table = target.FindComponent<DynamicTable<ThemeCatalogItem>>();
-            var row = target.FindComponents<MudTr>().First();
-            var args = new TableRowClickEventArgs<ThemeCatalogItem>(new MouseEventArgs(), row.Instance, themes[0]);
+            var detailsButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetails-ThemeId");
 
-            await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(args));
+            await target.InvokeAsync(() => detailsButton.Instance.OnClick.InvokeAsync());
 
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/themes/ThemeId");
         }
 
         [Fact]
-        public async Task GIVEN_RowClickedWithNullItem_WHEN_OnRowClickInvoked_THEN_DoesNotNavigate()
+        public async Task GIVEN_RowClicked_WHEN_OnRowClickNotConfigured_THEN_DoesNotNavigate()
         {
             var themes = new List<ThemeCatalogItem>
             {
@@ -512,10 +548,10 @@ namespace Lantean.QBTMud.Test.Pages
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/other");
 
-            var row = target.FindComponents<MudTr>().First();
-            var args = new TableRowClickEventArgs<ThemeCatalogItem>(new MouseEventArgs(), row.Instance, null);
+            table.Instance.OnRowClick.HasDelegate.Should().BeFalse();
 
-            await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(args));
+            var row = target.FindComponents<MudTr>().First().Find("tr");
+            await target.InvokeAsync(() => row.Click());
 
             navigationManager.Uri.Should().Be("http://localhost/other");
         }

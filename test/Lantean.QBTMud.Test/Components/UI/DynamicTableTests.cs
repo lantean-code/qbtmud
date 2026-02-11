@@ -1309,6 +1309,47 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
+        public void GIVEN_SelectedRowAndNoHighlightFlags_WHEN_Rendered_THEN_RowStyleNotHighlighted()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleNoHighlight");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.SelectOnRowClick, false);
+                parameters.Add(p => p.SelectedItem, item);
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var style = row.Find("tr").GetAttribute("style");
+            style.Should().NotContain("background-color");
+        }
+
+        [Fact]
+        public void GIVEN_SelectedRowAndHighlightSelectedItem_WHEN_Rendered_THEN_RowStyleHighlighted()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleHighlightSelectedItem");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.SelectOnRowClick, false);
+                parameters.Add(p => p.HighlightSelectedItem, true);
+                parameters.Add(p => p.SelectedItem, item);
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var style = row.Find("tr").GetAttribute("style");
+            style.Should().Contain("background-color");
+        }
+
+        [Fact]
         public void GIVEN_RowClassFuncProvided_WHEN_Rendered_THEN_RowClassApplied()
         {
             var columns = CreateColumns();

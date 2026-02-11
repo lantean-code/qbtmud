@@ -54,6 +54,20 @@ namespace Lantean.QBTMud.Pages
             get { return ThemeManagerService.Themes; }
         }
 
+        protected ThemeCatalogItem? SelectedThemeEntry
+        {
+            get
+            {
+                var currentThemeId = ThemeManagerService.CurrentThemeId;
+                if (string.IsNullOrWhiteSpace(currentThemeId))
+                {
+                    return null;
+                }
+
+                return ThemeEntries.FirstOrDefault(theme => string.Equals(theme.Id, currentThemeId, StringComparison.Ordinal));
+            }
+        }
+
         protected bool IsBusy
         {
             get { return _isBusy; }
@@ -312,15 +326,14 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        protected Task OpenThemeDetails(TableRowClickEventArgs<ThemeCatalogItem> args)
+        protected void OpenThemeDetails(ThemeCatalogItem theme)
         {
-            if (args.Item is null)
+            if (theme is null)
             {
-                return Task.CompletedTask;
+                return;
             }
 
-            NavigateToDetails(args.Item.Id);
-            return Task.CompletedTask;
+            NavigateToDetails(theme.Id);
         }
 
         protected string? RowClassFunc(ThemeCatalogItem theme, int index)

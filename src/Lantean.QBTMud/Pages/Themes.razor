@@ -29,9 +29,10 @@
                       T="ThemeCatalogItem"
                       ColumnDefinitions="Columns"
                       Items="ThemeEntries"
+                      SelectedItem="SelectedThemeEntry"
                       MultiSelection="false"
+                      HighlightSelectedItem="true"
                       SelectOnRowClick="false"
-                      OnRowClick="OpenThemeDetails"
                       RowClassFunc="RowClassFunc"
                       Class="details-list content-panel__table" />
     </div>
@@ -112,6 +113,11 @@
                 var theme = context.Data;
                 <div class="no-wrap" @onclick:stopPropagation="true">
                     <MudButtonGroup Variant="Variant.Outlined">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Info"
+                                       title="@Translate("Details")"
+                                       OnClick="@(e => OpenThemeDetails(theme))"
+                                       Disabled="@IsBusy"
+                                       data-test-id="@TestIdHelper.For($"ThemeDetails-{theme.Id}")" />
                         <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
                                        Color="Color.Primary"
                                        title="@Translate("Apply")"
