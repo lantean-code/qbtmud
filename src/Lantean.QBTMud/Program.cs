@@ -60,6 +60,7 @@ namespace Lantean.QBTMud
             builder.Services.AddSingleton<IManagedTimerFactory, ManagedTimerFactory>();
             builder.Services.AddScoped<ISpeedHistoryService, SpeedHistoryService>();
 
+            builder.Services.AddScoped<IBrowserStorageServiceFactory, BrowserStorageServiceFactory>();
             builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
             builder.Services.AddScoped<ISessionStorageService, SessionStorageService>();
             builder.Services.AddSingleton<IClipboardService, ClipboardService>();
