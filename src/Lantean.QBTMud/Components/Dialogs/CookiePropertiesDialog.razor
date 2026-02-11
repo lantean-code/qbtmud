@@ -1,0 +1,61 @@
+@inherits SubmittableDialog
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField T="string"
+                              Label="@WebUiLocalizer.Translate("CookiesDialog", "Domain")"
+                              @bind-Value="Domain"
+                              Variant="Variant.Outlined"
+                              ShrinkLabel="true"
+                              Disabled="Disabled"
+                              data-test-id="@TestIdHelper.For("CookiePropertiesDomain")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string"
+                              Label="@WebUiLocalizer.Translate("CookiesDialog", "Path")"
+                              @bind-Value="Path"
+                              Variant="Variant.Outlined"
+                              ShrinkLabel="true"
+                              Disabled="Disabled"
+                              data-test-id="@TestIdHelper.For("CookiePropertiesPath")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string"
+                              Label="@WebUiLocalizer.Translate("CookiesDialog", "Name")"
+                              @bind-Value="Name"
+                              Required="true"
+                              RequiredError="@Translate("Cookie name is required.")"
+                              Variant="Variant.Outlined"
+                              ShrinkLabel="true"
+                              Disabled="Disabled"
+                              data-test-id="@TestIdHelper.For("CookiePropertiesName")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string"
+                              Label="@WebUiLocalizer.Translate("CookiesDialog", "Value")"
+                              @bind-Value="Value"
+                              Variant="Variant.Outlined"
+                              ShrinkLabel="true"
+                              Disabled="Disabled"
+                              data-test-id="@TestIdHelper.For("CookiePropertiesValue")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string"
+                              Label="@WebUiLocalizer.Translate("CookiesDialog", "Expiration Date")"
+                              @bind-Value="ExpirationInput"
+                              InputType="InputType.DateTimeLocal"
+                              Validation="@(new Func<string, IEnumerable<string>>(ValidateExpiration))"
+                              Variant="Variant.Outlined"
+                              ShrinkLabel="true"
+                              Disabled="Disabled"
+                              data-test-id="@TestIdHelper.For("CookiePropertiesExpiration")" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("CookiePropertiesCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("CookiePropertiesSave")">@WebUiLocalizer.Translate("HttpServer", "Save")</MudButton>
+    </DialogActions>
+</MudDialog>

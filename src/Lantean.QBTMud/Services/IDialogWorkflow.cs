@@ -1,5 +1,6 @@
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
+using QbtCookie = Lantean.QBitTorrentClient.Models.ApplicationCookie;
 
 namespace Lantean.QBTMud.Helpers
 {
@@ -167,6 +168,14 @@ namespace Lantean.QBTMud.Helpers
         /// <param name="value">The initial value.</param>
         /// <returns>The entered value, or <c>null</c> if canceled.</returns>
         Task<string?> ShowStringFieldDialog(string title, string label, string? value);
+
+        /// <summary>
+        /// Shows the cookie properties dialog.
+        /// </summary>
+        /// <param name="title">The dialog title.</param>
+        /// <param name="cookie">The cookie to edit, or <c>null</c> to create a new cookie.</param>
+        /// <returns>The updated cookie, or <c>null</c> if canceled.</returns>
+        Task<QbtCookie?> ShowCookiePropertiesDialog(string title, QbtCookie? cookie);
 
         /// <summary>
         /// Shows the submenu dialog for torrent actions.

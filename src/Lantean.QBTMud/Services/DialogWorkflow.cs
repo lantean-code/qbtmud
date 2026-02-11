@@ -5,6 +5,7 @@ using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
 using MudBlazor;
+using QbtCookie = Lantean.QBitTorrentClient.Models.ApplicationCookie;
 using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
 
 namespace Lantean.QBTMud.Services
@@ -648,6 +649,25 @@ namespace Lantean.QBTMud.Services
             }
 
             return (string)dialogResult.Data;
+        }
+
+        /// <inheritdoc />
+        public async Task<QbtCookie?> ShowCookiePropertiesDialog(string title, QbtCookie? cookie)
+        {
+            var parameters = new DialogParameters();
+            if (cookie is not null)
+            {
+                parameters.Add(nameof(CookiePropertiesDialog.Cookie), cookie);
+            }
+
+            var reference = await _dialogService.ShowAsync<CookiePropertiesDialog>(title, parameters, FormDialogOptions);
+            var dialogResult = await reference.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+            {
+                return null;
+            }
+
+            return dialogResult.Data as QbtCookie;
         }
 
         /// <inheritdoc />

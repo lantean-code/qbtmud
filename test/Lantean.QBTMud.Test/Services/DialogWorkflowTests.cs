@@ -1232,6 +1232,50 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_CookieReturned_WHEN_ShowCookiePropertiesDialog_THEN_ShouldReturnCookieAndForwardParameters()
+        {
+            DialogParameters? captured = null;
+            var cookie = new ApplicationCookie("Name", "Domain", "/Path", "Value", 1);
+            var reference = CreateReference(DialogResult.Ok(cookie));
+            _dialogService
+                .Setup(s => s.ShowAsync<CookiePropertiesDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
+                .ReturnsAsync(reference);
+
+            var result = await _target.ShowCookiePropertiesDialog("Title", cookie);
+
+            result.Should().Be(cookie);
+            captured.Should().NotBeNull();
+            captured![nameof(CookiePropertiesDialog.Cookie)].Should().Be(cookie);
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogCanceled_WHEN_ShowCookiePropertiesDialog_THEN_ShouldReturnNull()
+        {
+            var reference = CreateReference(DialogResult.Cancel());
+            _dialogService
+                .Setup(s => s.ShowAsync<CookiePropertiesDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            var result = await _target.ShowCookiePropertiesDialog("Title", null);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_NonCookieResult_WHEN_ShowCookiePropertiesDialog_THEN_ShouldReturnNull()
+        {
+            var reference = CreateReference(DialogResult.Ok("Value"));
+            _dialogService
+                .Setup(s => s.ShowAsync<CookiePropertiesDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            var result = await _target.ShowCookiePropertiesDialog("Title", null);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_Data_WHEN_ShowSubMenu_THEN_ShouldForwardParameters()
         {
             DialogParameters? captured = null;

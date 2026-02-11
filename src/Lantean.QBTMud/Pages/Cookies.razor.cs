@@ -1,5 +1,9 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using System.Globalization;
@@ -8,18 +12,17 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Cookies
     {
-        private static readonly string[] ExpirationFormats =
-        [
-            "yyyy-MM-ddTHH:mm",
-            "yyyy-MM-ddTHH:mm:ss"
-        ];
+        private const string ActionsColumnHeader = "Actions";
 
-        private readonly List<CookieEntry> _cookies = [];
-        private bool _isLoading;
-        private bool _isSaving;
+        private readonly Dictionary<string, RenderFragment<RowContext<CookieRow>>> _columnRenderFragments = [];
+        private readonly List<CookieRow> _cookies = [];
+        private bool _isBusy;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -27,14 +30,38 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ISnackbar Snackbar { get; set; } = default!;
 
+        [Inject]
+        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
-        protected IReadOnlyList<CookieEntry> CookieEntries => _cookies;
+        protected DynamicTable<CookieRow>? Table { get; set; }
 
-        protected bool IsBusy => _isLoading || _isSaving;
+        protected bool IsBusy
+        {
+            get { return _isBusy; }
+        }
 
-        protected bool HasCookies => _cookies.Count > 0;
+        protected bool HasCookies
+        {
+            get { return _cookies.Count > 0; }
+        }
+
+        protected IReadOnlyList<CookieRow> CookieRows
+        {
+            get { return _cookies; }
+        }
+
+        protected IEnumerable<ColumnDefinition<CookieRow>> Columns
+        {
+            get { return GetColumnDefinitions(); }
+        }
+
+        public Cookies()
+        {
+            _columnRenderFragments.Add(ActionsColumnHeader, ActionsColumn);
+        }
 
         protected override async Task OnInitializedAsync()
         {
@@ -51,179 +78,182 @@ namespace Lantean.QBTMud.Pages
             await LoadCookiesAsync();
         }
 
-        protected void AddCookie()
+        protected async Task AddCookie()
         {
-            if (IsBusy)
+            if (_isBusy)
             {
                 return;
             }
 
-            _cookies.Add(new CookieEntry());
+            var title = WebUiLocalizer.Translate("CookiesDialog", "Add Cookie");
+            var cookie = await DialogWorkflow.ShowCookiePropertiesDialog(title, null);
+            if (cookie is null)
+            {
+                return;
+            }
+
+            var nextCookies = _cookies.Select(row => row.Cookie).Append(cookie).ToList();
+            await PersistCookiesAsync(nextCookies);
         }
 
-        protected void RemoveCookie(CookieEntry entry)
+        protected async Task EditCookie(CookieRow row)
         {
-            if (IsBusy)
+            if (_isBusy)
             {
                 return;
             }
 
-            _cookies.Remove(entry);
+            var updatedCookie = await DialogWorkflow.ShowCookiePropertiesDialog(Translate("Edit Cookie"), row.Cookie);
+            if (updatedCookie is null)
+            {
+                return;
+            }
+
+            var nextCookies = _cookies
+                .Select(cookie => cookie.Id == row.Id ? updatedCookie : cookie.Cookie)
+                .ToList();
+
+            await PersistCookiesAsync(nextCookies);
         }
 
-        protected void ClearAll()
+        protected async Task DeleteCookie(CookieRow row)
         {
-            if (IsBusy)
+            if (_isBusy)
             {
                 return;
             }
 
-            _cookies.Clear();
-        }
+            var nextCookies = _cookies
+                .Where(cookie => cookie.Id != row.Id)
+                .Select(cookie => cookie.Cookie)
+                .ToList();
 
-        protected async Task Save()
-        {
-            if (_isSaving)
-            {
-                return;
-            }
-
-            if (_cookies.Any(c => string.IsNullOrWhiteSpace(c.Name)))
-            {
-                Snackbar?.Add("Cookie name is required.", Severity.Warning);
-                return;
-            }
-
-            List<ApplicationCookie> cookiesToSave;
-            try
-            {
-                cookiesToSave = _cookies.Select(TransformToApplicationCookie).ToList();
-            }
-            catch (FormatException exception)
-            {
-                Snackbar?.Add(exception.Message, Severity.Warning);
-                return;
-            }
-
-            _isSaving = true;
-            try
-            {
-                await ApiClient.SetApplicationCookies(cookiesToSave);
-                Snackbar?.Add("Cookies saved.", Severity.Success);
-                await LoadCookiesAsync();
-            }
-            catch (HttpRequestException)
-            {
-                Snackbar?.Add("Unable to save cookies. Please try again.", Severity.Error);
-            }
-            finally
-            {
-                _isSaving = false;
-            }
+            await PersistCookiesAsync(nextCookies);
         }
 
         private async Task LoadCookiesAsync()
         {
-            _isLoading = true;
-            _cookies.Clear();
+            if (_isBusy)
+            {
+                return;
+            }
 
+            _isBusy = true;
             try
             {
-                var cookies = await ApiClient.GetApplicationCookies();
-                foreach (var cookie in cookies.OrderBy(c => c.Domain, StringComparer.OrdinalIgnoreCase)
-                                              .ThenBy(c => c.Path, StringComparer.OrdinalIgnoreCase)
-                                              .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase))
-                {
-                    _cookies.Add(CreateEntry(cookie));
-                }
+                await LoadCookiesCoreAsync();
             }
             catch (HttpRequestException)
             {
-                Snackbar?.Add("Unable to load cookies. Please try again.", Severity.Error);
+                Snackbar.Add(Translate("Unable to load cookies. Please try again."), Severity.Error);
             }
             finally
             {
-                _isLoading = false;
+                _isBusy = false;
+                await InvokeAsync(StateHasChanged);
             }
-
-            await InvokeAsync(StateHasChanged);
         }
 
-        private static CookieEntry CreateEntry(ApplicationCookie cookie)
+        private async Task PersistCookiesAsync(IEnumerable<ApplicationCookie> nextCookies)
         {
-            var expiration = cookie.ExpirationDate.GetValueOrDefault();
-            string? expirationInput = null;
-            if (expiration > 0)
+            if (_isBusy)
             {
-                var local = DateTimeOffset.FromUnixTimeSeconds(expiration).LocalDateTime;
-                expirationInput = local.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
+                return;
             }
 
-            return new CookieEntry
+            _isBusy = true;
+            try
             {
-                Domain = cookie.Domain,
-                Path = cookie.Path,
-                Name = cookie.Name,
-                Value = cookie.Value,
-                ExpirationInput = expirationInput
-            };
+                await ApiClient.SetApplicationCookies(nextCookies);
+                await LoadCookiesCoreAsync();
+            }
+            catch (HttpRequestException)
+            {
+                Snackbar.Add(Translate("Unable to update cookies. Please try again."), Severity.Error);
+            }
+            finally
+            {
+                _isBusy = false;
+                await InvokeAsync(StateHasChanged);
+            }
         }
 
-        private static Func<string, IEnumerable<string>> ExpirationValidator = value =>
+        private async Task LoadCookiesCoreAsync()
         {
-            if (string.IsNullOrWhiteSpace(value))
+            _cookies.Clear();
+
+            var cookies = await ApiClient.GetApplicationCookies();
+            foreach (var cookie in cookies.OrderBy(c => c.Domain, StringComparer.OrdinalIgnoreCase)
+                                          .ThenBy(c => c.Path, StringComparer.OrdinalIgnoreCase)
+                                          .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase))
             {
-                return [];
+                _cookies.Add(new CookieRow(Guid.NewGuid(), cookie));
             }
+        }
 
-            if (!DateTime.TryParseExact(value, ExpirationFormats, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var _))
-            {
-                throw new FormatException("Expiration date must be a valid date and time.");
-            }
-
-            return [];
-        };
-
-        private static ApplicationCookie TransformToApplicationCookie(CookieEntry entry)
+        private IEnumerable<ColumnDefinition<CookieRow>> GetColumnDefinitions()
         {
-            long? expirationSeconds = null;
-            if (!string.IsNullOrWhiteSpace(entry.ExpirationInput))
+            foreach (var columnDefinition in ColumnsDefinitions)
             {
-                if (!DateTime.TryParseExact(entry.ExpirationInput, ExpirationFormats, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var localDateTime))
+                if (_columnRenderFragments.TryGetValue(columnDefinition.Header, out var fragment))
                 {
-                    throw new FormatException("Expiration date must be a valid date and time.");
+                    columnDefinition.RowTemplate = fragment;
                 }
 
-                var offset = new DateTimeOffset(localDateTime, DateTimeOffset.Now.Offset);
-                expirationSeconds = offset.ToUnixTimeSeconds();
-            }
+                if (string.Equals(columnDefinition.Header, ActionsColumnHeader, StringComparison.Ordinal))
+                {
+                    columnDefinition.DisplayHeader = Translate("Actions");
+                }
 
-            return new ApplicationCookie(
-                entry.Name!.Trim(),
-                string.IsNullOrWhiteSpace(entry.Domain) ? null : entry.Domain.Trim(),
-                string.IsNullOrWhiteSpace(entry.Path) ? null : entry.Path.Trim(),
-                entry.Value,
-                expirationSeconds);
+                yield return columnDefinition;
+            }
         }
 
-        public sealed class CookieEntry
+        private List<ColumnDefinition<CookieRow>> ColumnsDefinitions
         {
-            public CookieEntry()
+            get { return BuildColumnsDefinitions(); }
+        }
+
+        private List<ColumnDefinition<CookieRow>> BuildColumnsDefinitions()
+        {
+            return
+            [
+                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Domain"), row => row.Cookie.Domain),
+                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Path"), row => row.Cookie.Path),
+                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Name"), row => row.Cookie.Name),
+                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Value"), row => row.Cookie.Value),
+                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Expiration Date"), row => row.Cookie.ExpirationDate, row => GetExpirationDateText(row.Cookie.ExpirationDate)),
+                new ColumnDefinition<CookieRow>(ActionsColumnHeader, row => row)
+            ];
+        }
+
+        private static string GetExpirationDateText(long? expirationDate)
+        {
+            if (expirationDate is null || expirationDate <= 0)
             {
-                Id = Guid.NewGuid();
+                return string.Empty;
+            }
+
+            var dateTime = DateTimeOffset.FromUnixTimeSeconds(expirationDate.Value).LocalDateTime;
+            return dateTime.ToString("g", CultureInfo.CurrentCulture);
+        }
+
+        private string Translate(string value, params object[] args)
+        {
+            return WebUiLocalizer.Translate("AppCookies", value, args);
+        }
+
+        protected sealed class CookieRow
+        {
+            public CookieRow(Guid id, ApplicationCookie cookie)
+            {
+                Id = id;
+                Cookie = cookie;
             }
 
             public Guid Id { get; }
 
-            public string? Domain { get; set; }
-
-            public string? Path { get; set; }
-
-            public string? Name { get; set; }
-
-            public string? Value { get; set; }
-
-            public string? ExpirationInput { get; set; }
+            public ApplicationCookie Cookie { get; }
         }
     }
 }
