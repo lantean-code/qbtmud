@@ -1,18 +1,17 @@
-using Microsoft.JSInterop;
-
 namespace Lantean.QBTMud.Services
 {
     public sealed class LocalStorageService : ILocalStorageService
     {
-        private readonly BrowserStorageService _storage;
+        private readonly IBrowserStorageService _storage;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LocalStorageService"/> class.
         /// </summary>
-        /// <param name="jsRuntime">The JavaScript runtime used to access browser storage.</param>
-        public LocalStorageService(IJSRuntime jsRuntime)
+        /// <param name="storageServiceFactory">The browser storage service factory.</param>
+        public LocalStorageService(IBrowserStorageServiceFactory storageServiceFactory)
         {
-            _storage = new BrowserStorageService(jsRuntime, "localStorage");
+            ArgumentNullException.ThrowIfNull(storageServiceFactory);
+            _storage = storageServiceFactory.CreateLocalStorageService();
         }
 
         /// <summary>

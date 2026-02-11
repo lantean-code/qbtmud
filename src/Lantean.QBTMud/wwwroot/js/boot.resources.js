@@ -1,5 +1,6 @@
 (function () {
     const logPrefix = "[qbtmud]";
+    const storageKeyPrefix = "QbtMud.";
     const cdnAssetTypes = new Set([
         "dotnetwasm",
         "assembly",
@@ -28,7 +29,7 @@
 
     function applyBootstrapFont() {
         try {
-            const rawFontFamily = localStorage.getItem("ThemeManager.BootstrapFontFamily");
+            const rawFontFamily = getStorageValueWithMigration("ThemeManager.BootstrapFontFamily");
             const fontFamily = normalizeStorageString(rawFontFamily);
             if (!isValidFontFamily(fontFamily)) {
                 return;
@@ -54,11 +55,11 @@
 
     function applyBootstrapTheme() {
         try {
-            const rawBootstrapMode = localStorage.getItem("ThemeManager.BootstrapIsDark");
-            const rawIsDark = localStorage.getItem("MainLayout.IsDarkMode");
+            const rawBootstrapMode = getStorageValueWithMigration("ThemeManager.BootstrapIsDark");
+            const rawIsDark = getStorageValueWithMigration("MainLayout.IsDarkMode");
             const isDark = parseBoolean(rawBootstrapMode ?? rawIsDark);
-            const css = localStorage.getItem(isDark ? "ThemeManager.BootstrapCss.Dark" : "ThemeManager.BootstrapCss.Light")
-                ?? localStorage.getItem("ThemeManager.BootstrapCss");
+            const css = getStorageValueWithMigration(isDark ? "ThemeManager.BootstrapCss.Dark" : "ThemeManager.BootstrapCss.Light")
+                ?? getStorageValueWithMigration("ThemeManager.BootstrapCss");
             if (!css) {
                 return;
             }
@@ -75,6 +76,35 @@
             document.body.appendChild(style);
         } catch {
         }
+    }
+
+    function getStorageValueWithMigration(key) {
+        const prefixedKey = getPrefixedStorageKey(key);
+        const prefixedValue = localStorage.getItem(prefixedKey);
+        if (prefixedValue !== null || prefixedKey === key) {
+            return prefixedValue;
+        }
+
+        const legacyValue = localStorage.getItem(key);
+        if (legacyValue === null) {
+            return null;
+        }
+
+        try {
+            localStorage.setItem(prefixedKey, legacyValue);
+            localStorage.removeItem(key);
+        } catch {
+        }
+
+        return legacyValue;
+    }
+
+    function getPrefixedStorageKey(key) {
+        if (key.startsWith(storageKeyPrefix)) {
+            return key;
+        }
+
+        return `${storageKeyPrefix}${key}`;
     }
 
     function parseBoolean(value) {
