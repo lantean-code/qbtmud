@@ -22,19 +22,19 @@
                 <FieldSwitch Label="@WebUiLocalizer.Translate("UpDownRatioDialog", "ratio")" Value="RatioEnabled" ValueChanged="RatioEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("RatioEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="float" Value="Ratio" ValueChanged="RatioChanged" Disabled="@(!(CustomEnabled && RatioEnabled))" Min="0" Max="1024000" Step="0.1F" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("Ratio")" />
+                <MudNumericField T="float" Value="Ratio" ValueChanged="RatioChanged" Disabled="@(!(CustomEnabled && RatioEnabled))" Min="0" Max="1024000" Step="0.1F" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="%" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("Ratio")" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="@WebUiLocalizer.Translate("UpDownRatioDialog", "total minutes")" Value="TotalMinutesEnabled" ValueChanged="TotalMinutesEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("TotalMinutesEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Value="TotalMinutes" ValueChanged="TotalMinutesChanged" Disabled="@(!(CustomEnabled && TotalMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" data-test-id="@TestIdHelper.For("TotalMinutes")" />
+                <MudNumericField T="int" Value="TotalMinutes" ValueChanged="TotalMinutesChanged" Disabled="@(!(CustomEnabled && TotalMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("TotalMinutes")" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="@WebUiLocalizer.Translate("UpDownRatioDialog", "inactive minutes")" Value="InactiveMinutesEnabled" ValueChanged="InactiveMinutesEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("InactiveMinutesEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Value="InactiveMinutes" ValueChanged="InactiveMinutesChanged" Disabled="@(!(CustomEnabled && InactiveMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" data-test-id="@TestIdHelper.For("InactiveMinutes")" />
+                <MudNumericField T="int" Value="InactiveMinutes" ValueChanged="InactiveMinutesChanged" Disabled="@(!(CustomEnabled && InactiveMinutesEnabled))" Min="1" Max="1024000" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("InactiveMinutes")" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="ShareLimitAction" Label="@WebUiLocalizer.Translate("OptionsDialog", "then")" Value="SelectedShareLimitAction" ValueChanged="ShareLimitActionChanged" Disabled="@(!CustomEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("SelectedShareLimitAction")">
