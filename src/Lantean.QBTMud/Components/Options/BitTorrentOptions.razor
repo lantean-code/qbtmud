@@ -56,16 +56,16 @@
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Torrent Queueing")" Value="QueueingEnabled" ValueChanged="QueueingEnabledChanged" data-test-id="@TestIdHelper.For("QueueingEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Maximum active downloads:")" Value="MaxActiveDownloads" ValueChanged="MaxActiveDownloadsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveDownloadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveDownloads")" />
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Maximum active downloads:")" Value="MaxActiveDownloads" ValueChanged="MaxActiveDownloadsChanged" Min="-1" Disabled="@(QueueingEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveDownloadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveDownloads")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Maximum active uploads:")" Value="MaxActiveUploads" ValueChanged="MaxActiveUploadsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveUploadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveUploads")" />
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Maximum active uploads:")" Value="MaxActiveUploads" ValueChanged="MaxActiveUploadsChanged" Min="-1" Disabled="@(QueueingEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveUploadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveUploads")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Maximum active torrents:")" Value="MaxActiveTorrents" ValueChanged="MaxActiveTorrentsChanged" Min="-1" Disabled="@(!QueueingEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveTorrentsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveTorrents")" />
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Maximum active torrents:")" Value="MaxActiveTorrents" ValueChanged="MaxActiveTorrentsChanged" Min="-1" Disabled="@(QueueingEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveTorrentsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveTorrents")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Do not count slow torrents in these limits")" Value="DontCountSlowTorrents" ValueChanged="DontCountSlowTorrentsChanged" Disabled="@(!QueueingEnabled)" data-test-id="@TestIdHelper.For("DontCountSlowTorrents")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Do not count slow torrents in these limits")" Value="DontCountSlowTorrents" ValueChanged="DontCountSlowTorrentsChanged" Disabled="@(QueueingEnabled != true)" data-test-id="@TestIdHelper.For("DontCountSlowTorrents")" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Download rate threshold:")" Value="SlowTorrentDlRateThreshold" ValueChanged="SlowTorrentDlRateThresholdChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "KiB/s")" Validation="SlowTorrentDlRateThresholdValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SlowTorrentDlRateThreshold")" />
@@ -92,22 +92,22 @@
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "When ratio reaches")" Value="MaxRatioEnabled" ValueChanged="MaxRatioEnabledChanged" data-test-id="@TestIdHelper.For("MaxRatioEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="float" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(!MaxRatioEnabled)" Min="0" Max="9998" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxRatioValidation" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("MaxRatio")" />
+                <MudNumericField T="float" Label="" Value="MaxRatio" ValueChanged="MaxRatioChanged" Disabled="@(MaxRatioEnabled != true)" Min="0" Max="9998" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxRatioValidation" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("MaxRatio")" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "When total seeding time reaches")" Value="MaxSeedingTimeEnabled" ValueChanged="MaxSeedingTimeEnabledChanged" data-test-id="@TestIdHelper.For("MaxSeedingTimeEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Value="MaxSeedingTime" ValueChanged="MaxSeedingTimeChanged" Disabled="@(!MaxSeedingTimeEnabled)" Min="0" Max="525600" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Validation="MaxSeedingTimeValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxSeedingTime")" />
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Value="MaxSeedingTime" ValueChanged="MaxSeedingTimeChanged" Disabled="@(MaxSeedingTimeEnabled != true)" Min="0" Max="525600" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Validation="MaxSeedingTimeValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxSeedingTime")" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "When inactive seeding time reaches")" Value="MaxInactiveSeedingTimeEnabled" ValueChanged="MaxInactiveSeedingTimeEnabledChanged" data-test-id="@TestIdHelper.For("MaxInactiveSeedingTimeEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Value="MaxInactiveSeedingTime" ValueChanged="MaxInactiveSeedingTimeChanged" Disabled="@(!MaxInactiveSeedingTimeEnabled)" Min="0" Max="525600" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxInactiveSeedingTimeValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxInactiveSeedingTime")" />
+                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "minutes")" Value="MaxInactiveSeedingTime" ValueChanged="MaxInactiveSeedingTimeChanged" Disabled="@(MaxInactiveSeedingTimeEnabled != true)" Min="0" Max="525600" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxInactiveSeedingTimeValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxInactiveSeedingTime")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Value="MaxRatioAct" ValueChanged="MaxRatioActChanged" Disabled="@(!MaxRatioEnabled && !MaxSeedingTimeEnabled && !MaxInactiveSeedingTimeEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("MaxRatioAct")">
+                <MudSelect T="int" Value="MaxRatioAct" ValueChanged="MaxRatioActChanged" Disabled="@(MaxRatioEnabled != true && MaxSeedingTimeEnabled != true && MaxInactiveSeedingTimeEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("MaxRatioAct")">
                     <MudSelectItem Value="0">@WebUiLocalizer.Translate("OptionsDialog", "Stop torrent")</MudSelectItem>
                     <MudSelectItem Value="1">@WebUiLocalizer.Translate("OptionsDialog", "Remove torrent")</MudSelectItem>
                     <MudSelectItem Value="2">@WebUiLocalizer.Translate("OptionsDialog", "Remove torrent and its files")</MudSelectItem>

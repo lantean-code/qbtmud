@@ -2,28 +2,28 @@ namespace Lantean.QBTMud.Components.Options
 {
     public partial class BitTorrentOptions : Options
     {
-        protected bool Dht { get; private set; }
-        protected bool Pex { get; private set; }
-        protected bool Lsd { get; private set; }
+        protected bool? Dht { get; private set; }
+        protected bool? Pex { get; private set; }
+        protected bool? Lsd { get; private set; }
         protected int Encryption { get; private set; }
-        protected bool AnonymousMode { get; private set; }
+        protected bool? AnonymousMode { get; private set; }
         protected int MaxActiveCheckingTorrents { get; private set; }
-        protected bool QueueingEnabled { get; private set; }
+        protected bool? QueueingEnabled { get; private set; }
         protected int MaxActiveDownloads { get; private set; }
         protected int MaxActiveUploads { get; private set; }
         protected int MaxActiveTorrents { get; private set; }
-        protected bool DontCountSlowTorrents { get; private set; }
+        protected bool? DontCountSlowTorrents { get; private set; }
         protected int SlowTorrentDlRateThreshold { get; private set; }
         protected int SlowTorrentUlRateThreshold { get; private set; }
         protected int SlowTorrentInactiveTimer { get; private set; }
-        protected bool MaxRatioEnabled { get; private set; }
+        protected bool? MaxRatioEnabled { get; private set; }
         protected float MaxRatio { get; private set; }
-        protected bool MaxSeedingTimeEnabled { get; private set; }
+        protected bool? MaxSeedingTimeEnabled { get; private set; }
         protected int MaxSeedingTime { get; private set; }
         protected int MaxRatioAct { get; private set; }
-        protected bool MaxInactiveSeedingTimeEnabled { get; private set; }
+        protected bool? MaxInactiveSeedingTimeEnabled { get; private set; }
         protected int MaxInactiveSeedingTime { get; private set; }
-        protected bool AddTrackersEnabled { get; private set; }
+        protected bool? AddTrackersEnabled { get; private set; }
         protected string? AddTrackers { get; private set; }
 
         protected Func<int, string?> MaxActiveDownloadsValidation => MaxActiveDownloadsValidationFunc;

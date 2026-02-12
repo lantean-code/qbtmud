@@ -8,12 +8,12 @@ namespace Lantean.QBTMud.Components.Options
         [Inject]
         public IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
-        protected bool RssProcessingEnabled { get; private set; }
+        protected bool? RssProcessingEnabled { get; private set; }
         protected int RssRefreshInterval { get; private set; }
         protected long RssFetchDelay { get; private set; }
         protected int RssMaxArticlesPerFeed { get; private set; }
-        protected bool RssAutoDownloadingEnabled { get; private set; }
-        protected bool RssDownloadRepackProperEpisodes { get; private set; }
+        protected bool? RssAutoDownloadingEnabled { get; private set; }
+        protected bool? RssDownloadRepackProperEpisodes { get; private set; }
         protected string? RssSmartEpisodeFilters { get; private set; }
 
         protected override bool SetOptions()

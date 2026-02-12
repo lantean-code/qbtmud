@@ -4,35 +4,35 @@ namespace Lantean.QBTMud.Components.Options
     {
         protected int BittorrentProtocol { get; private set; }
         protected int ListenPort { get; private set; }
-        protected bool Upnp { get; private set; }
-        protected bool MaxConnecEnabled { get; private set; }
+        protected bool? Upnp { get; private set; }
+        protected bool? MaxConnecEnabled { get; private set; }
         protected int MaxConnec { get; private set; }
-        protected bool MaxConnecPerTorrentEnabled { get; private set; }
+        protected bool? MaxConnecPerTorrentEnabled { get; private set; }
         protected int MaxConnecPerTorrent { get; private set; }
-        protected bool MaxUploadsEnabled { get; private set; }
+        protected bool? MaxUploadsEnabled { get; private set; }
         protected int MaxUploads { get; private set; }
-        protected bool MaxUploadsPerTorrentEnabled { get; private set; }
+        protected bool? MaxUploadsPerTorrentEnabled { get; private set; }
         protected int MaxUploadsPerTorrent { get; private set; }
-        protected bool I2pEnabled { get; private set; }
+        protected bool? I2pEnabled { get; private set; }
         protected string? I2pAddress { get; private set; }
         protected int I2pPort { get; private set; }
-        protected bool I2pMixedMode { get; private set; }
+        protected bool? I2pMixedMode { get; private set; }
         protected bool ProxyDisabled { get; private set; }
         protected bool ProxySocks4 { get; private set; }
         protected string? ProxyType { get; private set; }
         protected string? ProxyIp { get; private set; }
         protected int ProxyPort { get; private set; }
-        protected bool ProxyAuthEnabled { get; private set; }
+        protected bool? ProxyAuthEnabled { get; private set; }
         protected string? ProxyUsername { get; private set; }
         protected string? ProxyPassword { get; private set; }
-        protected bool ProxyHostnameLookup { get; private set; }
-        protected bool ProxyBittorrent { get; private set; }
-        protected bool ProxyPeerConnections { get; private set; }
-        protected bool ProxyRss { get; private set; }
-        protected bool ProxyMisc { get; private set; }
-        protected bool IpFilterEnabled { get; private set; }
+        protected bool? ProxyHostnameLookup { get; private set; }
+        protected bool? ProxyBittorrent { get; private set; }
+        protected bool? ProxyPeerConnections { get; private set; }
+        protected bool? ProxyRss { get; private set; }
+        protected bool? ProxyMisc { get; private set; }
+        protected bool? IpFilterEnabled { get; private set; }
         protected string? IpFilterPath { get; private set; }
-        protected bool IpFilterTrackers { get; private set; }
+        protected bool? IpFilterTrackers { get; private set; }
         protected string? BannedIPs { get; private set; }
 
         protected Func<int, string?> MaxConnectValidation => MaxConnectValidationFunc;

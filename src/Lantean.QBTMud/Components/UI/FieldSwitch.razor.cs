@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Components.UI
     {
         /// <inheritdoc cref="MudBlazor.MudBooleanInput{T}.Value"/>
         [Parameter]
-        public bool Value { get; set; }
+        public bool? Value { get; set; }
 
         /// <inheritdoc cref="MudBlazor.MudBooleanInput{T}.ValueChanged"/>
         [Parameter]
@@ -31,10 +31,14 @@ namespace Lantean.QBTMud.Components.UI
         [Parameter(CaptureUnmatchedValues = true)]
         public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
-        protected async Task ValueChangedCallback(bool value)
+        protected async Task ValueChangedCallback(bool? value)
         {
             Value = value;
-            await ValueChanged.InvokeAsync(value);
+
+            if (value.HasValue)
+            {
+                await ValueChanged.InvokeAsync(value.Value);
+            }
         }
     }
 }

@@ -15,13 +15,13 @@ namespace Lantean.QBTMud.Components.Options
         protected string? CurrentInterfaceAddress { get; private set; }
         protected int SaveResumeDataInterval { get; private set; }
         protected int TorrentFileSizeLimit { get; private set; }
-        protected bool RecheckCompletedTorrents { get; private set; }
+        protected bool? RecheckCompletedTorrents { get; private set; }
 
-        protected bool ConfirmTorrentRecheck { get; private set; }
+        protected bool? ConfirmTorrentRecheck { get; private set; }
         protected string? AppInstanceName { get; private set; }
         protected int RefreshInterval { get; private set; }
-        protected bool ResolvePeerCountries { get; private set; }
-        protected bool ReannounceWhenAddressChanged { get; private set; }
+        protected bool? ResolvePeerCountries { get; private set; }
+        protected bool? ReannounceWhenAddressChanged { get; private set; }
         protected int BdecodeDepthLimit { get; private set; }
         protected int BdecodeTokenLimit { get; private set; }
         protected int AsyncIoThreads { get; private set; }
@@ -34,9 +34,9 @@ namespace Lantean.QBTMud.Components.Options
         protected int DiskIoType { get; private set; }
         protected int DiskIoReadMode { get; private set; }
         protected int DiskIoWriteMode { get; private set; }
-        protected bool EnableCoalesceReadWrite { get; private set; }
-        protected bool EnablePieceExtentAffinity { get; private set; }
-        protected bool EnableUploadSuggestions { get; private set; }
+        protected bool? EnableCoalesceReadWrite { get; private set; }
+        protected bool? EnablePieceExtentAffinity { get; private set; }
+        protected bool? EnableUploadSuggestions { get; private set; }
         protected int SendBufferWatermark { get; private set; }
         protected int SendBufferLowWatermark { get; private set; }
         protected int SendBufferWatermarkFactor { get; private set; }
@@ -49,20 +49,20 @@ namespace Lantean.QBTMud.Components.Options
         protected int UpnpLeaseDuration { get; private set; }
         protected int PeerTos { get; private set; }
         protected int UtpTcpMixedMode { get; private set; }
-        protected bool IdnSupportEnabled { get; private set; }
-        protected bool EnableMultiConnectionsFromSameIp { get; private set; }
-        protected bool ValidateHttpsTrackerCertificate { get; private set; }
-        protected bool SsrfMitigation { get; private set; }
-        protected bool BlockPeersOnPrivilegedPorts { get; private set; }
-        protected bool EnableEmbeddedTracker { get; private set; }
+        protected bool? IdnSupportEnabled { get; private set; }
+        protected bool? EnableMultiConnectionsFromSameIp { get; private set; }
+        protected bool? ValidateHttpsTrackerCertificate { get; private set; }
+        protected bool? SsrfMitigation { get; private set; }
+        protected bool? BlockPeersOnPrivilegedPorts { get; private set; }
+        protected bool? EnableEmbeddedTracker { get; private set; }
         protected int EmbeddedTrackerPort { get; private set; }
-        protected bool EmbeddedTrackerPortForwarding { get; private set; }
+        protected bool? EmbeddedTrackerPortForwarding { get; private set; }
         protected bool MarkOfTheWeb { get; private set; }
         protected string? PythonExecutablePath { get; private set; }
         protected int UploadSlotsBehavior { get; private set; }
         protected int UploadChokingAlgorithm { get; private set; }
-        protected bool AnnounceToAllTrackers { get; private set; }
-        protected bool AnnounceToAllTiers { get; private set; }
+        protected bool? AnnounceToAllTrackers { get; private set; }
+        protected bool? AnnounceToAllTiers { get; private set; }
         protected string? AnnounceIp { get; private set; }
         protected int MaxConcurrentHttpAnnounces { get; private set; }
         protected int StopTrackerTimeout { get; private set; }

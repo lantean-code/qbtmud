@@ -5,38 +5,38 @@ namespace Lantean.QBTMud.Components.Options
     public partial class DownloadsOptions : Options
     {
         protected string? TorrentContentLayout { get; set; }
-        protected bool AddToTopOfQueue { get; set; }
-        protected bool AddStoppedEnabled { get; set; }
+        protected bool? AddToTopOfQueue { get; set; }
+        protected bool? AddStoppedEnabled { get; set; }
         protected string? TorrentStopCondition { get; set; }
-        protected bool AutoDeleteMode { get; set; }
-        protected bool PreallocateAll { get; set; }
-        protected bool IncompleteFilesExt { get; set; }
+        protected bool? AutoDeleteMode { get; set; }
+        protected bool? PreallocateAll { get; set; }
+        protected bool? IncompleteFilesExt { get; set; }
         protected bool AutoTmmEnabled { get; set; }
         protected bool TorrentChangedTmmEnabled { get; set; }
         protected bool SavePathChangedTmmEnabled { get; set; }
         protected bool CategoryChangedTmmEnabled { get; set; }
-        protected bool UseSubcategories { get; set; }
+        protected bool? UseSubcategories { get; set; }
         protected string? SavePath { get; set; }
-        protected bool TempPathEnabled { get; set; }
+        protected bool? TempPathEnabled { get; set; }
         protected string? TempPath { get; set; }
-        protected bool ExportDirEnabled { get; set; }
+        protected bool? ExportDirEnabled { get; set; }
         protected string? ExportDir { get; set; }
-        protected bool ExportDirFinEnabled { get; set; }
+        protected bool? ExportDirFinEnabled { get; set; }
         protected string? ExportDirFin { get; set; }
         protected Dictionary<string, SaveLocation> ScanDirs { get; set; } = [];
-        protected bool ExcludedFileNamesEnabled { get; set; }
+        protected bool? ExcludedFileNamesEnabled { get; set; }
         protected string? ExcludedFileNames { get; set; }
-        protected bool MailNotificationEnabled { get; set; }
+        protected bool? MailNotificationEnabled { get; set; }
         protected string? MailNotificationSender { get; set; }
         protected string? MailNotificationEmail { get; set; }
         protected string? MailNotificationSmtp { get; set; }
-        protected bool MailNotificationSslEnabled { get; set; }
-        protected bool MailNotificationAuthEnabled { get; set; }
+        protected bool? MailNotificationSslEnabled { get; set; }
+        protected bool? MailNotificationAuthEnabled { get; set; }
         protected string? MailNotificationUsername { get; set; }
         protected string? MailNotificationPassword { get; set; }
-        protected bool AutorunOnTorrentAddedEnabled { get; set; }
+        protected bool? AutorunOnTorrentAddedEnabled { get; set; }
         protected string? AutorunOnTorrentAddedProgram { get; set; }
-        protected bool AutorunEnabled { get; set; }
+        protected bool? AutorunEnabled { get; set; }
         protected string? AutorunProgram { get; set; }
 
         protected List<KeyValuePair<string, SaveLocation>> AddedScanDirs { get; set; } = [];
@@ -133,7 +133,7 @@ namespace Lantean.QBTMud.Components.Options
         protected async Task AutoDeleteModeChanged(bool value)
         {
             AutoDeleteMode = value;
-            UpdatePreferences.AutoDeleteMode = value ? 1 : 0;
+            UpdatePreferences.AutoDeleteMode = value == true ? 1 : 0;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 

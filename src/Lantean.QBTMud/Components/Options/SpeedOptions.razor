@@ -36,13 +36,13 @@
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Schedule the use of alternative rate limits")" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" data-test-id="@TestIdHelper.For("SchedulerEnabled")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTimePicker Label="@WebUiLocalizer.Translate("OptionsDialog", "From:")" Editable="true" Time="ScheduleFrom" TimeChanged="ScheduleFromChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ScheduleFrom")" />
+                <MudTimePicker Label="@WebUiLocalizer.Translate("OptionsDialog", "From:")" Editable="true" Time="ScheduleFrom" TimeChanged="ScheduleFromChanged" Disabled="@(SchedulerEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ScheduleFrom")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTimePicker Label="@WebUiLocalizer.Translate("OptionsDialog", "To:")" Editable="true" Time="ScheduleTo" TimeChanged="ScheduleToChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ScheduleTo")" />
+                <MudTimePicker Label="@WebUiLocalizer.Translate("OptionsDialog", "To:")" Editable="true" Time="ScheduleTo" TimeChanged="ScheduleToChanged" Disabled="@(SchedulerEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ScheduleTo")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="int" Value="SchedulerDays" ValueChanged="SchedulerDaysChanged" Disabled="@(!SchedulerEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("SchedulerDays")">
+                <MudSelect T="int" Value="SchedulerDays" ValueChanged="SchedulerDaysChanged" Disabled="@(SchedulerEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("SchedulerDays")">
                     <MudSelectItem Value="0">@WebUiLocalizer.Translate("OptionsDialog", "Every day")</MudSelectItem>
                     <MudSelectItem Value="1">@WebUiLocalizer.Translate("OptionsDialog", "Weekdays")</MudSelectItem>
                     <MudSelectItem Value="2">@WebUiLocalizer.Translate("OptionsDialog", "Weekends")</MudSelectItem>
