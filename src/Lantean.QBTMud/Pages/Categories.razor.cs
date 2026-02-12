@@ -10,6 +10,8 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Categories
     {
+        private const string ActionsColumnId = "actions";
+
         private readonly Dictionary<string, RenderFragment<RowContext<Category>>> _columnRenderFragments = [];
 
         [Inject]
@@ -39,7 +41,7 @@ namespace Lantean.QBTMud.Pages
 
         public Categories()
         {
-            _columnRenderFragments.Add("Actions", ActionsColumn);
+            _columnRenderFragments.Add(ActionsColumnId, ActionsColumn);
         }
 
         protected void NavigateBack()
@@ -81,7 +83,7 @@ namespace Lantean.QBTMud.Pages
         {
             foreach (var columnDefinition in ColumnsDefinitions)
             {
-                if (_columnRenderFragments.TryGetValue(columnDefinition.Header, out var fragment))
+                if (_columnRenderFragments.TryGetValue(columnDefinition.Id, out var fragment))
                 {
                     columnDefinition.RowTemplate = fragment;
                 }
@@ -98,8 +100,13 @@ namespace Lantean.QBTMud.Pages
             [
                 new ColumnDefinition<Category>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l.Name, id: "name"),
                 new ColumnDefinition<Category>(WebUiLocalizer.Translate("TransferListModel", "Save path"), l => l.SavePath, id: "save_path"),
-                new ColumnDefinition<Category>("Actions", l => l, id: "actions")
+                new ColumnDefinition<Category>(Translate("Actions"), l => l, id: ActionsColumnId)
             ];
+        }
+
+        private string Translate(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate("AppCategories", source, arguments);
         }
     }
 }

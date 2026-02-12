@@ -152,7 +152,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             await ClipboardService.WriteToClipboard(message);
-            Snackbar?.Add("Log entry copied to clipboard.", Severity.Info);
+            Snackbar?.Add(TranslateLog("Log entry copied to clipboard."), Severity.Info);
         }
 
         protected async Task ClearResults()
@@ -164,7 +164,7 @@ namespace Lantean.QBTMud.Pages
 
             Results!.Clear();
             ContextMenuItem = null;
-            Snackbar?.Add("Log view cleared.", Severity.Info);
+            Snackbar?.Add(TranslateLog("Log view cleared."), Severity.Info);
             await InvokeAsync(StateHasChanged);
         }
 
@@ -256,6 +256,11 @@ namespace Lantean.QBTMud.Pages
 
             var removeCount = Results.Count - MaxResults;
             Results.RemoveRange(0, removeCount);
+        }
+
+        private string TranslateLog(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate("AppLog", source, arguments);
         }
     }
 }

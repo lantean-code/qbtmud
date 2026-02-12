@@ -5,7 +5,7 @@
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
-                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="@TranslateSearch("Back to torrent list")" />
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
@@ -53,20 +53,20 @@
                 <MudMenuItem Icon="@Icons.Material.Filled.Download" Disabled="@(!HasContextResult)" OnClick="DownloadResultFromContext">@WebUiLocalizer.Translate("SearchJobWidget", "Download")</MudMenuItem>
                 <MudMenuItem Icon="@Icons.Material.Filled.OpenInNew" Disabled="@(!HasContextResult)" OnClick="OpenDescriptionFromContext">@WebUiLocalizer.Translate("SearchJobWidget", "Open description page")</MudMenuItem>
                 <MudDivider />
-                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyNameFromContext">Copy name</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyDownloadLinkFromContext">Copy download link</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyDescriptionLinkFromContext">Copy description link</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyNameFromContext">@TranslateCopyAction("Name")</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyDownloadLinkFromContext">@TranslateCopyAction("Download link")</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyDescriptionLinkFromContext">@TranslateCopyAction("Description page URL")</MudMenuItem>
             </MudMenu>
 
             <MudStack Row="true" Class="ml-4 mr-4 mt-2 mb-1 align-center search-form-toggle">
-                <MudText Typo="Typo.subtitle2">Search filters</MudText>
+                <MudText Typo="Typo.subtitle2">@TranslateSearch("Search filters")</MudText>
                 <MudSpacer />
                 <MudButton Variant="Variant.Text"
                            Size="Size.Small"
                            StartIcon="@(ShowSearchForm ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
                            OnClick="ToggleSearchForm"
                            data-test-id="@TestIdHelper.For("ToggleSearchForm")">
-                    @(ShowSearchForm ? "Hide" : "Show")
+                    @(ShowSearchForm ? TranslateSearch("Hide") : TranslateSearch("Show"))
                 </MudButton>
             </MudStack>
             <MudCollapse Expanded="ShowSearchForm" data-test-id="@TestIdHelper.For("SearchFormCollapse")">
@@ -104,7 +104,7 @@
                                                ShrinkLabel="true"
                                                MultiSelection="true"
                                                SelectAll="true"
-                                               SelectAllText="Select all enabled"
+                                               SelectAllText="@WebUiLocalizer.Translate("SearchEngineWidget", "Only enabled")"
                                                SelectedValues="@Model.SelectedPlugins"
                                                SelectedValuesChanged="OnPluginsChanged"
                                                MultiSelectionTextFunc="PluginsSelectionText"
@@ -131,7 +131,7 @@
                                                    StartIcon="@(ShowAdvancedFilters ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
                                                    OnClick="ToggleAdvancedFilters"
                                                    data-test-id="@TestIdHelper.For("ToggleAdvancedFilters")">
-                                            @(ShowAdvancedFilters ? "Hide filters" : "Show filters")
+                                            @(ShowAdvancedFilters ? TranslateSearch("Hide filters") : TranslateSearch("Show filters"))
                                         </MudButton>
                                     </MudStack>
                                 </MudItem>
@@ -254,7 +254,7 @@
                           Elevation="0"
                           Class="ml-4 mr-4 mb-2"
                           data-test-id="@TestIdHelper.For("NoPluginAlert")">
-                    Enable at least one search plugin to run searches.
+                    @TranslateSearch("Enable at least one search plugin to run searches.")
                 </MudAlert>
             }
 

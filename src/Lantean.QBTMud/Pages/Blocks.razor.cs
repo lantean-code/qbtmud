@@ -115,7 +115,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             await ClipboardService.WriteToClipboard(address);
-            Snackbar?.Add("Address copied to clipboard.", Severity.Info);
+            Snackbar?.Add(TranslateBlocks("Address copied to clipboard."), Severity.Info);
         }
 
         protected async Task ClearResults()
@@ -127,7 +127,7 @@ namespace Lantean.QBTMud.Pages
 
             Results!.Clear();
             ContextMenuItem = null;
-            Snackbar?.Add("Blocked IP list cleared.", Severity.Info);
+            Snackbar?.Add(TranslateBlocks("Blocked IP list cleared."), Severity.Info);
             await InvokeAsync(StateHasChanged);
         }
 
@@ -213,6 +213,11 @@ namespace Lantean.QBTMud.Pages
 
             var removeCount = Results.Count - MaxResults;
             Results.RemoveRange(0, removeCount);
+        }
+
+        private string TranslateBlocks(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate("AppBlocks", source, arguments);
         }
     }
 }

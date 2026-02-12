@@ -305,7 +305,7 @@ namespace Lantean.QBTMud.Pages
             catch (ArgumentException)
             {
                 IsRegexValid = false;
-                SearchErrorText = "Invalid regular expression";
+                SearchErrorText = WebUiLocalizer.Translate("AppTorrentList", "Invalid regular expression");
             }
         }
 
