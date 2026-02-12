@@ -61,9 +61,6 @@ namespace Lantean.QBTMud.Layout
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
-        [Inject]
-        protected IManagedTimerRegistry TimerRegistry { get; set; } = default!;
-
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
 
@@ -126,10 +123,7 @@ namespace Lantean.QBTMud.Layout
         private Task? _locationChangeTask;
         private bool _navigationHandlerAttached;
         private bool _welcomeWizardLaunched;
-
-        protected bool ShowStatusLabels => (CurrentBreakpoint > Breakpoint.Md && CurrentOrientation == Orientation.Portrait) || (CurrentBreakpoint > Breakpoint.Lg && CurrentOrientation == Orientation.Landscape);
-
-        protected bool UseLightStatusBarDividers => IsDarkMode;
+        private bool _lostConnectionDialogShown;
 
         protected override void OnInitialized()
         {
@@ -232,6 +226,11 @@ namespace Lantean.QBTMud.Layout
                 _welcomeWizardLaunched = true;
                 await ShowWelcomeWizardIfNeededAsync();
             }
+
+            if (MainData?.LostConnection == true)
+            {
+                await ShowLostConnectionDialogAsync();
+            }
         }
 
         private async Task ShowWelcomeWizardIfNeededAsync()
@@ -259,6 +258,28 @@ namespace Lantean.QBTMud.Layout
             await DialogService.ShowAsync<WelcomeWizardDialog>(title: null, parameters, options);
         }
 
+        private async Task ShowLostConnectionDialogAsync()
+        {
+            if (_lostConnectionDialogShown)
+            {
+                return;
+            }
+
+            _lostConnectionDialogShown = true;
+
+            var options = new DialogOptions
+            {
+                CloseOnEscapeKey = false,
+                BackdropClick = false,
+                NoHeader = true,
+                FullWidth = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                BackgroundClass = "background-blur background-blur-strong"
+            };
+
+            await DialogService.ShowAsync<LostConnectionDialog>(title: null, parameters: new DialogParameters(), options);
+        }
+
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
             if (!IsAuthenticated)
@@ -277,6 +298,8 @@ namespace Lantean.QBTMud.Layout
                 {
                     MainData.LostConnection = true;
                 }
+
+                await InvokeAsync(ShowLostConnectionDialogAsync);
                 _timerCancellationToken.CancelIfNotDisposed();
                 await InvokeAsync(StateHasChanged);
                 return ManagedTimerTickResult.Stop;
@@ -593,88 +616,6 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
-        protected static (string, Color) GetConnectionIcon(string? status)
-        {
-            return status switch
-            {
-                "firewalled" => (Icons.Material.Outlined.SignalWifiStatusbarConnectedNoInternet4, Color.Warning),
-                "connected" => (Icons.Material.Outlined.SignalWifi4Bar, Color.Success),
-                _ => (Icons.Material.Outlined.SignalWifiOff, Color.Error),
-            };
-        }
-
-        private ManagedTimerState? GetTimerStatus()
-        {
-            var timers = TimerRegistry.GetTimers();
-            if (timers.Count == 0)
-            {
-                return null;
-            }
-
-            var running = timers.Count(timer => timer.State == ManagedTimerState.Running);
-            var paused = timers.Count(timer => timer.State == ManagedTimerState.Paused);
-            var stopped = timers.Count(timer => timer.State == ManagedTimerState.Stopped);
-            var faulted = timers.Count(timer => timer.State == ManagedTimerState.Faulted);
-
-            if (faulted > 0)
-            {
-                return ManagedTimerState.Faulted;
-            }
-
-            if (paused > 0)
-            {
-                return ManagedTimerState.Paused;
-            }
-
-            if (running == timers.Count)
-            {
-                return ManagedTimerState.Running;
-            }
-
-            if (stopped > 0)
-            {
-                return ManagedTimerState.Stopped;
-            }
-
-            return null;
-        }
-
-        private string GetTimerStatusIcon()
-        {
-            var status = GetTimerStatus();
-            if (!status.HasValue)
-            {
-                return Icons.Material.Filled.TimerOff;
-            }
-
-            return status.Value switch
-            {
-                ManagedTimerState.Running => Icons.Material.Filled.Timer,
-                ManagedTimerState.Paused => Icons.Material.Filled.PauseCircle,
-                ManagedTimerState.Faulted => Icons.Material.Filled.Error,
-                ManagedTimerState.Stopped => Icons.Material.Filled.TimerOff,
-                _ => Icons.Material.Filled.Timer,
-            };
-        }
-
-        private Color GetTimerStatusColor()
-        {
-            var status = GetTimerStatus();
-            if (!status.HasValue)
-            {
-                return Color.Default;
-            }
-
-            return status.Value switch
-            {
-                ManagedTimerState.Running => Color.Success,
-                ManagedTimerState.Paused => Color.Warning,
-                ManagedTimerState.Faulted => Color.Error,
-                ManagedTimerState.Stopped => Color.Default,
-                _ => Color.Default,
-            };
-        }
-
         private string BuildPageTitle()
         {
             var webUiLabel = WebUiLocalizer.Translate("OptionsDialog", "WebUI");
@@ -682,114 +623,11 @@ namespace Lantean.QBTMud.Layout
             return $"qBittorrent{versionPart} {webUiLabel}";
         }
 
-        private string BuildTimerTooltip()
-        {
-            var timers = TimerRegistry.GetTimers();
-            if (timers.Count == 0)
-            {
-                return WebUiLocalizer.Translate("AppTimerStatusPanel", "No timers registered.");
-            }
-
-            var running = timers.Count(timer => timer.State == ManagedTimerState.Running);
-            var paused = timers.Count(timer => timer.State == ManagedTimerState.Paused);
-            var stopped = timers.Count(timer => timer.State == ManagedTimerState.Stopped);
-            var faulted = timers.Count(timer => timer.State == ManagedTimerState.Faulted);
-
-            return WebUiLocalizer.Translate(
-                "AppTimerStatusPanel",
-                "Timers: %1 running, %2 paused, %3 stopped, %4 faulted",
-                running,
-                paused,
-                stopped,
-                faulted);
-        }
-
-        private string? BuildExternalIpLabel(ServerState? serverState)
-        {
-            if (serverState is null)
-            {
-                return null;
-            }
-
-            var v4 = serverState.LastExternalAddressV4;
-            var v6 = serverState.LastExternalAddressV6;
-            var hasV4 = !string.IsNullOrWhiteSpace(v4);
-            var hasV6 = !string.IsNullOrWhiteSpace(v6);
-
-            if (!hasV4 && !hasV6)
-            {
-                return WebUiLocalizer.Translate("HttpServer", "External IP: N/A");
-            }
-
-            if (hasV4 && hasV6)
-            {
-                return WebUiLocalizer.Translate("HttpServer", "External IPs: %1, %2", v4, v6);
-            }
-
-            return WebUiLocalizer.Translate("HttpServer", "External IP: %1%2", v4 ?? string.Empty, v6 ?? string.Empty);
-        }
-
-        private static string? BuildExternalIpValue(ServerState? serverState)
-        {
-            if (serverState is null)
-            {
-                return null;
-            }
-
-            var v4 = serverState.LastExternalAddressV4;
-            var v6 = serverState.LastExternalAddressV6;
-            var hasV4 = !string.IsNullOrWhiteSpace(v4);
-            var hasV6 = !string.IsNullOrWhiteSpace(v6);
-
-            if (!hasV4 && !hasV6)
-            {
-                return null;
-            }
-
-            if (hasV4 && hasV6)
-            {
-                return $"{v4}, {v6}";
-            }
-
-            return hasV4 ? v4 : v6;
-        }
-
-        private static string BuildTransferInfo(long? speed, long? rateLimit, long? data)
-        {
-            var speedText = DisplayHelpers.Speed(speed);
-            var limitText = rateLimit is > 0 ? $" [{DisplayHelpers.Speed(rateLimit)}]" : string.Empty;
-            var dataText = DisplayHelpers.Size(data);
-            var dataSuffix = string.IsNullOrEmpty(dataText) ? string.Empty : $" ({dataText})";
-
-            return $"{speedText}{limitText}{dataSuffix}";
-        }
-
-        private string BuildAlternativeSpeedLimitsTooltip()
-        {
-            return BuildAlternativeSpeedLimitsStatusMessage(MainData?.ServerState.UseAltSpeedLimits ?? false);
-        }
-
         private string BuildAlternativeSpeedLimitsStatusMessage(bool isEnabled)
         {
             return WebUiLocalizer.Translate(
                 "MainWindow",
                 isEnabled ? "Alternative speed limits: On" : "Alternative speed limits: Off");
-        }
-
-        private string? BuildConnectionStatusTitle(string? status)
-        {
-            if (string.IsNullOrWhiteSpace(status))
-            {
-                return null;
-            }
-
-            return status switch
-            {
-                "connected" => WebUiLocalizer.Translate("MainWindow", "Connection status: Connected"),
-                "firewalled" => WebUiLocalizer.Translate("MainWindow", "Connection status: Firewalled"),
-                "disconnected" => WebUiLocalizer.Translate("MainWindow", "Connection status: Disconnected"),
-                _ => status
-            };
         }
 
         private Task RecordSpeedSampleAsync(ServerState? serverState, CancellationToken cancellationToken)

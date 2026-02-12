@@ -92,6 +92,12 @@ namespace Lantean.QBTMud.Test.Layout
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()))
                 .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+            _dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()))
+                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
 
             _snackbar = Mock.Of<ISnackbar>();
             _snackbarMock = Mock.Get(_snackbar);
@@ -309,14 +315,20 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public void GIVEN_LostConnection_WHEN_Rendered_THEN_StatusBarShowsWarning()
+        public void GIVEN_LostConnection_WHEN_Rendered_THEN_ShowsLostConnectionDialog()
         {
+            _dialogServiceMock.Invocations.Clear();
             var mainData = CreateMainData(lostConnection: true);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            var lostConnection = FindComponentByTestId<MudText>(target, "Status-LostConnection");
-            GetChildContentText(lostConnection.Instance.ChildContent).Should().Be("qBittorrent client is not reachable");
+            target.WaitForAssertion(() =>
+            {
+                _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()), Times.Once);
+            });
         }
 
         [Fact]
@@ -338,13 +350,27 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState());
 
-            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, breakpoint: Breakpoint.Sm, orientation: Orientation.Landscape);
 
             var freeSpace = FindComponentByTestId<MudText>(target, "Status-FreeSpace");
             GetChildContentText(freeSpace.Instance.ChildContent).Should().NotStartWith("Free space: ");
 
             var dhtNodes = FindComponentByTestId<MudText>(target, "Status-DhtNodes");
             GetChildContentText(dhtNodes.Instance.ChildContent).Should().NotContain("nodes");
+        }
+
+        [Fact]
+        public void GIVEN_StatusLabelsWithLandscapeMd_WHEN_Rendered_THEN_ShowsLabelText()
+        {
+            var mainData = CreateMainData(serverState: CreateServerState());
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
+
+            var freeSpace = FindComponentByTestId<MudText>(target, "Status-FreeSpace");
+            GetChildContentText(freeSpace.Instance.ChildContent).Should().StartWith("Free space: ");
+
+            var dhtNodes = FindComponentByTestId<MudText>(target, "Status-DhtNodes");
+            GetChildContentText(dhtNodes.Instance.ChildContent).Should().Contain("nodes");
         }
 
         [Fact]
@@ -385,7 +411,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState(v4: string.Empty, v6: string.Empty));
 
-            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Sm, orientation: Orientation.Landscape);
 
             HasComponentWithTestId<MudText>(target, "Status-ExternalIp").Should().BeFalse();
         }
@@ -395,7 +421,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState(v4: "1.1.1.1", v6: "2.2.2.2"));
 
-            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Sm, orientation: Orientation.Landscape);
 
             var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
             GetChildContentText(externalIp.Instance.ChildContent).Should().Be("1.1.1.1, 2.2.2.2");
@@ -406,7 +432,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState(v4: string.Empty, v6: "2.2.2.2"));
 
-            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Sm, orientation: Orientation.Landscape);
 
             var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
             GetChildContentText(externalIp.Instance.ChildContent).Should().Be("2.2.2.2");
@@ -610,6 +636,7 @@ namespace Lantean.QBTMud.Test.Layout
             Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
             var probeBody = CreateProbeBody();
             var mainData = CreateMainData(serverState: CreateServerState());
+            _dialogServiceMock.Invocations.Clear();
 
             _apiClientMock.SetupSequence(c => c.GetMainData(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData())
@@ -631,6 +658,10 @@ namespace Lantean.QBTMud.Test.Layout
 
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
             target.WaitForAssertion(() => probe.Instance.MainData!.LostConnection.Should().BeTrue());
+            _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogParameters>(),
+                It.IsAny<DialogOptions?>()), Times.Once);
         }
 
         [Fact]

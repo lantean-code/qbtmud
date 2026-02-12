@@ -1,0 +1,31 @@
+@using Lantean.QBTMud.Helpers
+
+<MudDialog Class="lost-connection-dialog" ContentClass="lost-connection-dialog__content">
+    <DialogContent>
+        <div class="lost-connection-dialog__hero">
+            <MudAvatar Variant="Variant.Filled" Color="Color.Error" Size="Size.Large" Class="lost-connection-dialog__avatar">
+                <MudIcon Icon="@Icons.Material.Outlined.SignalWifiOff" />
+            </MudAvatar>
+
+            <MudText Typo="Typo.h6" Align="Align.Center" data-test-id="@TestIdHelper.For("LostConnectionMessage")">
+                @WebUiLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")
+            </MudText>
+
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="lost-connection-dialog__subtitle" data-test-id="@TestIdHelper.For("LostConnectionSubtitle")">
+                @WebUiLocalizer.Translate("MainWindow", "Connection status: Disconnected")
+            </MudText>
+        </div>
+    </DialogContent>
+
+    <DialogActions>
+        <div class="lost-connection-dialog__actions">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Error"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="Reconnect"
+                       data-test-id="@TestIdHelper.For("LostConnectionReconnect")">
+                @WebUiLocalizer.Translate("AppLostConnectionDialog", "Reconnect")
+            </MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
