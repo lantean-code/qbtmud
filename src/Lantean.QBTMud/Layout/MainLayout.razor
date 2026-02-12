@@ -15,8 +15,11 @@
 
                 <MudLayout>
                     <MudAppBar>
-                        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
-                        <MudText Typo="Typo.h5" Class="ml-3">@AppBarTitle</MudText>
+                        @if (ShowMenuButton)
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+                        }
+                        <MudText Typo="Typo.h5" Class="@AppBarTitleClass">@AppBarTitle</MudText>
                         <MudSpacer />
                         @if (ErrorBoundary?.Errors.Count > 0)
                         {
