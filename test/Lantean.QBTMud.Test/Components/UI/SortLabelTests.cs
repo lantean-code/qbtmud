@@ -1,4 +1,3 @@
-using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.UI;
@@ -19,13 +18,12 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
             });
 
-            var span = target.Find("span");
-            span.ClassList.Should().Contain("mud-button-root");
-            span.ClassList.Should().Contain("mud-table-sort-label");
-            span.TextContent.Should().Contain("Label");
+            target.Markup.Should().Contain("mud-button-root");
+            target.Markup.Should().Contain("mud-table-sort-label");
+            target.Markup.Should().Contain("Label");
 
-            var icon = target.Find(".mud-icon-root");
-            icon.ClassList.Should().Contain("mud-table-sort-label-icon");
+            var icon = target.FindComponent<MudIcon>();
+            icon.Instance.Class.Should().Contain("mud-table-sort-label-icon");
         }
 
         [Fact]
@@ -37,11 +35,8 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
             });
 
-            var root = target.Find("span");
-            root.TextContent.Should().Contain("Label");
-            var children = root.ChildNodes.ToList();
-            var iconIndex = children.FindIndex(node => node is IElement element && element.ClassList.Contains("mud-table-sort-label-icon"));
-            var labelIndex = children.FindIndex(node => node.NodeType == NodeType.Text && node.TextContent.Contains("Label", StringComparison.Ordinal));
+            var iconIndex = target.Markup.IndexOf("mud-table-sort-label-icon", StringComparison.Ordinal);
+            var labelIndex = target.Markup.IndexOf("Label", StringComparison.Ordinal);
             iconIndex.Should().BeGreaterThanOrEqualTo(0);
             labelIndex.Should().BeGreaterThanOrEqualTo(0);
             iconIndex.Should().BeLessThan(labelIndex);
@@ -105,8 +100,8 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
             });
 
-            var icon = target.Find(".mud-icon-root");
-            icon.ClassList.Should().Contain("mud-direction-asc");
+            var icon = target.FindComponent<MudIcon>();
+            icon.Instance.Class.Should().Contain("mud-direction-asc");
         }
 
         [Fact]
@@ -118,8 +113,8 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
             });
 
-            var icon = target.Find(".mud-icon-root");
-            icon.ClassList.Should().Contain("mud-direction-desc");
+            var icon = target.FindComponent<MudIcon>();
+            icon.Instance.Class.Should().Contain("mud-direction-desc");
         }
     }
 }

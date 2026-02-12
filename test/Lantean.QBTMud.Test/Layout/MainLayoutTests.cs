@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.AddSingleton<ILocalStorageService>(_localStorage);
 
             Mock.Get(_themeManagerService)
-                .Setup(service => (service.EnsureInitialized()))
+                .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
 
             TestContext.JSInterop.SetupVoid("qbt.removeBootstrapTheme", _ => true).SetVoidResult();
@@ -128,7 +128,7 @@ namespace Lantean.QBTMud.Test.Layout
             target.WaitForAssertion(() => probe.Instance.DrawerOpen.Should().BeTrue());
             target.FindComponent<MudThemeProvider>().Instance.IsDarkMode.Should().BeFalse();
 
-            Mock.Get(_themeManagerService).Verify(service => (service.EnsureInitialized()), Times.Once);
+            Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
         }
 
         [Fact]

@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindPathField(target, "ExportDir").Instance.Disabled.Should().BeFalse();
             FindSwitch(target, "MailNotificationEnabled").Instance.Value.Should().BeTrue();
             FindTextField(target, "MailNotificationUsername").Instance.Disabled.Should().BeFalse();
-            target.FindAll("tbody tr").Count.Should().Be(2);
+            target.FindComponents<MudSimpleTable>().Count.Should().Be(1);
             update.ScanDirs.Should().BeNull();
         }
 

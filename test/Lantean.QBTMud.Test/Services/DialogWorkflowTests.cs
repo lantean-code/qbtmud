@@ -18,36 +18,32 @@ namespace Lantean.QBTMud.Test.Services
 {
     public sealed class DialogWorkflowTests
     {
-        private readonly Mock<IDialogService> _dialogService;
-        private readonly Mock<IApiClient> _apiClient;
-        private readonly Mock<ISnackbar> _snackbar;
+        private readonly IDialogService _dialogService = Mock.Of<IDialogService>();
+        private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
+        private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
         private readonly IWebUiLocalizer _webUiLocalizer;
 
         private readonly DialogWorkflow _target;
 
         public DialogWorkflowTests()
         {
-            _dialogService = new Mock<IDialogService>(MockBehavior.Strict);
-            _apiClient = new Mock<IApiClient>(MockBehavior.Strict);
-            _snackbar = new Mock<ISnackbar>();
-
             _webUiLocalizer = Mock.Of<IWebUiLocalizer>();
             var localizerMock = Mock.Get(_webUiLocalizer);
             localizerMock
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] arguments) => FormatLocalizerString(source, arguments));
 
-            _target = new DialogWorkflow(_dialogService.Object, _apiClient.Object, _snackbar.Object, _webUiLocalizer);
+            _target = new DialogWorkflow(_dialogService, _apiClient, _snackbar, _webUiLocalizer);
         }
 
         [Fact]
         public async Task GIVEN_CategoryCreated_WHEN_InvokeAddCategoryDialog_THEN_ShouldCallApi()
         {
             var reference = CreateReference(DialogResult.Ok(new MudCategory("Name", "SavePath")));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("New Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddCategory("Name", "SavePath"))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
@@ -55,7 +51,7 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.InvokeAddCategoryDialog();
 
             result.Should().Be("Name");
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
@@ -63,7 +59,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("New Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
@@ -82,7 +78,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_InvokeAddCategoryDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("New Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -117,12 +113,12 @@ namespace Lantean.QBTMud.Test.Services
             };
 
             var reference = CreateReference(DialogResult.Ok(fileOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             AddTorrentParams? captured = null;
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
                 .Callback<AddTorrentParams>(p => captured = p)
                 .ReturnsAsync(new AddTorrentResult(1, 1));
@@ -158,7 +154,7 @@ namespace Lantean.QBTMud.Test.Services
             fileOne.VerifyAll();
             fileTwo.VerifyAll();
 
-            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("Added torrent(s) and failed to add torrent(s).");
             snackbarCall.Arguments[1].Should().Be(Severity.Warning);
         }
@@ -177,15 +173,15 @@ namespace Lantean.QBTMud.Test.Services
             var options = CreateTorrentOptions(false, false);
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeAddTorrentFileDialog();
 
             stream.DisposeAsyncCalled.Should().BeTrue();
-            _apiClient.Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
-            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
+            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("Unable to read \"Second.torrent\": fail");
             snackbarCall.Arguments[1].Should().Be(Severity.Error);
             fileOne.VerifyAll();
@@ -207,11 +203,11 @@ namespace Lantean.QBTMud.Test.Services
             var options = CreateTorrentOptions(false, false);
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
                 .ThrowsAsync(new HttpRequestException());
 
@@ -219,7 +215,7 @@ namespace Lantean.QBTMud.Test.Services
 
             streamOne.DisposeAsyncCalled.Should().BeTrue();
             streamTwo.DisposeAsyncCalled.Should().BeTrue();
-            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("Unable to add torrent. Please try again.");
             snackbarCall.Arguments[1].Should().Be(Severity.Error);
             fileOne.VerifyAll();
@@ -245,12 +241,12 @@ namespace Lantean.QBTMud.Test.Services
             var options = CreateTorrentOptions(false, false);
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object, fileThree.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             AddTorrentParams? captured = null;
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
                 .Callback<AddTorrentParams>(p => captured = p)
                 .ReturnsAsync(new AddTorrentResult(0, 0));
@@ -266,7 +262,7 @@ namespace Lantean.QBTMud.Test.Services
             streamOne.DisposeAsyncCalled.Should().BeTrue();
             streamTwo.DisposeAsyncCalled.Should().BeTrue();
             streamThree.DisposeAsyncCalled.Should().BeTrue();
-            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("No torrents processed.");
             snackbarCall.Arguments[1].Should().Be(Severity.Success);
             fileOne.VerifyAll();
@@ -280,12 +276,12 @@ namespace Lantean.QBTMud.Test.Services
             var options = CreateTorrentOptions(true, true);
             var linkOptions = new AddTorrentLinkOptions("http://one", options);
             var reference = CreateReference(DialogResult.Ok(linkOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             AddTorrentParams? captured = null;
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
                 .Callback<AddTorrentParams>(p => captured = p)
                 .ReturnsAsync(new AddTorrentResult(1, 0, 0, null));
@@ -300,14 +296,14 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_InvokeAddTorrentFileDialog_THEN_ShouldNotUpload()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeAddTorrentFileDialog();
 
-            _apiClient.Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
-            _snackbar.Invocations.Count.Should().Be(0);
+            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
+            Mock.Get(_snackbar).Invocations.Count.Should().Be(0);
         }
 
         [Fact]
@@ -316,16 +312,16 @@ namespace Lantean.QBTMud.Test.Services
             var options = CreateTorrentOptions(false, false);
             var fileOptions = new AddTorrentFileOptions(Array.Empty<IBrowserFile>(), options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(0, 0));
 
             await _target.InvokeAddTorrentFileDialog();
 
-            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("No torrents processed.");
             snackbarCall.Arguments[1].Should().Be(Severity.Success);
         }
@@ -348,13 +344,13 @@ namespace Lantean.QBTMud.Test.Services
             };
 
             var reference = CreateReference(DialogResult.Ok(linkOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => capturedParameters = parameters)
                 .ReturnsAsync(reference);
 
             AddTorrentParams? captured = null;
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
                 .Callback<AddTorrentParams>(p => captured = p)
                 .ReturnsAsync(new AddTorrentResult(1, 0, 0, new[] { "Hash" }));
@@ -380,7 +376,7 @@ namespace Lantean.QBTMud.Test.Services
             captured.StopCondition.Should().Be(StopCondition.MetadataReceived);
             captured.Stopped.Should().BeFalse();
 
-            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("Added 1 torrent.");
             snackbarCall.Arguments[1].Should().Be(Severity.Success);
         }
@@ -389,14 +385,14 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_InvokeAddTorrentLinkDialog_THEN_ShouldNotAddTorrent()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            _apiClient.Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
-            _snackbar.Invocations.Count.Should().Be(0);
+            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
+            Mock.Get(_snackbar).Invocations.Count.Should().Be(0);
         }
 
         [Fact]
@@ -405,16 +401,16 @@ namespace Lantean.QBTMud.Test.Services
             var options = CreateTorrentOptions(true, true);
             var linkOptions = new AddTorrentLinkOptions("http://one", options);
             var reference = CreateReference(DialogResult.Ok(linkOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(0, 1, 0, new[] { "Hash" }));
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("Failed to add 1 torrent.");
             snackbarCall.Arguments[1].Should().Be(Severity.Error);
         }
@@ -425,16 +421,16 @@ namespace Lantean.QBTMud.Test.Services
             var options = CreateTorrentOptions(true, true);
             var linkOptions = new AddTorrentLinkOptions("http://one", options);
             var reference = CreateReference(DialogResult.Ok(linkOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
                 .ThrowsAsync(new HttpRequestException());
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("Unable to add torrent. Please try again.");
             snackbarCall.Arguments[1].Should().Be(Severity.Error);
         }
@@ -445,16 +441,16 @@ namespace Lantean.QBTMud.Test.Services
             var options = CreateTorrentOptions(true, true);
             var linkOptions = new AddTorrentLinkOptions("http://one", options);
             var reference = CreateReference(DialogResult.Ok(linkOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(2, 2, 1, null));
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("Added 2 torrents and failed to add 2 torrents and Pending 1 torrent.");
             snackbarCall.Arguments[1].Should().Be(Severity.Warning);
         }
@@ -465,16 +461,16 @@ namespace Lantean.QBTMud.Test.Services
             var options = CreateTorrentOptions(true, true);
             var linkOptions = new AddTorrentLinkOptions("http://one", options);
             var reference = CreateReference(DialogResult.Ok(linkOptions));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(0, 0, 2, null));
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            var snackbarCall = _snackbar.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
+            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("Pending 2 torrents.");
             snackbarCall.Arguments[1].Should().Be(Severity.Info);
         }
@@ -482,7 +478,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_DeleteWithoutConfirmation_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldDelete()
         {
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrents(null, false, It.Is<string[]>(hashes => hashes.Length == 1 && hashes[0] == "Hash")))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
@@ -490,7 +486,7 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.InvokeDeleteTorrentDialog(false, "Hash");
 
             result.Should().BeTrue();
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
@@ -505,10 +501,10 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_ConfirmationDeclined_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldNotDelete()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
                 .ReturnsAsync(new List<QbtTorrent> { new() { Name = "Name" } });
 
@@ -522,14 +518,14 @@ namespace Lantean.QBTMud.Test.Services
         {
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok(true));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
                 .ReturnsAsync(new List<QbtTorrent> { new() { Name = "Name" } });
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrents(null, true, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
@@ -542,7 +538,7 @@ namespace Lantean.QBTMud.Test.Services
             captured[nameof(DeleteDialog.Count)].Should().Be(1);
             captured.Any(p => p.Key == nameof(DeleteDialog.TorrentName)).Should().BeTrue();
             captured[nameof(DeleteDialog.TorrentName)].Should().Be("Name");
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
@@ -550,11 +546,11 @@ namespace Lantean.QBTMud.Test.Services
         {
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok(false));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrents(null, false, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "Other" }))))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
@@ -566,7 +562,7 @@ namespace Lantean.QBTMud.Test.Services
             captured!.Any(p => p.Key == nameof(DeleteDialog.Count)).Should().BeTrue();
             captured[nameof(DeleteDialog.Count)].Should().Be(2);
             captured.Any(p => p.Key == nameof(DeleteDialog.TorrentName)).Should().BeFalse();
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
@@ -574,7 +570,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             await _target.ForceRecheckAsync(Array.Empty<string>(), false);
 
-            _apiClient.Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
@@ -582,97 +578,97 @@ namespace Lantean.QBTMud.Test.Services
         {
             await _target.ForceRecheckAsync(null!, false);
 
-            _apiClient.Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_RecheckWithoutConfirmation_WHEN_ForceRecheckAsync_THEN_ShouldCallApi()
         {
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.RecheckTorrents(null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
             await _target.ForceRecheckAsync(new[] { "Hash" }, false);
 
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
         public async Task GIVEN_RecheckConfirmationDeclined_WHEN_ForceRecheckAsync_THEN_ShouldNotCallApi()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Recheck confirmation", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.ForceRecheckAsync(new[] { "Hash" }, true);
 
-            _apiClient.Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_RecheckConfirmationAccepted_WHEN_ForceRecheckAsync_THEN_ShouldCallApi()
         {
             var reference = CreateReference(DialogResult.Ok(true));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Recheck confirmation", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.RecheckTorrents(null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
             await _target.ForceRecheckAsync(new[] { "Hash" }, true);
 
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
         public async Task GIVEN_MultipleHashes_WHEN_ForceRecheckAsync_THEN_ShouldPluralizeConfirmation()
         {
             var reference = CreateReference(DialogResult.Ok(true));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Recheck confirmation", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.RecheckTorrents(null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "Other" }))))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
             await _target.ForceRecheckAsync(new[] { "Hash", "Other" }, true);
 
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
         public async Task GIVEN_DialogConfirmed_WHEN_InvokeDownloadRateDialog_THEN_ShouldUpdateRate()
         {
             var reference = CreateReference(DialogResult.Ok(3L));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Download Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.SetTorrentDownloadLimit(3072, null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
             await _target.InvokeDownloadRateDialog(2048, new[] { "Hash" });
 
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
         public async Task GIVEN_DialogCanceled_WHEN_InvokeDownloadRateDialog_THEN_ShouldNotUpdateRate()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Download Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeDownloadRateDialog(2048, new[] { "Hash" });
 
-            _apiClient.Verify(a => a.SetTorrentDownloadLimit(It.IsAny<long>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentDownloadLimit(It.IsAny<long>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
@@ -680,7 +676,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Download Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
@@ -701,30 +697,30 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogConfirmed_WHEN_InvokeUploadRateDialog_THEN_ShouldUpdateRate()
         {
             var reference = CreateReference(DialogResult.Ok(4L));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Upload Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.SetTorrentUploadLimit(4096, null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
             await _target.InvokeUploadRateDialog(1024, new[] { "Hash" });
 
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
         public async Task GIVEN_DialogCanceled_WHEN_InvokeUploadRateDialog_THEN_ShouldNotUpdateRate()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Upload Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeUploadRateDialog(1024, new[] { "Hash" });
 
-            _apiClient.Verify(a => a.SetTorrentUploadLimit(It.IsAny<long>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentUploadLimit(It.IsAny<long>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
@@ -732,7 +728,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Upload Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
@@ -757,15 +753,15 @@ namespace Lantean.QBTMud.Test.Services
             {
                 { "Category", new QbtCategory("Category", "SavePath", new DownloadPathOption(true, "DownloadPath")) }
             };
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.GetAllCategories())
                 .ReturnsAsync(categories);
             var reference = CreateReference(DialogResult.Ok(new MudCategory("Name", "SavePath")));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("Edit Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.EditCategory("Name", "SavePath"))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
@@ -778,18 +774,18 @@ namespace Lantean.QBTMud.Test.Services
             captured[nameof(CategoryPropertiesDialog.Category)].Should().Be("Category");
             captured.Any(p => p.Key == nameof(CategoryPropertiesDialog.SavePath)).Should().BeTrue();
             captured[nameof(CategoryPropertiesDialog.SavePath)].Should().Be("SavePath");
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
         public async Task GIVEN_DialogCanceled_WHEN_InvokeEditCategoryDialog_THEN_ShouldReturnNull()
         {
             var categories = new Dictionary<string, QbtCategory>();
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.GetAllCategories())
                 .ReturnsAsync(categories);
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("Edit Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -803,7 +799,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             DialogParameters? captured = null;
             var reference = new Mock<IDialogReference>();
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<RenameFilesDialog>("Renaming", It.IsAny<DialogParameters>(), DialogWorkflow.FullScreenDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference.Object);
@@ -819,14 +815,14 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_InvokeRssRulesDialog_WHEN_Executed_THEN_ShouldOpenDialog()
         {
             var reference = new Mock<IDialogReference>();
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<RssRulesDialog>("Rss Downloader", DialogWorkflow.FullScreenDialogOptions))
                 .ReturnsAsync(reference.Object)
                 .Verifiable();
 
             await _target.InvokeRssRulesDialog();
 
-            _dialogService.Verify();
+            Mock.Get(_dialogService).Verify();
         }
 
         [Fact]
@@ -834,8 +830,8 @@ namespace Lantean.QBTMud.Test.Services
         {
             await _target.InvokeShareRatioDialog(Enumerable.Empty<MudTorrent>());
 
-            _dialogService.Invocations.Should().BeEmpty();
-            _apiClient.Invocations.Should().BeEmpty();
+            Mock.Get(_dialogService).Invocations.Should().BeEmpty();
+            Mock.Get(_apiClient).Invocations.Should().BeEmpty();
         }
 
         [Fact]
@@ -855,11 +851,11 @@ namespace Lantean.QBTMud.Test.Services
                 InactiveSeedingTimeLimit = 7F,
                 ShareLimitAction = ShareLimitAction.Remove
             }));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.SetTorrentShareLimit(5F, 6F, 7F, ShareLimitAction.Remove, null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "SecondHash" }))))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
@@ -876,7 +872,7 @@ namespace Lantean.QBTMud.Test.Services
             currentValue.SeedingTimeLimit.Should().Be(3);
             currentValue.InactiveSeedingTimeLimit.Should().Be(4F);
             currentValue.ShareLimitAction.Should().Be(ShareLimitAction.Stop);
-            _apiClient.Verify();
+            Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
@@ -896,11 +892,11 @@ namespace Lantean.QBTMud.Test.Services
                 InactiveSeedingTimeLimit = 7F,
                 ShareLimitAction = ShareLimitAction.Remove
             }));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
-            _apiClient
+            Mock.Get(_apiClient)
                 .Setup(a => a.SetTorrentShareLimit(5F, 6F, 7F, ShareLimitAction.Remove, null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "SecondHash" }))))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
@@ -917,20 +913,20 @@ namespace Lantean.QBTMud.Test.Services
         {
             var torrents = new[] { CreateTorrent("Hash", 2F, 3, 4F, ShareLimitAction.Stop) };
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeShareRatioDialog(torrents);
 
-            _apiClient.Verify(a => a.SetTorrentShareLimit(It.IsAny<float>(), It.IsAny<float>(), It.IsAny<float>(), It.IsAny<ShareLimitAction?>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentShareLimit(It.IsAny<float>(), It.IsAny<float>(), It.IsAny<float>(), It.IsAny<ShareLimitAction?>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_ValueReturned_WHEN_InvokeStringFieldDialog_THEN_ShouldInvokeSuccess()
         {
             var reference = CreateReference(DialogResult.Ok("Value"));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<StringFieldDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             var invoked = false;
@@ -948,7 +944,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_ValueMissing_WHEN_InvokeStringFieldDialog_THEN_ShouldNotInvokeSuccess()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<StringFieldDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             var invoked = false;
@@ -967,7 +963,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var peers = new HashSet<PeerId> { new PeerId("Host", 1) };
             var reference = CreateReference(DialogResult.Ok(peers));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddPeerDialog>("Add Peers", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -980,7 +976,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_ShowAddPeersDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddPeerDialog>("Add Peers", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -994,7 +990,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var tags = new HashSet<string> { "Tag" };
             var reference = CreateReference(DialogResult.Ok(tags));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTagDialog>("Add tags", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1007,7 +1003,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_ShowAddTagsDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTagDialog>("Add tags", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1021,7 +1017,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var trackers = new HashSet<string> { "Tracker" };
             var reference = CreateReference(DialogResult.Ok(trackers));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTrackerDialog>("Add trackers", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1034,7 +1030,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_ShowAddTrackersDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTrackerDialog>("Add trackers", DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1051,7 +1047,7 @@ namespace Lantean.QBTMud.Test.Services
             var widths = new Dictionary<string, int?> { { "Header", 10 } };
             var order = new Dictionary<string, int> { { "Header", 0 } };
             var reference = CreateReference(DialogResult.Ok((selected, widths, order)));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ColumnOptionsDialog<string>>("Choose Columns", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1067,7 +1063,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var columns = new[] { new ColumnDefinition<string>("Header", value => value) };
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ColumnOptionsDialog<string>>("Choose Columns", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1082,7 +1078,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogConfirmed_WHEN_ShowConfirmDialog_THEN_ShouldReturnTrue()
         {
             var reference = CreateReference(DialogResult.Ok(true));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1095,7 +1091,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_ShowConfirmDialog_THEN_ShouldReturnFalse()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1109,7 +1105,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = new Mock<IDialogReference>();
             reference.Setup(r => r.Result).Returns(Task.FromResult<DialogResult?>(null));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference.Object);
 
@@ -1122,7 +1118,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_ConfirmationAccepted_WHEN_ShowConfirmDialogWithTask_THEN_ShouldInvokeCallback()
         {
             var reference = CreateReference(DialogResult.Ok(true));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             var invoked = false;
@@ -1140,7 +1136,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_ConfirmationRejected_WHEN_ShowConfirmDialogWithTask_THEN_ShouldNotInvokeCallback()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             var invoked = false;
@@ -1158,7 +1154,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_ConfirmationAccepted_WHEN_ShowConfirmDialogWithAction_THEN_ShouldInvokeCallback()
         {
             var reference = CreateReference(DialogResult.Ok(true));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             var invoked = false;
@@ -1176,7 +1172,7 @@ namespace Lantean.QBTMud.Test.Services
                 new PropertyFilterDefinition<FilterSample>(nameof(FilterSample.Value), "Equals", "Value")
             };
             var reference = CreateReference(DialogResult.Ok(filters));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<FilterOptionsDialog<FilterSample>>("Filters", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1189,7 +1185,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_ShowFilterOptionsDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<FilterOptionsDialog<FilterSample>>("Filters", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1203,7 +1199,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok("Value"));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<StringFieldDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
@@ -1222,7 +1218,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_ShowStringFieldDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<StringFieldDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1237,7 +1233,7 @@ namespace Lantean.QBTMud.Test.Services
             DialogParameters? captured = null;
             var cookie = new ApplicationCookie("Name", "Domain", "/Path", "Value", 1);
             var reference = CreateReference(DialogResult.Ok(cookie));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CookiePropertiesDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
@@ -1253,7 +1249,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_ShowCookiePropertiesDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CookiePropertiesDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1266,7 +1262,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_NonCookieResult_WHEN_ShowCookiePropertiesDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Ok("Value"));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CookiePropertiesDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1283,7 +1279,7 @@ namespace Lantean.QBTMud.Test.Services
             var parent = new UIAction("Name", "Parent", null, Color.Primary, "Href");
             var hashes = new[] { "Hash" };
             var torrents = new Dictionary<string, MudTorrent> { { "Hash", CreateTorrent("Hash", 0F, 0, 0F, ShareLimitAction.Default) } };
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SubMenuDialog>("Parent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference.Object);
@@ -1303,7 +1299,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_PluginChanges_WHEN_ShowSearchPluginsDialog_THEN_ShouldReturnTrue()
         {
             var reference = CreateReference(DialogResult.Ok(true));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SearchPluginsDialog>("Search plugins", DialogWorkflow.FullScreenDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1316,7 +1312,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_NoPluginChanges_WHEN_ShowSearchPluginsDialog_THEN_ShouldReturnFalse()
         {
             var reference = CreateReference(DialogResult.Ok(false));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SearchPluginsDialog>("Search plugins", DialogWorkflow.FullScreenDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1329,7 +1325,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_NonBooleanResult_WHEN_ShowSearchPluginsDialog_THEN_ShouldReturnFalse()
         {
             var reference = CreateReference(DialogResult.Ok("ignore"));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SearchPluginsDialog>("Search plugins", DialogWorkflow.FullScreenDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1342,7 +1338,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_ShowSearchPluginsDialog_THEN_ShouldReturnFalse()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SearchPluginsDialog>("Search plugins", DialogWorkflow.FullScreenDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1365,7 +1361,7 @@ namespace Lantean.QBTMud.Test.Services
             DialogParameters? captured = null;
             DialogOptions? capturedOptions = null;
             var reference = new Mock<IDialogReference>();
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ThemePreviewDialog>("Theme Preview", It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, options) =>
                 {
@@ -1392,7 +1388,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok("C:/Folder"));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
@@ -1410,7 +1406,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DialogCanceled_WHEN_ShowPathBrowserDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Cancel());
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1424,7 +1420,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = new Mock<IDialogReference>();
             reference.Setup(r => r.Result).ReturnsAsync((DialogResult?)null);
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference.Object);
 
@@ -1437,7 +1433,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_NonStringResult_WHEN_ShowPathBrowserDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Ok(12));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
@@ -1450,7 +1446,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_WhitespaceResult_WHEN_ShowPathBrowserDialog_THEN_ShouldReturnNull()
         {
             var reference = CreateReference(DialogResult.Ok(" "));
-            _dialogService
+            Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 

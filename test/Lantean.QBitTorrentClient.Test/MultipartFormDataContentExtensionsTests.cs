@@ -18,7 +18,7 @@ namespace Lantean.QBitTorrentClient.Test
 
             var part = _target.ToList().Single();
             part.Headers.ContentDisposition!.Name.Should().Be("name");
-            (await part.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("value");
+            (await part.ReadAsStringAsync(TestContext.Current.CancellationToken)).Should().Be("value");
         }
 
         [Fact]
@@ -28,7 +28,7 @@ namespace Lantean.QBitTorrentClient.Test
 
             var part = _target.ToList().Single();
             part.Headers.ContentDisposition!.Name.Should().Be("flag");
-            (await part.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("true");
+            (await part.ReadAsStringAsync(TestContext.Current.CancellationToken)).Should().Be("true");
         }
 
         [Fact]
@@ -38,7 +38,7 @@ namespace Lantean.QBitTorrentClient.Test
 
             var part = _target.ToList().Single();
             part.Headers.ContentDisposition!.Name.Should().Be("flag");
-            (await part.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("false");
+            (await part.ReadAsStringAsync(TestContext.Current.CancellationToken)).Should().Be("false");
         }
 
         [Fact]
@@ -48,7 +48,7 @@ namespace Lantean.QBitTorrentClient.Test
 
             var part = _target.ToList().Single();
             part.Headers.ContentDisposition!.Name.Should().Be("count");
-            (await part.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("123");
+            (await part.ReadAsStringAsync(TestContext.Current.CancellationToken)).Should().Be("123");
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Lantean.QBitTorrentClient.Test
 
             var part = _target.ToList().Single();
             part.Headers.ContentDisposition!.Name.Should().Be("size");
-            (await part.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("9223372036854775807");
+            (await part.ReadAsStringAsync(TestContext.Current.CancellationToken)).Should().Be("9223372036854775807");
         }
 
         [Fact]
@@ -68,7 +68,7 @@ namespace Lantean.QBitTorrentClient.Test
 
             var part = _target.ToList().Single();
             part.Headers.ContentDisposition!.Name.Should().Be("ratio");
-            (await part.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be(42f.ToString());
+            (await part.ReadAsStringAsync(TestContext.Current.CancellationToken)).Should().Be(42f.ToString());
         }
 
         [Fact]
@@ -78,7 +78,7 @@ namespace Lantean.QBitTorrentClient.Test
 
             var part = _target.ToList().Single();
             part.Headers.ContentDisposition!.Name.Should().Be("day");
-            (await part.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("Monday");
+            (await part.ReadAsStringAsync(TestContext.Current.CancellationToken)).Should().Be("Monday");
         }
 
         [Fact]
@@ -90,7 +90,7 @@ namespace Lantean.QBitTorrentClient.Test
 
             var part = _target.ToList().Single();
             part.Headers.ContentDisposition!.Name.Should().Be("epoch");
-            (await part.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("946684800");
+            (await part.ReadAsStringAsync(TestContext.Current.CancellationToken)).Should().Be("946684800");
         }
 
         [Fact]
@@ -102,7 +102,7 @@ namespace Lantean.QBitTorrentClient.Test
 
             var part = _target.ToList().Single();
             part.Headers.ContentDisposition!.Name.Should().Be("epochMs");
-            (await part.ReadAsStringAsync(Xunit.TestContext.Current.CancellationToken)).Should().Be("946684800000");
+            (await part.ReadAsStringAsync(TestContext.Current.CancellationToken)).Should().Be("946684800000");
         }
 
         public void Dispose()

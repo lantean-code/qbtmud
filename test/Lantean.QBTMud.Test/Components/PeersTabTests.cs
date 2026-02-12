@@ -16,13 +16,14 @@ namespace Lantean.QBTMud.Test.Components
 {
     public sealed class PeersTabTests : RazorComponentTestBase
     {
-        private readonly Mock<IApiClient> _apiClientMock;
+        private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
         private readonly IManagedTimer _timer;
         private readonly IManagedTimerFactory _timerFactory;
 
         public PeersTabTests()
         {
-            _apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            TestContext.Services.RemoveAll<IApiClient>();
+            TestContext.Services.AddSingleton(_apiClient);
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             TestContext.UseSnackbarMock(MockBehavior.Loose);
 
@@ -52,7 +53,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_ShowFlagsTrue_WHEN_Rendered_THEN_RendersCountryFlag()
         {
-            _apiClientMock
+            Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPeersData("Hash", 0))
                 .ReturnsAsync(CreatePeers(true, "US", "Country"));
 
@@ -70,7 +71,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_ShowFlagsFalse_WHEN_Rendered_THEN_DoesNotRenderCountryFlag()
         {
-            _apiClientMock
+            Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPeersData("Hash", 0))
                 .ReturnsAsync(CreatePeers(false, "US", "Country"));
 
@@ -86,7 +87,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_FlagsDescriptionPresent_WHEN_Rendered_THEN_RendersFlagsTooltip()
         {
-            _apiClientMock
+            Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPeersData("Hash", 0))
                 .ReturnsAsync(CreatePeers(true, "US", "Country"));
 
@@ -104,7 +105,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_FlagsMissing_WHEN_Rendered_THEN_DoesNotRenderFlagsTooltip()
         {
-            _apiClientMock
+            Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPeersData("Hash", 0))
                 .ReturnsAsync(CreatePeers(true, "US", "Country", null, "FlagsDescription"));
 

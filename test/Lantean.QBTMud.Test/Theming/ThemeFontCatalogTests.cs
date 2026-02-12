@@ -29,7 +29,7 @@ namespace Lantean.QBTMud.Test.Theming
                 Content = new StringContent(json)
             });
 
-            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
+            await target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             target.SuggestedFonts.Should().Equal("Nunito Sans", "Open Sans", "Roboto-Flex");
 
@@ -48,8 +48,8 @@ namespace Lantean.QBTMud.Test.Theming
             });
             var target = CreateCatalog(handler);
 
-            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
-            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
+            await target.EnsureInitialized(TestContext.Current.CancellationToken);
+            await target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             handler.CallCount.Should().Be(1);
         }
@@ -61,7 +61,7 @@ namespace Lantean.QBTMud.Test.Theming
             factory.Setup(f => f.CreateClient("Assets")).Throws<InvalidOperationException>();
             var target = new ThemeFontCatalog(factory.Object);
 
-            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
+            await target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             target.SuggestedFonts.Should().BeEmpty();
         }
@@ -71,7 +71,7 @@ namespace Lantean.QBTMud.Test.Theming
         {
             var target = CreateCatalog(_ => new HttpResponseMessage(HttpStatusCode.BadRequest));
 
-            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
+            await target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             target.SuggestedFonts.Should().BeEmpty();
         }
@@ -84,7 +84,7 @@ namespace Lantean.QBTMud.Test.Theming
                 Content = new StringContent("not-json")
             });
 
-            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
+            await target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             target.SuggestedFonts.Should().BeEmpty();
         }
@@ -97,7 +97,7 @@ namespace Lantean.QBTMud.Test.Theming
                 Content = new StringContent("null")
             });
 
-            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
+            await target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             target.SuggestedFonts.Should().BeEmpty();
         }
@@ -107,7 +107,7 @@ namespace Lantean.QBTMud.Test.Theming
         {
             var target = CreateCatalog(_ => throw new HttpRequestException("Request"));
 
-            await (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
+            await target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             target.SuggestedFonts.Should().BeEmpty();
         }
@@ -135,8 +135,8 @@ namespace Lantean.QBTMud.Test.Theming
             var handler = new BlockingHandler(() => tcs.Task);
             var target = CreateCatalog(handler);
 
-            var first = (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
-            var second = (target.EnsureInitialized(Xunit.TestContext.Current.CancellationToken));
+            var first = target.EnsureInitialized(TestContext.Current.CancellationToken);
+            var second = target.EnsureInitialized(TestContext.Current.CancellationToken);
 
             tcs.SetResult(new HttpResponseMessage(HttpStatusCode.OK)
             {

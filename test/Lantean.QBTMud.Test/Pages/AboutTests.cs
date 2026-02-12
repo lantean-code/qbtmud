@@ -48,7 +48,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Should()
                 .Be("qBittorrent Version WebUI (64-bit)");
 
-            ActivateTab("Software Used");
+            ActivateTab(5);
 
             _target.WaitForAssertion(() =>
             {
@@ -104,10 +104,9 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private void ActivateTab(string tabText)
+        private void ActivateTab(int tabIndex)
         {
-            var tab = _target.FindAll("div.mud-tab")
-                .Single(element => element.TextContent == tabText);
+            var tab = _target.FindAll("div.mud-tab")[tabIndex];
 
             tab.Click();
         }

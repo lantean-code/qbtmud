@@ -268,7 +268,7 @@ namespace Lantean.QBitTorrentClient.Test
 
                 json.Should().Be(expectedJson);
 
-                return new HttpResponseMessage(System.Net.HttpStatusCode.OK);
+                return new HttpResponseMessage(HttpStatusCode.OK);
             };
 
             await _target.SetRssAutoDownloadingRule("r1", new AutoDownloadingRule());

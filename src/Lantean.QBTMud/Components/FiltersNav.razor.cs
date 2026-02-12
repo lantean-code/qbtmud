@@ -519,18 +519,18 @@ namespace Lantean.QBTMud.Components
 
             return parsed switch
             {
-                Lantean.QBTMud.Models.Status.All => WebUiLocalizer.Translate("StatusFilterWidget", "All (%1)", count),
-                Lantean.QBTMud.Models.Status.Downloading => WebUiLocalizer.Translate("StatusFilterWidget", "Downloading (%1)", count),
-                Lantean.QBTMud.Models.Status.Seeding => WebUiLocalizer.Translate("StatusFilterWidget", "Seeding (%1)", count),
-                Lantean.QBTMud.Models.Status.Completed => WebUiLocalizer.Translate("StatusFilterWidget", "Completed (%1)", count),
-                Lantean.QBTMud.Models.Status.Stopped => WebUiLocalizer.Translate("StatusFilterWidget", "Stopped (%1)", count),
-                Lantean.QBTMud.Models.Status.Active => WebUiLocalizer.Translate("StatusFilterWidget", "Active (%1)", count),
-                Lantean.QBTMud.Models.Status.Inactive => WebUiLocalizer.Translate("StatusFilterWidget", "Inactive (%1)", count),
-                Lantean.QBTMud.Models.Status.Stalled => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled (%1)", count),
-                Lantean.QBTMud.Models.Status.StalledUploading => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled Uploading (%1)", count),
-                Lantean.QBTMud.Models.Status.StalledDownloading => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled Downloading (%1)", count),
-                Lantean.QBTMud.Models.Status.Checking => WebUiLocalizer.Translate("StatusFilterWidget", "Checking (%1)", count),
-                Lantean.QBTMud.Models.Status.Errored => WebUiLocalizer.Translate("StatusFilterWidget", "Errored (%1)", count),
+                Models.Status.All => WebUiLocalizer.Translate("StatusFilterWidget", "All (%1)", count),
+                Models.Status.Downloading => WebUiLocalizer.Translate("StatusFilterWidget", "Downloading (%1)", count),
+                Models.Status.Seeding => WebUiLocalizer.Translate("StatusFilterWidget", "Seeding (%1)", count),
+                Models.Status.Completed => WebUiLocalizer.Translate("StatusFilterWidget", "Completed (%1)", count),
+                Models.Status.Stopped => WebUiLocalizer.Translate("StatusFilterWidget", "Stopped (%1)", count),
+                Models.Status.Active => WebUiLocalizer.Translate("StatusFilterWidget", "Active (%1)", count),
+                Models.Status.Inactive => WebUiLocalizer.Translate("StatusFilterWidget", "Inactive (%1)", count),
+                Models.Status.Stalled => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled (%1)", count),
+                Models.Status.StalledUploading => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled Uploading (%1)", count),
+                Models.Status.StalledDownloading => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled Downloading (%1)", count),
+                Models.Status.Checking => WebUiLocalizer.Translate("StatusFilterWidget", "Checking (%1)", count),
+                Models.Status.Errored => WebUiLocalizer.Translate("StatusFilterWidget", "Errored (%1)", count),
                 _ => status
             };
         }

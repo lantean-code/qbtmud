@@ -33,7 +33,9 @@
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable auto downloading of RSS torrents")" Value="RssAutoDownloadingEnabled" ValueChanged="RssAutoDownloadingEnabledChanged" data-test-id="@TestIdHelper.For("RssAutoDownloadingEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudButton OnClick="OpenRssRulesDialog" Variant="Variant.Filled">@WebUiLocalizer.Translate("OptionsDialog", "Edit auto downloading rules...")</MudButton>
+                <MudButton OnClick="OpenRssRulesDialog"
+                           Variant="Variant.Filled"
+                           data-test-id="@TestIdHelper.For("EditRssRules")">@WebUiLocalizer.Translate("OptionsDialog", "Edit auto downloading rules...")</MudButton>
             </MudItem>
         </MudGrid>
     </MudCardContent>

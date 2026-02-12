@@ -40,7 +40,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_WarmupNotRun_WHEN_Invoked_THEN_CompletesAndCallsDependencies()
         {
-            await _target.WarmupAsync(Xunit.TestContext.Current.CancellationToken);
+            await _target.WarmupAsync(TestContext.Current.CancellationToken);
 
             _target.IsCompleted.Should().BeTrue();
             _target.Failures.Should().BeEmpty();
@@ -53,8 +53,8 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_WarmupCompleted_WHEN_InvokedAgain_THEN_DoesNotRunTwice()
         {
-            await _target.WarmupAsync(Xunit.TestContext.Current.CancellationToken);
-            await _target.WarmupAsync(Xunit.TestContext.Current.CancellationToken);
+            await _target.WarmupAsync(TestContext.Current.CancellationToken);
+            await _target.WarmupAsync(TestContext.Current.CancellationToken);
 
             Mock.Get(_webUiLocalizer).Verify(localizer => localizer.InitializeAsync(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_webUiLanguageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
@@ -74,7 +74,7 @@ namespace Lantean.QBTMud.Test.Services
                     return new ValueTask(gate.Task);
                 });
 
-            var cancellationToken = Xunit.TestContext.Current.CancellationToken;
+            var cancellationToken = TestContext.Current.CancellationToken;
             var first = _target.WarmupAsync(cancellationToken);
             var second = _target.WarmupAsync(cancellationToken);
 
@@ -93,7 +93,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(localizer => localizer.InitializeAsync(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Failure"));
 
-            await _target.WarmupAsync(Xunit.TestContext.Current.CancellationToken);
+            await _target.WarmupAsync(TestContext.Current.CancellationToken);
 
             _target.IsCompleted.Should().BeTrue();
             _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.WebUiLocalizer && failure.Message == "Failure");

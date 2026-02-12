@@ -42,7 +42,7 @@ namespace Lantean.QBTMud.Test.Layout
             _navigationManager = new TestNavigationManager();
             TestContext.Services.RemoveAll<NavigationManager>();
             TestContext.Services.AddSingleton<NavigationManager>(_navigationManager);
-            
+
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock.Setup(c => c.CheckAuthState()).ReturnsAsync(true);
             apiClientMock.Setup(c => c.GetApplicationPreferences()).ReturnsAsync(CreatePreferences());
@@ -897,7 +897,7 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public void GIVEN_NavigationAfterAuth_WHEN_LocationChanges_THEN_ProcessesDownload()
+        public async Task GIVEN_NavigationAfterAuth_WHEN_LocationChanges_THEN_ProcessesDownload()
         {
             DisposeDefaultTarget();
             ResetDialogInvocations();
@@ -907,9 +907,12 @@ namespace Lantean.QBTMud.Test.Layout
 
             target.WaitForAssertion(() => target.FindComponent<MudAppBar>().Should().NotBeNull());
 
-            target.InvokeAsync(() => _navigationManager.NavigateTo("http://localhost/?download=http://example.com/file.torrent"));
+            await target.InvokeAsync(() => _navigationManager.NavigateTo("http://localhost/?download=http://example.com/file.torrent"));
 
-            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent"), Times.AtLeastOnce);
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent"), Times.AtLeastOnce);
+            });
         }
 
         [Fact]
@@ -1175,7 +1178,7 @@ namespace Lantean.QBTMud.Test.Layout
                 downloadPath: "DownloadPath",
                 rootPath: "RootPath",
                 isPrivate: false,
-                shareLimitAction: Lantean.QBitTorrentClient.Models.ShareLimitAction.Default,
+                shareLimitAction: ClientModels.ShareLimitAction.Default,
                 comment: "Comment");
         }
 

@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            Tags = [.. (await ApiClient.GetAllTags())];
+            Tags = [.. await ApiClient.GetAllTags()];
             if (!Hashes.Any())
             {
                 return;

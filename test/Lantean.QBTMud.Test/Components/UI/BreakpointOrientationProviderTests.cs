@@ -14,6 +14,8 @@ namespace Lantean.QBTMud.Test.Components.UI
 {
     public sealed class BreakpointOrientationProviderTests : RazorComponentTestBase
     {
+        private static readonly Guid TestBrowserViewportId = new("20000000-0000-0000-0000-000000000001");
+
         [Fact]
         public async Task GIVEN_DefaultCascades_WHEN_ViewportChanges_THEN_BreakpointCascadedAndEventRaised()
         {
@@ -201,7 +203,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 Width = (int)width,
                 Height = (int)height
             };
-            return new BrowserViewportEventArgs(Guid.NewGuid(), size, breakpoint, false);
+            return new BrowserViewportEventArgs(TestBrowserViewportId, size, breakpoint, false);
         }
 
         private sealed class CascadingProbe : ComponentBase

@@ -1083,9 +1083,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var stored = TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(JobsStorageKey).GetAwaiter().GetResult();
-                stored.Should().NotBeNull();
-                stored!.Should().BeEmpty();
+                var snapshot = TestContext.LocalStorage.Snapshot();
+                snapshot.TryGetValue(JobsStorageKey, out var storedValue).Should().BeTrue();
+                storedValue.Should().BeOfType<List<SearchJobMetadata>>();
+                ((List<SearchJobMetadata>)storedValue!).Should().BeEmpty();
             });
         }
 
@@ -1237,9 +1238,11 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var stored = TestContext.LocalStorage.GetItemAsync<SearchPreferences>(PreferencesStorageKey, Xunit.TestContext.Current.CancellationToken).GetAwaiter().GetResult();
-                stored.Should().NotBeNull();
-                stored!.SelectedCategory.Should().Be("tv");
+                var snapshot = TestContext.LocalStorage.Snapshot();
+                snapshot.TryGetValue(PreferencesStorageKey, out var storedValue).Should().BeTrue();
+                storedValue.Should().BeOfType<SearchPreferences>();
+                var stored = (SearchPreferences)storedValue!;
+                stored.SelectedCategory.Should().Be("tv");
                 stored.FilterText.Should().Be("dv");
                 stored.SearchIn.Should().Be(SearchInScope.Names);
                 stored.MinimumSeeds.Should().Be(10);

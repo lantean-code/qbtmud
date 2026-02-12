@@ -8,8 +8,8 @@ using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using MudBlazor;
 using Moq;
+using MudBlazor;
 using System.Text.Json;
 using ClientModels = Lantean.QBitTorrentClient.Models;
 
@@ -19,8 +19,7 @@ namespace Lantean.QBTMud.Test.Pages
     {
         private const string HashValue = "Hash";
 
-        private readonly IKeyboardService _keyboardService;
-        private readonly Mock<IKeyboardService> _keyboardServiceMock;
+        private readonly IKeyboardService _keyboardService = Mock.Of<IKeyboardService>();
         private readonly TestNavigationManager _navigationManager;
         private readonly List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)> _handlers;
         private readonly IRenderedComponent<Details> _target;
@@ -43,13 +42,12 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(c => c.GetTorrentContents(HashValue, It.IsAny<int[]>()))
                 .ReturnsAsync(Array.Empty<ClientModels.FileData>());
 
-            _keyboardService = Mock.Of<IKeyboardService>();
-            _keyboardServiceMock = Mock.Get(_keyboardService);
-            _keyboardServiceMock
+            var keyboardServiceMock = Mock.Get(_keyboardService);
+            keyboardServiceMock
                 .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
                 .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => _handlers.Add((criteria, handler)))
                 .Returns(Task.CompletedTask);
-            _keyboardServiceMock
+            keyboardServiceMock
                 .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
                 .Returns(Task.CompletedTask);
 
@@ -156,7 +154,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await _target.InvokeAsync(() => _target.Instance.DisposeAsync().AsTask());
 
-            _keyboardServiceMock.Verify(
+            Mock.Get(_keyboardService).Verify(
                 s => s.UnregisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Backspace")),
                 Times.Once);
         }

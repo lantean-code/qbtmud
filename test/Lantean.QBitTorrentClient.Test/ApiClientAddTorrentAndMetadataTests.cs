@@ -59,34 +59,36 @@ namespace Lantean.QBitTorrentClient.Test
 
                 var parts = (req.Content as MultipartFormDataContent)!.ToList();
 
-                string Read(string name) =>
-                    parts.Single(p => p.Headers.ContentDisposition!.Name == name)
-                         .ReadAsStringAsync().GetAwaiter().GetResult();
+                async Task<string> ReadAsync(string name)
+                {
+                    var part = parts.Single(p => p.Headers.ContentDisposition!.Name == name);
+                    return await part.ReadAsStringAsync(ct);
+                }
 
                 parts.Any(p => p.Headers.ContentDisposition!.Name == "torrents" &&
                                p.Headers.ContentDisposition!.FileName == "a.torrent").Should().BeTrue();
                 parts.Any(p => p.Headers.ContentDisposition!.Name == "torrents" &&
                                p.Headers.ContentDisposition!.FileName == "b.torrent").Should().BeTrue();
 
-                Read("skip_checking").Should().Be("true");
-                Read("sequentialDownload").Should().Be("false");
-                Read("firstLastPiecePrio").Should().Be("true");
-                Read("addToTopOfQueue").Should().Be("true");
-                Read("forced").Should().Be("false");
-                Read("stopped").Should().Be("true");
-                Read("savepath").Should().Be("/save");
-                Read("downloadPath").Should().Be("/dl");
-                Read("useDownloadPath").Should().Be("true");
-                Read("category").Should().Be("Movies");
-                Read("tags").Should().Be("one,two");
-                Read("rename").Should().Be("renamed");
-                Read("upLimit").Should().Be("123");
-                Read("dlLimit").Should().Be("456");
-                Read("downloader").Should().Be("curl");
-                Read("filePriorities").Should().Be("0,1");
-                Read("ssl_certificate").Should().Be("cert");
-                Read("ssl_private_key").Should().Be("key");
-                Read("ssl_dh_params").Should().Be("dh");
+                (await ReadAsync("skip_checking")).Should().Be("true");
+                (await ReadAsync("sequentialDownload")).Should().Be("false");
+                (await ReadAsync("firstLastPiecePrio")).Should().Be("true");
+                (await ReadAsync("addToTopOfQueue")).Should().Be("true");
+                (await ReadAsync("forced")).Should().Be("false");
+                (await ReadAsync("stopped")).Should().Be("true");
+                (await ReadAsync("savepath")).Should().Be("/save");
+                (await ReadAsync("downloadPath")).Should().Be("/dl");
+                (await ReadAsync("useDownloadPath")).Should().Be("true");
+                (await ReadAsync("category")).Should().Be("Movies");
+                (await ReadAsync("tags")).Should().Be("one,two");
+                (await ReadAsync("rename")).Should().Be("renamed");
+                (await ReadAsync("upLimit")).Should().Be("123");
+                (await ReadAsync("dlLimit")).Should().Be("456");
+                (await ReadAsync("downloader")).Should().Be("curl");
+                (await ReadAsync("filePriorities")).Should().Be("0,1");
+                (await ReadAsync("ssl_certificate")).Should().Be("cert");
+                (await ReadAsync("ssl_private_key")).Should().Be("key");
+                (await ReadAsync("ssl_dh_params")).Should().Be("dh");
 
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {

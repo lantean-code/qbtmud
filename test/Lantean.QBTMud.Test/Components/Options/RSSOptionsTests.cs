@@ -6,6 +6,7 @@ using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Moq;
 using MudBlazor;
 using System.Text.Json;
@@ -105,9 +106,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var button = target.FindAll("button")
-                .Single(b => b.TextContent.Contains("Edit auto downloading rules", StringComparison.Ordinal));
-            await target.InvokeAsync(() => button.Click());
+            var button = FindComponentByTestId<MudButton>(target, "EditRssRules");
+            await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             workflowMock.Verify(w => w.InvokeRssRulesDialog(), Times.Once);
         }

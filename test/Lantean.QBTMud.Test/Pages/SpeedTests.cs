@@ -6,6 +6,7 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 
@@ -13,16 +14,19 @@ namespace Lantean.QBTMud.Test.Pages
 {
     public sealed class SpeedTests : RazorComponentTestBase<Speed>
     {
-        private readonly Mock<ISpeedHistoryService> _speedHistoryService;
+        private readonly ISpeedHistoryService _speedHistoryService = Mock.Of<ISpeedHistoryService>();
 
         public SpeedTests()
         {
-            _speedHistoryService = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
-            _speedHistoryService.Setup(s => s.InitializeAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _speedHistoryService.SetupGet(s => s.LastUpdatedUtc).Returns(new DateTime(2000, 1, 1, 0, 5, 0, DateTimeKind.Utc));
-            _speedHistoryService.Setup(s => s.GetSeries(It.IsAny<SpeedPeriod>(), SpeedDirection.Download))
+            TestContext.Services.RemoveAll<ISpeedHistoryService>();
+            TestContext.Services.AddSingleton(_speedHistoryService);
+
+            var speedHistoryServiceMock = Mock.Get(_speedHistoryService);
+            speedHistoryServiceMock.Setup(s => s.InitializeAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            speedHistoryServiceMock.SetupGet(s => s.LastUpdatedUtc).Returns(new DateTime(2000, 1, 1, 0, 5, 0, DateTimeKind.Utc));
+            speedHistoryServiceMock.Setup(s => s.GetSeries(It.IsAny<SpeedPeriod>(), SpeedDirection.Download))
                 .Returns(new List<SpeedPoint> { new(new DateTime(2000, 1, 1, 0, 4, 0, DateTimeKind.Utc), 1000) });
-            _speedHistoryService.Setup(s => s.GetSeries(It.IsAny<SpeedPeriod>(), SpeedDirection.Upload))
+            speedHistoryServiceMock.Setup(s => s.GetSeries(It.IsAny<SpeedPeriod>(), SpeedDirection.Upload))
                 .Returns(new List<SpeedPoint> { new(new DateTime(2000, 1, 1, 0, 4, 0, DateTimeKind.Utc), 2000) });
         }
 
@@ -34,28 +38,28 @@ namespace Lantean.QBTMud.Test.Pages
             var toggleGroup = FindComponentByTestId<MudToggleGroup<SpeedPeriod>>(target, "PeriodToggleGroup");
             toggleGroup.Instance.Value.Should().Be(SpeedPeriod.Min5);
 
-            _speedHistoryService.Verify(s => s.InitializeAsync(It.IsAny<CancellationToken>()), Times.AtLeast(2));
-            _speedHistoryService.Verify(s => s.GetSeries(SpeedPeriod.Min5, SpeedDirection.Download), Times.AtLeastOnce());
-            _speedHistoryService.Verify(s => s.GetSeries(SpeedPeriod.Min5, SpeedDirection.Upload), Times.AtLeastOnce());
+            Mock.Get(_speedHistoryService).Verify(s => s.InitializeAsync(It.IsAny<CancellationToken>()), Times.AtLeast(2));
+            Mock.Get(_speedHistoryService).Verify(s => s.GetSeries(SpeedPeriod.Min5, SpeedDirection.Download), Times.AtLeastOnce());
+            Mock.Get(_speedHistoryService).Verify(s => s.GetSeries(SpeedPeriod.Min5, SpeedDirection.Upload), Times.AtLeastOnce());
         }
 
         [Fact]
         public void GIVEN_Render_WHEN_PeriodChanged_THEN_RequestsNewSeries()
         {
             var requestedPeriods = new List<SpeedPeriod>();
-            _speedHistoryService.Reset();
-            ConfigureSpeedService(_speedHistoryService, _ => 1000, requestedPeriods);
+            Mock.Get(_speedHistoryService).Reset();
+            ConfigureSpeedService(Mock.Get(_speedHistoryService), _ => 1000, requestedPeriods);
 
             var target = RenderTarget();
 
             var hourSixToggle = FindComponentByTestId<MudToggleItem<SpeedPeriod>>(target, "PeriodToggle-Hour6");
             hourSixToggle.Find("button").Click();
 
-            _speedHistoryService.Verify(s => s.InitializeAsync(It.IsAny<CancellationToken>()), Times.AtLeast(3));
+            Mock.Get(_speedHistoryService).Verify(s => s.InitializeAsync(It.IsAny<CancellationToken>()), Times.AtLeast(3));
             requestedPeriods.Should().Contain(SpeedPeriod.Min5);
             requestedPeriods.Should().Contain(SpeedPeriod.Hour6);
-            _speedHistoryService.Verify(s => s.GetSeries(SpeedPeriod.Hour6, SpeedDirection.Download), Times.Once);
-            _speedHistoryService.Verify(s => s.GetSeries(SpeedPeriod.Hour6, SpeedDirection.Upload), Times.Once);
+            Mock.Get(_speedHistoryService).Verify(s => s.GetSeries(SpeedPeriod.Hour6, SpeedDirection.Download), Times.Once);
+            Mock.Get(_speedHistoryService).Verify(s => s.GetSeries(SpeedPeriod.Hour6, SpeedDirection.Upload), Times.Once);
         }
 
         [Fact]
@@ -78,27 +82,27 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_Toggles_WHEN_SameValueProvided_THEN_NoReloadIsTriggered()
+        public async Task GIVEN_Toggles_WHEN_SameValueProvided_THEN_NoReloadIsTriggered()
         {
             var calls = 0;
-            _speedHistoryService.Reset();
-            ConfigureSpeedService(_speedHistoryService, _ => 500, null, () => calls++);
+            Mock.Get(_speedHistoryService).Reset();
+            ConfigureSpeedService(Mock.Get(_speedHistoryService), _ => 500, null, () => calls++);
 
             var target = RenderTarget();
 
             var downloadSwitch = FindComponentByTestId<MudSwitch<bool>>(target, "DownloadToggle");
             downloadSwitch.Find("input").Change(false);
-            target.InvokeAsync(() => downloadSwitch.Instance.ValueChanged.InvokeAsync(downloadSwitch.Instance.Value));
+            await target.InvokeAsync(() => downloadSwitch.Instance.ValueChanged.InvokeAsync(downloadSwitch.Instance.Value));
 
             var uploadSwitch = FindComponentByTestId<MudSwitch<bool>>(target, "UploadToggle");
             uploadSwitch.Find("input").Change(false);
-            target.InvokeAsync(() => uploadSwitch.Instance.ValueChanged.InvokeAsync(uploadSwitch.Instance.Value));
+            await target.InvokeAsync(() => uploadSwitch.Instance.ValueChanged.InvokeAsync(uploadSwitch.Instance.Value));
 
             calls.Should().Be(0);
         }
 
         [Fact]
-        public void GIVEN_DifferentMagnitudes_WHEN_PeriodsChanged_THEN_UnitsAndDurationsAreCovered()
+        public async Task GIVEN_DifferentMagnitudes_WHEN_PeriodsChanged_THEN_UnitsAndDurationsAreCovered()
         {
             var valuesByPeriod = new Dictionary<SpeedPeriod, double>
             {
@@ -111,8 +115,8 @@ namespace Lantean.QBTMud.Test.Pages
                 { SpeedPeriod.Hour24, 70 }
             };
 
-            _speedHistoryService.Reset();
-            ConfigureSpeedService(_speedHistoryService, p => valuesByPeriod[p], null);
+            Mock.Get(_speedHistoryService).Reset();
+            ConfigureSpeedService(Mock.Get(_speedHistoryService), p => valuesByPeriod[p], null);
 
             var target = RenderTarget();
 
@@ -127,18 +131,18 @@ namespace Lantean.QBTMud.Test.Pages
             }
 
             var toggleGroup = FindComponentByTestId<MudToggleGroup<SpeedPeriod>>(target, "PeriodToggleGroup");
-            target.InvokeAsync(() => toggleGroup.Instance.ValueChanged.InvokeAsync(toggleGroup.Instance.Value));
+            await target.InvokeAsync(() => toggleGroup.Instance.ValueChanged.InvokeAsync(toggleGroup.Instance.Value));
         }
 
         [Fact]
-        public void GIVEN_InvalidPeriod_WHEN_ValueChangedInvoked_THEN_DefaultDurationPathCovered()
+        public async Task GIVEN_InvalidPeriod_WHEN_ValueChangedInvoked_THEN_DefaultDurationPathCovered()
         {
-            _speedHistoryService.Reset();
-            ConfigureSpeedService(_speedHistoryService, _ => 100, null);
+            Mock.Get(_speedHistoryService).Reset();
+            ConfigureSpeedService(Mock.Get(_speedHistoryService), _ => 100, null);
 
             var target = RenderTarget();
             var toggleGroup = FindComponentByTestId<MudToggleGroup<SpeedPeriod>>(target, "PeriodToggleGroup");
-            target.InvokeAsync(() => toggleGroup.Instance.ValueChanged.InvokeAsync((SpeedPeriod)(-1)));
+            await target.InvokeAsync(() => toggleGroup.Instance.ValueChanged.InvokeAsync((SpeedPeriod)(-1)));
         }
 
         private IRenderedComponent<Speed> RenderTarget()

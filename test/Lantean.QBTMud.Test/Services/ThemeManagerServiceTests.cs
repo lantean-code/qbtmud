@@ -48,7 +48,7 @@ namespace Lantean.QBTMud.Test.Services
             ThemeChangedEventArgs? captured = null;
             _target.ThemeChanged += (_, args) => captured = args;
 
-            await (_target.EnsureInitialized());
+            await _target.EnsureInitialized();
 
             _target.Themes.Should().ContainSingle(theme => theme.Id == "ThemeId");
             _target.CurrentThemeId.Should().Be("ThemeId");
@@ -61,13 +61,13 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_StoredThemeId_WHEN_Initialized_THEN_AppliesStoredTheme()
         {
-            await _localStorage.SetItemAsync(SelectedThemeStorageKey, "ThemeId", Xunit.TestContext.Current.CancellationToken);
+            await _localStorage.SetItemAsync(SelectedThemeStorageKey, "ThemeId", TestContext.Current.CancellationToken);
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
             SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
                 CreateThemeResponse("themes/theme-one.json", themeJson));
             SetupFontCatalogValid("Nunito Sans");
 
-            await (_target.EnsureInitialized());
+            await _target.EnsureInitialized();
 
             _target.CurrentThemeId.Should().Be("ThemeId");
         }
@@ -78,7 +78,7 @@ namespace Lantean.QBTMud.Test.Services
             SetupHttpClient(_notFoundResponseMessage);
             SetupFontCatalogValid("Nunito Sans");
 
-            await (_target.EnsureInitialized());
+            await _target.EnsureInitialized();
 
             _target.Themes.Should().BeEmpty();
             _target.CurrentThemeId.Should().Be("default");
@@ -92,7 +92,7 @@ namespace Lantean.QBTMud.Test.Services
                 CreateThemeResponse("themes/theme-one.json", themeJson));
             SetupFontCatalogValid("Nunito Sans");
 
-            await (_target.EnsureInitialized());
+            await _target.EnsureInitialized();
 
             await _target.ApplyTheme("Missing");
 
@@ -121,7 +121,7 @@ namespace Lantean.QBTMud.Test.Services
                 && themeItem.Theme.FontFamily == "Nunito Sans"
                 && themeItem.Theme.Description == "Description");
 
-            var stored = await _localStorage.GetItemAsync<List<ThemeDefinition>>(LocalThemesStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var stored = await _localStorage.GetItemAsync<List<ThemeDefinition>>(LocalThemesStorageKey, TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
             stored!.Should().ContainSingle(item => item.Name == "Untitled Theme" && item.FontFamily == "Nunito Sans" && item.Description == "Description");
         }
@@ -134,7 +134,7 @@ namespace Lantean.QBTMud.Test.Services
                 CreateThemeResponse("themes/theme-one.json", themeJson));
             SetupFontCatalogValid("Nunito Sans");
 
-            await (_target.EnsureInitialized());
+            await _target.EnsureInitialized();
 
             var localDefinition = new ThemeDefinition
             {
@@ -177,7 +177,7 @@ namespace Lantean.QBTMud.Test.Services
             SetupHttpClient(handler);
             SetupFontCatalogValid("Nunito Sans");
 
-            await (_target.EnsureInitialized());
+            await _target.EnsureInitialized();
 
             handler.SetResponses(new Dictionary<string, HttpResponseMessage>
             {

@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Services;
 using Moq;
+using System.Diagnostics;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -305,8 +306,8 @@ namespace Lantean.QBTMud.Test.Services
         private static async Task<bool> WaitUntilAsync(Func<bool> condition)
         {
             var timeout = TimeSpan.FromSeconds(10);
-            var start = DateTime.UtcNow;
-            while (!condition() && DateTime.UtcNow - start < timeout)
+            var stopwatch = Stopwatch.StartNew();
+            while (!condition() && stopwatch.Elapsed < timeout)
             {
                 await Task.Delay(1);
             }

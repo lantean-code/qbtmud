@@ -29,7 +29,7 @@ namespace Lantean.QBTMud.Components
             await DialogService.ShowAsync<ExceptionDialog>(
                 WebUiLocalizer.Translate("AppErrorDisplay", "Error Details"),
                 parameters,
-                global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
+                Services.DialogWorkflow.FormDialogOptions);
         }
 
         protected async Task ClearErrors()

@@ -9,27 +9,34 @@ namespace Lantean.QBTMud.Test.Services
 {
     public sealed class KeyboardServiceTests : IAsyncLifetime
     {
-        private readonly Mock<IJSRuntime> _jsRuntime;
+        private readonly IJSRuntime _jsRuntime = Mock.Of<IJSRuntime>();
 
         private readonly KeyboardService _target;
 
         public KeyboardServiceTests()
         {
-            _jsRuntime = new Mock<IJSRuntime>(MockBehavior.Strict);
-            _target = new KeyboardService(_jsRuntime.Object);
+            _target = new KeyboardService(_jsRuntime);
+        }
+
+        private Mock<IJSRuntime> JsRuntimeMock
+        {
+            get
+            {
+                return Mock.Get(_jsRuntime);
+            }
         }
 
         [Fact]
         public async Task GIVEN_Keypress_WHEN_RegisterKeypressEvent_THEN_ShouldInvokeJsWithReference()
         {
-            _jsRuntime.Invocations.Clear();
+            JsRuntimeMock.Invocations.Clear();
             var criteria = new KeyboardEvent("Key");
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.registerKeypressEvent",
                     It.Is<object?[]>(args => MatchesRegisterArgs(args, criteria, _target))))
                 .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.unregisterKeypressEvent",
                     It.Is<object?[]>(args => MatchesRegisterArgs(args, criteria, _target))))
@@ -37,11 +44,11 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.RegisterKeypressEvent(criteria, _ => Task.CompletedTask);
 
-            _jsRuntime.Verify(js => js.InvokeAsync<IJSVoidResult>(
+            JsRuntimeMock.Verify(js => js.InvokeAsync<IJSVoidResult>(
                 "qbt.registerKeypressEvent",
                 It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))), Times.Once);
             await _target.UnregisterKeypressEvent(criteria);
-            _jsRuntime.Verify(js => js.InvokeAsync<IJSVoidResult>(
+            JsRuntimeMock.Verify(js => js.InvokeAsync<IJSVoidResult>(
                 "qbt.unregisterKeypressEvent",
                 It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))), Times.Once);
         }
@@ -49,14 +56,14 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeypressRegistered_WHEN_HandleKeyPressEventInvoked_THEN_ShouldCallHandler()
         {
-            _jsRuntime.Invocations.Clear();
+            JsRuntimeMock.Invocations.Clear();
             var criteria = new KeyboardEvent("Enter");
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.registerKeypressEvent",
                     It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
                 .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.unregisterKeypressEvent",
                     It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
@@ -77,14 +84,14 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeypressRegistered_WHEN_HandleRepeatKeyPressEventInvoked_THEN_ShouldCallHandler()
         {
-            _jsRuntime.Invocations.Clear();
+            JsRuntimeMock.Invocations.Clear();
             var criteria = new KeyboardEvent("Enter");
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.registerKeypressEvent",
                     It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
                 .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.unregisterKeypressEvent",
                     It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
@@ -105,7 +112,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ModifierKeypressRegistered_WHEN_HandleKeyPressEventInvoked_THEN_ShouldCallHandler()
         {
-            _jsRuntime.Invocations.Clear();
+            JsRuntimeMock.Invocations.Clear();
             var criteria = new KeyboardEvent("K")
             {
                 CtrlKey = true,
@@ -113,12 +120,12 @@ namespace Lantean.QBTMud.Test.Services
                 AltKey = true,
                 MetaKey = true
             };
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.registerKeypressEvent",
                     It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
                 .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.unregisterKeypressEvent",
                     It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
@@ -145,14 +152,14 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_NullKey_WHEN_HandleKeyPressEventInvoked_THEN_ShouldCallHandler()
         {
-            _jsRuntime.Invocations.Clear();
+            JsRuntimeMock.Invocations.Clear();
             var criteria = new KeyboardEvent(null!);
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.registerKeypressEvent",
                     It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
                 .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.unregisterKeypressEvent",
                     It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
@@ -173,7 +180,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeypressNotRegistered_WHEN_HandleKeyPressEventInvoked_THEN_ShouldNotCallHandler()
         {
-            _jsRuntime.Invocations.Clear();
+            JsRuntimeMock.Invocations.Clear();
             var invoked = false;
 
             await _target.HandleKeyPressEvent(new KeyboardEvent("Escape"));
@@ -184,14 +191,14 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeypressRegistered_WHEN_UnregisterKeypressEvent_THEN_ShouldInvokeJsAndRemoveHandler()
         {
-            _jsRuntime.Invocations.Clear();
+            JsRuntimeMock.Invocations.Clear();
             var criteria = new KeyboardEvent("Space");
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.registerKeypressEvent",
                     It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
                 .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.unregisterKeypressEvent",
                     It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))))
@@ -205,7 +212,7 @@ namespace Lantean.QBTMud.Test.Services
             });
             await _target.UnregisterKeypressEvent(criteria);
 
-            _jsRuntime.Verify(js => js.InvokeAsync<IJSVoidResult>(
+            JsRuntimeMock.Verify(js => js.InvokeAsync<IJSVoidResult>(
                 "qbt.unregisterKeypressEvent",
                 It.Is<object?[]>(args => MatchesCriteriaArgs(args, criteria))), Times.Once);
             await _target.HandleKeyPressEvent(new KeyboardEvent("Space"));
@@ -215,8 +222,8 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeyboardService_WHEN_Focus_THEN_ShouldInvokeJs()
         {
-            _jsRuntime.Invocations.Clear();
-            _jsRuntime
+            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.keyPressFocusInstance",
                     It.Is<object?[]>(args => MatchesFocusArgs(args, _target))))
@@ -224,7 +231,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.Focus();
 
-            _jsRuntime.Verify(js => js.InvokeAsync<IJSVoidResult>(
+            JsRuntimeMock.Verify(js => js.InvokeAsync<IJSVoidResult>(
                 "qbt.keyPressFocusInstance",
                 It.Is<object?[]>(args => MatchesSingleArg(args))), Times.Once);
         }
@@ -232,8 +239,8 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeyboardService_WHEN_UnFocus_THEN_ShouldInvokeJs()
         {
-            _jsRuntime.Invocations.Clear();
-            _jsRuntime
+            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.keyPressUnFocusInstance",
                     It.Is<object?[]>(args => MatchesFocusArgs(args, _target))))
@@ -241,7 +248,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.UnFocus();
 
-            _jsRuntime.Verify(js => js.InvokeAsync<IJSVoidResult>(
+            JsRuntimeMock.Verify(js => js.InvokeAsync<IJSVoidResult>(
                 "qbt.keyPressUnFocusInstance",
                 It.Is<object?[]>(args => MatchesSingleArg(args))), Times.Once);
         }
@@ -350,12 +357,12 @@ namespace Lantean.QBTMud.Test.Services
 
         public async ValueTask DisposeAsync()
         {
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.keyPressUnFocusInstance",
                     It.IsAny<object?[]>()))
                 .Returns(() => ValueTask.FromResult<IJSVoidResult>(default!));
-            _jsRuntime
+            JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.unregisterKeypressEvent",
                     It.IsAny<object?[]>()))

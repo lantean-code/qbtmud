@@ -7,6 +7,7 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 
@@ -14,22 +15,26 @@ namespace Lantean.QBTMud.Test.Pages
 {
     public sealed class TorrentListTests : RazorComponentTestBase<TorrentList>
     {
-        private readonly Mock<IKeyboardService> _keyboardServiceMock;
-        private readonly Mock<IDialogWorkflow> _dialogWorkflowMock;
+        private readonly IKeyboardService _keyboardService = Mock.Of<IKeyboardService>();
+        private readonly IDialogWorkflow _dialogWorkflow = Mock.Of<IDialogWorkflow>();
         private readonly TestNavigationManager _navigationManager;
 
         public TorrentListTests()
         {
-            _keyboardServiceMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
-            _keyboardServiceMock.Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>())).Returns(Task.CompletedTask);
-            _keyboardServiceMock.Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>())).Returns(Task.CompletedTask);
+            var keyboardServiceMock = Mock.Get(_keyboardService);
+            keyboardServiceMock.Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>())).Returns(Task.CompletedTask);
+            keyboardServiceMock.Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>())).Returns(Task.CompletedTask);
 
-            _dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
-            _dialogWorkflowMock.Setup(w => w.InvokeAddTorrentFileDialog()).Returns(Task.CompletedTask);
-            _dialogWorkflowMock.Setup(w => w.InvokeAddTorrentLinkDialog(It.IsAny<string?>())).Returns(Task.CompletedTask);
+            var dialogWorkflowMock = Mock.Get(_dialogWorkflow);
+            dialogWorkflowMock.Setup(w => w.InvokeAddTorrentFileDialog()).Returns(Task.CompletedTask);
+            dialogWorkflowMock.Setup(w => w.InvokeAddTorrentLinkDialog(It.IsAny<string?>())).Returns(Task.CompletedTask);
 
             _navigationManager = new TestNavigationManager();
+            TestContext.Services.RemoveAll<IKeyboardService>();
+            TestContext.Services.RemoveAll<IDialogWorkflow>();
             TestContext.Services.AddSingleton<NavigationManager>(_navigationManager);
+            TestContext.Services.AddSingleton(_keyboardService);
+            TestContext.Services.AddSingleton(_dialogWorkflow);
         }
 
         [Fact]
@@ -57,23 +62,24 @@ namespace Lantean.QBTMud.Test.Pages
                 parameters.AddCascadingValue("SortDirectionChanged", EventCallback.Factory.Create<SortDirection>(this, _ => { }));
             });
 
-            _keyboardServiceMock.Verify(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()), Times.Exactly(8));
+            Mock.Get(_keyboardService).Verify(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()), Times.Exactly(8));
 
             _navigationManager.TriggerLocationChanged("http://localhost/details/test");
 
             target.WaitForAssertion(() =>
-                _keyboardServiceMock.Verify(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()), Times.Exactly(2)));
+                Mock.Get(_keyboardService).Verify(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()), Times.Exactly(2)));
         }
 
         [Fact]
-        public void GIVEN_SearchText_WHEN_Changed_THEN_PublishesFilterStateAndValidatesRegex()
+        public async Task GIVEN_SearchText_WHEN_Changed_THEN_PublishesFilterStateAndValidatesRegex()
         {
             var filterState = default(FilterSearchState);
             var callback = EventCallback.Factory.Create<FilterSearchState>(this, state => filterState = state);
 
             var target = RenderWithDefaults(callback);
 
-            target.FindComponent<MudTextField<string>>().Instance.TextChanged.InvokeAsync("test");
+            var searchTextField = target.FindComponent<MudTextField<string>>();
+            await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("test"));
 
             filterState.Text.Should().Be("test");
             filterState.UseRegex.Should().BeFalse();
@@ -92,8 +98,8 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => linkButton.Instance.OnClick.InvokeAsync());
             await target.InvokeAsync(() => fileButton.Instance.OnClick.InvokeAsync());
 
-            _dialogWorkflowMock.Verify(w => w.InvokeAddTorrentFileDialog(), Times.Once);
-            _dialogWorkflowMock.Verify(w => w.InvokeAddTorrentLinkDialog(null), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(w => w.InvokeAddTorrentFileDialog(), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(w => w.InvokeAddTorrentLinkDialog(null), Times.Once);
         }
 
         private IRenderedComponent<TorrentList> RenderWithDefaults(EventCallback<FilterSearchState>? searchCallback = null)

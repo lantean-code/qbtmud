@@ -37,10 +37,10 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             target.WaitForAssertion(() =>
             {
-                target.FindAll("th").Count.Should().Be(3);
+                target.FindComponents<MudTh>().Count.Should().Be(3);
             });
 
-            target.FindAll("tbody tr").Count.Should().Be(2);
+            target.FindComponents<MudTr>().Count.Should().Be(2);
 
             selectedColumns.Should().Contain("id");
             selectedColumns.Should().Contain("name");
@@ -529,7 +529,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 builder.Add(p => p.ColumnFilter, new Func<ColumnDefinition<SampleItem>, bool>(_ => false));
             });
 
-            target.FindAll("th").Count.Should().Be(0);
+            target.FindComponents<MudTh>().Count.Should().Be(0);
         }
 
         [Fact]
@@ -664,7 +664,9 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             target.WaitForAssertion(() =>
             {
-                var headers = target.FindComponents<MudTh>().Select(component => component.Find("th").TextContent.Trim()).ToList();
+                var headers = target.FindComponents<MudTh>()
+                    .Select(component => GetChildContentText(component.Instance.ChildContent)?.Trim() ?? string.Empty)
+                    .ToList();
                 headers.Should().HaveCount(3);
                 headers[0].Should().Be("Score");
                 headers[1].Should().Be("Name");
@@ -694,8 +696,8 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionEvents.Add(value)));
             });
 
-            var header = target.FindAll("span.mud-table-sort-label").Single(element => element.TextContent.Contains("Age", StringComparison.Ordinal));
-            await target.InvokeAsync(() => header.Click());
+            var header = FindSortLabel(target, "Age");
+            await target.InvokeAsync(() => header.Find("span").Click());
 
             target.WaitForAssertion(() =>
             {
@@ -758,11 +760,11 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionEvents.Add(value)));
             });
 
-            var ageHeader = target.FindAll("span.mud-table-sort-label").Single(element => element.TextContent.Contains("Age", StringComparison.Ordinal));
-            await target.InvokeAsync(() => ageHeader.Click());
+            var ageHeader = FindSortLabel(target, "Age");
+            await target.InvokeAsync(() => ageHeader.Find("span").Click());
 
-            var scoreHeader = target.FindAll("span.mud-table-sort-label").Single(element => element.TextContent.Contains("Score", StringComparison.Ordinal));
-            await target.InvokeAsync(() => scoreHeader.Click());
+            var scoreHeader = FindSortLabel(target, "Score");
+            await target.InvokeAsync(() => scoreHeader.Find("span").Click());
 
             sortColumnEvents.Should().ContainInOrder("age", "score");
             sortDirectionEvents.Should().NotBeEmpty();
@@ -785,9 +787,9 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirectionEvents.Add(value)));
             });
 
-            var ageHeader = target.FindAll("span.mud-table-sort-label").Single(element => element.TextContent.Contains("Age", StringComparison.Ordinal));
-            await target.InvokeAsync(() => ageHeader.Click());
-            await target.InvokeAsync(() => ageHeader.Click());
+            var ageHeader = FindSortLabel(target, "Age");
+            await target.InvokeAsync(() => ageHeader.Find("span").Click());
+            await target.InvokeAsync(() => ageHeader.Find("span").Click());
 
             sortDirectionEvents.Should().HaveCount(2);
             sortDirectionEvents[0].Should().NotBe(SortDirection.None);
@@ -886,10 +888,13 @@ namespace Lantean.QBTMud.Test.Components.UI
             await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
             target.Render();
 
-            target.FindAll("span.mud-table-sort-label").Any(element => element.TextContent.Contains("Age", StringComparison.Ordinal)).Should().BeTrue();
+            target.FindComponents<SortLabel>()
+                .Any(component => HasTestId(component, GetSortLabelTestId("Age")))
+                .Should()
+                .BeTrue();
 
-            var ageHeader = target.FindAll("span.mud-table-sort-label").Single(element => element.TextContent.Contains("Age", StringComparison.Ordinal));
-            await target.InvokeAsync(() => ageHeader.Click());
+            var ageHeader = FindSortLabel(target, "Age");
+            await target.InvokeAsync(() => ageHeader.Find("span").Click());
 
             sortEvents.Last().Should().Be("age");
         }
@@ -941,7 +946,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.SelectedItemsChanged, EventCallback.Factory.Create<HashSet<TestRow>>(this, value => selections.Add(new HashSet<TestRow>(value))));
             });
 
-            var rows = target.FindAll("tbody tr");
+            var rows = target.FindComponents<MudTr>().Select(component => component.Find("tr")).ToList();
             rows.Count.Should().Be(2);
 
             await target.InvokeAsync(() => rows[0].Click());
@@ -1253,7 +1258,7 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             var cell = target.FindComponents<TdExtended>().First().Find("td");
             await target.InvokeAsync(() => cell.TriggerEventAsync("onlongpress", new LongPressEventArgs()));
-            await (Task.Delay(1500, Xunit.TestContext.Current.CancellationToken));
+            await Task.Delay(1500, Xunit.TestContext.Current.CancellationToken);
 
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.TriggerEventAsync("onclick", new MouseEventArgs()));
@@ -1284,8 +1289,8 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.PreSorted, true);
             });
 
-            var firstCell = target.FindComponent<TdExtended>().Find("td");
-            firstCell.TextContent.Should().Be("B");
+            var firstCell = target.FindComponent<TdExtended>();
+            firstCell.Markup.Should().Contain(">B<");
         }
 
         [Fact]
@@ -1304,7 +1309,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var row = target.FindComponents<MudTr>().First();
-            var style = row.Find("tr").GetAttribute("style");
+            var style = row.Instance.Style;
             style.Should().Contain("background-color");
         }
 
@@ -1324,7 +1329,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var row = target.FindComponents<MudTr>().First();
-            var style = row.Find("tr").GetAttribute("style");
+            var style = row.Instance.Style;
             style.Should().NotContain("background-color");
         }
 
@@ -1345,7 +1350,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var row = target.FindComponents<MudTr>().First();
-            var style = row.Find("tr").GetAttribute("style");
+            var style = row.Instance.Style;
             style.Should().Contain("background-color");
         }
 
@@ -1364,7 +1369,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var row = target.FindComponents<MudTr>().Single();
-            row.Find("tr").ClassList.Should().Contain("row-0");
+            row.Instance.Class.Should().Contain("row-0");
         }
 
         [Fact]
@@ -1387,7 +1392,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var cell = target.FindComponent<TdExtended>();
-            cell.Find("td").ClassList.Should().Contain("func-class");
+            cell.Instance.Class.Should().Contain("func-class");
         }
 
         [Fact]
@@ -1440,7 +1445,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var header = target.FindComponents<MudTh>().Single();
-            header.Find("th").TextContent.Should().NotContain("Icon");
+            GetChildContentText(header.Instance.ChildContent).Should().NotContain("Icon");
             target.FindComponents<SortLabel>().Should().HaveCount(1);
         }
 
@@ -1624,8 +1629,8 @@ namespace Lantean.QBTMud.Test.Components.UI
                 .NotContain(component => HasTestId(component, GetSortLabelTestId("Name")));
 
             var rows = target.FindComponents<MudTr>();
-            rows[0].Find("tr").TextContent.Should().Contain("Second");
-            rows[1].Find("tr").TextContent.Should().Contain("First");
+            rows[0].Markup.Should().Contain("Second");
+            rows[1].Markup.Should().Contain("First");
         }
 
         [Fact]
@@ -1649,8 +1654,8 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var rows = target.FindComponents<MudTr>();
-            rows[0].Find("tr").TextContent.Should().Contain("First");
-            rows[1].Find("tr").TextContent.Should().Contain("Second");
+            rows[0].Markup.Should().Contain("First");
+            rows[1].Markup.Should().Contain("Second");
         }
 
         [Fact]
@@ -1680,11 +1685,13 @@ namespace Lantean.QBTMud.Test.Components.UI
             await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
             target.Render();
 
-            var headers = target.FindComponents<MudTh>().Select(h => h.Find("th")).ToList();
+            var headers = target.FindComponents<MudTh>()
+                .Select(h => GetChildContentText(h.Instance.ChildContent) ?? string.Empty)
+                .ToList();
             headers.Should().HaveCount(3);
-            headers[0].TextContent.Should().Contain("Age");
-            headers[1].TextContent.Should().Contain("Name");
-            headers[2].TextContent.Should().Contain("Score");
+            headers[0].Should().Contain("Age");
+            headers[1].Should().Contain("Name");
+            headers[2].Should().Contain("Score");
             dialogWorkflowMock.VerifyAll();
         }
 
@@ -1742,7 +1749,12 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => directionChanges.Add(value)));
             });
 
-            var initialAges = target.FindAll("[data-test-id='AgeCell']").Select(e => e.TextContent).ToList();
+            var initialAges = target.FindComponents<TdExtended>()
+                .Select(cell => cell.Markup)
+                .Where(markup => markup.Contains("AgeCell", StringComparison.Ordinal))
+                .Select(markup => markup.Contains(">10<", StringComparison.Ordinal) ? "10" : markup.Contains(">5<", StringComparison.Ordinal) ? "5" : string.Empty)
+                .Where(value => !string.IsNullOrEmpty(value))
+                .ToList();
             initialAges.Should().ContainInOrder("10", "5");
             sortChanges.Should().Contain("name");
 
@@ -1757,9 +1769,21 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => directionChanges.Add(value)));
             });
 
-            target.WaitForState(() => target.FindAll("[data-test-id='AgeCell']").First().TextContent == "5");
+            target.WaitForState(() =>
+            {
+                var firstAgeCellMarkup = target.FindComponents<TdExtended>()
+                    .Select(cell => cell.Markup)
+                    .First(markup => markup.Contains("AgeCell", StringComparison.Ordinal));
 
-            var updatedAges = target.FindAll("[data-test-id='AgeCell']").Select(e => e.TextContent).ToList();
+                return firstAgeCellMarkup.Contains(">5<", StringComparison.Ordinal);
+            });
+
+            var updatedAges = target.FindComponents<TdExtended>()
+                .Select(cell => cell.Markup)
+                .Where(markup => markup.Contains("AgeCell", StringComparison.Ordinal))
+                .Select(markup => markup.Contains(">10<", StringComparison.Ordinal) ? "10" : markup.Contains(">5<", StringComparison.Ordinal) ? "5" : string.Empty)
+                .Where(value => !string.IsNullOrEmpty(value))
+                .ToList();
             updatedAges.Should().ContainInOrder("5", "10");
             sortChanges.Should().Contain("age");
         }

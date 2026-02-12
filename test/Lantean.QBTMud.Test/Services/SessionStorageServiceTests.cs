@@ -21,7 +21,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             _jsRuntime.EnqueueResult("\"Session\"");
 
-            var result = await _target.GetItemAsync<string>("Key", Xunit.TestContext.Current.CancellationToken);
+            var result = await _target.GetItemAsync<string>("Key", TestContext.Current.CancellationToken);
 
             result.Should().Be("Session");
             _jsRuntime.LastIdentifier.Should().Be("sessionStorage.getItem");
@@ -34,7 +34,7 @@ namespace Lantean.QBTMud.Test.Services
             _jsRuntime.EnqueueResult(null);
             _jsRuntime.EnqueueResult("\"Session\"");
 
-            var result = await _target.GetItemAsync<string>("Key", Xunit.TestContext.Current.CancellationToken);
+            var result = await _target.GetItemAsync<string>("Key", TestContext.Current.CancellationToken);
 
             result.Should().Be("Session");
             _jsRuntime.LastIdentifier.Should().Be("sessionStorage.removeItem");
@@ -47,7 +47,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var payload = new SamplePayload("Column", 2);
 
-            await _target.SetItemAsync("Payload", payload, Xunit.TestContext.Current.CancellationToken);
+            await _target.SetItemAsync("Payload", payload, TestContext.Current.CancellationToken);
 
             _jsRuntime.LastIdentifier.Should().Be("sessionStorage.setItem");
             _jsRuntime.LastArguments.Should().NotBeNull();
@@ -59,7 +59,7 @@ namespace Lantean.QBTMud.Test.Services
             jsonValue.Should().Contain("\"sortColumn\":\"Column\"");
             jsonValue.Should().Contain("\"sortDirection\":2");
 
-            await _target.RemoveItemAsync("Payload", Xunit.TestContext.Current.CancellationToken);
+            await _target.RemoveItemAsync("Payload", TestContext.Current.CancellationToken);
 
             _jsRuntime.LastIdentifier.Should().Be("sessionStorage.removeItem");
             _jsRuntime.LastArguments.Should().BeEquivalentTo(new object?[] { "Payload" });
@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_InjectedFactory_WHEN_GetItemAsync_THEN_DelegatesToCreatedStorageService()
         {
-            var cancellationToken = Xunit.TestContext.Current.CancellationToken;
+            var cancellationToken = TestContext.Current.CancellationToken;
             var storage = new Mock<IBrowserStorageService>(MockBehavior.Strict);
             storage.Setup(mock => mock.GetItemAsync<string>("Key", cancellationToken))
                 .Returns(new ValueTask<string?>("Session"));

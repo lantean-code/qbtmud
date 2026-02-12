@@ -14,8 +14,7 @@ namespace Lantean.QBTMud.Test.Layout
 {
     public sealed class DetailsLayoutTests : RazorComponentTestBase<DetailsLayout>
     {
-        private readonly IKeyboardService _keyboardService;
-        private readonly Mock<IKeyboardService> _keyboardServiceMock;
+        private readonly IKeyboardService _keyboardService = Mock.Of<IKeyboardService>();
         private readonly TestNavigationManager _navigationManager;
         private readonly List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)> _handlers;
         private readonly IRenderedComponent<DetailsLayout> _target;
@@ -25,13 +24,12 @@ namespace Lantean.QBTMud.Test.Layout
         {
             _handlers = new List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)>();
 
-            _keyboardService = Mock.Of<IKeyboardService>();
-            _keyboardServiceMock = Mock.Get(_keyboardService);
-            _keyboardServiceMock
+            var keyboardServiceMock = Mock.Get(_keyboardService);
+            keyboardServiceMock
                 .Setup(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()))
                 .Callback<KeyboardEvent, Func<KeyboardEvent, Task>>((criteria, handler) => _handlers.Add((criteria, handler)))
                 .Returns(Task.CompletedTask);
-            _keyboardServiceMock
+            keyboardServiceMock
                 .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
                 .Returns(Task.CompletedTask);
 
@@ -149,10 +147,10 @@ namespace Lantean.QBTMud.Test.Layout
 
             await _target.InvokeAsync(() => _target.Instance.DisposeAsync().AsTask());
 
-            _keyboardServiceMock.Verify(
+            Mock.Get(_keyboardService).Verify(
                 s => s.UnregisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "ArrowUp" && e.AltKey)),
                 Times.Once);
-            _keyboardServiceMock.Verify(
+            Mock.Get(_keyboardService).Verify(
                 s => s.UnregisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "ArrowDown" && e.AltKey)),
                 Times.Once);
         }
@@ -243,7 +241,7 @@ namespace Lantean.QBTMud.Test.Layout
                 downloadPath: "DownloadPath",
                 rootPath: "RootPath",
                 isPrivate: false,
-                shareLimitAction: Lantean.QBitTorrentClient.Models.ShareLimitAction.Default,
+                shareLimitAction: QBitTorrentClient.Models.ShareLimitAction.Default,
                 comment: "Comment");
         }
 

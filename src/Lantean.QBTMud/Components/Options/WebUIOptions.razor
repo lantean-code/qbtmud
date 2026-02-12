@@ -176,9 +176,12 @@
                     <MudSelectItem Value="1">NO-IP</MudSelectItem>
                 </MudSelect>
             </MudItem>
-            <MudItem xs="4">
-                <MudButton OnClick="RegisterDyndnsService" Disabled="@(!DyndnsEnabled)" Variant="Variant.Filled">@WebUiLocalizer.Translate("OptionsDialog", "Register")</MudButton>
-            </MudItem>
+                <MudItem xs="4">
+                    <MudButton OnClick="RegisterDyndnsService"
+                               Disabled="@(!DyndnsEnabled)"
+                               Variant="Variant.Filled"
+                               data-test-id="@TestIdHelper.For("DyndnsRegister")">@WebUiLocalizer.Translate("OptionsDialog", "Register")</MudButton>
+                </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Domain name:")" Value="DyndnsDomain" ValueChanged="DyndnsDomainChanged" Disabled="@(!DyndnsEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DyndnsDomain")" />
             </MudItem>

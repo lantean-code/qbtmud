@@ -203,7 +203,7 @@ namespace Lantean.QBTMud.Components
 
             var percentComplete = Pieces.Count == 0
                 ? 0
-                : ((downloadedCount + (downloadingCount * 0.5)) / Pieces.Count) * 100.0;
+                : (downloadedCount + (downloadingCount * 0.5)) / Pieces.Count * 100.0;
             var percentCompleteText = percentComplete.ToString("0.#", CultureInfo.InvariantCulture);
             _linearSummary = TranslateApp(
                 "%1% complete — %2 downloaded, %3 in progress",

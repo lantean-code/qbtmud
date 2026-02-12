@@ -5,6 +5,7 @@ using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using System.Text.Json;
 
@@ -266,7 +267,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            await target.InvokeAsync(() => target.FindAll("button").First(b => b.TextContent.Contains("Register", StringComparison.Ordinal)).Click());
+            var registerButton = FindComponentByTestId<MudButton>(target, "DyndnsRegister");
+            await target.InvokeAsync(() => registerButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             var calls = TestContext.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
             calls.Should().HaveCount(1);
@@ -274,14 +276,14 @@ namespace Lantean.QBTMud.Test.Components.Options
 
             var enableSwitch = FindSwitch(target, "DyndnsEnabled");
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(false));
-            await target.InvokeAsync(() => target.FindAll("button").First(b => b.TextContent.Contains("Register", StringComparison.Ordinal)).Click());
+            await target.InvokeAsync(() => registerButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
             calls = TestContext.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
             calls.Should().HaveCount(1);
 
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(true));
             var serviceSelect = FindSelect<int>(target, "DyndnsService");
             await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => target.FindAll("button").First(b => b.TextContent.Contains("Register", StringComparison.Ordinal)).Click());
+            await target.InvokeAsync(() => registerButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             calls = TestContext.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
             calls.Should().HaveCount(2);

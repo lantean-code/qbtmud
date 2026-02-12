@@ -18,14 +18,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 {
     public sealed class WelcomeWizardDialogTests : RazorComponentTestBase<WelcomeWizardDialog>
     {
-        private readonly IApiClient _apiClient;
-        private readonly Mock<IApiClient> _apiClientMock;
-        private readonly IThemeManagerService _themeManagerService;
-        private readonly Mock<IThemeManagerService> _themeManagerServiceMock;
-        private readonly ISnackbar _snackbar;
-        private readonly Mock<ISnackbar> _snackbarMock;
-        private readonly IWebUiLanguageCatalog _languageCatalog;
-        private readonly Mock<IWebUiLanguageCatalog> _languageCatalogMock;
+        private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
+        private readonly IThemeManagerService _themeManagerService = Mock.Of<IThemeManagerService>();
+        private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
+        private readonly IWebUiLanguageCatalog _languageCatalog = Mock.Of<IWebUiLanguageCatalog>();
         private readonly TestNavigationManager _navigationManager;
         private readonly WelcomeWizardDialogTestDriver _target;
 
@@ -35,44 +31,38 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.RemoveAll<Microsoft.AspNetCore.Components.NavigationManager>();
             TestContext.Services.AddSingleton<Microsoft.AspNetCore.Components.NavigationManager>(_navigationManager);
 
-            _apiClient = Mock.Of<IApiClient>();
-            _apiClientMock = Mock.Get(_apiClient);
-            _apiClientMock
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock
                 .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
                 .Returns(Task.CompletedTask);
 
-            _themeManagerService = Mock.Of<IThemeManagerService>();
-            _themeManagerServiceMock = Mock.Get(_themeManagerService);
-            _themeManagerServiceMock
+            var themeManagerServiceMock = Mock.Get(_themeManagerService);
+            themeManagerServiceMock
                 .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
-            _themeManagerServiceMock
+            themeManagerServiceMock
                 .SetupGet(service => service.Themes)
                 .Returns(new List<ThemeCatalogItem>
                 {
                     CreateTheme("theme1", "Theme1"),
                     CreateTheme("theme2", "Theme2"),
                 });
-            _themeManagerServiceMock
+            themeManagerServiceMock
                 .SetupGet(service => service.CurrentThemeId)
                 .Returns("theme1");
-            _themeManagerServiceMock
+            themeManagerServiceMock
                 .Setup(service => service.ApplyTheme(It.IsAny<string>()))
                 .Returns(Task.CompletedTask);
 
-            _snackbar = Mock.Of<ISnackbar>();
-            _snackbarMock = Mock.Get(_snackbar);
-
-            _languageCatalog = Mock.Of<IWebUiLanguageCatalog>();
-            _languageCatalogMock = Mock.Get(_languageCatalog);
-            _languageCatalogMock
+            var languageCatalogMock = Mock.Get(_languageCatalog);
+            languageCatalogMock
                 .SetupGet(catalog => catalog.Languages)
                 .Returns(new List<WebUiLanguageCatalogItem>
                 {
                     new("en", "English"),
                     new("fr", "Francais"),
                 });
-            _languageCatalogMock
+            languageCatalogMock
                 .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
@@ -176,7 +166,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 CultureInfo.DefaultThreadCurrentUICulture = previousUiCulture;
             }
 
-            _apiClientMock.Verify(client => client.SetApplicationPreferences(It.Is<UpdatePreferences>(preferences =>
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.Is<UpdatePreferences>(preferences =>
                 string.Equals(preferences.Locale, "fr", StringComparison.Ordinal))), Times.Once);
         }
 
@@ -191,7 +181,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
             await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync(locale));
 
-            _apiClientMock.Verify(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()), Times.Never);
         }
 
         [Theory]
@@ -225,7 +215,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 CultureInfo.DefaultThreadCurrentUICulture = previousUiCulture;
             }
 
-            _apiClientMock.Verify(client => client.SetApplicationPreferences(It.Is<UpdatePreferences>(preferences =>
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.Is<UpdatePreferences>(preferences =>
                 string.Equals(preferences.Locale, locale, StringComparison.Ordinal))), Times.Once);
         }
 
@@ -240,7 +230,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
             await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
 
-            _themeManagerServiceMock.Verify(service => service.ApplyTheme("theme2"), Times.Once);
+            Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme("theme2"), Times.Once);
         }
 
         [Fact]
@@ -254,13 +244,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
             await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync(" "));
 
-            _themeManagerServiceMock.Verify(service => service.ApplyTheme(It.IsAny<string>()), Times.Never);
+            Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_ThemeStep_WHEN_ApplyThemeThrows_THEN_ShowsSnackbarError()
         {
-            _themeManagerServiceMock
+            Mock.Get(_themeManagerService)
                 .Setup(service => service.ApplyTheme(It.IsAny<string>()))
                 .ThrowsAsync(new InvalidOperationException("Message"));
 
@@ -272,7 +262,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
             await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
 
-            _snackbarMock.Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
         }
 
         [Fact]
@@ -356,13 +346,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
             await finishButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            _snackbarMock.Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_LanguageUpdateFails_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
         {
-            _apiClientMock
+            Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
                 .ThrowsAsync(new HttpRequestException("Message"));
 
@@ -371,20 +361,20 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
             await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
 
-            _snackbarMock.Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_ThemeIdUnsetAndLanguageUnset_WHEN_DoneStepRendered_THEN_RendersSuccessfully()
         {
-            _themeManagerServiceMock
+            Mock.Get(_themeManagerService)
                 .SetupGet(service => service.Themes)
                 .Returns(new List<ThemeCatalogItem>());
-            _themeManagerServiceMock
+            Mock.Get(_themeManagerService)
                 .SetupGet(service => service.CurrentThemeId)
                 .Returns((string?)null);
 
-            _languageCatalogMock
+            Mock.Get(_languageCatalog)
                 .SetupGet(catalog => catalog.Languages)
                 .Returns(new List<WebUiLanguageCatalogItem>());
 
@@ -400,7 +390,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_CurrentThemeIdMissing_WHEN_Rendered_THEN_SelectsFirstTheme()
         {
-            _themeManagerServiceMock
+            Mock.Get(_themeManagerService)
                 .SetupGet(service => service.CurrentThemeId)
                 .Returns((string?)null);
 

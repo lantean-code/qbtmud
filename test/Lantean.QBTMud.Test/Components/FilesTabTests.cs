@@ -24,16 +24,18 @@ namespace Lantean.QBTMud.Test.Components
 {
     public sealed class FilesTabTests : RazorComponentTestBase
     {
-        private readonly Mock<IApiClient> _apiClientMock;
+        private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
         private readonly IManagedTimer _timer;
         private readonly IManagedTimerFactory _timerFactory;
-        private readonly Mock<IDialogWorkflow> _dialogWorkflowMock;
+        private readonly IDialogWorkflow _dialogWorkflow = Mock.Of<IDialogWorkflow>();
         private IRenderedComponent<MudPopoverProvider>? _popoverProvider;
 
         public FilesTabTests()
         {
-            _apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            _dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.Services.RemoveAll<IApiClient>();
+            TestContext.Services.RemoveAll<IDialogWorkflow>();
+            TestContext.Services.AddSingleton(_apiClient);
+            TestContext.Services.AddSingleton(_dialogWorkflow);
             TestContext.UseSnackbarMock(MockBehavior.Loose);
 
             _timer = Mock.Of<IManagedTimer>();
@@ -48,10 +50,26 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.Services.AddSingleton(_timerFactory);
         }
 
+        private Mock<IApiClient> ApiClientMock
+        {
+            get
+            {
+                return Mock.Get(_apiClient);
+            }
+        }
+
+        private Mock<IDialogWorkflow> DialogWorkflowMock
+        {
+            get
+            {
+                return Mock.Get(_dialogWorkflow);
+            }
+        }
+
         [Fact]
         public async Task GIVEN_TimerTick_WHEN_ContentFetched_THEN_FolderExpandsToShowFiles()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("Folder/file1.txt", "Folder/file2.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("Folder/file1.txt", "Folder/file2.txt"));
 
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
@@ -67,8 +85,8 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_FileRow_WHEN_PriorityChanged_THEN_ApiCalledWithIndexes()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("Root/file1.txt"));
-            _apiClientMock.Setup(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.Single() == 1), ClientPriority.High)).Returns(Task.CompletedTask);
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("Root/file1.txt"));
+            ApiClientMock.Setup(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.Single() == 1), ClientPriority.High)).Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
@@ -81,7 +99,7 @@ namespace Lantean.QBTMud.Test.Components
             var prioritySelect = FindComponentByTestId<MudSelect<UiPriority>>(target, "Priority-Root_file1.txt");
             await target.InvokeAsync(() => prioritySelect.Instance.ValueChanged.InvokeAsync(UiPriority.High));
 
-            _apiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.Single() == 1), ClientPriority.High), Times.Once);
+            ApiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.Single() == 1), ClientPriority.High), Times.Once);
         }
 
         [Fact]
@@ -92,8 +110,8 @@ namespace Lantean.QBTMud.Test.Components
                 new FileData(1, "root/low.txt", 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.5f),
                 new FileData(2, "root/high.txt", 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.9f),
             };
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
-            _apiClientMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+            ApiClientMock
                 .Setup(c => c.SetFilePriority("Hash", It.IsAny<IEnumerable<int>>(), ClientPriority.DoNotDownload))
                 .Returns(Task.CompletedTask);
 
@@ -115,7 +133,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                var setPriorityInvocation = _apiClientMock.Invocations.SingleOrDefault(invocation => invocation.Method.Name == nameof(IApiClient.SetFilePriority));
+                var setPriorityInvocation = ApiClientMock.Invocations.SingleOrDefault(invocation => invocation.Method.Name == nameof(IApiClient.SetFilePriority));
                 setPriorityInvocation.Should().NotBeNull();
                 var indexes = (IEnumerable<int>)setPriorityInvocation!.Arguments[1];
                 indexes.Should().Equal(new[] { 1 });
@@ -126,7 +144,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_SearchText_WHEN_Filtered_THEN_OnlyMatchingFilesRemain()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt", "folder/file2.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt", "folder/file2.txt"));
 
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
@@ -165,15 +183,15 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Invocations.Should().BeEmpty();
+                ApiClientMock.Invocations.Should().BeEmpty();
             });
         }
 
         [Fact]
         public async Task GIVEN_NoSelection_WHEN_RenameToolbarClicked_THEN_MultiRenameDialogInvoked()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
-            _dialogWorkflowMock.Setup(d => d.InvokeRenameFilesDialog("Hash")).Returns(Task.CompletedTask);
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
+            DialogWorkflowMock.Setup(d => d.InvokeRenameFilesDialog("Hash")).Returns(Task.CompletedTask);
 
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
@@ -183,7 +201,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _dialogWorkflowMock.Verify(d => d.InvokeRenameFilesDialog("Hash"), Times.Once);
+                DialogWorkflowMock.Verify(d => d.InvokeRenameFilesDialog("Hash"), Times.Once);
             });
         }
 
@@ -191,8 +209,8 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_FileSelected_WHEN_RenameToolbarClicked_THEN_StringDialogShown()
         {
             var files = CreateFiles("root/file1.txt");
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
-            _dialogWorkflowMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+            DialogWorkflowMock
                 .Setup(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()))
                 .Returns(Task.CompletedTask);
 
@@ -212,7 +230,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _dialogWorkflowMock.Verify(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()), Times.Once);
+                DialogWorkflowMock.Verify(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()), Times.Once);
             });
         }
 
@@ -220,8 +238,8 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_FileContextMenu_WHEN_RenameClicked_THEN_StringDialogShown()
         {
             var files = CreateFiles("root/file1.txt");
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
-            _dialogWorkflowMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+            DialogWorkflowMock
                 .Setup(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()))
                 .Returns(Task.CompletedTask);
 
@@ -241,7 +259,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _dialogWorkflowMock.Verify(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()), Times.Once);
+                DialogWorkflowMock.Verify(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()), Times.Once);
             });
         }
 
@@ -250,7 +268,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var initial = CreateFiles("root/file1.txt");
             var updated = CreateFiles("root/file1.txt", "root/file2.txt");
-            _apiClientMock
+            ApiClientMock
                 .SetupSequence(c => c.GetTorrentContents("Hash"))
                 .ReturnsAsync(initial)
                 .ReturnsAsync(updated);
@@ -275,7 +293,7 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_FileListMissing_WHEN_TimerRuns_THEN_ContentListInitialized()
         {
             var files = CreateFiles("root/file1.txt");
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
 
             var dataManagerMock = new Mock<ITorrentDataManager>();
             TestContext.Services.RemoveAll<ITorrentDataManager>();
@@ -299,7 +317,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_TimerTick_WHEN_ComponentInactive_THEN_NoRefreshPerformed()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
 
             var target = TestContext.Render<FilesTab>(parameters =>
             {
@@ -310,13 +328,13 @@ namespace Lantean.QBTMud.Test.Components
 
             await TriggerTimerTickAsync(target);
 
-            _apiClientMock.Verify(c => c.GetTorrentContents(It.IsAny<string>()), Times.Never);
+            ApiClientMock.Verify(c => c.GetTorrentContents(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_TimerTick_WHEN_ApiReturnsForbidden_THEN_RefreshStops()
         {
-            _apiClientMock
+            ApiClientMock
                 .SetupSequence(c => c.GetTorrentContents("Hash"))
                 .ReturnsAsync(CreateFiles("root/file1.txt"))
                 .ThrowsAsync(new HttpRequestException(null, null, HttpStatusCode.Forbidden));
@@ -327,14 +345,14 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Exactly(2));
+                ApiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Exactly(2));
             });
         }
 
         [Fact]
         public async Task GIVEN_ExpandedFolder_WHEN_ToggledAgain_THEN_FolderCollapses()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
 
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
@@ -352,22 +370,22 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_TimerStops_WHEN_NoFurtherTicks_THEN_NoAdditionalWork()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
 
             var target = RenderFilesTab();
 
             await TriggerTimerTickAsync(target);
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().BeGreaterThanOrEqualTo(1);
+                ApiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().BeGreaterThanOrEqualTo(1);
             });
-            _apiClientMock.Invocations.Clear();
+            ApiClientMock.Invocations.Clear();
 
             target.Render();
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().Be(0);
+                ApiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().Be(0);
             });
         }
 
@@ -380,7 +398,7 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.Services.RemoveAll<ITorrentDataManager>();
             TestContext.Services.AddSingleton(dataManagerMock.Object);
 
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
 
             var target = TestContext.Render<FilesTab>(parameters =>
             {
@@ -393,33 +411,33 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Invocations.Count(i => i.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().BeGreaterThanOrEqualTo(1);
+                ApiClientMock.Invocations.Count(i => i.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().BeGreaterThanOrEqualTo(1);
             });
 
-            _apiClientMock.Invocations.Clear();
+            ApiClientMock.Invocations.Clear();
 
             target.Render();
 
-            _apiClientMock.Invocations.Should().BeEmpty();
+            ApiClientMock.Invocations.Should().BeEmpty();
         }
 
         [Fact]
         public void GIVEN_SubsequentRender_WHEN_FirstRenderComplete_THEN_NoAdditionalInitialization()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
 
             var target = RenderFilesTab();
 
             target.Render();
 
-            _apiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Once);
+            ApiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_FilterDialogCancelled_WHEN_ShowFilterInvoked_THEN_FiltersCleared()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
-            _dialogWorkflowMock.Setup(d => d.ShowFilterOptionsDialog(It.IsAny<List<PropertyFilterDefinition<ContentItem>>?>())).ReturnsAsync((List<PropertyFilterDefinition<ContentItem>>?)null);
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+            DialogWorkflowMock.Setup(d => d.ShowFilterOptionsDialog(It.IsAny<List<PropertyFilterDefinition<ContentItem>>?>())).ReturnsAsync((List<PropertyFilterDefinition<ContentItem>>?)null);
 
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
@@ -433,8 +451,8 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_FilterDialogWithDefinition_WHEN_Applied_THEN_FiltersStoredAndRendered()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt", "folder/file2.txt"));
-            _dialogWorkflowMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt", "folder/file2.txt"));
+            DialogWorkflowMock
                 .Setup(d => d.ShowFilterOptionsDialog(It.IsAny<List<PropertyFilterDefinition<ContentItem>>?>()))
                 .ReturnsAsync(new List<PropertyFilterDefinition<ContentItem>>
                 {
@@ -461,8 +479,8 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_FilterApplied_WHEN_RemoveFilterClicked_THEN_AllFilesVisible()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt", "folder/file2.txt"));
-            _dialogWorkflowMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt", "folder/file2.txt"));
+            DialogWorkflowMock
                 .Setup(d => d.ShowFilterOptionsDialog(It.IsAny<List<PropertyFilterDefinition<ContentItem>>?>()))
                 .ReturnsAsync(new List<PropertyFilterDefinition<ContentItem>>
                 {
@@ -501,14 +519,14 @@ namespace Lantean.QBTMud.Test.Components
 
             await TriggerTimerTickAsync(target);
 
-            _apiClientMock.Verify(c => c.GetTorrentContents(It.IsAny<string>()), Times.Never);
+            ApiClientMock.Verify(c => c.GetTorrentContents(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_ExpandedNodesInStorage_WHEN_Rendered_THEN_NodesRestored()
         {
             await TestContext.SessionStorage.SetItemAsync("FilesTab.ExpandedNodes.Hash", new HashSet<string>(new[] { "folder" }), Xunit.TestContext.Current.CancellationToken);
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
 
             var target = RenderFilesTab();
 
@@ -521,20 +539,20 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_RefreshActive_WHEN_SameHashProvided_THEN_LoadNotRepeated()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
 
             var target = RenderFilesTab();
 
             target.Render();
 
-            _apiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Once);
+            ApiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_Folder_WHEN_PriorityChanged_THEN_AllDescendantsUpdated()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("Folder/file1.txt", "Folder/file2.txt"));
-            _apiClientMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("Folder/file1.txt", "Folder/file2.txt"));
+            ApiClientMock
                 .Setup(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1, 2 })), ClientPriority.Maximum))
                 .Returns(Task.CompletedTask);
 
@@ -544,7 +562,7 @@ namespace Lantean.QBTMud.Test.Components
             var folderPriority = FindComponentByTestId<MudSelect<UiPriority>>(target, "Priority-Folder");
             await target.InvokeAsync(async () => await folderPriority.Instance.ValueChanged.InvokeAsync(UiPriority.Maximum));
 
-            _apiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1, 2 })), ClientPriority.Maximum), Times.Once);
+            ApiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1, 2 })), ClientPriority.Maximum), Times.Once);
         }
 
         [Fact]
@@ -555,8 +573,8 @@ namespace Lantean.QBTMud.Test.Components
                 new FileData(1, "root/low.txt", 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.5f),
                 new FileData(2, "root/high.txt", 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.9f),
             };
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
-            _apiClientMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+            ApiClientMock
                 .Setup(c => c.SetFilePriority("Hash", It.IsAny<IEnumerable<int>>(), ClientPriority.DoNotDownload))
                 .Returns(Task.CompletedTask);
 
@@ -575,7 +593,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1, 2 })), ClientPriority.DoNotDownload), Times.Once);
+                ApiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1, 2 })), ClientPriority.DoNotDownload), Times.Once);
             });
         }
 
@@ -587,8 +605,8 @@ namespace Lantean.QBTMud.Test.Components
                 new FileData(1, "root/low.txt", 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.5f),
                 new FileData(2, "root/high.txt", 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.9f),
             };
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
-            _apiClientMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+            ApiClientMock
                 .Setup(c => c.SetFilePriority("Hash", It.IsAny<IEnumerable<int>>(), ClientPriority.Normal))
                 .Returns(Task.CompletedTask);
 
@@ -607,7 +625,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1 })), ClientPriority.Normal), Times.Once);
+                ApiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1 })), ClientPriority.Normal), Times.Once);
             });
         }
 
@@ -618,8 +636,8 @@ namespace Lantean.QBTMud.Test.Components
             {
                 new FileData(1, "root/only.txt", 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 0.5f),
             };
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
-            _apiClientMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+            ApiClientMock
                 .Setup(c => c.SetFilePriority("Hash", It.IsAny<IEnumerable<int>>(), ClientPriority.DoNotDownload))
                 .Returns(Task.CompletedTask);
 
@@ -638,7 +656,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1 })), ClientPriority.DoNotDownload), Times.Once);
+                ApiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1 })), ClientPriority.DoNotDownload), Times.Once);
             });
         }
 
@@ -649,8 +667,8 @@ namespace Lantean.QBTMud.Test.Components
             {
                 new FileData(1, "root/only.txt", 100, 0.5f, ClientPriority.DoNotDownload, false, new[] { 0 }, 0.5f),
             };
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
-            _apiClientMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+            ApiClientMock
                 .Setup(c => c.SetFilePriority("Hash", It.IsAny<IEnumerable<int>>(), ClientPriority.Normal))
                 .Returns(Task.CompletedTask);
 
@@ -669,7 +687,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1 })), ClientPriority.Normal), Times.Once);
+                ApiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1 })), ClientPriority.Normal), Times.Once);
             });
         }
 
@@ -681,8 +699,8 @@ namespace Lantean.QBTMud.Test.Components
                 new FileData(1, "root/low.txt", 100, 0.5f, ClientPriority.DoNotDownload, false, new[] { 0 }, 0.5f),
                 new FileData(2, "root/high.txt", 100, 0.5f, ClientPriority.DoNotDownload, false, new[] { 0 }, 0.9f),
             };
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
-            _apiClientMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+            ApiClientMock
                 .Setup(c => c.SetFilePriority("Hash", It.IsAny<IEnumerable<int>>(), ClientPriority.Normal))
                 .Returns(Task.CompletedTask);
 
@@ -701,7 +719,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1, 2 })), ClientPriority.Normal), Times.Once);
+                ApiClientMock.Verify(c => c.SetFilePriority("Hash", It.Is<IEnumerable<int>>(i => i.SequenceEqual(new[] { 1, 2 })), ClientPriority.Normal), Times.Once);
             });
         }
 
@@ -712,11 +730,11 @@ namespace Lantean.QBTMud.Test.Components
             {
                 new FileData(1, "root/high.txt", 100, 0.5f, ClientPriority.Normal, false, new[] { 0 }, 1.0f),
             };
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
 
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
-            _apiClientMock.Invocations.Clear();
+            ApiClientMock.Invocations.Clear();
 
             var menu = FindComponentByTestId<MudMenu>(target, "NormalPriorityMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
@@ -727,7 +745,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.SetFilePriority)).Should().Be(0);
+                ApiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.SetFilePriority)).Should().Be(0);
             });
         }
 
@@ -742,7 +760,7 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.Services.RemoveAll<ITorrentDataManager>();
             TestContext.Services.AddSingleton(dataManagerMock.Object);
 
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
 
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
@@ -753,7 +771,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_ActiveFalse_WHEN_ParametersSet_THEN_ApiNotInvoked()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
 
             TestContext.Render<FilesTab>(parameters =>
             {
@@ -762,13 +780,13 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Hash, "Hash");
             });
 
-            _apiClientMock.Verify(c => c.GetTorrentContents(It.IsAny<string>()), Times.Never);
+            ApiClientMock.Verify(c => c.GetTorrentContents(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_SameHash_WHEN_ParametersUpdated_THEN_InitialLoadNotRepeated()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
 
             var target = RenderFilesTab();
 
@@ -778,13 +796,13 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Hash, "Hash");
             });
 
-            _apiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Once);
+            ApiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_HttpForbidden_WHEN_Refreshed_THEN_CancellationRequested()
         {
-            _apiClientMock
+            ApiClientMock
                 .SetupSequence(c => c.GetTorrentContents("Hash"))
                 .ReturnsAsync(CreateFiles("folder/file1.txt"))
                 .ThrowsAsync(new HttpRequestException(null, null, HttpStatusCode.Forbidden));
@@ -794,15 +812,15 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                _apiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Exactly(2));
+                ApiClientMock.Verify(c => c.GetTorrentContents("Hash"), Times.Exactly(2));
             });
         }
 
         [Fact]
         public async Task GIVEN_TableRendered_WHEN_ColumnOptionsClicked_THEN_NoErrors()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
-            _dialogWorkflowMock
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+            DialogWorkflowMock
                 .Setup(d => d.ShowColumnsOptionsDialog(
                     It.IsAny<List<ColumnDefinition<ContentItem>>>(),
                     It.IsAny<HashSet<string>>(),
@@ -820,7 +838,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_Component_WHEN_Disposed_THEN_TimerCancelled()
         {
-            _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+            ApiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
 
             var target = RenderFilesTab();
             await target.Instance.DisposeAsync();

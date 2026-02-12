@@ -466,7 +466,7 @@ namespace Lantean.QBTMud.Components
             await DialogService.ShowAsync<ManageTagsDialog>(
                 TranslateApp("Manage Torrent Tags"),
                 parameters,
-                global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
+                Services.DialogWorkflow.FormDialogOptions);
         }
 
         protected async Task ShowCategories()
@@ -479,7 +479,7 @@ namespace Lantean.QBTMud.Components
             await DialogService.ShowAsync<ManageCategoriesDialog>(
                 TranslateApp("Manage Torrent Categories"),
                 parameters,
-                global::Lantean.QBTMud.Services.DialogWorkflow.FormDialogOptions);
+                Services.DialogWorkflow.FormDialogOptions);
         }
 
         protected async Task DownloadSequential()
