@@ -346,20 +346,19 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 CreateTheme("ThemeId", "Theme/Name", ThemeSource.Local)
             };
-            TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true).SetVoidResult();
+            var downloadInvocation = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            downloadInvocation.SetVoidResult();
 
             var target = RenderPage(themes);
 
             var exportButton = FindComponentByTestId<MudIconButton>(target, "ThemeExport-ThemeId");
             await target.InvokeAsync(() => exportButton.Instance.OnClick.InvokeAsync());
 
-            var invocation = TestContext.JSInterop.Invocations
-                .Where(item => item.Identifier == "qbt.triggerFileDownload")
-                .Should()
-                .ContainSingle()
-                .Subject;
-            invocation.Arguments.Count.Should().Be(2);
-            invocation.Arguments[1].Should().Be("Theme-Name.json");
+            var arguments = downloadInvocation.Invocations
+                .Select(invocation => invocation.Arguments.OfType<string>().ToList())
+                .Single();
+            arguments.Should().HaveCount(2);
+            arguments.Last().Should().Be("Theme-Name.json");
         }
 
         [Fact]
@@ -573,20 +572,19 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 CreateTheme("ThemeId", "   ", ThemeSource.Local)
             };
-            TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true).SetVoidResult();
+            var downloadInvocation = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            downloadInvocation.SetVoidResult();
 
             var target = RenderPage(themes);
 
             var exportButton = FindComponentByTestId<MudIconButton>(target, "ThemeExport-ThemeId");
             await target.InvokeAsync(() => exportButton.Instance.OnClick.InvokeAsync());
 
-            var invocation = TestContext.JSInterop.Invocations
-                .Where(item => item.Identifier == "qbt.triggerFileDownload")
-                .Should()
-                .ContainSingle()
-                .Subject;
-            invocation.Arguments.Count.Should().Be(2);
-            invocation.Arguments[1].Should().Be("theme.json");
+            var arguments = downloadInvocation.Invocations
+                .Select(invocation => invocation.Arguments.OfType<string>().ToList())
+                .Single();
+            arguments.Should().HaveCount(2);
+            arguments.Last().Should().Be("theme.json");
         }
 
         [Fact]

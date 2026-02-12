@@ -247,7 +247,8 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_themeFontCatalog)
                 .Setup(catalog => catalog.TryGetFontUrl("Invalid", out It.Ref<string>.IsAny))
                 .Returns(false);
-            TestContext.JSInterop.SetupVoid("qbt.loadGoogleFont", _ => true).SetVoidResult();
+            var loadGoogleFontInvocation = TestContext.JSInterop.SetupVoid("qbt.loadGoogleFont", _ => true);
+            loadGoogleFontInvocation.SetVoidResult();
 
             var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
             var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
@@ -271,7 +272,7 @@ namespace Lantean.QBTMud.Test.Pages
             secondTask.Should().NotBeNull();
             await secondTask!;
 
-            TestContext.JSInterop.Invocations.Count(invocation => invocation.Identifier == "qbt.loadGoogleFont").Should().Be(2);
+            loadGoogleFontInvocation.Invocations.Should().HaveCount(2);
         }
 
         [Fact]

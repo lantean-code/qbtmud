@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using System.Diagnostics;
 
 namespace Lantean.QBTMud.Test.Components.UI
 {
@@ -48,7 +49,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             sortColumn.Should().Be("id");
             sortDirection.Should().Be(SortDirection.Ascending);
 
-            localStorageMock.Invocations.Count.Should().BeGreaterThan(0);
+            localStorageMock.Verify(service => service.GetItemAsync<HashSet<string>>(It.IsAny<string>()), Times.AtLeastOnce);
         }
 
         [Fact]
@@ -1258,7 +1259,7 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             var cell = target.FindComponents<TdExtended>().First().Find("td");
             await target.InvokeAsync(() => cell.TriggerEventAsync("onlongpress", new LongPressEventArgs()));
-            await Task.Delay(1500, Xunit.TestContext.Current.CancellationToken);
+            await WaitForSuppressWindowToExpireAsync();
 
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.TriggerEventAsync("onclick", new MouseEventArgs()));
@@ -1270,6 +1271,16 @@ namespace Lantean.QBTMud.Test.Components.UI
                 target.Instance.SelectedItem.Should().Be(items[0]);
                 rowClicks.Should().ContainSingle();
             });
+        }
+
+        private static async Task WaitForSuppressWindowToExpireAsync()
+        {
+            var targetDuration = TimeSpan.FromMilliseconds(550);
+            var stopwatch = Stopwatch.StartNew();
+            while (stopwatch.Elapsed < targetDuration)
+            {
+                await Task.Yield();
+            }
         }
 
         [Fact]
@@ -1290,7 +1301,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var firstCell = target.FindComponent<TdExtended>();
-            firstCell.Markup.Should().Contain(">B<");
+            firstCell.Find("td").TextContent.Trim().Should().Be("B");
         }
 
         [Fact]
@@ -1629,8 +1640,8 @@ namespace Lantean.QBTMud.Test.Components.UI
                 .NotContain(component => HasTestId(component, GetSortLabelTestId("Name")));
 
             var rows = target.FindComponents<MudTr>();
-            rows[0].Markup.Should().Contain("Second");
-            rows[1].Markup.Should().Contain("First");
+            rows[0].Find("tr").TextContent.Should().Contain("Second");
+            rows[1].Find("tr").TextContent.Should().Contain("First");
         }
 
         [Fact]
@@ -1654,8 +1665,8 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             var rows = target.FindComponents<MudTr>();
-            rows[0].Markup.Should().Contain("First");
-            rows[1].Markup.Should().Contain("Second");
+            rows[0].Find("tr").TextContent.Should().Contain("First");
+            rows[1].Find("tr").TextContent.Should().Contain("Second");
         }
 
         [Fact]

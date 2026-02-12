@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.JSInterop;
 using Microsoft.JSInterop.Infrastructure;
 using Moq;
@@ -29,7 +30,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_Keypress_WHEN_RegisterKeypressEvent_THEN_ShouldInvokeJsWithReference()
         {
-            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock.ClearInvocations();
             var criteria = new KeyboardEvent("Key");
             JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
@@ -56,7 +57,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeypressRegistered_WHEN_HandleKeyPressEventInvoked_THEN_ShouldCallHandler()
         {
-            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock.ClearInvocations();
             var criteria = new KeyboardEvent("Enter");
             JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
@@ -84,7 +85,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeypressRegistered_WHEN_HandleRepeatKeyPressEventInvoked_THEN_ShouldCallHandler()
         {
-            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock.ClearInvocations();
             var criteria = new KeyboardEvent("Enter");
             JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
@@ -112,7 +113,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ModifierKeypressRegistered_WHEN_HandleKeyPressEventInvoked_THEN_ShouldCallHandler()
         {
-            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock.ClearInvocations();
             var criteria = new KeyboardEvent("K")
             {
                 CtrlKey = true,
@@ -152,7 +153,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_NullKey_WHEN_HandleKeyPressEventInvoked_THEN_ShouldCallHandler()
         {
-            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock.ClearInvocations();
             var criteria = new KeyboardEvent(null!);
             JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
@@ -180,7 +181,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeypressNotRegistered_WHEN_HandleKeyPressEventInvoked_THEN_ShouldNotCallHandler()
         {
-            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock.ClearInvocations();
             var invoked = false;
 
             await _target.HandleKeyPressEvent(new KeyboardEvent("Escape"));
@@ -191,7 +192,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeypressRegistered_WHEN_UnregisterKeypressEvent_THEN_ShouldInvokeJsAndRemoveHandler()
         {
-            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock.ClearInvocations();
             var criteria = new KeyboardEvent("Space");
             JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
@@ -222,7 +223,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeyboardService_WHEN_Focus_THEN_ShouldInvokeJs()
         {
-            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock.ClearInvocations();
             JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.keyPressFocusInstance",
@@ -239,7 +240,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_KeyboardService_WHEN_UnFocus_THEN_ShouldInvokeJs()
         {
-            JsRuntimeMock.Invocations.Clear();
+            JsRuntimeMock.ClearInvocations();
             JsRuntimeMock
                 .Setup(js => js.InvokeAsync<IJSVoidResult>(
                     "qbt.keyPressUnFocusInstance",

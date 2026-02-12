@@ -48,6 +48,16 @@
 
 - After each set of changes, follow the test execution instructions in `AGENTS.md`.
 
+## Anti-Smell Rules
+
+- Do not inspect invocation internals in assertions. Avoid `Invocations.Count/Any/Where/Single/First/Last`, `Method.Name`, and `Arguments[...]` in test assertions.
+- Prefer `Verify(...)` for Moq assertions and bUnit planned-invocation assertions for JS interop (`Setup/SetupVoid(...).Invocations`) when call counting is required.
+- If invocation history must be reset between phases, use the shared `ClearInvocations()` helper in test infrastructure, not ad-hoc invocation-list manipulation.
+- Do not assert UI text by scanning component markup strings (`Markup.Should().Contain/NotContain`, `Markup.IndexOf`).
+- Prefer component- and attribute-based assertions (`FindComponent`, `FindComponentByTestId`, strongly-typed component state/properties).
+- Do not use `Task.Delay(...)` for synchronization or timing in tests.
+- Use deterministic waiting primitives instead (`WaitForAssertion`, `WaitForState`, `WaitAsync(timeout)`, `Task.Yield` polling only when strictly necessary).
+
 ## Blazor Components
 
 - Use `bUnit` for testing Blazor components.
@@ -79,3 +89,6 @@
 - [ ] Planned tests achieve 100% line coverage.
 - [ ] Any uncertainties have been raised and clarified.
 - [ ] If coverage would require new public/test-only members or hooks, I have stopped and asked for a refactor approval.
+- [ ] No invocation-internals inspection is used in assertions.
+- [ ] No markup-string assertions are used.
+- [ ] No `Task.Delay(...)` is used for test synchronization.

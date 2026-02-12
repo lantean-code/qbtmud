@@ -49,7 +49,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_PreferencesLoaded_WHEN_Rendered_THEN_DisablesSaveAndUndo()
         {
-            Mock.Get(_apiClient).Invocations.Clear();
+            _apiClient.ClearInvocations();
 
             var target = RenderPage();
 
@@ -83,7 +83,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_SaveWithoutChanges_WHEN_Clicked_THEN_DoesNotCallApi()
         {
-            Mock.Get(_apiClient).Invocations.Clear();
+            _apiClient.ClearInvocations();
 
             var target = RenderPage();
             var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
@@ -106,7 +106,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
                 .Returns(Task.CompletedTask);
 
-            Mock.Get(_apiClient).Invocations.Clear();
+            _apiClient.ClearInvocations();
             var target = RenderPage(preferences, configureApi: false);
 
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
@@ -132,7 +132,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_NoPendingChanges_WHEN_NavigateAttempted_THEN_NavigatesWithoutPrompt()
         {
-            Mock.Get(_dialogWorkflow).Invocations.Clear();
+            _dialogWorkflow.ClearInvocations();
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/settings");
 

@@ -22,7 +22,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.AddUnmatched("data-test-id", testId);
             });
 
-            target.Markup.Should().Contain($"data-test-id=\"{testId}\"");
+            HasTestId(target, testId).Should().BeTrue();
             var popover = target.FindComponent<MudPopover>();
 
             popover.Instance.Open.Should().BeFalse();
@@ -48,7 +48,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.AddUnmatched("data-test-id", testId);
             });
 
-            target.Markup.Should().Contain($"data-test-id=\"{testId}\"");
+            HasTestId(target, testId).Should().BeTrue();
             var popover = target.FindComponent<MudPopover>();
 
             target.Find("div.theme-color-item__row").Click();
@@ -67,7 +67,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.AddUnmatched("data-test-id", testId);
             });
 
-            target.Markup.Should().Contain($"data-test-id=\"{testId}\"");
+            HasTestId(target, testId).Should().BeTrue();
             var value = target
                 .FindComponents<MudText>()
                 .Single(text => text.Instance.Typo == Typo.caption);
@@ -89,7 +89,7 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.AddUnmatched("data-test-id", testId);
             });
 
-            target.Markup.Should().Contain($"data-test-id=\"{testId}\"");
+            HasTestId(target, testId).Should().BeTrue();
             target.Find("div.theme-color-item__row").Click();
             var picker = popoverProvider.FindComponent<MudColorPicker>();
             await target.InvokeAsync(() => picker.Instance.ValueChanged.InvokeAsync(new MudColor("#654321")));

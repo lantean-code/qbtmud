@@ -262,7 +262,8 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>();
             TestContext.UseSnackbarMock();
-            TestContext.JSInterop.SetupVoid("qbt.copyTextToClipboard", _ => true).SetVoidResult();
+            var copyTextInvocation = TestContext.JSInterop.SetupVoid("qbt.copyTextToClipboard", _ => true);
+            copyTextInvocation.SetVoidResult();
 
             var target = TestContext.Render<TorrentActions>(parameters =>
             {
@@ -284,7 +285,7 @@ namespace Lantean.QBTMud.Test.Components
                 await target.InvokeAsync(() => item.Instance.OnClick.InvokeAsync());
             }
 
-            TestContext.JSInterop.Invocations.Count(invocation => invocation.Identifier == "qbt.copyTextToClipboard").Should().Be(items.Count);
+            copyTextInvocation.Invocations.Should().HaveCount(items.Count);
         }
 
         [Fact]

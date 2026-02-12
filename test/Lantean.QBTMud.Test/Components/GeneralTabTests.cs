@@ -18,6 +18,7 @@ namespace Lantean.QBTMud.Test.Components
         private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
         private readonly IManagedTimer _timer;
         private readonly IManagedTimerFactory _timerFactory;
+        private Func<CancellationToken, Task<ManagedTimerTickResult>>? _tickHandler;
 
         public GeneralTabTests()
         {
@@ -31,6 +32,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(_timer);
             Mock.Get(_timer)
                 .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((handler, _) => _tickHandler = handler)
                 .ReturnsAsync(true);
             TestContext.Services.RemoveAll<IManagedTimerFactory>();
             TestContext.Services.AddSingleton(_timerFactory);
@@ -240,8 +242,8 @@ namespace Lantean.QBTMud.Test.Components
                     Times.Once);
             });
 
-            var invocation = Mock.Get(_timer).Invocations.Single(invocation => invocation.Method.Name == nameof(IManagedTimer.StartAsync));
-            return (Func<CancellationToken, Task<ManagedTimerTickResult>>)invocation.Arguments[0];
+            _tickHandler.Should().NotBeNull();
+            return _tickHandler!;
         }
 
         private static TorrentProperties CreateProperties()

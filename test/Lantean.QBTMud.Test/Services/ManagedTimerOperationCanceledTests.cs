@@ -141,8 +141,15 @@ namespace Lantean.QBTMud.Test.Services
         private static async Task<bool> WaitForTaskAsync(Task task)
         {
             var timeout = TimeSpan.FromSeconds(10);
-            var completed = await Task.WhenAny(task, Task.Delay(timeout));
-            return ReferenceEquals(completed, task);
+            try
+            {
+                await task.WaitAsync(timeout);
+                return true;
+            }
+            catch (TimeoutException)
+            {
+                return false;
+            }
         }
     }
 }

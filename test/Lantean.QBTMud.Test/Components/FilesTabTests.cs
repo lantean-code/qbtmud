@@ -28,6 +28,7 @@ namespace Lantean.QBTMud.Test.Components
         private readonly IManagedTimer _timer;
         private readonly IManagedTimerFactory _timerFactory;
         private readonly IDialogWorkflow _dialogWorkflow = Mock.Of<IDialogWorkflow>();
+        private Func<CancellationToken, Task<ManagedTimerTickResult>>? _tickHandler;
         private IRenderedComponent<MudPopoverProvider>? _popoverProvider;
 
         public FilesTabTests()
@@ -45,6 +46,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(_timer);
             Mock.Get(_timer)
                 .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((handler, _) => _tickHandler = handler)
                 .ReturnsAsync(true);
             TestContext.Services.RemoveAll<IManagedTimerFactory>();
             TestContext.Services.AddSingleton(_timerFactory);
@@ -74,12 +76,12 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("Folder"));
+            target.WaitForAssertion(() => HasElementByTestId(target, "FolderToggle-Folder").Should().BeTrue());
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-Folder");
             await target.InvokeAsync(() => toggle.Find("button").Click());
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
+            target.WaitForAssertion(() => HasElementByTestId(target, "Priority-Folder_file1.txt").Should().BeTrue());
         }
 
         [Fact]
@@ -94,7 +96,7 @@ namespace Lantean.QBTMud.Test.Components
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-Root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
+            target.WaitForAssertion(() => HasElementByTestId(target, "Priority-Root_file1.txt").Should().BeTrue());
 
             var prioritySelect = FindComponentByTestId<MudSelect<UiPriority>>(target, "Priority-Root_file1.txt");
             await target.InvokeAsync(() => prioritySelect.Instance.ValueChanged.InvokeAsync(UiPriority.High));
@@ -118,11 +120,11 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("root"));
+            target.WaitForAssertion(() => HasElementByTestId(target, "FolderToggle-root").Should().BeTrue());
 
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(async () => await toggle.Find("button").ClickAsync());
-            target.WaitForAssertion(() => target.Markup.Should().Contain("low.txt"));
+            target.WaitForAssertion(() => HasElementByTestId(target, "Priority-root_low.txt").Should().BeTrue());
 
             var menu = FindComponentByTestId<MudMenu>(target, "DoNotDownloadMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
@@ -133,11 +135,10 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                var setPriorityInvocation = ApiClientMock.Invocations.SingleOrDefault(invocation => invocation.Method.Name == nameof(IApiClient.SetFilePriority));
-                setPriorityInvocation.Should().NotBeNull();
-                var indexes = (IEnumerable<int>)setPriorityInvocation!.Arguments[1];
-                indexes.Should().Equal(new[] { 1 });
-                setPriorityInvocation.Arguments[2].Should().Be(ClientPriority.DoNotDownload);
+                ApiClientMock.Verify(client => client.SetFilePriority(
+                    "Hash",
+                    It.Is<IEnumerable<int>>(indexes => indexes.SequenceEqual(new[] { 1 })),
+                    ClientPriority.DoNotDownload), Times.Once);
             });
         }
 
@@ -157,8 +158,8 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("file2.txt");
-                target.Markup.Should().NotContain("file1.txt");
+                HasElementByTestId(target, "Priority-folder_file2.txt").Should().BeTrue();
+                HasElementByTestId(target, "Priority-folder_file1.txt").Should().BeFalse();
             });
         }
 
@@ -183,7 +184,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                ApiClientMock.Invocations.Should().BeEmpty();
+                ApiClientMock.Verify(client => client.SetFilePriority(It.IsAny<string>(), It.IsAny<IEnumerable<int>>(), It.IsAny<ClientPriority>()), Times.Never);
             });
         }
 
@@ -220,7 +221,7 @@ namespace Lantean.QBTMud.Test.Components
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").ClickAsync());
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
+            target.WaitForAssertion(() => HasElementByTestId(target, "Priority-root_file1.txt").Should().BeTrue());
 
             var row = target.WaitForElement($"[data-test-id=\"{TestIdHelper.For("Row-Files-root_file1.txt")}\"]");
             await target.InvokeAsync(() => row.Click());
@@ -249,7 +250,7 @@ namespace Lantean.QBTMud.Test.Components
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
             await target.InvokeAsync(() => toggle.Find("button").Click());
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
+            target.WaitForAssertion(() => HasElementByTestId(target, "Priority-root_file1.txt").Should().BeTrue());
 
             var row = target.WaitForElement($"[data-test-id=\"{TestIdHelper.For("Row-Files-root_file1.txt")}\"]");
             await target.InvokeAsync(() => row.TriggerEvent("oncontextmenu", new MouseEventArgs()));
@@ -360,11 +361,11 @@ namespace Lantean.QBTMud.Test.Components
             var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-folder");
             await target.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
 
-            target.WaitForAssertion(() => target.Markup.Should().Contain("file1.txt"));
+            target.WaitForAssertion(() => HasElementByTestId(target, "Priority-folder_file1.txt").Should().BeTrue());
 
             await target.InvokeAsync(() => toggle.Instance.OnClick.InvokeAsync());
 
-            target.WaitForAssertion(() => target.Markup.Should().NotContain("file1.txt"));
+            target.WaitForAssertion(() => HasElementByTestId(target, "Priority-folder_file1.txt").Should().BeFalse());
         }
 
         [Fact]
@@ -377,15 +378,15 @@ namespace Lantean.QBTMud.Test.Components
             await TriggerTimerTickAsync(target);
             target.WaitForAssertion(() =>
             {
-                ApiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().BeGreaterThanOrEqualTo(1);
+                ApiClientMock.Verify(client => client.GetTorrentContents("Hash"), Times.AtLeastOnce);
             });
-            ApiClientMock.Invocations.Clear();
+            ApiClientMock.ClearInvocations();
 
             target.Render();
 
             target.WaitForAssertion(() =>
             {
-                ApiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().Be(0);
+                ApiClientMock.Verify(client => client.GetTorrentContents("Hash"), Times.Never);
             });
         }
 
@@ -411,14 +412,14 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                ApiClientMock.Invocations.Count(i => i.Method.Name == nameof(IApiClient.GetTorrentContents)).Should().BeGreaterThanOrEqualTo(1);
+                ApiClientMock.Verify(client => client.GetTorrentContents("Hash"), Times.AtLeastOnce);
             });
 
-            ApiClientMock.Invocations.Clear();
+            ApiClientMock.ClearInvocations();
 
             target.Render();
 
-            ApiClientMock.Invocations.Should().BeEmpty();
+            ApiClientMock.Verify(client => client.GetTorrentContents("Hash"), Times.Never);
         }
 
         [Fact]
@@ -470,8 +471,8 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("file2.txt");
-                target.Markup.Should().NotContain("file1.txt");
+                HasElementByTestId(target, "Priority-folder_file2.txt").Should().BeTrue();
+                HasElementByTestId(target, "Priority-folder_file1.txt").Should().BeFalse();
                 target.Instance.Filters.Should().NotBeNull();
             });
         }
@@ -501,8 +502,8 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("file1.txt");
-                target.Markup.Should().Contain("file2.txt");
+                HasElementByTestId(target, "Priority-folder_file1.txt").Should().BeTrue();
+                HasElementByTestId(target, "Priority-folder_file2.txt").Should().BeTrue();
                 target.Instance.Filters.Should().BeNull();
             });
         }
@@ -532,7 +533,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("file1.txt");
+                HasElementByTestId(target, "Priority-folder_file1.txt").Should().BeTrue();
             });
         }
 
@@ -734,7 +735,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
-            ApiClientMock.Invocations.Clear();
+            ApiClientMock.ClearInvocations();
 
             var menu = FindComponentByTestId<MudMenu>(target, "NormalPriorityMenu");
             var menuActivator = menu.FindComponent<MudIconButton>();
@@ -745,7 +746,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                ApiClientMock.Invocations.Count(invocation => invocation.Method.Name == nameof(IApiClient.SetFilePriority)).Should().Be(0);
+                ApiClientMock.Verify(client => client.SetFilePriority(It.IsAny<string>(), It.IsAny<IEnumerable<int>>(), It.IsAny<ClientPriority>()), Times.Never);
             });
         }
 
@@ -765,7 +766,7 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderFilesTab();
             await TriggerTimerTickAsync(target);
 
-            target.Markup.Should().NotContain("file1.txt");
+            HasElementByTestId(target, "Priority-folder_file1.txt").Should().BeFalse();
         }
 
         [Fact]
@@ -876,13 +877,18 @@ namespace Lantean.QBTMud.Test.Components
                     Times.Once);
             });
 
-            var invocation = Mock.Get(_timer).Invocations.Single(invocation => invocation.Method.Name == nameof(IManagedTimer.StartAsync));
-            return (Func<CancellationToken, Task<ManagedTimerTickResult>>)invocation.Arguments[0];
+            _tickHandler.Should().NotBeNull();
+            return _tickHandler!;
         }
 
         private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<FilesTab> target, string testId) where TComponent : IComponent
         {
             return target.FindComponents<TComponent>().First(component => component.Markup.Contains($"data-test-id=\"{testId}\"", StringComparison.Ordinal));
+        }
+
+        private static bool HasElementByTestId(IRenderedComponent<FilesTab> target, string testId)
+        {
+            return target.FindAll($"[data-test-id=\"{testId}\"]").Count > 0;
         }
     }
 }

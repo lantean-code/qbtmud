@@ -23,18 +23,20 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "ChildContent"));
             });
 
-            target.Markup.Should().Contain("mud-nav-item");
-            target.Markup.Should().Contain("mud-ripple");
-            target.Markup.Should().Contain("Class");
-            target.Markup.Should().Contain("mud-nav-link");
-            target.Markup.Should().Contain("active");
-            target.Markup.Should().Contain("unselectable");
+            var root = target.FindAll("div").First();
+            root.ClassList.Should().Contain("mud-nav-item");
+            root.ClassList.Should().Contain("mud-ripple");
+            root.ClassList.Should().Contain("Class");
+
+            var link = target.Find(".mud-nav-link");
+            link.ClassList.Should().Contain("active");
+            link.ClassList.Should().Contain("unselectable");
 
             var icon = target.FindComponent<MudIcon>();
             icon.Instance.Class.Should().Contain("mud-nav-link-icon");
             icon.Instance.Class.Should().Contain("mud-nav-link-icon-default");
 
-            target.Markup.Should().Contain("ChildContent");
+            link.TextContent.Should().Contain("ChildContent");
         }
 
         [Fact]
@@ -54,8 +56,11 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             clicked.Should().BeFalse();
 
-            target.Markup.Should().NotContain("mud-ripple");
-            target.Markup.Should().NotContain("unselectable");
+            var root = target.FindAll("div").First();
+            root.ClassList.Should().NotContain("mud-ripple");
+
+            var link = target.Find(".mud-nav-link");
+            link.ClassList.Should().NotContain("unselectable");
         }
 
         [Fact]

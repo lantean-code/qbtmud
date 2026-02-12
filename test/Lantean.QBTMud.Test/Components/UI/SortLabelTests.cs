@@ -18,9 +18,9 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
             });
 
-            target.Markup.Should().Contain("mud-button-root");
-            target.Markup.Should().Contain("mud-table-sort-label");
-            target.Markup.Should().Contain("Label");
+            var labelHost = target.Find("span");
+            labelHost.ClassList.Should().Contain("mud-table-sort-label");
+            labelHost.TextContent.Should().Contain("Label");
 
             var icon = target.FindComponent<MudIcon>();
             icon.Instance.Class.Should().Contain("mud-table-sort-label-icon");
@@ -35,11 +35,10 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
             });
 
-            var iconIndex = target.Markup.IndexOf("mud-table-sort-label-icon", StringComparison.Ordinal);
-            var labelIndex = target.Markup.IndexOf("Label", StringComparison.Ordinal);
-            iconIndex.Should().BeGreaterThanOrEqualTo(0);
-            labelIndex.Should().BeGreaterThanOrEqualTo(0);
-            iconIndex.Should().BeLessThan(labelIndex);
+            var labelHost = target.Find("span");
+            labelHost.TextContent.Trim().Should().Be("Label");
+            labelHost.FirstElementChild.Should().NotBeNull();
+            labelHost.FirstElementChild!.ClassList.Should().Contain("mud-table-sort-label-icon");
         }
 
         [Fact]

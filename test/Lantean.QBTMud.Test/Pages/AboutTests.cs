@@ -66,7 +66,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_VersionProvided_WHEN_Rendered_THEN_SkipsApplicationVersionRequest()
         {
-            Mock.Get(_apiClient).Invocations.Clear();
+            _apiClient.ClearInvocations();
 
             var target = RenderPage("Version");
 

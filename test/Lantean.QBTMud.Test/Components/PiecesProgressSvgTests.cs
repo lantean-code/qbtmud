@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("<svg");
+                HasGridSvg(target).Should().BeTrue();
                 target.FindComponents<MudStack>().Where(c => c.FindAll("[data-test-id=\"PiecesSpinner\"]").Count > 0).Should().BeEmpty();
             });
         }
@@ -42,8 +42,8 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("<svg");
-                target.Markup.Should().NotContain("PiecesSpinner");
+                HasGridSvg(target).Should().BeTrue();
+                target.FindAll("[data-test-id=\"PiecesSpinner\"]").Count.Should().Be(0);
             });
         }
 
@@ -86,7 +86,7 @@ namespace Lantean.QBTMud.Test.Components
             target.WaitForAssertion(() =>
             {
                 GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesHiddenText").Instance.ChildContent).Should().Be("Pieces SVG hidden on small screens.");
-                target.Markup.Should().NotContain("pieces-progress-svg__grid");
+                HasGridSvg(target).Should().BeFalse();
             });
         }
 
@@ -102,7 +102,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("<svg");
+                HasGridSvg(target).Should().BeTrue();
             });
         }
 
@@ -158,7 +158,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("viewBox=\"0 0 32");
+                GetGridViewBox(target).Should().Contain("0 0 32");
             });
         }
 
@@ -174,7 +174,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("viewBox=\"0 0 64");
+                GetGridViewBox(target).Should().Contain("0 0 64");
             });
         }
 
@@ -190,7 +190,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("viewBox=\"0 0 128");
+                GetGridViewBox(target).Should().Contain("0 0 128");
             });
         }
 
@@ -230,8 +230,19 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                target.Markup.Should().Contain("<svg");
+                HasGridSvg(target).Should().BeTrue();
             });
+        }
+
+        private static bool HasGridSvg(IRenderedComponent<PiecesProgressSvg> target)
+        {
+            return target.FindAll("svg").Any(svg => svg.ClassList.Contains("pieces-progress-svg__grid"));
+        }
+
+        private static string? GetGridViewBox(IRenderedComponent<PiecesProgressSvg> target)
+        {
+            var grid = target.FindAll("svg").Single(svg => svg.ClassList.Contains("pieces-progress-svg__grid"));
+            return grid.GetAttribute("viewBox");
         }
 
         private IRenderedComponent<PiecesProgressSvg> RenderComponent(IReadOnlyList<PieceState> pieces, bool loading = false, bool failed = false, Breakpoint breakpoint = Breakpoint.Lg)

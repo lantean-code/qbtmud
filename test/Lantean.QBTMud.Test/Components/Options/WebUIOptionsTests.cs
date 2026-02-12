@@ -257,6 +257,8 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_RegisterButton_WHEN_Clicked_THEN_ShouldInvokeJs()
         {
             TestContext.Render<MudPopoverProvider>();
+            var openInvocation = TestContext.JSInterop.SetupVoid("qbt.open", _ => true);
+            openInvocation.SetVoidResult();
 
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
@@ -270,14 +272,16 @@ namespace Lantean.QBTMud.Test.Components.Options
             var registerButton = FindComponentByTestId<MudButton>(target, "DyndnsRegister");
             await target.InvokeAsync(() => registerButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            var calls = TestContext.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
+            var calls = openInvocation.Invocations.ToList();
             calls.Should().HaveCount(1);
-            calls[0].Arguments[0].Should().Be("https://www.dyndns.com/account/services/hosts/add.html");
+            calls.Select(call => call.Arguments.OfType<string>().First())
+                .Should()
+                .Equal("https://www.dyndns.com/account/services/hosts/add.html");
 
             var enableSwitch = FindSwitch(target, "DyndnsEnabled");
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => registerButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
-            calls = TestContext.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
+            calls = openInvocation.Invocations.ToList();
             calls.Should().HaveCount(1);
 
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(true));
@@ -285,9 +289,13 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(1));
             await target.InvokeAsync(() => registerButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            calls = TestContext.JSInterop.Invocations.Where(i => i.Identifier == "qbt.open").ToList();
+            calls = openInvocation.Invocations.ToList();
             calls.Should().HaveCount(2);
-            calls[1].Arguments[0].Should().Be("http://www.no-ip.com/services/managed_dns/free_dynamic_dns.html");
+            calls.Select(call => call.Arguments.OfType<string>().First())
+                .Should()
+                .Equal(
+                    "https://www.dyndns.com/account/services/hosts/add.html",
+                    "http://www.no-ip.com/services/managed_dns/free_dynamic_dns.html");
         }
 
         private static Preferences DeserializePreferences()

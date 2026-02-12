@@ -259,22 +259,18 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasks())
                 .ReturnsAsync(new[] { task });
-            TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true).SetVoidResult();
+            var downloadInvocation = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            downloadInvocation.SetVoidResult();
 
             var target = RenderPage();
 
             var downloadButton = FindIconButton(target, Icons.Material.Filled.Download);
             await target.InvokeAsync(() => downloadButton.Instance.OnClick.InvokeAsync());
 
-            var invocation = TestContext.JSInterop.Invocations
-                .Where(item => item.Identifier == "qbt.triggerFileDownload")
-                .Should()
-                .ContainSingle()
-                .Subject;
-            invocation.Identifier.Should().Be("qbt.triggerFileDownload");
-            invocation.Arguments.Count.Should().Be(2);
-            invocation.Arguments[0].Should().Be("api/v2/torrentcreator/torrentFile?taskID=TaskId");
-            invocation.Arguments[1].Should().Be("File.txt.torrent");
+            var arguments = downloadInvocation.Invocations
+                .Select(invocation => invocation.Arguments.OfType<string>().ToList())
+                .Single();
+            arguments.Should().Equal("api/v2/torrentcreator/torrentFile?taskID=TaskId", "File.txt.torrent");
         }
 
         [Fact]
@@ -304,20 +300,18 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasks())
                 .ReturnsAsync(new[] { task });
-            TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true).SetVoidResult();
+            var downloadInvocation = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            downloadInvocation.SetVoidResult();
 
             var target = RenderPage();
 
             var downloadButton = FindIconButton(target, Icons.Material.Filled.Download);
             await target.InvokeAsync(() => downloadButton.Instance.OnClick.InvokeAsync());
 
-            var invocation = TestContext.JSInterop.Invocations
-                .Where(item => item.Identifier == "qbt.triggerFileDownload")
-                .Should()
-                .ContainSingle()
-                .Subject;
-            invocation.Identifier.Should().Be("qbt.triggerFileDownload");
-            invocation.Arguments[1].Should().Be("TaskId.torrent");
+            var arguments = downloadInvocation.Invocations
+                .Select(invocation => invocation.Arguments.OfType<string>().ToList())
+                .Single();
+            arguments.Last().Should().Be("TaskId.torrent");
         }
 
         [Fact]
@@ -327,19 +321,18 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasks())
                 .ReturnsAsync(new[] { task });
-            TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true).SetVoidResult();
+            var downloadInvocation = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            downloadInvocation.SetVoidResult();
 
             var target = RenderPage();
 
             var downloadButton = FindIconButton(target, Icons.Material.Filled.Download);
             await target.InvokeAsync(() => downloadButton.Instance.OnClick.InvokeAsync());
 
-            var invocation = TestContext.JSInterop.Invocations
-                .Where(item => item.Identifier == "qbt.triggerFileDownload")
-                .Should()
-                .ContainSingle()
-                .Subject;
-            invocation.Arguments[1].Should().Be("File.torrent");
+            var arguments = downloadInvocation.Invocations
+                .Select(invocation => invocation.Arguments.OfType<string>().ToList())
+                .Single();
+            arguments.Last().Should().Be("File.torrent");
         }
 
         [Fact]
@@ -674,19 +667,18 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasks())
                 .ReturnsAsync(new[] { task });
-            TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true).SetVoidResult();
+            var downloadInvocation = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            downloadInvocation.SetVoidResult();
 
             var target = RenderPage();
 
             var downloadButton = FindIconButton(target, Icons.Material.Filled.Download);
             await target.InvokeAsync(() => downloadButton.Instance.OnClick.InvokeAsync());
 
-            var invocation = TestContext.JSInterop.Invocations
-                .Where(item => item.Identifier == "qbt.triggerFileDownload")
-                .Should()
-                .ContainSingle()
-                .Subject;
-            invocation.Arguments[1].Should().Be("TaskId.torrent");
+            var arguments = downloadInvocation.Invocations
+                .Select(invocation => invocation.Arguments.OfType<string>().ToList())
+                .Single();
+            arguments.Last().Should().Be("TaskId.torrent");
         }
 
         [Fact]
@@ -696,19 +688,18 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasks())
                 .ReturnsAsync(new[] { task });
-            TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true).SetVoidResult();
+            var downloadInvocation = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            downloadInvocation.SetVoidResult();
 
             var target = RenderPage();
 
             var downloadButton = FindIconButton(target, Icons.Material.Filled.Download);
             await target.InvokeAsync(() => downloadButton.Instance.OnClick.InvokeAsync());
 
-            var invocation = TestContext.JSInterop.Invocations
-                .Where(item => item.Identifier == "qbt.triggerFileDownload")
-                .Should()
-                .ContainSingle()
-                .Subject;
-            invocation.Arguments[1].Should().Be("TaskId.torrent");
+            var arguments = downloadInvocation.Invocations
+                .Select(invocation => invocation.Arguments.OfType<string>().ToList())
+                .Single();
+            arguments.Last().Should().Be("TaskId.torrent");
         }
 
         [Fact]
@@ -718,19 +709,18 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasks())
                 .ReturnsAsync(new[] { task });
-            TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true).SetVoidResult();
+            var downloadInvocation = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            downloadInvocation.SetVoidResult();
 
             var target = RenderPage();
 
             var downloadButton = FindIconButton(target, Icons.Material.Filled.Download);
             await target.InvokeAsync(() => downloadButton.Instance.OnClick.InvokeAsync());
 
-            var invocation = TestContext.JSInterop.Invocations
-                .Where(item => item.Identifier == "qbt.triggerFileDownload")
-                .Should()
-                .ContainSingle()
-                .Subject;
-            invocation.Arguments[1].Should().Be("TaskId.torrent");
+            var arguments = downloadInvocation.Invocations
+                .Select(invocation => invocation.Arguments.OfType<string>().ToList())
+                .Single();
+            arguments.Last().Should().Be("TaskId.torrent");
         }
 
         [Fact]

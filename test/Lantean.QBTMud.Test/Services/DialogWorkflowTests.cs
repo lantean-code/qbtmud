@@ -129,9 +129,7 @@ namespace Lantean.QBTMud.Test.Services
             fileOne.VerifyAll();
             fileTwo.VerifyAll();
 
-            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("Added torrent(s) and failed to add torrent(s).");
-            snackbarCall.Arguments[1].Should().Be(Severity.Warning);
+            VerifySnackbar("Added torrent(s) and failed to add torrent(s).", Severity.Warning);
         }
 
         [Fact]
@@ -156,9 +154,7 @@ namespace Lantean.QBTMud.Test.Services
 
             stream.DisposeAsyncCalled.Should().BeTrue();
             Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
-            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("Unable to read \"Second.torrent\": fail");
-            snackbarCall.Arguments[1].Should().Be(Severity.Error);
+            VerifySnackbar("Unable to read \"Second.torrent\": fail", Severity.Error);
             fileOne.VerifyAll();
             fileTwo.VerifyAll();
         }
@@ -190,9 +186,7 @@ namespace Lantean.QBTMud.Test.Services
 
             streamOne.DisposeAsyncCalled.Should().BeTrue();
             streamTwo.DisposeAsyncCalled.Should().BeTrue();
-            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("Unable to add torrent. Please try again.");
-            snackbarCall.Arguments[1].Should().Be(Severity.Error);
+            VerifySnackbar("Unable to add torrent. Please try again.", Severity.Error);
             fileOne.VerifyAll();
             fileTwo.VerifyAll();
         }
@@ -231,9 +225,7 @@ namespace Lantean.QBTMud.Test.Services
             streamOne.DisposeAsyncCalled.Should().BeTrue();
             streamTwo.DisposeAsyncCalled.Should().BeTrue();
             streamThree.DisposeAsyncCalled.Should().BeTrue();
-            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("No torrents processed.");
-            snackbarCall.Arguments[1].Should().Be(Severity.Success);
+            VerifySnackbar("No torrents processed.", Severity.Success);
             fileOne.VerifyAll();
             fileTwo.VerifyAll();
             fileThree.VerifyAll();
@@ -269,7 +261,7 @@ namespace Lantean.QBTMud.Test.Services
             await _target.InvokeAddTorrentFileDialog();
 
             Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
-            Mock.Get(_snackbar).Invocations.Count.Should().Be(0);
+            VerifyNoSnackbar();
         }
 
         [Fact]
@@ -287,9 +279,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeAddTorrentFileDialog();
 
-            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("No torrents processed.");
-            snackbarCall.Arguments[1].Should().Be(Severity.Success);
+            VerifySnackbar("No torrents processed.", Severity.Success);
         }
 
         [Fact]
@@ -327,9 +317,7 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.Is<AddTorrentParams>(parameters => MatchesAddTorrentLinkParameters(parameters))),
                 Times.Once);
 
-            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("Added 1 torrent.");
-            snackbarCall.Arguments[1].Should().Be(Severity.Success);
+            VerifySnackbar("Added 1 torrent.", Severity.Success);
         }
 
         [Fact]
@@ -343,7 +331,7 @@ namespace Lantean.QBTMud.Test.Services
             await _target.InvokeAddTorrentLinkDialog();
 
             Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
-            Mock.Get(_snackbar).Invocations.Count.Should().Be(0);
+            VerifyNoSnackbar();
         }
 
         [Fact]
@@ -361,9 +349,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("Failed to add 1 torrent.");
-            snackbarCall.Arguments[1].Should().Be(Severity.Error);
+            VerifySnackbar("Failed to add 1 torrent.", Severity.Error);
         }
 
         [Fact]
@@ -381,9 +367,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("Unable to add torrent. Please try again.");
-            snackbarCall.Arguments[1].Should().Be(Severity.Error);
+            VerifySnackbar("Unable to add torrent. Please try again.", Severity.Error);
         }
 
         [Fact]
@@ -401,9 +385,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("Added 2 torrents and failed to add 2 torrents and Pending 1 torrent.");
-            snackbarCall.Arguments[1].Should().Be(Severity.Warning);
+            VerifySnackbar("Added 2 torrents and failed to add 2 torrents and Pending 1 torrent.", Severity.Warning);
         }
 
         [Fact]
@@ -421,9 +403,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
-            snackbarCall.Arguments[0].Should().Be("Pending 2 torrents.");
-            snackbarCall.Arguments[1].Should().Be(Severity.Info);
+            VerifySnackbar("Pending 2 torrents.", Severity.Info);
         }
 
         [Fact]
@@ -1367,6 +1347,20 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.ShowPathBrowserDialog("Pick", null, DirectoryContentMode.Directories, true);
 
             result.Should().BeNull();
+        }
+
+        private void VerifySnackbar(string message, Severity severity)
+        {
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(message, severity, It.IsAny<Action<SnackbarOptions>>()),
+                Times.Once);
+        }
+
+        private void VerifyNoSnackbar()
+        {
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>()),
+                Times.Never);
         }
 
         private static bool HasCategoryPropertiesDialogParameters(DialogParameters parameters, string category, string savePath)

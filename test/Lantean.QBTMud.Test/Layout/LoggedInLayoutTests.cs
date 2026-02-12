@@ -98,7 +98,7 @@ namespace Lantean.QBTMud.Test.Layout
         public async Task GIVEN_WelcomeWizardIncomplete_WHEN_Rendered_THEN_ShowsWizardDialog()
         {
             DisposeDefaultTarget();
-            Mock.Get(_dialogService).Invocations.Clear();
+            _dialogService.ClearInvocations();
 
             await TestContext.LocalStorage.RemoveItemAsync(WelcomeWizardCompletedStorageKey, Xunit.TestContext.Current.CancellationToken);
 
@@ -117,7 +117,7 @@ namespace Lantean.QBTMud.Test.Layout
         public async Task GIVEN_WelcomeWizardCompleted_WHEN_Rendered_THEN_DoesNotShowWizardDialog()
         {
             DisposeDefaultTarget();
-            Mock.Get(_dialogService).Invocations.Clear();
+            _dialogService.ClearInvocations();
 
             await TestContext.LocalStorage.SetItemAsync(WelcomeWizardCompletedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
 
@@ -456,7 +456,7 @@ namespace Lantean.QBTMud.Test.Layout
         public async Task GIVEN_AlternativeSpeedLimitToggleSucceeds_WHEN_Enabled_THEN_UpdatesStateAndShowsSnackbar()
         {
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
-            Mock.Get(_snackbar).Invocations.Clear();
+            _snackbar.ClearInvocations();
 
             Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(Task.CompletedTask);
             Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
@@ -467,14 +467,16 @@ namespace Lantean.QBTMud.Test.Layout
             await target.InvokeAsync(() => button.Find("button").Click());
 
             mainData.ServerState.UseAltSpeedLimits.Should().BeTrue();
-            Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Alternative speed limits: On");
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Alternative speed limits: On", It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_AlternativeSpeedLimitToggleSucceeds_WHEN_Disabled_THEN_UpdatesStateAndShowsSnackbar()
         {
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: true));
-            Mock.Get(_snackbar).Invocations.Clear();
+            _snackbar.ClearInvocations();
 
             Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(Task.CompletedTask);
             Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(false);
@@ -485,14 +487,16 @@ namespace Lantean.QBTMud.Test.Layout
             await target.InvokeAsync(() => button.Find("button").Click());
 
             mainData.ServerState.UseAltSpeedLimits.Should().BeFalse();
-            Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Alternative speed limits: Off");
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Alternative speed limits: Off", It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_AlternativeSpeedLimitToggleFails_WHEN_Clicked_THEN_ShowsErrorSnackbar()
         {
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
-            Mock.Get(_snackbar).Invocations.Clear();
+            _snackbar.ClearInvocations();
 
             Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).ThrowsAsync(new HttpRequestException("Fail"));
 
@@ -501,7 +505,9 @@ namespace Lantean.QBTMud.Test.Layout
 
             await target.InvokeAsync(() => button.Find("button").Click());
 
-            Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Unable to toggle alternative speed limits: Fail");
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Unable to toggle alternative speed limits: Fail", It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
         }
 
         [Fact]
@@ -509,7 +515,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
             var toggleTaskSource = new TaskCompletionSource<bool>();
-            Mock.Get(_snackbar).Invocations.Clear();
+            _snackbar.ClearInvocations();
 
             Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(toggleTaskSource.Task);
             Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
@@ -531,7 +537,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState());
             mainData.ServerState.RefreshInterval = 0;
-            Mock.Get(_refreshTimer).Invocations.Clear();
+            _refreshTimer.ClearInvocations();
 
             RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
@@ -568,7 +574,7 @@ namespace Lantean.QBTMud.Test.Layout
             Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
             var probeBody = CreateProbeBody();
             var mainData = CreateMainData(serverState: CreateServerState());
-            Mock.Get(_dialogService).Invocations.Clear();
+            _dialogService.ClearInvocations();
 
             Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData())
@@ -1032,7 +1038,7 @@ namespace Lantean.QBTMud.Test.Layout
 
         private void ResetDialogInvocations()
         {
-            Mock.Get(_dialogWorkflow).Invocations.Clear();
+            _dialogWorkflow.ClearInvocations();
         }
 
         private static IRenderedComponent<MudIconButton> FindTimerButton(IRenderedComponent<LoggedInLayout> target, string icon)

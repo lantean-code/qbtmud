@@ -22,6 +22,7 @@ namespace Lantean.QBTMud.Test.Pages
         private readonly ISnackbar _snackbar;
         private readonly IManagedTimer _timer;
         private readonly IManagedTimerFactory _timerFactory;
+        private Func<CancellationToken, Task<ManagedTimerTickResult>>? _tickHandler;
         private readonly IRenderedComponent<MudPopoverProvider> _popoverProvider;
         private readonly IRenderedComponent<Blocks> _target;
 
@@ -36,6 +37,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Returns(_timer);
             Mock.Get(_timer)
                 .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((handler, _) => _tickHandler = handler)
                 .ReturnsAsync(true);
 
             TestContext.Services.RemoveAll<IApiClient>();
@@ -258,8 +260,8 @@ namespace Lantean.QBTMud.Test.Pages
                     Times.Once);
             });
 
-            var invocation = Mock.Get(_timer).Invocations.Single(invocation => invocation.Method.Name == nameof(IManagedTimer.StartAsync));
-            return (Func<CancellationToken, Task<ManagedTimerTickResult>>)invocation.Arguments[0];
+            _tickHandler.Should().NotBeNull();
+            return _tickHandler!;
         }
 
         private IRenderedComponent<MudMenuItem> FindMenuItem(string icon)

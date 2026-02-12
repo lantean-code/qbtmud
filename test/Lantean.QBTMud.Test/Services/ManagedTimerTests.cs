@@ -307,19 +307,31 @@ namespace Lantean.QBTMud.Test.Services
         {
             var timeout = TimeSpan.FromSeconds(10);
             var stopwatch = Stopwatch.StartNew();
-            while (!condition() && stopwatch.Elapsed < timeout)
+            while (!condition())
             {
-                await Task.Delay(1);
+                if (stopwatch.Elapsed >= timeout)
+                {
+                    return false;
+                }
+
+                await Task.Yield();
             }
 
-            return condition();
+            return true;
         }
 
         private static async Task<bool> WaitForTaskAsync(Task task)
         {
             var timeout = TimeSpan.FromSeconds(10);
-            var completed = await Task.WhenAny(task, Task.Delay(timeout));
-            return ReferenceEquals(completed, task);
+            try
+            {
+                await task.WaitAsync(timeout);
+                return true;
+            }
+            catch (TimeoutException)
+            {
+                return false;
+            }
         }
 
         private void ConfigureTimerMocks()

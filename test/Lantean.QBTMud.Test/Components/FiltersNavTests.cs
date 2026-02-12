@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
@@ -636,9 +635,9 @@ namespace Lantean.QBTMud.Test.Components
             var trackerStart = WaitForMenuItemByTestId("_trackerType-Start");
             await target.InvokeAsync(() => trackerStart.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Invocations.Count(i => i.Method.Name == nameof(IApiClient.StartTorrents)).Should().Be(2);
-            apiClientMock.Invocations.Count(i => i.Method.Name == nameof(IApiClient.StopTorrents)).Should().Be(1);
-            dialogMock.Invocations.Count(i => i.Method.Name == nameof(IDialogWorkflow.InvokeDeleteTorrentDialog)).Should().Be(1);
+            apiClientMock.Verify(client => client.StartTorrents(null, It.IsAny<string[]>()), Times.Exactly(2));
+            apiClientMock.Verify(client => client.StopTorrents(null, It.IsAny<string[]>()), Times.Once);
+            dialogMock.Verify(workflow => workflow.InvokeDeleteTorrentDialog(false, It.IsAny<string[]>()), Times.Once);
         }
 
         [Fact]
@@ -658,7 +657,7 @@ namespace Lantean.QBTMud.Test.Components
             var statusStart = WaitForMenuItemByTestId("_statusType-Start");
             await target.InvokeAsync(() => statusStart.Instance.OnClick.InvokeAsync());
 
-            apiClientMock.Invocations.Count(i => i.Method.Name == nameof(IApiClient.StartTorrents)).Should().Be(1);
+            apiClientMock.Verify(client => client.StartTorrents(null, It.IsAny<string[]>()), Times.Once);
         }
 
         [Fact]

@@ -70,13 +70,15 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public async Task GIVEN_ThemeChangedWithEmptyFont_WHEN_Rendered_THEN_DoesNotLoad()
         {
+            var loadGoogleFontInvocation = TestContext.JSInterop.SetupVoid("qbt.loadGoogleFont", _ => true);
+            loadGoogleFontInvocation.SetVoidResult();
             var target = RenderLayout();
 
             await target.InvokeAsync(() => RaiseThemeChanged(new MudTheme(), string.Empty, "ThemeId"));
 
             target.WaitForAssertion(() =>
             {
-                TestContext.JSInterop.Invocations.Count(inv => inv.Identifier == "qbt.loadGoogleFont").Should().Be(0);
+                loadGoogleFontInvocation.Invocations.Should().BeEmpty();
             });
         }
 
@@ -87,6 +89,8 @@ namespace Lantean.QBTMud.Test.Layout
             Mock.Get(_themeFontCatalog)
                 .Setup(catalog => catalog.TryGetFontUrl("FontFamily", out url))
                 .Returns(false);
+            var loadGoogleFontInvocation = TestContext.JSInterop.SetupVoid("qbt.loadGoogleFont", _ => true);
+            loadGoogleFontInvocation.SetVoidResult();
 
             var target = RenderLayout();
 
@@ -94,7 +98,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             target.WaitForAssertion(() =>
             {
-                TestContext.JSInterop.Invocations.Count(inv => inv.Identifier == "qbt.loadGoogleFont").Should().Be(0);
+                loadGoogleFontInvocation.Invocations.Should().BeEmpty();
             });
         }
 

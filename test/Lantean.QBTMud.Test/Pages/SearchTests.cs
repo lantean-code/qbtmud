@@ -1011,7 +1011,12 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_ContextMenuSelection_WHEN_OpenDescription_THEN_InvokesBrowserOpen()
         {
             var result = new SearchResult("http://desc/open", "Open Result", 1_000_000_000, "http://files/open", 12, 60, "http://site/open", "movies", 1_700_000_000);
-            TestContext.JSInterop.SetupVoid("open");
+            var openInvocation = TestContext.JSInterop.SetupVoid(
+                "open",
+                invocation => invocation.Arguments.Count == 2
+                    && invocation.Arguments.ElementAt(0) as string == "http://desc/open"
+                    && invocation.Arguments.ElementAt(1) as string == "http://desc/open");
+            openInvocation.SetVoidResult();
 
             var target = await RenderSearchHostWithResultsAsync(205, new List<SearchResult> { result });
 
@@ -1020,15 +1025,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                var hasInvocation = TestContext.JSInterop.Invocations.Any(invocation =>
-                    invocation.Identifier == "open"
-                    && invocation.Arguments.Count == 2
-                    && invocation.Arguments[0] is string first
-                    && invocation.Arguments[1] is string second
-                    && first == "http://desc/open"
-                    && second == "http://desc/open");
-
-                hasInvocation.Should().BeTrue();
+                openInvocation.Invocations.Should().ContainSingle();
             });
         }
 

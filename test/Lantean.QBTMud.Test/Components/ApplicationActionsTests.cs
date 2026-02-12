@@ -418,8 +418,12 @@ namespace Lantean.QBTMud.Test.Components
         {
             TestContext.UseApiClientMock();
             TestContext.UseSnackbarMock(MockBehavior.Loose);
-            TestContext.JSInterop.Setup<MagnetRegistrationResult>("qbt.registerMagnetHandler", _ => true)
-                .SetResult(new MagnetRegistrationResult { Status = "success" });
+            var registerInvocation = TestContext.JSInterop.Setup<MagnetRegistrationResult>(
+                "qbt.registerMagnetHandler",
+                invocation => invocation.Arguments.Count == 2
+                    && invocation.Arguments.ElementAt(0) as string == "http://localhost/#download=%s"
+                    && invocation.Arguments.ElementAt(1) as string == "qBittorrent WebUI magnet handler");
+            registerInvocation.SetResult(new MagnetRegistrationResult { Status = "success" });
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -430,9 +434,7 @@ namespace Lantean.QBTMud.Test.Components
             var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
             await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
 
-            var invocation = TestContext.JSInterop.Invocations.Single(i => i.Identifier == "qbt.registerMagnetHandler");
-            invocation.Arguments.First().Should().Be("http://localhost/#download=%s");
-            invocation.Arguments[1].Should().Be("qBittorrent WebUI magnet handler");
+            registerInvocation.Invocations.Should().ContainSingle();
         }
 
         [Fact]
