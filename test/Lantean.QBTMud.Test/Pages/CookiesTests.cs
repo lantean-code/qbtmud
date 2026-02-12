@@ -96,11 +96,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .SetupSequence(client => client.GetApplicationCookies())
                 .ReturnsAsync(initialCookies)
                 .ReturnsAsync(new[] { initialCookies[0], addedCookie });
-
-            List<ApplicationCookie> savedCookies = [];
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Callback<IEnumerable<ApplicationCookie>>(cookies => savedCookies = cookies.ToList())
                 .Returns(Task.CompletedTask);
 
             Mock.Get(_dialogWorkflow)
@@ -112,9 +109,9 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
-            savedCookies.Should().HaveCount(2);
-            savedCookies.Should().Contain(cookie => cookie.Name == "Existing");
-            savedCookies.Should().Contain(cookie => cookie.Name == "Added");
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(
+                    It.Is<IEnumerable<ApplicationCookie>>(cookies => HasExistingAndAddedCookies(cookies))),
+                Times.Once);
             Mock.Get(_apiClient).Verify(client => client.GetApplicationCookies(), Times.Exactly(2));
         }
 
@@ -129,16 +126,11 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(new[] { existingCookie })
                 .ReturnsAsync(new[] { updatedCookie });
 
-            ApplicationCookie? dialogCookie = null;
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowCookiePropertiesDialog("Edit Cookie", It.IsAny<ApplicationCookie>()))
-                .Callback<string, ApplicationCookie?>((_, cookie) => dialogCookie = cookie)
                 .ReturnsAsync(updatedCookie);
-
-            List<ApplicationCookie> savedCookies = [];
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Callback<IEnumerable<ApplicationCookie>>(cookies => savedCookies = cookies.ToList())
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage(new[] { existingCookie }, configureApi: false);
@@ -146,9 +138,13 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => editButton.Instance.OnClick.InvokeAsync());
 
-            dialogCookie.Should().Be(existingCookie);
-            savedCookies.Should().ContainSingle();
-            savedCookies[0].Should().Be(updatedCookie);
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowCookiePropertiesDialog(
+                    "Edit Cookie",
+                    It.Is<ApplicationCookie?>(cookie => ReferenceEquals(cookie, existingCookie))),
+                Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(
+                    It.Is<IEnumerable<ApplicationCookie>>(cookies => HasOnlyCookie(cookies, updatedCookie))),
+                Times.Once);
             Mock.Get(_apiClient).Verify(client => client.GetApplicationCookies(), Times.Exactly(2));
         }
 
@@ -176,11 +172,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .SetupSequence(client => client.GetApplicationCookies())
                 .ReturnsAsync(new[] { existingCookie })
                 .ReturnsAsync(Array.Empty<ApplicationCookie>());
-
-            List<ApplicationCookie> savedCookies = [];
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Callback<IEnumerable<ApplicationCookie>>(cookies => savedCookies = cookies.ToList())
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage(new[] { existingCookie }, configureApi: false);
@@ -188,7 +181,9 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-            savedCookies.Should().BeEmpty();
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(
+                    It.Is<IEnumerable<ApplicationCookie>>(cookies => !cookies.Any())),
+                Times.Once);
             Mock.Get(_apiClient).Verify(client => client.GetApplicationCookies(), Times.Exactly(2));
         }
 
@@ -294,6 +289,20 @@ namespace Lantean.QBTMud.Test.Pages
         private static IRenderedComponent<MudIconButton> FindRowDeleteButton(IRenderedComponent<Cookies> component)
         {
             return component.FindComponents<MudIconButton>().First(button => button.Instance.Icon == Icons.Material.Filled.Delete);
+        }
+
+        private static bool HasExistingAndAddedCookies(IEnumerable<ApplicationCookie> cookies)
+        {
+            var list = cookies.ToList();
+            return list.Count == 2
+                   && list.Any(cookie => cookie.Name == "Existing")
+                   && list.Any(cookie => cookie.Name == "Added");
+        }
+
+        private static bool HasOnlyCookie(IEnumerable<ApplicationCookie> cookies, ApplicationCookie expectedCookie)
+        {
+            var list = cookies.ToList();
+            return list.Count == 1 && list[0].Equals(expectedCookie);
         }
     }
 }

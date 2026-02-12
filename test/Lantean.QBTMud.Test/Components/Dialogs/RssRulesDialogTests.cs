@@ -215,11 +215,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync("RuleA");
-
-            AutoDownloadingRule? capturedRule = null;
             Mock.Get(_apiClient)
                 .Setup(client => client.SetRssAutoDownloadingRule("RuleA", It.IsAny<AutoDownloadingRule>()))
-                .Callback<string, AutoDownloadingRule>((_, rule) => capturedRule = rule)
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -239,8 +236,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            capturedRule.Should().NotBeNull();
-            capturedRule!.TorrentParams.SavePath.Should().Be("C:/Downloads/RuleA");
+            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRule(
+                    "RuleA",
+                    It.Is<AutoDownloadingRule>(rule => rule.TorrentParams.SavePath == "C:/Downloads/RuleA")),
+                Times.Once);
         }
 
         [Fact]
@@ -259,10 +258,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     { "FeedA", new List<string> { "ArticleA" } },
                 });
 
-            AutoDownloadingRule? capturedRule = null;
             apiClientMock
                 .Setup(client => client.SetRssAutoDownloadingRule("RuleA", It.IsAny<AutoDownloadingRule>()))
-                .Callback<string, AutoDownloadingRule>((_, rule) => capturedRule = rule)
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -318,19 +315,24 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            capturedRule.Should().NotBeNull();
-            capturedRule!.UseRegex.Should().BeTrue();
-            capturedRule.MustContain.Should().Be("MustContain");
-            capturedRule.MustNotContain.Should().Be("MustNotContain");
-            capturedRule.EpisodeFilter.Should().Be("EpisodeFilter");
-            capturedRule.SmartFilter.Should().BeTrue();
-            capturedRule.IgnoreDays.Should().Be(3);
-            capturedRule.TorrentParams.Category.Should().Be("CatA");
-            capturedRule.TorrentParams.Tags.Should().BeEquivalentTo(new[] { "alpha", "beta", "gamma" });
-            capturedRule.TorrentParams.SavePath.Should().BeEmpty();
-            capturedRule.TorrentParams.Stopped.Should().BeFalse();
-            capturedRule.TorrentParams.ContentLayout.Should().Be("NoSubfolder");
-            capturedRule.AffectedFeeds.Should().ContainSingle(value => value == "http://feed-a");
+            apiClientMock.Verify(client => client.SetRssAutoDownloadingRule(
+                    "RuleA",
+                    It.Is<AutoDownloadingRule>(rule =>
+                        rule.UseRegex == true
+                        && rule.MustContain == "MustContain"
+                        && rule.MustNotContain == "MustNotContain"
+                        && rule.EpisodeFilter == "EpisodeFilter"
+                        && rule.SmartFilter == true
+                        && rule.IgnoreDays == 3
+                        && rule.TorrentParams.Category == "CatA"
+                        && rule.TorrentParams.Tags != null
+                        && rule.TorrentParams.Tags.SequenceEqual(new[] { "alpha", "beta", "gamma" })
+                        && rule.TorrentParams.SavePath == string.Empty
+                        && rule.TorrentParams.Stopped == false
+                        && rule.TorrentParams.ContentLayout == "NoSubfolder"
+                        && rule.AffectedFeeds.Count == 1
+                        && rule.AffectedFeeds.Contains("http://feed-a"))),
+                Times.Once);
 
             FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRulesArticle-ArticleA").Should().NotBeNull();
         }

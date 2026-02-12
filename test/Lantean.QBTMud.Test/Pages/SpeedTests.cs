@@ -84,9 +84,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_Toggles_WHEN_SameValueProvided_THEN_NoReloadIsTriggered()
         {
-            var calls = 0;
             Mock.Get(_speedHistoryService).Reset();
-            ConfigureSpeedService(Mock.Get(_speedHistoryService), _ => 500, null, () => calls++);
+            ConfigureSpeedService(Mock.Get(_speedHistoryService), _ => 500, null);
 
             var target = RenderTarget();
 
@@ -98,7 +97,7 @@ namespace Lantean.QBTMud.Test.Pages
             uploadSwitch.Find("input").Change(false);
             await target.InvokeAsync(() => uploadSwitch.Instance.ValueChanged.InvokeAsync(uploadSwitch.Instance.Value));
 
-            calls.Should().Be(0);
+            Mock.Get(_speedHistoryService).Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -168,7 +167,7 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private static void ConfigureSpeedService(Mock<ISpeedHistoryService> mock, Func<SpeedPeriod, double> valueFactory, List<SpeedPeriod>? requestedPeriods, Action? noOpCall = null)
+        private static void ConfigureSpeedService(Mock<ISpeedHistoryService> mock, Func<SpeedPeriod, double> valueFactory, List<SpeedPeriod>? requestedPeriods)
         {
             mock.Setup(s => s.InitializeAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             mock.SetupGet(s => s.LastUpdatedUtc).Returns(new DateTime(2000, 1, 1, 0, 5, 0, DateTimeKind.Utc));
@@ -184,7 +183,7 @@ namespace Lantean.QBTMud.Test.Pages
                     requestedPeriods?.Add(period);
                     return new List<SpeedPoint> { new(new DateTime(2000, 1, 1, 0, 4, 0, DateTimeKind.Utc), valueFactory(period)) };
                 });
-            mock.Setup(s => s.ClearAsync(It.IsAny<CancellationToken>())).Callback(() => noOpCall?.Invoke());
+            mock.Setup(s => s.ClearAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         }
     }
 }

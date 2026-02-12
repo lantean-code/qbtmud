@@ -97,7 +97,6 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_SaveWithChanges_WHEN_Clicked_THEN_SavesAndNavigatesHome()
         {
             var preferences = CreatePreferences();
-            UpdatePreferences? saved = null;
 
             Mock.Get(_apiClient)
                 .SetupSequence(client => client.GetApplicationPreferences())
@@ -105,7 +104,6 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(preferences);
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
-                .Callback<UpdatePreferences>(value => saved = value)
                 .Returns(Task.CompletedTask);
 
             Mock.Get(_apiClient).Invocations.Clear();
@@ -120,11 +118,10 @@ namespace Lantean.QBTMud.Test.Pages
             var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
             await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
 
-            saved.Should().NotBeNull();
-            saved!.ConfirmTorrentDeletion.Should().BeTrue();
-
             Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferences(), Times.Exactly(2));
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(
+                    It.Is<UpdatePreferences>(value => value.ConfirmTorrentDeletion == true)),
+                Times.Once);
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add("Options saved.", Severity.Success, It.IsAny<Action<SnackbarOptions>>()),
                 Times.Once);

@@ -137,11 +137,8 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_themeManagerService)
                 .SetupGet(service => service.CurrentTheme)
                 .Returns((ThemeCatalogItem?)null);
-
-            ThemeDefinition? saved = null;
             Mock.Get(_themeManagerService)
                 .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
-                .Callback<ThemeDefinition>(definition => saved = definition)
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage(new List<ThemeCatalogItem>());
@@ -149,9 +146,11 @@ namespace Lantean.QBTMud.Test.Pages
             var createButton = FindComponentByTestId<MudIconButton>(target, "ThemesCreate");
             await target.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
 
-            saved.Should().NotBeNull();
-            saved!.Name.Should().Be("Name");
-            saved.Description.Should().BeEmpty();
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                    It.Is<ThemeDefinition>(definition =>
+                        definition.Name == "Name"
+                        && definition.Description == string.Empty)),
+                Times.Once);
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/themes/");
         }
 
@@ -206,11 +205,8 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowStringFieldDialog("Duplicate Theme", "Name", "Name Copy"))
                 .ReturnsAsync("Name Copy");
-
-            ThemeDefinition? saved = null;
             Mock.Get(_themeManagerService)
                 .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
-                .Callback<ThemeDefinition>(definition => saved = definition)
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage(themes);
@@ -218,8 +214,9 @@ namespace Lantean.QBTMud.Test.Pages
             var duplicateButton = FindComponentByTestId<MudIconButton>(target, "ThemeDuplicate-ThemeId");
             await target.InvokeAsync(() => duplicateButton.Instance.OnClick.InvokeAsync());
 
-            saved.Should().NotBeNull();
-            saved!.Name.Should().Be("Name Copy");
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                    It.Is<ThemeDefinition>(definition => definition.Name == "Name Copy")),
+                Times.Once);
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/themes/");
         }
 
@@ -271,11 +268,8 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowStringFieldDialog("Rename Theme", "Name", "Name"))
                 .ReturnsAsync("Renamed");
-
-            ThemeDefinition? saved = null;
             Mock.Get(_themeManagerService)
                 .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
-                .Callback<ThemeDefinition>(definition => saved = definition)
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage(themes);
@@ -283,8 +277,9 @@ namespace Lantean.QBTMud.Test.Pages
             var renameButton = FindComponentByTestId<MudIconButton>(target, "ThemeRename-ThemeId");
             await target.InvokeAsync(() => renameButton.Instance.OnClick.InvokeAsync());
 
-            saved.Should().NotBeNull();
-            saved!.Name.Should().Be("Renamed");
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                    It.Is<ThemeDefinition>(definition => definition.Name == "Renamed")),
+                Times.Once);
         }
 
         [Fact]
@@ -397,10 +392,8 @@ namespace Lantean.QBTMud.Test.Pages
             var file = new TestBrowserFile("theme.json", json);
 
             SetupFontCatalogValid();
-            ThemeDefinition? saved = null;
             Mock.Get(_themeManagerService)
                 .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
-                .Callback<ThemeDefinition>(value => saved = value)
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage(new List<ThemeCatalogItem>());
@@ -408,9 +401,11 @@ namespace Lantean.QBTMud.Test.Pages
             var upload = target.FindComponent<MudFileUpload<IReadOnlyList<IBrowserFile>>>();
             await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
 
-            saved.Should().NotBeNull();
-            saved!.Name.Should().Be("Name");
-            saved.Description.Should().Be("Description");
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                    It.Is<ThemeDefinition>(value =>
+                        value.Name == "Name"
+                        && value.Description == "Description")),
+                Times.Once);
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/themes/");
         }
 
@@ -444,10 +439,8 @@ namespace Lantean.QBTMud.Test.Pages
             var file = new TestBrowserFile(" .json", json);
 
             SetupFontCatalogValid();
-            ThemeDefinition? saved = null;
             Mock.Get(_themeManagerService)
                 .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
-                .Callback<ThemeDefinition>(value => saved = value)
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage(new List<ThemeCatalogItem>());
@@ -455,8 +448,9 @@ namespace Lantean.QBTMud.Test.Pages
             var upload = target.FindComponent<MudFileUpload<IReadOnlyList<IBrowserFile>>>();
             await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
 
-            saved.Should().NotBeNull();
-            saved!.Name.Should().Be("Imported Theme");
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                    It.Is<ThemeDefinition>(value => value.Name == "Imported Theme")),
+                Times.Once);
         }
 
         [Fact]
@@ -474,10 +468,8 @@ namespace Lantean.QBTMud.Test.Pages
             var file = new TestBrowserFile("theme.json", json);
 
             SetupFontCatalogValid();
-            ThemeDefinition? saved = null;
             Mock.Get(_themeManagerService)
                 .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
-                .Callback<ThemeDefinition>(value => saved = value)
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage(new List<ThemeCatalogItem> { existing });
@@ -485,8 +477,9 @@ namespace Lantean.QBTMud.Test.Pages
             var upload = target.FindComponent<MudFileUpload<IReadOnlyList<IBrowserFile>>>();
             await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
 
-            saved.Should().NotBeNull();
-            saved!.Id.Should().NotBe("ThemeId");
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                    It.Is<ThemeDefinition>(value => value.Id != "ThemeId")),
+                Times.Once);
         }
 
         [Fact]
@@ -505,11 +498,8 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_themeFontCatalog)
                 .Setup(catalog => catalog.TryGetFontUrl("Invalid", out It.Ref<string>.IsAny))
                 .Returns(false);
-
-            ThemeDefinition? saved = null;
             Mock.Get(_themeManagerService)
                 .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
-                .Callback<ThemeDefinition>(value => saved = value)
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage(new List<ThemeCatalogItem>());
@@ -517,8 +507,9 @@ namespace Lantean.QBTMud.Test.Pages
             var upload = target.FindComponent<MudFileUpload<IReadOnlyList<IBrowserFile>>>();
             await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
 
-            saved.Should().NotBeNull();
-            saved!.FontFamily.Should().Be("Nunito Sans");
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                    It.Is<ThemeDefinition>(value => value.FontFamily == "Nunito Sans")),
+                Times.Once);
         }
 
         [Fact]

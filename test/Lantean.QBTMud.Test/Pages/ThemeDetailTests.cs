@@ -170,14 +170,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .SetupGet(service => service.Themes)
                 .Returns(themes);
 
-            ThemeDefinition? saved = null;
             Mock.Get(_themeManagerService)
                 .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
-                .Callback<ThemeDefinition>(definition =>
-                {
-                    saved = definition;
-                    themes[0].Name = definition.Name;
-                })
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage("ThemeId", themes);
@@ -191,9 +185,11 @@ namespace Lantean.QBTMud.Test.Pages
             var saveButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
             await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
 
-            saved.Should().NotBeNull();
-            saved!.Name.Should().Be("Updated");
-            saved.Description.Should().Be("Updated Description");
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                    It.Is<ThemeDefinition>(definition =>
+                        definition.Name == "Updated" &&
+                        definition.Description == "Updated Description")),
+                Times.Once);
         }
 
         [Fact]

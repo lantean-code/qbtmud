@@ -57,21 +57,19 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_InitialValues_WHEN_InvokeAddCategoryDialog_THEN_ShouldPopulateParameters()
         {
-            DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Cancel());
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("New Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
 
             var result = await _target.InvokeAddCategoryDialog("Category", "SavePath");
 
             result.Should().BeNull();
-            captured.Should().NotBeNull();
-            captured!.Any(p => p.Key == nameof(CategoryPropertiesDialog.Category)).Should().BeTrue();
-            captured[nameof(CategoryPropertiesDialog.Category)].Should().Be("Category");
-            captured.Any(p => p.Key == nameof(CategoryPropertiesDialog.SavePath)).Should().BeTrue();
-            captured[nameof(CategoryPropertiesDialog.SavePath)].Should().Be("SavePath");
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<CategoryPropertiesDialog>(
+                    "New Category",
+                    It.Is<DialogParameters>(parameters => HasCategoryPropertiesDialogParameters(parameters, "Category", "SavePath")),
+                    DialogWorkflow.NonBlurFormDialogOptions),
+                Times.Once);
         }
 
         [Fact]
@@ -117,37 +115,14 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
-            AddTorrentParams? captured = null;
             Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
-                .Callback<AddTorrentParams>(p => captured = p)
                 .ReturnsAsync(new AddTorrentResult(1, 1));
 
             await _target.InvokeAddTorrentFileDialog();
 
-            captured.Should().NotBeNull();
-            captured!.Torrents.Should().NotBeNull();
-            captured.Torrents!.Count.Should().Be(2);
-            captured.Torrents!.ContainsKey("Name").Should().BeTrue();
-            captured.Torrents!["Name"].Should().BeSameAs(streamOne);
-            captured.Torrents!.ContainsKey("SecondName").Should().BeTrue();
-            captured.Torrents!["SecondName"].Should().BeSameAs(streamTwo);
-            captured.AutoTorrentManagement.Should().BeFalse();
-            captured.Category.Should().Be("Category");
-            captured.DownloadLimit.Should().Be(2);
-            captured.UploadLimit.Should().Be(3);
-            captured.DownloadPath.Should().Be("DownloadPath");
-            captured.UseDownloadPath.Should().BeTrue();
-            captured.SavePath.Should().Be("SavePath");
-            captured.Tags!.Single().Should().Be("Tags");
-            captured.RatioLimit.Should().Be(5F);
-            captured.SeedingTimeLimit.Should().Be(6);
-            captured.InactiveSeedingTimeLimit.Should().Be(4);
-            captured.ShareLimitAction.Should().Be(ShareLimitAction.Remove);
-            captured.ContentLayout.Should().Be(TorrentContentLayout.Original);
-            captured.StopCondition.Should().Be(StopCondition.MetadataReceived);
-            captured.Stopped.Should().BeTrue();
-            captured.AddToTopOfQueue.Should().BeTrue();
+            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.Is<AddTorrentParams>(parameters => MatchesAddTorrentFileParameters(parameters, streamOne, streamTwo))),
+                Times.Once);
 
             streamOne.DisposeAsyncCalled.Should().BeTrue();
             streamTwo.DisposeAsyncCalled.Should().BeTrue();
@@ -245,20 +220,14 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
-            AddTorrentParams? captured = null;
             Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
-                .Callback<AddTorrentParams>(p => captured = p)
                 .ReturnsAsync(new AddTorrentResult(0, 0));
 
             await _target.InvokeAddTorrentFileDialog();
 
-            captured.Should().NotBeNull();
-            captured!.Torrents.Should().NotBeNull();
-            captured!.Torrents!.Count.Should().Be(3);
-            captured!.Torrents!.ContainsKey("Same.torrent").Should().BeTrue();
-            captured!.Torrents!.ContainsKey("Same (1).torrent").Should().BeTrue();
-            captured!.Torrents!.ContainsKey("Same (2).torrent").Should().BeTrue();
+            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.Is<AddTorrentParams>(parameters => MatchesDuplicateNameAddTorrentFileParameters(parameters))),
+                Times.Once);
             streamOne.DisposeAsyncCalled.Should().BeTrue();
             streamTwo.DisposeAsyncCalled.Should().BeTrue();
             streamThree.DisposeAsyncCalled.Should().BeTrue();
@@ -280,16 +249,13 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
-            AddTorrentParams? captured = null;
             Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
-                .Callback<AddTorrentParams>(p => captured = p)
                 .ReturnsAsync(new AddTorrentResult(1, 0, 0, null));
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            captured.Should().NotBeNull();
-            captured!.Cookie.Should().Be("Cookie");
+            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.Is<AddTorrentParams>(parameters => parameters.Cookie == "Cookie")), Times.Once);
         }
 
         [Fact]
@@ -329,7 +295,6 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_LinkOptions_WHEN_InvokeAddTorrentLinkDialog_THEN_ShouldAddTorrent()
         {
-            DialogParameters? capturedParameters = null;
             var options = CreateTorrentOptions(true, true);
             options.ShareLimitAction = ShareLimitAction.Remove.ToString();
             var linkOptions = new AddTorrentLinkOptions("http://one\nhttp://two", options)
@@ -346,35 +311,21 @@ namespace Lantean.QBTMud.Test.Services
             var reference = CreateReference(DialogResult.Ok(linkOptions));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => capturedParameters = parameters)
                 .ReturnsAsync(reference);
 
-            AddTorrentParams? captured = null;
             Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
-                .Callback<AddTorrentParams>(p => captured = p)
                 .ReturnsAsync(new AddTorrentResult(1, 0, 0, new[] { "Hash" }));
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            capturedParameters.Should().NotBeNull();
-            capturedParameters!.Any(p => p.Key == nameof(AddTorrentLinkDialog.Url)).Should().BeTrue();
-            capturedParameters[nameof(AddTorrentLinkDialog.Url)].Should().BeNull();
-
-            captured.Should().NotBeNull();
-            captured!.Urls!.Should().BeEquivalentTo("http://one", "http://two");
-            captured.Torrents.Should().BeNull();
-            captured.AutoTorrentManagement.Should().BeTrue();
-            captured.SavePath.Should().BeNull();
-            captured.DownloadPath.Should().Be("DownloadPath");
-            captured.UseDownloadPath.Should().BeTrue();
-            captured.Tags!.Single().Should().Be("Tags");
-            captured.RatioLimit.Should().Be(5F);
-            captured.SeedingTimeLimit.Should().Be(6);
-            captured.InactiveSeedingTimeLimit.Should().Be(4);
-            captured.ShareLimitAction.Should().Be(ShareLimitAction.Remove);
-            captured.StopCondition.Should().Be(StopCondition.MetadataReceived);
-            captured.Stopped.Should().BeFalse();
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<AddTorrentLinkDialog>(
+                    "Download from URLs",
+                    It.Is<DialogParameters>(parameters => HasAddTorrentLinkDialogUrlUnsetParameter(parameters)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
+            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.Is<AddTorrentParams>(parameters => MatchesAddTorrentLinkParameters(parameters))),
+                Times.Once);
 
             var snackbarCall = Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add));
             snackbarCall.Arguments[0].Should().Be("Added 1 torrent.");
@@ -516,11 +467,9 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ConfirmationAccepted_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldDeleteWithFilesOption()
         {
-            DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok(true));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
@@ -533,22 +482,20 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.InvokeDeleteTorrentDialog(true, "Hash");
 
             result.Should().BeTrue();
-            captured.Should().NotBeNull();
-            captured!.Any(p => p.Key == nameof(DeleteDialog.Count)).Should().BeTrue();
-            captured[nameof(DeleteDialog.Count)].Should().Be(1);
-            captured.Any(p => p.Key == nameof(DeleteDialog.TorrentName)).Should().BeTrue();
-            captured[nameof(DeleteDialog.TorrentName)].Should().Be("Name");
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<DeleteDialog>(
+                    "Remove torrent(s)",
+                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 1, "Name")),
+                    DialogWorkflow.ConfirmDialogOptions),
+                Times.Once);
             Mock.Get(_apiClient).Verify();
         }
 
         [Fact]
         public async Task GIVEN_MultipleHashes_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldUsePluralTitle()
         {
-            DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok(false));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrents(null, false, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "Other" }))))
@@ -558,10 +505,11 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.InvokeDeleteTorrentDialog(true, "Hash", "Other");
 
             result.Should().BeTrue();
-            captured.Should().NotBeNull();
-            captured!.Any(p => p.Key == nameof(DeleteDialog.Count)).Should().BeTrue();
-            captured[nameof(DeleteDialog.Count)].Should().Be(2);
-            captured.Any(p => p.Key == nameof(DeleteDialog.TorrentName)).Should().BeFalse();
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<DeleteDialog>(
+                    "Remove torrent(s)",
+                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 2, null)),
+                    DialogWorkflow.ConfirmDialogOptions),
+                Times.Once);
             Mock.Get(_apiClient).Verify();
         }
 
@@ -674,23 +622,18 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_DownloadRateDialog_WHEN_BuildingParameters_THEN_ValueFuncsCoverBranches()
         {
-            DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Cancel());
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Download Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
 
             await _target.InvokeDownloadRateDialog(1024, new[] { "Hash" });
 
-            captured.Should().NotBeNull();
-            var parameters = captured!;
-            var display = (Func<long, string>)parameters[nameof(SliderFieldDialog<long>.ValueDisplayFunc)]!;
-            display(Limits.NoLimit).Should().Be("∞");
-            display(2048).Should().Be("2048");
-            var getter = (Func<string, long>)parameters[nameof(SliderFieldDialog<long>.ValueGetFunc)]!;
-            getter("∞").Should().Be(Limits.NoLimit);
-            getter("5").Should().Be(5);
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<SliderFieldDialog<long>>(
+                    "Torrent Download Speed Limiting",
+                    It.Is<DialogParameters>(parameters => HasDownloadRateDialogValueFunctions(parameters)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
         }
 
         [Fact]
@@ -726,29 +669,23 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_UploadRateDialog_WHEN_BuildingParameters_THEN_ValueFuncsCoverBranches()
         {
-            DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Cancel());
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Upload Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
 
             await _target.InvokeUploadRateDialog(1024, new[] { "Hash" });
 
-            captured.Should().NotBeNull();
-            var parameters = captured!;
-            var display = (Func<long, string>)parameters[nameof(SliderFieldDialog<long>.ValueDisplayFunc)]!;
-            display(Limits.NoLimit).Should().Be("∞");
-            display(1024).Should().Be("1024");
-            var getter = (Func<string, long>)parameters[nameof(SliderFieldDialog<long>.ValueGetFunc)]!;
-            getter("∞").Should().Be(Limits.NoLimit);
-            getter("7").Should().Be(7);
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<SliderFieldDialog<long>>(
+                    "Torrent Upload Speed Limiting",
+                    It.Is<DialogParameters>(parameters => HasUploadRateDialogValueFunctions(parameters)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_CategoryFound_WHEN_InvokeEditCategoryDialog_THEN_ShouldCallApi()
         {
-            DialogParameters? captured = null;
             var categories = new Dictionary<string, QbtCategory>
             {
                 { "Category", new QbtCategory("Category", "SavePath", new DownloadPathOption(true, "DownloadPath")) }
@@ -759,7 +696,6 @@ namespace Lantean.QBTMud.Test.Services
             var reference = CreateReference(DialogResult.Ok(new MudCategory("Name", "SavePath")));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("Edit Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.EditCategory("Name", "SavePath"))
@@ -769,11 +705,11 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.InvokeEditCategoryDialog("Category");
 
             result.Should().Be("Name");
-            captured.Should().NotBeNull();
-            captured!.Any(p => p.Key == nameof(CategoryPropertiesDialog.Category)).Should().BeTrue();
-            captured[nameof(CategoryPropertiesDialog.Category)].Should().Be("Category");
-            captured.Any(p => p.Key == nameof(CategoryPropertiesDialog.SavePath)).Should().BeTrue();
-            captured[nameof(CategoryPropertiesDialog.SavePath)].Should().Be("SavePath");
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<CategoryPropertiesDialog>(
+                    "Edit Category",
+                    It.Is<DialogParameters>(parameters => HasCategoryPropertiesDialogParameters(parameters, "Category", "SavePath")),
+                    DialogWorkflow.NonBlurFormDialogOptions),
+                Times.Once);
             Mock.Get(_apiClient).Verify();
         }
 
@@ -797,18 +733,18 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_Hash_WHEN_InvokeRenameFilesDialog_THEN_ShouldForwardParameters()
         {
-            DialogParameters? captured = null;
             var reference = new Mock<IDialogReference>();
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<RenameFilesDialog>("Renaming", It.IsAny<DialogParameters>(), DialogWorkflow.FullScreenDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference.Object);
 
             await _target.InvokeRenameFilesDialog("Hash");
 
-            captured.Should().NotBeNull();
-            captured!.Any(p => p.Key == nameof(RenameFilesDialog.Hash)).Should().BeTrue();
-            captured[nameof(RenameFilesDialog.Hash)].Should().Be("Hash");
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<RenameFilesDialog>(
+                    "Renaming",
+                    It.Is<DialogParameters>(parameters => HasStringParameter(parameters, nameof(RenameFilesDialog.Hash), "Hash")),
+                    DialogWorkflow.FullScreenDialogOptions),
+                Times.Once);
         }
 
         [Fact]
@@ -843,7 +779,6 @@ namespace Lantean.QBTMud.Test.Services
                 CreateTorrent("SecondHash", 3F, 3, 4F, ShareLimitAction.Remove)
             };
 
-            DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok(new ShareRatio
             {
                 RatioLimit = 5F,
@@ -853,7 +788,6 @@ namespace Lantean.QBTMud.Test.Services
             }));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.SetTorrentShareLimit(5F, 6F, 7F, ShareLimitAction.Remove, null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "SecondHash" }))))
@@ -862,16 +796,11 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeShareRatioDialog(torrents);
 
-            captured.Should().NotBeNull();
-            captured!.Any(p => p.Key == nameof(ShareRatioDialog.Value)).Should().BeTrue();
-            captured[nameof(ShareRatioDialog.Value)].Should().BeNull();
-            captured.Any(p => p.Key == nameof(ShareRatioDialog.CurrentValue)).Should().BeTrue();
-            captured[nameof(ShareRatioDialog.CurrentValue)].Should().BeAssignableTo<ShareRatioMax>();
-            var currentValue = (ShareRatioMax)captured[nameof(ShareRatioDialog.CurrentValue)]!;
-            currentValue.RatioLimit.Should().Be(2F);
-            currentValue.SeedingTimeLimit.Should().Be(3);
-            currentValue.InactiveSeedingTimeLimit.Should().Be(4F);
-            currentValue.ShareLimitAction.Should().Be(ShareLimitAction.Stop);
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<ShareRatioDialog>(
+                    "Torrent Upload/Download Ratio Limiting",
+                    It.Is<DialogParameters>(parameters => HasDistinctShareRatioDialogParameters(parameters)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
             Mock.Get(_apiClient).Verify();
         }
 
@@ -884,7 +813,6 @@ namespace Lantean.QBTMud.Test.Services
                 CreateTorrent("SecondHash", 2F, 3, 4F, ShareLimitAction.Stop)
             };
 
-            DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok(new ShareRatio
             {
                 RatioLimit = 5F,
@@ -894,7 +822,6 @@ namespace Lantean.QBTMud.Test.Services
             }));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.SetTorrentShareLimit(5F, 6F, 7F, ShareLimitAction.Remove, null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "SecondHash" }))))
@@ -903,9 +830,11 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeShareRatioDialog(torrents);
 
-            captured.Should().NotBeNull();
-            captured!.Any(p => p.Key == nameof(ShareRatioDialog.Value)).Should().BeTrue();
-            captured[nameof(ShareRatioDialog.Value)].Should().BeAssignableTo<ShareRatioMax>();
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<ShareRatioDialog>(
+                    "Torrent Upload/Download Ratio Limiting",
+                    It.Is<DialogParameters>(parameters => HasMatchingShareRatioDialogParameters(parameters)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
         }
 
         [Fact]
@@ -1197,21 +1126,19 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ValueReturned_WHEN_ShowStringFieldDialog_THEN_ShouldReturnValue()
         {
-            DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok("Value"));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<StringFieldDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowStringFieldDialog("Title", "Label", "Value");
 
             result.Should().Be("Value");
-            captured.Should().NotBeNull();
-            captured!.Any(p => p.Key == nameof(StringFieldDialog.Label)).Should().BeTrue();
-            captured[nameof(StringFieldDialog.Label)].Should().Be("Label");
-            captured.Any(p => p.Key == nameof(StringFieldDialog.Value)).Should().BeTrue();
-            captured[nameof(StringFieldDialog.Value)].Should().Be("Value");
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<StringFieldDialog>(
+                    "Title",
+                    It.Is<DialogParameters>(parameters => HasStringFieldDialogParameters(parameters, "Label", "Value")),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
         }
 
         [Fact]
@@ -1230,19 +1157,20 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_CookieReturned_WHEN_ShowCookiePropertiesDialog_THEN_ShouldReturnCookieAndForwardParameters()
         {
-            DialogParameters? captured = null;
             var cookie = new ApplicationCookie("Name", "Domain", "/Path", "Value", 1);
             var reference = CreateReference(DialogResult.Ok(cookie));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CookiePropertiesDialog>("Title", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowCookiePropertiesDialog("Title", cookie);
 
             result.Should().Be(cookie);
-            captured.Should().NotBeNull();
-            captured![nameof(CookiePropertiesDialog.Cookie)].Should().Be(cookie);
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<CookiePropertiesDialog>(
+                    "Title",
+                    It.Is<DialogParameters>(parameters => HasCookieDialogParameters(parameters, cookie)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
         }
 
         [Fact]
@@ -1274,25 +1202,21 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_Data_WHEN_ShowSubMenu_THEN_ShouldForwardParameters()
         {
-            DialogParameters? captured = null;
             var reference = new Mock<IDialogReference>();
             var parent = new UIAction("Name", "Parent", null, Color.Primary, "Href");
             var hashes = new[] { "Hash" };
             var torrents = new Dictionary<string, MudTorrent> { { "Hash", CreateTorrent("Hash", 0F, 0, 0F, ShareLimitAction.Default) } };
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SubMenuDialog>("Parent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference.Object);
 
             await _target.ShowSubMenu(hashes, parent, torrents, null, [], []);
 
-            captured.Should().NotBeNull();
-            captured!.Any(p => p.Key == nameof(SubMenuDialog.ParentAction)).Should().BeTrue();
-            captured[nameof(SubMenuDialog.ParentAction)].Should().BeSameAs(parent);
-            captured.Any(p => p.Key == nameof(SubMenuDialog.Hashes)).Should().BeTrue();
-            ((IEnumerable<string>)captured[nameof(SubMenuDialog.Hashes)]!).Should().BeEquivalentTo(hashes);
-            captured.Any(p => p.Key == nameof(SubMenuDialog.Torrents)).Should().BeTrue();
-            captured[nameof(SubMenuDialog.Torrents)].Should().BeSameAs(torrents);
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<SubMenuDialog>(
+                    "Parent",
+                    It.Is<DialogParameters>(parameters => HasSubMenuDialogParameters(parameters, parent, hashes, torrents)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
         }
 
         [Fact]
@@ -1358,48 +1282,38 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_Theme_WHEN_ShowThemePreviewDialog_THEN_ShowsDialog()
         {
-            DialogParameters? captured = null;
-            DialogOptions? capturedOptions = null;
             var reference = new Mock<IDialogReference>();
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ThemePreviewDialog>("Theme Preview", It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, options) =>
-                {
-                    captured = parameters;
-                    capturedOptions = options;
-                })
                 .ReturnsAsync(reference.Object);
 
             var theme = new MudTheme();
 
             await _target.ShowThemePreviewDialog(theme, true);
 
-            captured.Should().NotBeNull();
-            captured![nameof(ThemePreviewDialog.Theme)].Should().BeSameAs(theme);
-            captured[nameof(ThemePreviewDialog.IsDarkMode)].Should().Be(true);
-            capturedOptions.Should().NotBeNull();
-            capturedOptions!.FullScreen.Should().BeFalse();
-            capturedOptions.NoHeader.Should().BeTrue();
-            capturedOptions.FullWidth.Should().BeFalse();
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<ThemePreviewDialog>(
+                    "Theme Preview",
+                    It.Is<DialogParameters>(parameters => HasThemePreviewDialogParameters(parameters, theme, true)),
+                    It.Is<DialogOptions>(options => HasThemePreviewDialogOptions(options))),
+                Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_PathBrowserSelection_WHEN_ShowPathBrowserDialog_THEN_ShouldReturnSelectedPath()
         {
-            DialogParameters? captured = null;
             var reference = CreateReference(DialogResult.Ok("C:/Folder"));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<PathBrowserDialog>("Pick", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
-                .Callback<string, DialogParameters, DialogOptions>((_, parameters, _) => captured = parameters)
                 .ReturnsAsync(reference);
 
             var result = await _target.ShowPathBrowserDialog("Pick", "C:/", DirectoryContentMode.Files, false);
 
             result.Should().Be("C:/Folder");
-            captured.Should().NotBeNull();
-            captured![nameof(PathBrowserDialog.InitialPath)].Should().Be("C:/");
-            captured[nameof(PathBrowserDialog.Mode)].Should().Be(DirectoryContentMode.Files);
-            captured[nameof(PathBrowserDialog.AllowFolderSelection)].Should().Be(false);
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<PathBrowserDialog>(
+                    "Pick",
+                    It.Is<DialogParameters>(parameters => HasPathBrowserDialogParameters(parameters, "C:/", DirectoryContentMode.Files, false)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
         }
 
         [Fact]
@@ -1453,6 +1367,273 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.ShowPathBrowserDialog("Pick", null, DirectoryContentMode.Directories, true);
 
             result.Should().BeNull();
+        }
+
+        private static bool HasCategoryPropertiesDialogParameters(DialogParameters parameters, string category, string savePath)
+        {
+            return HasStringParameter(parameters, nameof(CategoryPropertiesDialog.Category), category)
+                   && HasStringParameter(parameters, nameof(CategoryPropertiesDialog.SavePath), savePath);
+        }
+
+        private static bool MatchesAddTorrentFileParameters(AddTorrentParams parameters, Stream firstStream, Stream secondStream)
+        {
+            if (parameters.Torrents == null)
+            {
+                return false;
+            }
+
+            if (parameters.Torrents.Count != 2)
+            {
+                return false;
+            }
+
+            if (!parameters.Torrents.TryGetValue("Name", out var firstTorrentStream) || !ReferenceEquals(firstTorrentStream, firstStream))
+            {
+                return false;
+            }
+
+            if (!parameters.Torrents.TryGetValue("SecondName", out var secondTorrentStream) || !ReferenceEquals(secondTorrentStream, secondStream))
+            {
+                return false;
+            }
+
+            return parameters.AutoTorrentManagement == false
+                   && parameters.Category == "Category"
+                   && parameters.DownloadLimit == 2
+                   && parameters.UploadLimit == 3
+                   && parameters.DownloadPath == "DownloadPath"
+                   && parameters.UseDownloadPath == true
+                   && parameters.SavePath == "SavePath"
+                   && parameters.Tags != null
+                   && parameters.Tags.SequenceEqual(new[] { "Tags" })
+                   && parameters.RatioLimit == 5F
+                   && parameters.SeedingTimeLimit == 6
+                   && parameters.InactiveSeedingTimeLimit == 4
+                   && parameters.ShareLimitAction == ShareLimitAction.Remove
+                   && parameters.ContentLayout == TorrentContentLayout.Original
+                   && parameters.StopCondition == StopCondition.MetadataReceived
+                   && parameters.Stopped == true
+                   && parameters.AddToTopOfQueue == true;
+        }
+
+        private static bool MatchesDuplicateNameAddTorrentFileParameters(AddTorrentParams parameters)
+        {
+            return parameters.Torrents != null
+                   && parameters.Torrents.Count == 3
+                   && parameters.Torrents.ContainsKey("Same.torrent")
+                   && parameters.Torrents.ContainsKey("Same (1).torrent")
+                   && parameters.Torrents.ContainsKey("Same (2).torrent");
+        }
+
+        private static bool HasAddTorrentLinkDialogUrlUnsetParameter(DialogParameters parameters)
+        {
+            return HasParameter(parameters, nameof(AddTorrentLinkDialog.Url))
+                   && parameters[nameof(AddTorrentLinkDialog.Url)] == null;
+        }
+
+        private static bool MatchesAddTorrentLinkParameters(AddTorrentParams parameters)
+        {
+            return parameters.Urls != null
+                   && parameters.Urls.SequenceEqual(new[] { "http://one", "http://two" })
+                   && parameters.Torrents == null
+                   && parameters.AutoTorrentManagement == true
+                   && parameters.SavePath == null
+                   && parameters.DownloadPath == "DownloadPath"
+                   && parameters.UseDownloadPath == true
+                   && parameters.Tags != null
+                   && parameters.Tags.SequenceEqual(new[] { "Tags" })
+                   && parameters.RatioLimit == 5F
+                   && parameters.SeedingTimeLimit == 6
+                   && parameters.InactiveSeedingTimeLimit == 4
+                   && parameters.ShareLimitAction == ShareLimitAction.Remove
+                   && parameters.StopCondition == StopCondition.MetadataReceived
+                   && parameters.Stopped == false;
+        }
+
+        private static bool HasDeleteDialogParameters(DialogParameters parameters, int count, string? torrentName)
+        {
+            if (!HasParameter(parameters, nameof(DeleteDialog.Count)))
+            {
+                return false;
+            }
+
+            if (!Equals(parameters[nameof(DeleteDialog.Count)], count))
+            {
+                return false;
+            }
+
+            var hasTorrentName = HasParameter(parameters, nameof(DeleteDialog.TorrentName));
+            if (torrentName == null)
+            {
+                return hasTorrentName == false;
+            }
+
+            return hasTorrentName
+                   && string.Equals(parameters[nameof(DeleteDialog.TorrentName)]?.ToString(), torrentName, StringComparison.Ordinal);
+        }
+
+        private static bool HasDownloadRateDialogValueFunctions(DialogParameters parameters)
+        {
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<long>.ValueDisplayFunc)))
+            {
+                return false;
+            }
+
+            var display = parameters[nameof(SliderFieldDialog<long>.ValueDisplayFunc)] as Func<long, string>;
+            if (display == null || display(Limits.NoLimit) != "∞" || display(2048) != "2048")
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<long>.ValueGetFunc)))
+            {
+                return false;
+            }
+
+            var getter = parameters[nameof(SliderFieldDialog<long>.ValueGetFunc)] as Func<string, long>;
+            return getter != null
+                   && getter("∞") == Limits.NoLimit
+                   && getter("5") == 5;
+        }
+
+        private static bool HasUploadRateDialogValueFunctions(DialogParameters parameters)
+        {
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<long>.ValueDisplayFunc)))
+            {
+                return false;
+            }
+
+            var display = parameters[nameof(SliderFieldDialog<long>.ValueDisplayFunc)] as Func<long, string>;
+            if (display == null || display(Limits.NoLimit) != "∞" || display(1024) != "1024")
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<long>.ValueGetFunc)))
+            {
+                return false;
+            }
+
+            var getter = parameters[nameof(SliderFieldDialog<long>.ValueGetFunc)] as Func<string, long>;
+            return getter != null
+                   && getter("∞") == Limits.NoLimit
+                   && getter("7") == 7;
+        }
+
+        private static bool HasDistinctShareRatioDialogParameters(DialogParameters parameters)
+        {
+            if (!HasParameter(parameters, nameof(ShareRatioDialog.Value)))
+            {
+                return false;
+            }
+
+            if (parameters[nameof(ShareRatioDialog.Value)] != null)
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(ShareRatioDialog.CurrentValue)))
+            {
+                return false;
+            }
+
+            var currentValue = parameters[nameof(ShareRatioDialog.CurrentValue)] as ShareRatioMax;
+            return currentValue != null
+                   && currentValue.RatioLimit == 2F
+                   && currentValue.SeedingTimeLimit == 3
+                   && currentValue.InactiveSeedingTimeLimit == 4F
+                   && currentValue.ShareLimitAction == ShareLimitAction.Stop;
+        }
+
+        private static bool HasMatchingShareRatioDialogParameters(DialogParameters parameters)
+        {
+            return HasParameter(parameters, nameof(ShareRatioDialog.Value))
+                   && parameters[nameof(ShareRatioDialog.Value)] is ShareRatioMax;
+        }
+
+        private static bool HasStringFieldDialogParameters(DialogParameters parameters, string label, string value)
+        {
+            return HasStringParameter(parameters, nameof(StringFieldDialog.Label), label)
+                   && HasStringParameter(parameters, nameof(StringFieldDialog.Value), value);
+        }
+
+        private static bool HasCookieDialogParameters(DialogParameters parameters, ApplicationCookie cookie)
+        {
+            return HasParameter(parameters, nameof(CookiePropertiesDialog.Cookie))
+                   && ReferenceEquals(parameters[nameof(CookiePropertiesDialog.Cookie)], cookie);
+        }
+
+        private static bool HasSubMenuDialogParameters(DialogParameters parameters, UIAction parent, IEnumerable<string> hashes, IReadOnlyDictionary<string, MudTorrent> torrents)
+        {
+            if (!HasParameter(parameters, nameof(SubMenuDialog.ParentAction))
+                || !ReferenceEquals(parameters[nameof(SubMenuDialog.ParentAction)], parent))
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(SubMenuDialog.Hashes)))
+            {
+                return false;
+            }
+
+            var forwardedHashes = parameters[nameof(SubMenuDialog.Hashes)] as IEnumerable<string>;
+            if (forwardedHashes == null || !forwardedHashes.SequenceEqual(hashes))
+            {
+                return false;
+            }
+
+            return HasParameter(parameters, nameof(SubMenuDialog.Torrents))
+                   && ReferenceEquals(parameters[nameof(SubMenuDialog.Torrents)], torrents);
+        }
+
+        private static bool HasThemePreviewDialogParameters(DialogParameters parameters, MudTheme theme, bool isDarkMode)
+        {
+            if (!HasParameter(parameters, nameof(ThemePreviewDialog.Theme))
+                || !ReferenceEquals(parameters[nameof(ThemePreviewDialog.Theme)], theme))
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(ThemePreviewDialog.IsDarkMode)))
+            {
+                return false;
+            }
+
+            var isDarkModeValue = parameters[nameof(ThemePreviewDialog.IsDarkMode)] as bool?;
+            return isDarkModeValue.HasValue && isDarkModeValue.Value == isDarkMode;
+        }
+
+        private static bool HasThemePreviewDialogOptions(DialogOptions options)
+        {
+            return options.FullScreen == false && options.NoHeader == true && options.FullWidth == false;
+        }
+
+        private static bool HasPathBrowserDialogParameters(DialogParameters parameters, string initialPath, DirectoryContentMode mode, bool allowFolderSelection)
+        {
+            if (!HasStringParameter(parameters, nameof(PathBrowserDialog.InitialPath), initialPath))
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(PathBrowserDialog.Mode))
+                || !Equals(parameters[nameof(PathBrowserDialog.Mode)], mode))
+            {
+                return false;
+            }
+
+            return HasParameter(parameters, nameof(PathBrowserDialog.AllowFolderSelection))
+                   && Equals(parameters[nameof(PathBrowserDialog.AllowFolderSelection)], allowFolderSelection);
+        }
+
+        private static bool HasStringParameter(DialogParameters parameters, string key, string value)
+        {
+            return HasParameter(parameters, key)
+                   && string.Equals(parameters[key]?.ToString(), value, StringComparison.Ordinal);
+        }
+
+        private static bool HasParameter(DialogParameters parameters, string key)
+        {
+            return parameters.Any(parameter => parameter.Key == key);
         }
 
         private static IDialogReference CreateReference(DialogResult result)
