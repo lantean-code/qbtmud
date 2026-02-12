@@ -26,7 +26,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             _apiClient = Mock.Of<IApiClient>();
             _snackbar = Mock.Of<ISnackbar>();
             TestContext.AddSingleton(_apiClient);
-            TestContext.Services.RemoveAll(typeof(ISnackbar));
+            TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.AddSingleton(_snackbar);
             _target = new CreateTorrentDialogTestDriver(TestContext);
         }
@@ -201,7 +201,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .Setup(service => service.UnFocus())
                 .Returns(Task.CompletedTask);
 
-            TestContext.Services.RemoveAll(typeof(IKeyboardService));
+            TestContext.Services.RemoveAll<IKeyboardService>();
             TestContext.Services.AddSingleton(keyboardMock.Object);
 
             Mock.Get(_apiClient)
@@ -327,7 +327,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             localStorage
                 .Setup(storage => storage.SetItemAsync(StorageKey, It.IsAny<TorrentCreationFormState>(), It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);
-            TestContext.Services.RemoveAll(typeof(ILocalStorageService));
+            TestContext.Services.RemoveAll<ILocalStorageService>();
             TestContext.Services.AddSingleton(localStorage.Object);
 
             Mock.Get(_apiClient)

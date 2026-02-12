@@ -32,7 +32,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public WelcomeWizardDialogTests()
         {
             _navigationManager = new TestNavigationManager();
-            TestContext.Services.RemoveAll(typeof(Microsoft.AspNetCore.Components.NavigationManager));
+            TestContext.Services.RemoveAll<Microsoft.AspNetCore.Components.NavigationManager>();
             TestContext.Services.AddSingleton<Microsoft.AspNetCore.Components.NavigationManager>(_navigationManager);
 
             _apiClient = Mock.Of<IApiClient>();
@@ -76,10 +76,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            TestContext.Services.RemoveAll(typeof(IApiClient));
-            TestContext.Services.RemoveAll(typeof(IThemeManagerService));
-            TestContext.Services.RemoveAll(typeof(ISnackbar));
-            TestContext.Services.RemoveAll(typeof(IWebUiLanguageCatalog));
+            TestContext.Services.RemoveAll<IApiClient>();
+            TestContext.Services.RemoveAll<IThemeManagerService>();
+            TestContext.Services.RemoveAll<ISnackbar>();
+            TestContext.Services.RemoveAll<IWebUiLanguageCatalog>();
+            TestContext.Services.RemoveAll<IKeyboardService>();
 
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.AddSingleton(_themeManagerService);
@@ -343,7 +344,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .Setup(service => service.SetItemAsync<bool>(WelcomeWizardStorageKeys.Completed, true, It.IsAny<CancellationToken>()))
                 .Throws(new InvalidOperationException("Message"));
 
-            TestContext.Services.RemoveAll(typeof(ILocalStorageService));
+            TestContext.Services.RemoveAll<ILocalStorageService>();
             TestContext.Services.AddSingleton<ILocalStorageService>(localStorage.Object);
 
             var dialog = await _target.RenderDialogAsync();

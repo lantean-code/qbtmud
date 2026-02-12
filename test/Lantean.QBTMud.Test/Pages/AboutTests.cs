@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetApplicationVersion())
                 .ReturnsAsync("Version");
 
-            TestContext.Services.RemoveAll(typeof(IApiClient));
+            TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
 
             _target = RenderPage();

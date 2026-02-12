@@ -20,7 +20,7 @@ namespace Lantean.QBTMud.Test.Components
             var registry = new Mock<IManagedTimerRegistry>();
             registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
             TestContext.Services.AddSingleton(registry.Object);
 
             var target = TestContext.Render<TimerStatusPanel>();
@@ -48,8 +48,8 @@ namespace Lantean.QBTMud.Test.Components
                 .Setup(factory => factory.Create(It.IsAny<TimeSpan>()))
                 .Returns(periodicTimer.Object);
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
-            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
+            TestContext.Services.RemoveAll<IPeriodicTimerFactory>();
             TestContext.Services.AddSingleton(registry.Object);
             TestContext.Services.AddSingleton(periodicTimerFactory.Object);
 
@@ -76,8 +76,8 @@ namespace Lantean.QBTMud.Test.Components
                 .Setup(factory => factory.Create(It.IsAny<TimeSpan>()))
                 .Returns(periodicTimer.Object);
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
-            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
+            TestContext.Services.RemoveAll<IPeriodicTimerFactory>();
             TestContext.Services.AddSingleton(registry.Object);
             TestContext.Services.AddSingleton(periodicTimerFactory.Object);
 
@@ -102,8 +102,8 @@ namespace Lantean.QBTMud.Test.Components
                 .Setup(factory => factory.Create(It.IsAny<TimeSpan>()))
                 .Returns(periodicTimer.Object);
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
-            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
+            TestContext.Services.RemoveAll<IPeriodicTimerFactory>();
             TestContext.Services.AddSingleton(registry.Object);
             TestContext.Services.AddSingleton(periodicTimerFactory.Object);
 
@@ -126,7 +126,7 @@ namespace Lantean.QBTMud.Test.Components
             var registry = new Mock<IManagedTimerRegistry>();
             registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer> { timer.Object });
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
             TestContext.Services.AddSingleton(registry.Object);
 
             var target = TestContext.Render<TimerStatusPanel>();
@@ -148,7 +148,7 @@ namespace Lantean.QBTMud.Test.Components
             var registry = new Mock<IManagedTimerRegistry>();
             registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer> { timer.Object });
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
             TestContext.Services.AddSingleton(registry.Object);
 
             var target = TestContext.Render<TimerStatusPanel>();
@@ -169,7 +169,7 @@ namespace Lantean.QBTMud.Test.Components
             var registry = new Mock<IManagedTimerRegistry>();
             registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer> { timer.Object });
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
             TestContext.Services.AddSingleton(registry.Object);
 
             var target = TestContext.Render<TimerStatusPanel>();
@@ -198,8 +198,8 @@ namespace Lantean.QBTMud.Test.Components
             var closed = false;
             var callback = EventCallback.Factory.Create<bool>(this, value => closed = !value);
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
-            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
+            TestContext.Services.RemoveAll<IPeriodicTimerFactory>();
             TestContext.Services.AddSingleton(registry.Object);
             TestContext.Services.AddSingleton(periodicTimerFactory.Object);
 
@@ -231,8 +231,8 @@ namespace Lantean.QBTMud.Test.Components
                 .Setup(factory => factory.Create(It.IsAny<TimeSpan>()))
                 .Returns(periodicTimer.Object);
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
-            TestContext.Services.RemoveAll(typeof(IPeriodicTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
+            TestContext.Services.RemoveAll<IPeriodicTimerFactory>();
             TestContext.Services.AddSingleton(registry.Object);
             TestContext.Services.AddSingleton(periodicTimerFactory.Object);
 
@@ -267,7 +267,7 @@ namespace Lantean.QBTMud.Test.Components
                 stopped.Object,
             });
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
             TestContext.Services.AddSingleton(registry.Object);
 
             var target = TestContext.Render<TimerStatusPanel>();

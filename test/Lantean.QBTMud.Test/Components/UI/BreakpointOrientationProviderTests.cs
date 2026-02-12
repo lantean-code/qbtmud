@@ -188,7 +188,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             viewportMock.Setup(v => v.UnsubscribeAsync(It.IsAny<IBrowserViewportObserver>()))
                 .Returns(Task.CompletedTask);
 
-            TestContext.Services.RemoveAll(typeof(IBrowserViewportService));
+            TestContext.Services.RemoveAll<IBrowserViewportService>();
             TestContext.Services.AddSingleton(viewportMock.Object);
 
             return (viewportMock, defaultOptions, () => observer);

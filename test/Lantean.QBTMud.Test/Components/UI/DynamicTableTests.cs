@@ -500,9 +500,9 @@ namespace Lantean.QBTMud.Test.Components.UI
             localStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
             localStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
 
-            TestContext.Services.RemoveAll(typeof(IDialogService));
+            TestContext.Services.RemoveAll<IDialogService>();
             TestContext.Services.AddSingleton(dialogServiceMock.Object);
-            TestContext.Services.RemoveAll(typeof(ILocalStorageService));
+            TestContext.Services.RemoveAll<ILocalStorageService>();
             TestContext.Services.AddSingleton(localStorageMock.Object);
 
             var target = RenderDynamicTable(builder =>

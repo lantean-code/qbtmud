@@ -44,7 +44,7 @@ namespace Lantean.QBTMud.Test.Components
             Mock.Get(_timer)
                 .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
-            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerFactory>();
             TestContext.Services.AddSingleton(_timerFactory);
         }
 
@@ -256,7 +256,7 @@ namespace Lantean.QBTMud.Test.Components
                 .ReturnsAsync(updated);
 
             var dataManagerMock = new Mock<ITorrentDataManager>();
-            TestContext.Services.RemoveAll(typeof(ITorrentDataManager));
+            TestContext.Services.RemoveAll<ITorrentDataManager>();
             TestContext.Services.AddSingleton(dataManagerMock.Object);
 
             dataManagerMock.Setup(m => m.CreateContentsList(initial)).Returns(new Dictionary<string, ContentItem>());
@@ -278,7 +278,7 @@ namespace Lantean.QBTMud.Test.Components
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(files);
 
             var dataManagerMock = new Mock<ITorrentDataManager>();
-            TestContext.Services.RemoveAll(typeof(ITorrentDataManager));
+            TestContext.Services.RemoveAll<ITorrentDataManager>();
             TestContext.Services.AddSingleton(dataManagerMock.Object);
 
             dataManagerMock
@@ -377,7 +377,7 @@ namespace Lantean.QBTMud.Test.Components
             var dataManagerMock = new Mock<ITorrentDataManager>();
             dataManagerMock.Setup(m => m.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>())).Returns(new Dictionary<string, ContentItem>());
             dataManagerMock.Setup(m => m.MergeContentsList(It.IsAny<IReadOnlyList<FileData>>(), It.IsAny<Dictionary<string, ContentItem>>())).Returns(false);
-            TestContext.Services.RemoveAll(typeof(ITorrentDataManager));
+            TestContext.Services.RemoveAll<ITorrentDataManager>();
             TestContext.Services.AddSingleton(dataManagerMock.Object);
 
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("root/file1.txt"));
@@ -739,7 +739,7 @@ namespace Lantean.QBTMud.Test.Components
             var fileList = new Dictionary<string, ContentItem> { { content.Name, content } };
             dataManagerMock.Setup(m => m.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>())).Returns(fileList);
 
-            TestContext.Services.RemoveAll(typeof(ITorrentDataManager));
+            TestContext.Services.RemoveAll<ITorrentDataManager>();
             TestContext.Services.AddSingleton(dataManagerMock.Object);
 
             _apiClientMock.Setup(c => c.GetTorrentContents("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));

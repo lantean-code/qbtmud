@@ -41,11 +41,11 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            TestContext.Services.RemoveAll(typeof(IApiClient));
+            TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
-            TestContext.Services.RemoveAll(typeof(ISnackbar));
+            TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.AddSingleton(_snackbar);
-            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerFactory>();
             TestContext.Services.AddSingleton(_timerFactory);
 
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
@@ -238,7 +238,7 @@ namespace Lantean.QBTMud.Test.Pages
             apiClientMock
                 .Setup(c => c.GetLog(false, true, false, true, It.IsAny<int?>()))
                 .ReturnsAsync(new List<LogEntry>());
-            localContext.Services.RemoveAll(typeof(IApiClient));
+            localContext.Services.RemoveAll<IApiClient>();
             localContext.Services.AddSingleton(apiClientMock.Object);
             var managedTimer = new Mock<IManagedTimer>();
             var managedTimerFactory = new Mock<IManagedTimerFactory>();
@@ -248,7 +248,7 @@ namespace Lantean.QBTMud.Test.Pages
             managedTimer
                 .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
-            localContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            localContext.Services.RemoveAll<IManagedTimerFactory>();
             localContext.Services.AddSingleton(managedTimerFactory.Object);
 
             var localTarget = localContext.Render<LogPage>(parameters =>

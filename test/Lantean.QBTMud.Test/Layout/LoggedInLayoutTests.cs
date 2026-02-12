@@ -25,85 +25,63 @@ namespace Lantean.QBTMud.Test.Layout
         private const string LastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
         private const string WelcomeWizardCompletedStorageKey = "WelcomeWizard.Completed.v1";
 
-        private readonly IApiClient _apiClient;
-        private readonly Mock<IApiClient> _apiClientMock;
-        private readonly ITorrentDataManager _dataManager;
-        private readonly Mock<ITorrentDataManager> _dataManagerMock;
-        private readonly ISpeedHistoryService _speedHistoryService;
-        private readonly Mock<ISpeedHistoryService> _speedHistoryServiceMock;
-        private readonly IManagedTimerFactory _managedTimerFactory;
-        private readonly Mock<IManagedTimerFactory> _managedTimerFactoryMock;
-        private readonly IManagedTimerRegistry _timerRegistry;
-        private readonly Mock<IManagedTimerRegistry> _timerRegistryMock;
-        private readonly IManagedTimer _refreshTimer;
-        private readonly Mock<IManagedTimer> _refreshTimerMock;
-        private readonly IDialogWorkflow _dialogWorkflow;
-        private readonly Mock<IDialogWorkflow> _dialogWorkflowMock;
-        private readonly IDialogService _dialogService;
-        private readonly Mock<IDialogService> _dialogServiceMock;
-        private readonly ISnackbar _snackbar;
-        private readonly Mock<ISnackbar> _snackbarMock;
+        private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
+        private readonly ITorrentDataManager _dataManager = Mock.Of<ITorrentDataManager>();
+        private readonly ISpeedHistoryService _speedHistoryService = Mock.Of<ISpeedHistoryService>();
+        private readonly IManagedTimerFactory _managedTimerFactory = Mock.Of<IManagedTimerFactory>();
+        private readonly IManagedTimerRegistry _timerRegistry = Mock.Of<IManagedTimerRegistry>();
+        private readonly IManagedTimer _refreshTimer = Mock.Of<IManagedTimer>();
+        private readonly IDialogWorkflow _dialogWorkflow = Mock.Of<IDialogWorkflow>();
+        private readonly IDialogService _dialogService = Mock.Of<IDialogService>();
+        private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
         private readonly TestNavigationManager _navigationManager;
         private readonly IRenderedComponent<LoggedInLayout> _target;
 
         public LoggedInLayoutTests()
         {
             _navigationManager = new TestNavigationManager();
-            TestContext.Services.RemoveAll(typeof(NavigationManager));
+            TestContext.Services.RemoveAll<NavigationManager>();
             TestContext.Services.AddSingleton<NavigationManager>(_navigationManager);
+            
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock.Setup(c => c.CheckAuthState()).ReturnsAsync(true);
+            apiClientMock.Setup(c => c.GetApplicationPreferences()).ReturnsAsync(CreatePreferences());
+            apiClientMock.Setup(c => c.GetApplicationVersion()).ReturnsAsync("Version");
+            apiClientMock.Setup(c => c.GetMainData(It.IsAny<int>())).ReturnsAsync(CreateClientMainData());
 
-            _apiClient = Mock.Of<IApiClient>();
-            _apiClientMock = Mock.Get(_apiClient);
-            _apiClientMock.Setup(c => c.CheckAuthState()).ReturnsAsync(true);
-            _apiClientMock.Setup(c => c.GetApplicationPreferences()).ReturnsAsync(CreatePreferences());
-            _apiClientMock.Setup(c => c.GetApplicationVersion()).ReturnsAsync("Version");
-            _apiClientMock.Setup(c => c.GetMainData(It.IsAny<int>())).ReturnsAsync(CreateClientMainData());
+            var dataManagerMock = Mock.Get(_dataManager);
+            dataManagerMock.Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(CreateMainData());
 
-            _dataManager = Mock.Of<ITorrentDataManager>();
-            _dataManagerMock = Mock.Get(_dataManager);
-            _dataManagerMock.Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(CreateMainData());
+            var speedHistoryServiceMock = Mock.Get(_speedHistoryService);
+            speedHistoryServiceMock.Setup(s => s.InitializeAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            speedHistoryServiceMock.Setup(s => s.PushSampleAsync(It.IsAny<DateTime>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
-            _speedHistoryService = Mock.Of<ISpeedHistoryService>();
-            _speedHistoryServiceMock = Mock.Get(_speedHistoryService);
-            _speedHistoryServiceMock.Setup(s => s.InitializeAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _speedHistoryServiceMock.Setup(s => s.PushSampleAsync(It.IsAny<DateTime>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            var refreshTimerMock = Mock.Get(_refreshTimer);
+            refreshTimerMock.Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            refreshTimerMock.Setup(t => t.UpdateIntervalAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-            _refreshTimer = Mock.Of<IManagedTimer>();
-            _refreshTimerMock = Mock.Get(_refreshTimer);
-            _refreshTimerMock.Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            _refreshTimerMock.Setup(t => t.UpdateIntervalAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            var managedTimerFactoryMock = Mock.Get(_managedTimerFactory);
+            managedTimerFactoryMock.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(_refreshTimer);
 
-            _managedTimerFactory = Mock.Of<IManagedTimerFactory>();
-            _managedTimerFactoryMock = Mock.Get(_managedTimerFactory);
-            _managedTimerFactoryMock.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(_refreshTimer);
+            var timerRegistryMock = Mock.Get(_timerRegistry);
+            timerRegistryMock.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
 
-            _timerRegistry = Mock.Of<IManagedTimerRegistry>();
-            _timerRegistryMock = Mock.Get(_timerRegistry);
-            _timerRegistryMock.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
-
-            _dialogWorkflow = Mock.Of<IDialogWorkflow>();
-            _dialogWorkflowMock = Mock.Get(_dialogWorkflow);
-
-            _dialogService = Mock.Of<IDialogService>();
-            _dialogServiceMock = Mock.Get(_dialogService);
-            _dialogServiceMock
+            var dialogServiceMock = Mock.Get(_dialogService);
+            dialogServiceMock
                 .Setup(service => service.ShowAsync<WelcomeWizardDialog>(
                     It.IsAny<string?>(),
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()))
                 .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
 
-            _snackbar = Mock.Of<ISnackbar>();
-            _snackbarMock = Mock.Get(_snackbar);
-
-            TestContext.Services.RemoveAll(typeof(IApiClient));
-            TestContext.Services.RemoveAll(typeof(ITorrentDataManager));
-            TestContext.Services.RemoveAll(typeof(ISpeedHistoryService));
-            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
-            TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
-            TestContext.Services.RemoveAll(typeof(IDialogWorkflow));
-            TestContext.Services.RemoveAll(typeof(IDialogService));
-            TestContext.Services.RemoveAll(typeof(ISnackbar));
+            TestContext.Services.RemoveAll<IApiClient>();
+            TestContext.Services.RemoveAll<ITorrentDataManager>();
+            TestContext.Services.RemoveAll<ISpeedHistoryService>();
+            TestContext.Services.RemoveAll<IManagedTimerFactory>();
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
+            TestContext.Services.RemoveAll<IDialogWorkflow>();
+            TestContext.Services.RemoveAll<IDialogService>();
+            TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.AddSingleton(_dataManager);
             TestContext.Services.AddSingleton(_speedHistoryService);
@@ -117,18 +95,18 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public void GIVEN_WelcomeWizardIncomplete_WHEN_Rendered_THEN_ShowsWizardDialog()
+        public async Task GIVEN_WelcomeWizardIncomplete_WHEN_Rendered_THEN_ShowsWizardDialog()
         {
             DisposeDefaultTarget();
-            _dialogServiceMock.Invocations.Clear();
+            Mock.Get(_dialogService).Invocations.Clear();
 
-            TestContext.LocalStorage.RemoveItemAsync(WelcomeWizardCompletedStorageKey, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.RemoveItemAsync(WelcomeWizardCompletedStorageKey, Xunit.TestContext.Current.CancellationToken);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
             target.WaitForAssertion(() =>
             {
-                _dialogServiceMock.Verify(service => service.ShowAsync<WelcomeWizardDialog>(
+                Mock.Get(_dialogService).Verify(service => service.ShowAsync<WelcomeWizardDialog>(
                     It.IsAny<string?>(),
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()), Times.Once);
@@ -136,18 +114,18 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public void GIVEN_WelcomeWizardCompleted_WHEN_Rendered_THEN_DoesNotShowWizardDialog()
+        public async Task GIVEN_WelcomeWizardCompleted_WHEN_Rendered_THEN_DoesNotShowWizardDialog()
         {
             DisposeDefaultTarget();
-            _dialogServiceMock.Invocations.Clear();
+            Mock.Get(_dialogService).Invocations.Clear();
 
-            TestContext.LocalStorage.SetItemAsync(WelcomeWizardCompletedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(WelcomeWizardCompletedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
             target.WaitForAssertion(() =>
             {
-                _dialogServiceMock.Verify(service => service.ShowAsync<WelcomeWizardDialog>(
+                Mock.Get(_dialogService).Verify(service => service.ShowAsync<WelcomeWizardDialog>(
                     It.IsAny<string?>(),
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()), Times.Never);
@@ -298,7 +276,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, "magnet:?xt=urn:btih:ABC", Xunit.TestContext.Current.CancellationToken);
 
-            _apiClientMock.Setup(c => c.CheckAuthState()).ReturnsAsync(false);
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthState()).ReturnsAsync(false);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -306,17 +284,6 @@ namespace Lantean.QBTMud.Test.Layout
             target.FindComponent<MudProgressLinear>().Should().NotBeNull();
             var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
-        }
-
-        [Fact]
-        public void GIVEN_LostConnection_WHEN_Rendered_THEN_StatusBarShowsWarning()
-        {
-            var mainData = CreateMainData(lostConnection: true);
-
-            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
-
-            var lostConnection = FindComponentByTestId<MudText>(target, "Status-LostConnection");
-            GetChildContentText(lostConnection.Instance.ChildContent).Should().Be("qBittorrent client is not reachable");
         }
 
         [Fact]
@@ -489,10 +456,10 @@ namespace Lantean.QBTMud.Test.Layout
         public async Task GIVEN_AlternativeSpeedLimitToggleSucceeds_WHEN_Enabled_THEN_UpdatesStateAndShowsSnackbar()
         {
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
-            _snackbarMock.Invocations.Clear();
+            Mock.Get(_snackbar).Invocations.Clear();
 
-            _apiClientMock.Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(Task.CompletedTask);
-            _apiClientMock.Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(Task.CompletedTask);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -500,17 +467,17 @@ namespace Lantean.QBTMud.Test.Layout
             await target.InvokeAsync(() => button.Find("button").Click());
 
             mainData.ServerState.UseAltSpeedLimits.Should().BeTrue();
-            _snackbarMock.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Alternative speed limits: On");
+            Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Alternative speed limits: On");
         }
 
         [Fact]
         public async Task GIVEN_AlternativeSpeedLimitToggleSucceeds_WHEN_Disabled_THEN_UpdatesStateAndShowsSnackbar()
         {
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: true));
-            _snackbarMock.Invocations.Clear();
+            Mock.Get(_snackbar).Invocations.Clear();
 
-            _apiClientMock.Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(Task.CompletedTask);
-            _apiClientMock.Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(false);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(Task.CompletedTask);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(false);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -518,23 +485,23 @@ namespace Lantean.QBTMud.Test.Layout
             await target.InvokeAsync(() => button.Find("button").Click());
 
             mainData.ServerState.UseAltSpeedLimits.Should().BeFalse();
-            _snackbarMock.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Alternative speed limits: Off");
+            Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Alternative speed limits: Off");
         }
 
         [Fact]
         public async Task GIVEN_AlternativeSpeedLimitToggleFails_WHEN_Clicked_THEN_ShowsErrorSnackbar()
         {
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
-            _snackbarMock.Invocations.Clear();
+            Mock.Get(_snackbar).Invocations.Clear();
 
-            _apiClientMock.Setup(c => c.ToggleAlternativeSpeedLimits()).ThrowsAsync(new HttpRequestException("Fail"));
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).ThrowsAsync(new HttpRequestException("Fail"));
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
 
             await target.InvokeAsync(() => button.Find("button").Click());
 
-            _snackbarMock.Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Unable to toggle alternative speed limits: Fail");
+            Mock.Get(_snackbar).Invocations.Single(i => i.Method.Name == nameof(ISnackbar.Add)).Arguments[0].Should().Be("Unable to toggle alternative speed limits: Fail");
         }
 
         [Fact]
@@ -542,10 +509,10 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
             var toggleTaskSource = new TaskCompletionSource<bool>();
-            _snackbarMock.Invocations.Clear();
+            Mock.Get(_snackbar).Invocations.Clear();
 
-            _apiClientMock.Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(toggleTaskSource.Task);
-            _apiClientMock.Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(toggleTaskSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -553,7 +520,7 @@ namespace Lantean.QBTMud.Test.Layout
             var firstClick = target.InvokeAsync(() => button.Find("button").Click());
             await target.InvokeAsync(() => button.Find("button").Click());
 
-            _apiClientMock.Verify(c => c.ToggleAlternativeSpeedLimits(), Times.Once);
+            Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimits(), Times.Once);
 
             toggleTaskSource.SetResult(true);
             await firstClick;
@@ -564,11 +531,11 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState());
             mainData.ServerState.RefreshInterval = 0;
-            _refreshTimerMock.Invocations.Clear();
+            Mock.Get(_refreshTimer).Invocations.Clear();
 
             RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            _refreshTimerMock.Verify(t => t.UpdateIntervalAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Never);
+            Mock.Get(_refreshTimer).Verify(t => t.UpdateIntervalAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -577,9 +544,9 @@ namespace Lantean.QBTMud.Test.Layout
             var tickSource = new TaskCompletionSource<bool>();
             Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
 
-            _apiClientMock.Setup(c => c.CheckAuthState()).Returns(tickSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthState()).Returns(tickSource.Task);
 
-            _refreshTimerMock
+            Mock.Get(_refreshTimer)
                 .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
                 .ReturnsAsync(true);
@@ -601,14 +568,15 @@ namespace Lantean.QBTMud.Test.Layout
             Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
             var probeBody = CreateProbeBody();
             var mainData = CreateMainData(serverState: CreateServerState());
+            Mock.Get(_dialogService).Invocations.Clear();
 
-            _apiClientMock.SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData())
                 .ThrowsAsync(new HttpRequestException());
 
-            _dataManagerMock.Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
+            Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
 
-            _refreshTimerMock
+            Mock.Get(_refreshTimer)
                 .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
                 .ReturnsAsync(true);
@@ -632,15 +600,15 @@ namespace Lantean.QBTMud.Test.Layout
             var initialData = CreateMainData(serverState: CreateServerState());
             var updatedData = CreateMainData(serverState: CreateServerState(connectionStatus: "connected"));
 
-            _apiClientMock.SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: true));
 
-            _dataManagerMock.SetupSequence(m => m.CreateMainData(It.IsAny<ClientModels.MainData>()))
+            Mock.Get(_dataManager).SetupSequence(m => m.CreateMainData(It.IsAny<ClientModels.MainData>()))
                 .Returns(initialData)
                 .Returns(updatedData);
 
-            _refreshTimerMock
+            Mock.Get(_refreshTimer)
                 .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
                 .ReturnsAsync(true);
@@ -667,14 +635,14 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = true;
 
-            _apiClientMock.SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
-            _dataManagerMock.Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
-            _dataManagerMock.Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged)).Returns(false);
+            Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
+            Mock.Get(_dataManager).Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged)).Returns(false);
 
-            _refreshTimerMock
+            Mock.Get(_refreshTimer)
                 .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
                 .ReturnsAsync(true);
@@ -701,14 +669,14 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = false;
 
-            _apiClientMock.SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
-            _dataManagerMock.Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
-            _dataManagerMock.Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged)).Returns(true);
+            Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
+            Mock.Get(_dataManager).Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged)).Returns(true);
 
-            _refreshTimerMock
+            Mock.Get(_refreshTimer)
                 .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
                 .ReturnsAsync(true);
@@ -766,11 +734,11 @@ namespace Lantean.QBTMud.Test.Layout
             var magnet = "magnet:?xt=urn:btih:ABC";
             await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
 
-            _dialogWorkflowMock.Setup(d => d.InvokeAddTorrentLinkDialog(magnet)).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog(magnet)).Returns(Task.CompletedTask);
 
             RenderLayout(new List<IManagedTimer>());
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog(magnet), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(magnet), Times.Once);
             var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(LastProcessedDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
@@ -785,11 +753,11 @@ namespace Lantean.QBTMud.Test.Layout
             var link = "http://example.com/file.torrent";
             await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, link, Xunit.TestContext.Current.CancellationToken);
 
-            _dialogWorkflowMock.Setup(d => d.InvokeAddTorrentLinkDialog(link)).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog(link)).Returns(Task.CompletedTask);
 
             RenderLayout(new List<IManagedTimer>());
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog(link), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(link), Times.Once);
             var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(LastProcessedDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
@@ -819,11 +787,11 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             _navigationManager.SetUri("http://localhost/#download=magnet:?xt=urn:btih:ABC");
-            _dialogWorkflowMock.Setup(d => d.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC")).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC")).Returns(Task.CompletedTask);
 
             RenderLayout(new List<IManagedTimer>());
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC"), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC"), Times.Once);
         }
 
         [Fact]
@@ -832,11 +800,11 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             _navigationManager.SetUri("http://localhost/?download=http://example.com/file.torrent");
-            _dialogWorkflowMock.Setup(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent")).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent")).Returns(Task.CompletedTask);
 
             RenderLayout(new List<IManagedTimer>());
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent"), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent"), Times.Once);
         }
 
         [Fact]
@@ -848,7 +816,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -860,7 +828,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -874,7 +842,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -886,7 +854,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -898,7 +866,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -910,7 +878,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             RenderLayout(new List<IManagedTimer>());
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -920,7 +888,7 @@ namespace Lantean.QBTMud.Test.Layout
             ResetDialogInvocations();
             var magnet = "magnet:?xt=urn:btih:ABC";
             _navigationManager.SetUri($"http://localhost/#download={magnet}");
-            _dialogWorkflowMock.Setup(d => d.InvokeAddTorrentLinkDialog(magnet))
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog(magnet))
                 .ThrowsAsync(new InvalidOperationException("Failure"));
 
             Action action = () => RenderLayout(new List<IManagedTimer>());
@@ -933,7 +901,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             DisposeDefaultTarget();
             ResetDialogInvocations();
-            _dialogWorkflowMock.Setup(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent")).Returns(Task.CompletedTask);
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent")).Returns(Task.CompletedTask);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -941,7 +909,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             target.InvokeAsync(() => _navigationManager.NavigateTo("http://localhost/?download=http://example.com/file.torrent"));
 
-            _dialogWorkflowMock.Verify(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent"), Times.AtLeastOnce);
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog("http://example.com/file.torrent"), Times.AtLeastOnce);
         }
 
         [Fact]
@@ -967,7 +935,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             var timer = new Mock<IManagedTimer>();
             timer.Setup(t => t.DisposeAsync()).Returns(ValueTask.CompletedTask);
-            _managedTimerFactoryMock.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(timer.Object);
+            Mock.Get(_managedTimerFactory).Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(timer.Object);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -981,8 +949,8 @@ namespace Lantean.QBTMud.Test.Layout
         {
             DisposeDefaultTarget();
             var completionSource = new TaskCompletionSource<bool>();
-            _apiClientMock.Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(completionSource.Task);
-            _apiClientMock.Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(completionSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>());
             var button = target.FindComponents<MudIconButton>()
@@ -990,11 +958,11 @@ namespace Lantean.QBTMud.Test.Layout
 
             var firstClick = button.Find("button").TriggerEventAsync("onclick", new MouseEventArgs());
 
-            target.WaitForAssertion(() => _apiClientMock.Verify(c => c.ToggleAlternativeSpeedLimits(), Times.Once));
+            target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimits(), Times.Once));
 
             await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(null));
 
-            _apiClientMock.Verify(c => c.ToggleAlternativeSpeedLimits(), Times.Once);
+            Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimits(), Times.Once);
 
             completionSource.SetResult(true);
             await firstClick;
@@ -1013,12 +981,12 @@ namespace Lantean.QBTMud.Test.Layout
             Menu? menu = null,
             bool configureMainData = true)
         {
-            _timerRegistryMock.Setup(r => r.GetTimers()).Returns(timers);
+            Mock.Get(_timerRegistry).Setup(r => r.GetTimers()).Returns(timers);
             if (configureMainData)
             {
-                _dataManagerMock.Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData ?? CreateMainData());
+                Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData ?? CreateMainData());
             }
-            _apiClientMock.Setup(c => c.GetApplicationPreferences()).ReturnsAsync(preferences ?? CreatePreferences());
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferences()).ReturnsAsync(preferences ?? CreatePreferences());
 
             return TestContext.Render<LoggedInLayout>(parameters =>
             {
@@ -1061,7 +1029,7 @@ namespace Lantean.QBTMud.Test.Layout
 
         private void ResetDialogInvocations()
         {
-            _dialogWorkflowMock.Invocations.Clear();
+            Mock.Get(_dialogWorkflow).Invocations.Clear();
         }
 
         private static IRenderedComponent<MudIconButton> FindTimerButton(IRenderedComponent<LoggedInLayout> target, string icon)

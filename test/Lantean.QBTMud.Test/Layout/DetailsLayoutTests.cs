@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Test.Layout
                 .Setup(s => s.UnregisterKeypressEvent(It.IsAny<KeyboardEvent>()))
                 .Returns(Task.CompletedTask);
 
-            TestContext.Services.RemoveAll(typeof(IKeyboardService));
+            TestContext.Services.RemoveAll<IKeyboardService>();
             TestContext.Services.AddSingleton(_keyboardService);
 
             _navigationManager = new TestNavigationManager();

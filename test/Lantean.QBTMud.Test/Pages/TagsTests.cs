@@ -25,9 +25,9 @@ namespace Lantean.QBTMud.Test.Pages
             _apiClient = Mock.Of<IApiClient>();
             _dialogWorkflow = Mock.Of<IDialogWorkflow>();
 
-            TestContext.Services.RemoveAll(typeof(IApiClient));
+            TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
-            TestContext.Services.RemoveAll(typeof(IDialogWorkflow));
+            TestContext.Services.RemoveAll<IDialogWorkflow>();
             TestContext.Services.AddSingleton(_dialogWorkflow);
 
             _target = RenderPage();

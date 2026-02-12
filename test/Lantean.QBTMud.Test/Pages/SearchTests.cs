@@ -1613,7 +1613,7 @@ namespace Lantean.QBTMud.Test.Pages
             var factory = new Mock<IManagedTimerFactory>();
             factory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(timer.Object);
 
-            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerFactory>();
             TestContext.Services.AddSingleton(factory.Object);
 
             return cancellationToken => handler!.Invoke(cancellationToken);

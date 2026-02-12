@@ -27,11 +27,11 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflow = Mock.Of<IDialogWorkflow>();
             _snackbar = Mock.Of<ISnackbar>();
 
-            TestContext.Services.RemoveAll(typeof(IApiClient));
+            TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
-            TestContext.Services.RemoveAll(typeof(IDialogWorkflow));
+            TestContext.Services.RemoveAll<IDialogWorkflow>();
             TestContext.Services.AddSingleton(_dialogWorkflow);
-            TestContext.Services.RemoveAll(typeof(ISnackbar));
+            TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.AddSingleton(_snackbar);
 
             Mock.Get(_apiClient)

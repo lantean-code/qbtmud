@@ -22,7 +22,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _apiClient = Mock.Of<IApiClient>();
 
-            TestContext.Services.RemoveAll(typeof(IApiClient));
+            TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
 
             _target = RenderPage();

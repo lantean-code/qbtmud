@@ -18,6 +18,10 @@ namespace Lantean.QBTMud.Test.Infrastructure
         private const string ApiClientName = "API";
 
         private static readonly Uri _baseAddress = new Uri("http://localhost:8080");
+        private static readonly IReadOnlyDictionary<string, object?> _defaultLocalStorageValues = new Dictionary<string, object?>
+        {
+            [WelcomeWizardStorageKeys.Completed] = true
+        };
         private readonly TestHttpMessageHandler _httpHandler;
         private readonly TestLocalStorageService _localStorage;
         private readonly TestSessionStorageService _sessionStorage;
@@ -29,7 +33,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
             BunitContext.DefaultWaitTimeout = TimeSpan.FromMinutes(1);
 
             _httpHandler = new TestHttpMessageHandler();
-            _localStorage = new TestLocalStorageService();
+            _localStorage = new TestLocalStorageService(_defaultLocalStorageValues);
             _sessionStorage = new TestSessionStorageService();
             _clipboard = new TestClipboardService();
 
@@ -54,8 +58,6 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddSingleton<ILocalStorageService>(_localStorage);
             Services.AddSingleton<ISessionStorageService>(_sessionStorage);
             Services.AddSingleton<IClipboardService>(_clipboard);
-
-            _localStorage.SetItemAsync(WelcomeWizardStorageKeys.Completed, true);
 
             // Message handlers used by your HttpClient pipeline
             Services.AddTransient<CookieHandler>();

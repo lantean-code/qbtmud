@@ -29,7 +29,7 @@ namespace Lantean.QBTMud.Test.Components
             Mock.Get(_timer)
                 .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
-            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerFactory>();
             TestContext.Services.AddSingleton(_timerFactory);
 
             _target = TestContext.Render<TrackersTab>(parameters =>

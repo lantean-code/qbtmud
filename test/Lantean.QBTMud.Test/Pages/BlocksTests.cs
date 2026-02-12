@@ -38,11 +38,11 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            TestContext.Services.RemoveAll(typeof(IApiClient));
+            TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
-            TestContext.Services.RemoveAll(typeof(ISnackbar));
+            TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.AddSingleton(_snackbar);
-            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerFactory>();
             TestContext.Services.AddSingleton(_timerFactory);
 
             _popoverProvider = TestContext.Render<MudPopoverProvider>();

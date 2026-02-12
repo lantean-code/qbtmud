@@ -42,13 +42,13 @@ namespace Lantean.QBTMud.Test.Pages
                 .SetupGet(timer => timer.State)
                 .Returns(ManagedTimerState.Running);
 
-            TestContext.Services.RemoveAll(typeof(IApiClient));
+            TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
-            TestContext.Services.RemoveAll(typeof(IDialogService));
+            TestContext.Services.RemoveAll<IDialogService>();
             TestContext.Services.AddSingleton(_dialogService);
-            TestContext.Services.RemoveAll(typeof(ISnackbar));
+            TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.AddSingleton(_snackbar);
-            TestContext.Services.RemoveAll(typeof(IManagedTimerFactory));
+            TestContext.Services.RemoveAll<IManagedTimerFactory>();
             TestContext.Services.AddSingleton(_timerFactory);
         }
 

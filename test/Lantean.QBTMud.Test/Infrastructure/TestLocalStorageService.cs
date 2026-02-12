@@ -10,6 +10,19 @@ namespace Lantean.QBTMud.Test.Infrastructure
         private readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerDefaults.Web);
         private int _writeCount;
 
+        public TestLocalStorageService(IReadOnlyDictionary<string, object?>? initialValues = null)
+        {
+            if (initialValues is null)
+            {
+                return;
+            }
+
+            foreach (var entry in initialValues)
+            {
+                _store[entry.Key] = entry.Value;
+            }
+        }
+
         public int WriteCount
         {
             get
