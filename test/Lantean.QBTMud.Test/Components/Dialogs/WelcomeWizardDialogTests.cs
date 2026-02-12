@@ -26,6 +26,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private readonly Mock<ISnackbar> _snackbarMock;
         private readonly IWebUiLanguageCatalog _languageCatalog;
         private readonly Mock<IWebUiLanguageCatalog> _languageCatalogMock;
+        private readonly IKeyboardService _keyboardService;
+        private readonly Mock<IKeyboardService> _keyboardServiceMock;
         private readonly TestNavigationManager _navigationManager;
         private readonly WelcomeWizardDialogTestDriver _target;
 
@@ -76,15 +78,26 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
+            _keyboardService = Mock.Of<IKeyboardService>();
+            _keyboardServiceMock = Mock.Get(_keyboardService);
+            _keyboardServiceMock
+                .Setup(service => service.Focus())
+                .Returns(Task.CompletedTask);
+            _keyboardServiceMock
+                .Setup(service => service.UnFocus())
+                .Returns(Task.CompletedTask);
+
             TestContext.Services.RemoveAll(typeof(IApiClient));
             TestContext.Services.RemoveAll(typeof(IThemeManagerService));
             TestContext.Services.RemoveAll(typeof(ISnackbar));
             TestContext.Services.RemoveAll(typeof(IWebUiLanguageCatalog));
+            TestContext.Services.RemoveAll(typeof(IKeyboardService));
 
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.AddSingleton(_themeManagerService);
             TestContext.Services.AddSingleton(_snackbar);
             TestContext.Services.AddSingleton(_languageCatalog);
+            TestContext.Services.AddSingleton(_keyboardService);
 
             _target = new WelcomeWizardDialogTestDriver(TestContext);
         }
@@ -107,6 +120,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             backButton.Instance.Disabled.Should().BeTrue();
 
             FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect").Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogRendered_WHEN_FirstRenderCompletes_THEN_FocusesKeyboardService()
+        {
+            await _target.RenderDialogAsync();
+
+            _keyboardServiceMock.Verify(service => service.Focus(), Times.Once);
         }
 
         [Fact]
@@ -310,6 +331,26 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var stored = await TestContext.LocalStorage.GetItemAsync<bool?>(WelcomeWizardStorageKeys.Completed, Xunit.TestContext.Current.CancellationToken);
             stored.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogRendered_WHEN_Closed_THEN_UnFocusesKeyboardService()
+        {
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            await dialog.Reference.Result;
+
+            dialog.Provider.WaitForAssertion(() =>
+            {
+                _keyboardServiceMock.Verify(service => service.UnFocus(), Times.Once);
+            });
         }
 
         [Fact]
