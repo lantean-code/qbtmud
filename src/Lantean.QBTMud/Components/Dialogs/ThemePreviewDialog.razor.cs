@@ -1,19 +1,14 @@
 using Lantean.QBTMud.Services.Localization;
+using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class ThemePreviewDialog
     {
         private const string PreviewScope = "root .theme-preview-scope";
-
-        private static readonly JsonSerializerOptions _previewThemeOptions = new(JsonSerializerDefaults.Web)
-        {
-            PropertyNameCaseInsensitive = true
-        };
 
         private MudTheme _previewTheme = new();
         private bool _isDarkMode;
@@ -75,13 +70,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private static MudTheme BuildPreviewTheme(MudTheme? theme)
         {
-            if (theme is null)
-            {
-                return new MudTheme();
-            }
-
-            var json = JsonSerializer.Serialize(theme, _previewThemeOptions);
-            return JsonSerializer.Deserialize<MudTheme>(json, _previewThemeOptions) ?? new MudTheme();
+            return ThemeSerialization.CloneTheme(theme);
         }
 
         private string Translate(string value)

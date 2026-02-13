@@ -308,6 +308,36 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_CustomOrder_WHEN_ResetOrderInvokedAndSaved_THEN_DefaultOrderPersisted()
+        {
+            var columns = CreateColumns(
+                ("Name", null, true),
+                ("Age", null, true),
+                ("Size", null, true));
+            var selected = columns.Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
+            var order = new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                { "age", 0 },
+                { "size", 1 },
+                { "name", 2 },
+            };
+
+            var dialog = await _target.RenderDialogAsync(columns, selected, order: order);
+
+            var resetButton = FindComponentByTestId<MudButton>(dialog.Component, "ColumnOptionsResetOrder");
+            await resetButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "ColumnOptionsSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var result = await dialog.Reference.Result;
+            var (_, _, resultOrder) = ((HashSet<string>, Dictionary<string, int?>, Dictionary<string, int>))result!.Data!;
+            resultOrder["name"].Should().Be(0);
+            resultOrder["age"].Should().Be(1);
+            resultOrder["size"].Should().Be(2);
+        }
+
+        [Fact]
         public async Task GIVEN_EdgeMovesInvoked_WHEN_Saved_THEN_OrderUnchanged()
         {
             var columns = CreateColumns(

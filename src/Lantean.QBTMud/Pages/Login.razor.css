@@ -1,0 +1,63 @@
+.login-root ::deep .login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--app-viewport-height);
+    padding: calc(var(--mud-appbar-height) + 1rem) 1rem 1rem 1rem;
+    background: radial-gradient(circle at top left, rgba(var(--mud-palette-primary-rgb), 0.12), transparent 55%), radial-gradient(circle at bottom right, rgba(var(--mud-palette-secondary-rgb), 0.12), transparent 50%);
+}
+
+.login-root ::deep .login-page__container {
+    width: 100%;
+}
+
+.login-root ::deep .login-card {
+    border: 1px solid var(--mud-palette-lines-default);
+}
+
+.login-root ::deep .login-card__content {
+    padding: clamp(1.25rem, 2vw, 2rem);
+}
+
+.login-root ::deep .login-card__header {
+    text-align: center;
+}
+
+.login-root ::deep .login-card__logo {
+    display: block;
+    margin: 0 auto 0.75rem auto;
+}
+
+.login-root ::deep .login-card__form {
+    margin-top: 0.25rem;
+}
+
+.login-root ::deep .login-card input.mud-input-root {
+    -webkit-text-fill-color: var(--mud-palette-text-primary) !important;
+    caret-color: var(--mud-palette-text-primary);
+    -webkit-box-shadow: 0 0 0 1000px var(--mud-palette-surface) inset;
+    box-shadow: 0 0 0 1000px var(--mud-palette-surface) inset;
+    background-color: var(--mud-palette-surface);
+    border-radius: inherit;
+}
+
+    .login-root ::deep .login-card input.mud-input-root:-webkit-autofill,
+    .login-root ::deep .login-card input.mud-input-root:-webkit-autofill:hover,
+    .login-root ::deep .login-card input.mud-input-root:-webkit-autofill:focus,
+    .login-root ::deep .login-card input.mud-input-root:-webkit-autofill:active,
+    .login-root ::deep .login-card input.mud-input-root:autofill,
+    .login-root ::deep .login-card input.mud-input-root:-moz-autofill {
+        -webkit-text-fill-color: var(--mud-palette-text-primary) !important;
+        caret-color: var(--mud-palette-text-primary);
+        -webkit-box-shadow: 0 0 0 1000px var(--mud-palette-surface) inset !important;
+        box-shadow: 0 0 0 1000px var(--mud-palette-surface) inset !important;
+        background-color: var(--mud-palette-surface) !important;
+        transition: background-color 9999s ease-out 0s;
+    }
+
+@media (max-width: 600px) {
+    .login-root ::deep .login-page {
+        align-items: flex-start;
+        padding-top: calc(var(--mud-appbar-height) + 1rem + env(safe-area-inset-top, 0px));
+    }
+}

@@ -204,7 +204,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task ForceStart()
         {
-            await ApiClient.SetForceStart(true, null, Hashes.ToArray());
+            await ApiClient.SetForceStart(value: true, all: null, hashes: Hashes.ToArray());
             Snackbar.Add(TranslateApp("Torrent force started."));
         }
 
@@ -286,7 +286,7 @@ namespace Lantean.QBTMud.Components
                 TranslateTransferList("Set location"),
                 TranslateTransferList("Location:"),
                 savePath,
-                v => ApiClient.SetTorrentLocation(v, null, Hashes.ToArray()));
+                v => ApiClient.SetTorrentLocation(location: v, all: null, hashes: Hashes.ToArray()));
         }
 
         protected async Task Rename()
@@ -311,7 +311,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task SetCategory(string category)
         {
-            await ApiClient.SetTorrentCategory(category, null, Hashes.ToArray());
+            await ApiClient.SetTorrentCategory(category: category, all: null, hashes: Hashes.ToArray());
         }
 
         protected async Task ToggleAutoTMM()
@@ -324,12 +324,12 @@ namespace Lantean.QBTMud.Components
             {
                 if (disableHashes.Length > 0)
                 {
-                    await ApiClient.SetAutomaticTorrentManagement(false, null, disableHashes);
+                    await ApiClient.SetAutomaticTorrentManagement(enable: false, all: null, hashes: disableHashes);
                 }
 
                 if (enableHashes.Length > 0)
                 {
-                    await ApiClient.SetAutomaticTorrentManagement(true, null, enableHashes);
+                    await ApiClient.SetAutomaticTorrentManagement(enable: true, all: null, hashes: enableHashes);
                 }
             }
             catch
@@ -387,12 +387,12 @@ namespace Lantean.QBTMud.Components
             {
                 if (disableHashes.Length > 0)
                 {
-                    await ApiClient.SetSuperSeeding(false, null, disableHashes);
+                    await ApiClient.SetSuperSeeding(value: false, all: null, hashes: disableHashes);
                 }
 
                 if (enableHashes.Length > 0)
                 {
-                    await ApiClient.SetSuperSeeding(true, null, enableHashes);
+                    await ApiClient.SetSuperSeeding(value: true, all: null, hashes: enableHashes);
                 }
             }
             catch
@@ -409,27 +409,27 @@ namespace Lantean.QBTMud.Components
 
         protected async Task ForceReannounce()
         {
-            await ApiClient.ReannounceTorrents(null, Hashes.ToArray());
+            await ApiClient.ReannounceTorrents(all: null, trackers: null, hashes: Hashes.ToArray());
         }
 
         protected async Task MoveToTop()
         {
-            await ApiClient.MaxTorrentPriority(null, Hashes.ToArray());
+            await ApiClient.MaxTorrentPriority(all: null, hashes: Hashes.ToArray());
         }
 
         protected async Task MoveUp()
         {
-            await ApiClient.IncreaseTorrentPriority(null, Hashes.ToArray());
+            await ApiClient.IncreaseTorrentPriority(all: null, hashes: Hashes.ToArray());
         }
 
         protected async Task MoveDown()
         {
-            await ApiClient.DecreaseTorrentPriority(null, Hashes.ToArray());
+            await ApiClient.DecreaseTorrentPriority(all: null, hashes: Hashes.ToArray());
         }
 
         protected async Task MoveToBottom()
         {
-            await ApiClient.MinTorrentPriority(null, Hashes.ToArray());
+            await ApiClient.MinTorrentPriority(all: null, hashes: Hashes.ToArray());
         }
 
         protected async Task Copy(string value)
@@ -488,7 +488,7 @@ namespace Lantean.QBTMud.Components
 
             try
             {
-                await ApiClient.ToggleSequentialDownload(null, Hashes.ToArray());
+                await ApiClient.ToggleSequentialDownload(all: null, hashes: Hashes.ToArray());
             }
             catch
             {
@@ -503,7 +503,7 @@ namespace Lantean.QBTMud.Components
 
             try
             {
-                await ApiClient.SetFirstLastPiecePriority(null, Hashes.ToArray());
+                await ApiClient.SetFirstLastPiecePriority(all: null, hashes: Hashes.ToArray());
             }
             catch
             {
@@ -937,7 +937,7 @@ namespace Lantean.QBTMud.Components
 
             if (allHaveCategory)
             {
-                await ApiClient.SetTorrentCategory(string.Empty, null, selectedHashes);
+                await ApiClient.SetTorrentCategory(category: string.Empty, all: null, hashes: selectedHashes);
 
                 foreach (var hash in selectedHashes)
                 {
@@ -946,7 +946,7 @@ namespace Lantean.QBTMud.Components
             }
             else
             {
-                await ApiClient.SetTorrentCategory(category, null, selectedHashes);
+                await ApiClient.SetTorrentCategory(category: category, all: null, hashes: selectedHashes);
 
                 foreach (var hash in selectedHashes)
                 {

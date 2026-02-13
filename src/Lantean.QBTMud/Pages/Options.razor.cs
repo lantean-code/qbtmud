@@ -72,8 +72,8 @@ namespace Lantean.QBTMud.Pages
             }
 
             var exit = await DialogWorkflow.ShowConfirmDialog(
-                "Unsaved Changed",
-                "Are you sure you want to leave without saving your changes?");
+                TranslateOptions("Unsaved Changes"),
+                TranslateOptions("Are you sure you want to leave without saving your changes?"));
 
             if (!exit)
             {
@@ -133,12 +133,17 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
             await ApiClient.SetApplicationPreferences(UpdatePreferences);
-            Snackbar.Add("Options saved.", Severity.Success);
+            Snackbar.Add(TranslateOptions("Options saved."), Severity.Success);
 
             Preferences = await ApiClient.GetApplicationPreferences();
             UpdatePreferences = null;
 
             NavigationManager.NavigateToHome(forceLoad: true);
+        }
+
+        private string TranslateOptions(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate("AppOptions", source, arguments);
         }
     }
 }

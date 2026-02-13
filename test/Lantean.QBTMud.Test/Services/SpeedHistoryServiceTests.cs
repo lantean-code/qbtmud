@@ -146,13 +146,13 @@ namespace Lantean.QBTMud.Test.Services
             await localStorage.SetItemAsStringAsync("OtherKey", "OtherValue", TestContext.Current.CancellationToken);
 
             target.LastUpdatedUtc.Should().NotBeNull();
-            localStorage.Snapshot().Keys.Should().Contain("qbtmud.speedhistory.v1");
+            localStorage.Snapshot().Keys.Should().Contain("SpeedHistory.State");
 
             await target.ClearAsync(TestContext.Current.CancellationToken);
 
             target.LastUpdatedUtc.Should().BeNull();
             target.GetSeries(SpeedPeriod.Min1, SpeedDirection.Download).Should().BeEmpty();
-            localStorage.Snapshot().Keys.Should().NotContain("qbtmud.speedhistory.v1");
+            localStorage.Snapshot().Keys.Should().NotContain("SpeedHistory.State");
             localStorage.Snapshot().Keys.Should().Contain("OtherKey");
         }
     }

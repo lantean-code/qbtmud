@@ -1,4 +1,4 @@
-using Lantean.QBTMud.Serialization;
+using Lantean.QBTMud.Theming;
 using Microsoft.JSInterop;
 using System.Text.Json;
 
@@ -7,7 +7,7 @@ namespace Lantean.QBTMud.Services
     internal sealed class BrowserStorageService : IBrowserStorageService
     {
         private const string StorageKeyPrefix = "QbtMud.";
-        private static readonly JsonSerializerOptions _serializerOptions = CreateOptions();
+        private static readonly JsonSerializerOptions _serializerOptions = ThemeSerialization.CreateSerializerOptions(writeIndented: false);
 
         private readonly IJSRuntime _jsRuntime;
         private readonly string _storageName;
@@ -21,13 +21,6 @@ namespace Lantean.QBTMud.Services
         {
             _jsRuntime = jsRuntime;
             _storageName = storageName;
-        }
-
-        private static JsonSerializerOptions CreateOptions()
-        {
-            var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-            options.Converters.Add(new MudColorJsonConverter());
-            return options;
         }
 
         /// <inheritdoc />

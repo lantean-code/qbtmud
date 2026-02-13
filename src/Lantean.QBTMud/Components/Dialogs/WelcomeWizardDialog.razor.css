@@ -72,3 +72,9 @@
     display: flex;
     height: 100%;
 }
+
+@media (orientation: landscape) and (max-height: 900px) and (min-width: 1000px) and (max-width: 1400px) {
+    .welcome-wizard-dialog__layout {
+        height: 100%;
+    }
+}

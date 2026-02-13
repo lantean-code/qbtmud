@@ -1,7 +1,96 @@
-@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+@using Lantean.QBTMud.Helpers
 
-<h3>@WebUiLocalizer.Translate("MainWindow", "Status Bar")</h3>
-
-@code {
-
-}
+<MudAppBar Bottom="true" Dense="true" Class="app-shell__status-bar">
+    @{
+        var freeSpaceValue = DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk);
+        var freeSpaceFullText = WebUiLocalizer.Translate("HttpServer", "Free space: %1", freeSpaceValue);
+        var freeSpaceText = ShowStatusLabels ? freeSpaceFullText : freeSpaceValue;
+    }
+    @if (ShowStatusLabels)
+    {
+        <MudText Class="mr-2 d-none d-sm-flex"
+                 data-test-id="@TestIdHelper.For("Status-FreeSpace")">@freeSpaceText</MudText>
+    }
+    else
+    {
+        <Tooltip Text="@freeSpaceFullText" data-test-id="@TestIdHelper.For("Status-FreeSpaceTooltip")">
+            <MudText Class="mr-2 d-none d-sm-flex"
+                     data-test-id="@TestIdHelper.For("Status-FreeSpace")">@freeSpaceText</MudText>
+        </Tooltip>
+    }
+    @{
+        var externalIpFullText = Preferences?.StatusBarExternalIp == true
+            ? BuildExternalIpLabel(MainData?.ServerState)
+            : null;
+        var externalIpText = Preferences?.StatusBarExternalIp == true
+            ? (ShowStatusLabels ? externalIpFullText : BuildExternalIpValue(MainData?.ServerState))
+            : null;
+    }
+    @if (!string.IsNullOrEmpty(externalIpText))
+    {
+        <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
+        @if (ShowStatusLabels)
+        {
+            <MudText Class="mx-2 d-none d-sm-flex"
+                     data-test-id="@TestIdHelper.For("Status-ExternalIp")">@externalIpText</MudText>
+        }
+        else
+        {
+            <Tooltip Text="@externalIpFullText" data-test-id="@TestIdHelper.For("Status-ExternalIpTooltip")">
+                <MudText Class="mx-2 d-none d-sm-flex"
+                         data-test-id="@TestIdHelper.For("Status-ExternalIp")">@externalIpText</MudText>
+            </Tooltip>
+        }
+    }
+    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
+    @{
+        var dhtNodesValue = MainData?.ServerState.DHTNodes ?? 0;
+        var dhtNodesFullText = WebUiLocalizer.Translate("StatusBar", "DHT: %1 nodes", dhtNodesValue);
+        var dhtNodesText = ShowStatusLabels ? dhtNodesFullText : dhtNodesValue.ToString();
+    }
+    @if (ShowStatusLabels)
+    {
+        <MudText Class="mx-2 d-none d-sm-flex"
+                 data-test-id="@TestIdHelper.For("Status-DhtNodes")">@dhtNodesText</MudText>
+    }
+    else
+    {
+        <Tooltip Text="@dhtNodesFullText" data-test-id="@TestIdHelper.For("Status-DhtNodesTooltip")">
+            <MudText Class="mx-2 d-none d-sm-flex"
+                     data-test-id="@TestIdHelper.For("Status-DhtNodes")">@dhtNodesText</MudText>
+        </Tooltip>
+    }
+    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
+    @{
+        var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);
+        var connectionTitle = BuildConnectionStatusTitle(MainData?.ServerState.ConnectionStatus);
+    }
+    <Tooltip Text="@connectionTitle" data-test-id="@TestIdHelper.For("Status-ConnectionTooltip")">
+        <MudIcon Class="mx-1" Icon="@icon" Color="@colour" data-test-id="@TestIdHelper.For("Status-ConnectionIcon")" />
+    </Tooltip>
+    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
+    <Tooltip Text="@BuildTimerTooltip()" data-test-id="@TestIdHelper.For("Status-TimerTooltip")">
+        <MudIconButton Class="mx-1"
+                       Icon="@GetTimerStatusIcon()"
+                       Color="@GetTimerStatusColor()"
+                       OnClick="ToggleTimerDrawerClicked"
+                       data-test-id="@TestIdHelper.For("Status-TimerButton")" />
+    </Tooltip>
+    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
+    <Tooltip Text="@BuildAlternativeSpeedLimitsTooltip()" data-test-id="@TestIdHelper.For("Status-AltSpeedTooltip")">
+        <MudIconButton Class="@($"mx-1{((MainData?.ServerState.UseAltSpeedLimits ?? false) ? " app-shell__alt-speed-enabled" : string.Empty)}")"
+                       Icon="@Icons.Material.Outlined.Speed"
+                       Color="@((MainData?.ServerState.UseAltSpeedLimits ?? false) ? Color.Error : Color.Success)"
+                       OnClick="ToggleAlternativeSpeedLimitsClicked"
+                       Disabled="ToggleAlternativeSpeedLimitsInProgress"
+                       data-test-id="@TestIdHelper.For("Status-AltSpeedButton")" />
+    </Tooltip>
+    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
+    <MudSpacer />
+    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
+    <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Success" />
+    <MudText Class="mr-1" data-test-id="@TestIdHelper.For("Status-Download")">@BuildTransferInfo(MainData?.ServerState.DownloadInfoSpeed, MainData?.ServerState.DownloadRateLimit, MainData?.ServerState.DownloadInfoData)</MudText>
+    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
+    <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowUp" Color="Color.Info" />
+    <MudText Class="mr-1" data-test-id="@TestIdHelper.For("Status-Upload")">@BuildTransferInfo(MainData?.ServerState.UploadInfoSpeed, MainData?.ServerState.UploadRateLimit, MainData?.ServerState.UploadInfoData)</MudText>
+</MudAppBar>

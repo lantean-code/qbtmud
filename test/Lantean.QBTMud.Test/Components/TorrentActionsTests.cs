@@ -154,7 +154,7 @@ namespace Lantean.QBTMud.Test.Components
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             apiClientMock.Setup(c => c.ToggleSequentialDownload(null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
             apiClientMock.Setup(c => c.SetFirstLastPiecePriority(null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.ReannounceTorrents(null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.ReannounceTorrents(null, null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             dialogWorkflowMock.Setup(d => d.ForceRecheckAsync(Hashes("Alpha", "Beta"), false)).Returns(Task.CompletedTask);
             TestContext.UseSnackbarMock();
@@ -181,7 +181,7 @@ namespace Lantean.QBTMud.Test.Components
             torrents["Beta"].FirstLastPiecePriority.Should().BeTrue();
             apiClientMock.Verify(c => c.ToggleSequentialDownload(null, Hashes("Alpha", "Beta")), Times.Once);
             apiClientMock.Verify(c => c.SetFirstLastPiecePriority(null, Hashes("Alpha", "Beta")), Times.Once);
-            apiClientMock.Verify(c => c.ReannounceTorrents(null, Hashes("Alpha", "Beta")), Times.Once);
+            apiClientMock.Verify(c => c.ReannounceTorrents(null, null, Hashes("Alpha", "Beta")), Times.Once);
         }
 
         [Fact]

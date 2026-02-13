@@ -19,6 +19,10 @@ namespace Lantean.QBTMud.Pages
     public partial class Themes
     {
         private const long MaxThemeUploadBytes = 1024 * 1024;
+        private const string ThemeColumnId = "theme";
+        private const string DescriptionColumnId = "description";
+        private const string ColorsColumnId = "colors";
+        private const string ActionsColumnId = "actions";
 
         private readonly Dictionary<string, RenderFragment<RowContext<ThemeCatalogItem>>> _columnRenderFragments = [];
         private bool _isBusy;
@@ -80,10 +84,10 @@ namespace Lantean.QBTMud.Pages
 
         public Themes()
         {
-            _columnRenderFragments.Add("Theme", NameColumn);
-            _columnRenderFragments.Add("Description", DescriptionColumn);
-            _columnRenderFragments.Add("Actions", ActionsColumn);
-            _columnRenderFragments.Add("Colors", ColorsColumn);
+            _columnRenderFragments.Add(ThemeColumnId, NameColumn);
+            _columnRenderFragments.Add(DescriptionColumnId, DescriptionColumn);
+            _columnRenderFragments.Add(ActionsColumnId, ActionsColumn);
+            _columnRenderFragments.Add(ColorsColumnId, ColorsColumn);
         }
 
         protected override async Task OnInitializedAsync()
@@ -371,7 +375,7 @@ namespace Lantean.QBTMud.Pages
         {
             foreach (var columnDefinition in ColumnsDefinitions)
             {
-                if (_columnRenderFragments.TryGetValue(columnDefinition.Header, out var fragment))
+                if (_columnRenderFragments.TryGetValue(columnDefinition.Id, out var fragment))
                 {
                     columnDefinition.RowTemplate = fragment;
                 }
@@ -471,11 +475,11 @@ namespace Lantean.QBTMud.Pages
 
         public static List<ColumnDefinition<ThemeCatalogItem>> ColumnsDefinitions { get; } =
         [
-            new ColumnDefinition<ThemeCatalogItem>("Theme", t => t.Name),
-            new ColumnDefinition<ThemeCatalogItem>("Description", t => t.Theme.Description),
-            new ColumnDefinition<ThemeCatalogItem>("Source", t => t.Source.ToString()),
-            new ColumnDefinition<ThemeCatalogItem>("Colors", t => t.Name, tdClass: "no-wrap", width: 160),
-            new ColumnDefinition<ThemeCatalogItem>("Actions", t => t.Name, tdClass: "no-wrap")
+            new ColumnDefinition<ThemeCatalogItem>("Theme", t => t.Name, id: ThemeColumnId),
+            new ColumnDefinition<ThemeCatalogItem>("Description", t => t.Theme.Description, id: DescriptionColumnId),
+            new ColumnDefinition<ThemeCatalogItem>("Source", t => t.Source.ToString(), id: "source"),
+            new ColumnDefinition<ThemeCatalogItem>("Colors", t => t.Name, tdClass: "no-wrap", width: 160, id: ColorsColumnId),
+            new ColumnDefinition<ThemeCatalogItem>("Actions", t => t.Name, tdClass: "no-wrap", id: ActionsColumnId)
         ];
     }
 }

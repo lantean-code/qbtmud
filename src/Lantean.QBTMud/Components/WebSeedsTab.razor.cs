@@ -133,7 +133,7 @@ namespace Lantean.QBTMud.Components
 
             return
             [
-                new ColumnDefinition<WebSeed>(urlLabel, w => w.Url, w => w.Url),
+                new ColumnDefinition<WebSeed>(urlLabel, w => w.Url, w => w.Url, id: "url"),
             ];
         }
     }

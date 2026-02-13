@@ -478,7 +478,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"Unable to rename RSS item: {exception.Message}", Severity.Error);
+                Snackbar?.Add(TranslateRss("Unable to rename RSS item: %1", exception.Message), Severity.Error);
             }
         }
 
@@ -505,7 +505,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"Unable to update feed URL: {exception.Message}", Severity.Error);
+                Snackbar?.Add($"{WebUiLocalizer.Translate("RSSWidget", "Unable to update URL")}: {exception.Message}", Severity.Error);
             }
         }
 
@@ -518,7 +518,7 @@ namespace Lantean.QBTMud.Pages
 
             var confirmed = await DialogWorkflow.ShowConfirmDialog(
                 WebUiLocalizer.Translate("RSSWidget", "Deletion confirmation"),
-                $"Remove \"{_contextNode.Name}\"?");
+                TranslateRss("Remove \"%1\"?", _contextNode.Name));
             if (!confirmed)
             {
                 return;
@@ -532,7 +532,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"Unable to remove RSS item: {exception.Message}", Severity.Error);
+                Snackbar?.Add(TranslateRss("Unable to remove RSS item: %1", exception.Message), Severity.Error);
             }
         }
 
@@ -572,7 +572,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"Unable to add folder: {exception.Message}", Severity.Error);
+                Snackbar?.Add(TranslateRss("Unable to add folder: %1", exception.Message), Severity.Error);
             }
         }
 
@@ -584,7 +584,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             await ClipboardService.WriteToClipboard(_contextNode.Feed.Url);
-            Snackbar?.Add("Feed URL copied to clipboard.", Severity.Info);
+            Snackbar?.Add(TranslateRss("Feed URL copied to clipboard."), Severity.Info);
         }
 
         protected async Task DownloadItem(string? url)
@@ -639,7 +639,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"Unable to add feed: {exception.Message}", Severity.Error);
+                Snackbar?.Add(TranslateRss("Unable to add feed: %1", exception.Message), Severity.Error);
             }
         }
 
@@ -904,6 +904,11 @@ namespace Lantean.QBTMud.Pages
             }
 
             return feedPath.StartsWith($"{ancestorPath}{PathSeparator}", StringComparison.Ordinal);
+        }
+
+        private string TranslateRss(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate("AppRss", source, arguments);
         }
 
         private int DetermineColumnCount()

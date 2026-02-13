@@ -17,7 +17,7 @@
                                   Disabled="OperationInProgress"
                                   Immediate="true"
                                   data-test-id="@TestIdHelper.For("SearchPluginInstallUrl")" />
-                    <MudButton Color="Color.Primary"
+                    <MudButton Color="Color.Success"
                                Variant="Variant.Filled"
                                Disabled="OperationInProgress || string.IsNullOrWhiteSpace(InstallUrl)"
                                OnClick="InstallFromUrl"
@@ -37,7 +37,7 @@
                                       Disabled="OperationInProgress"
                                       Immediate="true"
                                       data-test-id="@TestIdHelper.For("SearchPluginInstallPath")" />
-                    <MudButton Color="Color.Primary"
+                    <MudButton Color="Color.Success"
                                Variant="Variant.Filled"
                                Disabled="OperationInProgress || string.IsNullOrWhiteSpace(InstallLocalPath)"
                                OnClick="InstallFromPath"
@@ -50,37 +50,37 @@
         <MudPaper Class="pa-3 mb-3">
             <MudStack Row="true" Spacing="2">
                 <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
+                           Color="Color.Success"
                            Disabled="!HasSelection || OperationInProgress"
                            StartIcon="@Icons.Material.Filled.ToggleOn"
                            OnClick="EnableSelected"
                            data-test-id="@TestIdHelper.For("SearchPluginEnable")">@WebUiLocalizer.Translate("AppTemp", "Enable")</MudButton>
-                <MudButton Variant="Variant.Outlined"
+                <MudButton Variant="Variant.Filled"
                            Color="Color.Default"
                            Disabled="!HasSelection || OperationInProgress"
                            StartIcon="@Icons.Material.Filled.ToggleOff"
                            OnClick="DisableSelected"
                            data-test-id="@TestIdHelper.For("SearchPluginDisable")">@WebUiLocalizer.Translate("AppTemp", "Disable")</MudButton>
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Error"
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Default"
                            Disabled="!HasSelection || OperationInProgress"
                            StartIcon="@Icons.Material.Filled.Delete"
                            OnClick="UninstallSelected"
                            data-test-id="@TestIdHelper.For("SearchPluginUninstall")">@WebUiLocalizer.Translate("PluginSelectDlg", "Uninstall")</MudButton>
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Info"
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Default"
                            Disabled="OperationInProgress || Plugins.Count == 0"
                            StartIcon="@Icons.Material.Filled.Update"
                            OnClick="UpdateAll"
                            data-test-id="@TestIdHelper.For("SearchPluginUpdateAll")">@WebUiLocalizer.Translate("PluginSelectDlg", "Check for updates")</MudButton>
                 <MudSpacer />
-                <MudTooltip Text="@WebUiLocalizer.Translate("AppTemp", "Refresh plugins")">
+                <Tooltip Text="@WebUiLocalizer.Translate("AppTemp", "Refresh plugins")">
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh"
                                    Color="Color.Default"
                                    Disabled="OperationInProgress"
                                    OnClick="RefreshPlugins"
                                    data-test-id="@TestIdHelper.For("SearchPluginRefresh")" />
-                </MudTooltip>
+                </Tooltip>
             </MudStack>
         </MudPaper>
         <MudTable T="Lantean.QBitTorrentClient.Models.SearchPlugin"
@@ -137,6 +137,6 @@
         </MudTable>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="CloseDialog" data-test-id="@TestIdHelper.For("SearchPluginClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="CloseDialog" data-test-id="@TestIdHelper.For("SearchPluginClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
     </DialogActions>
 </MudDialog>

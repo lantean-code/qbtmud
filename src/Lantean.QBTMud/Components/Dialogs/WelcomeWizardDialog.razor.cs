@@ -11,7 +11,7 @@ using System.Text.Json;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
-    public partial class WelcomeWizardDialog
+    public partial class WelcomeWizardDialog : IAsyncDisposable
     {
         [Inject]
         protected QBitTorrentClient.IApiClient ApiClient { get; set; } = default!;
@@ -37,12 +37,17 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Inject]
         protected ILogger<WelcomeWizardDialog> Logger { get; set; } = default!;
 
+        [Inject]
+        protected IKeyboardService KeyboardService { get; set; } = default!;
+
         private int _activeIndex;
         private WebUiLanguageCatalogItem? _selectedLanguage;
         private string? _selectedLocale;
         private string? _selectedThemeId;
         private IReadOnlyList<WebUiLanguageCatalogItem> _languageOptions = Array.Empty<WebUiLanguageCatalogItem>();
         private IReadOnlyList<ThemeCatalogItem> _themeOptions = Array.Empty<ThemeCatalogItem>();
+        private bool _keyboardFocused;
+        private bool _disposedValue;
 
         private string SelectedLanguageName => _selectedLanguage?.DisplayName ?? string.Empty;
 
@@ -69,6 +74,17 @@ namespace Lantean.QBTMud.Components.Dialogs
             _selectedThemeId = ThemeManagerService.CurrentThemeId ?? _themeOptions.FirstOrDefault()?.Id;
 
             _activeIndex = 0;
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (!firstRender)
+            {
+                return;
+            }
+
+            await KeyboardService.Focus();
+            _keyboardFocused = true;
         }
 
         private string? GetLanguageDisplayName(string? locale)
@@ -299,6 +315,30 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             return script;
+        }
+
+        protected virtual async ValueTask DisposeAsync(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing && _keyboardFocused)
+                {
+                    await KeyboardService.UnFocus();
+                    _keyboardFocused = false;
+                }
+
+                _disposedValue = true;
+            }
+        }
+
+        /// <summary>
+        /// Releases resources used by the dialog.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous dispose operation.</returns>
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsync(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

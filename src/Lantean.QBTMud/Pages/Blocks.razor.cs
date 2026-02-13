@@ -115,7 +115,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             await ClipboardService.WriteToClipboard(address);
-            Snackbar?.Add("Address copied to clipboard.", Severity.Info);
+            Snackbar?.Add(TranslateBlocks("Address copied to clipboard."), Severity.Info);
         }
 
         protected async Task ClearResults()
@@ -127,7 +127,7 @@ namespace Lantean.QBTMud.Pages
 
             Results!.Clear();
             ContextMenuItem = null;
-            Snackbar?.Add("Blocked IP list cleared.", Severity.Info);
+            Snackbar?.Add(TranslateBlocks("Blocked IP list cleared."), Severity.Info);
             await InvokeAsync(StateHasChanged);
         }
 
@@ -191,15 +191,16 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id),
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "IP"), l => l.IPAddress),
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp)),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "IP"), l => l.IPAddress, id: "message"),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
                 new ColumnDefinition<PeerLog>(
                     WebUiLocalizer.Translate("ExecutionLogWidget", "Blocked"),
                     l => l.Blocked
                         ? WebUiLocalizer.Translate("ExecutionLogWidget", "Blocked")
-                        : WebUiLocalizer.Translate("ExecutionLogWidget", "Banned")),
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Reason"), l => l.Reason),
+                        : WebUiLocalizer.Translate("ExecutionLogWidget", "Banned"),
+                    id: "blocked"),
+                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Reason"), l => l.Reason, id: "reason"),
             ];
         }
 
@@ -212,6 +213,11 @@ namespace Lantean.QBTMud.Pages
 
             var removeCount = Results.Count - MaxResults;
             Results.RemoveRange(0, removeCount);
+        }
+
+        private string TranslateBlocks(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate("AppBlocks", source, arguments);
         }
     }
 }

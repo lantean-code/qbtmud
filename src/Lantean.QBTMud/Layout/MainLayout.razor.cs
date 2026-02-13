@@ -33,6 +33,9 @@ namespace Lantean.QBTMud.Layout
         [Inject]
         protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected NavigationManager NavigationManager { get; set; } = default!;
+
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
 
@@ -44,7 +47,11 @@ namespace Lantean.QBTMud.Layout
 
         protected EnhancedErrorBoundary? ErrorBoundary { get; set; }
 
-        protected string AppBarTitle => UseShortTitle ? "qBittorrent" : BuildFullTitle();
+        protected string AppBarTitle => IsLoginPage ? BuildFullTitle() : (UseShortTitle ? "qBittorrent" : BuildFullTitle());
+
+        protected bool ShowMenuButton => !IsLoginPage;
+
+        protected string AppBarTitleClass => ShowMenuButton ? "ml-3" : string.Empty;
 
         protected bool IsDarkMode { get; set; }
 
@@ -65,6 +72,8 @@ namespace Lantean.QBTMud.Layout
 
         private bool UseShortTitle => CurrentBreakpoint <= Breakpoint.Sm;
 
+        private bool IsLoginPage => IsLoginRoute(NavigationManager.ToBaseRelativePath(NavigationManager.Uri));
+
         public MainLayout()
         {
             Theme = QbtMudThemeFactory.CreateDefaultTheme();
@@ -78,6 +87,22 @@ namespace Lantean.QBTMud.Layout
         private string BuildFullTitle()
         {
             return WebUiLocalizer.Translate("Login", "qBittorrent WebUI");
+        }
+
+        private static bool IsLoginRoute(string? relativeUri)
+        {
+            if (string.IsNullOrWhiteSpace(relativeUri))
+            {
+                return false;
+            }
+
+            var queryIndex = relativeUri.IndexOfAny(new[] { '?', '#' });
+            var path = queryIndex >= 0
+                ? relativeUri[..queryIndex]
+                : relativeUri;
+            var normalized = path.Trim('/');
+
+            return string.Equals(normalized, "login", StringComparison.OrdinalIgnoreCase);
         }
 
         protected override void OnInitialized()

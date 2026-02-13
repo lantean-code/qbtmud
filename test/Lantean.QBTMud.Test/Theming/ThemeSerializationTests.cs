@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Theming;
 using MudBlazor;
+using MudBlazor.Utilities;
 
 namespace Lantean.QBTMud.Test.Theming
 {
@@ -69,6 +70,32 @@ namespace Lantean.QBTMud.Test.Theming
             clone.Should().NotBeSameAs(definition);
             clone.FontFamily.Should().Be("FontFamily");
             clone.Theme.PaletteLight.Primary.ToString().Should().Be(definition.Theme.PaletteLight.Primary.ToString());
+        }
+
+        [Fact]
+        public void GIVEN_NullTheme_WHEN_CloneTheme_THEN_ReturnsDefaultTheme()
+        {
+            var clone = ThemeSerialization.CloneTheme(null);
+
+            clone.Should().NotBeNull();
+            clone.PaletteLight.Should().NotBeNull();
+            clone.PaletteDark.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GIVEN_Theme_WHEN_CloneTheme_THEN_ReturnsDeepCopy()
+        {
+            var theme = new MudTheme();
+            theme.PaletteLight.Primary = new MudColor(1, 2, 3, 4);
+
+            var clone = ThemeSerialization.CloneTheme(theme);
+
+            clone.Should().NotBeSameAs(theme);
+            clone.PaletteLight.Should().NotBeSameAs(theme.PaletteLight);
+            clone.PaletteLight.Primary.R.Should().Be((byte)1);
+            clone.PaletteLight.Primary.G.Should().Be((byte)2);
+            clone.PaletteLight.Primary.B.Should().Be((byte)3);
+            clone.PaletteLight.Primary.A.Should().Be((byte)4);
         }
     }
 }

@@ -52,7 +52,7 @@
     color: var(--mud-palette-appbar-text);
 }
 
-.theme-preview__card {
+.theme-preview ::deep .theme-preview__card {
     padding: 1rem;
     margin-top: 1rem;
     border: 1px solid var(--mud-palette-lines-default);

@@ -2,40 +2,59 @@
 @layout MainLayout
 <PageTitle>@WebUiLocalizer.Translate("Login", "Login")</PageTitle>
 
-<MudMainContent>
-    <MudContainer Fixed MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-        <EditForm Model="Model" OnValidSubmit="LoginClick">
-            <MudGrid Justify="Justify.Center">
-                <MudItem xs="12">
-                    <MudCard>
-                        <MudCardHeader>
-                            <MudText Typo="Typo.h6">@WebUiLocalizer.Translate("Login", "Login")</MudText>
-                        </MudCardHeader>
-                        <MudCardContent Class="pt-0">
-                            @if (ApiError is not null)
-                            {
-                                <MudAlert Severity="Severity.Error"
-                                          Variant="Variant.Filled"
-                                          Dense="true"
-                                          Class="my-2"
-                                          data-test-id="@TestIdHelper.For("LoginError")">@ApiError</MudAlert>
-                            }
+<div class="login-root">
+    <MudMainContent Class="login-page">
+        <MudContainer MaxWidth="MaxWidth.Small" Class="login-page__container">
+            <MudCard Class="login-card mt-3" Elevation="6">
+                <MudCardContent Class="login-card__content">
+                    <MudStack Spacing="2">
+                        <div class="login-card__header">
+                            <img src="images/qbittorrent32.png" alt="" class="login-card__logo" />
+                            <MudText Typo="Typo.h5">@WebUiLocalizer.Translate("Login", "Login")</MudText>
+                        </div>
+
+                        @if (ApiError is not null)
+                        {
+                            <MudAlert Severity="Severity.Error"
+                                      Variant="Variant.Filled"
+                                      Dense="true"
+                                      data-test-id="@TestIdHelper.For("LoginError")">@ApiError</MudAlert>
+                        }
+
+                        <EditForm Model="Model" OnValidSubmit="LoginClick">
                             <DataAnnotationsValidator />
-                            <MudItem xs="12">
-                                <MudTextField Label="@WebUiLocalizer.Translate("Login", "Username")" @bind-Value="Model.Username" For="@(() => Model.Username)" data-test-id="@TestIdHelper.For("Username")" />
-                            </MudItem>
-                            <MudItem xs="12">
-                                <MudTextField Label="@WebUiLocalizer.Translate("Login", "Password")" @bind-Value="Model.Password" For="@(() => Model.Password)" InputType="InputType.Password" data-test-id="@TestIdHelper.For("Password")" />
-                            </MudItem>
-                        </MudCardContent>
-                        <MudCardActions>
-                            <MudItem xs="12">
-                                <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit">@WebUiLocalizer.Translate("Login", "Login")</MudButton>
-                            </MudItem>
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
-            </MudGrid>
-        </EditForm>
-    </MudContainer>
-</MudMainContent>
+                            <MudStack Spacing="2" Class="login-card__form">
+                                <MudTextField Label="@WebUiLocalizer.Translate("Login", "Username")"
+                                              @bind-Value="Model.Username"
+                                              For="@(() => Model.Username)"
+                                              Variant="Variant.Outlined"
+                                              ShrinkLabel="true"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Person"
+                                              Disabled="@IsSubmitting"
+                                              data-test-id="@TestIdHelper.For("Username")" />
+                                <MudTextField Label="@WebUiLocalizer.Translate("Login", "Password")"
+                                              @bind-Value="Model.Password"
+                                              For="@(() => Model.Password)"
+                                              InputType="@PasswordInputType"
+                                              Variant="Variant.Outlined"
+                                              ShrinkLabel="true"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@PasswordAdornmentIcon"
+                                              OnAdornmentClick="TogglePasswordVisibility"
+                                              Disabled="@IsSubmitting"
+                                              data-test-id="@TestIdHelper.For("Password")" />
+                                <MudButton Color="Color.Primary"
+                                           Variant="Variant.Filled"
+                                           ButtonType="ButtonType.Submit"
+                                           FullWidth="true"
+                                           Disabled="@IsSubmitting"
+                                           data-test-id="@TestIdHelper.For("Login")">@WebUiLocalizer.Translate("Login", "Login")</MudButton>
+                            </MudStack>
+                        </EditForm>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudContainer>
+    </MudMainContent>
+</div>

@@ -22,7 +22,7 @@
                 <FieldSwitch Label="@WebUiLocalizer.Translate("UpDownRatioDialog", "ratio")" Value="RatioEnabled" ValueChanged="RatioEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("RatioEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="float" Value="Ratio" ValueChanged="RatioChanged" Disabled="@(!(CustomEnabled && RatioEnabled))" Min="0" Max="1024000" Step="0.1F" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="%" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("Ratio")" />
+                <MudNumericField T="float" Value="Ratio" ValueChanged="RatioChanged" Disabled="@(!(CustomEnabled && RatioEnabled))" Min="0" Max="1024000" Step="0.1F" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("Ratio")" />
             </MudItem>
             <MudItem xs="3">
                 <FieldSwitch Label="@WebUiLocalizer.Translate("UpDownRatioDialog", "total minutes")" Value="TotalMinutesEnabled" ValueChanged="TotalMinutesEnabledChanged" Disabled="@(!CustomEnabled)" data-test-id="@TestIdHelper.For("TotalMinutesEnabled")" />
@@ -48,7 +48,7 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("ShareRatioCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("ShareRatioSave")">@WebUiLocalizer.Translate("HttpServer", "Save")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("ShareRatioCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("ShareRatioSave")">@WebUiLocalizer.Translate("HttpServer", "Save")</MudButton>
     </DialogActions>
 </MudDialog>

@@ -147,7 +147,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add($"Unable to delete task: {exception.Message}", Severity.Error);
+                Snackbar.Add(TranslateTorrentCreator("Unable to delete task: %1", exception.Message), Severity.Error);
                 return;
             }
 
@@ -182,7 +182,7 @@ namespace Lantean.QBTMud.Pages
         {
             if (MainData?.LostConnection == true)
             {
-                Snackbar.Add("qBittorrent client is not reachable.", Severity.Warning);
+                Snackbar.Add($"{WebUiLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")}.", Severity.Warning);
                 _timerCancellationToken.CancelIfNotDisposed();
                 return;
             }
@@ -226,7 +226,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (Exception exception)
             {
-                Snackbar.Add($"Unable to refresh torrent creation tasks: {exception.Message}", Severity.Error);
+                Snackbar.Add(TranslateTorrentCreator("Unable to refresh torrent creation tasks: %1", exception.Message), Severity.Error);
                 return ManagedTimerTickResult.Stop;
             }
 
@@ -364,17 +364,22 @@ namespace Lantean.QBTMud.Pages
 
             return
             [
-                new ColumnDefinition<TorrentCreationTaskStatus>(statusLabel, t => t.Status ?? string.Empty, StatusColumn),
-                new ColumnDefinition<TorrentCreationTaskStatus>(progressLabel, t => t.Progress ?? 0.0, ProgressColumn, tdClass: "table-progress"),
-                new ColumnDefinition<TorrentCreationTaskStatus>(nameLabel, t => ResolveFileName(t)),
-                new ColumnDefinition<TorrentCreationTaskStatus>(sourcePathLabel, t => t.SourcePath),
-                new ColumnDefinition<TorrentCreationTaskStatus>("Torrent File", t => t.TorrentFilePath ?? string.Empty) { Enabled = false },
-                new ColumnDefinition<TorrentCreationTaskStatus>(addedOnLabel, t => t.TimeAdded ?? string.Empty) { Enabled = false },
-                new ColumnDefinition<TorrentCreationTaskStatus>(startedOnLabel, t => t.TimeStarted ?? string.Empty) { Enabled = false },
-                new ColumnDefinition<TorrentCreationTaskStatus>(completedOnLabel, t => t.TimeFinished ?? string.Empty) { Enabled = false },
-                new ColumnDefinition<TorrentCreationTaskStatus>(errorLabel, t => t.ErrorMessage ?? string.Empty) { Enabled = false },
-                new ColumnDefinition<TorrentCreationTaskStatus>("Actions", t => t.TaskId, ActionsColumn) { Width = 140 }
+                new ColumnDefinition<TorrentCreationTaskStatus>(statusLabel, t => t.Status ?? string.Empty, StatusColumn, id: "status"),
+                new ColumnDefinition<TorrentCreationTaskStatus>(progressLabel, t => t.Progress ?? 0.0, ProgressColumn, tdClass: "table-progress", id: "progress"),
+                new ColumnDefinition<TorrentCreationTaskStatus>(nameLabel, t => ResolveFileName(t), id: "name"),
+                new ColumnDefinition<TorrentCreationTaskStatus>(sourcePathLabel, t => t.SourcePath, id: "source_path"),
+                new ColumnDefinition<TorrentCreationTaskStatus>(TranslateTorrentCreator("Torrent File"), t => t.TorrentFilePath ?? string.Empty, id: "torrent_file") { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(addedOnLabel, t => t.TimeAdded ?? string.Empty, id: "added") { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(startedOnLabel, t => t.TimeStarted ?? string.Empty, id: "started") { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(completedOnLabel, t => t.TimeFinished ?? string.Empty, id: "finished") { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(errorLabel, t => t.ErrorMessage ?? string.Empty, id: "error") { Enabled = false },
+                new ColumnDefinition<TorrentCreationTaskStatus>(TranslateTorrentCreator("Actions"), t => t.TaskId, ActionsColumn, id: "actions") { Width = 140 }
             ];
+        }
+
+        private string TranslateTorrentCreator(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate("AppTorrentCreator", source, arguments);
         }
     }
 }

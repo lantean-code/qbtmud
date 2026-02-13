@@ -5,6 +5,7 @@ using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -80,7 +81,7 @@ namespace Lantean.QBTMud.Test.Pages
             _target.WaitForAssertion(() =>
             {
                 var alert = FindComponentByTestId<MudAlert>(_target, "LoginError");
-                GetChildContentText(alert.Instance.ChildContent).Should().Be("Requests from this client are currently unavailable.");
+                GetChildContentText(alert.Instance.ChildContent).Should().Be("Unable to log in, server is probably unreachable.");
             });
         }
 
@@ -108,6 +109,22 @@ namespace Lantean.QBTMud.Test.Pages
         public void GIVEN_NoError_WHEN_Rendered_THEN_HidesAlert()
         {
             _target.FindComponents<MudAlert>().Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_HiddenPassword_WHEN_ToggleVisibilityClicked_THEN_ShouldTogglePasswordInputType()
+        {
+            var passwordField = FindComponentByTestId<MudTextField<string>>(_target, "Password");
+
+            passwordField.Instance.InputType.Should().Be(InputType.Password);
+
+            await _target.InvokeAsync(() => passwordField.Instance.OnAdornmentClick.InvokeAsync(new MouseEventArgs()));
+
+            passwordField.Instance.InputType.Should().Be(InputType.Text);
+
+            await _target.InvokeAsync(() => passwordField.Instance.OnAdornmentClick.InvokeAsync(new MouseEventArgs()));
+
+            passwordField.Instance.InputType.Should().Be(InputType.Password);
         }
 
         private IRenderedComponent<Login> RenderPage()

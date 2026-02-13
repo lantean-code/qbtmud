@@ -178,16 +178,20 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_RefreshClicked_WHEN_Invoked_THEN_ReloadsCurrentPage()
+        public async Task GIVEN_RefreshClicked_WHEN_Invoked_THEN_ReloadsTagsFromApi()
         {
-            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
-            navigationManager.NavigateTo("http://localhost/tags");
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetAllTags())
+                .ReturnsAsync(["Tag"]);
 
             var refreshButton = FindIconButton(_target, Icons.Material.Filled.Refresh);
 
             await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
-            navigationManager.Uri.Should().Be("http://localhost/tags");
+            Mock.Get(_apiClient).Verify(client => client.GetAllTags(), Times.Once);
+
+            var table = _target.FindComponent<DynamicTable<string>>();
+            table.Instance.Items.Should().ContainSingle(tag => tag == "Tag");
         }
 
         [Fact]

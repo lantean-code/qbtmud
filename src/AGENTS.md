@@ -49,6 +49,12 @@
   - If an async operation must be triggered from a synchronous API/event, marshal via `InvokeAsync(...)` and await it, or refactor to an async lifecycle method.
   - If you must keep a background task, add explicit exception handling and a clear shutdown/cancellation path.
 
+### Routing Safety (qBittorrent Host)
+- qBittorrent only serves `index.html`; force-loading arbitrary URLs breaks navigation.
+- Never use `NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true)`.
+- Do not call `NavigationManager.NavigateTo(..., forceLoad: true)` directly in components/services/pages; use the `NavigateToHome` helper.
+- If force-load is required, always call `NavigationManager.NavigateToHome(forceLoad: true)`.
+
 ### Design
 - Use constructor injection only, unless absolutely necessary (for example, in Blazor).
 - Static methods and classes are acceptable when appropriate.
@@ -67,7 +73,9 @@
 ### Localization (Copy)
 - Any user-facing copy (labels, button text, tooltips, empty states, alerts, errors) must be localized.
 - When replicating qBittorrent WebUI functionality, prefer using qBittorrent's existing language keys and text via `IWebUiLocalizer.Translate(context, source, ...)` so translations come from the bundled WebUI language files.
-- For qbtmud-specific copy that does not exist in qBittorrent's WebUI language files, add the English source to `src/Lantean.QBTMud/wwwroot/i18n/webui_overrides_en.json` and reference it via `IWebUiLocalizer.Translate(...)` using a stable context/source pair (do not hardcode strings in Razor/C#).
+- Before adding any new override key, explicitly verify the text is not already available in qBittorrent WebUI locale files (context + source), and reuse an existing key whenever possible.
+- Do not add entries to `webui_overrides_*.json` for convenience, wording preference, or duplicate text that already exists upstream under another usable context.
+- Only when no suitable upstream translation key exists, add the English source to `src/Lantean.QBTMud/wwwroot/i18n/webui_overrides_en.json` and reference it via `IWebUiLocalizer.Translate(...)` using a stable context/source pair (do not hardcode strings in Razor/C#).
 
 ## Line endings
 - Use CRLF line terminators for any files you write or modify.
@@ -87,4 +95,5 @@
 - [ ] LINQ used for simple ops; loops for complex logic.
 - [ ] No exceptions are used for flow control.
 - [ ] Design follows DI, SOLID, DRY; security pitfalls avoided.
+- [ ] Localization keys were checked against qBittorrent WebUI locale files before adding any override entries.
 - [ ] Any conflicts with existing code are reported for clarification.

@@ -10,7 +10,11 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Categories
     {
+        private const string ActionsColumnId = "actions";
+
         private readonly Dictionary<string, RenderFragment<RowContext<Category>>> _columnRenderFragments = [];
+        private IReadOnlyList<Category>? _categories;
+        private bool _isBusy;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -33,13 +37,24 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter]
         public MainData? MainData { get; set; }
 
-        protected IEnumerable<Category>? Results => MainData?.Categories.Values;
+        protected IEnumerable<Category>? Results
+        {
+            get
+            {
+                if (_categories is not null)
+                {
+                    return _categories;
+                }
+
+                return MainData?.Categories.Values;
+            }
+        }
 
         protected DynamicTable<Category>? Table { get; set; }
 
         public Categories()
         {
-            _columnRenderFragments.Add("Actions", ActionsColumn);
+            _columnRenderFragments.Add(ActionsColumnId, ActionsColumn);
         }
 
         protected void NavigateBack()
@@ -47,9 +62,26 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateToHome();
         }
 
-        protected void Reload()
+        protected async Task Reload()
         {
-            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+            if (_isBusy)
+            {
+                return;
+            }
+
+            _isBusy = true;
+            try
+            {
+                var categories = await ApiClient.GetAllCategories();
+                _categories = categories.Values
+                    .Select(category => new Category(category.Name, category.SavePath ?? string.Empty))
+                    .ToList();
+            }
+            finally
+            {
+                _isBusy = false;
+                await InvokeAsync(StateHasChanged);
+            }
         }
 
         protected async Task DeleteCategory(string? name)
@@ -81,7 +113,7 @@ namespace Lantean.QBTMud.Pages
         {
             foreach (var columnDefinition in ColumnsDefinitions)
             {
-                if (_columnRenderFragments.TryGetValue(columnDefinition.Header, out var fragment))
+                if (_columnRenderFragments.TryGetValue(columnDefinition.Id, out var fragment))
                 {
                     columnDefinition.RowTemplate = fragment;
                 }
@@ -96,10 +128,15 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<Category>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l.Name),
-                new ColumnDefinition<Category>(WebUiLocalizer.Translate("TransferListModel", "Save path"), l => l.SavePath),
-                new ColumnDefinition<Category>("Actions", l => l)
+                new ColumnDefinition<Category>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l.Name, id: "name"),
+                new ColumnDefinition<Category>(WebUiLocalizer.Translate("TransferListModel", "Save path"), l => l.SavePath, id: "save_path"),
+                new ColumnDefinition<Category>(Translate("Actions"), l => l, id: ActionsColumnId)
             ];
+        }
+
+        private string Translate(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate("AppCategories", source, arguments);
         }
     }
 }

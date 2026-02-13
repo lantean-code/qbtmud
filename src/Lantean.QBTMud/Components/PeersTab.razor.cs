@@ -292,23 +292,23 @@ namespace Lantean.QBTMud.Components
             var relevanceLabel = TranslatePeerList("Relevance");
             var filesLabel = TranslatePeerList("Files");
 
-            _countryColumnId = CreateColumnId(countryLabel);
+            _countryColumnId = "country/region";
 
             return
             [
-                new ColumnDefinition<Peer>(countryLabel, p => p.Country, CountryColumnTemplate),
-                new ColumnDefinition<Peer>(ipLabel, p => p.IPAddress),
-                new ColumnDefinition<Peer>(portLabel, p => p.Port),
-                new ColumnDefinition<Peer>(connectionLabel, p => p.Connection),
-                new ColumnDefinition<Peer>(flagsLabel, p => p.Flags, FlagsColumnTemplate),
-                new ColumnDefinition<Peer>(clientLabel, p => p.Client),
-                new ColumnDefinition<Peer>(progressLabel, p => p.Progress, p => DisplayHelpers.Percentage(p.Progress)),
-                new ColumnDefinition<Peer>(downSpeedLabel, p => p.DownloadSpeed, p => DisplayHelpers.Speed(p.DownloadSpeed)),
-                new ColumnDefinition<Peer>(upSpeedLabel, p => p.UploadSpeed, p => DisplayHelpers.Speed(p.UploadSpeed)),
-                new ColumnDefinition<Peer>(downloadedLabel, p => p.Downloaded, p => DisplayHelpers.Size(p.Downloaded)),
-                new ColumnDefinition<Peer>(uploadedLabel, p => p.Uploaded, p => DisplayHelpers.Size(p.Uploaded)),
-                new ColumnDefinition<Peer>(relevanceLabel, p => p.Relevance, p => DisplayHelpers.Percentage(p.Relevance)),
-                new ColumnDefinition<Peer>(filesLabel, p => p.Files),
+                new ColumnDefinition<Peer>(countryLabel, p => p.Country, CountryColumnTemplate, id: "country/region"),
+                new ColumnDefinition<Peer>(ipLabel, p => p.IPAddress, id: "ip"),
+                new ColumnDefinition<Peer>(portLabel, p => p.Port, id: "port"),
+                new ColumnDefinition<Peer>(connectionLabel, p => p.Connection, id: "connection"),
+                new ColumnDefinition<Peer>(flagsLabel, p => p.Flags, FlagsColumnTemplate, id: "flags"),
+                new ColumnDefinition<Peer>(clientLabel, p => p.Client, id: "client"),
+                new ColumnDefinition<Peer>(progressLabel, p => p.Progress, p => DisplayHelpers.Percentage(p.Progress), id: "progress"),
+                new ColumnDefinition<Peer>(downSpeedLabel, p => p.DownloadSpeed, p => DisplayHelpers.Speed(p.DownloadSpeed), id: "download_speed"),
+                new ColumnDefinition<Peer>(upSpeedLabel, p => p.UploadSpeed, p => DisplayHelpers.Speed(p.UploadSpeed), id: "upload_speed"),
+                new ColumnDefinition<Peer>(downloadedLabel, p => p.Downloaded, p => DisplayHelpers.Size(p.Downloaded), id: "downloaded"),
+                new ColumnDefinition<Peer>(uploadedLabel, p => p.Uploaded, p => DisplayHelpers.Size(p.Uploaded), id: "uploaded"),
+                new ColumnDefinition<Peer>(relevanceLabel, p => p.Relevance, p => DisplayHelpers.Percentage(p.Relevance), id: "relevance"),
+                new ColumnDefinition<Peer>(filesLabel, p => p.Files, id: "files"),
             ];
         }
 
@@ -390,11 +390,6 @@ namespace Lantean.QBTMud.Components
             }
 
             return Enum.IsDefined(country);
-        }
-
-        private static string CreateColumnId(string header)
-        {
-            return header.ToLowerInvariant().Replace(' ', '_');
         }
 
         private string TranslatePeerList(string source, params object[] arguments)

@@ -3,7 +3,7 @@
 
 <MudPaper Class="pieces-progress-canvas" Elevation="1">
     <MudStack Spacing="1">
-        <MudTooltip Text="@LinearTooltip" Placement="Placement.Top">
+        <Tooltip Text="@LinearTooltip" Placement="Placement.Top">
             <div class="pieces-progress-canvas__linear" role="button" tabindex="0" aria-expanded="@_showCanvas.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" @onclick="ToggleCanvas" @onkeydown="HandleLinearKeyDown" @onkeydown:preventDefault="true">
                 <div class="pieces-progress-canvas__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
                 <div class="pieces-progress-canvas__linear-overlay">
@@ -11,7 +11,7 @@
                     <MudIcon Icon="@ToggleIcon" Class="pieces-progress-canvas__icon" />
                 </div>
             </div>
-        </MudTooltip>
+        </Tooltip>
 
         <MudCollapse Expanded="@_showCanvas">
             <MudPaper Class="pieces-progress-canvas__surface" Elevation="0">

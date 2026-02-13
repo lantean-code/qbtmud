@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public class SpeedHistoryService : ISpeedHistoryService
     {
-        private const string StorageKey = "qbtmud.speedhistory.v1";
+        private const string StorageKey = "SpeedHistory.State";
         private const int SchemaVersion = 1;
         private static readonly TimeSpan DefaultFlushInterval = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan MaximumRetention = TimeSpan.FromHours(24);

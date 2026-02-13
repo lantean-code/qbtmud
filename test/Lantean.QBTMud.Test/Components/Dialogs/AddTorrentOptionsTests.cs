@@ -521,7 +521,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static bool GetUseDownloadPath(IRenderedComponent<AddTorrentOptions> component)
         {
-            return FindFieldSwitch(component, "UseIncompleteSavePath").Instance.Value;
+            return FindFieldSwitch(component, "UseIncompleteSavePath").Instance.Value == true;
         }
 
         private static async Task SetSelectValue<T>(IRenderedComponent<AddTorrentOptions> component, string testId, T value)

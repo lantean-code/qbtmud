@@ -109,7 +109,7 @@
                                           Value="@TempPath"
                                           ValueChanged="@(value => TempPathChanged(value ?? string.Empty))"
                                           Mode="DirectoryContentMode.Directories"
-                                          Disabled="@(!TempPathEnabled)"
+                                          Disabled="@(TempPathEnabled != true)"
                                           Immediate="true"
                                           DebounceInterval="300"
                                           data-test-id="@TestIdHelper.For("TempPath")" />
@@ -126,7 +126,7 @@
                                           Value="@ExportDir"
                                           ValueChanged="@(value => ExportDirChanged(value ?? string.Empty))"
                                           Mode="DirectoryContentMode.Directories"
-                                          Disabled="@(!TempPathEnabled)"
+                                          Disabled="@(TempPathEnabled != true)"
                                           Immediate="true"
                                           DebounceInterval="300"
                                           data-test-id="@TestIdHelper.For("ExportDir")" />
@@ -143,7 +143,7 @@
                                           Value="@ExportDirFin"
                                           ValueChanged="@(value => ExportDirFinChanged(value ?? string.Empty))"
                                           Mode="DirectoryContentMode.Directories"
-                                          Disabled="@(!TempPathEnabled)"
+                                          Disabled="@(TempPathEnabled != true)"
                                           Immediate="true"
                                           DebounceInterval="300"
                                           data-test-id="@TestIdHelper.For("ExportDirFin")" />
@@ -293,7 +293,7 @@
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Excluded file names")" Value="ExcludedFileNamesEnabled" ValueChanged="ExcludedFileNamesEnabledChanged" data-test-id="@TestIdHelper.For("ExcludedFileNamesEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Excluded file names")" Value="ExcludedFileNames" ValueChanged="ExcludedFileNamesChanged" Lines="5" Disabled="@(!ExcludedFileNamesEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ExcludedFileNames")" />
+                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Excluded file names")" Value="ExcludedFileNames" ValueChanged="ExcludedFileNamesChanged" Lines="5" Disabled="@(ExcludedFileNamesEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ExcludedFileNames")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -311,25 +311,25 @@
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Email notification upon download completion")" Value="MailNotificationEnabled" ValueChanged="MailNotificationEnabledChanged" data-test-id="@TestIdHelper.For("MailNotificationEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "From:")" Value="MailNotificationSender" ValueChanged="MailNotificationSenderChanged" Disabled="@(!MailNotificationEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationSender")" />
+                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "From:")" Value="MailNotificationSender" ValueChanged="MailNotificationSenderChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationSender")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "To:")" Value="MailNotificationEmail" ValueChanged="MailNotificationEmailChanged" Disabled="@(!MailNotificationEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationEmail")" />
+                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "To:")" Value="MailNotificationEmail" ValueChanged="MailNotificationEmailChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationEmail")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "SMTP server:")" Value="MailNotificationSmtp" ValueChanged="MailNotificationSmtpChanged" Disabled="@(!MailNotificationEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationSmtp")" />
+                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "SMTP server:")" Value="MailNotificationSmtp" ValueChanged="MailNotificationSmtpChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationSmtp")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "This server requires a secure connection (SSL)")" Value="MailNotificationSslEnabled" ValueChanged="MailNotificationSslEnabledChanged" Disabled="@(!MailNotificationEnabled)" data-test-id="@TestIdHelper.For("MailNotificationSslEnabled")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "This server requires a secure connection (SSL)")" Value="MailNotificationSslEnabled" ValueChanged="MailNotificationSslEnabledChanged" Disabled="@(MailNotificationEnabled != true)" data-test-id="@TestIdHelper.For("MailNotificationSslEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Authentication")" Value="MailNotificationAuthEnabled" ValueChanged="MailNotificationAuthEnabledChanged" Disabled="@(!MailNotificationEnabled)" data-test-id="@TestIdHelper.For("MailNotificationAuthEnabled")" />
+                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Authentication")" Value="MailNotificationAuthEnabled" ValueChanged="MailNotificationAuthEnabledChanged" Disabled="@(MailNotificationEnabled != true)" data-test-id="@TestIdHelper.For("MailNotificationAuthEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Username:")" Value="MailNotificationUsername" ValueChanged="MailNotificationUsernameChanged" Disabled="@(!(MailNotificationEnabled && MailNotificationAuthEnabled))" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationUsername")" />
+                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Username:")" Value="MailNotificationUsername" ValueChanged="MailNotificationUsernameChanged" Disabled="@(MailNotificationEnabled != true || MailNotificationAuthEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationUsername")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Password:")" Value="MailNotificationPassword" ValueChanged="MailNotificationPasswordChanged" Disabled="@(!(MailNotificationEnabled && MailNotificationAuthEnabled))" InputType="InputType.Password" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationPassword")" />
+                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Password:")" Value="MailNotificationPassword" ValueChanged="MailNotificationPasswordChanged" Disabled="@(MailNotificationEnabled != true || MailNotificationAuthEnabled != true)" InputType="InputType.Password" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationPassword")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -347,13 +347,13 @@
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Run on torrent added:")" Value="AutorunOnTorrentAddedEnabled" ValueChanged="AutorunOnTorrentAddedEnabledChanged" data-test-id="@TestIdHelper.For("AutorunOnTorrentAddedEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "External program")" Value="AutorunOnTorrentAddedProgram" ValueChanged="AutorunOnTorrentAddedProgramChanged" Disabled="@(!AutorunOnTorrentAddedEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AutorunOnTorrentAddedProgram")" />
+                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "External program")" Value="AutorunOnTorrentAddedProgram" ValueChanged="AutorunOnTorrentAddedProgramChanged" Disabled="@(AutorunOnTorrentAddedEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AutorunOnTorrentAddedProgram")" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Run on torrent finished:")" Value="AutorunEnabled" ValueChanged="AutorunEnabledChanged" data-test-id="@TestIdHelper.For("AutorunEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "External program")" Value="AutorunProgram" ValueChanged="AutorunProgramChanged" Disabled="@(!AutorunEnabled)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AutorunProgram")" />
+                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "External program")" Value="AutorunProgram" ValueChanged="AutorunProgramChanged" Disabled="@(AutorunEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AutorunProgram")" />
             </MudItem>
             <MudItem xs="12">
                 <MudText>@WebUiLocalizer.Translate("OptionsDialog", "Supported parameters (case sensitive):")</MudText>

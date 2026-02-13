@@ -168,6 +168,36 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public void GIVEN_LoginRoute_WHEN_Rendered_THEN_HidesMenuButton()
+        {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/login");
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.FindComponents<MudIconButton>()
+                .Any(button => button.Instance.Icon == Icons.Material.Filled.Menu)
+                .Should()
+                .BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_LoginRouteAndSmallBreakpoint_WHEN_Rendered_THEN_UsesFullLocalizedTitle()
+        {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/login");
+
+            var target = RenderLayout(CreateProbeBody());
+            var provider = target.FindComponent<BreakpointOrientationProvider>();
+            await target.InvokeAsync(() => provider.Instance.OnBreakpointChanged.InvokeAsync(Breakpoint.Sm));
+
+            var title = target.FindComponents<MudText>()
+                .Single(text => text.Instance.Typo == Typo.h5);
+
+            GetChildContentText(title.Instance.ChildContent).Should().Be("qBittorrent WebUI");
+        }
+
+        [Fact]
         public async Task GIVEN_DrawerOpenChangedCallback_WHEN_ValueUnchanged_THEN_StateUnchanged()
         {
             await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true, Xunit.TestContext.Current.CancellationToken);

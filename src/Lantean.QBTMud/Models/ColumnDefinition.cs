@@ -5,7 +5,7 @@ namespace Lantean.QBTMud.Models
 {
     public class ColumnDefinition<T>
     {
-        public ColumnDefinition(string header, Func<T, object?> sortSelector, Func<T, string>? formatter = null, string? tdClass = null, int? width = null)
+        public ColumnDefinition(string header, Func<T, object?> sortSelector, Func<T, string>? formatter = null, string? tdClass = null, int? width = null, string? id = null)
         {
             Header = header;
             DisplayHeader = header;
@@ -13,11 +13,12 @@ namespace Lantean.QBTMud.Models
             Formatter = formatter;
             Class = tdClass;
             Width = width;
+            Id = string.IsNullOrWhiteSpace(id) ? CreateId(header) : id;
 
             RowTemplate = (context) => (builder) => builder.AddContent(1, context.GetValue());
         }
 
-        public ColumnDefinition(string header, Func<T, object?> sortSelector, RenderFragment<RowContext<T>> rowTemplate, Func<T, string>? formatter = null, string? tdClass = null, int? width = null)
+        public ColumnDefinition(string header, Func<T, object?> sortSelector, RenderFragment<RowContext<T>> rowTemplate, Func<T, string>? formatter = null, string? tdClass = null, int? width = null, string? id = null)
         {
             Header = header;
             DisplayHeader = header;
@@ -26,9 +27,10 @@ namespace Lantean.QBTMud.Models
             Formatter = formatter;
             Class = tdClass;
             Width = width;
+            Id = string.IsNullOrWhiteSpace(id) ? CreateId(header) : id;
         }
 
-        public string Id => Header.ToLowerInvariant().Replace(' ', '_');
+        public string Id { get; }
 
         public string Header { get; set; }
 
@@ -55,6 +57,11 @@ namespace Lantean.QBTMud.Models
         public RowContext<T> GetRowContext(T data)
         {
             return new RowContext<T>(DisplayHeader, data, Formatter is null ? SortSelector : Formatter);
+        }
+
+        private static string CreateId(string header)
+        {
+            return header.ToLowerInvariant().Replace(' ', '_');
         }
     }
 }

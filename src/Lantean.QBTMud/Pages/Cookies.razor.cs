@@ -218,12 +218,12 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Domain"), row => row.Cookie.Domain),
-                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Path"), row => row.Cookie.Path),
-                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Name"), row => row.Cookie.Name),
-                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Value"), row => row.Cookie.Value),
-                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Expiration Date"), row => row.Cookie.ExpirationDate, row => GetExpirationDateText(row.Cookie.ExpirationDate)),
-                new ColumnDefinition<CookieRow>(ActionsColumnHeader, row => row)
+                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Domain"), row => row.Cookie.Domain, id: "domain"),
+                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Path"), row => row.Cookie.Path, id: "path"),
+                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Name"), row => row.Cookie.Name, id: "name"),
+                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Value"), row => row.Cookie.Value, id: "value"),
+                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Expiration Date"), row => row.Cookie.ExpirationDate, row => GetExpirationDateText(row.Cookie.ExpirationDate), id: "expiration_date"),
+                new ColumnDefinition<CookieRow>(ActionsColumnHeader, row => row, id: "actions")
             ];
         }
 

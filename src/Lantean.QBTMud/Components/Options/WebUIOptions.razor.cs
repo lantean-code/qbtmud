@@ -10,33 +10,33 @@ namespace Lantean.QBTMud.Components.Options
         public IJSRuntime JSRuntime { get; set; } = default!;
 
         protected string? Locale { get; private set; }
-        protected bool PerformanceWarning { get; private set; }
+        protected bool? PerformanceWarning { get; private set; }
         protected string? WebUiDomainList { get; private set; }
         protected string? WebUiAddress { get; private set; }
         protected int WebUiPort { get; private set; }
-        protected bool WebUiUpnp { get; private set; }
-        protected bool UseHttps { get; private set; }
+        protected bool? WebUiUpnp { get; private set; }
+        protected bool? UseHttps { get; private set; }
         protected string? WebUiHttpsCertPath { get; private set; }
         protected string? WebUiHttpsKeyPath { get; private set; }
         protected string? WebUiUsername { get; private set; }
         protected string? WebUiPassword { get; private set; }
-        protected bool BypassLocalAuth { get; private set; }
-        protected bool BypassAuthSubnetWhitelistEnabled { get; private set; }
+        protected bool? BypassLocalAuth { get; private set; }
+        protected bool? BypassAuthSubnetWhitelistEnabled { get; private set; }
         protected string? BypassAuthSubnetWhitelist { get; private set; }
         protected int WebUiMaxAuthFailCount { get; private set; }
         protected int WebUiBanDuration { get; private set; }
         protected int WebUiSessionTimeout { get; private set; }
-        protected bool AlternativeWebuiEnabled { get; private set; }
+        protected bool? AlternativeWebuiEnabled { get; private set; }
         protected string? AlternativeWebuiPath { get; private set; }
-        protected bool WebUiClickjackingProtectionEnabled { get; private set; }
-        protected bool WebUiCsrfProtectionEnabled { get; private set; }
-        protected bool WebUiSecureCookieEnabled { get; private set; }
-        protected bool WebUiHostHeaderValidationEnabled { get; private set; }
-        protected bool WebUiUseCustomHttpHeadersEnabled { get; private set; }
+        protected bool? WebUiClickjackingProtectionEnabled { get; private set; }
+        protected bool? WebUiCsrfProtectionEnabled { get; private set; }
+        protected bool? WebUiSecureCookieEnabled { get; private set; }
+        protected bool? WebUiHostHeaderValidationEnabled { get; private set; }
+        protected bool? WebUiUseCustomHttpHeadersEnabled { get; private set; }
         protected string? WebUiCustomHttpHeaders { get; private set; }
-        protected bool WebUiReverseProxyEnabled { get; private set; }
+        protected bool? WebUiReverseProxyEnabled { get; private set; }
         protected string? WebUiReverseProxiesList { get; private set; }
-        protected bool DyndnsEnabled { get; private set; }
+        protected bool? DyndnsEnabled { get; private set; }
         protected int DyndnsService { get; private set; }
         protected string? DyndnsDomain { get; private set; }
         protected string? DyndnsUsername { get; private set; }
@@ -86,7 +86,7 @@ namespace Lantean.QBTMud.Components.Options
 
         protected string? WebUiHttpsCertPathValidationFunc(string? value)
         {
-            if (!UseHttps)
+            if (UseHttps != true)
             {
                 return null;
             }
@@ -101,7 +101,7 @@ namespace Lantean.QBTMud.Components.Options
 
         protected string? WebUiHttpsKeyPathValidationFunc(string? value)
         {
-            if (!UseHttps)
+            if (UseHttps != true)
             {
                 return null;
             }
@@ -116,7 +116,7 @@ namespace Lantean.QBTMud.Components.Options
 
         protected string? AlternativeWebuiPathValidationFunc(string? value)
         {
-            if (!AlternativeWebuiEnabled)
+            if (AlternativeWebuiEnabled != true)
             {
                 return null;
             }
@@ -398,7 +398,7 @@ namespace Lantean.QBTMud.Components.Options
 
         protected async Task RegisterDyndnsService()
         {
-            if (!DyndnsEnabled)
+            if (DyndnsEnabled != true)
             {
                 return;
             }

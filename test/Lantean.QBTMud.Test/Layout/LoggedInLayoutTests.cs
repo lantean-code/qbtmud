@@ -33,6 +33,7 @@ namespace Lantean.QBTMud.Test.Layout
         private readonly IManagedTimer _refreshTimer = Mock.Of<IManagedTimer>();
         private readonly IDialogWorkflow _dialogWorkflow = Mock.Of<IDialogWorkflow>();
         private readonly IDialogService _dialogService = Mock.Of<IDialogService>();
+        private readonly Mock<IDialogService> _dialogServiceMock;
         private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
         private readonly TestNavigationManager _navigationManager;
         private readonly IRenderedComponent<LoggedInLayout> _target;
@@ -66,9 +67,15 @@ namespace Lantean.QBTMud.Test.Layout
             var timerRegistryMock = Mock.Get(_timerRegistry);
             timerRegistryMock.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
 
-            var dialogServiceMock = Mock.Get(_dialogService);
-            dialogServiceMock
+            _dialogServiceMock = Mock.Get(_dialogService);
+            _dialogServiceMock
                 .Setup(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()))
+                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+            _dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
                     It.IsAny<string?>(),
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()))
@@ -287,6 +294,23 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public void GIVEN_LostConnection_WHEN_Rendered_THEN_ShowsLostConnectionDialog()
+        {
+            _dialogService.ClearInvocations();
+            var mainData = CreateMainData(lostConnection: true);
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+
+            target.WaitForAssertion(() =>
+            {
+                _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()), Times.Once);
+            });
+        }
+
+        [Fact]
         public void GIVEN_StatusLabelsEnabled_WHEN_Rendered_THEN_ShowsLabelText()
         {
             var mainData = CreateMainData(serverState: CreateServerState());
@@ -305,13 +329,27 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState());
 
-            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, breakpoint: Breakpoint.Sm, orientation: Orientation.Landscape);
 
             var freeSpace = FindComponentByTestId<MudText>(target, "Status-FreeSpace");
             GetChildContentText(freeSpace.Instance.ChildContent).Should().NotStartWith("Free space: ");
 
             var dhtNodes = FindComponentByTestId<MudText>(target, "Status-DhtNodes");
             GetChildContentText(dhtNodes.Instance.ChildContent).Should().NotContain("nodes");
+        }
+
+        [Fact]
+        public void GIVEN_StatusLabelsWithLandscapeMd_WHEN_Rendered_THEN_ShowsLabelText()
+        {
+            var mainData = CreateMainData(serverState: CreateServerState());
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
+
+            var freeSpace = FindComponentByTestId<MudText>(target, "Status-FreeSpace");
+            GetChildContentText(freeSpace.Instance.ChildContent).Should().StartWith("Free space: ");
+
+            var dhtNodes = FindComponentByTestId<MudText>(target, "Status-DhtNodes");
+            GetChildContentText(dhtNodes.Instance.ChildContent).Should().Contain("nodes");
         }
 
         [Fact]
@@ -352,7 +390,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState(v4: string.Empty, v6: string.Empty));
 
-            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Sm, orientation: Orientation.Landscape);
 
             HasComponentWithTestId<MudText>(target, "Status-ExternalIp").Should().BeFalse();
         }
@@ -362,7 +400,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState(v4: "1.1.1.1", v6: "2.2.2.2"));
 
-            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Sm, orientation: Orientation.Landscape);
 
             var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
             GetChildContentText(externalIp.Instance.ChildContent).Should().Be("1.1.1.1, 2.2.2.2");
@@ -373,7 +411,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var mainData = CreateMainData(serverState: CreateServerState(v4: string.Empty, v6: "2.2.2.2"));
 
-            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Md, orientation: Orientation.Landscape);
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(true), breakpoint: Breakpoint.Sm, orientation: Orientation.Landscape);
 
             var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
             GetChildContentText(externalIp.Instance.ChildContent).Should().Be("2.2.2.2");
@@ -386,7 +424,10 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            var icon = target.FindComponents<MudIcon>().Single(i => i.Instance.Title == "Connection status: Firewalled");
+            var tooltip = FindComponentByTestId<MudTooltip>(target, "Status-ConnectionTooltip");
+            tooltip.Instance.Text.Should().Be("Connection status: Firewalled");
+
+            var icon = FindComponentByTestId<MudIcon>(target, "Status-ConnectionIcon");
             icon.Instance.Icon.Should().Be(Icons.Material.Outlined.SignalWifiStatusbarConnectedNoInternet4);
             icon.Instance.Color.Should().Be(Color.Warning);
         }
@@ -398,7 +439,10 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            var icon = target.FindComponents<MudIcon>().Single(i => i.Instance.Title == "Connection status: Connected");
+            var tooltip = FindComponentByTestId<MudTooltip>(target, "Status-ConnectionTooltip");
+            tooltip.Instance.Text.Should().Be("Connection status: Connected");
+
+            var icon = FindComponentByTestId<MudIcon>(target, "Status-ConnectionIcon");
             icon.Instance.Icon.Should().Be(Icons.Material.Outlined.SignalWifi4Bar);
             icon.Instance.Color.Should().Be(Color.Success);
         }
@@ -410,7 +454,10 @@ namespace Lantean.QBTMud.Test.Layout
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
-            var icon = target.FindComponents<MudIcon>().Single(i => i.Instance.Title == "offline");
+            var tooltip = FindComponentByTestId<MudTooltip>(target, "Status-ConnectionTooltip");
+            tooltip.Instance.Text.Should().Be("offline");
+
+            var icon = FindComponentByTestId<MudIcon>(target, "Status-ConnectionIcon");
             icon.Instance.Icon.Should().Be(Icons.Material.Outlined.SignalWifiOff);
             icon.Instance.Color.Should().Be(Color.Error);
         }
@@ -596,6 +643,10 @@ namespace Lantean.QBTMud.Test.Layout
 
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
             target.WaitForAssertion(() => probe.Instance.MainData!.LostConnection.Should().BeTrue());
+            _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogParameters>(),
+                It.IsAny<DialogOptions?>()), Times.Once);
         }
 
         [Fact]
@@ -1051,7 +1102,12 @@ namespace Lantean.QBTMud.Test.Layout
         private static IRenderedComponent<MudTooltip> FindTimerTooltip(IRenderedComponent<LoggedInLayout> target)
         {
             return target.FindComponents<MudTooltip>()
-                .Single(t => !(t.Instance.Text ?? string.Empty).StartsWith("Alternative speed limits:", StringComparison.Ordinal));
+                .Single(t =>
+                {
+                    var text = t.Instance.Text ?? string.Empty;
+                    return text == "No timers registered."
+                        || text.StartsWith("Timers:", StringComparison.Ordinal);
+                });
         }
 
         private static bool HasComponentWithTestId<TComponent>(IRenderedComponent<LoggedInLayout> target, string testId)

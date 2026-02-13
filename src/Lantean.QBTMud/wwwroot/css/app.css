@@ -249,6 +249,11 @@ code {
     backdrop-filter: blur(10px);
 }
 
+.background-blur-strong {
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+}
+
 .icon-menu {
     color: var(--mud-palette-text-primary);
 }
@@ -530,6 +535,12 @@ td .folder-button {
     padding-top: 4px !important;
 }
 
+.lost-connection-dialog.mud-dialog .mud-dialog-content,
+.lost-connection-dialog .mud-dialog-content,
+.lost-connection-dialog__content {
+    padding: 0 !important;
+}
+
 .icon-menu-dense {
     padding-top: 2px;
     padding-bottom: 2px;
@@ -559,6 +570,30 @@ td .folder-button {
         min-height: 0;
         overflow: hidden;
     }
+
+@media (orientation: landscape) and (max-height: 900px) and (min-width: 1000px) and (max-width: 1400px) {
+    .welcome-wizard-dialog.mud-dialog,
+    .welcome-wizard-dialog .mud-dialog {
+        display: flex;
+        flex-direction: column;
+        height: var(--app-viewport-height);
+        max-height: var(--app-viewport-height);
+        margin: 0;
+    }
+
+        .welcome-wizard-dialog.mud-dialog .mud-dialog-content,
+        .welcome-wizard-dialog .mud-dialog-content {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+    .welcome-wizard-dialog__content {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+}
 
 .path-browser-dialog__content {
     display: flex;

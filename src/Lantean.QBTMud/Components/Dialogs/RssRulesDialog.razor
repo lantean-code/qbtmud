@@ -112,7 +112,7 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("RssRulesClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("RssRulesSave")">@WebUiLocalizer.Translate("HttpServer", "Save")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("RssRulesClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("RssRulesSave")">@WebUiLocalizer.Translate("HttpServer", "Save")</MudButton>
     </DialogActions>
 </MudDialog>

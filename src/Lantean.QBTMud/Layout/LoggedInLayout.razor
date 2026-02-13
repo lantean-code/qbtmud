@@ -26,68 +26,14 @@
                                                         <CascadingValue Value="Version" Name="Version">
                                                             <div class="app-shell">
                                                                 @Body
-                                                                <MudAppBar Bottom="true" Dense="true" Class="app-shell__status-bar">
-                                                                    @if (MainData?.LostConnection == true)
-                                                                    {
-                                                                        var lostConnectionText = WebUiLocalizer.Translate("HttpServer", "qBittorrent client is not reachable");
-                                                                        <MudText Class="mx-2 d-none d-sm-flex"
-                                                                                 Color="Color.Error"
-                                                                                 data-test-id="@TestIdHelper.For("Status-LostConnection")">@lostConnectionText</MudText>
-                                                                    }
-                                                                    <MudSpacer />
-                                                                    @{
-                                                                        var freeSpaceValue = DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk);
-                                                                        var freeSpaceText = ShowStatusLabels
-                                                                            ? WebUiLocalizer.Translate("HttpServer", "Free space: %1", freeSpaceValue)
-                                                                            : freeSpaceValue;
-                                                                    }
-                                                                    <MudText Class="mx-2 d-none d-sm-flex"
-                                                                             data-test-id="@TestIdHelper.For("Status-FreeSpace")">@freeSpaceText</MudText>
-                                                                    @{
-                                                                        var externalIpLabel = Preferences?.StatusBarExternalIp == true
-                                                                            ? (ShowStatusLabels ? BuildExternalIpLabel(MainData?.ServerState) : BuildExternalIpValue(MainData?.ServerState))
-                                                                            : null;
-                                                                    }
-                                                                    @if (!string.IsNullOrEmpty(externalIpLabel))
-                                                                    {
-                                                                        <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
-                                                                        <MudText Class="mx-2 d-none d-sm-flex"
-                                                                                 data-test-id="@TestIdHelper.For("Status-ExternalIp")">@externalIpLabel</MudText>
-                                                                    }
-                                                                    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
-                                                                    @{
-                                                                        var dhtNodesValue = MainData?.ServerState.DHTNodes ?? 0;
-                                                                        var dhtNodesText = ShowStatusLabels
-                                                                            ? WebUiLocalizer.Translate("StatusBar", "DHT: %1 nodes", dhtNodesValue)
-                                                                            : dhtNodesValue.ToString();
-                                                                    }
-                                                                    <MudText Class="mx-2 d-none d-sm-flex"
-                                                                             data-test-id="@TestIdHelper.For("Status-DhtNodes")">@dhtNodesText</MudText>
-                                                                    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
-                                                                    @{
-                                                                        var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);
-                                                                        var connectionTitle = BuildConnectionStatusTitle(MainData?.ServerState.ConnectionStatus);
-                                                                    }
-                                                                    <MudIcon Class="mx-1" Icon="@icon" Color="@colour" Title="@connectionTitle" />
-                                                                    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
-                                                                    <MudTooltip Text="@BuildTimerTooltip()">
-                                                                        <MudIconButton Class="mx-1" Icon="@GetTimerStatusIcon()" Color="@GetTimerStatusColor()" OnClick="ToggleTimerDrawerAsync" />
-                                                                    </MudTooltip>
-                                                                    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
-                                                                    <MudTooltip Text="@BuildAlternativeSpeedLimitsTooltip()">
-                                                                        <MudIconButton Class="@($"mx-1{((MainData?.ServerState.UseAltSpeedLimits ?? false) ? " app-shell__alt-speed-enabled" : string.Empty)}")"
-                                                                                       Icon="@Icons.Material.Outlined.Speed"
-                                                                                       Color="@((MainData?.ServerState.UseAltSpeedLimits ?? false) ? Color.Error : Color.Success)"
-                                                                                       OnClick="ToggleAlternativeSpeedLimits"
-                                                                                       Disabled="_toggleAltSpeedLimitsInProgress" />
-                                                                    </MudTooltip>
-                                                                    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
-                                                                    <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Success" />
-                                                                    <MudText Class="mr-1">@BuildTransferInfo(MainData?.ServerState?.DownloadInfoSpeed, MainData?.ServerState?.DownloadRateLimit, MainData?.ServerState?.DownloadInfoData)</MudText>
-                                                                    <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
-                                                                    <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowUp" Color="Color.Info" />
-                                                                    <MudText Class="mr-1">@BuildTransferInfo(MainData?.ServerState?.UploadInfoSpeed, MainData?.ServerState?.UploadRateLimit, MainData?.ServerState?.UploadInfoData)</MudText>
-                                                                </MudAppBar>
+                                                                <StatusBar MainData="MainData"
+                                                                           Preferences="Preferences"
+                                                                           IsDarkMode="IsDarkMode"
+                                                                           CurrentBreakpoint="CurrentBreakpoint"
+                                                                           CurrentOrientation="CurrentOrientation"
+                                                                           ToggleAlternativeSpeedLimitsInProgress="_toggleAltSpeedLimitsInProgress"
+                                                                           OnToggleTimerDrawer="ToggleTimerDrawerAsync"
+                                                                           OnToggleAlternativeSpeedLimits="ToggleAlternativeSpeedLimits" />
                                                             </div>
                                                         </CascadingValue>
                                                     </CascadingValue>

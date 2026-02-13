@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using ClientCategory = Lantean.QBitTorrentClient.Models.Category;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -57,16 +58,23 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_RefreshClicked_WHEN_Invoked_THEN_ReloadsCurrentPage()
+        public async Task GIVEN_RefreshClicked_WHEN_Invoked_THEN_ReloadsCategoriesFromApi()
         {
-            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
-            navigationManager.NavigateTo("http://localhost/categories");
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetAllCategories())
+                .ReturnsAsync(new Dictionary<string, ClientCategory>
+                {
+                    { "Category", new ClientCategory("Category", "SavePath", null) }
+                });
 
             var refreshButton = FindIconButton(_target, Icons.Material.Filled.Refresh);
 
             await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
-            navigationManager.Uri.Should().Be("http://localhost/categories");
+            Mock.Get(_apiClient).Verify(client => client.GetAllCategories(), Times.Once);
+
+            var table = _target.FindComponent<DynamicTable<Category>>();
+            table.Instance.Items.Should().ContainSingle(category => category.Name == "Category");
         }
 
         [Fact]

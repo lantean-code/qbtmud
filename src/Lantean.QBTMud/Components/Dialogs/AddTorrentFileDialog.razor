@@ -9,7 +9,7 @@
                 <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadFiles" Accept=".torrent" MaximumFileCount="50" data-test-id="@TestIdHelper.For("AddTorrentFileUpload")">
                     <ActivatorContent>
                         <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
+                                   Color="Color.Default"
                                    StartIcon="@Icons.Material.Filled.CloudUpload"
                                    data-test-id="@TestIdHelper.For("AddTorrentFileChoose")">
                             @WebUiLocalizer.Translate("AddNewTorrentDialog", "Select .torrent files")
@@ -50,7 +50,7 @@
         <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="true" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTorrentFileClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTorrentFileSubmit")">@WebUiLocalizer.Translate("HttpServer", "Upload Torrents")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTorrentFileClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTorrentFileSubmit")">@WebUiLocalizer.Translate("HttpServer", "Upload Torrents")</MudButton>
     </DialogActions>
 </MudDialog>

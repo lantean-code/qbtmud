@@ -11,7 +11,11 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Tags
     {
+        private const string ActionsColumnId = "actions";
+
         private readonly Dictionary<string, RenderFragment<RowContext<string>>> _columnRenderFragments = [];
+        private IReadOnlyList<string>? _tags;
+        private bool _isBusy;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -34,13 +38,24 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter]
         public MainData? MainData { get; set; }
 
-        protected IEnumerable<string>? Results => MainData?.Tags;
+        protected IEnumerable<string>? Results
+        {
+            get
+            {
+                if (_tags is not null)
+                {
+                    return _tags;
+                }
+
+                return MainData?.Tags;
+            }
+        }
 
         protected DynamicTable<string>? Table { get; set; }
 
         public Tags()
         {
-            _columnRenderFragments.Add("Actions", ActionsColumn);
+            _columnRenderFragments.Add(ActionsColumnId, ActionsColumn);
         }
 
         protected void NavigateBack()
@@ -48,9 +63,23 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateToHome();
         }
 
-        protected void Reload()
+        protected async Task Reload()
         {
-            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+            if (_isBusy)
+            {
+                return;
+            }
+
+            _isBusy = true;
+            try
+            {
+                _tags = await ApiClient.GetAllTags();
+            }
+            finally
+            {
+                _isBusy = false;
+                await InvokeAsync(StateHasChanged);
+            }
         }
 
         protected async Task DeleteTag(string? tag)
@@ -89,7 +118,7 @@ namespace Lantean.QBTMud.Pages
         {
             foreach (var columnDefinition in ColumnsDefinitions)
             {
-                if (_columnRenderFragments.TryGetValue(columnDefinition.Header, out var fragment))
+                if (_columnRenderFragments.TryGetValue(columnDefinition.Id, out var fragment))
                 {
                     columnDefinition.RowTemplate = fragment;
                 }
@@ -104,9 +133,14 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<string>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l),
-                new ColumnDefinition<string>("Actions", l => l)
+                new ColumnDefinition<string>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l, id: "id"),
+                new ColumnDefinition<string>(Translate("Actions"), l => l, id: ActionsColumnId)
             ];
+        }
+
+        private string Translate(string source, params object[] arguments)
+        {
+            return WebUiLocalizer.Translate("AppTags", source, arguments);
         }
     }
 }
