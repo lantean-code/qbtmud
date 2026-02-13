@@ -49,6 +49,12 @@
   - If an async operation must be triggered from a synchronous API/event, marshal via `InvokeAsync(...)` and await it, or refactor to an async lifecycle method.
   - If you must keep a background task, add explicit exception handling and a clear shutdown/cancellation path.
 
+### Routing Safety (qBittorrent Host)
+- qBittorrent only serves `index.html`; force-loading arbitrary URLs breaks navigation.
+- Never use `NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true)`.
+- Do not call `NavigationManager.NavigateTo(..., forceLoad: true)` directly in components/services/pages; use the `NavigateToHome` helper.
+- If force-load is required, always call `NavigationManager.NavigateToHome(forceLoad: true)`.
+
 ### Design
 - Use constructor injection only, unless absolutely necessary (for example, in Blazor).
 - Static methods and classes are acceptable when appropriate.

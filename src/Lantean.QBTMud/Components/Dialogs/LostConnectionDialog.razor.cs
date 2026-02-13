@@ -13,7 +13,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected void Reconnect()
         {
-            NavigationManager.NavigateTo(NavigationManager.BaseUri, forceLoad: true);
+            NavigationManager.NavigateToHome(forceLoad: true);
         }
     }
 }

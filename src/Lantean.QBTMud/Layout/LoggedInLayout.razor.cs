@@ -536,7 +536,7 @@ namespace Lantean.QBTMud.Layout
             if (string.Equals(_lastProcessedDownloadToken, magnet, StringComparison.Ordinal))
             {
                 await ClearPendingDownloadAsync();
-                NavigationManager.NavigateTo("./", true);
+                NavigationManager.NavigateToHome(forceLoad: true);
                 return;
             }
 
@@ -545,7 +545,7 @@ namespace Lantean.QBTMud.Layout
                 await InvokeAsync(() => DialogWorkflow.InvokeAddTorrentLinkDialog(magnet));
                 await SaveLastProcessedDownloadAsync(magnet);
                 await ClearPendingDownloadAsync();
-                NavigationManager.NavigateTo("./", true);
+                NavigationManager.NavigateToHome(forceLoad: true);
             }
             catch
             {

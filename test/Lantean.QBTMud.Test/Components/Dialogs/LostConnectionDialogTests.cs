@@ -39,14 +39,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_ReconnectClicked_WHEN_Invoked_THEN_NavigatesToBaseUriWithForceLoad()
+        public async Task GIVEN_ReconnectClicked_WHEN_Invoked_THEN_NavigatesHomeWithForceLoad()
         {
             var dialog = await _target.RenderDialogAsync();
             var reconnect = FindButton(dialog.Component, "LostConnectionReconnect");
 
             await dialog.Component.InvokeAsync(() => reconnect.Find("button").Click(new MouseEventArgs()));
 
-            _navigationManager.LastNavigationUri.Should().Be("http://localhost/qbt/");
+            _navigationManager.LastNavigationUri.Should().Be("./");
             _navigationManager.LastNavigationForceLoad.Should().BeTrue();
         }
 

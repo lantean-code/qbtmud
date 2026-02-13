@@ -13,6 +13,8 @@ namespace Lantean.QBTMud.Pages
         private const string ActionsColumnId = "actions";
 
         private readonly Dictionary<string, RenderFragment<RowContext<Category>>> _columnRenderFragments = [];
+        private IReadOnlyList<Category>? _categories;
+        private bool _isBusy;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -35,7 +37,18 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter]
         public MainData? MainData { get; set; }
 
-        protected IEnumerable<Category>? Results => MainData?.Categories.Values;
+        protected IEnumerable<Category>? Results
+        {
+            get
+            {
+                if (_categories is not null)
+                {
+                    return _categories;
+                }
+
+                return MainData?.Categories.Values;
+            }
+        }
 
         protected DynamicTable<Category>? Table { get; set; }
 
@@ -49,9 +62,26 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateToHome();
         }
 
-        protected void Reload()
+        protected async Task Reload()
         {
-            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+            if (_isBusy)
+            {
+                return;
+            }
+
+            _isBusy = true;
+            try
+            {
+                var categories = await ApiClient.GetAllCategories();
+                _categories = categories.Values
+                    .Select(category => new Category(category.Name, category.SavePath ?? string.Empty))
+                    .ToList();
+            }
+            finally
+            {
+                _isBusy = false;
+                await InvokeAsync(StateHasChanged);
+            }
         }
 
         protected async Task DeleteCategory(string? name)
