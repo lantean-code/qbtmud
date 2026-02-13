@@ -1,5 +1,6 @@
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Serialization;
+using MudBlazor;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Theming
@@ -9,8 +10,8 @@ namespace Lantean.QBTMud.Theming
     /// </summary>
     public static class ThemeSerialization
     {
-        private static readonly JsonSerializerOptions _defaultOptions = CreateOptions(writeIndented: false);
-        private static readonly JsonSerializerOptions _indentedOptions = CreateOptions(writeIndented: true);
+        private static readonly JsonSerializerOptions _defaultOptions = CreateSerializerOptions(writeIndented: false);
+        private static readonly JsonSerializerOptions _indentedOptions = CreateSerializerOptions(writeIndented: true);
 
         /// <summary>
         /// Serializes a <see cref="ThemeDefinition"/> to JSON.
@@ -50,7 +51,23 @@ namespace Lantean.QBTMud.Theming
             return JsonSerializer.Deserialize<ThemeDefinition>(json, _defaultOptions) ?? new ThemeDefinition();
         }
 
-        private static JsonSerializerOptions CreateOptions(bool writeIndented)
+        /// <summary>
+        /// Creates a deep clone of a <see cref="MudTheme"/> instance.
+        /// </summary>
+        /// <param name="theme">The theme to clone.</param>
+        /// <returns>A deep copy of the theme, or a default theme when the input is null.</returns>
+        public static MudTheme CloneTheme(MudTheme? theme)
+        {
+            if (theme is null)
+            {
+                return new MudTheme();
+            }
+
+            var json = JsonSerializer.Serialize(theme, _defaultOptions);
+            return JsonSerializer.Deserialize<MudTheme>(json, _defaultOptions) ?? new MudTheme();
+        }
+
+        internal static JsonSerializerOptions CreateSerializerOptions(bool writeIndented)
         {
             var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
             {
