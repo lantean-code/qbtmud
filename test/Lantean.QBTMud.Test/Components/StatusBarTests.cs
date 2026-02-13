@@ -76,6 +76,42 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public void GIVEN_SmallLandscapeBreakpoint_WHEN_Rendered_THEN_ShowsReducedModeStatusTooltips()
+        {
+            var target = RenderStatusBar(
+                preferences: CreatePreferences(true),
+                breakpoint: Breakpoint.Sm,
+                orientation: Orientation.Landscape);
+
+            var freeSpace = FindComponentByTestId<MudText>(target, "Status-FreeSpace");
+            var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
+            var dhtNodes = FindComponentByTestId<MudText>(target, "Status-DhtNodes");
+            var freeSpaceTooltip = FindComponentByTestId<MudTooltip>(target, "Status-FreeSpaceTooltip");
+            var externalIpTooltip = FindComponentByTestId<MudTooltip>(target, "Status-ExternalIpTooltip");
+            var dhtNodesTooltip = FindComponentByTestId<MudTooltip>(target, "Status-DhtNodesTooltip");
+
+            GetChildContentText(freeSpace.Instance.ChildContent).Should().Be(DisplayHelpers.Size(1024));
+            GetChildContentText(externalIp.Instance.ChildContent).Should().Be("1.1.1.1");
+            GetChildContentText(dhtNodes.Instance.ChildContent).Should().Be("10");
+            freeSpaceTooltip.Instance.Text.Should().Be($"Free space: {DisplayHelpers.Size(1024)}");
+            externalIpTooltip.Instance.Text.Should().Be("External IP: 1.1.1.1");
+            dhtNodesTooltip.Instance.Text.Should().Be("DHT: 10 nodes");
+        }
+
+        [Fact]
+        public void GIVEN_LargePortraitBreakpoint_WHEN_Rendered_THEN_DoesNotShowReducedModeStatusTooltips()
+        {
+            var target = RenderStatusBar(
+                preferences: CreatePreferences(true),
+                breakpoint: Breakpoint.Lg,
+                orientation: Orientation.Portrait);
+
+            ContainsComponentWithTestId<MudTooltip>(target, "Status-FreeSpaceTooltip").Should().BeFalse();
+            ContainsComponentWithTestId<MudTooltip>(target, "Status-ExternalIpTooltip").Should().BeFalse();
+            ContainsComponentWithTestId<MudTooltip>(target, "Status-DhtNodesTooltip").Should().BeFalse();
+        }
+
+        [Fact]
         public void GIVEN_ExternalIpDisabled_WHEN_Rendered_THEN_DoesNotRenderExternalIp()
         {
             var target = RenderStatusBar(preferences: CreatePreferences(false));
