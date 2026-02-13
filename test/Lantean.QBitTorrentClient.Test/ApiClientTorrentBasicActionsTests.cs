@@ -93,6 +93,24 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_EmptyPath_WHEN_SetTorrentSavePath_THEN_ShouldThrowArgumentException()
+        {
+            var action = async () => await _target.SetTorrentSavePath(new[] { "a" }, string.Empty);
+
+            var exception = await action.Should().ThrowAsync<ArgumentException>();
+            exception.Which.ParamName.Should().Be("path");
+        }
+
+        [Fact]
+        public async Task GIVEN_EmptyHashes_WHEN_SetTorrentSavePath_THEN_ShouldThrowArgumentException()
+        {
+            var action = async () => await _target.SetTorrentSavePath(Array.Empty<string>(), "/path");
+
+            var exception = await action.Should().ThrowAsync<ArgumentException>();
+            exception.Which.ParamName.Should().Be("hashes");
+        }
+
+        [Fact]
         public async Task GIVEN_Hashes_WHEN_SetTorrentDownloadPath_THEN_ShouldPOSTIdsAndPath()
         {
             _handler.Responder = async (req, ct) =>
@@ -104,6 +122,29 @@ namespace Lantean.QBitTorrentClient.Test
             };
 
             await _target.SetTorrentDownloadPath(new[] { "a", "b" }, "temp");
+        }
+
+        [Fact]
+        public async Task GIVEN_NullPath_WHEN_SetTorrentDownloadPath_THEN_ShouldPostEmptyPath()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrents/setDownloadPath");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().Be("id=a&path=");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
+
+            await _target.SetTorrentDownloadPath(new[] { "a" }, null);
+        }
+
+        [Fact]
+        public async Task GIVEN_EmptyHashes_WHEN_SetTorrentDownloadPath_THEN_ShouldThrowArgumentException()
+        {
+            var action = async () => await _target.SetTorrentDownloadPath(Array.Empty<string>(), "temp");
+
+            var exception = await action.Should().ThrowAsync<ArgumentException>();
+            exception.Which.ParamName.Should().Be("hashes");
         }
 
         [Fact]
@@ -165,6 +206,39 @@ namespace Lantean.QBitTorrentClient.Test
             var parameters = new SslParameters("cert", "key", "dh");
 
             await _target.SetTorrentSslParameters("abc", parameters);
+        }
+
+        [Fact]
+        public async Task GIVEN_NullParameters_WHEN_SetTorrentSslParameters_THEN_ShouldThrowArgumentNullException()
+        {
+            var action = async () => await _target.SetTorrentSslParameters("abc", null!);
+
+            var exception = await action.Should().ThrowAsync<ArgumentNullException>();
+            exception.Which.ParamName.Should().Be("parameters");
+        }
+
+        [Fact]
+        public async Task GIVEN_MissingRequiredSslFields_WHEN_SetTorrentSslParameters_THEN_ShouldThrowArgumentException()
+        {
+            var action = async () => await _target.SetTorrentSslParameters("abc", new SslParameters("", "key", "dh"));
+
+            var exception = await action.Should().ThrowAsync<ArgumentException>();
+            exception.Which.ParamName.Should().Be("parameters");
+        }
+
+        [Fact]
+        public async Task GIVEN_NonSuccess_WHEN_SetTorrentSslParameters_THEN_ShouldThrowHttpRequestException()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadGateway)
+            {
+                Content = new StringContent("ssl failed")
+            });
+
+            var action = async () => await _target.SetTorrentSslParameters("abc", new SslParameters("cert", "key", "dh"));
+
+            var exception = await action.Should().ThrowAsync<HttpRequestException>();
+            exception.Which.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+            exception.Which.Message.Should().Be("ssl failed");
         }
     }
 }

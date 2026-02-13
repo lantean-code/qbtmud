@@ -179,6 +179,57 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_LegacyOkPayload_WHEN_AddTorrent_THEN_ShouldReturnSingleSuccess()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("Ok.")
+            });
+
+            var result = await _target.AddTorrent(new AddTorrentParams { Urls = new[] { "u" } });
+
+            result.SuccessCount.Should().Be(1);
+            result.FailureCount.Should().Be(0);
+            result.SupportsAsync.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_LegacyFailsPayload_WHEN_AddTorrent_THEN_ShouldReturnSingleFailure()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("Fails.")
+            });
+
+            var result = await _target.AddTorrent(new AddTorrentParams { Urls = new[] { "u" } });
+
+            result.SuccessCount.Should().Be(0);
+            result.FailureCount.Should().Be(1);
+            result.SupportsAsync.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_NullJsonPayload_WHEN_AddTorrent_THEN_ShouldFallbackToFailureCountFromInputSize()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("null")
+            });
+
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("x"));
+            var parameters = new AddTorrentParams
+            {
+                Urls = new[] { "u1", "u2" },
+                Torrents = new Dictionary<string, Stream> { ["file.torrent"] = stream }
+            };
+
+            var result = await _target.AddTorrent(parameters);
+
+            result.SuccessCount.Should().Be(0);
+            result.FailureCount.Should().Be(3);
+        }
+
+        [Fact]
         public async Task GIVEN_BaseAddressAndHash_WHEN_GetExportUrl_THEN_ShouldReturnFormattedUrl()
         {
             var result = await _target.GetExportUrl("abc123");

@@ -9,11 +9,6 @@ namespace Lantean.QBTMud.Filter
         {
             var propertyExpression = filter.Expression;
 
-            if (propertyExpression is null)
-            {
-                return x => true;
-            }
-
             var fieldType = FieldType.Identify(filter.ColumnType);
 
             if (fieldType.IsString)

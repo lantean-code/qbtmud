@@ -262,6 +262,66 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_FilesMode_WHEN_GetDirectoryContent_THEN_ShouldUseFilesModeQuery()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.ToString().Should().Be("http://localhost/app/getDirectoryContent?dirPath=%2Fdata&mode=files");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("[\"/data/file1\"]")
+                });
+            };
+
+            var result = await _target.GetDirectoryContent("/data", DirectoryContentMode.Files);
+
+            result.Should().ContainSingle().Which.Should().Be("/data/file1");
+        }
+
+        [Fact]
+        public async Task GIVEN_DefaultMode_WHEN_GetDirectoryContent_THEN_ShouldUseAllModeQuery()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.ToString().Should().Be("http://localhost/app/getDirectoryContent?dirPath=%2Fdata&mode=all");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("[]")
+                });
+            };
+
+            var result = await _target.GetDirectoryContent("/data");
+
+            result.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_WhitespacePath_WHEN_GetDirectoryContent_THEN_ShouldThrowArgumentException()
+        {
+            var action = async () => await _target.GetDirectoryContent(" ");
+
+            var exception = await action.Should().ThrowAsync<ArgumentException>();
+            exception.Which.ParamName.Should().Be("directoryPath");
+        }
+
+        [Fact]
+        public async Task GIVEN_NonSuccess_WHEN_GetDirectoryContent_THEN_ShouldThrow()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("bad directory")
+            });
+
+            var action = async () => await _target.GetDirectoryContent("/data", DirectoryContentMode.Directories);
+
+            var exception = await action.Should().ThrowAsync<HttpRequestException>();
+            exception.Which.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            exception.Which.Message.Should().Be("bad directory");
+        }
+
+        [Fact]
         public async Task GIVEN_OK_WHEN_GetDefaultSavePath_THEN_ShouldReturnRawBody()
         {
             _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)

@@ -298,6 +298,84 @@ namespace Lantean.QBTMud.Test.Components.Options
                     "http://www.no-ip.com/services/managed_dns/free_dynamic_dns.html");
         }
 
+        [Fact]
+        public void GIVEN_ValidationDelegates_WHEN_InvalidValuesProvided_THEN_ShouldReturnValidationMessages()
+        {
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+            var target = TestContext.Render<WebUIOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var portValidation = FindNumeric(target, "WebUiPort").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            portValidation(0).Should().Be("The port used for the WebUI must be between 1 and 65535.");
+            portValidation(8080).Should().BeNull();
+
+            var usernameValidation = FindTextField(target, "WebUiUsername").Instance.Validation.Should().BeOfType<Func<string?, string?>>().Subject;
+            usernameValidation("ab").Should().Be("The WebUI username must be at least 3 characters long.");
+            usernameValidation("admin").Should().BeNull();
+
+            var passwordValidation = FindTextField(target, "WebUiPassword").Instance.Validation.Should().BeOfType<Func<string?, string?>>().Subject;
+            passwordValidation("12345").Should().Be("The WebUI password must be at least 6 characters long.");
+            passwordValidation("123456").Should().BeNull();
+
+            var certValidation = FindTextField(target, "WebUiHttpsCertPath").Instance.Validation.Should().BeOfType<Func<string?, string?>>().Subject;
+            certValidation(string.Empty).Should().Be("HTTPS certificate should not be empty.");
+
+            var keyValidation = FindTextField(target, "WebUiHttpsKeyPath").Instance.Validation.Should().BeOfType<Func<string?, string?>>().Subject;
+            keyValidation(string.Empty).Should().Be("HTTPS key should not be empty.");
+
+            var altPathValidation = FindTextField(target, "AlternativeWebuiPath").Instance.Validation.Should().BeOfType<Func<string?, string?>>().Subject;
+            altPathValidation(string.Empty).Should().Be("The alternative WebUI files location cannot be blank.");
+        }
+
+        [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldNotPopulateValuesOrThrow()
+        {
+            var target = TestContext.Render<WebUIOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindTextField(target, "WebUiAddress").Instance.Value.Should().BeNull();
+            FindNumeric(target, "WebUiPort").Instance.Value.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_UnsupportedDyndnsService_WHEN_RegisterClicked_THEN_ShouldThrowInvalidOperationException()
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var preferences = DeserializeUnsupportedDyndnsPreferences();
+            var target = TestContext.Render<WebUIOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var registerButton = FindComponentByTestId<MudButton>(target, "DyndnsRegister");
+            Func<Task> action = async () => await target.InvokeAsync(() => registerButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            await action.Should().ThrowAsync<InvalidOperationException>();
+        }
+
+        private static Preferences DeserializeUnsupportedDyndnsPreferences()
+        {
+            const string json = """
+            {
+                "dyndns_enabled": true,
+                "dyndns_service": 2
+            }
+            """;
+
+            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+        }
+
         private static Preferences DeserializePreferences()
         {
             const string json = """

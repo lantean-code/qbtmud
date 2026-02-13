@@ -95,6 +95,35 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_EnabledDownloadPathWithWhitespacePath_WHEN_EditCategory_THEN_ShouldOmitDownloadPathValue()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrents/editCategory");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().Be("category=Books&savePath=%2Fbooks&downloadPathEnabled=true");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
+
+            await _target.EditCategory("Books", "/books", new DownloadPathOption(true, " "));
+        }
+
+        [Fact]
+        public async Task GIVEN_NonSuccess_WHEN_EditCategory_THEN_ShouldThrowHttpRequestException()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("edit failed")
+            });
+
+            var action = async () => await _target.EditCategory("Books", "/books");
+
+            var exception = await action.Should().ThrowAsync<HttpRequestException>();
+            exception.Which.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            exception.Which.Message.Should().Be("edit failed");
+        }
+
+        [Fact]
         public async Task GIVEN_Categories_WHEN_RemoveCategories_THEN_ShouldPOSTNewlineSeparated()
         {
             _handler.Responder = async (req, ct) =>

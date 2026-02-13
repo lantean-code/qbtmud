@@ -29,12 +29,7 @@ namespace Lantean.QBTMud.Pages
         private int _previousStartPaneForAnimation;
         private int ColumnCount => DetermineColumnCount();
 
-        private int ColumnSpan => ColumnCount switch
-        {
-            1 => 12,
-            2 => 6,
-            _ => 4
-        };
+        private int ColumnSpan => 4;
 
         private int CurrentStage
         {
@@ -61,30 +56,13 @@ namespace Lantean.QBTMud.Pages
 
         private int StartPane => Math.Max(0, CurrentStage - (ColumnCount - 1));
 
-        private double SlideOffsetPercent => ColumnCount switch
-        {
-            1 => StartPane * 100,
-            2 => StartPane * 50,
-            _ => 0
-        };
+        private double SlideOffsetPercent => ColumnCount == 1 ? StartPane * 100 : StartPane * 50;
 
-        private string SliderContainerClass => ColumnCount switch
-        {
-            1 => "rss-slider rss-slider--one",
-            2 => "rss-slider rss-slider--two",
-            _ => "rss-slider"
-        };
+        private string SliderContainerClass => ColumnCount == 1 ? "rss-slider rss-slider--one" : "rss-slider rss-slider--two";
 
-        private string SliderTrackClass => ColumnCount switch
-        {
-            1 => "rss-slider__track rss-slider__track--one",
-            2 => "rss-slider__track rss-slider__track--two",
-            _ => "rss-slider__track"
-        };
+        private string SliderTrackClass => ColumnCount == 1 ? "rss-slider__track rss-slider__track--one" : "rss-slider__track rss-slider__track--two";
 
-        private string SliderTrackStyle => ColumnCount >= 3
-            ? string.Empty
-            : $"transform: translateX(-{SlideOffsetPercent.ToString(CultureInfo.InvariantCulture)}%);";
+        private string SliderTrackStyle => $"transform: translateX(-{SlideOffsetPercent.ToString(CultureInfo.InvariantCulture)}%);";
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -119,9 +97,6 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter]
         public Orientation CurrentOrientation { get; set; }
 
-        [Parameter]
-        public string? Hash { get; set; }
-
         protected MudMenu? FeedContextMenu { get; set; }
 
         protected RssList? RssList { get; set; }
@@ -134,13 +109,9 @@ namespace Lantean.QBTMud.Pages
 
         protected string? SelectedArticle { get; set; }
 
-        protected int UnreadCount => RssList?.UnreadCount ?? 0;
-
-        protected ServerState? ServerState => MainData?.ServerState;
-
         protected bool CanMarkSelectionAsRead => _selectedNode is not null && !IsClientDisconnected;
 
-        private bool IsClientDisconnected => MainData?.LostConnection == true;
+        private bool IsClientDisconnected => MainData is not null && MainData.LostConnection;
 
         protected override async Task OnInitializedAsync()
         {
@@ -182,24 +153,31 @@ namespace Lantean.QBTMud.Pages
 
         protected bool ContextCanAddSubscription => !IsClientDisconnected;
 
-        protected bool ContextCanAddFolder => !IsClientDisconnected && (_contextIsEmptyArea || _contextNode?.IsFolder == true);
+        protected bool ContextCanAddFolder
+        {
+            get
+            {
+                if (IsClientDisconnected)
+                {
+                    return false;
+                }
+
+                if (_contextIsEmptyArea)
+                {
+                    return true;
+                }
+
+                return _contextNode is not null && _contextNode.IsFolder;
+            }
+        }
 
         protected bool ContextCanUpdateAll => _contextIsEmptyArea && !IsClientDisconnected;
 
         protected bool ContextCanCopyUrl => _contextNode?.Feed is not null;
 
-        protected bool ShowFeedsColumn => StartPane == 0 || ColumnCount >= 3;
-
-        protected bool ShowArticlesColumn => ColumnCount >= 3 || (StartPane <= 1 && StartPane + ColumnCount > 1);
-
-        protected bool ShowDetailsColumn => ColumnCount >= 3 || (StartPane <= 2 && StartPane + ColumnCount > 2);
-
-        protected bool ShowBackToFeedsFromArticles => ColumnCount switch
-        {
-            1 => StartPane > 0 || (_isAnimating && _previousStartPaneForAnimation > 0),
-            2 => StartPane > 0,
-            _ => false
-        };
+        protected bool ShowBackToFeedsFromArticles => ColumnCount == 1
+            ? StartPane > 0 || (_isAnimating && _previousStartPaneForAnimation > 0)
+            : StartPane > 0;
 
         protected bool ShowBackToArticlesFromDetails => ColumnCount == 1 && Article is not null;
 
@@ -228,12 +206,13 @@ namespace Lantean.QBTMud.Pages
                 return Icons.Material.Filled.Folder;
             }
 
-            if (node.Feed?.IsLoading == true)
+            var feed = node.Feed!;
+            if (feed.IsLoading)
             {
                 return Icons.Material.Filled.Sync;
             }
 
-            if (node.Feed?.HasError == true)
+            if (feed.HasError)
             {
                 return Icons.Material.Filled.Error;
             }
@@ -253,12 +232,13 @@ namespace Lantean.QBTMud.Pages
                 return Color.Default;
             }
 
-            if (node.Feed?.HasError == true)
+            var feed = node.Feed!;
+            if (feed.HasError)
             {
                 return Color.Error;
             }
 
-            return node.Feed?.IsLoading == true ? Color.Info : Color.Default;
+            return feed.IsLoading ? Color.Info : Color.Default;
         }
 
         protected string GetNodeCssClass(RssTreeNode node)
@@ -406,17 +386,14 @@ namespace Lantean.QBTMud.Pages
 
         private void UpdateUnreadCountsAfterRead(RssArticle article)
         {
-            if (RssList is null)
+            var rssList = RssList!;
+
+            if (rssList.Feeds.TryGetValue(article.Feed, out var feed))
             {
-                return;
+                feed.UnreadCount = Math.Max(0, feed.UnreadCount - 1);
             }
 
-            if (RssList.Feeds.TryGetValue(article.Feed, out var feed) && feed.UnreadCount > 0)
-            {
-                feed.UnreadCount--;
-            }
-
-            RssList.RecalculateCounts();
+            rssList.RecalculateCounts();
         }
 
         protected async Task UpdateContextUpdate()
@@ -775,26 +752,22 @@ namespace Lantean.QBTMud.Pages
             var previousSelectedArticle = SelectedArticle;
             Articles.Clear();
 
-            if (RssList is null || _selectedNode is null)
-            {
-                Article = null;
-                SelectedArticle = null;
-                return;
-            }
+            var rssList = RssList!;
+            var selectedNode = _selectedNode!;
 
             IEnumerable<RssArticle> source;
 
-            if (_selectedNode.IsUnread)
+            if (selectedNode.IsUnread)
             {
-                source = RssList.Articles.Where(a => !a.IsRead);
+                source = rssList.Articles.Where(a => !a.IsRead);
             }
-            else if (_selectedNode.IsFolder)
+            else if (selectedNode.IsFolder)
             {
-                source = RssList.Articles.Where(a => IsDescendantPath(a.Feed, _selectedNode.Path));
+                source = rssList.Articles.Where(a => IsDescendantPath(a.Feed, selectedNode.Path));
             }
             else
             {
-                source = RssList.Articles.Where(a => string.Equals(a.Feed, _selectedNode.Path, StringComparison.Ordinal));
+                source = rssList.Articles.Where(a => string.Equals(a.Feed, selectedNode.Path, StringComparison.Ordinal));
             }
 
             Articles.AddRange(source);
@@ -832,9 +805,10 @@ namespace Lantean.QBTMud.Pages
         {
             if (node.IsUnread)
             {
-                return RssList?.TreeItems
+                var rssList = RssList!;
+                return rssList.TreeItems
                     .Select(t => t.Node)
-                    .Where(n => n.Feed is not null) ?? Enumerable.Empty<RssTreeNode>();
+                    .Where(n => n.Feed is not null);
             }
 
             if (node.Feed is not null)
@@ -862,47 +836,27 @@ namespace Lantean.QBTMud.Pages
                 return node.Path;
             }
 
-            return GetParentPath(node.Path) ?? string.Empty;
+            return GetParentPath(node.Path);
         }
 
         private static string DetermineParentPathForNewFolder(RssTreeNode? node)
         {
-            if (node is null || node.IsUnread)
+            if (node is null || node.IsUnread || !node.IsFolder)
             {
                 return string.Empty;
             }
 
-            if (node.IsFolder)
-            {
-                return node.Path;
-            }
-
-            return GetParentPath(node.Path) ?? string.Empty;
+            return node.Path;
         }
 
-        private static string? GetParentPath(string path)
+        private static string GetParentPath(string path)
         {
-            if (string.IsNullOrEmpty(path))
-            {
-                return null;
-            }
-
             var lastSeparator = path.LastIndexOf(PathSeparator);
             return lastSeparator == -1 ? string.Empty : path[..lastSeparator];
         }
 
         private static bool IsDescendantPath(string feedPath, string ancestorPath)
         {
-            if (string.IsNullOrEmpty(ancestorPath))
-            {
-                return true;
-            }
-
-            if (string.Equals(feedPath, ancestorPath, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
             return feedPath.StartsWith($"{ancestorPath}{PathSeparator}", StringComparison.Ordinal);
         }
 

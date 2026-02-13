@@ -5,16 +5,16 @@
         <MudToolBar Gutters="false" Dense="true">
             @if (!DrawerOpen)
             {
-                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" data-test-id="@TestIdHelper.For("RssBackToList")" />
                 <MudDivider Vertical="true" />
             }
             <MudText Class="px-5 no-wrap">@WebUiLocalizer.Translate("MainWindow", "RSS")</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" Disabled="@IsClientDisconnected" title="@WebUiLocalizer.Translate("RSSWidget", "New subscription")" />
-            <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="@WebUiLocalizer.Translate("RSSWidget", "Mark items read")" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="RefreshAllFeeds" Disabled="@IsClientDisconnected" title="@WebUiLocalizer.Translate("RSSWidget", "Update all")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" Disabled="@IsClientDisconnected" title="@WebUiLocalizer.Translate("RSSWidget", "New subscription")" data-test-id="@TestIdHelper.For("RssNewSubscription")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="@WebUiLocalizer.Translate("RSSWidget", "Mark items read")" data-test-id="@TestIdHelper.For("RssMarkItemsRead")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="RefreshAllFeeds" Disabled="@IsClientDisconnected" title="@WebUiLocalizer.Translate("RSSWidget", "Update all")" data-test-id="@TestIdHelper.For("RssUpdateAll")" />
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="@WebUiLocalizer.Translate("RSSWidget", "RSS Downloader...")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="@WebUiLocalizer.Translate("RSSWidget", "RSS Downloader...")" data-test-id="@TestIdHelper.For("RssEditDownloadRules")" />
         </MudToolBar>
     </div>
 
@@ -25,26 +25,27 @@
                      PositionAtCursor="true"
                      RelativeWidth="DropdownWidth.Ignore"
                      ListClass="unselectable"
-                     PopoverClass="unselectable">
+                     PopoverClass="unselectable"
+                     data-test-id="@TestIdHelper.For("RssFeedContextMenu")">
                 @if (ContextCanUpdate)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="UpdateContextUpdate">@WebUiLocalizer.Translate("RSSWidget", "Update")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="UpdateContextUpdate" data-test-id="@TestIdHelper.For("RssContextUpdate")">@WebUiLocalizer.Translate("RSSWidget", "Update")</MudMenuItem>
                 }
                 @if (ContextCanMarkRead)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.MarkEmailRead" IconColor="Color.Info" OnClick="UpdateContextMarkRead">@WebUiLocalizer.Translate("RSSWidget", "Mark items read")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.MarkEmailRead" IconColor="Color.Info" OnClick="UpdateContextMarkRead" data-test-id="@TestIdHelper.For("RssContextMarkItemsRead")">@WebUiLocalizer.Translate("RSSWidget", "Mark items read")</MudMenuItem>
                 }
                 @if (ContextCanRename)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" IconColor="Color.Info" OnClick="UpdateContextRename">@WebUiLocalizer.Translate("RSSWidget", "Rename...")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" IconColor="Color.Info" OnClick="UpdateContextRename" data-test-id="@TestIdHelper.For("RssContextRename")">@WebUiLocalizer.Translate("RSSWidget", "Rename...")</MudMenuItem>
                 }
                 @if (ContextCanEditUrl)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="UpdateContextEditUrl">@WebUiLocalizer.Translate("RSSWidget", "Edit feed URL...")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="UpdateContextEditUrl" data-test-id="@TestIdHelper.For("RssContextEditFeedUrl")">@WebUiLocalizer.Translate("RSSWidget", "Edit feed URL...")</MudMenuItem>
                 }
                 @if (ContextCanDelete)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="UpdateContextDelete">@WebUiLocalizer.Translate("RSSWidget", "Delete")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="UpdateContextDelete" data-test-id="@TestIdHelper.For("RssContextDelete")">@WebUiLocalizer.Translate("RSSWidget", "Delete")</MudMenuItem>
                 }
                 @if (ContextCanAddSubscription || ContextCanAddFolder || ContextCanUpdateAll)
                 {
@@ -52,20 +53,20 @@
                 }
                 @if (ContextCanAddSubscription)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Outlined.Subscriptions" IconColor="Color.Info" OnClick="UpdateContextAddSubscription">@WebUiLocalizer.Translate("RSSWidget", "New subscription...")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Outlined.Subscriptions" IconColor="Color.Info" OnClick="UpdateContextAddSubscription" data-test-id="@TestIdHelper.For("RssContextNewSubscription")">@WebUiLocalizer.Translate("RSSWidget", "New subscription...")</MudMenuItem>
                 }
                 @if (ContextCanAddFolder)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="UpdateContextAddFolder">@WebUiLocalizer.Translate("RSSWidget", "New folder...")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="UpdateContextAddFolder" data-test-id="@TestIdHelper.For("RssContextNewFolder")">@WebUiLocalizer.Translate("RSSWidget", "New folder...")</MudMenuItem>
                 }
                 @if (ContextCanUpdateAll)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Outlined.Update" IconColor="Color.Info" OnClick="RefreshAllFeeds">@WebUiLocalizer.Translate("RSSWidget", "Update all feeds")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Outlined.Update" IconColor="Color.Info" OnClick="RefreshAllFeeds" data-test-id="@TestIdHelper.For("RssContextUpdateAllFeeds")">@WebUiLocalizer.Translate("RSSWidget", "Update all feeds")</MudMenuItem>
                 }
                 @if (ContextCanCopyUrl)
                 {
                     <MudDivider />
-                    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="UpdateContextCopyUrl">@WebUiLocalizer.Translate("RSSWidget", "Copy feed URL")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="UpdateContextCopyUrl" data-test-id="@TestIdHelper.For("RssContextCopyFeedUrl")">@WebUiLocalizer.Translate("RSSWidget", "Copy feed URL")</MudMenuItem>
                 }
             </MudMenu>
 
@@ -75,11 +76,13 @@
                     <MudItem xs="@ColumnSpan" sm="@ColumnSpan" md="@ColumnSpan" lg="@ColumnSpan" xl="@ColumnSpan" Style="height: 100%;" Class="px-0">
                         <div class="rss-feed-list-container"
                              tabindex="0"
+                             data-test-id="@TestIdHelper.For("RssFeedListContainerDesktop")"
                              @oncontextmenu="ShowFeedContextMenuFromContainer"
                              @oncontextmenu:preventDefault="true">
                             <MudList T="RssTreeNode"
                                      Dense="true"
                                      Class="rss-feed-list"
+                                     data-test-id="@TestIdHelper.For("RssFeedListDesktop")"
                                      SelectionMode="SelectionMode.SingleSelection"
                                      SelectedValue="_selectedNode"
                                      SelectedValueChanged="SelectNode">
@@ -88,6 +91,7 @@
                                     var node = item.Node;
                                     <MudListItem @key="GetNodeKey(node)"
                                                  Value="node"
+                                                 data-test-id="@TestIdHelper.For($"RssFeedNode-{GetNodeKey(node)}")"
                                                  Class="@($"rss-feed-list__item {GetNodeCssClass(node)}")"
                                                  Style="@($"padding-left: {item.Depth * 20 + 12}px")">
                                         <div class="rss-feed-list__item-content"
@@ -105,12 +109,13 @@
                     <MudItem xs="@ColumnSpan" sm="@ColumnSpan" md="@ColumnSpan" lg="@ColumnSpan" xl="@ColumnSpan" Style="height: 100%; overflow: auto" Class="px-0">
                         @if (Articles.Count > 0)
                         {
-                            <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedArticle" SelectedValueChanged="SelectedArticleChanged" Dense="true">
+                            <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedArticle" SelectedValueChanged="SelectedArticleChanged" Dense="true" data-test-id="@TestIdHelper.For("RssArticleListDesktop")">
                                 @foreach (var article in Articles)
                                 {
                                     <MudListItem Text="@article.Title"
                                                  Value="article.Id"
                                                  @key="article.Id"
+                                                 data-test-id="@TestIdHelper.For($"RssArticle-{article.Id}")"
                                                  Class="@GetArticleCssClass(article)"
                                                  Icon="@Icons.Material.Filled.Check"
                                                  IconColor="@(article.IsRead ? Color.Success : Color.Transparent)"
@@ -126,18 +131,18 @@
                     <MudItem xs="@ColumnSpan" sm="@ColumnSpan" md="@ColumnSpan" lg="@ColumnSpan" xl="@ColumnSpan" Style="height: 100%" Class="px-0">
                         @if (Article is not null)
                         {
-                            <MudCard>
+                            <MudCard data-test-id="@TestIdHelper.For("RssArticleDetailsDesktop")">
                                 <MudCardHeader>
                                     <CardHeaderContent>
                                         <MudText Typo="Typo.h6" Style="overflow-wrap: anywhere">@Article.Title</MudText>
                                     </CardHeaderContent>
                                     <CardHeaderActions>
-                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense>
-                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="@WebUiLocalizer.Translate("RSSWidget", "Download torrent")">@WebUiLocalizer.Translate("RSSWidget", "Download torrent")</MudMenuItem>
-                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="@WebUiLocalizer.Translate("RSSWidget", "Open link")">@WebUiLocalizer.Translate("RSSWidget", "Open link")</MudMenuItem>
+                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense data-test-id="@TestIdHelper.For("RssArticleActionsDesktop")">
+                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="@WebUiLocalizer.Translate("RSSWidget", "Download torrent")" data-test-id="@TestIdHelper.For("RssDownloadTorrentDesktop")">@WebUiLocalizer.Translate("RSSWidget", "Download torrent")</MudMenuItem>
+                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="@WebUiLocalizer.Translate("RSSWidget", "Open link")" data-test-id="@TestIdHelper.For("RssOpenTorrentLinkDesktop")">@WebUiLocalizer.Translate("RSSWidget", "Open link")</MudMenuItem>
                                             @if (!string.IsNullOrWhiteSpace(Article.Link))
                                             {
-                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link">@WebUiLocalizer.Translate("RSSWidget", "Open news URL")</MudMenuItem>
+                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link" data-test-id="@TestIdHelper.For("RssOpenNewsUrlDesktop")">@WebUiLocalizer.Translate("RSSWidget", "Open news URL")</MudMenuItem>
                                             }
                                         </MudMenu>
                                     </CardHeaderActions>
@@ -164,12 +169,14 @@
                                     <div class="rss-slider__pane-content">
                                         <div class="rss-feed-list-container"
                                              tabindex="0"
+                                             data-test-id="@TestIdHelper.For("RssFeedListContainerMobile")"
                                              @oncontextmenu="ShowFeedContextMenuFromContainer"
                                              @oncontextmenu:preventDefault="true">
                                             <MudList T="RssTreeNode"
                                                      Dense="true"
                                                      Gutters="false"
                                                      Class="rss-feed-list"
+                                                     data-test-id="@TestIdHelper.For("RssFeedListMobile")"
                                                      SelectionMode="SelectionMode.SingleSelection"
                                                      SelectedValue="_selectedNode"
                                                      SelectedValueChanged="SelectNode">
@@ -178,6 +185,7 @@
                                                     var node = item.Node;
                                                     <MudListItem @key="GetNodeKey(node)"
                                                                  Value="node"
+                                                                 data-test-id="@TestIdHelper.For($"RssFeedNode-{GetNodeKey(node)}")"
                                                                  Class="@($"rss-feed-list__item {GetNodeCssClass(node)}")"
                                                                  Style="@($"padding-left: {item.Depth * 20 + 12}px")">
                                                         <div class="rss-feed-list__item-content"
@@ -197,18 +205,19 @@
                                     @if (ShowBackToFeedsFromArticles)
                                     {
                                         <div class="rss-back-button-container">
-                                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="ShowFeedsPanel" Class="rss-back-button">Feeds</MudButton>
+                                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="ShowFeedsPanel" Class="rss-back-button" data-test-id="@TestIdHelper.For("RssBackToFeeds")">Feeds</MudButton>
                                         </div>
                                     }
                                     <div class="rss-slider__pane-content @(ShowBackToFeedsFromArticles ? "rss-slider__pane-content--with-back" : string.Empty)">
                                         @if (Articles.Count > 0)
                                         {
-                                            <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedArticle" SelectedValueChanged="SelectedArticleChanged" Dense="true" Gutters="false">
+                                            <MudList T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="SelectedArticle" SelectedValueChanged="SelectedArticleChanged" Dense="true" Gutters="false" data-test-id="@TestIdHelper.For("RssArticleListMobile")">
                                                 @foreach (var article in Articles)
                                                 {
                                                     <MudListItem Text="@article.Title"
                                                                  Value="article.Id"
                                                                  @key="article.Id"
+                                                                 data-test-id="@TestIdHelper.For($"RssArticle-{article.Id}")"
                                                                  Class="@GetArticleCssClass(article)"
                                                                  Icon="@Icons.Material.Filled.Check"
                                                                  IconColor="@(article.IsRead ? Color.Success : Color.Transparent)"
@@ -226,22 +235,22 @@
                                     <div class="rss-slider__pane-content">
                                         @if (ShowBackToArticlesFromDetails)
                                         {
-                                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="ShowArticlesPanel" Class="rss-back-button">Articles</MudButton>
+                                            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="ShowArticlesPanel" Class="rss-back-button" data-test-id="@TestIdHelper.For("RssBackToArticles")">Articles</MudButton>
                                         }
                                         @if (Article is not null)
                                         {
-                                            <MudCard>
+                                            <MudCard data-test-id="@TestIdHelper.For("RssArticleDetailsMobile")">
                                                 <MudCardHeader>
                                                     <CardHeaderContent>
                                                         <MudText Typo="Typo.h6" Style="overflow-wrap: anywhere">@Article.Title</MudText>
                                                     </CardHeaderContent>
                                                     <CardHeaderActions>
-                                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense>
-                                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="@WebUiLocalizer.Translate("RSSWidget", "Download torrent")">@WebUiLocalizer.Translate("RSSWidget", "Download torrent")</MudMenuItem>
-                                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="@WebUiLocalizer.Translate("RSSWidget", "Open link")">@WebUiLocalizer.Translate("RSSWidget", "Open link")</MudMenuItem>
+                                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense data-test-id="@TestIdHelper.For("RssArticleActionsMobile")">
+                                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="@WebUiLocalizer.Translate("RSSWidget", "Download torrent")" data-test-id="@TestIdHelper.For("RssDownloadTorrentMobile")">@WebUiLocalizer.Translate("RSSWidget", "Download torrent")</MudMenuItem>
+                                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="@WebUiLocalizer.Translate("RSSWidget", "Open link")" data-test-id="@TestIdHelper.For("RssOpenTorrentLinkMobile")">@WebUiLocalizer.Translate("RSSWidget", "Open link")</MudMenuItem>
                                                             @if (!string.IsNullOrWhiteSpace(Article.Link))
                                                             {
-                                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link">@WebUiLocalizer.Translate("RSSWidget", "Open news URL")</MudMenuItem>
+                                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link" data-test-id="@TestIdHelper.For("RssOpenNewsUrlMobile")">@WebUiLocalizer.Translate("RSSWidget", "Open news URL")</MudMenuItem>
                                                             }
                                                         </MudMenu>
                                                     </CardHeaderActions>

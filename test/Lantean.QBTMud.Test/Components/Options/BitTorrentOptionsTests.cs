@@ -272,6 +272,73 @@ namespace Lantean.QBTMud.Test.Components.Options
             events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
         }
 
+        [Fact]
+        public void GIVEN_ValidationDelegates_WHEN_InvalidValuesProvided_THEN_ShouldReturnValidationMessages()
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var preferences = DeserializePreferences();
+            var target = TestContext.Render<BitTorrentOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var maxActiveDownloadsValidation = FindNumericInt(target, "MaxActiveDownloads").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            maxActiveDownloadsValidation(-2).Should().Be("Maximum active downloads must be greater than -1.");
+            maxActiveDownloadsValidation(0).Should().BeNull();
+
+            var maxActiveUploadsValidation = FindNumericInt(target, "MaxActiveUploads").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            maxActiveUploadsValidation(-2).Should().Be("Maximum active uploads must be greater than -1.");
+            maxActiveUploadsValidation(0).Should().BeNull();
+
+            var maxActiveTorrentsValidation = FindNumericInt(target, "MaxActiveTorrents").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            maxActiveTorrentsValidation(-2).Should().Be("Maximum active torrents must be greater than -1.");
+            maxActiveTorrentsValidation(0).Should().BeNull();
+
+            var dlThresholdValidation = FindNumericInt(target, "SlowTorrentDlRateThreshold").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            dlThresholdValidation(0).Should().Be("Download rate threshold must be greater than 0.");
+            dlThresholdValidation(1).Should().BeNull();
+
+            var ulThresholdValidation = FindNumericInt(target, "SlowTorrentUlRateThreshold").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            ulThresholdValidation(0).Should().Be("Upload rate threshold must be greater than 0.");
+            ulThresholdValidation(1).Should().BeNull();
+
+            var inactiveTimerValidation = FindNumericInt(target, "SlowTorrentInactiveTimer").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            inactiveTimerValidation(0).Should().Be("Torrent inactivity timer must be greater than 0.");
+            inactiveTimerValidation(1).Should().BeNull();
+
+            var ratioValidation = FindNumericFloat(target, "MaxRatio").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            ratioValidation(-1).Should().Be("Share ratio limit must be between 0 and 9998.");
+            ratioValidation(9999).Should().Be("Share ratio limit must be between 0 and 9998.");
+            ratioValidation(100).Should().BeNull();
+
+            var maxSeedingValidation = FindNumericInt(target, "MaxSeedingTime").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            maxSeedingValidation(-1).Should().Be("Seeding time limit must be between 0 and 525600 minutes.");
+            maxSeedingValidation(525601).Should().Be("Seeding time limit must be between 0 and 525600 minutes.");
+            maxSeedingValidation(10).Should().BeNull();
+
+            var maxInactiveValidation = FindNumericInt(target, "MaxInactiveSeedingTime").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            maxInactiveValidation(-1).Should().Be("Seeding time limit must be between 0 and 525600 minutes.");
+            maxInactiveValidation(525601).Should().Be("Seeding time limit must be between 0 and 525600 minutes.");
+            maxInactiveValidation(10).Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldNotPopulateValuesOrThrow()
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var target = TestContext.Render<BitTorrentOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindSwitch(target, "Dht").Instance.Value.Should().BeNull();
+            FindNumericInt(target, "MaxActiveCheckingTorrents").Instance.Value.Should().Be(0);
+        }
+
         private static Preferences DeserializePreferences()
         {
             const string json = """

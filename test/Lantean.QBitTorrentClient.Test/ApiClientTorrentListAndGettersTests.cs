@@ -71,6 +71,29 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_BooleanFlagsFalseAndTrueMix_WHEN_GetTorrentList_THEN_ShouldSerializeExpectedBooleanValues()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.AbsolutePath.Should().Be("/torrents/info");
+                req.RequestUri!.Query.Should().Be("?private=false&includeFiles=true&includeTrackers=false");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("[]")
+                });
+            };
+
+            var result = await _target.GetTorrentList(
+                isPrivate: false,
+                includeFiles: true,
+                includeTrackers: false);
+
+            result.Should().NotBeNull();
+            result.Count.Should().Be(0);
+        }
+
+        [Fact]
         public async Task GIVEN_Response_WHEN_GetTorrentCount_THEN_ShouldParseInteger()
         {
             _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
