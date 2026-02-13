@@ -13,10 +13,10 @@
     }
     else
     {
-        <MudTooltip Text="@freeSpaceFullText" data-test-id="@TestIdHelper.For("Status-FreeSpaceTooltip")">
+        <Tooltip Text="@freeSpaceFullText" data-test-id="@TestIdHelper.For("Status-FreeSpaceTooltip")">
             <MudText Class="mr-2 d-none d-sm-flex"
                      data-test-id="@TestIdHelper.For("Status-FreeSpace")">@freeSpaceText</MudText>
-        </MudTooltip>
+        </Tooltip>
     }
     @{
         var externalIpFullText = Preferences?.StatusBarExternalIp == true
@@ -36,10 +36,10 @@
         }
         else
         {
-            <MudTooltip Text="@externalIpFullText" data-test-id="@TestIdHelper.For("Status-ExternalIpTooltip")">
+            <Tooltip Text="@externalIpFullText" data-test-id="@TestIdHelper.For("Status-ExternalIpTooltip")">
                 <MudText Class="mx-2 d-none d-sm-flex"
                          data-test-id="@TestIdHelper.For("Status-ExternalIp")">@externalIpText</MudText>
-            </MudTooltip>
+            </Tooltip>
         }
     }
     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
@@ -55,36 +55,36 @@
     }
     else
     {
-        <MudTooltip Text="@dhtNodesFullText" data-test-id="@TestIdHelper.For("Status-DhtNodesTooltip")">
+        <Tooltip Text="@dhtNodesFullText" data-test-id="@TestIdHelper.For("Status-DhtNodesTooltip")">
             <MudText Class="mx-2 d-none d-sm-flex"
                      data-test-id="@TestIdHelper.For("Status-DhtNodes")">@dhtNodesText</MudText>
-        </MudTooltip>
+        </Tooltip>
     }
     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
     @{
         var (icon, colour) = GetConnectionIcon(MainData?.ServerState.ConnectionStatus);
         var connectionTitle = BuildConnectionStatusTitle(MainData?.ServerState.ConnectionStatus);
     }
-    <MudTooltip Text="@connectionTitle" data-test-id="@TestIdHelper.For("Status-ConnectionTooltip")">
+    <Tooltip Text="@connectionTitle" data-test-id="@TestIdHelper.For("Status-ConnectionTooltip")">
         <MudIcon Class="mx-1" Icon="@icon" Color="@colour" data-test-id="@TestIdHelper.For("Status-ConnectionIcon")" />
-    </MudTooltip>
+    </Tooltip>
     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
-    <MudTooltip Text="@BuildTimerTooltip()" data-test-id="@TestIdHelper.For("Status-TimerTooltip")">
+    <Tooltip Text="@BuildTimerTooltip()" data-test-id="@TestIdHelper.For("Status-TimerTooltip")">
         <MudIconButton Class="mx-1"
                        Icon="@GetTimerStatusIcon()"
                        Color="@GetTimerStatusColor()"
                        OnClick="ToggleTimerDrawerClicked"
                        data-test-id="@TestIdHelper.For("Status-TimerButton")" />
-    </MudTooltip>
+    </Tooltip>
     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
-    <MudTooltip Text="@BuildAlternativeSpeedLimitsTooltip()" data-test-id="@TestIdHelper.For("Status-AltSpeedTooltip")">
+    <Tooltip Text="@BuildAlternativeSpeedLimitsTooltip()" data-test-id="@TestIdHelper.For("Status-AltSpeedTooltip")">
         <MudIconButton Class="@($"mx-1{((MainData?.ServerState.UseAltSpeedLimits ?? false) ? " app-shell__alt-speed-enabled" : string.Empty)}")"
                        Icon="@Icons.Material.Outlined.Speed"
                        Color="@((MainData?.ServerState.UseAltSpeedLimits ?? false) ? Color.Error : Color.Success)"
                        OnClick="ToggleAlternativeSpeedLimitsClicked"
                        Disabled="ToggleAlternativeSpeedLimitsInProgress"
                        data-test-id="@TestIdHelper.For("Status-AltSpeedButton")" />
-    </MudTooltip>
+    </Tooltip>
     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
     <MudSpacer />
     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />

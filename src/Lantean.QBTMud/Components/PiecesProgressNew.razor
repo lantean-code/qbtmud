@@ -3,7 +3,7 @@
 
 <MudPaper Class="pieces-progress-new" Elevation="1">
         <MudStack Spacing="1">
-            <MudTooltip Text="@LinearTooltip" Placement="Placement.Top">
+            <Tooltip Text="@LinearTooltip" Placement="Placement.Top">
                 <div class="pieces-progress-new__linear" role="button" tabindex="0" aria-expanded="@_showHeatmap.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" @onclick="ToggleHeatmap" @onkeydown="HandleLinearKeyDown" @onkeydown:preventDefault="true">
                     <div class="pieces-progress-new__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
                     <div class="pieces-progress-new__linear-overlay">
@@ -11,7 +11,7 @@
                         <MudIcon Icon="@ToggleIcon" Class="pieces-progress-new__icon" />
                     </div>
                 </div>
-            </MudTooltip>
+            </Tooltip>
 
             <MudCollapse Expanded="@_showHeatmap">
                 <MudPaper Class="pieces-progress-new__heatmap" Elevation="0">
@@ -36,7 +36,7 @@
                                     }
                                     else
                                     {
-                                        <MudTooltip Text="@cell.Tooltip" Placement="Placement.Top">
+                                        <Tooltip Text="@cell.Tooltip" Placement="Placement.Top">
                                             <div class="pieces-progress-new__cell" role="gridcell" aria-label="@cell.Tooltip">
                                                 <div class="pieces-progress-new__cell-inner @cell.LayoutClass">
                                                     @foreach (var segment in cell.Segments)
@@ -45,7 +45,7 @@
                                                     }
                                                 </div>
                                             </div>
-                                        </MudTooltip>
+                                        </Tooltip>
                                     }
                                 }
                             }

@@ -74,13 +74,13 @@
                            OnClick="UpdateAll"
                            data-test-id="@TestIdHelper.For("SearchPluginUpdateAll")">@WebUiLocalizer.Translate("PluginSelectDlg", "Check for updates")</MudButton>
                 <MudSpacer />
-                <MudTooltip Text="@WebUiLocalizer.Translate("AppTemp", "Refresh plugins")">
+                <Tooltip Text="@WebUiLocalizer.Translate("AppTemp", "Refresh plugins")">
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh"
                                    Color="Color.Default"
                                    Disabled="OperationInProgress"
                                    OnClick="RefreshPlugins"
                                    data-test-id="@TestIdHelper.For("SearchPluginRefresh")" />
-                </MudTooltip>
+                </Tooltip>
             </MudStack>
         </MudPaper>
         <MudTable T="Lantean.QBitTorrentClient.Models.SearchPlugin"
