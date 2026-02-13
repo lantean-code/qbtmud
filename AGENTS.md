@@ -25,8 +25,10 @@
   - `dotnet build  --artifacts-path=/tmp/artifacts/qbtmud`
 - Run tests:
   - `dotnet test --artifacts-path=/tmp/artifacts/qbtmud`
-- After each set of changes:
+- After each behavior-affecting set of changes:
   - Run `dotnet test --artifacts-path=/tmp/artifacts/qbtmud`.
+  - Behavior-affecting includes edits to production code, test code, project/package/build configuration, or other runtime-impacting assets.
+  - Docs-only/report-only/markdown-only edits do not require restore/build/test unless explicitly requested.
 
 ## Coding and test standards
 - Source code rules and generation constraints live in `./src/AGENTS.md` (authoritative for code style, design, docs).

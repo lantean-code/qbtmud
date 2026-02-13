@@ -46,7 +46,8 @@
 - Use CRLF line terminators for any files you write or modify.
 ## Test Execution
 
-- After each set of changes, follow the test execution instructions in `AGENTS.md`.
+- After each behavior-affecting set of changes, follow the test execution instructions in `AGENTS.md`.
+- If the change is docs-only/report-only/markdown-only and does not affect behavior, test execution is optional unless explicitly requested.
 
 ## Anti-Smell Rules
 
