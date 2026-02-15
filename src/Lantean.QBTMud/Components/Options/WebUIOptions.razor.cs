@@ -58,7 +58,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 1 || value > MaxPortValue)
             {
-                return WebUiLocalizer.Translate("HttpServer", "The port used for the WebUI must be between 1 and 65535.");
+                return LanguageLocalizer.Translate("HttpServer", "The port used for the WebUI must be between 1 and 65535.");
             }
 
             return null;
@@ -68,7 +68,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value is null || value.Length < 3)
             {
-                return WebUiLocalizer.Translate("OptionsDialog", "The WebUI username must be at least 3 characters long.");
+                return LanguageLocalizer.Translate("OptionsDialog", "The WebUI username must be at least 3 characters long.");
             }
 
             return null;
@@ -78,7 +78,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value is null || value.Length < 6)
             {
-                return WebUiLocalizer.Translate("OptionsDialog", "The WebUI password must be at least 6 characters long.");
+                return LanguageLocalizer.Translate("OptionsDialog", "The WebUI password must be at least 6 characters long.");
             }
 
             return null;
@@ -96,7 +96,7 @@ namespace Lantean.QBTMud.Components.Options
                 return null;
             }
 
-            return WebUiLocalizer.Translate("OptionsDialog", "HTTPS certificate should not be empty.");
+            return LanguageLocalizer.Translate("OptionsDialog", "HTTPS certificate should not be empty.");
         }
 
         protected string? WebUiHttpsKeyPathValidationFunc(string? value)
@@ -111,7 +111,7 @@ namespace Lantean.QBTMud.Components.Options
                 return null;
             }
 
-            return WebUiLocalizer.Translate("OptionsDialog", "HTTPS key should not be empty.");
+            return LanguageLocalizer.Translate("OptionsDialog", "HTTPS key should not be empty.");
         }
 
         protected string? AlternativeWebuiPathValidationFunc(string? value)
@@ -126,7 +126,7 @@ namespace Lantean.QBTMud.Components.Options
                 return null;
             }
 
-            return WebUiLocalizer.Translate("OptionsDialog", "The alternative WebUI files location cannot be blank.");
+            return LanguageLocalizer.Translate("OptionsDialog", "The alternative WebUI files location cannot be blank.");
         }
 
         protected override bool SetOptions()

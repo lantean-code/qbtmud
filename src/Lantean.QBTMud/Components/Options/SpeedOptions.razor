@@ -3,16 +3,16 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Global Rate Limits")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Global Rate Limits")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Upload:")" Value="UpLimit" ValueChanged="UpLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "KiB/s")" HelperText="@WebUiLocalizer.Translate("OptionsDialog", "0 means unlimited")" Validation="UpLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("UpLimit")" />
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Upload:")" Value="UpLimit" ValueChanged="UpLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("OptionsDialog", "KiB/s")" HelperText="@LanguageLocalizer.Translate("OptionsDialog", "0 means unlimited")" Validation="UpLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("UpLimit")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Download:")" Value="DlLimit" ValueChanged="DlLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "KiB/s")" HelperText="@WebUiLocalizer.Translate("OptionsDialog", "0 means unlimited")" Validation="DlLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DlLimit")" />
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Download:")" Value="DlLimit" ValueChanged="DlLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("OptionsDialog", "KiB/s")" HelperText="@LanguageLocalizer.Translate("OptionsDialog", "0 means unlimited")" Validation="DlLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DlLimit")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -21,38 +21,38 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Alternative Rate Limits")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Alternative Rate Limits")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Upload:")" Value="AltUpLimit" ValueChanged="AltUpLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "KiB/s")" HelperText="@WebUiLocalizer.Translate("OptionsDialog", "0 means unlimited")" Validation="AltUpLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AltUpLimit")" />
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Upload:")" Value="AltUpLimit" ValueChanged="AltUpLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("OptionsDialog", "KiB/s")" HelperText="@LanguageLocalizer.Translate("OptionsDialog", "0 means unlimited")" Validation="AltUpLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AltUpLimit")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Download:")" Value="AltDlLimit" ValueChanged="AltDlLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "KiB/s")" HelperText="@WebUiLocalizer.Translate("OptionsDialog", "0 means unlimited")" Validation="AltDlLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AltDlLimit")" />
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Download:")" Value="AltDlLimit" ValueChanged="AltDlLimitChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("OptionsDialog", "KiB/s")" HelperText="@LanguageLocalizer.Translate("OptionsDialog", "0 means unlimited")" Validation="AltDlLimitValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AltDlLimit")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Schedule the use of alternative rate limits")" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" data-test-id="@TestIdHelper.For("SchedulerEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Schedule the use of alternative rate limits")" Value="SchedulerEnabled" ValueChanged="SchedulerEnabledChanged" data-test-id="@TestIdHelper.For("SchedulerEnabled")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTimePicker Label="@WebUiLocalizer.Translate("OptionsDialog", "From:")" Editable="true" Time="ScheduleFrom" TimeChanged="ScheduleFromChanged" Disabled="@(SchedulerEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ScheduleFrom")" />
+                <MudTimePicker Label="@LanguageLocalizer.Translate("OptionsDialog", "From:")" Editable="true" Time="ScheduleFrom" TimeChanged="ScheduleFromChanged" Disabled="@(SchedulerEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ScheduleFrom")" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudTimePicker Label="@WebUiLocalizer.Translate("OptionsDialog", "To:")" Editable="true" Time="ScheduleTo" TimeChanged="ScheduleToChanged" Disabled="@(SchedulerEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ScheduleTo")" />
+                <MudTimePicker Label="@LanguageLocalizer.Translate("OptionsDialog", "To:")" Editable="true" Time="ScheduleTo" TimeChanged="ScheduleToChanged" Disabled="@(SchedulerEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ScheduleTo")" />
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="int" Value="SchedulerDays" ValueChanged="SchedulerDaysChanged" Disabled="@(SchedulerEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("SchedulerDays")">
-                    <MudSelectItem Value="0">@WebUiLocalizer.Translate("OptionsDialog", "Every day")</MudSelectItem>
-                    <MudSelectItem Value="1">@WebUiLocalizer.Translate("OptionsDialog", "Weekdays")</MudSelectItem>
-                    <MudSelectItem Value="2">@WebUiLocalizer.Translate("OptionsDialog", "Weekends")</MudSelectItem>
-                    <MudSelectItem Value="3">@WebUiLocalizer.Translate("HttpServer", "Monday")</MudSelectItem>
-                    <MudSelectItem Value="4">@WebUiLocalizer.Translate("HttpServer", "Tuesday")</MudSelectItem>
-                    <MudSelectItem Value="5">@WebUiLocalizer.Translate("HttpServer", "Wednesday")</MudSelectItem>
-                    <MudSelectItem Value="6">@WebUiLocalizer.Translate("HttpServer", "Thursday")</MudSelectItem>
-                    <MudSelectItem Value="7">@WebUiLocalizer.Translate("HttpServer", "Friday")</MudSelectItem>
-                    <MudSelectItem Value="8">@WebUiLocalizer.Translate("HttpServer", "Saturday")</MudSelectItem>
-                    <MudSelectItem Value="9">@WebUiLocalizer.Translate("HttpServer", "Sunday")</MudSelectItem>
+                    <MudSelectItem Value="0">@LanguageLocalizer.Translate("OptionsDialog", "Every day")</MudSelectItem>
+                    <MudSelectItem Value="1">@LanguageLocalizer.Translate("OptionsDialog", "Weekdays")</MudSelectItem>
+                    <MudSelectItem Value="2">@LanguageLocalizer.Translate("OptionsDialog", "Weekends")</MudSelectItem>
+                    <MudSelectItem Value="3">@LanguageLocalizer.Translate("HttpServer", "Monday")</MudSelectItem>
+                    <MudSelectItem Value="4">@LanguageLocalizer.Translate("HttpServer", "Tuesday")</MudSelectItem>
+                    <MudSelectItem Value="5">@LanguageLocalizer.Translate("HttpServer", "Wednesday")</MudSelectItem>
+                    <MudSelectItem Value="6">@LanguageLocalizer.Translate("HttpServer", "Thursday")</MudSelectItem>
+                    <MudSelectItem Value="7">@LanguageLocalizer.Translate("HttpServer", "Friday")</MudSelectItem>
+                    <MudSelectItem Value="8">@LanguageLocalizer.Translate("HttpServer", "Saturday")</MudSelectItem>
+                    <MudSelectItem Value="9">@LanguageLocalizer.Translate("HttpServer", "Sunday")</MudSelectItem>
                 </MudSelect>
             </MudItem>
         </MudGrid>
@@ -62,19 +62,19 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Rate Limits Settings")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Rate Limits Settings")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Apply rate limit to µTP protocol")" Value="LimitUtpRate" ValueChanged="LimitUtpRateChanged" data-test-id="@TestIdHelper.For("LimitUtpRate")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Apply rate limit to µTP protocol")" Value="LimitUtpRate" ValueChanged="LimitUtpRateChanged" data-test-id="@TestIdHelper.For("LimitUtpRate")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Apply rate limit to transport overhead")" Value="LimitTcpOverhead" ValueChanged="LimitTcpOverheadChanged" data-test-id="@TestIdHelper.For("LimitTcpOverhead")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Apply rate limit to transport overhead")" Value="LimitTcpOverhead" ValueChanged="LimitTcpOverheadChanged" data-test-id="@TestIdHelper.For("LimitTcpOverhead")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Apply rate limit to peers on LAN")" Value="LimitLanPeers" ValueChanged="LimitLanPeersChanged" data-test-id="@TestIdHelper.For("LimitLanPeers")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Apply rate limit to peers on LAN")" Value="LimitLanPeers" ValueChanged="LimitLanPeersChanged" data-test-id="@TestIdHelper.For("LimitLanPeers")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

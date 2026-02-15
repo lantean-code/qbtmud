@@ -27,12 +27,12 @@ namespace Lantean.QBTMud.Components.Options
 
         protected bool? PerformanceWarning { get; set; }
 
-        protected IReadOnlyList<WebUiLanguageCatalogItem> LanguageOptions { get; private set; } = Array.Empty<WebUiLanguageCatalogItem>();
+        protected IReadOnlyList<LanguageCatalogItem> LanguageOptions { get; private set; } = Array.Empty<LanguageCatalogItem>();
 
         protected override async Task OnInitializedAsync()
         {
-            await WebUiLanguageCatalog.EnsureInitialized();
-            LanguageOptions = WebUiLanguageCatalog.Languages;
+            await LanguageCatalog.EnsureInitialized();
+            LanguageOptions = LanguageCatalog.Languages;
         }
 
         protected override bool SetOptions()

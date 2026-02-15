@@ -18,10 +18,12 @@ namespace Lantean.QBTMud.Test.Infrastructure
         private const string ApiClientName = "API";
 
         private static readonly Uri _baseAddress = new Uri("http://localhost:8080");
+
         private static readonly IReadOnlyDictionary<string, object?> _defaultLocalStorageValues = new Dictionary<string, object?>
         {
             [WelcomeWizardStorageKeys.Completed] = true
         };
+
         private readonly TestHttpMessageHandler _httpHandler;
         private readonly TestLocalStorageService _localStorage;
         private readonly TestSessionStorageService _sessionStorage;
@@ -93,18 +95,18 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
             Services.AddTransient<IKeyboardService, KeyboardService>();
 
-            var webUiLocalizer = Mock.Of<IWebUiLocalizer>();
-            var localizerMock = Mock.Get(webUiLocalizer);
+            var languageLocalizer = Mock.Of<ILanguageLocalizer>();
+            var localizerMock = Mock.Get(languageLocalizer);
             localizerMock
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] __) => source);
-            Services.AddSingleton(webUiLocalizer);
+            Services.AddSingleton(languageLocalizer);
 
-            var languageCatalog = Mock.Of<IWebUiLanguageCatalog>();
+            var languageCatalog = Mock.Of<ILanguageCatalog>();
             var languageCatalogMock = Mock.Get(languageCatalog);
             languageCatalogMock
                 .Setup(catalog => catalog.Languages)
-                .Returns(new List<WebUiLanguageCatalogItem> { new("en", "English") });
+                .Returns(new List<LanguageCatalogItem> { new("en", "English") });
             languageCatalogMock
                 .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);

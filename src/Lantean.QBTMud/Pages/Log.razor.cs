@@ -41,7 +41,7 @@ namespace Lantean.QBTMud.Pages
         protected ISnackbar Snackbar { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -91,7 +91,7 @@ namespace Lantean.QBTMud.Pages
         {
             if (values.Count == 4)
             {
-                return WebUiLocalizer.Translate("ExecutionLogWidget", "All");
+                return LanguageLocalizer.Translate("ExecutionLogWidget", "All");
             }
 
             if (values.Count == 1)
@@ -99,7 +99,7 @@ namespace Lantean.QBTMud.Pages
                 return GetLogLevelLabel(values[0]);
             }
 
-            return $"{values.Count} {WebUiLocalizer.Translate("ExecutionLogWidget", "items")}";
+            return $"{values.Count} {LanguageLocalizer.Translate("ExecutionLogWidget", "items")}";
         }
 
         protected Task Submit(EditContext editContext)
@@ -228,10 +228,10 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Message"), l => l.Message, id: "message"),
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
-                new ColumnDefinition<QBitTorrentClient.Models.Log>(WebUiLocalizer.Translate("ExecutionLogWidget", "Log Type"), l => l.Type, id: "log_type"),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "Message"), l => l.Message, id: "message"),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
+                new ColumnDefinition<QBitTorrentClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "Log Type"), l => l.Type, id: "log_type"),
             ];
         }
 
@@ -239,10 +239,10 @@ namespace Lantean.QBTMud.Pages
         {
             return value switch
             {
-                "Normal" => WebUiLocalizer.Translate("ExecutionLogWidget", "Normal Messages"),
-                "Info" => WebUiLocalizer.Translate("ExecutionLogWidget", "Information Messages"),
-                "Warning" => WebUiLocalizer.Translate("ExecutionLogWidget", "Warning Messages"),
-                "Critical" => WebUiLocalizer.Translate("ExecutionLogWidget", "Critical Messages"),
+                "Normal" => LanguageLocalizer.Translate("ExecutionLogWidget", "Normal Messages"),
+                "Info" => LanguageLocalizer.Translate("ExecutionLogWidget", "Information Messages"),
+                "Warning" => LanguageLocalizer.Translate("ExecutionLogWidget", "Warning Messages"),
+                "Critical" => LanguageLocalizer.Translate("ExecutionLogWidget", "Critical Messages"),
                 _ => value
             };
         }
@@ -260,7 +260,7 @@ namespace Lantean.QBTMud.Pages
 
         private string TranslateLog(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate("AppLog", source, arguments);
+            return LanguageLocalizer.Translate("AppLog", source, arguments);
         }
     }
 }

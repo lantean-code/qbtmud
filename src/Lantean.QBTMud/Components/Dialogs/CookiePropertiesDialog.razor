@@ -5,7 +5,7 @@
         <MudGrid>
             <MudItem xs="12">
                 <MudTextField T="string"
-                              Label="@WebUiLocalizer.Translate("CookiesDialog", "Domain")"
+                              Label="@LanguageLocalizer.Translate("CookiesDialog", "Domain")"
                               @bind-Value="Domain"
                               Variant="Variant.Outlined"
                               ShrinkLabel="true"
@@ -14,7 +14,7 @@
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string"
-                              Label="@WebUiLocalizer.Translate("CookiesDialog", "Path")"
+                              Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
                               @bind-Value="Path"
                               Variant="Variant.Outlined"
                               ShrinkLabel="true"
@@ -23,7 +23,7 @@
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string"
-                              Label="@WebUiLocalizer.Translate("CookiesDialog", "Name")"
+                              Label="@LanguageLocalizer.Translate("CookiesDialog", "Name")"
                               @bind-Value="Name"
                               Required="true"
                               RequiredError="@Translate("Cookie name is required.")"
@@ -34,7 +34,7 @@
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string"
-                              Label="@WebUiLocalizer.Translate("CookiesDialog", "Value")"
+                              Label="@LanguageLocalizer.Translate("CookiesDialog", "Value")"
                               @bind-Value="Value"
                               Variant="Variant.Outlined"
                               ShrinkLabel="true"
@@ -43,7 +43,7 @@
             </MudItem>
             <MudItem xs="12">
                 <MudTextField T="string"
-                              Label="@WebUiLocalizer.Translate("CookiesDialog", "Expiration Date")"
+                              Label="@LanguageLocalizer.Translate("CookiesDialog", "Expiration Date")"
                               @bind-Value="ExpirationInput"
                               InputType="InputType.DateTimeLocal"
                               Validation="@(new Func<string, IEnumerable<string>>(ValidateExpiration))"
@@ -55,7 +55,7 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("CookiePropertiesCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("CookiePropertiesSave")">@WebUiLocalizer.Translate("HttpServer", "Save")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("CookiePropertiesCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("CookiePropertiesSave")">@LanguageLocalizer.Translate("HttpServer", "Save")</MudButton>
     </DialogActions>
 </MudDialog>

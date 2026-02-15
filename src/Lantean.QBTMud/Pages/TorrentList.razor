@@ -11,8 +11,8 @@
 <div class="content-panel">
     <div class="content-panel__toolbar content-panel__toolbar--scroll">
         <MudToolBar Gutters="false" Dense="true">
-            <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="@WebUiLocalizer.Translate("MainWindow", "Add Torrent Link...")" data-test-id="@TestIdHelper.For("TorrentListAddTorrentLink")" />
-            <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="@WebUiLocalizer.Translate("MainWindow", "Add Torrent File...")" data-test-id="@TestIdHelper.For("TorrentListAddTorrentFile")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.AddLink" OnClick="AddTorrentLink" title="@LanguageLocalizer.Translate("MainWindow", "Add Torrent Link...")" data-test-id="@TestIdHelper.For("TorrentListAddTorrentLink")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.AddCircle" OnClick="AddTorrentFile" title="@LanguageLocalizer.Translate("MainWindow", "Add Torrent File...")" data-test-id="@TestIdHelper.For("TorrentListAddTorrentFile")" />
             <MudDivider Vertical="true" />
             <TorrentActions RenderType="RenderType.InitialIconsOnly" Hashes="GetSelectedTorrentsHashes()" Torrents="MainData.Torrents" Preferences="Preferences" Tags="@MainData.Tags" Categories="@MainData.Categories" />
             <MudDivider Vertical="true" />
@@ -20,11 +20,11 @@
             <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="Choose Columns" data-test-id="@TestIdHelper.For("TorrentListColumnOptions")" />
             <MudSpacer />
             <MudSelect T="TorrentFilterField" @bind-Value="SearchField" @bind-Value:after="OnSearchFieldChanged" Dense="true" Class="mt-0 mr-2 filter-field-select" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" data-test-id="@TestIdHelper.For("TorrentListSearchField")">
-                <MudSelectItem Value="TorrentFilterField.Name">@WebUiLocalizer.Translate("TransferListModel", "Name")</MudSelectItem>
-                <MudSelectItem Value="TorrentFilterField.SavePath">@WebUiLocalizer.Translate("TransferListModel", "Save path")</MudSelectItem>
+                <MudSelectItem Value="TorrentFilterField.Name">@LanguageLocalizer.Translate("TransferListModel", "Name")</MudSelectItem>
+                <MudSelectItem Value="TorrentFilterField.SavePath">@LanguageLocalizer.Translate("TransferListModel", "Save path")</MudSelectItem>
             </MudSelect>
             <MudCheckBox T="bool" @bind-Value="UseRegex" @bind-Value:after="OnUseRegexChanged" Label="Regex" Class="mt-0 mr-2" data-test-id="@TestIdHelper.For("TorrentListUseRegex")" />
-            <MudTextField Value="SearchText" TextChanged="SearchTextChanged" Immediate="true" DebounceInterval="1000" Placeholder="@WebUiLocalizer.Translate("MainWindow", "Filter torrent list...")" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Error="@(UseRegex && !IsRegexValid)" ErrorText="@SearchErrorText" data-test-id="@TestIdHelper.For("TorrentListSearchText")"></MudTextField>
+            <MudTextField Value="SearchText" TextChanged="SearchTextChanged" Immediate="true" DebounceInterval="1000" Placeholder="@LanguageLocalizer.Translate("MainWindow", "Filter torrent list...")" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Error="@(UseRegex && !IsRegexValid)" ErrorText="@SearchErrorText" data-test-id="@TestIdHelper.For("TorrentListSearchText")"></MudTextField>
         </MudToolBar>
     </div>
     <div class="content-panel__body">

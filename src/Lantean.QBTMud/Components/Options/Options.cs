@@ -28,7 +28,7 @@ namespace Lantean.QBTMud.Components.Options
         public EventCallback<UpdatePreferences> PreferencesChanged { get; set; }
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         protected Func<int, string?> PortNonNegativeValidation => ValidatePortNonNegative;
 
@@ -59,7 +59,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (port < MinNonNegativePortValue || port > MaxPortValue)
             {
-                return WebUiLocalizer.Translate(HttpServerContext, "The port used for incoming connections must be between 0 and 65535.");
+                return LanguageLocalizer.Translate(HttpServerContext, "The port used for incoming connections must be between 0 and 65535.");
             }
 
             return null;
@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (port < MinPortValue || port > MaxPortValue)
             {
-                return WebUiLocalizer.Translate(AppContext, "The port used for incoming connections must be between %1 and %2.", MinPortValue, MaxPortValue);
+                return LanguageLocalizer.Translate(AppContext, "The port used for incoming connections must be between %1 and %2.", MinPortValue, MaxPortValue);
             }
 
             return null;

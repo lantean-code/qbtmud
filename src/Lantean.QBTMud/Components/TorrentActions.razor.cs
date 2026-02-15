@@ -46,7 +46,7 @@ namespace Lantean.QBTMud.Components
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -1070,12 +1070,12 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateTransferList(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(_transferListContext, source, arguments);
+            return LanguageLocalizer.Translate(_transferListContext, source, arguments);
         }
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(_appContext, source, arguments);
+            return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
 
         public async ValueTask DisposeAsync()

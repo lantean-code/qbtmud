@@ -83,7 +83,7 @@ namespace Lantean.QBTMud.Pages
         protected IClipboardService ClipboardService { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         public MainData? MainData { get; set; }
@@ -186,7 +186,7 @@ namespace Lantean.QBTMud.Pages
             var count = node.UnreadCount;
             if (node.IsUnread)
             {
-                return $"{WebUiLocalizer.Translate("FeedListWidget", "Unread")} ({count})";
+                return $"{LanguageLocalizer.Translate("FeedListWidget", "Unread")} ({count})";
             }
 
             return count > 0
@@ -436,11 +436,11 @@ namespace Lantean.QBTMud.Pages
             }
 
             var title = _contextNode.IsFolder
-                ? WebUiLocalizer.Translate("RSSWidget", "Please choose a folder name")
-                : WebUiLocalizer.Translate("RSSWidget", "Please choose a new name for this RSS feed");
+                ? LanguageLocalizer.Translate("RSSWidget", "Please choose a folder name")
+                : LanguageLocalizer.Translate("RSSWidget", "Please choose a new name for this RSS feed");
             var label = _contextNode.IsFolder
-                ? WebUiLocalizer.Translate("RSSWidget", "Folder name:")
-                : WebUiLocalizer.Translate("RSSWidget", "New feed name:");
+                ? LanguageLocalizer.Translate("RSSWidget", "Folder name:")
+                : LanguageLocalizer.Translate("RSSWidget", "New feed name:");
             var newPath = await DialogWorkflow.ShowStringFieldDialog(title, label, _contextNode.Path);
             if (string.IsNullOrWhiteSpace(newPath) || newPath == _contextNode.Path)
             {
@@ -467,8 +467,8 @@ namespace Lantean.QBTMud.Pages
             }
 
             var newUrl = await DialogWorkflow.ShowStringFieldDialog(
-                WebUiLocalizer.Translate("RSSWidget", "Edit feed URL..."),
-                WebUiLocalizer.Translate("RSSWidget", "Feed URL:"),
+                LanguageLocalizer.Translate("RSSWidget", "Edit feed URL..."),
+                LanguageLocalizer.Translate("RSSWidget", "Feed URL:"),
                 _contextNode.Feed.Url);
             if (string.IsNullOrWhiteSpace(newUrl) || string.Equals(newUrl, _contextNode.Feed.Url, StringComparison.Ordinal))
             {
@@ -482,7 +482,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"{WebUiLocalizer.Translate("RSSWidget", "Unable to update URL")}: {exception.Message}", Severity.Error);
+                Snackbar?.Add($"{LanguageLocalizer.Translate("RSSWidget", "Unable to update URL")}: {exception.Message}", Severity.Error);
             }
         }
 
@@ -494,7 +494,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             var confirmed = await DialogWorkflow.ShowConfirmDialog(
-                WebUiLocalizer.Translate("RSSWidget", "Deletion confirmation"),
+                LanguageLocalizer.Translate("RSSWidget", "Deletion confirmation"),
                 TranslateRss("Remove \"%1\"?", _contextNode.Name));
             if (!confirmed)
             {
@@ -532,8 +532,8 @@ namespace Lantean.QBTMud.Pages
 
             var parentPath = DetermineParentPathForNewFolder(_contextNode);
             var folderName = await DialogWorkflow.ShowStringFieldDialog(
-                WebUiLocalizer.Translate("RSSWidget", "Please choose a folder name"),
-                WebUiLocalizer.Translate("RSSWidget", "Folder name:"),
+                LanguageLocalizer.Translate("RSSWidget", "Please choose a folder name"),
+                LanguageLocalizer.Translate("RSSWidget", "Folder name:"),
                 null);
             if (string.IsNullOrWhiteSpace(folderName))
             {
@@ -600,8 +600,8 @@ namespace Lantean.QBTMud.Pages
         private async Task AddSubscriptionAtNode(RssTreeNode? node)
         {
             var url = await DialogWorkflow.ShowStringFieldDialog(
-                WebUiLocalizer.Translate("RSSWidget", "Please type a RSS feed URL"),
-                WebUiLocalizer.Translate("RSSWidget", "Feed URL:"),
+                LanguageLocalizer.Translate("RSSWidget", "Please type a RSS feed URL"),
+                LanguageLocalizer.Translate("RSSWidget", "Feed URL:"),
                 null);
             if (string.IsNullOrWhiteSpace(url))
             {
@@ -862,7 +862,7 @@ namespace Lantean.QBTMud.Pages
 
         private string TranslateRss(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate("AppRss", source, arguments);
+            return LanguageLocalizer.Translate("AppRss", source, arguments);
         }
 
         private int DetermineColumnCount()

@@ -30,7 +30,7 @@ namespace Lantean.QBTMud.Pages
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -94,8 +94,8 @@ namespace Lantean.QBTMud.Pages
         protected async Task AddTag()
         {
             var tag = await DialogWorkflow.ShowStringFieldDialog(
-                WebUiLocalizer.Translate("TagFilterWidget", "New Tag"),
-                WebUiLocalizer.Translate("TagFilterWidget", "Tag:"),
+                LanguageLocalizer.Translate("TagFilterWidget", "New Tag"),
+                LanguageLocalizer.Translate("TagFilterWidget", "Tag:"),
                 null);
 
             if (tag is null)
@@ -133,14 +133,14 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<string>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l, id: "id"),
+                new ColumnDefinition<string>(LanguageLocalizer.Translate("TransferListModel", "Name"), l => l, id: "id"),
                 new ColumnDefinition<string>(Translate("Actions"), l => l, id: ActionsColumnId)
             ];
         }
 
         private string Translate(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate("AppTags", source, arguments);
+            return LanguageLocalizer.Translate("AppTags", source, arguments);
         }
     }
 }

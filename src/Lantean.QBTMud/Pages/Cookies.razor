@@ -11,9 +11,9 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="@Translate("Back to torrent list")" data-test-id="@TestIdHelper.For("CookiesBack")" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@WebUiLocalizer.Translate("CookiesDialog", "Manage Cookies")</MudText>
+            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("CookiesDialog", "Manage Cookies")</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddCookie" title="@WebUiLocalizer.Translate("CookiesDialog", "Add Cookie")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("CookiesAdd")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddCookie" title="@LanguageLocalizer.Translate("CookiesDialog", "Add Cookie")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("CookiesAdd")" />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Reload" title="@Translate("Refresh")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("CookiesRefresh")" />
         </MudToolBar>
     </div>
@@ -48,7 +48,7 @@
                                    Color="Color.Error"
                                    Disabled="@IsBusy"
                                    OnClick="@(async _ => await DeleteCookie(row))"
-                                   title="@WebUiLocalizer.Translate("CookiesDialog", "Remove")"
+                                   title="@LanguageLocalizer.Translate("CookiesDialog", "Remove")"
                                    data-test-id="@TestIdHelper.For($"CookieDelete-{row.Id}")" />
                 </MudButtonGroup>
                 ;

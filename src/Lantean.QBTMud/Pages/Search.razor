@@ -9,34 +9,34 @@
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
-            <MudText Class="px-5 no-wrap">@WebUiLocalizer.Translate("SearchEngineWidget", "Search")</MudText>
+            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("SearchEngineWidget", "Search")</MudText>
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Filled.Settings"
-                           title="@WebUiLocalizer.Translate("SearchEngineWidget", "Search plugins...")"
+                           title="@LanguageLocalizer.Translate("SearchEngineWidget", "Search plugins...")"
                            OnClick="ManagePlugins"
                            data-test-id="@TestIdHelper.For("ManagePluginsButton")" />
             <MudDivider Vertical="true" />
             <MudIconButton Color="Color.Error"
                            Icon="@Icons.Material.Filled.Stop"
-                           title="@WebUiLocalizer.Translate("SearchEngineWidget", "Stop")"
+                           title="@LanguageLocalizer.Translate("SearchEngineWidget", "Stop")"
                            Disabled="@(ActiveJob?.IsRunning != true)"
                            OnClick="StopActiveJob"
                            data-test-id="@TestIdHelper.For("StopActiveJobButton")" />
             <MudIconButton Color="Color.Primary"
                            Icon="@Icons.Material.Filled.Refresh"
-                           title="@WebUiLocalizer.Translate("SearchJobWidget", "Refresh tab")"
+                           title="@LanguageLocalizer.Translate("SearchJobWidget", "Refresh tab")"
                            Disabled="@(ActiveJob is null)"
                            OnClick="RefreshActiveJob"
                            data-test-id="@TestIdHelper.For("RefreshActiveJobButton")" />
             <MudIconButton Color="Color.Secondary"
                            Icon="@Icons.Material.Filled.Close"
-                           title="@WebUiLocalizer.Translate("SearchJobWidget", "Close tab")"
+                           title="@LanguageLocalizer.Translate("SearchJobWidget", "Close tab")"
                            Disabled="@(ActiveJob is null)"
                            OnClick="CloseActiveJob"
                            data-test-id="@TestIdHelper.For("CloseActiveJobButton")" />
             <MudIconButton Color="Color.Default"
                            Icon="@Icons.Material.Filled.Cancel"
-                           title="@WebUiLocalizer.Translate("SearchJobWidget", "Close all tabs")"
+                           title="@LanguageLocalizer.Translate("SearchJobWidget", "Close all tabs")"
                            Disabled="@(Jobs.Count == 0)"
                            OnClick="CloseAllJobs"
                            data-test-id="@TestIdHelper.For("CloseAllJobsButton")" />
@@ -50,8 +50,8 @@
                      PositionAtCursor="true"
                      ListClass="unselectable"
                      PopoverClass="unselectable">
-                <MudMenuItem Icon="@Icons.Material.Filled.Download" Disabled="@(!HasContextResult)" OnClick="DownloadResultFromContext">@WebUiLocalizer.Translate("SearchJobWidget", "Download")</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.OpenInNew" Disabled="@(!HasContextResult)" OnClick="OpenDescriptionFromContext">@WebUiLocalizer.Translate("SearchJobWidget", "Open description page")</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.Download" Disabled="@(!HasContextResult)" OnClick="DownloadResultFromContext">@LanguageLocalizer.Translate("SearchJobWidget", "Download")</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.OpenInNew" Disabled="@(!HasContextResult)" OnClick="OpenDescriptionFromContext">@LanguageLocalizer.Translate("SearchJobWidget", "Open description page")</MudMenuItem>
                 <MudDivider />
                 <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyNameFromContext">@TranslateCopyAction("Name")</MudMenuItem>
                 <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" Disabled="@(!HasContextResult)" OnClick="CopyDownloadLinkFromContext">@TranslateCopyAction("Download link")</MudMenuItem>
@@ -76,7 +76,7 @@
                             <MudGrid>
                                 <MudItem xs="12" md="4">
                                     <MudTextField T="string"
-                                                  Label="@WebUiLocalizer.Translate("SearchEngineWidget", "Search")"
+                                                  Label="@LanguageLocalizer.Translate("SearchEngineWidget", "Search")"
                                                   Variant="Variant.Outlined"
                                                   ShrinkLabel="true"
                                                   Immediate="true"
@@ -85,7 +85,7 @@
                                 </MudItem>
                                 <MudItem xs="12" md="3">
                                     <MudSelect T="string"
-                                               Label="@WebUiLocalizer.Translate("SearchEngineWidget", "Select category")"
+                                               Label="@LanguageLocalizer.Translate("SearchEngineWidget", "Select category")"
                                                Variant="Variant.Outlined"
                                                ShrinkLabel="true"
                                                Value="@Model.SelectedCategory"
@@ -99,12 +99,12 @@
                                 </MudItem>
                                 <MudItem xs="12" md="3">
                                     <MudSelect T="string"
-                                               Label="@WebUiLocalizer.Translate("SearchEngineWidget", "Select plugins")"
+                                               Label="@LanguageLocalizer.Translate("SearchEngineWidget", "Select plugins")"
                                                Variant="Variant.Outlined"
                                                ShrinkLabel="true"
                                                MultiSelection="true"
                                                SelectAll="true"
-                                               SelectAllText="@WebUiLocalizer.Translate("SearchEngineWidget", "Only enabled")"
+                                               SelectAllText="@LanguageLocalizer.Translate("SearchEngineWidget", "Only enabled")"
                                                SelectedValues="@Model.SelectedPlugins"
                                                SelectedValuesChanged="OnPluginsChanged"
                                                MultiSelectionTextFunc="PluginsSelectionText"
@@ -124,7 +124,7 @@
                                                    EndIcon="@Icons.Material.Filled.Search"
                                                    Variant="Variant.Filled"
                                                    data-test-id="@TestIdHelper.For("StartSearchButton")">
-                                            @WebUiLocalizer.Translate("SearchEngineWidget", "Search")
+                                            @LanguageLocalizer.Translate("SearchEngineWidget", "Search")
                                         </MudButton>
                                         <MudButton FullWidth="true"
                                                    Variant="Variant.Text"
@@ -140,7 +140,7 @@
                                 <MudGrid Class="mt-2">
                                     <MudItem xs="12" md="4">
                                         <MudTextField T="string"
-                                                      Label="@WebUiLocalizer.Translate("SearchEngineWidget", "Filter")"
+                                                      Label="@LanguageLocalizer.Translate("SearchEngineWidget", "Filter")"
                                                       Variant="Variant.Outlined"
                                                       ShrinkLabel="true"
                                                       Value="@Model.FilterText"
@@ -150,19 +150,19 @@
                                     </MudItem>
                                     <MudItem xs="12" md="2">
                                         <MudSelect T="SearchInScope"
-                                                   Label="@WebUiLocalizer.Translate("SearchEngineWidget", "Search in:")"
+                                                   Label="@LanguageLocalizer.Translate("SearchEngineWidget", "Search in:")"
                                                    Variant="Variant.Outlined"
                                                    ShrinkLabel="true"
                                             Value="@Model.SearchIn"
                                             ValueChanged="OnSearchInChanged"
                                             data-test-id="@TestIdHelper.For("SearchInScopeSelect")">
-                                            <MudSelectItem Value="@SearchInScope.Everywhere">@WebUiLocalizer.Translate("SearchEngineWidget", "Everywhere")</MudSelectItem>
-                                            <MudSelectItem Value="@SearchInScope.Names">@WebUiLocalizer.Translate("SearchEngineWidget", "Torrent names only")</MudSelectItem>
+                                            <MudSelectItem Value="@SearchInScope.Everywhere">@LanguageLocalizer.Translate("SearchEngineWidget", "Everywhere")</MudSelectItem>
+                                            <MudSelectItem Value="@SearchInScope.Names">@LanguageLocalizer.Translate("SearchEngineWidget", "Torrent names only")</MudSelectItem>
                                         </MudSelect>
                                     </MudItem>
                                     <MudItem xs="12" md="2">
                                         <MudNumericField T="int?"
-                                                         Label="@WebUiLocalizer.Translate("SearchEngineWidget", "Seeds:")"
+                                                         Label="@LanguageLocalizer.Translate("SearchEngineWidget", "Seeds:")"
                                                          Variant="Variant.Outlined"
                                                          ShrinkLabel="true"
                                                          Min="0"
@@ -173,7 +173,7 @@
                                     </MudItem>
                                     <MudItem xs="12" md="2">
                                         <MudNumericField T="int?"
-                                                         Label="@WebUiLocalizer.Translate("SearchEngineWidget", "to")"
+                                                         Label="@LanguageLocalizer.Translate("SearchEngineWidget", "to")"
                                                          Variant="Variant.Outlined"
                                                          ShrinkLabel="true"
                                                          Min="0"
@@ -186,7 +186,7 @@
                                 <MudGrid Class="mt-2">
                                     <MudItem xs="12" md="3">
                                         <MudNumericField T="double?"
-                                                         Label="@WebUiLocalizer.Translate("SearchEngineWidget", "Size:")"
+                                                         Label="@LanguageLocalizer.Translate("SearchEngineWidget", "Size:")"
                                                          Variant="Variant.Outlined"
                                                          ShrinkLabel="true"
                                                          Min="0"
@@ -197,7 +197,7 @@
                                     </MudItem>
                                     <MudItem xs="12" md="1">
                                         <MudSelect T="SearchSizeUnit"
-                                                   Label="@WebUiLocalizer.Translate("SearchEngineWidget", "Min size prefix")"
+                                                   Label="@LanguageLocalizer.Translate("SearchEngineWidget", "Min size prefix")"
                                                    Variant="Variant.Outlined"
                                                    ShrinkLabel="true"
                                                    Value="@Model.MinimumSizeUnit"
@@ -210,7 +210,7 @@
                                     </MudItem>
                                     <MudItem xs="12" md="3">
                                         <MudNumericField T="double?"
-                                                         Label="@WebUiLocalizer.Translate("SearchEngineWidget", "to")"
+                                                         Label="@LanguageLocalizer.Translate("SearchEngineWidget", "to")"
                                                          Variant="Variant.Outlined"
                                                          ShrinkLabel="true"
                                                          Min="0"
@@ -221,7 +221,7 @@
                                     </MudItem>
                                     <MudItem xs="12" md="1">
                                         <MudSelect T="SearchSizeUnit"
-                                                   Label="@WebUiLocalizer.Translate("SearchEngineWidget", "Max size prefix")"
+                                                   Label="@LanguageLocalizer.Translate("SearchEngineWidget", "Max size prefix")"
                                                    Variant="Variant.Outlined"
                                                    ShrinkLabel="true"
                                                    Value="@Model.MaximumSizeUnit"
@@ -304,7 +304,7 @@
                     <MudStack Spacing="1" Class="text-center">
                         <MudIcon Icon="@Icons.Material.Filled.ManageSearch" Color="Color.Info" Size="Size.Large" />
                         <MudText Typo="Typo.subtitle1"
-                                 data-test-id="@TestIdHelper.For("SearchEmptyStateTitle")">@WebUiLocalizer.Translate("SearchEngineWidget", "Start a search above.")</MudText>
+                                 data-test-id="@TestIdHelper.For("SearchEmptyStateTitle")">@LanguageLocalizer.Translate("SearchEngineWidget", "Start a search above.")</MudText>
                     </MudStack>
                 </MudPaper>
             }

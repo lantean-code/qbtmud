@@ -1,9 +1,9 @@
 @page "/blocks"
 @layout OtherLayout
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" Disabled="@(ContextMenuItem is null)" OnClick="CopyContextMenuItem">@WebUiLocalizer.Translate("ExecutionLogWidget", "Copy")</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" Disabled="@(ContextMenuItem is null)" OnClick="CopyContextMenuItem">@LanguageLocalizer.Translate("ExecutionLogWidget", "Copy")</MudMenuItem>
     <MudDivider />
-    <MudMenuItem Icon="@Icons.Material.Filled.Clear" IconColor="Color.Error" Disabled="@(!HasResults)" OnClick="ClearResults">@WebUiLocalizer.Translate("ExecutionLogWidget", "Clear")</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.Clear" IconColor="Color.Error" Disabled="@(!HasResults)" OnClick="ClearResults">@LanguageLocalizer.Translate("ExecutionLogWidget", "Clear")</MudMenuItem>
 </MudMenu>
 
 <div class="content-panel">
@@ -15,7 +15,7 @@
                 <MudDivider Vertical="true" />
             }
             <MudDivider Vertical="true" />
-            <MudText Class="pl-5 no-wrap">@WebUiLocalizer.Translate("ExecutionLogWidget", "Blocked IPs")</MudText>
+            <MudText Class="pl-5 no-wrap">@LanguageLocalizer.Translate("ExecutionLogWidget", "Blocked IPs")</MudText>
         </MudToolBar>
     </div>
     <div class="content-panel__body">
@@ -24,10 +24,10 @@
                 <EditForm Model="Model" OnSubmit="Submit">
                     <MudGrid>
                         <MudItem md="10">
-                            <MudTextField T="string" Label="@WebUiLocalizer.Translate("ExecutionLogWidget", "Filter logs")" @bind-Value="Model.Criteria" Variant="Variant.Outlined" ShrinkLabel="true" />
+                            <MudTextField T="string" Label="@LanguageLocalizer.Translate("ExecutionLogWidget", "Filter logs")" @bind-Value="Model.Criteria" Variant="Variant.Outlined" ShrinkLabel="true" />
                         </MudItem>
                         <MudItem md="2">
-                            <MudButton ButtonType="ButtonType.Submit" FullWidth="true" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Search" Variant="Variant.Filled" Class="mt-6">@WebUiLocalizer.Translate("SearchEngineWidget", "Filter")</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" FullWidth="true" Color="Color.Primary" EndIcon="@Icons.Material.Filled.Search" Variant="Variant.Filled" Class="mt-6">@LanguageLocalizer.Translate("SearchEngineWidget", "Filter")</MudButton>
                         </MudItem>
                     </MudGrid>
                 </EditForm>

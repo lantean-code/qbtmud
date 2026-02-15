@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Components
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
-        protected Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         protected IReadOnlyList<PieceState> Pieces { get; set; } = [];
 
@@ -201,7 +201,7 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateProperties(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(PropertiesContext, source, arguments);
+            return LanguageLocalizer.Translate(PropertiesContext, source, arguments);
         }
 
         private string FormatWithDetail(string? value, string? detail, string formatKey)

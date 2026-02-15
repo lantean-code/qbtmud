@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Services.Localization
     /// <summary>
     /// Provides access to the WebUI language catalog.
     /// </summary>
-    public sealed class WebUiLanguageCatalog : IWebUiLanguageCatalog
+    public sealed class LanguageCatalog : ILanguageCatalog
     {
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -18,34 +18,34 @@ namespace Lantean.QBTMud.Services.Localization
         };
 
         private readonly HttpClient _httpClient;
-        private readonly ILogger<WebUiLanguageCatalog> _logger;
+        private readonly ILogger<LanguageCatalog> _logger;
         private readonly WebUiLocalizationOptions _options;
         private readonly SemaphoreSlim _initLock;
-        private IReadOnlyList<WebUiLanguageCatalogItem> _languages;
+        private IReadOnlyList<LanguageCatalogItem> _languages;
         private bool _initialized;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="WebUiLanguageCatalog"/> class.
+        /// Initializes a new instance of the <see cref="LanguageCatalog"/> class.
         /// </summary>
         /// <param name="httpClientFactory">The HTTP client factory for loading assets.</param>
         /// <param name="logger">The logger instance.</param>
         /// <param name="options">The localization options.</param>
-        public WebUiLanguageCatalog(
+        public LanguageCatalog(
             IHttpClientFactory httpClientFactory,
-            ILogger<WebUiLanguageCatalog> logger,
+            ILogger<LanguageCatalog> logger,
             IOptions<WebUiLocalizationOptions> options)
         {
             _httpClient = httpClientFactory.CreateClient("WebUiAssets");
             _logger = logger;
             _options = options.Value;
             _initLock = new SemaphoreSlim(1, 1);
-            _languages = Array.Empty<WebUiLanguageCatalogItem>();
+            _languages = Array.Empty<LanguageCatalogItem>();
         }
 
         /// <summary>
         /// Gets the available WebUI languages.
         /// </summary>
-        public IReadOnlyList<WebUiLanguageCatalogItem> Languages
+        public IReadOnlyList<LanguageCatalogItem> Languages
         {
             get { return _languages; }
         }
@@ -114,9 +114,9 @@ namespace Lantean.QBTMud.Services.Localization
             }
         }
 
-        private static IReadOnlyList<WebUiLanguageCatalogItem> BuildCatalog(IEnumerable<string> locales)
+        private static IReadOnlyList<LanguageCatalogItem> BuildCatalog(IEnumerable<string> locales)
         {
-            var items = new List<WebUiLanguageCatalogItem>();
+            var items = new List<LanguageCatalogItem>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var locale in locales)
@@ -131,12 +131,12 @@ namespace Lantean.QBTMud.Services.Localization
                     continue;
                 }
 
-                items.Add(new WebUiLanguageCatalogItem(locale, ResolveDisplayName(locale)));
+                items.Add(new LanguageCatalogItem(locale, ResolveDisplayName(locale)));
             }
 
             if (seen.Add("en"))
             {
-                items.Add(new WebUiLanguageCatalogItem("en", ResolveDisplayName("en")));
+                items.Add(new LanguageCatalogItem("en", ResolveDisplayName("en")));
             }
 
             return items;
@@ -184,6 +184,11 @@ namespace Lantean.QBTMud.Services.Localization
             }
 
             var script = NormalizeScriptTag(scriptPart);
+            if (string.IsNullOrWhiteSpace(script))
+            {
+                return basePart;
+            }
+
             return string.Concat(basePart, "-", script);
         }
 
@@ -204,7 +209,7 @@ namespace Lantean.QBTMud.Services.Localization
                 return string.Concat(char.ToUpperInvariant(script[0]), script.Substring(1).ToLowerInvariant());
             }
 
-            return script;
+            return string.Empty;
         }
     }
 }

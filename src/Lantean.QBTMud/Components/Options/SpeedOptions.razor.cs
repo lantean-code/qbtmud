@@ -27,7 +27,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Global upload rate limit must be greater than 0 or disabled.");
+                return LanguageLocalizer.Translate("HttpServer", "Global upload rate limit must be greater than 0 or disabled.");
             }
 
             return null;
@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Global download rate limit must be greater than 0 or disabled.");
+                return LanguageLocalizer.Translate("HttpServer", "Global download rate limit must be greater than 0 or disabled.");
             }
 
             return null;
@@ -47,7 +47,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Alternative upload rate limit must be greater than 0 or disabled.");
+                return LanguageLocalizer.Translate("HttpServer", "Alternative upload rate limit must be greater than 0 or disabled.");
             }
 
             return null;
@@ -57,7 +57,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Alternative download rate limit must be greater than 0 or disabled.");
+                return LanguageLocalizer.Translate("HttpServer", "Alternative download rate limit must be greater than 0 or disabled.");
             }
 
             return null;

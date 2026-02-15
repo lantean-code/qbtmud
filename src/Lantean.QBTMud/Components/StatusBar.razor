@@ -3,7 +3,7 @@
 <MudAppBar Bottom="true" Dense="true" Class="app-shell__status-bar">
     @{
         var freeSpaceValue = DisplayHelpers.Size(MainData?.ServerState.FreeSpaceOnDisk);
-        var freeSpaceFullText = WebUiLocalizer.Translate("HttpServer", "Free space: %1", freeSpaceValue);
+        var freeSpaceFullText = LanguageLocalizer.Translate("HttpServer", "Free space: %1", freeSpaceValue);
         var freeSpaceText = ShowStatusLabels ? freeSpaceFullText : freeSpaceValue;
     }
     @if (ShowStatusLabels)
@@ -45,7 +45,7 @@
     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" Class="d-none d-sm-flex" />
     @{
         var dhtNodesValue = MainData?.ServerState.DHTNodes ?? 0;
-        var dhtNodesFullText = WebUiLocalizer.Translate("StatusBar", "DHT: %1 nodes", dhtNodesValue);
+        var dhtNodesFullText = LanguageLocalizer.Translate("StatusBar", "DHT: %1 nodes", dhtNodesValue);
         var dhtNodesText = ShowStatusLabels ? dhtNodesFullText : dhtNodesValue.ToString();
     }
     @if (ShowStatusLabels)

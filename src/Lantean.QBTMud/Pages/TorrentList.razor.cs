@@ -39,7 +39,7 @@ namespace Lantean.QBTMud.Pages
         public ISnackbar Snackbar { get; set; } = default!;
 
         [Inject]
-        public IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        public ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
@@ -305,7 +305,7 @@ namespace Lantean.QBTMud.Pages
             catch (ArgumentException)
             {
                 IsRegexValid = false;
-                SearchErrorText = WebUiLocalizer.Translate("AppTorrentList", "Invalid regular expression");
+                SearchErrorText = LanguageLocalizer.Translate("AppTorrentList", "Invalid regular expression");
             }
         }
 
@@ -369,9 +369,9 @@ namespace Lantean.QBTMud.Pages
 
         protected IEnumerable<ColumnDefinition<Torrent>> Columns => ColumnsDefinitions.Where(c => c.Id != "#" || Preferences?.QueueingEnabled == true);
 
-        private IReadOnlyList<ColumnDefinition<Torrent>> ColumnsDefinitions => _columnsDefinitions ??= BuildColumnsDefinitions(WebUiLocalizer);
+        private IReadOnlyList<ColumnDefinition<Torrent>> ColumnsDefinitions => _columnsDefinitions ??= BuildColumnsDefinitions(LanguageLocalizer);
 
-        internal static IReadOnlyList<ColumnDefinition<Torrent>> BuildColumnsDefinitions(IWebUiLocalizer localizer)
+        internal static IReadOnlyList<ColumnDefinition<Torrent>> BuildColumnsDefinitions(ILanguageLocalizer localizer)
         {
             var progressColumn = CreateProgressBarColumn(localizer);
             var iconColumn = CreateIconColumn();
@@ -456,7 +456,7 @@ namespace Lantean.QBTMud.Pages
             }.AsReadOnly();
         }
 
-        private static RenderFragment<RowContext<Torrent>> CreateProgressBarColumn(IWebUiLocalizer localizer)
+        private static RenderFragment<RowContext<Torrent>> CreateProgressBarColumn(ILanguageLocalizer localizer)
         {
             var title = localizer.Translate("TransferListModel", "Progress");
             return context => builder =>

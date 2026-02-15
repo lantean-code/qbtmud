@@ -24,6 +24,7 @@ namespace Lantean.QBTMud.Test.Layout
         private const string PendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
         private const string LastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
         private const string WelcomeWizardCompletedStorageKey = "WelcomeWizard.Completed.v1";
+        private const string PreferredLocaleStorageKey = "WebUiLocalization.PreferredLocale.v1";
 
         private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
         private readonly ITorrentDataManager _dataManager = Mock.Of<ITorrentDataManager>();
@@ -77,8 +78,7 @@ namespace Lantean.QBTMud.Test.Layout
             _dialogServiceMock
                 .Setup(service => service.ShowAsync<LostConnectionDialog>(
                     It.IsAny<string?>(),
-                    It.IsAny<DialogParameters>(),
-                    It.IsAny<DialogOptions?>()))
+                    It.IsAny<DialogOptions>()))
                 .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
 
             TestContext.Services.RemoveAll<IApiClient>();
@@ -137,6 +137,76 @@ namespace Lantean.QBTMud.Test.Layout
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()), Times.Never);
             });
+        }
+
+        [Fact]
+        public async Task GIVEN_StoredLocaleMissing_WHEN_Initialized_THEN_ShouldSyncFromApiWithoutWarning()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+
+            await TestContext.LocalStorage.RemoveItemAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "fr"));
+
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            storedLocale.Should().Be("fr");
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Language preference changed on server. Click Reload to apply it.", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_StoredLocalePresentAndApiLocaleBlank_WHEN_Initialized_THEN_ShouldClearStoredLocaleWithoutWarning()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+
+            await TestContext.LocalStorage.SetItemAsStringAsync(PreferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
+            RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "   "));
+
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            storedLocale.Should().BeNull();
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Language preference changed on server. Click Reload to apply it.", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_StoredLocaleMismatch_WHEN_Initialized_THEN_ShouldShowWarningWithReloadAction()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+            await TestContext.LocalStorage.SetItemAsStringAsync(PreferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
+
+            Action<SnackbarOptions>? snackbarOptions = null;
+            Mock.Get(_snackbar)
+                .Setup(snackbar => snackbar.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
+                .Callback<string, Severity, Action<SnackbarOptions>, string>((_, _, options, _) => snackbarOptions = options);
+            RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "fr"));
+
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            storedLocale.Should().Be("fr");
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Language preference changed on server. Click Reload to apply it.", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
+
+            snackbarOptions.Should().NotBeNull();
+
+            var options = new SnackbarOptions(Severity.Warning, new SnackbarConfiguration());
+            snackbarOptions!(options);
+
+            options.RequireInteraction.Should().BeTrue();
+            options.Action.Should().Be("Reload");
+            options.CloseAfterNavigation.Should().BeTrue();
+            options.OnClick.Should().NotBeNull();
+
+            _navigationManager.LastNavigationUri.Should().NotBe("./");
+            await options.OnClick!(null!);
+            _navigationManager.LastNavigationUri.Should().Be("./");
+            _navigationManager.ForceLoad.Should().BeTrue();
         }
 
         [Fact]
@@ -305,8 +375,7 @@ namespace Lantean.QBTMud.Test.Layout
             {
                 _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                     It.IsAny<string?>(),
-                    It.IsAny<DialogParameters>(),
-                    It.IsAny<DialogOptions?>()), Times.Once);
+                    It.IsAny<DialogOptions>()), Times.Once);
             });
         }
 
@@ -645,8 +714,7 @@ namespace Lantean.QBTMud.Test.Layout
             target.WaitForAssertion(() => probe.Instance.MainData!.LostConnection.Should().BeTrue());
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
-                It.IsAny<DialogParameters>(),
-                It.IsAny<DialogOptions?>()), Times.Once);
+                It.IsAny<DialogOptions>()), Times.Once);
         }
 
         [Fact]
@@ -1249,9 +1317,10 @@ namespace Lantean.QBTMud.Test.Layout
             return new ClientModels.MainData(1, fullUpdate, null, null, null, null, null, null, null, null, null);
         }
 
-        private static ClientModels.Preferences CreatePreferences(bool statusBarExternalIp = false)
+        private static ClientModels.Preferences CreatePreferences(bool statusBarExternalIp = false, string? locale = null)
         {
-            var json = $"{{\"rss_processing_enabled\":false,\"status_bar_external_ip\":{statusBarExternalIp.ToString().ToLowerInvariant()}}}";
+            var localeJson = locale is null ? "null" : $"\"{locale}\"";
+            var json = $"{{\"rss_processing_enabled\":false,\"status_bar_external_ip\":{statusBarExternalIp.ToString().ToLowerInvariant()},\"locale\":{localeJson}}}";
             return JsonSerializer.Deserialize<ClientModels.Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
         }
 

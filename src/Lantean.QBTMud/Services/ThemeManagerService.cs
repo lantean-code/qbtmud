@@ -19,7 +19,7 @@ namespace Lantean.QBTMud.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILocalStorageService _localStorage;
         private readonly IThemeFontCatalog _themeFontCatalog;
-        private readonly IWebUiLocalizer _webUiLocalizer;
+        private readonly ILanguageLocalizer _languageLocalizer;
         private readonly List<ThemeDefinition> _localThemes = [];
         private readonly List<ThemeCatalogItem> _serverThemes = [];
         private readonly List<ThemeCatalogItem> _themes = [];
@@ -38,12 +38,12 @@ namespace Lantean.QBTMud.Services
             IHttpClientFactory httpClientFactory,
             ILocalStorageService localStorage,
             IThemeFontCatalog themeFontCatalog,
-            IWebUiLocalizer webUiLocalizer)
+            ILanguageLocalizer languageLocalizer)
         {
             _httpClientFactory = httpClientFactory;
             _localStorage = localStorage;
             _themeFontCatalog = themeFontCatalog;
-            _webUiLocalizer = webUiLocalizer;
+            _languageLocalizer = languageLocalizer;
         }
 
         /// <summary>
@@ -410,7 +410,7 @@ namespace Lantean.QBTMud.Services
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return _webUiLocalizer.Translate(AppContext, source, arguments);
+            return _languageLocalizer.Translate(AppContext, source, arguments);
         }
     }
 }

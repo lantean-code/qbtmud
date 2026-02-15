@@ -1,4 +1,4 @@
-@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
 
 <MudDialog ContentStyle="mix-width: 400px">
     <DialogContent>
@@ -11,7 +11,7 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" Style="display:none" OnClick="Cancel" data-test-id="@TestIdHelper.For("SubMenuCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" Style="display:none" OnClick="CloseDialog" data-test-id="@TestIdHelper.For("SubMenuClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" Style="display:none" OnClick="Cancel" data-test-id="@TestIdHelper.For("SubMenuCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" Style="display:none" OnClick="CloseDialog" data-test-id="@TestIdHelper.For("SubMenuClose")">@LanguageLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
     </DialogActions>
 </MudDialog>

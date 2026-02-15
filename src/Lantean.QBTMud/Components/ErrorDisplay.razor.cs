@@ -11,7 +11,7 @@ namespace Lantean.QBTMud.Components
         protected IDialogService DialogService { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -27,7 +27,7 @@ namespace Lantean.QBTMud.Components
             };
 
             await DialogService.ShowAsync<ExceptionDialog>(
-                WebUiLocalizer.Translate("AppErrorDisplay", "Error Details"),
+                LanguageLocalizer.Translate("AppErrorDisplay", "Error Details"),
                 parameters,
                 Services.DialogWorkflow.FormDialogOptions);
         }

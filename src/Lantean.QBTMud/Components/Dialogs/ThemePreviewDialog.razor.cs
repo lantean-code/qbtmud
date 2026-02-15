@@ -18,7 +18,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Parameter]
         public MudTheme? Theme { get; set; }
@@ -75,7 +75,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private string Translate(string value)
         {
-            return WebUiLocalizer.Translate("AppThemePreviewDialog", value);
+            return LanguageLocalizer.Translate("AppThemePreviewDialog", value);
         }
     }
 }

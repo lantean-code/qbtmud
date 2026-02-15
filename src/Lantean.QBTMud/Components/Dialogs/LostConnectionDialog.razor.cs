@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     public partial class LostConnectionDialog
     {
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
