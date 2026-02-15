@@ -8,11 +8,11 @@
             </MudAvatar>
 
             <MudText Typo="Typo.h6" Align="Align.Center" data-test-id="@TestIdHelper.For("LostConnectionMessage")">
-                @WebUiLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")
+                @LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")
             </MudText>
 
             <MudText Typo="Typo.body2" Align="Align.Center" Class="lost-connection-dialog__subtitle" data-test-id="@TestIdHelper.For("LostConnectionSubtitle")">
-                @WebUiLocalizer.Translate("MainWindow", "Connection status: Disconnected")
+                @LanguageLocalizer.Translate("MainWindow", "Connection status: Disconnected")
             </MudText>
         </div>
     </DialogContent>
@@ -24,7 +24,7 @@
                        StartIcon="@Icons.Material.Filled.Refresh"
                        OnClick="Reconnect"
                        data-test-id="@TestIdHelper.For("LostConnectionReconnect")">
-                @WebUiLocalizer.Translate("AppLostConnectionDialog", "Reconnect")
+                @LanguageLocalizer.Translate("AppLostConnectionDialog", "Reconnect")
             </MudButton>
         </div>
     </DialogActions>

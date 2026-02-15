@@ -55,7 +55,7 @@ namespace Lantean.QBTMud.Components
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         protected IReadOnlyList<TorrentTracker>? TrackerList { get; set; }
 
@@ -325,17 +325,17 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateTrackerList(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(_trackerListContext, source, arguments);
+            return LanguageLocalizer.Translate(_trackerListContext, source, arguments);
         }
 
         private string TranslateTrackersAddition(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(_trackersAdditionContext, source, arguments);
+            return LanguageLocalizer.Translate(_trackersAdditionContext, source, arguments);
         }
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(_appContext, source, arguments);
+            return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
 
         protected virtual async Task DisposeAsync(bool disposing)

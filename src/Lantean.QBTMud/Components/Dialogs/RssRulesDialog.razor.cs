@@ -23,7 +23,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         protected string? SelectedRuleName { get; set; }
 
@@ -202,8 +202,8 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task AddRule()
         {
             var ruleName = await DialogWorkflow.ShowStringFieldDialog(
-                WebUiLocalizer.Translate("AutomatedRssDownloader", "New rule name"),
-                WebUiLocalizer.Translate("AutomatedRssDownloader", "Please type the name of the new download rule."),
+                LanguageLocalizer.Translate("AutomatedRssDownloader", "New rule name"),
+                LanguageLocalizer.Translate("AutomatedRssDownloader", "Please type the name of the new download rule."),
                 null);
             if (ruleName is null)
             {

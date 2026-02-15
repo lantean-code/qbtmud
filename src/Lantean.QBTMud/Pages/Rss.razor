@@ -8,13 +8,13 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" data-test-id="@TestIdHelper.For("RssBackToList")" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@WebUiLocalizer.Translate("MainWindow", "RSS")</MudText>
+            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("MainWindow", "RSS")</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" Disabled="@IsClientDisconnected" title="@WebUiLocalizer.Translate("RSSWidget", "New subscription")" data-test-id="@TestIdHelper.For("RssNewSubscription")" />
-            <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="@WebUiLocalizer.Translate("RSSWidget", "Mark items read")" data-test-id="@TestIdHelper.For("RssMarkItemsRead")" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="RefreshAllFeeds" Disabled="@IsClientDisconnected" title="@WebUiLocalizer.Translate("RSSWidget", "Update all")" data-test-id="@TestIdHelper.For("RssUpdateAll")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Subscriptions" OnClick="NewSubscription" Disabled="@IsClientDisconnected" title="@LanguageLocalizer.Translate("RSSWidget", "New subscription")" data-test-id="@TestIdHelper.For("RssNewSubscription")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.MarkEmailRead" OnClick="MarkAsRead" Disabled="@(!CanMarkSelectionAsRead)" title="@LanguageLocalizer.Translate("RSSWidget", "Mark items read")" data-test-id="@TestIdHelper.For("RssMarkItemsRead")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Update" OnClick="RefreshAllFeeds" Disabled="@IsClientDisconnected" title="@LanguageLocalizer.Translate("RSSWidget", "Update all")" data-test-id="@TestIdHelper.For("RssUpdateAll")" />
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="@WebUiLocalizer.Translate("RSSWidget", "RSS Downloader...")" data-test-id="@TestIdHelper.For("RssEditDownloadRules")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.DownloadForOffline" OnClick="EditDownloadRules" title="@LanguageLocalizer.Translate("RSSWidget", "RSS Downloader...")" data-test-id="@TestIdHelper.For("RssEditDownloadRules")" />
         </MudToolBar>
     </div>
 
@@ -29,23 +29,23 @@
                      data-test-id="@TestIdHelper.For("RssFeedContextMenu")">
                 @if (ContextCanUpdate)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="UpdateContextUpdate" data-test-id="@TestIdHelper.For("RssContextUpdate")">@WebUiLocalizer.Translate("RSSWidget", "Update")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Refresh" IconColor="Color.Info" OnClick="UpdateContextUpdate" data-test-id="@TestIdHelper.For("RssContextUpdate")">@LanguageLocalizer.Translate("RSSWidget", "Update")</MudMenuItem>
                 }
                 @if (ContextCanMarkRead)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.MarkEmailRead" IconColor="Color.Info" OnClick="UpdateContextMarkRead" data-test-id="@TestIdHelper.For("RssContextMarkItemsRead")">@WebUiLocalizer.Translate("RSSWidget", "Mark items read")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.MarkEmailRead" IconColor="Color.Info" OnClick="UpdateContextMarkRead" data-test-id="@TestIdHelper.For("RssContextMarkItemsRead")">@LanguageLocalizer.Translate("RSSWidget", "Mark items read")</MudMenuItem>
                 }
                 @if (ContextCanRename)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" IconColor="Color.Info" OnClick="UpdateContextRename" data-test-id="@TestIdHelper.For("RssContextRename")">@WebUiLocalizer.Translate("RSSWidget", "Rename...")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" IconColor="Color.Info" OnClick="UpdateContextRename" data-test-id="@TestIdHelper.For("RssContextRename")">@LanguageLocalizer.Translate("RSSWidget", "Rename...")</MudMenuItem>
                 }
                 @if (ContextCanEditUrl)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="UpdateContextEditUrl" data-test-id="@TestIdHelper.For("RssContextEditFeedUrl")">@WebUiLocalizer.Translate("RSSWidget", "Edit feed URL...")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="UpdateContextEditUrl" data-test-id="@TestIdHelper.For("RssContextEditFeedUrl")">@LanguageLocalizer.Translate("RSSWidget", "Edit feed URL...")</MudMenuItem>
                 }
                 @if (ContextCanDelete)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="UpdateContextDelete" data-test-id="@TestIdHelper.For("RssContextDelete")">@WebUiLocalizer.Translate("RSSWidget", "Delete")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="UpdateContextDelete" data-test-id="@TestIdHelper.For("RssContextDelete")">@LanguageLocalizer.Translate("RSSWidget", "Delete")</MudMenuItem>
                 }
                 @if (ContextCanAddSubscription || ContextCanAddFolder || ContextCanUpdateAll)
                 {
@@ -53,20 +53,20 @@
                 }
                 @if (ContextCanAddSubscription)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Outlined.Subscriptions" IconColor="Color.Info" OnClick="UpdateContextAddSubscription" data-test-id="@TestIdHelper.For("RssContextNewSubscription")">@WebUiLocalizer.Translate("RSSWidget", "New subscription...")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Outlined.Subscriptions" IconColor="Color.Info" OnClick="UpdateContextAddSubscription" data-test-id="@TestIdHelper.For("RssContextNewSubscription")">@LanguageLocalizer.Translate("RSSWidget", "New subscription...")</MudMenuItem>
                 }
                 @if (ContextCanAddFolder)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="UpdateContextAddFolder" data-test-id="@TestIdHelper.For("RssContextNewFolder")">@WebUiLocalizer.Translate("RSSWidget", "New folder...")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="UpdateContextAddFolder" data-test-id="@TestIdHelper.For("RssContextNewFolder")">@LanguageLocalizer.Translate("RSSWidget", "New folder...")</MudMenuItem>
                 }
                 @if (ContextCanUpdateAll)
                 {
-                    <MudMenuItem Icon="@Icons.Material.Outlined.Update" IconColor="Color.Info" OnClick="RefreshAllFeeds" data-test-id="@TestIdHelper.For("RssContextUpdateAllFeeds")">@WebUiLocalizer.Translate("RSSWidget", "Update all feeds")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Outlined.Update" IconColor="Color.Info" OnClick="RefreshAllFeeds" data-test-id="@TestIdHelper.For("RssContextUpdateAllFeeds")">@LanguageLocalizer.Translate("RSSWidget", "Update all feeds")</MudMenuItem>
                 }
                 @if (ContextCanCopyUrl)
                 {
                     <MudDivider />
-                    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="UpdateContextCopyUrl" data-test-id="@TestIdHelper.For("RssContextCopyFeedUrl")">@WebUiLocalizer.Translate("RSSWidget", "Copy feed URL")</MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" IconColor="Color.Info" OnClick="UpdateContextCopyUrl" data-test-id="@TestIdHelper.For("RssContextCopyFeedUrl")">@LanguageLocalizer.Translate("RSSWidget", "Copy feed URL")</MudMenuItem>
                 }
             </MudMenu>
 
@@ -138,11 +138,11 @@
                                     </CardHeaderContent>
                                     <CardHeaderActions>
                                         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense data-test-id="@TestIdHelper.For("RssArticleActionsDesktop")">
-                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="@WebUiLocalizer.Translate("RSSWidget", "Download torrent")" data-test-id="@TestIdHelper.For("RssDownloadTorrentDesktop")">@WebUiLocalizer.Translate("RSSWidget", "Download torrent")</MudMenuItem>
-                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="@WebUiLocalizer.Translate("RSSWidget", "Open link")" data-test-id="@TestIdHelper.For("RssOpenTorrentLinkDesktop")">@WebUiLocalizer.Translate("RSSWidget", "Open link")</MudMenuItem>
+                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="@LanguageLocalizer.Translate("RSSWidget", "Download torrent")" data-test-id="@TestIdHelper.For("RssDownloadTorrentDesktop")">@LanguageLocalizer.Translate("RSSWidget", "Download torrent")</MudMenuItem>
+                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="@LanguageLocalizer.Translate("RSSWidget", "Open link")" data-test-id="@TestIdHelper.For("RssOpenTorrentLinkDesktop")">@LanguageLocalizer.Translate("RSSWidget", "Open link")</MudMenuItem>
                                             @if (!string.IsNullOrWhiteSpace(Article.Link))
                                             {
-                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link" data-test-id="@TestIdHelper.For("RssOpenNewsUrlDesktop")">@WebUiLocalizer.Translate("RSSWidget", "Open news URL")</MudMenuItem>
+                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link" data-test-id="@TestIdHelper.For("RssOpenNewsUrlDesktop")">@LanguageLocalizer.Translate("RSSWidget", "Open news URL")</MudMenuItem>
                                             }
                                         </MudMenu>
                                     </CardHeaderActions>
@@ -246,11 +246,11 @@
                                                     </CardHeaderContent>
                                                     <CardHeaderActions>
                                                         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense data-test-id="@TestIdHelper.For("RssArticleActionsMobile")">
-                                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="@WebUiLocalizer.Translate("RSSWidget", "Download torrent")" data-test-id="@TestIdHelper.For("RssDownloadTorrentMobile")">@WebUiLocalizer.Translate("RSSWidget", "Download torrent")</MudMenuItem>
-                                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="@WebUiLocalizer.Translate("RSSWidget", "Open link")" data-test-id="@TestIdHelper.For("RssOpenTorrentLinkMobile")">@WebUiLocalizer.Translate("RSSWidget", "Open link")</MudMenuItem>
+                                                            <MudMenuItem Icon="@Icons.Material.Filled.Download" OnClick="c => DownloadItem(Article.TorrentURL)" title="@LanguageLocalizer.Translate("RSSWidget", "Download torrent")" data-test-id="@TestIdHelper.For("RssDownloadTorrentMobile")">@LanguageLocalizer.Translate("RSSWidget", "Download torrent")</MudMenuItem>
+                                                            <MudMenuItem Icon="@Icons.Material.Filled.Link" Href="@Article.TorrentURL" Target="@Article.TorrentURL" title="@LanguageLocalizer.Translate("RSSWidget", "Open link")" data-test-id="@TestIdHelper.For("RssOpenTorrentLinkMobile")">@LanguageLocalizer.Translate("RSSWidget", "Open link")</MudMenuItem>
                                                             @if (!string.IsNullOrWhiteSpace(Article.Link))
                                                             {
-                                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link" data-test-id="@TestIdHelper.For("RssOpenNewsUrlMobile")">@WebUiLocalizer.Translate("RSSWidget", "Open news URL")</MudMenuItem>
+                                                                <MudMenuItem Icon="@Icons.Material.Filled.Public" Href="@Article.Link" Target="@Article.Link" data-test-id="@TestIdHelper.For("RssOpenNewsUrlMobile")">@LanguageLocalizer.Translate("RSSWidget", "Open news URL")</MudMenuItem>
                                                             }
                                                         </MudMenu>
                                                     </CardHeaderActions>

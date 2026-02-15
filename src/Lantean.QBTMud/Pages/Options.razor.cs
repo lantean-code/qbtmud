@@ -3,6 +3,7 @@ using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
@@ -25,6 +26,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected IPreferencesDataManager PreferencesDataManager { get; set; } = default!;
+
+        [Inject]
+        protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -133,6 +137,12 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
             await ApiClient.SetApplicationPreferences(UpdatePreferences);
+
+            if (!string.IsNullOrWhiteSpace(UpdatePreferences.Locale))
+            {
+                await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, UpdatePreferences.Locale);
+            }
+
             Snackbar.Add(TranslateOptions("Options saved."), Severity.Success);
 
             Preferences = await ApiClient.GetApplicationPreferences();
@@ -143,7 +153,7 @@ namespace Lantean.QBTMud.Pages
 
         private string TranslateOptions(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate("AppOptions", source, arguments);
+            return LanguageLocalizer.Translate("AppOptions", source, arguments);
         }
     }
 }

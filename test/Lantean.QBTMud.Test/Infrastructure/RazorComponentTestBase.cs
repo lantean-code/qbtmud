@@ -22,18 +22,18 @@ namespace Lantean.QBTMud.Test.Infrastructure
         protected RazorComponentTestBase()
         {
             TestContext = new ComponentTestContext();
-            var webUiLocalizer = Mock.Of<IWebUiLocalizer>();
-            var localizerMock = Mock.Get(webUiLocalizer);
+            var languageLocalizer = Mock.Of<ILanguageLocalizer>();
+            var localizerMock = Mock.Get(languageLocalizer);
             localizerMock
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] arguments) => FormatLocalizerString(source, arguments));
-            TestContext.Services.AddSingleton(webUiLocalizer);
+            TestContext.Services.AddSingleton(languageLocalizer);
 
-            var languageCatalog = Mock.Of<IWebUiLanguageCatalog>();
+            var languageCatalog = Mock.Of<ILanguageCatalog>();
             var languageCatalogMock = Mock.Get(languageCatalog);
             languageCatalogMock
                 .Setup(catalog => catalog.Languages)
-                .Returns(new List<WebUiLanguageCatalogItem> { new("en", "English") });
+                .Returns(new List<LanguageCatalogItem> { new("en", "English") });
             languageCatalogMock
                 .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);

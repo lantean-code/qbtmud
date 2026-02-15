@@ -22,7 +22,7 @@ namespace Lantean.QBTMud.Layout
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -176,7 +176,7 @@ namespace Lantean.QBTMud.Layout
                 return [];
             }
 
-            var sortSelector = TorrentList.BuildColumnsDefinitions(WebUiLocalizer).FirstOrDefault(t => t.Id == SortColumn)?.SortSelector ?? (t => t.Name);
+            var sortSelector = TorrentList.BuildColumnsDefinitions(LanguageLocalizer).FirstOrDefault(t => t.Id == SortColumn)?.SortSelector ?? (t => t.Name);
             return Torrents.OrderByDirection(SortDirection, sortSelector).ToList();
         }
     }

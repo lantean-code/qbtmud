@@ -1,12 +1,12 @@
 @inherits SubmittableDialog
-@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
 
 <MudDialog>
     <DialogContent>
         <table width="100%">
             <tbody>
                 <tr>
-                    <td style="width: 100%"><MudTextField T="string" Label="@WebUiLocalizer.Translate("TrackerListWidget", "Tracker URL:")" Value="@Tracker" ValueChanged="SetTracker" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddTrackerInput")" /></td>
+                    <td style="width: 100%"><MudTextField T="string" Label="@LanguageLocalizer.Translate("TrackerListWidget", "Tracker URL:")" Value="@Tracker" ValueChanged="SetTracker" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AddTrackerInput")" /></td>
                     <td><MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddTracker" data-test-id="@TestIdHelper.For("AddTrackerAdd")" /></td>
                 </tr>
                 @foreach (var tracker in Trackers)
@@ -21,7 +21,7 @@
         </table>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTrackerCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTrackerSave")">@WebUiLocalizer.Translate("HttpServer", "Add")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTrackerCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("AddTrackerSave")">@LanguageLocalizer.Translate("HttpServer", "Add")</MudButton>
     </DialogActions>
 </MudDialog>

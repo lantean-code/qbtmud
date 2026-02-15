@@ -19,7 +19,7 @@ namespace Lantean.QBTMud.Components.UI
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Parameter]
         public string? Label { get; set; }
@@ -108,7 +108,7 @@ namespace Lantean.QBTMud.Components.UI
                     return RequiredErrorText!;
                 }
 
-                return WebUiLocalizer.Translate("AppPathAutocomplete", "Required.");
+                return LanguageLocalizer.Translate("AppPathAutocomplete", "Required.");
             }
         }
 
@@ -157,7 +157,7 @@ namespace Lantean.QBTMud.Components.UI
                 return BrowseDialogTitle!;
             }
 
-            return WebUiLocalizer.Translate("AppPathAutocomplete", "Browse");
+            return LanguageLocalizer.Translate("AppPathAutocomplete", "Browse");
         }
 
         private async Task<IReadOnlyList<string>> SearchPaths(string value, DirectoryContentMode mode, CancellationToken cancellationToken)

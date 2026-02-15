@@ -18,7 +18,7 @@ namespace Lantean.QBTMud.Pages
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         protected LoginForm Model { get; set; } = new LoginForm();
 
@@ -63,15 +63,15 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.BadRequest)
             {
-                ApiError = WebUiLocalizer.Translate("Login", "Invalid Username or Password.");
+                ApiError = LanguageLocalizer.Translate("Login", "Invalid Username or Password.");
             }
             catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
             {
-                ApiError = WebUiLocalizer.Translate("Login", "Unable to log in, server is probably unreachable.");
+                ApiError = LanguageLocalizer.Translate("Login", "Unable to log in, server is probably unreachable.");
             }
             catch
             {
-                ApiError = WebUiLocalizer.Translate("Login", "Unable to log in, server is probably unreachable.");
+                ApiError = LanguageLocalizer.Translate("Login", "Unable to log in, server is probably unreachable.");
             }
         }
     }

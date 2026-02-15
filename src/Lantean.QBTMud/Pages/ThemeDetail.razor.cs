@@ -98,7 +98,7 @@ namespace Lantean.QBTMud.Pages
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Parameter]
         public string ThemeId { get; set; } = string.Empty;
@@ -460,7 +460,7 @@ namespace Lantean.QBTMud.Pages
 
         private string Translate(string value)
         {
-            return WebUiLocalizer.Translate("AppThemeDetail", value);
+            return LanguageLocalizer.Translate("AppThemeDetail", value);
         }
     }
 }

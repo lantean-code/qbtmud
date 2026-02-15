@@ -29,7 +29,7 @@ namespace Lantean.QBTMud.Pages
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -128,15 +128,15 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<Category>(WebUiLocalizer.Translate("TransferListModel", "Name"), l => l.Name, id: "name"),
-                new ColumnDefinition<Category>(WebUiLocalizer.Translate("TransferListModel", "Save path"), l => l.SavePath, id: "save_path"),
+                new ColumnDefinition<Category>(LanguageLocalizer.Translate("TransferListModel", "Name"), l => l.Name, id: "name"),
+                new ColumnDefinition<Category>(LanguageLocalizer.Translate("TransferListModel", "Save path"), l => l.SavePath, id: "save_path"),
                 new ColumnDefinition<Category>(Translate("Actions"), l => l, id: ActionsColumnId)
             ];
         }
 
         private string Translate(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate("AppCategories", source, arguments);
+            return LanguageLocalizer.Translate("AppCategories", source, arguments);
         }
     }
 }

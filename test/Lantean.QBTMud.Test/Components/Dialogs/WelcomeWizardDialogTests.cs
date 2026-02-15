@@ -10,9 +10,11 @@ using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.JSInterop;
 using Moq;
 using MudBlazor;
 using System.Globalization;
+using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -21,7 +23,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
         private readonly IThemeManagerService _themeManagerService = Mock.Of<IThemeManagerService>();
         private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
-        private readonly IWebUiLanguageCatalog _languageCatalog = Mock.Of<IWebUiLanguageCatalog>();
+        private readonly ILanguageCatalog _languageCatalog = Mock.Of<ILanguageCatalog>();
+        private readonly ILanguageInitializationService _languageInitializationService = Mock.Of<ILanguageInitializationService>();
         private readonly IKeyboardService _keyboardService;
         private readonly Mock<IKeyboardService> _keyboardServiceMock;
         private readonly TestNavigationManager _navigationManager;
@@ -59,7 +62,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var languageCatalogMock = Mock.Get(_languageCatalog);
             languageCatalogMock
                 .SetupGet(catalog => catalog.Languages)
-                .Returns(new List<WebUiLanguageCatalogItem>
+                .Returns(new List<LanguageCatalogItem>
                 {
                     new("en", "English"),
                     new("fr", "Francais"),
@@ -67,6 +70,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             languageCatalogMock
                 .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
+
+            var languageInitializationServiceMock = Mock.Get(_languageInitializationService);
+            languageInitializationServiceMock
+                .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.CompletedTask);
 
             _keyboardService = Mock.Of<IKeyboardService>();
             _keyboardServiceMock = Mock.Get(_keyboardService);
@@ -80,13 +88,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.RemoveAll<IThemeManagerService>();
             TestContext.Services.RemoveAll<ISnackbar>();
-            TestContext.Services.RemoveAll<IWebUiLanguageCatalog>();
+            TestContext.Services.RemoveAll<ILanguageCatalog>();
+            TestContext.Services.RemoveAll<ILanguageInitializationService>();
             TestContext.Services.RemoveAll<IKeyboardService>();
 
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.AddSingleton(_themeManagerService);
             TestContext.Services.AddSingleton(_snackbar);
             TestContext.Services.AddSingleton(_languageCatalog);
+            TestContext.Services.AddSingleton(_languageInitializationService);
             TestContext.Services.AddSingleton(_keyboardService);
 
             _target = new WelcomeWizardDialogTestDriver(TestContext);
@@ -188,6 +198,19 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.Is<UpdatePreferences>(preferences =>
                 string.Equals(preferences.Locale, "fr", StringComparison.Ordinal))), Times.Once);
+            Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_LanguageSelected_WHEN_ValueChanged_THEN_PersistsLocaleInLocalStorage()
+        {
+            var dialog = await _target.RenderDialogAsync();
+
+            var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
+            await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
+
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, Xunit.TestContext.Current.CancellationToken);
+            storedLocale.Should().Be("fr");
         }
 
         [Theory]
@@ -202,6 +225,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync(locale));
 
             Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()), Times.Never);
+            Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Theory]
@@ -237,6 +261,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.Is<UpdatePreferences>(preferences =>
                 string.Equals(preferences.Locale, locale, StringComparison.Ordinal))), Times.Once);
+            Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -390,6 +415,79 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_FinishWriteThrowsJsException_WHEN_FinishClicked_THEN_ShowsSnackbarError()
+        {
+            var localStorage = new Mock<ILocalStorageService>(MockBehavior.Loose);
+            localStorage
+                .Setup(service => service.SetItemAsync<bool>(WelcomeWizardStorageKeys.Completed, true, It.IsAny<CancellationToken>()))
+                .Throws(new JSException("Message"));
+
+            TestContext.Services.RemoveAll<ILocalStorageService>();
+            TestContext.Services.AddSingleton<ILocalStorageService>(localStorage.Object);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_FinishWriteThrowsJsonException_WHEN_FinishClicked_THEN_ShowsSnackbarError()
+        {
+            var localStorage = new Mock<ILocalStorageService>(MockBehavior.Loose);
+            localStorage
+                .Setup(service => service.SetItemAsync<bool>(WelcomeWizardStorageKeys.Completed, true, It.IsAny<CancellationToken>()))
+                .Throws(new JsonException("Message"));
+
+            TestContext.Services.RemoveAll<ILocalStorageService>();
+            TestContext.Services.AddSingleton<ILocalStorageService>(localStorage.Object);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_FinishWriteCanceled_WHEN_FinishClicked_THEN_DoesNotShowSnackbarError()
+        {
+            using var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+
+            var localStorage = new Mock<ILocalStorageService>(MockBehavior.Loose);
+            localStorage
+                .Setup(service => service.SetItemAsync<bool>(WelcomeWizardStorageKeys.Completed, true, It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException(cancellationTokenSource.Token));
+
+            TestContext.Services.RemoveAll<ILocalStorageService>();
+            TestContext.Services.AddSingleton<ILocalStorageService>(localStorage.Object);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+
+            await dialog.Component.InvokeAsync(() => finishButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_LanguageUpdateFails_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
         {
             Mock.Get(_apiClient)
@@ -405,6 +503,109 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_LanguageUpdateThrowsInvalidOperation_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .ThrowsAsync(new InvalidOperationException("Message"));
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
+            await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_LanguageUpdateThrowsJsException_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .ThrowsAsync(new JSException("Message"));
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
+            await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_LanguageUpdateThrowsJsonException_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .ThrowsAsync(new JsonException("Message"));
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
+            await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeStep_WHEN_ApplyThemeThrowsJsException_THEN_ShowsSnackbarError()
+        {
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ApplyTheme(It.IsAny<string>()))
+                .ThrowsAsync(new JSException("Message"));
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
+            await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeStep_WHEN_ApplyThemeThrowsJsonException_THEN_ShowsSnackbarError()
+        {
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ApplyTheme(It.IsAny<string>()))
+                .ThrowsAsync(new JsonException("Message"));
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
+            await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeStep_WHEN_ApplyThemeCanceled_THEN_DoesNotShowSnackbarError()
+        {
+            using var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ApplyTheme(It.IsAny<string>()))
+                .ThrowsAsync(new OperationCanceledException(cancellationTokenSource.Token));
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
+
+            await dialog.Component.InvokeAsync(() => themeSelect.Instance.ValueChanged.InvokeAsync("theme2"));
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_ThemeIdUnsetAndLanguageUnset_WHEN_DoneStepRendered_THEN_RendersSuccessfully()
         {
             Mock.Get(_themeManagerService)
@@ -416,7 +617,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             Mock.Get(_languageCatalog)
                 .SetupGet(catalog => catalog.Languages)
-                .Returns(new List<WebUiLanguageCatalogItem>());
+                .Returns(new List<LanguageCatalogItem>());
 
             var dialog = await _target.RenderDialogAsync();
 

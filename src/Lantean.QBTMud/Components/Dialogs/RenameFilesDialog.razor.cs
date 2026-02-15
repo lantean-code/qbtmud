@@ -29,7 +29,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -458,7 +458,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             return
             [
                 ColumnDefinitionHelper.CreateColumnDefinition(
-                    WebUiLocalizer.Translate("TrackerListWidget", "Original"),
+                    LanguageLocalizer.Translate("TrackerListWidget", "Original"),
                     c => c.Name,
                     NameColumn,
                     width: 400,
@@ -466,7 +466,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                     classFunc: c => c.IsFolder ? "px-0 pt-0 pb-2" : "pa-2",
                     id: "original"),
                 ColumnDefinitionHelper.CreateColumnDefinition<FileRow>(
-                    WebUiLocalizer.Translate("TrackerListWidget", "Renamed"),
+                    LanguageLocalizer.Translate("TrackerListWidget", "Renamed"),
                     c => c.NewName,
                     id: "renamed"),
             ];

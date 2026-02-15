@@ -9,24 +9,24 @@ namespace Lantean.QBTMud.Test.Services
 {
     public sealed class AppWarmupServiceTests
     {
-        private readonly IWebUiLocalizer _webUiLocalizer;
-        private readonly IWebUiLanguageCatalog _webUiLanguageCatalog;
+        private readonly ILanguageInitializationService _languageInitializationService;
+        private readonly ILanguageCatalog _languageCatalog;
         private readonly IThemeManagerService _themeManagerService;
         private readonly ILogger<AppWarmupService> _logger;
         private readonly AppWarmupService _target;
 
         public AppWarmupServiceTests()
         {
-            _webUiLocalizer = Mock.Of<IWebUiLocalizer>();
-            _webUiLanguageCatalog = Mock.Of<IWebUiLanguageCatalog>();
+            _languageInitializationService = Mock.Of<ILanguageInitializationService>();
+            _languageCatalog = Mock.Of<ILanguageCatalog>();
             _themeManagerService = Mock.Of<IThemeManagerService>();
             _logger = Mock.Of<ILogger<AppWarmupService>>();
 
-            Mock.Get(_webUiLocalizer)
-                .Setup(localizer => localizer.InitializeAsync(It.IsAny<CancellationToken>()))
+            Mock.Get(_languageInitializationService)
+                .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);
 
-            Mock.Get(_webUiLanguageCatalog)
+            Mock.Get(_languageCatalog)
                 .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
@@ -34,7 +34,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
 
-            _target = new AppWarmupService(_webUiLocalizer, _webUiLanguageCatalog, _themeManagerService, _logger);
+            _target = new AppWarmupService(_languageInitializationService, _languageCatalog, _themeManagerService, _logger);
         }
 
         [Fact]
@@ -45,8 +45,8 @@ namespace Lantean.QBTMud.Test.Services
             _target.IsCompleted.Should().BeTrue();
             _target.Failures.Should().BeEmpty();
 
-            Mock.Get(_webUiLocalizer).Verify(localizer => localizer.InitializeAsync(It.IsAny<CancellationToken>()), Times.Once);
-            Mock.Get(_webUiLanguageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_languageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
         }
 
@@ -56,8 +56,8 @@ namespace Lantean.QBTMud.Test.Services
             await _target.WarmupAsync(TestContext.Current.CancellationToken);
             await _target.WarmupAsync(TestContext.Current.CancellationToken);
 
-            Mock.Get(_webUiLocalizer).Verify(localizer => localizer.InitializeAsync(It.IsAny<CancellationToken>()), Times.Once);
-            Mock.Get(_webUiLanguageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_languageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
         }
 
@@ -66,8 +66,8 @@ namespace Lantean.QBTMud.Test.Services
         {
             var gate = new TaskCompletionSource<bool>();
             var callCount = 0;
-            Mock.Get(_webUiLocalizer)
-                .Setup(localizer => localizer.InitializeAsync(It.IsAny<CancellationToken>()))
+            Mock.Get(_languageInitializationService)
+                .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
                 .Returns(() =>
                 {
                     Interlocked.Increment(ref callCount);
@@ -83,23 +83,92 @@ namespace Lantean.QBTMud.Test.Services
             gate.SetResult(true);
             await Task.WhenAll(first, second);
 
-            Mock.Get(_webUiLocalizer).Verify(localizer => localizer.InitializeAsync(It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_LocalizerThrows_WHEN_WarmupInvoked_THEN_RecordsFailureAndContinues()
+        public async Task GIVEN_LanguageInitializationThrows_WHEN_WarmupInvoked_THEN_RecordsFailureAndContinues()
         {
-            Mock.Get(_webUiLocalizer)
-                .Setup(localizer => localizer.InitializeAsync(It.IsAny<CancellationToken>()))
+            Mock.Get(_languageInitializationService)
+                .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Failure"));
 
             await _target.WarmupAsync(TestContext.Current.CancellationToken);
 
             _target.IsCompleted.Should().BeTrue();
-            _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.WebUiLocalizer && failure.Message == "Failure");
+            _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.LanguageLocalizer && failure.Message == "Failure");
 
-            Mock.Get(_webUiLanguageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_languageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_LanguageInitializationCanceledWithRequestedToken_WHEN_WarmupInvoked_THEN_ShouldPropagateOperationCanceledException()
+        {
+            using var cancellationTokenSource = new CancellationTokenSource();
+
+            Mock.Get(_languageInitializationService)
+                .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
+                .Returns<CancellationToken>(_ =>
+                {
+                    cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException(cancellationTokenSource.Token);
+                });
+
+            Func<Task> action = async () =>
+            {
+                await _target.WarmupAsync(cancellationTokenSource.Token);
+            };
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_LanguageCatalogInitCanceledWithRequestedToken_WHEN_WarmupInvoked_THEN_ShouldPropagateOperationCanceledException()
+        {
+            using var cancellationTokenSource = new CancellationTokenSource();
+
+            Mock.Get(_languageCatalog)
+                .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .Returns<CancellationToken>(_ =>
+                {
+                    cancellationTokenSource.Cancel();
+                    throw new OperationCanceledException(cancellationTokenSource.Token);
+                });
+
+            Func<Task> action = async () =>
+            {
+                await _target.WarmupAsync(cancellationTokenSource.Token);
+            };
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_LanguageCatalogInitThrows_WHEN_WarmupInvoked_THEN_ShouldRecordFailureAndContinue()
+        {
+            Mock.Get(_languageCatalog)
+                .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("CatalogFailure"));
+
+            await _target.WarmupAsync(TestContext.Current.CancellationToken);
+
+            _target.IsCompleted.Should().BeTrue();
+            _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.LanguageCatalog && failure.Message == "CatalogFailure");
+            Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeManagerInitThrows_WHEN_WarmupInvoked_THEN_ShouldRecordFailure()
+        {
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.EnsureInitialized())
+                .ThrowsAsync(new InvalidOperationException("ThemeFailure"));
+
+            await _target.WarmupAsync(TestContext.Current.CancellationToken);
+
+            _target.IsCompleted.Should().BeTrue();
+            _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.ThemeManager && failure.Message == "ThemeFailure");
         }
     }
 }

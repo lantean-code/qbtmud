@@ -10,8 +10,8 @@ namespace Lantean.QBTMud.Services
     public sealed class AppWarmupService : IAppWarmupService
     {
         private readonly SemaphoreSlim _warmupLock = new SemaphoreSlim(1, 1);
-        private readonly IWebUiLocalizer _webUiLocalizer;
-        private readonly IWebUiLanguageCatalog _webUiLanguageCatalog;
+        private readonly ILanguageInitializationService _languageInitializationService;
+        private readonly ILanguageCatalog _languageCatalog;
         private readonly IThemeManagerService _themeManagerService;
         private readonly ILogger<AppWarmupService> _logger;
         private List<AppWarmupFailure> _failures = [];
@@ -20,18 +20,18 @@ namespace Lantean.QBTMud.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="AppWarmupService"/> class.
         /// </summary>
-        /// <param name="webUiLocalizer">The WebUI localizer.</param>
-        /// <param name="webUiLanguageCatalog">The WebUI language catalog.</param>
+        /// <param name="languageInitializationService">The language initialization service.</param>
+        /// <param name="languageCatalog">The WebUI language catalog.</param>
         /// <param name="themeManagerService">The theme manager service.</param>
         /// <param name="logger">The logger instance.</param>
         public AppWarmupService(
-            IWebUiLocalizer webUiLocalizer,
-            IWebUiLanguageCatalog webUiLanguageCatalog,
+            ILanguageInitializationService languageInitializationService,
+            ILanguageCatalog languageCatalog,
             IThemeManagerService themeManagerService,
             ILogger<AppWarmupService> logger)
         {
-            _webUiLocalizer = webUiLocalizer;
-            _webUiLanguageCatalog = webUiLanguageCatalog;
+            _languageInitializationService = languageInitializationService;
+            _languageCatalog = languageCatalog;
             _themeManagerService = themeManagerService;
             _logger = logger;
         }
@@ -67,13 +67,13 @@ namespace Lantean.QBTMud.Services
                 _failures = [];
 
                 await RunStep(
-                    AppWarmupStep.WebUiLocalizer,
-                    () => _webUiLocalizer.InitializeAsync(cancellationToken),
+                    AppWarmupStep.LanguageLocalizer,
+                    () => _languageInitializationService.EnsureLanguageResourcesInitialized(cancellationToken),
                     cancellationToken);
 
                 await RunStep(
-                    AppWarmupStep.WebUiLanguageCatalog,
-                    () => _webUiLanguageCatalog.EnsureInitialized(cancellationToken),
+                    AppWarmupStep.LanguageCatalog,
+                    () => _languageCatalog.EnsureInitialized(cancellationToken),
                     cancellationToken);
 
                 await RunStep(

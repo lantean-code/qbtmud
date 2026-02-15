@@ -3,15 +3,8 @@ namespace Lantean.QBTMud.Services.Localization
     /// <summary>
     /// Resolves WebUI translations using qBittorrent-style context and source keys.
     /// </summary>
-    public interface IWebUiLocalizer
+    public interface ILanguageLocalizer
     {
-        /// <summary>
-        /// Loads translation data for the current UI culture.
-        /// </summary>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A task that represents the asynchronous initialization operation.</returns>
-        ValueTask InitializeAsync(CancellationToken cancellationToken = default);
-
         /// <summary>
         /// Translates the provided source text within the given context.
         /// </summary>

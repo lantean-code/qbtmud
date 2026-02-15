@@ -519,18 +519,18 @@ namespace Lantean.QBTMud.Components
 
             return parsed switch
             {
-                Models.Status.All => WebUiLocalizer.Translate("StatusFilterWidget", "All (%1)", count),
-                Models.Status.Downloading => WebUiLocalizer.Translate("StatusFilterWidget", "Downloading (%1)", count),
-                Models.Status.Seeding => WebUiLocalizer.Translate("StatusFilterWidget", "Seeding (%1)", count),
-                Models.Status.Completed => WebUiLocalizer.Translate("StatusFilterWidget", "Completed (%1)", count),
-                Models.Status.Stopped => WebUiLocalizer.Translate("StatusFilterWidget", "Stopped (%1)", count),
-                Models.Status.Active => WebUiLocalizer.Translate("StatusFilterWidget", "Active (%1)", count),
-                Models.Status.Inactive => WebUiLocalizer.Translate("StatusFilterWidget", "Inactive (%1)", count),
-                Models.Status.Stalled => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled (%1)", count),
-                Models.Status.StalledUploading => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled Uploading (%1)", count),
-                Models.Status.StalledDownloading => WebUiLocalizer.Translate("StatusFilterWidget", "Stalled Downloading (%1)", count),
-                Models.Status.Checking => WebUiLocalizer.Translate("StatusFilterWidget", "Checking (%1)", count),
-                Models.Status.Errored => WebUiLocalizer.Translate("StatusFilterWidget", "Errored (%1)", count),
+                Models.Status.All => LanguageLocalizer.Translate("StatusFilterWidget", "All (%1)", count),
+                Models.Status.Downloading => LanguageLocalizer.Translate("StatusFilterWidget", "Downloading (%1)", count),
+                Models.Status.Seeding => LanguageLocalizer.Translate("StatusFilterWidget", "Seeding (%1)", count),
+                Models.Status.Completed => LanguageLocalizer.Translate("StatusFilterWidget", "Completed (%1)", count),
+                Models.Status.Stopped => LanguageLocalizer.Translate("StatusFilterWidget", "Stopped (%1)", count),
+                Models.Status.Active => LanguageLocalizer.Translate("StatusFilterWidget", "Active (%1)", count),
+                Models.Status.Inactive => LanguageLocalizer.Translate("StatusFilterWidget", "Inactive (%1)", count),
+                Models.Status.Stalled => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled (%1)", count),
+                Models.Status.StalledUploading => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled Uploading (%1)", count),
+                Models.Status.StalledDownloading => LanguageLocalizer.Translate("StatusFilterWidget", "Stalled Downloading (%1)", count),
+                Models.Status.Checking => LanguageLocalizer.Translate("StatusFilterWidget", "Checking (%1)", count),
+                Models.Status.Errored => LanguageLocalizer.Translate("StatusFilterWidget", "Errored (%1)", count),
                 _ => status
             };
         }
@@ -539,12 +539,12 @@ namespace Lantean.QBTMud.Components
         {
             if (string.Equals(category, FilterHelper.CATEGORY_ALL, StringComparison.Ordinal))
             {
-                return WebUiLocalizer.Translate("CategoryFilterModel", "All");
+                return LanguageLocalizer.Translate("CategoryFilterModel", "All");
             }
 
             if (string.Equals(category, FilterHelper.CATEGORY_UNCATEGORIZED, StringComparison.Ordinal))
             {
-                return WebUiLocalizer.Translate("CategoryFilterModel", "Uncategorized");
+                return LanguageLocalizer.Translate("CategoryFilterModel", "Uncategorized");
             }
 
             return category;
@@ -554,12 +554,12 @@ namespace Lantean.QBTMud.Components
         {
             if (string.Equals(tag, FilterHelper.TAG_ALL, StringComparison.Ordinal))
             {
-                return WebUiLocalizer.Translate("TagFilterModel", "All");
+                return LanguageLocalizer.Translate("TagFilterModel", "All");
             }
 
             if (string.Equals(tag, FilterHelper.TAG_UNTAGGED, StringComparison.Ordinal))
             {
-                return WebUiLocalizer.Translate("TagFilterModel", "Untagged");
+                return LanguageLocalizer.Translate("TagFilterModel", "Untagged");
             }
 
             return tag;
@@ -574,11 +574,11 @@ namespace Lantean.QBTMud.Components
 
             return tracker.Key switch
             {
-                FilterHelper.TRACKER_ALL => WebUiLocalizer.Translate("TrackerFiltersList", "All"),
-                FilterHelper.TRACKER_TRACKERLESS => WebUiLocalizer.Translate("TrackerFiltersList", "Trackerless"),
-                FilterHelper.TRACKER_ERROR => WebUiLocalizer.Translate("TrackerFiltersList", "Tracker error"),
-                FilterHelper.TRACKER_WARNING => WebUiLocalizer.Translate("TrackerFiltersList", "Warning"),
-                FilterHelper.TRACKER_ANNOUNCE_ERROR => WebUiLocalizer.Translate("TrackerFiltersList", "Other error"),
+                FilterHelper.TRACKER_ALL => LanguageLocalizer.Translate("TrackerFiltersList", "All"),
+                FilterHelper.TRACKER_TRACKERLESS => LanguageLocalizer.Translate("TrackerFiltersList", "Trackerless"),
+                FilterHelper.TRACKER_ERROR => LanguageLocalizer.Translate("TrackerFiltersList", "Tracker error"),
+                FilterHelper.TRACKER_WARNING => LanguageLocalizer.Translate("TrackerFiltersList", "Warning"),
+                FilterHelper.TRACKER_ANNOUNCE_ERROR => LanguageLocalizer.Translate("TrackerFiltersList", "Other error"),
                 _ => tracker.DisplayName
             };
         }

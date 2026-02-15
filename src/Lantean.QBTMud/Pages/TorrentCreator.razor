@@ -12,9 +12,9 @@
                 <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore" OnClick="NavigateBack" title="Back to torrent list" />
                 <MudDivider Vertical="true" />
             }
-            <MudText Class="px-5 no-wrap">@WebUiLocalizer.Translate("TorrentCreator", "Torrent Creator")</MudText>
+            <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("TorrentCreator", "Torrent Creator")</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Filled.AddBox" OnClick="OpenCreateDialog" Disabled="@IsLoading" title="@WebUiLocalizer.Translate("TorrentCreator", "Create Torrent")" />
+            <MudIconButton Icon="@Icons.Material.Filled.AddBox" OnClick="OpenCreateDialog" Disabled="@IsLoading" title="@LanguageLocalizer.Translate("TorrentCreator", "Create Torrent")" />
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshTasks" Disabled="@IsLoading" title="Refresh" />
             <MudSpacer />
         </MudToolBar>
@@ -71,7 +71,7 @@
                 var task = context.Data;
                 var progress = GetProgress(task);
                 var color = progress < 100 ? Color.Success : Color.Info;
-                <MudProgressLinear title="@WebUiLocalizer.Translate("TorrentCreator", "Progress")"
+                <MudProgressLinear title="@LanguageLocalizer.Translate("TorrentCreator", "Progress")"
                                    Color="@color"
                                    Value="progress"
                                    Class="progress-expand"
@@ -95,11 +95,11 @@
                                    Color="Color.Primary"
                                    Disabled="@(!CanDownload(task))"
                                    OnClick="@(async () => await DownloadTask(task))"
-                                   title="@WebUiLocalizer.Translate("TorrentCreator", "Download Torrent")" />
+                                   title="@LanguageLocalizer.Translate("TorrentCreator", "Download Torrent")" />
                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                    Color="Color.Error"
                                    OnClick="@(async () => await DeleteTask(task))"
-                                   title="@WebUiLocalizer.Translate("TorrentCreator", "Remove Task")" />
+                                   title="@LanguageLocalizer.Translate("TorrentCreator", "Remove Task")" />
                 </MudButtonGroup>;
             };
         }

@@ -5,9 +5,9 @@ namespace Lantean.QBTMud.Models
     /// </summary>
     /// <param name="Code">The WebUI locale code.</param>
     /// <param name="DisplayName">The display name for the locale.</param>
-    public sealed record WebUiLanguageCatalogItem
+    public sealed record LanguageCatalogItem
     {
-        public WebUiLanguageCatalogItem(string code, string displayName)
+        public LanguageCatalogItem(string code, string displayName)
         {
             Code = code;
             DisplayName = displayName;

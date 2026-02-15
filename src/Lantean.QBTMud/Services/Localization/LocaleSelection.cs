@@ -2,9 +2,9 @@ using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Services.Localization
 {
-    internal static class WebUiLocaleSelection
+    internal static class LocaleSelection
     {
-        internal static string ResolveLocale(string? desiredLocale, IReadOnlyList<WebUiLanguageCatalogItem> languages)
+        internal static string ResolveLocale(string? desiredLocale, IReadOnlyList<LanguageCatalogItem> languages)
         {
             if (languages.Count == 0)
             {
@@ -57,7 +57,7 @@ namespace Lantean.QBTMud.Services.Localization
             return TryGetLocale("en", languages) ?? languages[0].Code;
         }
 
-        private static string? TryGetLocale(string locale, IReadOnlyList<WebUiLanguageCatalogItem> languages)
+        private static string? TryGetLocale(string locale, IReadOnlyList<LanguageCatalogItem> languages)
         {
             for (var i = 0; i < languages.Count; i++)
             {

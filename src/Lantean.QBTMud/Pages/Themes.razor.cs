@@ -46,7 +46,7 @@ namespace Lantean.QBTMud.Pages
         protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -452,7 +452,7 @@ namespace Lantean.QBTMud.Pages
 
         private string Translate(string value, params object[] args)
         {
-            return WebUiLocalizer.Translate("AppThemes", value, args);
+            return LanguageLocalizer.Translate("AppThemes", value, args);
         }
 
         private static string BuildJsonDataUrl(string json)

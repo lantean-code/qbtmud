@@ -54,7 +54,7 @@ namespace Lantean.QBTMud.Components
         public MudTheme Theme { get; set; } = default!;
 
         [Inject]
-        public Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        public Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         protected string LinearBarStyle => _linearBarStyle;
 
@@ -546,7 +546,7 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(AppContext, source, arguments);
+            return LanguageLocalizer.Translate(AppContext, source, arguments);
         }
     }
 }

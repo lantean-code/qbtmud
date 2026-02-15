@@ -1,30 +1,30 @@
-@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
 
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu" data-test-id="@TestIdHelper.For("ContextMenuRename")">@WebUiLocalizer.Translate("PropertiesWidget", "Rename...")</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileContextMenu" data-test-id="@TestIdHelper.For("ContextMenuRename")">@LanguageLocalizer.Translate("PropertiesWidget", "Rename...")</MudMenuItem>
 </MudMenu>
 
 <div class="content-panel">
     <div class="content-panel__toolbar content-panel__toolbar--scroll">
         <MudToolBar Gutters="false" Dense="true">
-            <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileToolbar" title="@WebUiLocalizer.Translate("PropertiesWidget", "Rename...")" data-test-id="@TestIdHelper.For("RenameToolbar")" />
+            <MudIconButton Icon="@Icons.Material.Filled.DriveFileRenameOutline" OnClick="RenameFileToolbar" title="@LanguageLocalizer.Translate("PropertiesWidget", "Rename...")" data-test-id="@TestIdHelper.For("RenameToolbar")" />
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="@WebUiLocalizer.Translate("AppFilesTab", "Choose Columns")" data-test-id="@TestIdHelper.For("ColumnOptions")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="@LanguageLocalizer.Translate("AppFilesTab", "Choose Columns")" data-test-id="@TestIdHelper.For("ColumnOptions")" />
             <MudDivider Vertical="true" />
-            <MudMenu Icon="@Icons.Material.Outlined.FileDownloadOff" Label="@WebUiLocalizer.Translate("PropListDelegate", "Do not download")" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="@WebUiLocalizer.Translate("PropListDelegate", "Do not download")" data-test-id="@TestIdHelper.For("DoNotDownloadMenu")">
-                <MudMenuItem OnClick="DoNotDownloadLessThan100PercentAvailability" data-test-id="@TestIdHelper.For("DoNotDownloadLessThan100")">@WebUiLocalizer.Translate("AppFilesTab", "Less Than 100% Availability")</MudMenuItem>
-                <MudMenuItem OnClick="DoNotDownloadLessThan80PercentAvailability" data-test-id="@TestIdHelper.For("DoNotDownloadLessThan80")">@WebUiLocalizer.Translate("AppFilesTab", "Less than 80% Availability")</MudMenuItem>
-                <MudMenuItem OnClick="DoNotDownloadCurrentlyFilteredFiles" data-test-id="@TestIdHelper.For("DoNotDownloadFiltered")">@WebUiLocalizer.Translate("AppFilesTab", "Currently Filtered Files")</MudMenuItem>
+            <MudMenu Icon="@Icons.Material.Outlined.FileDownloadOff" Label="@LanguageLocalizer.Translate("PropListDelegate", "Do not download")" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="@LanguageLocalizer.Translate("PropListDelegate", "Do not download")" data-test-id="@TestIdHelper.For("DoNotDownloadMenu")">
+                <MudMenuItem OnClick="DoNotDownloadLessThan100PercentAvailability" data-test-id="@TestIdHelper.For("DoNotDownloadLessThan100")">@LanguageLocalizer.Translate("AppFilesTab", "Less Than 100% Availability")</MudMenuItem>
+                <MudMenuItem OnClick="DoNotDownloadLessThan80PercentAvailability" data-test-id="@TestIdHelper.For("DoNotDownloadLessThan80")">@LanguageLocalizer.Translate("AppFilesTab", "Less than 80% Availability")</MudMenuItem>
+                <MudMenuItem OnClick="DoNotDownloadCurrentlyFilteredFiles" data-test-id="@TestIdHelper.For("DoNotDownloadFiltered")">@LanguageLocalizer.Translate("AppFilesTab", "Currently Filtered Files")</MudMenuItem>
             </MudMenu>
-            <MudMenu Icon="@Icons.Material.Outlined.FileDownload" Label="@WebUiLocalizer.Translate("PropListDelegate", "Normal")" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="@WebUiLocalizer.Translate("PropListDelegate", "Normal")" data-test-id="@TestIdHelper.For("NormalPriorityMenu")">
-                <MudMenuItem OnClick="NormalPriorityLessThan100PercentAvailability" data-test-id="@TestIdHelper.For("NormalPriorityLessThan100")">@WebUiLocalizer.Translate("AppFilesTab", "Less Than 100% Availability")</MudMenuItem>
-                <MudMenuItem OnClick="NormalPriorityLessThan80PercentAvailability" data-test-id="@TestIdHelper.For("NormalPriorityLessThan80")">@WebUiLocalizer.Translate("AppFilesTab", "Less than 80% Availability")</MudMenuItem>
-                <MudMenuItem OnClick="NormalPriorityCurrentlyFilteredFiles" data-test-id="@TestIdHelper.For("NormalPriorityFiltered")">@WebUiLocalizer.Translate("AppFilesTab", "Currently Filtered Files")</MudMenuItem>
+            <MudMenu Icon="@Icons.Material.Outlined.FileDownload" Label="@LanguageLocalizer.Translate("PropListDelegate", "Normal")" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" title="@LanguageLocalizer.Translate("PropListDelegate", "Normal")" data-test-id="@TestIdHelper.For("NormalPriorityMenu")">
+                <MudMenuItem OnClick="NormalPriorityLessThan100PercentAvailability" data-test-id="@TestIdHelper.For("NormalPriorityLessThan100")">@LanguageLocalizer.Translate("AppFilesTab", "Less Than 100% Availability")</MudMenuItem>
+                <MudMenuItem OnClick="NormalPriorityLessThan80PercentAvailability" data-test-id="@TestIdHelper.For("NormalPriorityLessThan80")">@LanguageLocalizer.Translate("AppFilesTab", "Less than 80% Availability")</MudMenuItem>
+                <MudMenuItem OnClick="NormalPriorityCurrentlyFilteredFiles" data-test-id="@TestIdHelper.For("NormalPriorityFiltered")">@LanguageLocalizer.Translate("AppFilesTab", "Currently Filtered Files")</MudMenuItem>
             </MudMenu>
-            <MudIconButton Icon="@Icons.Material.Outlined.FilterList" OnClick="ShowFilterDialog" title="@WebUiLocalizer.Translate("SearchEngineWidget", "Filter")" data-test-id="@TestIdHelper.For("ShowFilterDialog")" />
-            <MudIconButton Icon="@Icons.Material.Outlined.FilterListOff" OnClick="RemoveFilter" title="@WebUiLocalizer.Translate("AppFilesTab", "Remove Filter")" data-test-id="@TestIdHelper.For("RemoveFilter")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.FilterList" OnClick="ShowFilterDialog" title="@LanguageLocalizer.Translate("SearchEngineWidget", "Filter")" data-test-id="@TestIdHelper.For("ShowFilterDialog")" />
+            <MudIconButton Icon="@Icons.Material.Outlined.FilterListOff" OnClick="RemoveFilter" title="@LanguageLocalizer.Translate("AppFilesTab", "Remove Filter")" data-test-id="@TestIdHelper.For("RemoveFilter")" />
             <MudSpacer />
-            <MudTextField @ref="SearchInput" T="string" Value="SearchText" ValueChanged="SearchTextChanged" Immediate="true" DebounceInterval="500" Placeholder="@WebUiLocalizer.Translate("PropertiesWidget", "Filter files...")" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" data-test-id="@TestIdHelper.For("FilesTabSearch")"></MudTextField>
+            <MudTextField @ref="SearchInput" T="string" Value="SearchText" ValueChanged="SearchTextChanged" Immediate="true" DebounceInterval="500" Placeholder="@LanguageLocalizer.Translate("PropertiesWidget", "Filter files...")" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" data-test-id="@TestIdHelper.For("FilesTabSearch")"></MudTextField>
         </MudToolBar>
     </div>
     <div class="content-panel__body">
@@ -74,10 +74,10 @@
             return context => __builder =>
             {
                 <MudSelect T="Priority" Dense="true" Value="@context.Data.Priority" ValueChanged="@(priority => PriorityValueChanged(context.Data, priority))" Class="mt-0" data-test-id="@TestIdHelper.For($"Priority-{CreateKey(context.Data)}")">
-                    <MudSelectItem T="Priority" Value="Priority.DoNotDownload">@WebUiLocalizer.Translate("PropListDelegate", "Do not download")</MudSelectItem>
-                    <MudSelectItem T="Priority" Value="Priority.Normal">@WebUiLocalizer.Translate("PropListDelegate", "Normal")</MudSelectItem>
-                    <MudSelectItem T="Priority" Value="Priority.High">@WebUiLocalizer.Translate("PropListDelegate", "High")</MudSelectItem>
-                    <MudSelectItem T="Priority" Value="Priority.Maximum">@WebUiLocalizer.Translate("PropListDelegate", "Maximum")</MudSelectItem>
+                    <MudSelectItem T="Priority" Value="Priority.DoNotDownload">@LanguageLocalizer.Translate("PropListDelegate", "Do not download")</MudSelectItem>
+                    <MudSelectItem T="Priority" Value="Priority.Normal">@LanguageLocalizer.Translate("PropListDelegate", "Normal")</MudSelectItem>
+                    <MudSelectItem T="Priority" Value="Priority.High">@LanguageLocalizer.Translate("PropListDelegate", "High")</MudSelectItem>
+                    <MudSelectItem T="Priority" Value="Priority.Maximum">@LanguageLocalizer.Translate("PropListDelegate", "Maximum")</MudSelectItem>
                 </MudSelect>
             };
         }
@@ -91,7 +91,7 @@
             {
                 var value = (float?)context.GetValue();
                 var color = value < 1 ? Color.Success : Color.Info;
-                <MudProgressLinear title="@WebUiLocalizer.Translate("TransferListModel", "Progress")" Color="@color" Value="@((value ?? 0) * 100)" Class="progress-expand" Size="Size.Large">
+                <MudProgressLinear title="@LanguageLocalizer.Translate("TransferListModel", "Progress")" Color="@color" Value="@((value ?? 0) * 100)" Class="progress-expand" Size="Size.Large">
                     @DisplayHelpers.Percentage(value)
                 </MudProgressLinear>
             };

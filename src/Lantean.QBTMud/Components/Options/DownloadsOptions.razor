@@ -5,33 +5,33 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "When adding a torrent")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "When adding a torrent")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Torrent content layout:")" Value="TorrentContentLayout" ValueChanged="TorrentContentLayoutChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentContentLayout")">
-                    <MudSelectItem Value="@("Original")">@WebUiLocalizer.Translate("OptionsDialog", "Original")</MudSelectItem>
-                    <MudSelectItem Value="@("Subfolder")">@WebUiLocalizer.Translate("OptionsDialog", "Create subfolder")</MudSelectItem>
-                    <MudSelectItem Value="@("NoSubfolder")">@WebUiLocalizer.Translate("OptionsDialog", "Don't create subfolder")</MudSelectItem>
+                <MudSelect T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Torrent content layout:")" Value="TorrentContentLayout" ValueChanged="TorrentContentLayoutChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentContentLayout")">
+                    <MudSelectItem Value="@("Original")">@LanguageLocalizer.Translate("OptionsDialog", "Original")</MudSelectItem>
+                    <MudSelectItem Value="@("Subfolder")">@LanguageLocalizer.Translate("OptionsDialog", "Create subfolder")</MudSelectItem>
+                    <MudSelectItem Value="@("NoSubfolder")">@LanguageLocalizer.Translate("OptionsDialog", "Don't create subfolder")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Add to top of queue")" Value="AddToTopOfQueue" ValueChanged="AddToTopOfQueueChanged" data-test-id="@TestIdHelper.For("AddToTopOfQueue")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Add to top of queue")" Value="AddToTopOfQueue" ValueChanged="AddToTopOfQueueChanged" data-test-id="@TestIdHelper.For("AddToTopOfQueue")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Do not start the download automatically")" Value="AddStoppedEnabled" ValueChanged="AddStoppedEnabledChanged" data-test-id="@TestIdHelper.For("AddStoppedEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Do not start the download automatically")" Value="AddStoppedEnabled" ValueChanged="AddStoppedEnabledChanged" data-test-id="@TestIdHelper.For("AddStoppedEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Torrent stop condition:")" Value="TorrentStopCondition" ValueChanged="TorrentStopConditionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentStopCondition")">
-                    <MudSelectItem Value="@("None")">@WebUiLocalizer.Translate("OptionsDialog", "None")</MudSelectItem>
-                    <MudSelectItem Value="@("MetadataReceived")">@WebUiLocalizer.Translate("OptionsDialog", "Metadata received")</MudSelectItem>
-                    <MudSelectItem Value="@("FilesChecked")">@WebUiLocalizer.Translate("OptionsDialog", "Files checked")</MudSelectItem>
+                <MudSelect T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Torrent stop condition:")" Value="TorrentStopCondition" ValueChanged="TorrentStopConditionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentStopCondition")">
+                    <MudSelectItem Value="@("None")">@LanguageLocalizer.Translate("OptionsDialog", "None")</MudSelectItem>
+                    <MudSelectItem Value="@("MetadataReceived")">@LanguageLocalizer.Translate("OptionsDialog", "Metadata received")</MudSelectItem>
+                    <MudSelectItem Value="@("FilesChecked")">@LanguageLocalizer.Translate("OptionsDialog", "Files checked")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Delete .torrent files afterwards")" Value="AutoDeleteMode" ValueChanged="AutoDeleteModeChanged" data-test-id="@TestIdHelper.For("AutoDeleteMode")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Delete .torrent files afterwards")" Value="AutoDeleteMode" ValueChanged="AutoDeleteModeChanged" data-test-id="@TestIdHelper.For("AutoDeleteMode")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -40,16 +40,16 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Files")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Files")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent>
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Pre-allocate disk space for all files")" Value="PreallocateAll" ValueChanged="PreallocateAllChanged" data-test-id="@TestIdHelper.For("PreallocateAll")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Pre-allocate disk space for all files")" Value="PreallocateAll" ValueChanged="PreallocateAllChanged" data-test-id="@TestIdHelper.For("PreallocateAll")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Append .!qB extension to incomplete files")" Value="IncompleteFilesExt" ValueChanged="IncompleteFilesExtChanged" data-test-id="@TestIdHelper.For("IncompleteFilesExt")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Append .!qB extension to incomplete files")" Value="IncompleteFilesExt" ValueChanged="IncompleteFilesExtChanged" data-test-id="@TestIdHelper.For("IncompleteFilesExt")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -58,40 +58,40 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("HttpServer", "Saving Management")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("HttpServer", "Saving Management")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="bool" Label="@WebUiLocalizer.Translate("OptionsDialog", "Default Torrent Management Mode:")" Value="AutoTmmEnabled" ValueChanged="AutoTmmEnabledChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AutoTmmEnabled")">
-                    <MudSelectItem Value="false">@WebUiLocalizer.Translate("OptionsDialog", "Manual")</MudSelectItem>
-                    <MudSelectItem Value="true">@WebUiLocalizer.Translate("OptionsDialog", "Automatic")</MudSelectItem>
+                <MudSelect T="bool" Label="@LanguageLocalizer.Translate("OptionsDialog", "Default Torrent Management Mode:")" Value="AutoTmmEnabled" ValueChanged="AutoTmmEnabledChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("AutoTmmEnabled")">
+                    <MudSelectItem Value="false">@LanguageLocalizer.Translate("OptionsDialog", "Manual")</MudSelectItem>
+                    <MudSelectItem Value="true">@LanguageLocalizer.Translate("OptionsDialog", "Automatic")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="bool" Label="@WebUiLocalizer.Translate("OptionsDialog", "When Torrent Category changed:")" Value="TorrentChangedTmmEnabled" ValueChanged="TorrentChangedTmmEnabledChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentChangedTmmEnabled")">
-                    <MudSelectItem Value="true">@WebUiLocalizer.Translate("OptionsDialog", "Relocate torrent")</MudSelectItem>
-                    <MudSelectItem Value="false">@WebUiLocalizer.Translate("OptionsDialog", "Switch torrent to Manual Mode")</MudSelectItem>
+                <MudSelect T="bool" Label="@LanguageLocalizer.Translate("OptionsDialog", "When Torrent Category changed:")" Value="TorrentChangedTmmEnabled" ValueChanged="TorrentChangedTmmEnabledChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentChangedTmmEnabled")">
+                    <MudSelectItem Value="true">@LanguageLocalizer.Translate("OptionsDialog", "Relocate torrent")</MudSelectItem>
+                    <MudSelectItem Value="false">@LanguageLocalizer.Translate("OptionsDialog", "Switch torrent to Manual Mode")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="bool" Label="@WebUiLocalizer.Translate("OptionsDialog", "When Default Save Path changed:")" Value="SavePathChangedTmmEnabled" ValueChanged="SavePathChangedTmmEnabledChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("SavePathChangedTmmEnabled")">
-                    <MudSelectItem Value="true">@WebUiLocalizer.Translate("OptionsDialog", "Relocate affected torrents")</MudSelectItem>
-                    <MudSelectItem Value="false">@WebUiLocalizer.Translate("OptionsDialog", "Switch affected torrents to Manual Mode")</MudSelectItem>
+                <MudSelect T="bool" Label="@LanguageLocalizer.Translate("OptionsDialog", "When Default Save Path changed:")" Value="SavePathChangedTmmEnabled" ValueChanged="SavePathChangedTmmEnabledChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("SavePathChangedTmmEnabled")">
+                    <MudSelectItem Value="true">@LanguageLocalizer.Translate("OptionsDialog", "Relocate affected torrents")</MudSelectItem>
+                    <MudSelectItem Value="false">@LanguageLocalizer.Translate("OptionsDialog", "Switch affected torrents to Manual Mode")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <MudSelect T="bool" Label="@WebUiLocalizer.Translate("OptionsDialog", "When Category Save Path changed:")" Value="CategoryChangedTmmEnabled" ValueChanged="CategoryChangedTmmEnabledChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryChangedTmmEnabled")">
-                    <MudSelectItem Value="true">@WebUiLocalizer.Translate("OptionsDialog", "Relocate affected torrents")</MudSelectItem>
-                    <MudSelectItem Value="false">@WebUiLocalizer.Translate("OptionsDialog", "Switch affected torrents to Manual Mode")</MudSelectItem>
+                <MudSelect T="bool" Label="@LanguageLocalizer.Translate("OptionsDialog", "When Category Save Path changed:")" Value="CategoryChangedTmmEnabled" ValueChanged="CategoryChangedTmmEnabledChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryChangedTmmEnabled")">
+                    <MudSelectItem Value="true">@LanguageLocalizer.Translate("OptionsDialog", "Relocate affected torrents")</MudSelectItem>
+                    <MudSelectItem Value="false">@LanguageLocalizer.Translate("OptionsDialog", "Switch affected torrents to Manual Mode")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Use Category paths in Manual Mode")" Value="UseSubcategories" ValueChanged="UseSubcategoriesChanged" data-test-id="@TestIdHelper.For("UseSubcategories")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Use Category paths in Manual Mode")" Value="UseSubcategories" ValueChanged="UseSubcategoriesChanged" data-test-id="@TestIdHelper.For("UseSubcategories")" />
             </MudItem>
             <MudItem xs="12">
-                <PathAutocomplete Label="@WebUiLocalizer.Translate("OptionsDialog", "Default Save Path:")"
+                <PathAutocomplete Label="@LanguageLocalizer.Translate("OptionsDialog", "Default Save Path:")"
                                   Value="@SavePath"
                                   ValueChanged="@(value => SavePathChanged(value ?? string.Empty))"
                                   Mode="DirectoryContentMode.Directories"
@@ -102,10 +102,10 @@
             <MudItem xs="12">
                 <MudGrid>
                     <MudItem xs="12" sm="6" md="3">
-                        <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Keep incomplete torrents in:")" Value="TempPathEnabled" ValueChanged="TempPathEnabledChanged" data-test-id="@TestIdHelper.For("TempPathEnabled")" />
+                        <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Keep incomplete torrents in:")" Value="TempPathEnabled" ValueChanged="TempPathEnabledChanged" data-test-id="@TestIdHelper.For("TempPathEnabled")" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
-                        <PathAutocomplete Label="@WebUiLocalizer.Translate("CookiesDialog", "Path")"
+                        <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
                                           Value="@TempPath"
                                           ValueChanged="@(value => TempPathChanged(value ?? string.Empty))"
                                           Mode="DirectoryContentMode.Directories"
@@ -119,10 +119,10 @@
             <MudItem xs="12">
                 <MudGrid>
                     <MudItem xs="12" sm="6" md="3">
-                        <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Copy .torrent files to:")" Value="ExportDirEnabled" ValueChanged="ExportDirEnabledChanged" data-test-id="@TestIdHelper.For("ExportDirEnabled")" />
+                        <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Copy .torrent files to:")" Value="ExportDirEnabled" ValueChanged="ExportDirEnabledChanged" data-test-id="@TestIdHelper.For("ExportDirEnabled")" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
-                        <PathAutocomplete Label="@WebUiLocalizer.Translate("CookiesDialog", "Path")"
+                        <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
                                           Value="@ExportDir"
                                           ValueChanged="@(value => ExportDirChanged(value ?? string.Empty))"
                                           Mode="DirectoryContentMode.Directories"
@@ -136,10 +136,10 @@
             <MudItem xs="12">
                 <MudGrid>
                     <MudItem xs="12" sm="6" md="3">
-                        <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Copy .torrent files for finished downloads to:")" Value="ExportDirFinEnabled" ValueChanged="ExportDirFinEnabledChanged" data-test-id="@TestIdHelper.For("ExportDirFinEnabled")" />
+                        <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Copy .torrent files for finished downloads to:")" Value="ExportDirFinEnabled" ValueChanged="ExportDirFinEnabledChanged" data-test-id="@TestIdHelper.For("ExportDirFinEnabled")" />
                     </MudItem>
                     <MudItem xs="12" sm="6" md="9">
-                        <PathAutocomplete Label="@WebUiLocalizer.Translate("CookiesDialog", "Path")"
+                        <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
                                           Value="@ExportDirFin"
                                           ValueChanged="@(value => ExportDirFinChanged(value ?? string.Empty))"
                                           Mode="DirectoryContentMode.Directories"
@@ -157,15 +157,15 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Automatically add torrents from:")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Automatically add torrents from:")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudSimpleTable>
             <thead>
                 <tr>
-                    <th>@WebUiLocalizer.Translate("ScanFoldersModel", "Monitored Folder")</th>
-                    <th>@WebUiLocalizer.Translate("ScanFoldersModel", "Override Save Location")</th>
+                    <th>@LanguageLocalizer.Translate("ScanFoldersModel", "Monitored Folder")</th>
+                    <th>@LanguageLocalizer.Translate("ScanFoldersModel", "Override Save Location")</th>
                 </tr>
             </thead>
             <tbody>
@@ -181,7 +181,7 @@
 
                     <tr>
                         <td>
-                            <PathAutocomplete Label="@WebUiLocalizer.Translate("CookiesDialog", "Path")"
+                            <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
                                               Value="@key"
                                               ValueChanged="@(v => ScanDirsKeyChanged(key, v ?? string.Empty))"
                                               Mode="DirectoryContentMode.Directories"
@@ -195,15 +195,15 @@
                             <MudGrid>
                                 <MudItem xs="@(location.SavePath is null ? 11 : 3)">
                                     <MudSelect T="string" Value="@location.ToString()" ValueChanged="@(v => ScanDirsValueChanged(key, v))" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@(TestIdHelper.For($"{rowId}.Type"))">
-                                        <MudSelectItem T="string" Value="@("0")">@WebUiLocalizer.Translate("ScanFoldersModel", "Monitored folder")</MudSelectItem>
-                                        <MudSelectItem T="string" Value="@("1")">@WebUiLocalizer.Translate("ScanFoldersModel", "Default save location")</MudSelectItem>
-                                        <MudSelectItem T="string" Value="@(location.SavePath is not null ? location.SavePath : string.Empty)">@WebUiLocalizer.Translate("ScanFoldersModel", "Other...")</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@("0")">@LanguageLocalizer.Translate("ScanFoldersModel", "Monitored folder")</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@("1")">@LanguageLocalizer.Translate("ScanFoldersModel", "Default save location")</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@(location.SavePath is not null ? location.SavePath : string.Empty)">@LanguageLocalizer.Translate("ScanFoldersModel", "Other...")</MudSelectItem>
                                     </MudSelect>
                                 </MudItem>
                                 @if (location.SavePath is not null)
                                 {
                                     <MudItem xs="8">
-                                        <PathAutocomplete Label="@WebUiLocalizer.Translate("CookiesDialog", "Path")"
+                                        <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
                                                           Value="@location.SavePath"
                                                           ValueChanged="@(v => ScanDirsValueChanged(key, v ?? string.Empty))"
                                                           Mode="DirectoryContentMode.Directories"
@@ -230,7 +230,7 @@
 
                     <tr>
                         <td>
-                            <PathAutocomplete Label="@WebUiLocalizer.Translate("CookiesDialog", "Path")"
+                            <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
                                               Value="@item.Key"
                                               ValueChanged="@(v => AddedScanDirsKeyChanged(index, v ?? string.Empty))"
                                               Mode="DirectoryContentMode.Directories"
@@ -244,15 +244,15 @@
                             <MudGrid>
                                 <MudItem xs="@(item.Value.SavePath is null ? (isLast ? 11 : 12) : 3)">
                                     <MudSelect T="string" Value="@item.Value.ToString()" ValueChanged="@(v => AddedScanDirsValueChanged(index, v))" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@(TestIdHelper.For($"{rowId}.Type"))">
-                                        <MudSelectItem T="string" Value="@("0")">@WebUiLocalizer.Translate("ScanFoldersModel", "Monitored folder")</MudSelectItem>
-                                        <MudSelectItem T="string" Value="@("1")">@WebUiLocalizer.Translate("ScanFoldersModel", "Default save location")</MudSelectItem>
-                                        <MudSelectItem T="string" Value="@(item.Value.SavePath is not null ? item.Value.SavePath : "")">@WebUiLocalizer.Translate("ScanFoldersModel", "Other...")</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@("0")">@LanguageLocalizer.Translate("ScanFoldersModel", "Monitored folder")</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@("1")">@LanguageLocalizer.Translate("ScanFoldersModel", "Default save location")</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@(item.Value.SavePath is not null ? item.Value.SavePath : "")">@LanguageLocalizer.Translate("ScanFoldersModel", "Other...")</MudSelectItem>
                                     </MudSelect>
                                 </MudItem>
                                 @if (item.Value.SavePath is not null)
                                 {
                                     <MudItem xs="@(isLast ? 8 : 9)">
-                                        <PathAutocomplete Label="@WebUiLocalizer.Translate("CookiesDialog", "Path")"
+                                        <PathAutocomplete Label="@LanguageLocalizer.Translate("CookiesDialog", "Path")"
                                                           Value="@item.Value.SavePath"
                                                           ValueChanged="@(v => AddedScanDirsValueChanged(index, v ?? string.Empty))"
                                                           Mode="DirectoryContentMode.Directories"
@@ -284,16 +284,16 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Excluded file names")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Excluded file names")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent>
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Excluded file names")" Value="ExcludedFileNamesEnabled" ValueChanged="ExcludedFileNamesEnabledChanged" data-test-id="@TestIdHelper.For("ExcludedFileNamesEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Excluded file names")" Value="ExcludedFileNamesEnabled" ValueChanged="ExcludedFileNamesEnabledChanged" data-test-id="@TestIdHelper.For("ExcludedFileNamesEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Excluded file names")" Value="ExcludedFileNames" ValueChanged="ExcludedFileNamesChanged" Lines="5" Disabled="@(ExcludedFileNamesEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ExcludedFileNames")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Excluded file names")" Value="ExcludedFileNames" ValueChanged="ExcludedFileNamesChanged" Lines="5" Disabled="@(ExcludedFileNamesEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("ExcludedFileNames")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -302,34 +302,34 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Email notification upon download completion")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Email notification upon download completion")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent>
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Email notification upon download completion")" Value="MailNotificationEnabled" ValueChanged="MailNotificationEnabledChanged" data-test-id="@TestIdHelper.For("MailNotificationEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Email notification upon download completion")" Value="MailNotificationEnabled" ValueChanged="MailNotificationEnabledChanged" data-test-id="@TestIdHelper.For("MailNotificationEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "From:")" Value="MailNotificationSender" ValueChanged="MailNotificationSenderChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationSender")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "From:")" Value="MailNotificationSender" ValueChanged="MailNotificationSenderChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationSender")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "To:")" Value="MailNotificationEmail" ValueChanged="MailNotificationEmailChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationEmail")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "To:")" Value="MailNotificationEmail" ValueChanged="MailNotificationEmailChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationEmail")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "SMTP server:")" Value="MailNotificationSmtp" ValueChanged="MailNotificationSmtpChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationSmtp")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "SMTP server:")" Value="MailNotificationSmtp" ValueChanged="MailNotificationSmtpChanged" Disabled="@(MailNotificationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationSmtp")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "This server requires a secure connection (SSL)")" Value="MailNotificationSslEnabled" ValueChanged="MailNotificationSslEnabledChanged" Disabled="@(MailNotificationEnabled != true)" data-test-id="@TestIdHelper.For("MailNotificationSslEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "This server requires a secure connection (SSL)")" Value="MailNotificationSslEnabled" ValueChanged="MailNotificationSslEnabledChanged" Disabled="@(MailNotificationEnabled != true)" data-test-id="@TestIdHelper.For("MailNotificationSslEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Authentication")" Value="MailNotificationAuthEnabled" ValueChanged="MailNotificationAuthEnabledChanged" Disabled="@(MailNotificationEnabled != true)" data-test-id="@TestIdHelper.For("MailNotificationAuthEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Authentication")" Value="MailNotificationAuthEnabled" ValueChanged="MailNotificationAuthEnabledChanged" Disabled="@(MailNotificationEnabled != true)" data-test-id="@TestIdHelper.For("MailNotificationAuthEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Username:")" Value="MailNotificationUsername" ValueChanged="MailNotificationUsernameChanged" Disabled="@(MailNotificationEnabled != true || MailNotificationAuthEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationUsername")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Username:")" Value="MailNotificationUsername" ValueChanged="MailNotificationUsernameChanged" Disabled="@(MailNotificationEnabled != true || MailNotificationAuthEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationUsername")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Password:")" Value="MailNotificationPassword" ValueChanged="MailNotificationPasswordChanged" Disabled="@(MailNotificationEnabled != true || MailNotificationAuthEnabled != true)" InputType="InputType.Password" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationPassword")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Password:")" Value="MailNotificationPassword" ValueChanged="MailNotificationPasswordChanged" Disabled="@(MailNotificationEnabled != true || MailNotificationAuthEnabled != true)" InputType="InputType.Password" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MailNotificationPassword")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -338,38 +338,38 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Run external program")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Run external program")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Run on torrent added:")" Value="AutorunOnTorrentAddedEnabled" ValueChanged="AutorunOnTorrentAddedEnabledChanged" data-test-id="@TestIdHelper.For("AutorunOnTorrentAddedEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Run on torrent added:")" Value="AutorunOnTorrentAddedEnabled" ValueChanged="AutorunOnTorrentAddedEnabledChanged" data-test-id="@TestIdHelper.For("AutorunOnTorrentAddedEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "External program")" Value="AutorunOnTorrentAddedProgram" ValueChanged="AutorunOnTorrentAddedProgramChanged" Disabled="@(AutorunOnTorrentAddedEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AutorunOnTorrentAddedProgram")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "External program")" Value="AutorunOnTorrentAddedProgram" ValueChanged="AutorunOnTorrentAddedProgramChanged" Disabled="@(AutorunOnTorrentAddedEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AutorunOnTorrentAddedProgram")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Run on torrent finished:")" Value="AutorunEnabled" ValueChanged="AutorunEnabledChanged" data-test-id="@TestIdHelper.For("AutorunEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Run on torrent finished:")" Value="AutorunEnabled" ValueChanged="AutorunEnabledChanged" data-test-id="@TestIdHelper.For("AutorunEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "External program")" Value="AutorunProgram" ValueChanged="AutorunProgramChanged" Disabled="@(AutorunEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AutorunProgram")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "External program")" Value="AutorunProgram" ValueChanged="AutorunProgramChanged" Disabled="@(AutorunEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AutorunProgram")" />
             </MudItem>
             <MudItem xs="12">
-                <MudText>@WebUiLocalizer.Translate("OptionsDialog", "Supported parameters (case sensitive):")</MudText>
+                <MudText>@LanguageLocalizer.Translate("OptionsDialog", "Supported parameters (case sensitive):")</MudText>
                 <MudList T="string" ReadOnly="true">
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%N: Torrent name")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%L: Category")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%G: Tags (separated by comma)")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%F: Content path (same as root path for multifile torrent)")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%R: Root path (first torrent subdirectory path)")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%D: Save path")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%C: Number of files")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%Z: Torrent size (bytes)")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%T: Current tracker")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%I: Info hash v1")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%J: Info hash v2")</MudListItem>
-                    <MudListItem>@WebUiLocalizer.Translate("OptionsDialog", "%K: Torrent ID")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%N: Torrent name")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%L: Category")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%G: Tags (separated by comma)")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%F: Content path (same as root path for multifile torrent)")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%R: Root path (first torrent subdirectory path)")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%D: Save path")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%C: Number of files")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%Z: Torrent size (bytes)")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%T: Current tracker")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%I: Info hash v1")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%J: Info hash v2")</MudListItem>
+                    <MudListItem>@LanguageLocalizer.Translate("OptionsDialog", "%K: Torrent ID")</MudListItem>
                 </MudList>
             </MudItem>
         </MudGrid>

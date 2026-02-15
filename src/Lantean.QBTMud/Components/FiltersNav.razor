@@ -1,60 +1,60 @@
-@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
 
 <MudMenu @ref="StatusContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable"> 
     @TorrentControls(_statusType)
 </MudMenu>
 
 <MudMenu @ref="CategoryContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-<MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddCategory" data-test-id="@TestIdHelper.For("CategoryAdd")">@WebUiLocalizer.Translate("CategoryFilterWidget", "Add category...")</MudMenuItem>
+<MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddCategory" data-test-id="@TestIdHelper.For("CategoryAdd")">@LanguageLocalizer.Translate("CategoryFilterWidget", "Add category...")</MudMenuItem>
     @if (IsCategoryTarget)
     {
-        <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="EditCategory" data-test-id="@TestIdHelper.For("CategoryEdit")">@WebUiLocalizer.Translate("CategoryFilterWidget", "Edit category...")</MudMenuItem>
-        <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="AddSubcategory" data-test-id="@TestIdHelper.For("CategoryAddSubcategory")">@WebUiLocalizer.Translate("CategoryFilterWidget", "Add subcategory...")</MudMenuItem>
-        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveCategory" data-test-id="@TestIdHelper.For("CategoryRemove")">@WebUiLocalizer.Translate("CategoryFilterWidget", "Remove category")</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Edit" IconColor="Color.Info" OnClick="EditCategory" data-test-id="@TestIdHelper.For("CategoryEdit")">@LanguageLocalizer.Translate("CategoryFilterWidget", "Edit category...")</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.CreateNewFolder" IconColor="Color.Info" OnClick="AddSubcategory" data-test-id="@TestIdHelper.For("CategoryAddSubcategory")">@LanguageLocalizer.Translate("CategoryFilterWidget", "Add subcategory...")</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveCategory" data-test-id="@TestIdHelper.For("CategoryRemove")">@LanguageLocalizer.Translate("CategoryFilterWidget", "Remove category")</MudMenuItem>
     }
-    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedCategories" data-test-id="@TestIdHelper.For("CategoryRemoveUnused")">@WebUiLocalizer.Translate("CategoryFilterWidget", "Remove unused categories")</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedCategories" data-test-id="@TestIdHelper.For("CategoryRemoveUnused")">@LanguageLocalizer.Translate("CategoryFilterWidget", "Remove unused categories")</MudMenuItem>
     <MudDivider />
     @TorrentControls(_categoryType)
 </MudMenu>
 
 <MudMenu @ref="TagContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-<MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddTag" data-test-id="@TestIdHelper.For("TagAdd")">@WebUiLocalizer.Translate("TagFilterWidget", "Add tag...")</MudMenuItem>
+<MudMenuItem Icon="@Icons.Material.Outlined.AddCircle" IconColor="Color.Info" OnClick="AddTag" data-test-id="@TestIdHelper.For("TagAdd")">@LanguageLocalizer.Translate("TagFilterWidget", "Add tag...")</MudMenuItem>
     @if (IsTagTarget)
     {
-        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveTag" data-test-id="@TestIdHelper.For("TagRemove")">@WebUiLocalizer.Translate("TagFilterWidget", "Remove tag")</MudMenuItem>
+        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveTag" data-test-id="@TestIdHelper.For("TagRemove")">@LanguageLocalizer.Translate("TagFilterWidget", "Remove tag")</MudMenuItem>
     }
-    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedTags" data-test-id="@TestIdHelper.For("TagRemoveUnused")">@WebUiLocalizer.Translate("TagFilterWidget", "Remove unused tags")</MudMenuItem>
+    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="RemoveUnusedTags" data-test-id="@TestIdHelper.For("TagRemoveUnused")">@LanguageLocalizer.Translate("TagFilterWidget", "Remove unused tags")</MudMenuItem>
     <MudDivider />
     @TorrentControls(_tagType)
 </MudMenu>
 
 <MudMenu @ref="TrackerContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
-<MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" Disabled="@(!CanRemoveTracker)" OnClick="RemoveTracker" data-test-id="@TestIdHelper.For("TrackerRemove")">@WebUiLocalizer.Translate("TrackerFiltersList", "Remove tracker")</MudMenuItem>
+<MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" Disabled="@(!CanRemoveTracker)" OnClick="RemoveTracker" data-test-id="@TestIdHelper.For("TrackerRemove")">@LanguageLocalizer.Translate("TrackerFiltersList", "Remove tracker")</MudMenuItem>
     <MudDivider />
     @TorrentControls(_trackerType)
 </MudMenu>
 
 <MudNavMenu Dense="true">
-    <MudNavGroup Title="@WebUiLocalizer.Translate("TransferListFiltersWidget", "Status")" @bind-Expanded="_statusExpanded">
+    <MudNavGroup Title="@LanguageLocalizer.Translate("TransferListFiltersWidget", "Status")" @bind-Expanded="_statusExpanded">
         @foreach (var (status, count) in Statuses)
         {
             var (icon, color) = DisplayHelpers.GetStatusIcon(status);
             <CustomNavLink Class="filter-menu-item" Active="@(Status == status)" Icon="@icon" IconColor="@color" OnClick="@(e => StatusValueChanged(status))" OnContextMenu="@(e => StatusOnContextMenu(e, status))" OnLongPress="@(e => StatusOnLongPress(e, status))" data-test-id="@TestIdHelper.For($"Status-{status}")">@GetStatusDisplayName(status, count)</CustomNavLink>
         }
     </MudNavGroup>
-    <MudNavGroup Title="@WebUiLocalizer.Translate("TransferListFiltersWidget", "Categories")" @bind-Expanded="_categoriesExpanded">
+    <MudNavGroup Title="@LanguageLocalizer.Translate("TransferListFiltersWidget", "Categories")" @bind-Expanded="_categoriesExpanded">
         @foreach (var (category, count) in Categories)
         {
             <CustomNavLink Class="filter-menu-item" Active="@(Category == category)" Icon="@Icons.Material.Filled.List" IconColor="Color.Info" OnClick="@(e => CategoryValueChanged(category))" OnContextMenu="@(e => CategoryOnContextMenu(e, category))" OnLongPress="@(e => CategoryOnLongPress(e, category))" data-test-id="@TestIdHelper.For($"Category-{category}")">@($"{GetCategoryDisplayName(category)} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
-    <MudNavGroup Title="@WebUiLocalizer.Translate("TransferListFiltersWidget", "Tags")" @bind-Expanded="_tagsExpanded">
+    <MudNavGroup Title="@LanguageLocalizer.Translate("TransferListFiltersWidget", "Tags")" @bind-Expanded="_tagsExpanded">
         @foreach (var (tag, count) in Tags)
         {
             <CustomNavLink Class="filter-menu-item" Active="@(Tag == tag)" Icon="@Icons.Material.Filled.Label" IconColor="Color.Info" OnClick="@(e => TagValueChanged(tag))" OnContextMenu="@(e => TagOnContextMenu(e, tag))" OnLongPress="@(e => TagOnLongPress(e, tag))" data-test-id="@TestIdHelper.For($"Tag-{tag}")">@($"{GetTagDisplayName(tag)} ({count})")</CustomNavLink>
         }
     </MudNavGroup>
-    <MudNavGroup Title="@WebUiLocalizer.Translate("TransferListFiltersWidget", "Trackers")" @bind-Expanded="_trackersExpanded">
+    <MudNavGroup Title="@LanguageLocalizer.Translate("TransferListFiltersWidget", "Trackers")" @bind-Expanded="_trackersExpanded">
         @foreach (var tracker in Trackers)
         {
             <CustomNavLink Class="filter-menu-item" Active="@(Tracker == tracker.Key)" Icon="@Icons.Material.Filled.PinDrop" IconColor="Color.Info" OnClick="@(e => TrackerValueChanged(tracker.Key))" OnContextMenu="@(e => TrackerOnContextMenu(e, tracker.Key))" OnLongPress="@(e => TrackerOnLongPress(e, tracker.Key))" data-test-id="@TestIdHelper.For($"Tracker-{tracker.Key}")">@($"{GetTrackerDisplayName(tracker)} ({tracker.Count})")</CustomNavLink>
@@ -68,9 +68,9 @@
     {
         return __builder =>
         {
-            <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="@(e => StartTorrents(type))" data-test-id="@TestIdHelper.For($"{type}-Start")">@WebUiLocalizer.Translate(GetFilterContext(type), "Start torrents")</MudMenuItem>
-            <MudMenuItem Icon="@Icons.Material.Filled.Stop" IconColor="Color.Warning" OnClick="@(e => StopTorrents(type))" data-test-id="@TestIdHelper.For($"{type}-Stop")">@WebUiLocalizer.Translate(GetFilterContext(type), "Stop torrents")</MudMenuItem>
-            <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="@(e => RemoveTorrents(type))" data-test-id="@TestIdHelper.For($"{type}-Remove")">@WebUiLocalizer.Translate(GetFilterContext(type), "Remove torrents")</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.PlayArrow" IconColor="Color.Success" OnClick="@(e => StartTorrents(type))" data-test-id="@TestIdHelper.For($"{type}-Start")">@LanguageLocalizer.Translate(GetFilterContext(type), "Start torrents")</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Stop" IconColor="Color.Warning" OnClick="@(e => StopTorrents(type))" data-test-id="@TestIdHelper.For($"{type}-Stop")">@LanguageLocalizer.Translate(GetFilterContext(type), "Stop torrents")</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="@(e => RemoveTorrents(type))" data-test-id="@TestIdHelper.For($"{type}-Remove")">@LanguageLocalizer.Translate(GetFilterContext(type), "Remove torrents")</MudMenuItem>
         };
     }
 }

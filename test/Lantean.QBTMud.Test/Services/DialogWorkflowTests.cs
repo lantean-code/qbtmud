@@ -21,19 +21,19 @@ namespace Lantean.QBTMud.Test.Services
         private readonly IDialogService _dialogService = Mock.Of<IDialogService>();
         private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
         private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
-        private readonly IWebUiLocalizer _webUiLocalizer;
+        private readonly ILanguageLocalizer _languageLocalizer;
 
         private readonly DialogWorkflow _target;
 
         public DialogWorkflowTests()
         {
-            _webUiLocalizer = Mock.Of<IWebUiLocalizer>();
-            var localizerMock = Mock.Get(_webUiLocalizer);
+            _languageLocalizer = Mock.Of<ILanguageLocalizer>();
+            var localizerMock = Mock.Get(_languageLocalizer);
             localizerMock
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] arguments) => FormatLocalizerString(source, arguments));
 
-            _target = new DialogWorkflow(_dialogService, _apiClient, _snackbar, _webUiLocalizer);
+            _target = new DialogWorkflow(_dialogService, _apiClient, _snackbar, _languageLocalizer);
         }
 
         [Fact]

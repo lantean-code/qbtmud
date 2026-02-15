@@ -21,7 +21,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Parameter]
         public ApplicationCookie? Cookie { get; set; }
@@ -146,7 +146,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private string Translate(string value, params object[] args)
         {
-            return WebUiLocalizer.Translate("AppCookies", value, args);
+            return LanguageLocalizer.Translate("AppCookies", value, args);
         }
     }
 }

@@ -47,7 +47,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Maximum number of connections limit must be greater than 0 or disabled.");
+                return LanguageLocalizer.Translate("HttpServer", "Maximum number of connections limit must be greater than 0 or disabled.");
             }
 
             return null;
@@ -57,7 +57,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Maximum number of connections per torrent limit must be greater than 0 or disabled.");
+                return LanguageLocalizer.Translate("HttpServer", "Maximum number of connections per torrent limit must be greater than 0 or disabled.");
             }
 
             return null;
@@ -67,7 +67,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Global number of upload slots limit must be greater than 0 or disabled.");
+                return LanguageLocalizer.Translate("HttpServer", "Global number of upload slots limit must be greater than 0 or disabled.");
             }
 
             return null;
@@ -77,7 +77,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Maximum number of upload slots per torrent limit must be greater than 0 or disabled.");
+                return LanguageLocalizer.Translate("HttpServer", "Maximum number of upload slots per torrent limit must be greater than 0 or disabled.");
             }
 
             return null;

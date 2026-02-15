@@ -1,27 +1,27 @@
 @inherits SubmittableDialog
-@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
 
 <MudDialog>
     <DialogContent>
         <MudText data-test-id="@TestIdHelper.For("DeleteDialogMessage")">
             @(
                 Count == 1
-                    ? WebUiLocalizer.Translate(
+                    ? LanguageLocalizer.Translate(
                         "HttpServer",
                         "Are you sure you want to remove %1 from the transfer list?",
                         $"\"{TorrentName}\"")
-                    : WebUiLocalizer.Translate("HttpServer", "Are you sure you want to remove these %1 torrents from the transfer list?", Count)
+                    : LanguageLocalizer.Translate("HttpServer", "Are you sure you want to remove these %1 torrents from the transfer list?", Count)
             )
         </MudText>
 
         <MudGrid>
             <MudItem xs="12">
-                <MudCheckBox Label="@WebUiLocalizer.Translate("confirmDeletionDlg", "Also remove the content files")" @bind-Value="DeleteFiles" LabelPlacement="Placement.End" data-test-id="@TestIdHelper.For("DeleteFiles")" />
+                <MudCheckBox Label="@LanguageLocalizer.Translate("confirmDeletionDlg", "Also remove the content files")" @bind-Value="DeleteFiles" LabelPlacement="Placement.End" data-test-id="@TestIdHelper.For("DeleteFiles")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("DeleteDialogCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("DeleteDialogRemove")">@WebUiLocalizer.Translate("MainWindow", "Remove")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("DeleteDialogCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("DeleteDialogRemove")">@LanguageLocalizer.Translate("MainWindow", "Remove")</MudButton>
     </DialogActions>
 </MudDialog>

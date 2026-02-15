@@ -1,16 +1,16 @@
 @inherits Options
-@inject Lantean.QBTMud.Services.Localization.IWebUiLanguageCatalog WebUiLanguageCatalog
+@inject Lantean.QBTMud.Services.Localization.ILanguageCatalog LanguageCatalog
 
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Language")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Language")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "User interface language:")" Value="Locale" ValueChanged="LocaleChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UserInterfaceLanguage")">
+                <MudSelect T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "User interface language:")" Value="Locale" ValueChanged="LocaleChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UserInterfaceLanguage")">
                     @foreach (var language in LanguageOptions)
                     {
                         <MudSelectItem Value="@language.Code">@language.DisplayName</MudSelectItem>
@@ -24,16 +24,16 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Transfer list")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Transfer list")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Confirm when deleting torrents")" Value="ConfirmTorrentDeletion" ValueChanged="ConfirmTorrentDeletionChanged" data-test-id="@TestIdHelper.For("ConfirmTorrentDeletion")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Confirm when deleting torrents")" Value="ConfirmTorrentDeletion" ValueChanged="ConfirmTorrentDeletionChanged" data-test-id="@TestIdHelper.For("ConfirmTorrentDeletion")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Show external IP in status bar")" Value="StatusBarExternalIp" ValueChanged="StatusBarExternalIpChanged" data-test-id="@TestIdHelper.For("StatusBarExternalIp")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Show external IP in status bar")" Value="StatusBarExternalIp" ValueChanged="StatusBarExternalIpChanged" data-test-id="@TestIdHelper.For("StatusBarExternalIp")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -42,25 +42,25 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Log Files")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Log Files")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Log Files")" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" data-test-id="@TestIdHelper.For("FileLogEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Log Files")" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" data-test-id="@TestIdHelper.For("FileLogEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Save path:")" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(FileLogEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("FileLogPath")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Save path:")" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(FileLogEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("FileLogPath")" />
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Backup the log file after:")" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(FileLogEnabled != true)" data-test-id="@TestIdHelper.For("FileLogBackupEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Backup the log file after:")" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(FileLogEnabled != true)" data-test-id="@TestIdHelper.For("FileLogBackupEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(FileLogEnabled != true)" Min="1" Max="1024000" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("misc", "KiB")" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("FileLogMaxSize")" />
+                <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(FileLogEnabled != true)" Min="1" Max="1024000" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("misc", "KiB")" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("FileLogMaxSize")" />
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Delete backup logs older than:")" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(FileLogEnabled != true)" data-test-id="@TestIdHelper.For("FileLogDeleteOld")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Delete backup logs older than:")" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(FileLogEnabled != true)" data-test-id="@TestIdHelper.For("FileLogDeleteOld")" />
             </MudItem>
             <MudItem xs="9">
                 <MudGrid>
@@ -69,9 +69,9 @@
                     </MudItem>
                     <MudItem xs="3">
                         <MudSelect T="int" Value="FileLogAgeType" ValueChanged="FileLogAgeTypeChanged" Disabled="@(FileLogEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("FileLogAgeType")">
-                            <MudSelectItem Value="0">@WebUiLocalizer.Translate("OptionsDialog", "days")</MudSelectItem>
-                            <MudSelectItem Value="1">@WebUiLocalizer.Translate("OptionsDialog", "months")</MudSelectItem>
-                            <MudSelectItem Value="2">@WebUiLocalizer.Translate("OptionsDialog", "years")</MudSelectItem>
+                            <MudSelectItem Value="0">@LanguageLocalizer.Translate("OptionsDialog", "days")</MudSelectItem>
+                            <MudSelectItem Value="1">@LanguageLocalizer.Translate("OptionsDialog", "months")</MudSelectItem>
+                            <MudSelectItem Value="2">@LanguageLocalizer.Translate("OptionsDialog", "years")</MudSelectItem>
                         </MudSelect>
                     </MudItem>
                 </MudGrid>
@@ -89,7 +89,7 @@
     <MudCardContent>
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Log performance warnings")" Value="PerformanceWarning" ValueChanged="PerformanceWarningChanged" data-test-id="@TestIdHelper.For("PerformanceWarning")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Log performance warnings")" Value="PerformanceWarning" ValueChanged="PerformanceWarningChanged" data-test-id="@TestIdHelper.For("PerformanceWarning")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

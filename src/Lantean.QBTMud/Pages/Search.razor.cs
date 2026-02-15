@@ -61,7 +61,7 @@ namespace Lantean.QBTMud.Pages
         protected ISnackbar Snackbar { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         public MainUiData? MainData { get; set; }
@@ -315,13 +315,13 @@ namespace Lantean.QBTMud.Pages
 
         private IReadOnlyList<ColumnDefinition<SearchResult>> BuildColumns()
         {
-            var nameLabel = WebUiLocalizer.Translate("SearchResultsTable", "Name");
-            var sizeLabel = WebUiLocalizer.Translate("SearchResultsTable", "Size");
-            var seedersLabel = WebUiLocalizer.Translate("SearchResultsTable", "Seeders");
-            var leechersLabel = WebUiLocalizer.Translate("SearchResultsTable", "Leechers");
-            var engineLabel = WebUiLocalizer.Translate("SearchResultsTable", "Engine");
-            var engineUrlLabel = WebUiLocalizer.Translate("SearchResultsTable", "Engine URL");
-            var publishedLabel = WebUiLocalizer.Translate("SearchResultsTable", "Published On");
+            var nameLabel = LanguageLocalizer.Translate("SearchResultsTable", "Name");
+            var sizeLabel = LanguageLocalizer.Translate("SearchResultsTable", "Size");
+            var seedersLabel = LanguageLocalizer.Translate("SearchResultsTable", "Seeders");
+            var leechersLabel = LanguageLocalizer.Translate("SearchResultsTable", "Leechers");
+            var engineLabel = LanguageLocalizer.Translate("SearchResultsTable", "Engine");
+            var engineUrlLabel = LanguageLocalizer.Translate("SearchResultsTable", "Engine URL");
+            var publishedLabel = LanguageLocalizer.Translate("SearchResultsTable", "Published On");
 
             return new List<ColumnDefinition<SearchResult>>
             {
@@ -432,7 +432,7 @@ namespace Lantean.QBTMud.Pages
                 return $"{visible}/{total}";
             }
 
-            return $"{visible} {WebUiLocalizer.Translate("SearchEngineWidget", "Results")}";
+            return $"{visible} {LanguageLocalizer.Translate("SearchEngineWidget", "Results")}";
         }
 
         protected Task StopActiveJob()
@@ -490,7 +490,7 @@ namespace Lantean.QBTMud.Pages
             {
                 return new Dictionary<string, string>
                 {
-                    [SearchForm.AllCategoryId] = WebUiLocalizer.Translate("SearchEngineWidget", "All categories")
+                    [SearchForm.AllCategoryId] = LanguageLocalizer.Translate("SearchEngineWidget", "All categories")
                 };
             }
 
@@ -516,7 +516,7 @@ namespace Lantean.QBTMud.Pages
                 .DistinctBy(category => category.Id)
                 .ToDictionary(category => category.Id, category => category.Name);
 
-            categories[SearchForm.AllCategoryId] = WebUiLocalizer.Translate("SearchEngineWidget", "All categories");
+            categories[SearchForm.AllCategoryId] = LanguageLocalizer.Translate("SearchEngineWidget", "All categories");
 
             return categories;
         }
@@ -701,7 +701,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                job.SetError(WebUiLocalizer.Translate("SearchJobWidget", "An error occurred during search..."));
+                job.SetError(LanguageLocalizer.Translate("SearchJobWidget", "An error occurred during search..."));
                 Snackbar.Add(TranslateSearch("Failed to load results for \"%1\": %2", job.Pattern, exception.Message), Severity.Error);
                 await StopPollingIfAllJobsCompletedAsync();
             }
@@ -900,13 +900,13 @@ namespace Lantean.QBTMud.Pages
         {
             return new List<(SearchSizeUnit Unit, string Label)>
             {
-                (SearchSizeUnit.Bytes, WebUiLocalizer.Translate("misc", "B")),
-                (SearchSizeUnit.Kibibytes, WebUiLocalizer.Translate("misc", "KiB")),
-                (SearchSizeUnit.Mebibytes, WebUiLocalizer.Translate("misc", "MiB")),
-                (SearchSizeUnit.Gibibytes, WebUiLocalizer.Translate("misc", "GiB")),
-                (SearchSizeUnit.Tebibytes, WebUiLocalizer.Translate("misc", "TiB")),
-                (SearchSizeUnit.Pebibytes, WebUiLocalizer.Translate("misc", "PiB")),
-                (SearchSizeUnit.Exbibytes, WebUiLocalizer.Translate("misc", "EiB"))
+                (SearchSizeUnit.Bytes, LanguageLocalizer.Translate("misc", "B")),
+                (SearchSizeUnit.Kibibytes, LanguageLocalizer.Translate("misc", "KiB")),
+                (SearchSizeUnit.Mebibytes, LanguageLocalizer.Translate("misc", "MiB")),
+                (SearchSizeUnit.Gibibytes, LanguageLocalizer.Translate("misc", "GiB")),
+                (SearchSizeUnit.Tebibytes, LanguageLocalizer.Translate("misc", "TiB")),
+                (SearchSizeUnit.Pebibytes, LanguageLocalizer.Translate("misc", "PiB")),
+                (SearchSizeUnit.Exbibytes, LanguageLocalizer.Translate("misc", "EiB"))
             }.AsReadOnly();
         }
 
@@ -1190,12 +1190,12 @@ namespace Lantean.QBTMud.Pages
 
         private string TranslateSearch(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate("AppSearch", source, arguments);
+            return LanguageLocalizer.Translate("AppSearch", source, arguments);
         }
 
         private string TranslateCopyAction(string source)
         {
-            return $"{WebUiLocalizer.Translate("SearchJobWidget", "Copy")} {WebUiLocalizer.Translate("SearchJobWidget", source)}";
+            return $"{LanguageLocalizer.Translate("SearchJobWidget", "Copy")} {LanguageLocalizer.Translate("SearchJobWidget", source)}";
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

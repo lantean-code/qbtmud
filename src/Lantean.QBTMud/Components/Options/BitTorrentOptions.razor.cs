@@ -48,7 +48,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < -1)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Maximum active downloads must be greater than -1.");
+                return LanguageLocalizer.Translate("HttpServer", "Maximum active downloads must be greater than -1.");
             }
 
             return null;
@@ -58,7 +58,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < -1)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Maximum active uploads must be greater than -1.");
+                return LanguageLocalizer.Translate("HttpServer", "Maximum active uploads must be greater than -1.");
             }
 
             return null;
@@ -68,7 +68,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < -1)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Maximum active torrents must be greater than -1.");
+                return LanguageLocalizer.Translate("HttpServer", "Maximum active torrents must be greater than -1.");
             }
 
             return null;
@@ -78,7 +78,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 1)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Download rate threshold must be greater than 0.");
+                return LanguageLocalizer.Translate("HttpServer", "Download rate threshold must be greater than 0.");
             }
 
             return null;
@@ -88,7 +88,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 1)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Upload rate threshold must be greater than 0.");
+                return LanguageLocalizer.Translate("HttpServer", "Upload rate threshold must be greater than 0.");
             }
 
             return null;
@@ -98,7 +98,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 1)
             {
-                return WebUiLocalizer.Translate("HttpServer", "Torrent inactivity timer must be greater than 0.");
+                return LanguageLocalizer.Translate("HttpServer", "Torrent inactivity timer must be greater than 0.");
             }
 
             return null;
@@ -108,7 +108,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0 || value > 9998)
             {
-                return WebUiLocalizer.Translate("AppBitTorrentOptions", "Share ratio limit must be between 0 and 9998.");
+                return LanguageLocalizer.Translate("AppBitTorrentOptions", "Share ratio limit must be between 0 and 9998.");
             }
 
             return null;
@@ -118,7 +118,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0 || value > 525600)
             {
-                return WebUiLocalizer.Translate("AppBitTorrentOptions", "Seeding time limit must be between 0 and 525600 minutes.");
+                return LanguageLocalizer.Translate("AppBitTorrentOptions", "Seeding time limit must be between 0 and 525600 minutes.");
             }
 
             return null;
@@ -128,7 +128,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (value < 0 || value > 525600)
             {
-                return WebUiLocalizer.Translate("AppBitTorrentOptions", "Seeding time limit must be between 0 and 525600 minutes.");
+                return LanguageLocalizer.Translate("AppBitTorrentOptions", "Seeding time limit must be between 0 and 525600 minutes.");
             }
 
             return null;

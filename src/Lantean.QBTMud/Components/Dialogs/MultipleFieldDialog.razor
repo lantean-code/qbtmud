@@ -1,5 +1,5 @@
 @inherits SubmittableDialog
-@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
 
 <MudDialog>
     <DialogContent>
@@ -21,7 +21,7 @@
         </table>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("MultipleFieldCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("MultipleFieldSave")">@WebUiLocalizer.Translate("HttpServer", "Save")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("MultipleFieldCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("MultipleFieldSave")">@LanguageLocalizer.Translate("HttpServer", "Save")</MudButton>
     </DialogActions>
 </MudDialog>

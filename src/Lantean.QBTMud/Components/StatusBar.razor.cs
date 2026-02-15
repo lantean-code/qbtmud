@@ -11,7 +11,7 @@ namespace Lantean.QBTMud.Components
     public partial class StatusBar
     {
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Inject]
         protected IManagedTimerRegistry TimerRegistry { get; set; } = default!;
@@ -113,7 +113,7 @@ namespace Lantean.QBTMud.Components
             var timers = TimerRegistry.GetTimers();
             if (timers.Count == 0)
             {
-                return WebUiLocalizer.Translate("AppTimerStatusPanel", "No timers registered.");
+                return LanguageLocalizer.Translate("AppTimerStatusPanel", "No timers registered.");
             }
 
             var running = timers.Count(timer => timer.State == ManagedTimerState.Running);
@@ -121,7 +121,7 @@ namespace Lantean.QBTMud.Components
             var stopped = timers.Count(timer => timer.State == ManagedTimerState.Stopped);
             var faulted = timers.Count(timer => timer.State == ManagedTimerState.Faulted);
 
-            return WebUiLocalizer.Translate(
+            return LanguageLocalizer.Translate(
                 "AppTimerStatusPanel",
                 "Timers: %1 running, %2 paused, %3 stopped, %4 faulted",
                 running,
@@ -144,15 +144,15 @@ namespace Lantean.QBTMud.Components
 
             if (!hasV4 && !hasV6)
             {
-                return WebUiLocalizer.Translate("HttpServer", "External IP: N/A");
+                return LanguageLocalizer.Translate("HttpServer", "External IP: N/A");
             }
 
             if (hasV4 && hasV6)
             {
-                return WebUiLocalizer.Translate("HttpServer", "External IPs: %1, %2", v4, v6);
+                return LanguageLocalizer.Translate("HttpServer", "External IPs: %1, %2", v4, v6);
             }
 
-            return WebUiLocalizer.Translate("HttpServer", "External IP: %1%2", v4 ?? string.Empty, v6 ?? string.Empty);
+            return LanguageLocalizer.Translate("HttpServer", "External IP: %1%2", v4 ?? string.Empty, v6 ?? string.Empty);
         }
 
         protected static string? BuildExternalIpValue(ServerState? serverState)
@@ -197,7 +197,7 @@ namespace Lantean.QBTMud.Components
 
         protected string BuildAlternativeSpeedLimitsStatusMessage(bool isEnabled)
         {
-            return WebUiLocalizer.Translate(
+            return LanguageLocalizer.Translate(
                 "MainWindow",
                 isEnabled ? "Alternative speed limits: On" : "Alternative speed limits: Off");
         }
@@ -211,9 +211,9 @@ namespace Lantean.QBTMud.Components
 
             return status switch
             {
-                "connected" => WebUiLocalizer.Translate("MainWindow", "Connection status: Connected"),
-                "firewalled" => WebUiLocalizer.Translate("MainWindow", "Connection status: Firewalled"),
-                "disconnected" => WebUiLocalizer.Translate("MainWindow", "Connection status: Disconnected"),
+                "connected" => LanguageLocalizer.Translate("MainWindow", "Connection status: Connected"),
+                "firewalled" => LanguageLocalizer.Translate("MainWindow", "Connection status: Firewalled"),
+                "disconnected" => LanguageLocalizer.Translate("MainWindow", "Connection status: Disconnected"),
                 _ => status
             };
         }

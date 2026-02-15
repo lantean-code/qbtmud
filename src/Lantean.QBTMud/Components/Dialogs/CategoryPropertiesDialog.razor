@@ -1,26 +1,26 @@
 @inherits SubmittableDialog
 @using Lantean.QBitTorrentClient.Models
 @using Lantean.QBTMud.Components.UI
-@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
 
 <MudDialog>
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField Label="@WebUiLocalizer.Translate("TransferListWidget", "Category:")" @bind-Value="Category" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryPropertiesCategory")" />
+                <MudTextField Label="@LanguageLocalizer.Translate("TransferListWidget", "Category:")" @bind-Value="Category" Required Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("CategoryPropertiesCategory")" />
             </MudItem>
             <MudItem xs="12">
-                <PathAutocomplete Label="@WebUiLocalizer.Translate("TransferListWidget", "Save path:")"
+                <PathAutocomplete Label="@LanguageLocalizer.Translate("TransferListWidget", "Save path:")"
                                   @bind-Value="SavePath"
                                   Required="true"
-                                  RequiredErrorText="@WebUiLocalizer.Translate("TorrentsController", "Save path is empty")"
+                                  RequiredErrorText="@LanguageLocalizer.Translate("TorrentsController", "Save path is empty")"
                                   Mode="DirectoryContentMode.Directories"
                                   data-test-id="@TestIdHelper.For("CategoryPropertiesSavePath")" />
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("CategoryPropertiesCancel")">@WebUiLocalizer.Translate("MainWindow", "Cancel")</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("CategoryPropertiesSave")">@WebUiLocalizer.Translate("Category", "OK")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("CategoryPropertiesCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("CategoryPropertiesSave")">@LanguageLocalizer.Translate("Category", "OK")</MudButton>
     </DialogActions>
 </MudDialog>

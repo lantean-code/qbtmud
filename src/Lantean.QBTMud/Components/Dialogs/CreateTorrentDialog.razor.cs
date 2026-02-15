@@ -56,7 +56,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ISnackbar Snackbar { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -300,7 +300,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private string Translate(string value, params object[] args)
         {
-            return WebUiLocalizer.Translate("AppCreateTorrentDialog", value, args);
+            return LanguageLocalizer.Translate("AppCreateTorrentDialog", value, args);
         }
     }
 }
