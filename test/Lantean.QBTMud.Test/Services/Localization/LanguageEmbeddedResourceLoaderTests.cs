@@ -88,7 +88,7 @@ namespace Lantean.QBTMud.Test.Services.Localization
         [Fact]
         public async Task GIVEN_InvalidEmbeddedJson_WHEN_LoadDictionaryAsync_THEN_ShouldReturnNull()
         {
-            var invalidJson = new MemoryStream(Encoding.UTF8.GetBytes("{"));
+            using var invalidJson = new MemoryStream(Encoding.UTF8.GetBytes("{"));
 
             Mock.Get(_resourceAccessor)
                 .Setup(accessor => accessor.GetManifestResourceNames())

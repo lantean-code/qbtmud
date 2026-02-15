@@ -284,8 +284,19 @@ namespace Lantean.QBTMud.Layout
 
         private async Task SynchronizeLocalePreferenceAsync()
         {
-            if (Preferences is null || string.IsNullOrWhiteSpace(Preferences.Locale))
+            if (Preferences is null)
             {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Preferences.Locale))
+            {
+                var storedLocaleWhenApiMissing = await LocalStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale);
+                if (!string.IsNullOrWhiteSpace(storedLocaleWhenApiMissing))
+                {
+                    await LocalStorage.RemoveItemAsync(LanguageStorageKeys.PreferredLocale);
+                }
+
                 return;
             }
 

@@ -51,24 +51,24 @@
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Log Files")" Value="FileLogEnabled" ValueChanged="FileLogEnabledChanged" data-test-id="@TestIdHelper.For("FileLogEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Save path:")" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(FileLogEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("FileLogPath")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Save path:")" Value="FileLogPath" ValueChanged="FileLogPathChanged" Disabled="@(FileLogEnabled is not true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("FileLogPath")" />
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Backup the log file after:")" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(FileLogEnabled != true)" data-test-id="@TestIdHelper.For("FileLogBackupEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Backup the log file after:")" Value="FileLogBackupEnabled" ValueChanged="FileLogBackupEnabledChanged" Disabled="@(FileLogEnabled is not true)" data-test-id="@TestIdHelper.For("FileLogBackupEnabled")" />
             </MudItem>
             <MudItem xs="9">
-                <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(FileLogEnabled != true)" Min="1" Max="1024000" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("misc", "KiB")" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("FileLogMaxSize")" />
+                <MudNumericField T="int" Value="FileLogMaxSize" ValueChanged="FileLogMaxSizeChanged" Disabled="@(FileLogEnabled is not true)" Min="1" Max="1024000" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("misc", "KiB")" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("FileLogMaxSize")" />
             </MudItem>
             <MudItem xs="3">
-                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Delete backup logs older than:")" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(FileLogEnabled != true)" data-test-id="@TestIdHelper.For("FileLogDeleteOld")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Delete backup logs older than:")" Value="FileLogDeleteOld" ValueChanged="FileLogDeleteOldChanged" Disabled="@(FileLogEnabled is not true)" data-test-id="@TestIdHelper.For("FileLogDeleteOld")" />
             </MudItem>
             <MudItem xs="9">
                 <MudGrid>
                     <MudItem xs="9">
-                        <MudNumericField T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(FileLogEnabled != true)" Min="1" Max="365" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("FileLogAge")" />
+                        <MudNumericField T="int" Value="FileLogAge" ValueChanged="FileLogAgeChanged" Disabled="@(FileLogEnabled is not true)" Min="1" Max="365" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("FileLogAge")" />
                     </MudItem>
                     <MudItem xs="3">
-                        <MudSelect T="int" Value="FileLogAgeType" ValueChanged="FileLogAgeTypeChanged" Disabled="@(FileLogEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("FileLogAgeType")">
+                        <MudSelect T="int" Value="FileLogAgeType" ValueChanged="FileLogAgeTypeChanged" Disabled="@(FileLogEnabled is not true)" Variant="Variant.Outlined" ShrinkLabel="true" Class="mud-input-outlined-with-label" data-test-id="@TestIdHelper.For("FileLogAgeType")">
                             <MudSelectItem Value="0">@LanguageLocalizer.Translate("OptionsDialog", "days")</MudSelectItem>
                             <MudSelectItem Value="1">@LanguageLocalizer.Translate("OptionsDialog", "months")</MudSelectItem>
                             <MudSelectItem Value="2">@LanguageLocalizer.Translate("OptionsDialog", "years")</MudSelectItem>

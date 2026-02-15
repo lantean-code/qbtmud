@@ -56,16 +56,16 @@
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Torrent Queueing")" Value="QueueingEnabled" ValueChanged="QueueingEnabledChanged" data-test-id="@TestIdHelper.For("QueueingEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Maximum active downloads:")" Value="MaxActiveDownloads" ValueChanged="MaxActiveDownloadsChanged" Min="-1" Disabled="@(QueueingEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveDownloadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveDownloads")" />
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Maximum active downloads:")" Value="MaxActiveDownloads" ValueChanged="MaxActiveDownloadsChanged" Min="-1" Disabled="@(QueueingEnabled is not true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveDownloadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveDownloads")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Maximum active uploads:")" Value="MaxActiveUploads" ValueChanged="MaxActiveUploadsChanged" Min="-1" Disabled="@(QueueingEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveUploadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveUploads")" />
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Maximum active uploads:")" Value="MaxActiveUploads" ValueChanged="MaxActiveUploadsChanged" Min="-1" Disabled="@(QueueingEnabled is not true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveUploadsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveUploads")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Maximum active torrents:")" Value="MaxActiveTorrents" ValueChanged="MaxActiveTorrentsChanged" Min="-1" Disabled="@(QueueingEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveTorrentsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveTorrents")" />
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Maximum active torrents:")" Value="MaxActiveTorrents" ValueChanged="MaxActiveTorrentsChanged" Min="-1" Disabled="@(QueueingEnabled is not true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="MaxActiveTorrentsValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("MaxActiveTorrents")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Do not count slow torrents in these limits")" Value="DontCountSlowTorrents" ValueChanged="DontCountSlowTorrentsChanged" Disabled="@(QueueingEnabled != true)" data-test-id="@TestIdHelper.For("DontCountSlowTorrents")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Do not count slow torrents in these limits")" Value="DontCountSlowTorrents" ValueChanged="DontCountSlowTorrentsChanged" Disabled="@(QueueingEnabled is not true)" data-test-id="@TestIdHelper.For("DontCountSlowTorrents")" />
             </MudItem>
             <MudItem xs="12">
                 <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Download rate threshold:")" Value="SlowTorrentDlRateThreshold" ValueChanged="SlowTorrentDlRateThresholdChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("OptionsDialog", "KiB/s")" Validation="SlowTorrentDlRateThresholdValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("SlowTorrentDlRateThreshold")" />

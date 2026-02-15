@@ -157,6 +157,23 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_StoredLocalePresentAndApiLocaleBlank_WHEN_Initialized_THEN_ShouldClearStoredLocaleWithoutWarning()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+
+            await TestContext.LocalStorage.SetItemAsStringAsync(PreferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
+            RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "   "));
+
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            storedLocale.Should().BeNull();
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Language preference changed on server. Click Reload to apply it.", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_StoredLocaleMismatch_WHEN_Initialized_THEN_ShouldShowWarningWithReloadAction()
         {
             DisposeDefaultTarget();

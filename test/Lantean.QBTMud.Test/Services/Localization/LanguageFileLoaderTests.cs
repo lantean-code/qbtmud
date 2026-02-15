@@ -8,11 +8,12 @@ using System.Text;
 
 namespace Lantean.QBTMud.Test.Services.Localization
 {
-    public sealed class LanguageFileLoaderTests
+    public sealed class LanguageFileLoaderTests : IDisposable
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<LanguageFileLoader> _logger;
         private readonly DictionaryHttpMessageHandler _handler;
+        private readonly HttpClient _httpClient;
         private readonly LanguageFileLoader _target;
 
         public LanguageFileLoaderTests()
@@ -21,14 +22,14 @@ namespace Lantean.QBTMud.Test.Services.Localization
             _logger = Mock.Of<ILogger<LanguageFileLoader>>();
             _handler = new DictionaryHttpMessageHandler();
 
-            var httpClient = new HttpClient(_handler)
+            _httpClient = new HttpClient(_handler)
             {
                 BaseAddress = new Uri("http://localhost/")
             };
 
             Mock.Get(_httpClientFactory)
                 .Setup(factory => factory.CreateClient("WebUiAssets"))
-                .Returns(httpClient);
+                .Returns(_httpClient);
 
             var options = Options.Create(new WebUiLocalizationOptions
             {
@@ -39,6 +40,11 @@ namespace Lantean.QBTMud.Test.Services.Localization
             });
 
             _target = new LanguageFileLoader(_httpClientFactory, _logger, options);
+        }
+
+        public void Dispose()
+        {
+            _httpClient.Dispose();
         }
 
         [Fact]
@@ -141,6 +147,9 @@ namespace Lantean.QBTMud.Test.Services.Localization
 
         private sealed class DictionaryHttpMessageHandler : HttpMessageHandler
         {
+            private readonly HttpResponseMessage _notFoundResponse = new HttpResponseMessage(HttpStatusCode.NotFound);
+            private bool _disposed;
+
             public Dictionary<string, HttpResponseMessage> Responses { get; }
 
             public bool ThrowOperationCanceled { get; set; }
@@ -175,7 +184,7 @@ namespace Lantean.QBTMud.Test.Services.Localization
                     return Task.FromResult(CloneResponse(response));
                 }
 
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+                return Task.FromResult(CloneResponse(_notFoundResponse));
             }
 
             private static HttpResponseMessage CloneResponse(HttpResponseMessage source)
@@ -188,6 +197,26 @@ namespace Lantean.QBTMud.Test.Services.Localization
                 }
 
                 return target;
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                if (disposing)
+                {
+                    _notFoundResponse.Dispose();
+                    foreach (var response in Responses.Values)
+                    {
+                        response.Dispose();
+                    }
+                }
+
+                _disposed = true;
+                base.Dispose(disposing);
             }
         }
     }

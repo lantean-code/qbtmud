@@ -440,6 +440,8 @@ namespace Lantean.QBTMud.Test.Services.Localization
         private sealed class DictionaryHttpMessageHandler : HttpMessageHandler
         {
             private readonly IDictionary<string, HttpResponseMessage> _responses;
+            private readonly HttpResponseMessage _notFoundResponse = new HttpResponseMessage(HttpStatusCode.NotFound);
+            private bool _disposed;
 
             public DictionaryHttpMessageHandler(IDictionary<string, HttpResponseMessage> responses)
             {
@@ -475,7 +477,7 @@ namespace Lantean.QBTMud.Test.Services.Localization
                     return Task.FromResult(CloneResponse(response));
                 }
 
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+                return Task.FromResult(CloneResponse(_notFoundResponse));
             }
 
             private static HttpResponseMessage CloneResponse(HttpResponseMessage source)
@@ -488,6 +490,26 @@ namespace Lantean.QBTMud.Test.Services.Localization
                 }
 
                 return target;
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                if (disposing)
+                {
+                    _notFoundResponse.Dispose();
+                    foreach (var response in _responses.Values)
+                    {
+                        response.Dispose();
+                    }
+                }
+
+                _disposed = true;
+                base.Dispose(disposing);
             }
         }
     }
