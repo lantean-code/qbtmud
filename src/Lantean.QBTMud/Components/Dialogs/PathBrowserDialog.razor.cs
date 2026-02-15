@@ -19,7 +19,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -244,7 +244,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private string Translate(string value, params object[] args)
         {
-            return WebUiLocalizer.Translate("AppPathBrowserDialog", value, args);
+            return LanguageLocalizer.Translate("AppPathBrowserDialog", value, args);
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Lantean.QBTMud.Components
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Parameter]
         public IEnumerable<Torrent>? Torrents { get; set; }
@@ -24,7 +24,7 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(_appContext, source, arguments);
+            return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
     }
 }

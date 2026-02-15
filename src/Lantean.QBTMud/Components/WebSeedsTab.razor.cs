@@ -36,7 +36,7 @@ namespace Lantean.QBTMud.Components
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         protected IReadOnlyList<WebSeed>? WebSeeds { get; set; }
 
@@ -129,7 +129,7 @@ namespace Lantean.QBTMud.Components
 
         private IReadOnlyList<ColumnDefinition<WebSeed>> BuildColumnDefinitions()
         {
-            var urlLabel = WebUiLocalizer.Translate(_httpServerContext, "URL");
+            var urlLabel = LanguageLocalizer.Translate(_httpServerContext, "URL");
 
             return
             [

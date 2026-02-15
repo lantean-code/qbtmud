@@ -1,6 +1,6 @@
 <MudList T="string">
-    <MudListItem OnClick="ClearErrors">@WebUiLocalizer.Translate("AppErrorDisplay", "Clear Errors")</MudListItem>
-    <MudListItem OnClick="ClearErrorsAndResumeAsync">@WebUiLocalizer.Translate("AppErrorDisplay", "Clear Errors and Resume")</MudListItem>
+    <MudListItem OnClick="ClearErrors">@LanguageLocalizer.Translate("AppErrorDisplay", "Clear Errors")</MudListItem>
+    <MudListItem OnClick="ClearErrorsAndResumeAsync">@LanguageLocalizer.Translate("AppErrorDisplay", "Clear Errors and Resume")</MudListItem>
     <MudDivider />
     @foreach (var error in Errors)
     {

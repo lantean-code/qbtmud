@@ -3,40 +3,19 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Web User Interface (Remote control)")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Web User Interface (Remote control)")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12" md="8">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "IP address:")" Value="WebUiAddress" ValueChanged="WebUiAddressChanged" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiAddress")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "IP address:")" Value="WebUiAddress" ValueChanged="WebUiAddressChanged" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiAddress")" />
             </MudItem>
             <MudItem xs="12" md="4">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Port:")" Value="WebUiPort" ValueChanged="WebUiPortChanged" Min="1" Max="@Options.MaxPortValue" Variant="Variant.Outlined" ShrinkLabel="true" Validation="WebUiPortValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiPort")" />
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Port:")" Value="WebUiPort" ValueChanged="WebUiPortChanged" Min="1" Max="@Options.MaxPortValue" Variant="Variant.Outlined" ShrinkLabel="true" Validation="WebUiPortValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiPort")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Use UPnP / NAT-PMP to forward the port from my router")" Value="WebUiUpnp" ValueChanged="WebUiUpnpChanged" data-test-id="@TestIdHelper.For("WebUiUpnp")" />
-            </MudItem>
-        </MudGrid>
-    </MudCardContent>
-</MudCard>
-
-<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
-    <MudCardHeader>
-        <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Use HTTPS instead of HTTP")</MudText>
-        </CardHeaderContent>
-    </MudCardHeader>
-    <MudCardContent Class="pt-0">
-        <MudGrid>
-            <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Use HTTPS instead of HTTP")" Value="UseHttps" ValueChanged="UseHttpsChanged" data-test-id="@TestIdHelper.For("UseHttps")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Certificate:")" Value="WebUiHttpsCertPath" ValueChanged="WebUiHttpsCertPathChanged" Disabled="@(UseHttps != true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="WebUiHttpsCertPathValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiHttpsCertPath")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Key:")" Value="WebUiHttpsKeyPath" ValueChanged="WebUiHttpsKeyPathChanged" Disabled="@(UseHttps != true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="WebUiHttpsKeyPathValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiHttpsKeyPath")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Use UPnP / NAT-PMP to forward the port from my router")" Value="WebUiUpnp" ValueChanged="WebUiUpnpChanged" data-test-id="@TestIdHelper.For("WebUiUpnp")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -45,34 +24,19 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Authentication")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Use HTTPS instead of HTTP")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Username:")" Value="WebUiUsername" ValueChanged="WebUiUsernameChanged" Variant="Variant.Outlined" ShrinkLabel="true" Validation="WebUiUsernameValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiUsername")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Use HTTPS instead of HTTP")" Value="UseHttps" ValueChanged="UseHttpsChanged" data-test-id="@TestIdHelper.For("UseHttps")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Password:")" Value="WebUiPassword" ValueChanged="WebUiPasswordChanged" InputType="InputType.Password" Variant="Variant.Outlined" ShrinkLabel="true" Validation="WebUiPasswordValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiPassword")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Certificate:")" Value="WebUiHttpsCertPath" ValueChanged="WebUiHttpsCertPathChanged" Disabled="@(UseHttps != true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="WebUiHttpsCertPathValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiHttpsCertPath")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Bypass authentication for clients on localhost")" Value="BypassLocalAuth" ValueChanged="BypassLocalAuthChanged" data-test-id="@TestIdHelper.For("BypassLocalAuth")" />
-            </MudItem>
-            <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Bypass authentication for clients in whitelisted IP subnets")" Value="BypassAuthSubnetWhitelistEnabled" ValueChanged="BypassAuthSubnetWhitelistEnabledChanged" data-test-id="@TestIdHelper.For("BypassAuthSubnetWhitelistEnabled")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Bypass authentication for clients in whitelisted IP subnets")" Value="BypassAuthSubnetWhitelist" ValueChanged="BypassAuthSubnetWhitelistChanged" Lines="5" Disabled="@(BypassAuthSubnetWhitelistEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Placeholder="@WebUiLocalizer.Translate("OptionsDialog", "Example: 172.17.32.0/24, fdff:ffff:c8::/40")" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("BypassAuthSubnetWhitelist")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Ban client after consecutive failures:")" Value="WebUiMaxAuthFailCount" ValueChanged="WebUiMaxAuthFailCountChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiMaxAuthFailCount")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "ban for:")" Value="WebUiBanDuration" ValueChanged="WebUiBanDurationChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "sec")" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiBanDuration")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudNumericField T="int" Label="@WebUiLocalizer.Translate("OptionsDialog", "Session timeout:")" Value="WebUiSessionTimeout" ValueChanged="WebUiSessionTimeoutChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@WebUiLocalizer.Translate("OptionsDialog", "sec")" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiSessionTimeout")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Key:")" Value="WebUiHttpsKeyPath" ValueChanged="WebUiHttpsKeyPathChanged" Disabled="@(UseHttps != true)" Variant="Variant.Outlined" ShrinkLabel="true" Validation="WebUiHttpsKeyPathValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiHttpsKeyPath")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -81,16 +45,34 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Use alternative WebUI")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Authentication")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Use alternative WebUI")" Value="AlternativeWebuiEnabled" ValueChanged="AlternativeWebuiEnabledChanged" data-test-id="@TestIdHelper.For("AlternativeWebuiEnabled")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Username:")" Value="WebUiUsername" ValueChanged="WebUiUsernameChanged" Variant="Variant.Outlined" ShrinkLabel="true" Validation="WebUiUsernameValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiUsername")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Files location:")" Value="AlternativeWebuiPath" ValueChanged="AlternativeWebuiPathChanged" Variant="Variant.Outlined" ShrinkLabel="true" Validation="AlternativeWebuiPathValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AlternativeWebuiPath")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Password:")" Value="WebUiPassword" ValueChanged="WebUiPasswordChanged" InputType="InputType.Password" Variant="Variant.Outlined" ShrinkLabel="true" Validation="WebUiPasswordValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiPassword")" />
+            </MudItem>
+            <MudItem xs="12">
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Bypass authentication for clients on localhost")" Value="BypassLocalAuth" ValueChanged="BypassLocalAuthChanged" data-test-id="@TestIdHelper.For("BypassLocalAuth")" />
+            </MudItem>
+            <MudItem xs="12">
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Bypass authentication for clients in whitelisted IP subnets")" Value="BypassAuthSubnetWhitelistEnabled" ValueChanged="BypassAuthSubnetWhitelistEnabledChanged" data-test-id="@TestIdHelper.For("BypassAuthSubnetWhitelistEnabled")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Bypass authentication for clients in whitelisted IP subnets")" Value="BypassAuthSubnetWhitelist" ValueChanged="BypassAuthSubnetWhitelistChanged" Lines="5" Disabled="@(BypassAuthSubnetWhitelistEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Placeholder="@LanguageLocalizer.Translate("OptionsDialog", "Example: 172.17.32.0/24, fdff:ffff:c8::/40")" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("BypassAuthSubnetWhitelist")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Ban client after consecutive failures:")" Value="WebUiMaxAuthFailCount" ValueChanged="WebUiMaxAuthFailCountChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiMaxAuthFailCount")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "ban for:")" Value="WebUiBanDuration" ValueChanged="WebUiBanDurationChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("OptionsDialog", "sec")" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiBanDuration")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Session timeout:")" Value="WebUiSessionTimeout" ValueChanged="WebUiSessionTimeoutChanged" Min="0" Variant="Variant.Outlined" ShrinkLabel="true" Adornment="Adornment.End" AdornmentText="@LanguageLocalizer.Translate("OptionsDialog", "sec")" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiSessionTimeout")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -99,25 +81,16 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Security")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Use alternative WebUI")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable clickjacking protection")" Value="WebUiClickjackingProtectionEnabled" ValueChanged="WebUiClickjackingProtectionEnabledChanged" data-test-id="@TestIdHelper.For("WebUiClickjackingProtectionEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Use alternative WebUI")" Value="AlternativeWebuiEnabled" ValueChanged="AlternativeWebuiEnabledChanged" data-test-id="@TestIdHelper.For("AlternativeWebuiEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable Cross-Site Request Forgery (CSRF) protection")" Value="WebUiCsrfProtectionEnabled" ValueChanged="WebUiCsrfProtectionEnabledChanged" data-test-id="@TestIdHelper.For("WebUiCsrfProtectionEnabled")" />
-            </MudItem>
-            <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable cookie Secure flag (requires HTTPS or localhost connection)")" Value="WebUiSecureCookieEnabled" ValueChanged="WebUiSecureCookieEnabledChanged" data-test-id="@TestIdHelper.For("WebUiSecureCookieEnabled")" />
-            </MudItem>
-            <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable Host header validation")" Value="WebUiHostHeaderValidationEnabled" ValueChanged="WebUiHostHeaderValidationEnabledChanged" data-test-id="@TestIdHelper.For("WebUiHostHeaderValidationEnabled")" />
-            </MudItem>
-            <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Server domains:")" Value="WebUiDomainList" ValueChanged="WebUiDomainListChanged" Lines="5" Disabled="@(WebUiHostHeaderValidationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiDomainList")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Files location:")" Value="AlternativeWebuiPath" ValueChanged="AlternativeWebuiPathChanged" Variant="Variant.Outlined" ShrinkLabel="true" Validation="AlternativeWebuiPathValidation" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("AlternativeWebuiPath")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -126,16 +99,25 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Add custom HTTP headers")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Security")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Add custom HTTP headers")" Value="WebUiUseCustomHttpHeadersEnabled" ValueChanged="WebUiUseCustomHttpHeadersEnabledChanged" data-test-id="@TestIdHelper.For("WebUiUseCustomHttpHeadersEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Enable clickjacking protection")" Value="WebUiClickjackingProtectionEnabled" ValueChanged="WebUiClickjackingProtectionEnabledChanged" data-test-id="@TestIdHelper.For("WebUiClickjackingProtectionEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Header: value pairs, one per line")" Value="WebUiCustomHttpHeaders" ValueChanged="WebUiCustomHttpHeadersChanged" Lines="5" Disabled="@(WebUiUseCustomHttpHeadersEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiCustomHttpHeaders")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Enable Cross-Site Request Forgery (CSRF) protection")" Value="WebUiCsrfProtectionEnabled" ValueChanged="WebUiCsrfProtectionEnabledChanged" data-test-id="@TestIdHelper.For("WebUiCsrfProtectionEnabled")" />
+            </MudItem>
+            <MudItem xs="12">
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Enable cookie Secure flag (requires HTTPS or localhost connection)")" Value="WebUiSecureCookieEnabled" ValueChanged="WebUiSecureCookieEnabledChanged" data-test-id="@TestIdHelper.For("WebUiSecureCookieEnabled")" />
+            </MudItem>
+            <MudItem xs="12">
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Enable Host header validation")" Value="WebUiHostHeaderValidationEnabled" ValueChanged="WebUiHostHeaderValidationEnabledChanged" data-test-id="@TestIdHelper.For("WebUiHostHeaderValidationEnabled")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Server domains:")" Value="WebUiDomainList" ValueChanged="WebUiDomainListChanged" Lines="5" Disabled="@(WebUiHostHeaderValidationEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiDomainList")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -144,16 +126,16 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Enable reverse proxy support")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Add custom HTTP headers")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Enable reverse proxy support")" Value="WebUiReverseProxyEnabled" ValueChanged="WebUiReverseProxyEnabledChanged" data-test-id="@TestIdHelper.For("WebUiReverseProxyEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Add custom HTTP headers")" Value="WebUiUseCustomHttpHeadersEnabled" ValueChanged="WebUiUseCustomHttpHeadersEnabledChanged" data-test-id="@TestIdHelper.For("WebUiUseCustomHttpHeadersEnabled")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Trusted proxies list:")" Value="WebUiReverseProxiesList" ValueChanged="WebUiReverseProxiesListChanged" Lines="5" Disabled="@(WebUiReverseProxyEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiReverseProxiesList")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Header: value pairs, one per line")" Value="WebUiCustomHttpHeaders" ValueChanged="WebUiCustomHttpHeadersChanged" Lines="5" Disabled="@(WebUiUseCustomHttpHeadersEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiCustomHttpHeaders")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -162,13 +144,31 @@
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.subtitle2">@WebUiLocalizer.Translate("OptionsDialog", "Update my dynamic domain name")</MudText>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Enable reverse proxy support")</MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <FieldSwitch Label="@WebUiLocalizer.Translate("OptionsDialog", "Update my dynamic domain name")" Value="DyndnsEnabled" ValueChanged="DyndnsEnabledChanged" data-test-id="@TestIdHelper.For("DyndnsEnabled")" />
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Enable reverse proxy support")" Value="WebUiReverseProxyEnabled" ValueChanged="WebUiReverseProxyEnabledChanged" data-test-id="@TestIdHelper.For("WebUiReverseProxyEnabled")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Trusted proxies list:")" Value="WebUiReverseProxiesList" ValueChanged="WebUiReverseProxiesListChanged" Lines="5" Disabled="@(WebUiReverseProxyEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("WebUiReverseProxiesList")" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">@LanguageLocalizer.Translate("OptionsDialog", "Update my dynamic domain name")</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Update my dynamic domain name")" Value="DyndnsEnabled" ValueChanged="DyndnsEnabledChanged" data-test-id="@TestIdHelper.For("DyndnsEnabled")" />
             </MudItem>
             <MudItem xs="8">
                 <MudSelect T="int" Value="DyndnsService" ValueChanged="DyndnsServiceChanged" Disabled="@(DyndnsEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DyndnsService")">
@@ -180,16 +180,16 @@
                 <MudButton OnClick="RegisterDyndnsService"
                            Disabled="@(DyndnsEnabled != true)"
                            Variant="Variant.Filled"
-                           data-test-id="@TestIdHelper.For("DyndnsRegister")">@WebUiLocalizer.Translate("OptionsDialog", "Register")</MudButton>
+                           data-test-id="@TestIdHelper.For("DyndnsRegister")">@LanguageLocalizer.Translate("OptionsDialog", "Register")</MudButton>
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Domain name:")" Value="DyndnsDomain" ValueChanged="DyndnsDomainChanged" Disabled="@(DyndnsEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DyndnsDomain")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Domain name:")" Value="DyndnsDomain" ValueChanged="DyndnsDomainChanged" Disabled="@(DyndnsEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DyndnsDomain")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Username:")" Value="DyndnsUsername" ValueChanged="DyndnsUsernameChanged" Disabled="@(DyndnsEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DyndnsUsername")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Username:")" Value="DyndnsUsername" ValueChanged="DyndnsUsernameChanged" Disabled="@(DyndnsEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DyndnsUsername")" />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField T="string" Label="@WebUiLocalizer.Translate("OptionsDialog", "Password:")" Value="DyndnsPassword" ValueChanged="DyndnsPasswordChanged" Disabled="@(DyndnsEnabled != true)" InputType="InputType.Password" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DyndnsPassword")" />
+                <MudTextField T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "Password:")" Value="DyndnsPassword" ValueChanged="DyndnsPasswordChanged" Disabled="@(DyndnsEnabled != true)" InputType="InputType.Password" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("DyndnsPassword")" />
             </MudItem>
         </MudGrid>
     </MudCardContent>

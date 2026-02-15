@@ -351,6 +351,8 @@
   "AppOptions|Unsaved Changes": "Unsaved Changes",
   "AppOptions|Are you sure you want to leave without saving your changes?": "Are you sure you want to leave without saving your changes?",
   "AppOptions|Options saved.": "Options saved.",
+  "AppLocalization|Language preference changed on server. Click Reload to apply it.": "Language preference changed on server. Click Reload to apply it.",
+  "AppLocalization|Reload": "Reload",
   "AppRss|Unable to rename RSS item: %1": "Unable to rename RSS item: %1",
   "AppRss|Remove \"%1\"?": "Remove \"%1\"?",
   "AppRss|Unable to remove RSS item: %1": "Unable to remove RSS item: %1",

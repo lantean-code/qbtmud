@@ -31,7 +31,7 @@ namespace Lantean.QBTMud.Pages
         protected ISnackbar Snackbar { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -85,7 +85,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            var title = WebUiLocalizer.Translate("CookiesDialog", "Add Cookie");
+            var title = LanguageLocalizer.Translate("CookiesDialog", "Add Cookie");
             var cookie = await DialogWorkflow.ShowCookiePropertiesDialog(title, null);
             if (cookie is null)
             {
@@ -218,11 +218,11 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Domain"), row => row.Cookie.Domain, id: "domain"),
-                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Path"), row => row.Cookie.Path, id: "path"),
-                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Name"), row => row.Cookie.Name, id: "name"),
-                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Value"), row => row.Cookie.Value, id: "value"),
-                new ColumnDefinition<CookieRow>(WebUiLocalizer.Translate("CookiesDialog", "Expiration Date"), row => row.Cookie.ExpirationDate, row => GetExpirationDateText(row.Cookie.ExpirationDate), id: "expiration_date"),
+                new ColumnDefinition<CookieRow>(LanguageLocalizer.Translate("CookiesDialog", "Domain"), row => row.Cookie.Domain, id: "domain"),
+                new ColumnDefinition<CookieRow>(LanguageLocalizer.Translate("CookiesDialog", "Path"), row => row.Cookie.Path, id: "path"),
+                new ColumnDefinition<CookieRow>(LanguageLocalizer.Translate("CookiesDialog", "Name"), row => row.Cookie.Name, id: "name"),
+                new ColumnDefinition<CookieRow>(LanguageLocalizer.Translate("CookiesDialog", "Value"), row => row.Cookie.Value, id: "value"),
+                new ColumnDefinition<CookieRow>(LanguageLocalizer.Translate("CookiesDialog", "Expiration Date"), row => row.Cookie.ExpirationDate, row => GetExpirationDateText(row.Cookie.ExpirationDate), id: "expiration_date"),
                 new ColumnDefinition<CookieRow>(ActionsColumnHeader, row => row, id: "actions")
             ];
         }
@@ -240,7 +240,7 @@ namespace Lantean.QBTMud.Pages
 
         private string Translate(string value, params object[] args)
         {
-            return WebUiLocalizer.Translate("AppCookies", value, args);
+            return LanguageLocalizer.Translate("AppCookies", value, args);
         }
 
         protected sealed class CookieRow

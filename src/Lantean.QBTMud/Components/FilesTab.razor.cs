@@ -308,8 +308,8 @@ namespace Lantean.QBTMud.Components
                 var contentItem = contentItems[0];
                 var name = contentItem.GetFileName();
                 await DialogWorkflow.InvokeStringFieldDialog(
-                    WebUiLocalizer.Translate("TorrentContentTreeView", "Renaming"),
-                    WebUiLocalizer.Translate("TorrentContentTreeView", "New name:"),
+                    LanguageLocalizer.Translate("TorrentContentTreeView", "Renaming"),
+                    LanguageLocalizer.Translate("TorrentContentTreeView", "New name:"),
                     name,
                     async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
             }
@@ -619,12 +619,12 @@ namespace Lantean.QBTMud.Components
 
         private IReadOnlyList<ColumnDefinition<ContentItem>> BuildColumnDefinitions()
         {
-            var nameLabel = WebUiLocalizer.Translate("TransferListModel", "Name");
-            var totalSizeLabel = WebUiLocalizer.Translate("TransferListModel", "Total Size");
-            var progressLabel = WebUiLocalizer.Translate("TransferListModel", "Progress");
-            var priorityLabel = WebUiLocalizer.Translate("PropertiesWidget", "Priority");
-            var remainingLabel = WebUiLocalizer.Translate("TransferListModel", "Remaining");
-            var availabilityLabel = WebUiLocalizer.Translate("TransferListModel", "Availability");
+            var nameLabel = LanguageLocalizer.Translate("TransferListModel", "Name");
+            var totalSizeLabel = LanguageLocalizer.Translate("TransferListModel", "Total Size");
+            var progressLabel = LanguageLocalizer.Translate("TransferListModel", "Progress");
+            var priorityLabel = LanguageLocalizer.Translate("PropertiesWidget", "Priority");
+            var remainingLabel = LanguageLocalizer.Translate("TransferListModel", "Remaining");
+            var availabilityLabel = LanguageLocalizer.Translate("TransferListModel", "Availability");
 
             return
             [

@@ -4,6 +4,7 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Pages;
+using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -127,6 +128,34 @@ namespace Lantean.QBTMud.Test.Pages
                 Times.Once);
 
             navigationManager.Uri.Should().Be("http://localhost/");
+        }
+
+        [Fact]
+        public async Task GIVEN_LocaleChanged_WHEN_Saved_THEN_ShouldPersistLocaleToLocalStorage()
+        {
+            var preferences = CreatePreferences();
+
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetApplicationPreferences())
+                .ReturnsAsync(preferences)
+                .ReturnsAsync(preferences);
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .Returns(Task.CompletedTask);
+
+            await TestContext.LocalStorage.RemoveItemAsync(LanguageStorageKeys.PreferredLocale, Xunit.TestContext.Current.CancellationToken);
+
+            var target = RenderPage(preferences, configureApi: false);
+            await ActivateTab(target, 0);
+
+            var languageSelect = FindSelect<string>(target, "UserInterfaceLanguage");
+            await target.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
+
+            var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, Xunit.TestContext.Current.CancellationToken);
+            storedLocale.Should().Be("fr");
         }
 
         [Fact]

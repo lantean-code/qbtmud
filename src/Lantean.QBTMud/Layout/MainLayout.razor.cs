@@ -31,7 +31,7 @@ namespace Lantean.QBTMud.Layout
         protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -86,7 +86,7 @@ namespace Lantean.QBTMud.Layout
 
         private string BuildFullTitle()
         {
-            return WebUiLocalizer.Translate("Login", "qBittorrent WebUI");
+            return LanguageLocalizer.Translate("Login", "qBittorrent WebUI");
         }
 
         private static bool IsLoginRoute(string? relativeUri)

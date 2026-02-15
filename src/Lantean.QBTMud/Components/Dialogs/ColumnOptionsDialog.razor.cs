@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         public Dictionary<string, int> Order { get; set; } = [];
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         protected HashSet<string> SelectedColumnsInternal { get; set; } = [];
 
@@ -238,7 +238,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private string Translate(string value)
         {
-            return WebUiLocalizer.Translate("AppColumnOptionsDialog", value);
+            return LanguageLocalizer.Translate("AppColumnOptionsDialog", value);
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Lantean.QBTMud.Components
         protected IPeriodicTimerFactory PeriodicTimerFactory { get; set; } = default!;
 
         [Inject]
-        protected Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "TimerDrawerOpen")]
         public bool TimerDrawerOpen { get; set; }
@@ -221,7 +221,7 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(AppContext, source, arguments);
+            return LanguageLocalizer.Translate(AppContext, source, arguments);
         }
     }
 }

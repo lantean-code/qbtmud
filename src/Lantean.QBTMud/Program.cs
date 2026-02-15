@@ -21,8 +21,13 @@ namespace Lantean.QBTMud
             builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
             builder.Services.AddOptions<WebUiLocalizationOptions>();
             builder.Services.AddHttpClient("WebUiAssets", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
-            builder.Services.AddScoped<IWebUiLocalizer, WebUiLocalizer>();
-            builder.Services.AddScoped<IWebUiLanguageCatalog, WebUiLanguageCatalog>();
+            builder.Services.AddScoped<ILanguageFileLoader, LanguageFileLoader>();
+            builder.Services.AddScoped<IAssemblyResourceAccessor, AssemblyResourceAccessor>();
+            builder.Services.AddScoped<ILanguageEmbeddedResourceLoader, LanguageEmbeddedResourceLoader>();
+            builder.Services.AddScoped<ILanguageResourceProvider, LanguageResourceProvider>();
+            builder.Services.AddScoped<ILanguageResourceLoader, LanguageResourceLoader>();
+            builder.Services.AddScoped<ILanguageLocalizer, LanguageLocalizer>();
+            builder.Services.AddScoped<ILanguageCatalog, LanguageCatalog>();
 
             Uri baseAddress;
 #if DEBUG
@@ -49,6 +54,7 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
             builder.Services.AddSingleton<IThemeFontCatalog, ThemeFontCatalog>();
             builder.Services.AddScoped<IThemeManagerService, ThemeManagerService>();
+            builder.Services.AddScoped<ILanguageInitializationService, LanguageInitializationService>();
             builder.Services.AddScoped<IAppWarmupService, AppWarmupService>();
 
             builder.Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();

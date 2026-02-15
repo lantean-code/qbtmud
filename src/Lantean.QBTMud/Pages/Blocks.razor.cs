@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Pages
         protected ISnackbar Snackbar { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -191,16 +191,16 @@ namespace Lantean.QBTMud.Pages
         {
             return
             [
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "IP"), l => l.IPAddress, id: "message"),
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
+                new ColumnDefinition<PeerLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
+                new ColumnDefinition<PeerLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "IP"), l => l.IPAddress, id: "message"),
+                new ColumnDefinition<PeerLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
                 new ColumnDefinition<PeerLog>(
-                    WebUiLocalizer.Translate("ExecutionLogWidget", "Blocked"),
+                    LanguageLocalizer.Translate("ExecutionLogWidget", "Blocked"),
                     l => l.Blocked
-                        ? WebUiLocalizer.Translate("ExecutionLogWidget", "Blocked")
-                        : WebUiLocalizer.Translate("ExecutionLogWidget", "Banned"),
+                        ? LanguageLocalizer.Translate("ExecutionLogWidget", "Blocked")
+                        : LanguageLocalizer.Translate("ExecutionLogWidget", "Banned"),
                     id: "blocked"),
-                new ColumnDefinition<PeerLog>(WebUiLocalizer.Translate("ExecutionLogWidget", "Reason"), l => l.Reason, id: "reason"),
+                new ColumnDefinition<PeerLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "Reason"), l => l.Reason, id: "reason"),
             ];
         }
 
@@ -217,7 +217,7 @@ namespace Lantean.QBTMud.Pages
 
         private string TranslateBlocks(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate("AppBlocks", source, arguments);
+            return LanguageLocalizer.Translate("AppBlocks", source, arguments);
         }
     }
 }

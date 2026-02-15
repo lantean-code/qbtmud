@@ -6,14 +6,14 @@ namespace Lantean.QBTMud.Models
     public enum AppWarmupStep
     {
         /// <summary>
-        /// Loads translation aliases and the base/override WebUI translation dictionaries.
+        /// Initializes WebUI localization resources (aliases, base translations, and overrides).
         /// </summary>
-        WebUiLocalizer = 0,
+        LanguageLocalizer = 0,
 
         /// <summary>
         /// Loads the WebUI language catalog used for locale selection.
         /// </summary>
-        WebUiLanguageCatalog = 1,
+        LanguageCatalog = 1,
 
         /// <summary>
         /// Loads theme definitions and applies the selected theme.

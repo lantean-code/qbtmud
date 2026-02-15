@@ -1,6 +1,6 @@
 @page "/login"
 @layout MainLayout
-<PageTitle>@WebUiLocalizer.Translate("Login", "Login")</PageTitle>
+<PageTitle>@LanguageLocalizer.Translate("Login", "Login")</PageTitle>
 
 <div class="login-root">
     <MudMainContent Class="login-page">
@@ -10,7 +10,7 @@
                     <MudStack Spacing="2">
                         <div class="login-card__header">
                             <img src="images/qbittorrent32.png" alt="" class="login-card__logo" />
-                            <MudText Typo="Typo.h5">@WebUiLocalizer.Translate("Login", "Login")</MudText>
+                            <MudText Typo="Typo.h5">@LanguageLocalizer.Translate("Login", "Login")</MudText>
                         </div>
 
                         @if (ApiError is not null)
@@ -24,7 +24,7 @@
                         <EditForm Model="Model" OnValidSubmit="LoginClick">
                             <DataAnnotationsValidator />
                             <MudStack Spacing="2" Class="login-card__form">
-                                <MudTextField Label="@WebUiLocalizer.Translate("Login", "Username")"
+                                <MudTextField Label="@LanguageLocalizer.Translate("Login", "Username")"
                                               @bind-Value="Model.Username"
                                               For="@(() => Model.Username)"
                                               Variant="Variant.Outlined"
@@ -33,7 +33,7 @@
                                               AdornmentIcon="@Icons.Material.Filled.Person"
                                               Disabled="@IsSubmitting"
                                               data-test-id="@TestIdHelper.For("Username")" />
-                                <MudTextField Label="@WebUiLocalizer.Translate("Login", "Password")"
+                                <MudTextField Label="@LanguageLocalizer.Translate("Login", "Password")"
                                               @bind-Value="Model.Password"
                                               For="@(() => Model.Password)"
                                               InputType="@PasswordInputType"
@@ -49,7 +49,7 @@
                                            ButtonType="ButtonType.Submit"
                                            FullWidth="true"
                                            Disabled="@IsSubmitting"
-                                           data-test-id="@TestIdHelper.For("Login")">@WebUiLocalizer.Translate("Login", "Login")</MudButton>
+                                           data-test-id="@TestIdHelper.For("Login")">@LanguageLocalizer.Translate("Login", "Login")</MudButton>
                             </MudStack>
                         </EditForm>
                     </MudStack>

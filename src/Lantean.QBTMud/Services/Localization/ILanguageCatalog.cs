@@ -5,12 +5,12 @@ namespace Lantean.QBTMud.Services.Localization
     /// <summary>
     /// Provides access to available WebUI languages.
     /// </summary>
-    public interface IWebUiLanguageCatalog
+    public interface ILanguageCatalog
     {
         /// <summary>
         /// Gets the available WebUI languages.
         /// </summary>
-        IReadOnlyList<WebUiLanguageCatalogItem> Languages { get; }
+        IReadOnlyList<LanguageCatalogItem> Languages { get; }
 
         /// <summary>
         /// Ensures the language catalog has been loaded.

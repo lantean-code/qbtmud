@@ -67,7 +67,7 @@ namespace Lantean.QBTMud.Pages
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         public MainData? MainData { get; set; }
@@ -274,7 +274,7 @@ namespace Lantean.QBTMud.Pages
 
         private string Translate(string value)
         {
-            return WebUiLocalizer.Translate("AppSpeed", value);
+            return LanguageLocalizer.Translate("AppSpeed", value);
         }
 
         private static TimeSpan GetPeriodDuration(SpeedPeriod period)

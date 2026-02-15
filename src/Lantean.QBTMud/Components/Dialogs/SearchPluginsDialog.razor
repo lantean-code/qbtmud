@@ -10,9 +10,9 @@
         <MudGrid Class="mb-4" Spacing="2">
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4">
-                    <MudText Typo="Typo.subtitle2" Class="mb-2">@WebUiLocalizer.Translate("AppTemp", "Install from URL")</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">@LanguageLocalizer.Translate("AppTemp", "Install from URL")</MudText>
                     <MudTextField @bind-Value="InstallUrl"
-                                  Placeholder="@WebUiLocalizer.Translate("AppTemp", "https://example.com/plugin.zip")"
+                                  Placeholder="@LanguageLocalizer.Translate("AppTemp", "https://example.com/plugin.zip")"
                                   Variant="Variant.Outlined"
                                   Disabled="OperationInProgress"
                                   Immediate="true"
@@ -23,15 +23,15 @@
                                OnClick="InstallFromUrl"
                                Class="mt-3"
                                StartIcon="@Icons.Material.Filled.CloudDownload"
-                               data-test-id="@TestIdHelper.For("SearchPluginInstallUrlButton")">@WebUiLocalizer.Translate("PluginSourceDlg", "Install plugin")</MudButton>
+                               data-test-id="@TestIdHelper.For("SearchPluginInstallUrlButton")">@LanguageLocalizer.Translate("PluginSourceDlg", "Install plugin")</MudButton>
                 </MudPaper>
             </MudItem>
             <MudItem xs="12" md="6">
                 <MudPaper Class="pa-4">
-                    <MudText Typo="Typo.subtitle2" Class="mb-2">@WebUiLocalizer.Translate("AppTemp", "Install from server path")</MudText>
-                    <PathAutocomplete Label="@WebUiLocalizer.Translate("PluginSourceDlg", "Plugin path:")"
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">@LanguageLocalizer.Translate("AppTemp", "Install from server path")</MudText>
+                    <PathAutocomplete Label="@LanguageLocalizer.Translate("PluginSourceDlg", "Plugin path:")"
                                       @bind-Value="InstallLocalPath"
-                                      Placeholder="@WebUiLocalizer.Translate("AppTemp", "/home/qbt/plugins/my-plugin.py")"
+                                      Placeholder="@LanguageLocalizer.Translate("AppTemp", "/home/qbt/plugins/my-plugin.py")"
                                       Mode="DirectoryContentMode.All"
                                       AllowFolderSelection="false"
                                       Disabled="OperationInProgress"
@@ -43,7 +43,7 @@
                                OnClick="InstallFromPath"
                                Class="mt-3"
                                StartIcon="@Icons.Material.Filled.UploadFile"
-                               data-test-id="@TestIdHelper.For("SearchPluginInstallPathButton")">@WebUiLocalizer.Translate("PluginSourceDlg", "Install plugin")</MudButton>
+                               data-test-id="@TestIdHelper.For("SearchPluginInstallPathButton")">@LanguageLocalizer.Translate("PluginSourceDlg", "Install plugin")</MudButton>
                 </MudPaper>
             </MudItem>
         </MudGrid>
@@ -54,27 +54,27 @@
                            Disabled="!HasSelection || OperationInProgress"
                            StartIcon="@Icons.Material.Filled.ToggleOn"
                            OnClick="EnableSelected"
-                           data-test-id="@TestIdHelper.For("SearchPluginEnable")">@WebUiLocalizer.Translate("AppTemp", "Enable")</MudButton>
+                           data-test-id="@TestIdHelper.For("SearchPluginEnable")">@LanguageLocalizer.Translate("AppTemp", "Enable")</MudButton>
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Default"
                            Disabled="!HasSelection || OperationInProgress"
                            StartIcon="@Icons.Material.Filled.ToggleOff"
                            OnClick="DisableSelected"
-                           data-test-id="@TestIdHelper.For("SearchPluginDisable")">@WebUiLocalizer.Translate("AppTemp", "Disable")</MudButton>
+                           data-test-id="@TestIdHelper.For("SearchPluginDisable")">@LanguageLocalizer.Translate("AppTemp", "Disable")</MudButton>
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Default"
                            Disabled="!HasSelection || OperationInProgress"
                            StartIcon="@Icons.Material.Filled.Delete"
                            OnClick="UninstallSelected"
-                           data-test-id="@TestIdHelper.For("SearchPluginUninstall")">@WebUiLocalizer.Translate("PluginSelectDlg", "Uninstall")</MudButton>
+                           data-test-id="@TestIdHelper.For("SearchPluginUninstall")">@LanguageLocalizer.Translate("PluginSelectDlg", "Uninstall")</MudButton>
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Default"
                            Disabled="OperationInProgress || Plugins.Count == 0"
                            StartIcon="@Icons.Material.Filled.Update"
                            OnClick="UpdateAll"
-                           data-test-id="@TestIdHelper.For("SearchPluginUpdateAll")">@WebUiLocalizer.Translate("PluginSelectDlg", "Check for updates")</MudButton>
+                           data-test-id="@TestIdHelper.For("SearchPluginUpdateAll")">@LanguageLocalizer.Translate("PluginSelectDlg", "Check for updates")</MudButton>
                 <MudSpacer />
-                <Tooltip Text="@WebUiLocalizer.Translate("AppTemp", "Refresh plugins")">
+                <Tooltip Text="@LanguageLocalizer.Translate("AppTemp", "Refresh plugins")">
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh"
                                    Color="Color.Default"
                                    Disabled="OperationInProgress"
@@ -89,41 +89,41 @@
                   Bordered="true"
                   Dense="true">
             <HeaderContent>
-                <MudTh>@WebUiLocalizer.Translate("AppTemp", "Select")</MudTh>
-                <MudTh>@WebUiLocalizer.Translate("SearchPluginsTable", "Enabled")</MudTh>
-                <MudTh>@WebUiLocalizer.Translate("SearchPluginsTable", "Name")</MudTh>
-                <MudTh>@WebUiLocalizer.Translate("AppTemp", "Identifier")</MudTh>
-                <MudTh>@WebUiLocalizer.Translate("SearchPluginsTable", "Version")</MudTh>
-                <MudTh>@WebUiLocalizer.Translate("AppTemp", "Last update")</MudTh>
-                <MudTh>@WebUiLocalizer.Translate("SearchPluginsTable", "Url")</MudTh>
+                <MudTh>@LanguageLocalizer.Translate("AppTemp", "Select")</MudTh>
+                <MudTh>@LanguageLocalizer.Translate("SearchPluginsTable", "Enabled")</MudTh>
+                <MudTh>@LanguageLocalizer.Translate("SearchPluginsTable", "Name")</MudTh>
+                <MudTh>@LanguageLocalizer.Translate("AppTemp", "Identifier")</MudTh>
+                <MudTh>@LanguageLocalizer.Translate("SearchPluginsTable", "Version")</MudTh>
+                <MudTh>@LanguageLocalizer.Translate("AppTemp", "Last update")</MudTh>
+                <MudTh>@LanguageLocalizer.Translate("SearchPluginsTable", "Url")</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="@WebUiLocalizer.Translate("AppTemp", "Select")">
+                <MudTd DataLabel="@LanguageLocalizer.Translate("AppTemp", "Select")">
                     <MudIconButton Icon="@GetSelectionIcon(context)"
                                    Color="@GetSelectionColor(context)"
                                    Disabled="OperationInProgress"
                                    OnClick="@(() => ToggleSelection(context))"
                                    data-test-id="@TestIdHelper.For($"SearchPluginSelect-{context.Name}")" />
                 </MudTd>
-                <MudTd DataLabel="@WebUiLocalizer.Translate("SearchPluginsTable", "Enabled")">
+                <MudTd DataLabel="@LanguageLocalizer.Translate("SearchPluginsTable", "Enabled")">
                     <MudIconButton Icon="@GetEnabledIcon(context)"
                                    Color="@GetEnabledColor(context)"
                                    Disabled="OperationInProgress"
                                    OnClick="@(() => TogglePlugin(context, !context.Enabled))"
                                    data-test-id="@TestIdHelper.For($"SearchPluginToggle-{context.Name}")" />
                 </MudTd>
-                <MudTd DataLabel="@WebUiLocalizer.Translate("SearchPluginsTable", "Name")">
+                <MudTd DataLabel="@LanguageLocalizer.Translate("SearchPluginsTable", "Name")">
                     <MudText Typo="Typo.body2">@context.FullName</MudText>
                 </MudTd>
-                <MudTd DataLabel="@WebUiLocalizer.Translate("AppTemp", "Identifier")">
+                <MudTd DataLabel="@LanguageLocalizer.Translate("AppTemp", "Identifier")">
                     <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small">@context.Name</MudChip>
                 </MudTd>
-                <MudTd DataLabel="@WebUiLocalizer.Translate("SearchPluginsTable", "Version")">@context.Version</MudTd>
-                <MudTd DataLabel="@WebUiLocalizer.Translate("AppTemp", "Last update")">@GetLastUpdatedText(context)</MudTd>
-                <MudTd DataLabel="@WebUiLocalizer.Translate("SearchPluginsTable", "Url")">
+                <MudTd DataLabel="@LanguageLocalizer.Translate("SearchPluginsTable", "Version")">@context.Version</MudTd>
+                <MudTd DataLabel="@LanguageLocalizer.Translate("AppTemp", "Last update")">@GetLastUpdatedText(context)</MudTd>
+                <MudTd DataLabel="@LanguageLocalizer.Translate("SearchPluginsTable", "Url")">
                     @if (string.IsNullOrWhiteSpace(context.Url))
                     {
-                        <MudText Typo="Typo.caption">@WebUiLocalizer.Translate("AppTemp", "Not provided")</MudText>
+                        <MudText Typo="Typo.caption">@LanguageLocalizer.Translate("AppTemp", "Not provided")</MudText>
                     }
                     else
                     {
@@ -132,11 +132,11 @@
                 </MudTd>
             </RowTemplate>
             <NoRecordsContent>
-                <MudText Typo="Typo.subtitle2" Class="pa-4">@WebUiLocalizer.Translate("SearchEngineWidget", "There aren't any search plugins installed.")</MudText>
+                <MudText Typo="Typo.subtitle2" Class="pa-4">@LanguageLocalizer.Translate("SearchEngineWidget", "There aren't any search plugins installed.")</MudText>
             </NoRecordsContent>
         </MudTable>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="CloseDialog" data-test-id="@TestIdHelper.For("SearchPluginClose")">@WebUiLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="CloseDialog" data-test-id="@TestIdHelper.For("SearchPluginClose")">@LanguageLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>
     </DialogActions>
 </MudDialog>

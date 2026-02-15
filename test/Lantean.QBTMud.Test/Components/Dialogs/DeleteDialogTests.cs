@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
     public sealed class DeleteDialogTests : RazorComponentTestBase<DeleteDialog>
     {
         private readonly IKeyboardService _keyboardService;
-        private readonly IWebUiLocalizer _webUiLocalizer;
+        private readonly ILanguageLocalizer _languageLocalizer;
         private readonly DeleteDialogTestDriver _target;
 
         public DeleteDialogTests()
@@ -30,14 +30,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.RemoveAll<IKeyboardService>();
             TestContext.Services.AddSingleton(_keyboardService);
 
-            _webUiLocalizer = Mock.Of<IWebUiLocalizer>();
-            var localizerMock = Mock.Get(_webUiLocalizer);
+            _languageLocalizer = Mock.Of<ILanguageLocalizer>();
+            var localizerMock = Mock.Get(_languageLocalizer);
             localizerMock
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] args) => FormatLocalizedString(source, args));
 
-            TestContext.Services.RemoveAll<IWebUiLocalizer>();
-            TestContext.Services.AddSingleton(_webUiLocalizer);
+            TestContext.Services.RemoveAll<ILanguageLocalizer>();
+            TestContext.Services.AddSingleton(_languageLocalizer);
 
             _target = new DeleteDialogTestDriver(TestContext);
         }

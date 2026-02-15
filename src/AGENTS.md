@@ -72,10 +72,10 @@
 
 ### Localization (Copy)
 - Any user-facing copy (labels, button text, tooltips, empty states, alerts, errors) must be localized.
-- When replicating qBittorrent WebUI functionality, prefer using qBittorrent's existing language keys and text via `IWebUiLocalizer.Translate(context, source, ...)` so translations come from the bundled WebUI language files.
+- When replicating qBittorrent WebUI functionality, prefer using qBittorrent's existing language keys and text via `ILanguageLocalizer.Translate(context, source, ...)` so translations come from the bundled WebUI language files.
 - Before adding any new override key, explicitly verify the text is not already available in qBittorrent WebUI locale files (context + source), and reuse an existing key whenever possible.
 - Do not add entries to `webui_overrides_*.json` for convenience, wording preference, or duplicate text that already exists upstream under another usable context.
-- Only when no suitable upstream translation key exists, add the English source to `src/Lantean.QBTMud/wwwroot/i18n/webui_overrides_en.json` and reference it via `IWebUiLocalizer.Translate(...)` using a stable context/source pair (do not hardcode strings in Razor/C#).
+- Only when no suitable upstream translation key exists, add the English source to `src/Lantean.QBTMud/wwwroot/i18n/webui_overrides_en.json` and reference it via `ILanguageLocalizer.Translate(...)` using a stable context/source pair (do not hardcode strings in Razor/C#).
 
 ## Line endings
 - Use CRLF line terminators for any files you write or modify.

@@ -17,7 +17,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ISnackbar Snackbar { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -244,7 +244,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(AppContext, source, arguments);
+            return LanguageLocalizer.Translate(AppContext, source, arguments);
         }
     }
 }

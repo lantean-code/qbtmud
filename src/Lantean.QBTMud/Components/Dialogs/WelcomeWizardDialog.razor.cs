@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
-using System.Globalization;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Components.Dialogs
@@ -17,10 +16,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected QBitTorrentClient.IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLanguageCatalog WebUiLanguageCatalog { get; set; } = default!;
+        protected ILanguageCatalog LanguageCatalog { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected ILanguageInitializationService LanguageInitializationService { get; set; } = default!;
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
@@ -41,10 +43,10 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
         private int _activeIndex;
-        private WebUiLanguageCatalogItem? _selectedLanguage;
+        private LanguageCatalogItem? _selectedLanguage;
         private string? _selectedLocale;
         private string? _selectedThemeId;
-        private IReadOnlyList<WebUiLanguageCatalogItem> _languageOptions = Array.Empty<WebUiLanguageCatalogItem>();
+        private IReadOnlyList<LanguageCatalogItem> _languageOptions = Array.Empty<LanguageCatalogItem>();
         private IReadOnlyList<ThemeCatalogItem> _themeOptions = Array.Empty<ThemeCatalogItem>();
         private bool _keyboardFocused;
         private bool _disposedValue;
@@ -61,10 +63,10 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            await WebUiLanguageCatalog.EnsureInitialized();
-            _languageOptions = WebUiLanguageCatalog.Languages;
+            await LanguageCatalog.EnsureInitialized();
+            _languageOptions = LanguageCatalog.Languages;
 
-            var locale = WebUiLocaleSelection.ResolveLocale(InitialLocale, _languageOptions);
+            var locale = LocaleSelection.ResolveLocale(InitialLocale, _languageOptions);
             _selectedLanguage = _languageOptions.FirstOrDefault(item => string.Equals(item.Code, locale, StringComparison.OrdinalIgnoreCase))
                 ?? _languageOptions.FirstOrDefault();
             _selectedLocale = _selectedLanguage?.Code;
@@ -178,17 +180,17 @@ namespace Lantean.QBTMud.Components.Dialogs
             catch (InvalidOperationException ex)
             {
                 Logger.LogWarning(ex, "Unable to save welcome wizard completion due to invalid operation: {Message}.", ex.Message);
-                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to save welcome wizard completion: %1", ex.Message), Severity.Error);
+                Snackbar.Add(LanguageLocalizer.Translate("AppWelcomeWizard", "Unable to save welcome wizard completion: %1", ex.Message), Severity.Error);
             }
             catch (JSException ex)
             {
                 Logger.LogWarning(ex, "Unable to save welcome wizard completion due to JS exception: {Message}.", ex.Message);
-                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to save welcome wizard completion: %1", ex.Message), Severity.Error);
+                Snackbar.Add(LanguageLocalizer.Translate("AppWelcomeWizard", "Unable to save welcome wizard completion: %1", ex.Message), Severity.Error);
             }
             catch (JsonException ex)
             {
                 Logger.LogWarning(ex, "Unable to save welcome wizard completion due to JSON exception: {Message}.", ex.Message);
-                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to save welcome wizard completion: %1", ex.Message), Severity.Error);
+                Snackbar.Add(LanguageLocalizer.Translate("AppWelcomeWizard", "Unable to save welcome wizard completion: %1", ex.Message), Severity.Error);
             }
         }
 
@@ -212,17 +214,17 @@ namespace Lantean.QBTMud.Components.Dialogs
             catch (InvalidOperationException ex)
             {
                 Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to invalid operation: {Message}.", value, ex.Message);
-                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to apply theme: %1", ex.Message), Severity.Error);
+                Snackbar.Add(LanguageLocalizer.Translate("AppWelcomeWizard", "Unable to apply theme: %1", ex.Message), Severity.Error);
             }
             catch (JSException ex)
             {
                 Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to JS exception: {Message}.", value, ex.Message);
-                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to apply theme: %1", ex.Message), Severity.Error);
+                Snackbar.Add(LanguageLocalizer.Translate("AppWelcomeWizard", "Unable to apply theme: %1", ex.Message), Severity.Error);
             }
             catch (JsonException ex)
             {
                 Logger.LogWarning(ex, "Unable to apply theme {ThemeId} due to JSON exception: {Message}.", value, ex.Message);
-                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to apply theme: %1", ex.Message), Severity.Error);
+                Snackbar.Add(LanguageLocalizer.Translate("AppWelcomeWizard", "Unable to apply theme: %1", ex.Message), Severity.Error);
             }
         }
 
@@ -244,77 +246,27 @@ namespace Lantean.QBTMud.Components.Dialogs
                     Locale = locale
                 });
 
-                ApplyCulture(locale);
-                await WebUiLocalizer.InitializeAsync();
+                await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, locale);
+                await LanguageInitializationService.EnsureLanguageResourcesInitialized();
 
                 await InvokeAsync(StateHasChanged);
             }
             catch (HttpRequestException ex)
             {
-                Snackbar.Add(WebUiLocalizer.Translate("AppWelcomeWizard", "Unable to update language: %1", ex.Message), Severity.Error);
+                Snackbar.Add(LanguageLocalizer.Translate("AppWelcomeWizard", "Unable to update language: %1", ex.Message), Severity.Error);
             }
-        }
-
-        private void ApplyCulture(string locale)
-        {
-            var normalized = NormalizeLocaleForCulture(locale);
-            if (string.IsNullOrWhiteSpace(normalized))
+            catch (InvalidOperationException ex)
             {
-                return;
+                Snackbar.Add(LanguageLocalizer.Translate("AppWelcomeWizard", "Unable to update language: %1", ex.Message), Severity.Error);
             }
-
-            try
+            catch (JSException ex)
             {
-                var culture = CultureInfo.GetCultureInfo(normalized);
-                CultureInfo.CurrentCulture = culture;
-                CultureInfo.CurrentUICulture = culture;
-                CultureInfo.DefaultThreadCurrentCulture = culture;
-                CultureInfo.DefaultThreadCurrentUICulture = culture;
+                Snackbar.Add(LanguageLocalizer.Translate("AppWelcomeWizard", "Unable to update language: %1", ex.Message), Severity.Error);
             }
-            catch (CultureNotFoundException ex)
+            catch (JsonException ex)
             {
-                Logger.LogWarning(ex, "Unable to apply culture {Locale}.", normalized);
+                Snackbar.Add(LanguageLocalizer.Translate("AppWelcomeWizard", "Unable to update language: %1", ex.Message), Severity.Error);
             }
-        }
-
-        private static string NormalizeLocaleForCulture(string locale)
-        {
-            var normalized = locale.Replace('_', '-');
-            var atIndex = normalized.IndexOf('@', StringComparison.Ordinal);
-            if (atIndex < 0)
-            {
-                return normalized;
-            }
-
-            var basePart = normalized[..atIndex];
-            var scriptPart = normalized[(atIndex + 1)..];
-            if (string.IsNullOrWhiteSpace(scriptPart))
-            {
-                return basePart;
-            }
-
-            var script = NormalizeScriptTag(scriptPart);
-            return string.Concat(basePart, "-", script);
-        }
-
-        private static string NormalizeScriptTag(string script)
-        {
-            if (string.Equals(script, "latin", StringComparison.OrdinalIgnoreCase))
-            {
-                return "Latn";
-            }
-
-            if (string.Equals(script, "cyrillic", StringComparison.OrdinalIgnoreCase))
-            {
-                return "Cyrl";
-            }
-
-            if (script.Length == 4)
-            {
-                return string.Concat(char.ToUpperInvariant(script[0]), script.Substring(1).ToLowerInvariant());
-            }
-
-            return script;
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

@@ -41,7 +41,7 @@ namespace Lantean.QBTMud.Pages
         protected ISnackbar Snackbar { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -100,7 +100,7 @@ namespace Lantean.QBTMud.Pages
         protected async Task OpenCreateDialog()
         {
             var reference = await DialogService.ShowAsync<CreateTorrentDialog>(
-                WebUiLocalizer.Translate("TorrentCreator", "Create New Torrent"),
+                LanguageLocalizer.Translate("TorrentCreator", "Create New Torrent"),
                 DialogWorkflow.FormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
@@ -115,7 +115,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add($"{WebUiLocalizer.Translate("TorrentCreator", "Unable to create torrent.")} {exception.Message}", Severity.Error);
+                Snackbar.Add($"{LanguageLocalizer.Translate("TorrentCreator", "Unable to create torrent.")} {exception.Message}", Severity.Error);
                 return;
             }
 
@@ -182,7 +182,7 @@ namespace Lantean.QBTMud.Pages
         {
             if (MainData?.LostConnection == true)
             {
-                Snackbar.Add($"{WebUiLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")}.", Severity.Warning);
+                Snackbar.Add($"{LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")}.", Severity.Warning);
                 _timerCancellationToken.CancelIfNotDisposed();
                 return;
             }
@@ -194,7 +194,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add($"{WebUiLocalizer.Translate("TorrentCreator", "Unable to load torrent creation tasks")}: {exception.Message}", Severity.Error);
+                Snackbar.Add($"{LanguageLocalizer.Translate("TorrentCreator", "Unable to load torrent creation tasks")}: {exception.Message}", Severity.Error);
             }
             finally
             {
@@ -253,10 +253,10 @@ namespace Lantean.QBTMud.Pages
 
             return status switch
             {
-                "Running" => WebUiLocalizer.Translate("TorrentCreator", "Running"),
-                "Finished" => WebUiLocalizer.Translate("TorrentCreator", "Finished"),
-                "Failed" => WebUiLocalizer.Translate("TorrentCreator", "Failed"),
-                "Queued" => WebUiLocalizer.Translate("TorrentCreator", "Queued"),
+                "Running" => LanguageLocalizer.Translate("TorrentCreator", "Running"),
+                "Finished" => LanguageLocalizer.Translate("TorrentCreator", "Finished"),
+                "Failed" => LanguageLocalizer.Translate("TorrentCreator", "Failed"),
+                "Queued" => LanguageLocalizer.Translate("TorrentCreator", "Queued"),
                 _ => status
             };
         }
@@ -353,14 +353,14 @@ namespace Lantean.QBTMud.Pages
 
         private IReadOnlyList<ColumnDefinition<TorrentCreationTaskStatus>> BuildColumnsDefinitions()
         {
-            var statusLabel = WebUiLocalizer.Translate("TorrentCreator", "Status");
-            var progressLabel = WebUiLocalizer.Translate("TorrentCreator", "Progress");
-            var nameLabel = WebUiLocalizer.Translate("TransferListModel", "Name");
-            var sourcePathLabel = WebUiLocalizer.Translate("TorrentCreator", "Source Path");
-            var addedOnLabel = WebUiLocalizer.Translate("TorrentCreator", "Added On");
-            var startedOnLabel = WebUiLocalizer.Translate("TorrentCreator", "Started On");
-            var completedOnLabel = WebUiLocalizer.Translate("TorrentCreator", "Completed On");
-            var errorLabel = WebUiLocalizer.Translate("TorrentCreator", "Error Message");
+            var statusLabel = LanguageLocalizer.Translate("TorrentCreator", "Status");
+            var progressLabel = LanguageLocalizer.Translate("TorrentCreator", "Progress");
+            var nameLabel = LanguageLocalizer.Translate("TransferListModel", "Name");
+            var sourcePathLabel = LanguageLocalizer.Translate("TorrentCreator", "Source Path");
+            var addedOnLabel = LanguageLocalizer.Translate("TorrentCreator", "Added On");
+            var startedOnLabel = LanguageLocalizer.Translate("TorrentCreator", "Started On");
+            var completedOnLabel = LanguageLocalizer.Translate("TorrentCreator", "Completed On");
+            var errorLabel = LanguageLocalizer.Translate("TorrentCreator", "Error Message");
 
             return
             [
@@ -379,7 +379,7 @@ namespace Lantean.QBTMud.Pages
 
         private string TranslateTorrentCreator(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate("AppTorrentCreator", source, arguments);
+            return LanguageLocalizer.Translate("AppTorrentCreator", source, arguments);
         }
     }
 }

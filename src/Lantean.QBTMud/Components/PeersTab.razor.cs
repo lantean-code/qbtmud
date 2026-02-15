@@ -58,7 +58,7 @@ namespace Lantean.QBTMud.Components
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
-        protected Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         protected PeerList? PeerList { get; set; }
 
@@ -394,12 +394,12 @@ namespace Lantean.QBTMud.Components
 
         private string TranslatePeerList(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(_peerListContext, source, arguments);
+            return LanguageLocalizer.Translate(_peerListContext, source, arguments);
         }
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(_appContext, source, arguments);
+            return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
 
         protected virtual async Task DisposeAsync(bool disposing)

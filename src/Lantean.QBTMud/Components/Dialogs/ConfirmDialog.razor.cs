@@ -11,7 +11,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private IMudDialogInstance MudDialog { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Parameter]
         public string Content { get; set; } = default!;
@@ -26,12 +26,12 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             if (string.IsNullOrWhiteSpace(CancelText))
             {
-                CancelText = WebUiLocalizer.Translate("MainWindow", "Cancel");
+                CancelText = LanguageLocalizer.Translate("MainWindow", "Cancel");
             }
 
             if (string.IsNullOrWhiteSpace(SuccessText))
             {
-                SuccessText = WebUiLocalizer.Translate("HttpServer", "OK");
+                SuccessText = LanguageLocalizer.Translate("HttpServer", "OK");
             }
         }
 

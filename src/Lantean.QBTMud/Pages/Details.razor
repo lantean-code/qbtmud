@@ -1,6 +1,6 @@
 @page "/details/{hash}"
 @layout DetailsLayout
-@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
 
 <div class="content-panel">
     <div class="content-panel__toolbar content-panel__toolbar--scroll">
@@ -24,19 +24,19 @@
         {
             <CascadingValue Value="RefreshInterval" Name="RefreshInterval">
                 <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" KeepPanelsAlive="true" Border="true">
-                    <MudTabPanel Text="@WebUiLocalizer.Translate("PropTabBar", "General")">
+                    <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "General")">
                         <GeneralTab Hash="@Hash" Active="@(ActiveTab == 0)" />
                     </MudTabPanel>
-                    <MudTabPanel Text="@WebUiLocalizer.Translate("PropTabBar", "Trackers")">
+                    <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Trackers")">
                         <TrackersTab Hash="@Hash" Active="@(ActiveTab == 1)" />
                     </MudTabPanel>
-                    <MudTabPanel Text="@WebUiLocalizer.Translate("PropTabBar", "Peers")">
+                    <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Peers")">
                         <PeersTab Hash="@Hash" Active="@(ActiveTab == 2)" />
                     </MudTabPanel>
-                    <MudTabPanel Text="@WebUiLocalizer.Translate("PropTabBar", "HTTP Sources")">
+                    <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "HTTP Sources")">
                         <WebSeedsTab Hash="@Hash" Active="@(ActiveTab == 3)" />
                     </MudTabPanel>
-                    <MudTabPanel Text="@WebUiLocalizer.Translate("PropTabBar", "Content")">
+                    <MudTabPanel Text="@LanguageLocalizer.Translate("PropTabBar", "Content")">
                         <FilesTab Hash="@Hash" Active="@(ActiveTab == 4)" />
                     </MudTabPanel>
                 </MudTabs>

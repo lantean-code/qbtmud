@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Components
         private const string _transferListModelContext = "TransferListModel";
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Parameter]
         [EditorRequired]
@@ -32,7 +32,7 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateTransferListModel(string source, params object[] arguments)
         {
-            return WebUiLocalizer.Translate(_transferListModelContext, source, arguments);
+            return LanguageLocalizer.Translate(_transferListModelContext, source, arguments);
         }
     }
 }

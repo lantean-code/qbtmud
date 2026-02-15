@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Layout
         protected ISessionStorageService SessionStorage { get; set; } = default!;
 
         [Inject]
-        protected IWebUiLocalizer WebUiLocalizer { get; set; } = default!;
+        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Inject]
         protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
@@ -124,6 +124,7 @@ namespace Lantean.QBTMud.Layout
         private bool _navigationHandlerAttached;
         private bool _welcomeWizardLaunched;
         private bool _lostConnectionDialogShown;
+        private bool _localeMismatchWarningShown;
 
         protected override void OnInitialized()
         {
@@ -187,6 +188,7 @@ namespace Lantean.QBTMud.Layout
             await InvokeAsync(StateHasChanged);
 
             Preferences = await ApiClient.GetApplicationPreferences();
+            await SynchronizeLocalePreferenceAsync();
             Version = await ApiClient.GetApplicationVersion();
             var data = await ApiClient.GetMainData(_requestId);
             MainData = DataManager.CreateMainData(data);
@@ -277,7 +279,63 @@ namespace Lantean.QBTMud.Layout
                 BackgroundClass = "background-blur background-blur-strong"
             };
 
-            await DialogService.ShowAsync<LostConnectionDialog>(title: null, parameters: new DialogParameters(), options);
+            await DialogService.ShowAsync<LostConnectionDialog>(title: null, options);
+        }
+
+        private async Task SynchronizeLocalePreferenceAsync()
+        {
+            if (Preferences is null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Preferences.Locale))
+            {
+                var storedLocaleWhenApiMissing = await LocalStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale);
+                if (!string.IsNullOrWhiteSpace(storedLocaleWhenApiMissing))
+                {
+                    await LocalStorage.RemoveItemAsync(LanguageStorageKeys.PreferredLocale);
+                }
+
+                return;
+            }
+
+            var apiLocale = Preferences.Locale.Trim();
+            var storedLocale = await LocalStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale);
+
+            if (string.IsNullOrWhiteSpace(storedLocale))
+            {
+                await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, apiLocale);
+                return;
+            }
+
+            if (string.Equals(storedLocale.Trim(), apiLocale, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, apiLocale);
+
+            if (_localeMismatchWarningShown)
+            {
+                return;
+            }
+
+            _localeMismatchWarningShown = true;
+            Snackbar.Add(
+                LanguageLocalizer.Translate("AppLocalization", "Language preference changed on server. Click Reload to apply it."),
+                Severity.Warning,
+                options =>
+                {
+                    options.RequireInteraction = true;
+                    options.Action = LanguageLocalizer.Translate("AppLocalization", "Reload");
+                    options.CloseAfterNavigation = true;
+                    options.OnClick = _ =>
+                    {
+                        NavigationManager.NavigateToHome(forceLoad: true);
+                        return Task.CompletedTask;
+                    };
+                });
         }
 
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
@@ -618,14 +676,14 @@ namespace Lantean.QBTMud.Layout
 
         private string BuildPageTitle()
         {
-            var webUiLabel = WebUiLocalizer.Translate("OptionsDialog", "WebUI");
+            var webUiLabel = LanguageLocalizer.Translate("OptionsDialog", "WebUI");
             var versionPart = string.IsNullOrWhiteSpace(Version) ? string.Empty : $" {Version}";
             return $"qBittorrent{versionPart} {webUiLabel}";
         }
 
         private string BuildAlternativeSpeedLimitsStatusMessage(bool isEnabled)
         {
-            return WebUiLocalizer.Translate(
+            return LanguageLocalizer.Translate(
                 "MainWindow",
                 isEnabled ? "Alternative speed limits: On" : "Alternative speed limits: Off");
         }
@@ -727,7 +785,7 @@ namespace Lantean.QBTMud.Layout
             catch (HttpRequestException exception)
             {
                 Snackbar?.Add(
-                    WebUiLocalizer.Translate("AppLoggedInLayout", "Unable to toggle alternative speed limits: %1", exception.Message),
+                    LanguageLocalizer.Translate("AppLoggedInLayout", "Unable to toggle alternative speed limits: %1", exception.Message),
                     Severity.Error);
             }
             finally

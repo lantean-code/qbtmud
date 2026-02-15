@@ -22,7 +22,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly TestLocalStorageService _localStorage;
         private readonly IThemeFontCatalog _fontCatalog;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IWebUiLocalizer _webUiLocalizer;
+        private readonly ILanguageLocalizer _languageLocalizer;
         private readonly ThemeManagerService _target;
 
         public ThemeManagerServiceTests()
@@ -30,11 +30,11 @@ namespace Lantean.QBTMud.Test.Services
             _localStorage = new TestLocalStorageService();
             _fontCatalog = Mock.Of<IThemeFontCatalog>();
             _httpClientFactory = Mock.Of<IHttpClientFactory>();
-            _webUiLocalizer = Mock.Of<IWebUiLocalizer>();
-            Mock.Get(_webUiLocalizer)
+            _languageLocalizer = Mock.Of<ILanguageLocalizer>();
+            Mock.Get(_languageLocalizer)
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] _) => source);
-            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog, _webUiLocalizer);
+            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog, _languageLocalizer);
         }
 
         [Fact]

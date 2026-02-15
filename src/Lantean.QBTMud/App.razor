@@ -1,4 +1,4 @@
-@inject Lantean.QBTMud.Services.Localization.IWebUiLocalizer WebUiLocalizer
+@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
 
 <Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
@@ -6,9 +6,9 @@
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
     <NotFound>
-        <PageTitle>@WebUiLocalizer.Translate("App", "Not found")</PageTitle>
+        <PageTitle>@LanguageLocalizer.Translate("App", "Not found")</PageTitle>
         <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">@WebUiLocalizer.Translate("App", "Sorry, there's nothing at this address.")</p>
+            <p role="alert">@LanguageLocalizer.Translate("App", "Sorry, there's nothing at this address.")</p>
         </LayoutView>
     </NotFound>
 </Router>
