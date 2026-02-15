@@ -401,6 +401,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync();
 
             var closeButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginClose");
+            closeButton.Instance.Variant.Should().Be(Variant.Filled);
+            closeButton.Instance.Color.Should().Be(Color.Success);
             await closeButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var result = await dialog.Reference.Result;
