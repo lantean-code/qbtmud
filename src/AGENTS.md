@@ -36,7 +36,7 @@
   8. Public instance methods
   9. Private instance methods
   10. Public static methods
-  11. Private static methods
+  11. Private static methods 
 
 ### Coding Practices
 - Use `var` wherever possible unless it harms clarity.
