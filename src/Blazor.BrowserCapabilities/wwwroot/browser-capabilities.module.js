@@ -7,8 +7,9 @@ const supportsMediaQuery = (query) => {
 }
 
 export function supportsHoverPointer() {
+    const anyPointerQuery = "(any-hover: hover) and (any-pointer: fine)";
     const primaryPointerQuery = "(hover: hover) and (pointer: fine)";
-    return supportsMediaQuery(primaryPointerQuery);
+    return supportsMediaQuery(anyPointerQuery) || supportsMediaQuery(primaryPointerQuery);
 }
 
 export function getCapabilities() {

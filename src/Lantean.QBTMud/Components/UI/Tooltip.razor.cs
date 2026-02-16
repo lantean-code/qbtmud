@@ -1,5 +1,6 @@
 using Blazor.BrowserCapabilities;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Components.UI
@@ -33,7 +34,7 @@ namespace Lantean.QBTMud.Components.UI
         {
             get
             {
-                return UseTouchBehavior ? false : ShowOnHover;
+                return !UseTouchBehavior && ShowOnHover;
             }
         }
 
@@ -41,7 +42,7 @@ namespace Lantean.QBTMud.Components.UI
         {
             get
             {
-                return UseTouchBehavior ? false : ShowOnFocus;
+                return !UseTouchBehavior && ShowOnFocus;
             }
         }
 
@@ -49,7 +50,7 @@ namespace Lantean.QBTMud.Components.UI
         {
             get
             {
-                return UseTouchBehavior ? true : ShowOnClick;
+                return UseTouchBehavior || ShowOnClick;
             }
         }
 
@@ -79,6 +80,9 @@ namespace Lantean.QBTMud.Components.UI
 
         [Inject]
         private IBrowserCapabilitiesService BrowserCapabilitiesService { get; set; } = default!;
+
+        [Inject]
+        private ILogger<Tooltip> Logger { get; set; } = default!;
 
         /// <inheritdoc cref="MudTooltip.Text"/>
         [Parameter]
@@ -254,14 +258,17 @@ namespace Lantean.QBTMud.Components.UI
                     StateHasChanged();
                 });
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
+                Logger.LogTrace(ex, "Tooltip auto-hide cancelled.");
             }
-            catch (ObjectDisposedException)
+            catch (ObjectDisposedException ex)
             {
+                Logger.LogTrace(ex, "Tooltip auto-hide ignored because the component was disposed.");
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException ex)
             {
+                Logger.LogDebug(ex, "Tooltip auto-hide could not update component state.");
             }
         }
 

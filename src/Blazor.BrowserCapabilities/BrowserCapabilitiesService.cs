@@ -56,11 +56,6 @@ namespace Blazor.BrowserCapabilities
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
 
-            if (_isInitialized)
-            {
-                return;
-            }
-
             await _initializationLock.WaitAsync(cancellationToken);
             try
             {
