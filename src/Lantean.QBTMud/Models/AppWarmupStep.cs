@@ -18,6 +18,11 @@ namespace Lantean.QBTMud.Models
         /// <summary>
         /// Loads theme definitions and applies the selected theme.
         /// </summary>
-        ThemeManager = 2
+        ThemeManager = 2,
+
+        /// <summary>
+        /// Detects browser capabilities that are stable for the current session.
+        /// </summary>
+        BrowserCapabilities = 3
     }
 }

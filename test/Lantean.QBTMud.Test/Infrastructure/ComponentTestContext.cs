@@ -1,3 +1,4 @@
+using Blazor.BrowserCapabilities;
 using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
@@ -94,6 +95,31 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddScoped<ISpeedHistoryService, SpeedHistoryService>();
 
             Services.AddTransient<IKeyboardService, KeyboardService>();
+
+            var browserCapabilitiesService = Mock.Of<IBrowserCapabilitiesService>();
+            var browserCapabilitiesMock = Mock.Get(browserCapabilitiesService);
+            browserCapabilitiesMock.Setup(service => service.IsInitialized).Returns(true);
+            browserCapabilitiesMock.Setup(service => service.Capabilities).Returns(new BrowserCapabilities(
+                SupportsHoverPointer: true,
+                SupportsHover: true,
+                SupportsFinePointer: true,
+                SupportsCoarsePointer: false,
+                SupportsPointerEvents: true,
+                HasTouchInput: false,
+                MaxTouchPoints: 0,
+                PrefersReducedMotion: false,
+                PrefersReducedData: false,
+                PrefersDarkColorScheme: false,
+                ForcedColorsActive: false,
+                PrefersHighContrast: false,
+                SupportsClipboardRead: true,
+                SupportsClipboardWrite: true,
+                SupportsShareApi: true,
+                SupportsInstallPrompt: false,
+                IsAppleMobilePlatform: false,
+                IsStandaloneDisplayMode: false));
+            browserCapabilitiesMock.Setup(service => service.EnsureInitialized(It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
+            Services.AddSingleton(browserCapabilitiesService);
 
             var languageLocalizer = Mock.Of<ILanguageLocalizer>();
             var localizerMock = Mock.Get(languageLocalizer);
