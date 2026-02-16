@@ -3,6 +3,7 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
 using MudBlazor;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 
 namespace Lantean.QBTMud.Helpers
@@ -108,7 +109,7 @@ namespace Lantean.QBTMud.Helpers
             {
                 stringBuilder.Append(prefix);
             }
-            stringBuilder.Append(ByteSize.FromBytes(size.Value).ToString("#.##"));
+            stringBuilder.Append(FormatBinarySize(size.Value));
             if (suffix is not null)
             {
                 stringBuilder.Append(suffix);
@@ -157,7 +158,7 @@ namespace Lantean.QBTMud.Helpers
             {
                 stringBuilder.Append(prefix);
             }
-            stringBuilder.Append(ByteSize.FromBytes(size.Value).ToString("#.##"));
+            stringBuilder.Append(FormatBinarySize(size.Value));
             stringBuilder.Append("/s");
             if (suffix is not null)
             {
@@ -435,6 +436,11 @@ namespace Lantean.QBTMud.Helpers
             }
 
             return value.ToString("0.00");
+        }
+
+        private static string FormatBinarySize(long size)
+        {
+            return ByteSize.FromBytes(size).ToString("#.##", CultureInfo.CurrentCulture, useBinaryByte: true);
         }
     }
 }

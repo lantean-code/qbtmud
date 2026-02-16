@@ -39,10 +39,11 @@ namespace Lantean.QBTMud.Test.Helpers
         [Fact]
         public void GIVEN_SizeAndSpeed_WHEN_Formatted_THEN_ShouldIncludeExpectedSuffixes()
         {
-            DisplayHelpers.Size(1024, "pre-", "-post").Should().Contain("pre-").And.Contain("-post");
+            DisplayHelpers.Size(1024, "pre-", "-post").Should().Contain("pre-").And.Contain("KiB").And.Contain("-post");
+            DisplayHelpers.Size(1024 * 1024).Should().Contain("MiB");
             DisplayHelpers.Speed(null).Should().Be(string.Empty);
             DisplayHelpers.Speed(-1).Should().Be("∞");
-            DisplayHelpers.Speed(1024, "pre-", "-post").Should().Contain("/s").And.Contain("pre-").And.Contain("-post");
+            DisplayHelpers.Speed(1024, "pre-", "-post").Should().Contain("KiB/s").And.Contain("pre-").And.Contain("-post");
         }
 
         [Fact]
