@@ -10,7 +10,7 @@
     <MudCardContent Class="pt-0">
         <MudGrid>
             <MudItem xs="12">
-                <MudSelect T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "User interface language:")" Value="Locale" ValueChanged="LocaleChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UserInterfaceLanguage")">
+                <MudSelect T="string" Label="@LanguageLocalizer.Translate("OptionsDialog", "User interface language:")" Value="Locale" ValueChanged="LocaleChanged" ToStringFunc="GetLanguageDisplayName" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("UserInterfaceLanguage")">
                     @foreach (var language in LanguageOptions)
                     {
                         <MudSelectItem Value="@language.Code">@language.DisplayName</MudSelectItem>
