@@ -1,5 +1,6 @@
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services.Localization;
 
 namespace Lantean.QBTMud.Components.Options
 {
@@ -42,7 +43,7 @@ namespace Lantean.QBTMud.Components.Options
                 return false;
             }
 
-            Locale = string.IsNullOrWhiteSpace(Preferences.Locale) ? "en" : Preferences.Locale;
+            Locale = LocaleSelection.ResolveLocale(Preferences.Locale, LanguageOptions);
             ConfirmTorrentDeletion = Preferences.ConfirmTorrentDeletion;
             StatusBarExternalIp = Preferences.StatusBarExternalIp;
             FileLogEnabled = Preferences.FileLogEnabled;
@@ -133,6 +134,25 @@ namespace Lantean.QBTMud.Components.Options
             PerformanceWarning = value;
             UpdatePreferences.PerformanceWarning = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
+        }
+
+        private string? GetLanguageDisplayName(string? locale)
+        {
+            if (string.IsNullOrWhiteSpace(locale))
+            {
+                return locale;
+            }
+
+            for (var i = 0; i < LanguageOptions.Count; i++)
+            {
+                var candidate = LanguageOptions[i];
+                if (string.Equals(candidate.Code, locale, StringComparison.OrdinalIgnoreCase))
+                {
+                    return candidate.DisplayName;
+                }
+            }
+
+            return locale;
         }
     }
 }

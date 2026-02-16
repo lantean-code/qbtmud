@@ -62,6 +62,32 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public void GIVEN_LocaleNotInCatalog_WHEN_Rendered_THEN_ShouldResolveLocaleAndDisplayName()
+        {
+            var preferences = DeserializePreferences("""
+            {
+                "locale": "C"
+            }
+            """);
+
+            var updatePreferences = new UpdatePreferences();
+
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<BehaviourOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, updatePreferences);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var languageSelect = FindSelect<string>(target, "UserInterfaceLanguage");
+            languageSelect.Instance.Value.Should().Be("en");
+            languageSelect.Instance.ToStringFunc.Should().NotBeNull();
+            languageSelect.Instance.ToStringFunc!("en").Should().Be("English");
+        }
+
+        [Fact]
         public async Task GIVEN_FileLogDisabled_WHEN_Toggled_THEN_ShouldEnableInputsAndEmitPreferences()
         {
             var preferences = DeserializePreferences("""
