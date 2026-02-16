@@ -52,6 +52,7 @@ namespace Lantean.QBTMud
 
             builder.Services.AddScoped<IApiClient, ApiClient>();
             builder.Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
+            builder.Services.AddBrowserCapabilities();
             builder.Services.AddSingleton<IThemeFontCatalog, ThemeFontCatalog>();
             builder.Services.AddScoped<IThemeManagerService, ThemeManagerService>();
             builder.Services.AddScoped<ILanguageInitializationService, LanguageInitializationService>();

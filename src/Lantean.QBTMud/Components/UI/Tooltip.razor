@@ -11,8 +11,8 @@
             ShowOnHover="@EffectiveShowOnHover"
             ShowOnFocus="@EffectiveShowOnFocus"
             ShowOnClick="@EffectiveShowOnClick"
-            Visible="@Visible"
-            VisibleChanged="@VisibleChanged"
+            Visible="@EffectiveVisible"
+            VisibleChanged="@OnVisibleChanged"
             Disabled="@Disabled"
             @attributes="AdditionalAttributes">
     @ChildContent

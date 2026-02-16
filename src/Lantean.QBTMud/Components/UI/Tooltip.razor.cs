@@ -1,31 +1,31 @@
+using Blazor.BrowserCapabilities;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Components.UI
 {
-    public partial class Tooltip
+    public partial class Tooltip : IDisposable
     {
-        private const string SupportsHoverPointerInterop = "qbt.supportsHoverPointer";
+        private const int DefaultTouchClickAutoHideDelay = 1200;
 
-        private bool _supportsHoverPointer;
-        private bool _supportsHoverPointerResolved;
+        private bool _effectiveVisible;
+        private bool _effectiveVisibleInitialized;
+        private bool _lastVisibleParameterValue;
+        private bool _lastVisibleParameterValueInitialized;
+        private Task? _touchAutoHideTask;
+        private CancellationTokenSource? _touchAutoHideTokenSource;
+        private bool _disposed;
 
         private bool UseTouchBehavior
         {
             get
             {
-                if (!UseTouchOptimizedBehavior)
-                {
-                    return false;
-                }
-
-                if (!_supportsHoverPointerResolved)
+                if (!BrowserCapabilitiesService.IsInitialized)
                 {
                     return true;
                 }
 
-                return !_supportsHoverPointer;
+                return !BrowserCapabilitiesService.Capabilities.SupportsHoverPointer;
             }
         }
 
@@ -33,7 +33,7 @@ namespace Lantean.QBTMud.Components.UI
         {
             get
             {
-                return UseTouchBehavior ? ShowOnHoverOnTouch : ShowOnHover;
+                return UseTouchBehavior ? false : ShowOnHover;
             }
         }
 
@@ -41,7 +41,7 @@ namespace Lantean.QBTMud.Components.UI
         {
             get
             {
-                return UseTouchBehavior ? ShowOnFocusOnTouch : ShowOnFocus;
+                return UseTouchBehavior ? false : ShowOnFocus;
             }
         }
 
@@ -49,12 +49,36 @@ namespace Lantean.QBTMud.Components.UI
         {
             get
             {
-                return UseTouchBehavior ? ShowOnClickOnTouch : ShowOnClick;
+                return UseTouchBehavior ? true : ShowOnClick;
+            }
+        }
+
+        private bool EffectiveVisible
+        {
+            get
+            {
+                if (!_effectiveVisibleInitialized)
+                {
+                    return Visible;
+                }
+
+                return _effectiveVisible;
+            }
+        }
+
+        private bool IsTouchClickAutoHideEnabled
+        {
+            get
+            {
+                return UseTouchBehavior
+                    && EffectiveShowOnClick
+                    && !EffectiveShowOnHover
+                    && !EffectiveShowOnFocus;
             }
         }
 
         [Inject]
-        private IJSRuntime JSRuntime { get; set; } = default!;
+        private IBrowserCapabilitiesService BrowserCapabilitiesService { get; set; } = default!;
 
         /// <inheritdoc cref="MudTooltip.Text"/>
         [Parameter]
@@ -112,30 +136,6 @@ namespace Lantean.QBTMud.Components.UI
         [Parameter]
         public bool ShowOnClick { get; set; }
 
-        /// <summary>
-        /// Shows the tooltip on touch-oriented devices when pointer hover is unavailable.
-        /// </summary>
-        [Parameter]
-        public bool ShowOnHoverOnTouch { get; set; }
-
-        /// <summary>
-        /// Shows the tooltip on touch-oriented devices when pointer hover is unavailable.
-        /// </summary>
-        [Parameter]
-        public bool ShowOnFocusOnTouch { get; set; }
-
-        /// <summary>
-        /// Shows the tooltip on touch-oriented devices when pointer hover is unavailable.
-        /// </summary>
-        [Parameter]
-        public bool ShowOnClickOnTouch { get; set; }
-
-        /// <summary>
-        /// Enables automatic touch optimization by adapting tooltip trigger behavior when hover pointers are unavailable.
-        /// </summary>
-        [Parameter]
-        public bool UseTouchOptimizedBehavior { get; set; } = true;
-
         /// <inheritdoc cref="MudTooltip.Visible"/>
         [Parameter]
         public bool Visible { get; set; }
@@ -151,32 +151,138 @@ namespace Lantean.QBTMud.Components.UI
         [Parameter(CaptureUnmatchedValues = true)]
         public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
-        /// <inheritdoc />
-        protected override async Task OnAfterRenderAsync(bool firstRender)
+        /// <summary>
+        /// Releases resources held by the component.
+        /// </summary>
+        public void Dispose()
         {
-            if (!firstRender || !UseTouchOptimizedBehavior)
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases managed and unmanaged resources used by this instance.
+        /// </summary>
+        /// <param name="disposing"><c>true</c> when called from <see cref="Dispose()"/>.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
             {
                 return;
             }
 
-            bool supportsHoverPointer;
+            if (disposing)
+            {
+                CancelTouchAutoHide();
+            }
+
+            _disposed = true;
+        }
+
+        /// <inheritdoc />
+        protected override void OnParametersSet()
+        {
+            if (!_effectiveVisibleInitialized)
+            {
+                _effectiveVisible = Visible;
+                _effectiveVisibleInitialized = true;
+                _lastVisibleParameterValue = Visible;
+                _lastVisibleParameterValueInitialized = true;
+
+                return;
+            }
+
+            if (VisibleChanged.HasDelegate || !_lastVisibleParameterValueInitialized || _lastVisibleParameterValue != Visible)
+            {
+                _effectiveVisible = Visible;
+            }
+
+            _lastVisibleParameterValue = Visible;
+            _lastVisibleParameterValueInitialized = true;
+        }
+
+        private async Task OnVisibleChanged(bool visible)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            CancelTouchAutoHide();
+
+            _effectiveVisible = visible;
+            _effectiveVisibleInitialized = true;
+
+            if (visible && IsTouchClickAutoHideEnabled)
+            {
+                StartTouchAutoHide();
+            }
+
+            if (VisibleChanged.HasDelegate)
+            {
+                await VisibleChanged.InvokeAsync(visible);
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private async Task AutoHideAfterTouchClickAsync(CancellationToken cancellationToken)
+        {
             try
             {
-                supportsHoverPointer = await JSRuntime.InvokeAsync<bool>(SupportsHoverPointerInterop);
+                await Task.Delay(DefaultTouchClickAutoHideDelay, cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                await InvokeAsync(async () =>
+                {
+                    if (!_effectiveVisible)
+                    {
+                        return;
+                    }
+
+                    _effectiveVisible = false;
+
+                    if (VisibleChanged.HasDelegate)
+                    {
+                        await VisibleChanged.InvokeAsync(false);
+                    }
+
+                    StateHasChanged();
+                });
             }
-            catch (JSException)
+            catch (OperationCanceledException)
             {
-                _supportsHoverPointerResolved = true;
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+        }
+
+        private void StartTouchAutoHide()
+        {
+            if (_disposed)
+            {
                 return;
             }
 
-            _supportsHoverPointer = supportsHoverPointer;
-            _supportsHoverPointerResolved = true;
+            var tokenSource = new CancellationTokenSource();
+            _touchAutoHideTokenSource = tokenSource;
+            _touchAutoHideTask = AutoHideAfterTouchClickAsync(tokenSource.Token);
+        }
 
-            if (supportsHoverPointer)
-            {
-                await InvokeAsync(StateHasChanged);
-            }
+        private void CancelTouchAutoHide()
+        {
+            _touchAutoHideTokenSource?.Cancel();
+            _touchAutoHideTokenSource?.Dispose();
+            _touchAutoHideTokenSource = null;
+            _touchAutoHideTask = null;
         }
     }
 }

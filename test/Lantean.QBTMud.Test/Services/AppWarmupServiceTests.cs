@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Blazor.BrowserCapabilities;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
@@ -12,6 +13,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly ILanguageInitializationService _languageInitializationService;
         private readonly ILanguageCatalog _languageCatalog;
         private readonly IThemeManagerService _themeManagerService;
+        private readonly IBrowserCapabilitiesService _browserCapabilitiesService;
         private readonly ILogger<AppWarmupService> _logger;
         private readonly AppWarmupService _target;
 
@@ -20,6 +22,7 @@ namespace Lantean.QBTMud.Test.Services
             _languageInitializationService = Mock.Of<ILanguageInitializationService>();
             _languageCatalog = Mock.Of<ILanguageCatalog>();
             _themeManagerService = Mock.Of<IThemeManagerService>();
+            _browserCapabilitiesService = Mock.Of<IBrowserCapabilitiesService>();
             _logger = Mock.Of<ILogger<AppWarmupService>>();
 
             Mock.Get(_languageInitializationService)
@@ -34,7 +37,11 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
 
-            _target = new AppWarmupService(_languageInitializationService, _languageCatalog, _themeManagerService, _logger);
+            Mock.Get(_browserCapabilitiesService)
+                .Setup(service => service.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.CompletedTask);
+
+            _target = new AppWarmupService(_languageInitializationService, _languageCatalog, _themeManagerService, _browserCapabilitiesService, _logger);
         }
 
         [Fact]
@@ -48,6 +55,7 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_languageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+            Mock.Get(_browserCapabilitiesService).Verify(service => service.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -59,6 +67,7 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_languageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+            Mock.Get(_browserCapabilitiesService).Verify(service => service.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -100,6 +109,7 @@ namespace Lantean.QBTMud.Test.Services
 
             Mock.Get(_languageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+            Mock.Get(_browserCapabilitiesService).Verify(service => service.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -156,6 +166,7 @@ namespace Lantean.QBTMud.Test.Services
             _target.IsCompleted.Should().BeTrue();
             _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.LanguageCatalog && failure.Message == "CatalogFailure");
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+            Mock.Get(_browserCapabilitiesService).Verify(service => service.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -169,6 +180,20 @@ namespace Lantean.QBTMud.Test.Services
 
             _target.IsCompleted.Should().BeTrue();
             _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.ThemeManager && failure.Message == "ThemeFailure");
+            Mock.Get(_browserCapabilitiesService).Verify(service => service.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_BrowserCapabilitiesInitThrows_WHEN_WarmupInvoked_THEN_ShouldRecordFailure()
+        {
+            Mock.Get(_browserCapabilitiesService)
+                .Setup(service => service.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("BrowserCapabilitiesFailure"));
+
+            await _target.WarmupAsync(TestContext.Current.CancellationToken);
+
+            _target.IsCompleted.Should().BeTrue();
+            _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.BrowserCapabilities && failure.Message == "BrowserCapabilitiesFailure");
         }
     }
 }

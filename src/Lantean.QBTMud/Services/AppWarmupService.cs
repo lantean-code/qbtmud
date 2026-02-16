@@ -1,3 +1,4 @@
+using Blazor.BrowserCapabilities;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
 using System.Diagnostics;
@@ -13,6 +14,7 @@ namespace Lantean.QBTMud.Services
         private readonly ILanguageInitializationService _languageInitializationService;
         private readonly ILanguageCatalog _languageCatalog;
         private readonly IThemeManagerService _themeManagerService;
+        private readonly IBrowserCapabilitiesService _browserCapabilitiesService;
         private readonly ILogger<AppWarmupService> _logger;
         private List<AppWarmupFailure> _failures = [];
         private bool _completed;
@@ -23,16 +25,19 @@ namespace Lantean.QBTMud.Services
         /// <param name="languageInitializationService">The language initialization service.</param>
         /// <param name="languageCatalog">The WebUI language catalog.</param>
         /// <param name="themeManagerService">The theme manager service.</param>
+        /// <param name="browserCapabilitiesService">The browser capabilities service.</param>
         /// <param name="logger">The logger instance.</param>
         public AppWarmupService(
             ILanguageInitializationService languageInitializationService,
             ILanguageCatalog languageCatalog,
             IThemeManagerService themeManagerService,
+            IBrowserCapabilitiesService browserCapabilitiesService,
             ILogger<AppWarmupService> logger)
         {
             _languageInitializationService = languageInitializationService;
             _languageCatalog = languageCatalog;
             _themeManagerService = themeManagerService;
+            _browserCapabilitiesService = browserCapabilitiesService;
             _logger = logger;
         }
 
@@ -79,6 +84,11 @@ namespace Lantean.QBTMud.Services
                 await RunStep(
                     AppWarmupStep.ThemeManager,
                     () => _themeManagerService.EnsureInitialized(),
+                    cancellationToken);
+
+                await RunStep(
+                    AppWarmupStep.BrowserCapabilities,
+                    () => _browserCapabilitiesService.EnsureInitialized(cancellationToken),
                     cancellationToken);
 
                 _completed = true;

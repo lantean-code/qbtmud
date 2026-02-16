@@ -81,17 +81,6 @@ window.qbt.getWindowSize = () => {
     };
 }
 
-window.qbt.supportsHoverPointer = () => {
-    if (typeof window.matchMedia !== "function") {
-        return false;
-    }
-
-    const anyPointerQuery = "(any-hover: hover) and (any-pointer: fine)";
-    const pointerQuery = "(hover: hover) and (pointer: fine)";
-
-    return window.matchMedia(anyPointerQuery).matches || window.matchMedia(pointerQuery).matches;
-}
-
 window.qbt.open = (url, target) => {
     window.open(url, target);
 }
