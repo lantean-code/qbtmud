@@ -97,11 +97,13 @@ namespace Blazor.BrowserCapabilities
                 {
                     await _module.DisposeAsync();
                 }
-                catch (JSDisconnectedException)
+                catch (JSDisconnectedException ex)
                 {
+                    _logger.LogDebug(ex, "JS runtime disconnected while disposing the browser capabilities module.");
                 }
-                catch (ObjectDisposedException)
+                catch (ObjectDisposedException ex)
                 {
+                    _logger.LogDebug(ex, "The browser capabilities module was already disposed when attempting to dispose it.");
                 }
 
                 _module = null;
