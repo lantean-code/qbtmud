@@ -38,6 +38,8 @@ namespace Lantean.QBTMud.Test.Components
             menu.Should().NotBeNull();
             menu.Instance.Icon.Should().Be(Icons.Material.Filled.MoreVert);
             menu.Instance.Disabled.Should().BeFalse();
+            menu.Instance.PopoverClass.Should().Be("app-menu-popover");
+            menu.Instance.ListClass.Should().Be("app-menu-list");
         }
     }
 }

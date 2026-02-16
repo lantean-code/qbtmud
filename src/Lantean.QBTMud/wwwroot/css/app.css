@@ -556,6 +556,13 @@ td .folder-button {
     display: none;
 }
 
+.app-menu-popover .app-menu-list {
+    max-height: calc(var(--app-viewport-height) - var(--mud-appbar-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
 .path-browser-dialog.mud-dialog,
 .path-browser-dialog .mud-dialog {
     display: flex;
