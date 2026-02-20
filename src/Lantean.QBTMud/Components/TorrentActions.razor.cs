@@ -1,6 +1,5 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
-using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -282,11 +281,7 @@ namespace Lantean.QBTMud.Components
                 savePath = torrent.SavePath;
             }
 
-            await DialogWorkflow.InvokeStringFieldDialog(
-                TranslateTransferList("Set location"),
-                TranslateTransferList("Location:"),
-                savePath,
-                v => ApiClient.SetTorrentLocation(location: v, all: null, hashes: Hashes.ToArray()));
+            await DialogWorkflow.InvokeSetLocationDialog(savePath, Hashes);
         }
 
         protected async Task Rename()

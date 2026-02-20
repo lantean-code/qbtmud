@@ -2,7 +2,7 @@ using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
 using QbtCookie = Lantean.QBitTorrentClient.Models.ApplicationCookie;
 
-namespace Lantean.QBTMud.Helpers
+namespace Lantean.QBTMud.Services
 {
     public interface IDialogWorkflow
     {
@@ -66,6 +66,13 @@ namespace Lantean.QBTMud.Helpers
         Task InvokeRssRulesDialog();
 
         /// <summary>
+        /// Shows the set location dialog and applies the selected location to the specified torrents.
+        /// </summary>
+        /// <param name="savePath">The initial save path to prefill.</param>
+        /// <param name="hashes">The torrent hashes to update.</param>
+        Task InvokeSetLocationDialog(string? savePath, IEnumerable<string> hashes);
+
+        /// <summary>
         /// Shows the share ratio dialog and applies changes to the selected torrents.
         /// </summary>
         /// <param name="torrents">The torrents to update.</param>
@@ -91,7 +98,7 @@ namespace Lantean.QBTMud.Helpers
         /// Shows the add peers dialog.
         /// </summary>
         /// <returns>The selected peers, or <c>null</c> if canceled.</returns>
-        Task<HashSet<Lantean.QBitTorrentClient.Models.PeerId>?> ShowAddPeersDialog();
+        Task<HashSet<QBitTorrentClient.Models.PeerId>?> ShowAddPeersDialog();
 
         /// <summary>
         /// Shows the add tags dialog.
@@ -158,7 +165,7 @@ namespace Lantean.QBTMud.Helpers
         /// <param name="mode">The browse mode for directory content.</param>
         /// <param name="allowFolderSelection">Whether selecting the current folder is allowed.</param>
         /// <returns>The selected path, or <c>null</c> if the dialog was canceled.</returns>
-        Task<string?> ShowPathBrowserDialog(string title, string? initialPath, Lantean.QBitTorrentClient.Models.DirectoryContentMode mode, bool allowFolderSelection);
+        Task<string?> ShowPathBrowserDialog(string title, string? initialPath, QBitTorrentClient.Models.DirectoryContentMode mode, bool allowFolderSelection);
 
         /// <summary>
         /// Shows a string input dialog.

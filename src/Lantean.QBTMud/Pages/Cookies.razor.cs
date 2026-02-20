@@ -1,7 +1,6 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;

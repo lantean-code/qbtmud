@@ -988,6 +988,86 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_NoHashes_WHEN_InvokeSetLocationDialog_THEN_ShouldReturnImmediately()
+        {
+            await _target.InvokeSetLocationDialog("SavePath", Array.Empty<string>());
+
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<SetLocationDialog>(It.IsAny<string>(), It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocation(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NullHashes_WHEN_InvokeSetLocationDialog_THEN_ShouldReturnImmediately()
+        {
+            await _target.InvokeSetLocationDialog("SavePath", null!);
+
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<SetLocationDialog>(It.IsAny<string>(), It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocation(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogConfirmed_WHEN_InvokeSetLocationDialog_THEN_ShouldUpdateLocation()
+        {
+            var reference = CreateReference(DialogResult.Ok("UpdatedPath"));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SetLocationDialog>("Set location", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.SetTorrentLocation("UpdatedPath", null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "Other" }))))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            await _target.InvokeSetLocationDialog("SavePath", new[] { "Hash", "Other" });
+
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<SetLocationDialog>(
+                    "Set location",
+                    It.Is<DialogParameters>(parameters => HasSetLocationDialogParameters(parameters, "SavePath")),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
+            Mock.Get(_apiClient).Verify();
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogCanceled_WHEN_InvokeSetLocationDialog_THEN_ShouldNotUpdateLocation()
+        {
+            var reference = CreateReference(DialogResult.Cancel());
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SetLocationDialog>("Set location", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            await _target.InvokeSetLocationDialog("SavePath", new[] { "Hash" });
+
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocation(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NullDialogResult_WHEN_InvokeSetLocationDialog_THEN_ShouldNotUpdateLocation()
+        {
+            var reference = new Mock<IDialogReference>();
+            reference.Setup(r => r.Result).ReturnsAsync((DialogResult?)null);
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SetLocationDialog>("Set location", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference.Object);
+
+            await _target.InvokeSetLocationDialog("SavePath", new[] { "Hash" });
+
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocation(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NullDialogData_WHEN_InvokeSetLocationDialog_THEN_ShouldNotUpdateLocation()
+        {
+            var reference = CreateReference(DialogResult.Ok((string?)null));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SetLocationDialog>("Set location", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            await _target.InvokeSetLocationDialog("SavePath", new[] { "Hash" });
+
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocation(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_NoTorrents_WHEN_InvokeShareRatioDialog_THEN_ShouldReturnImmediately()
         {
             await _target.InvokeShareRatioDialog(Enumerable.Empty<MudTorrent>());
@@ -1863,6 +1943,22 @@ namespace Lantean.QBTMud.Test.Services
 
             return HasParameter(parameters, nameof(PathBrowserDialog.AllowFolderSelection))
                    && Equals(parameters[nameof(PathBrowserDialog.AllowFolderSelection)], allowFolderSelection);
+        }
+
+        private static bool HasSetLocationDialogParameters(DialogParameters parameters, string? location)
+        {
+            if (!HasParameter(parameters, nameof(SetLocationDialog.Location)))
+            {
+                return false;
+            }
+
+            var value = parameters[nameof(SetLocationDialog.Location)] as string;
+            if (location is null)
+            {
+                return value is null;
+            }
+
+            return string.Equals(value, location, StringComparison.Ordinal);
         }
 
         private static bool HasStringParameter(DialogParameters parameters, string key, string value)

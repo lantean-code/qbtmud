@@ -1,4 +1,4 @@
-using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 
 namespace Lantean.QBTMud.Components.Options

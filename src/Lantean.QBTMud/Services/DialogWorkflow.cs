@@ -1,7 +1,6 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Filter;
-using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
 using MudBlazor;
@@ -374,6 +373,34 @@ namespace Lantean.QBTMud.Services
         public async Task InvokeRssRulesDialog()
         {
             await _dialogService.ShowAsync<RssRulesDialog>(_languageLocalizer.Translate("AutomatedRssDownloader", "Rss Downloader"), FullScreenDialogOptions);
+        }
+
+        /// <inheritdoc />
+        public async Task InvokeSetLocationDialog(string? savePath, IEnumerable<string> hashes)
+        {
+            var hashArray = hashes?.ToArray() ?? Array.Empty<string>();
+            if (hashArray.Length == 0)
+            {
+                return;
+            }
+
+            var parameters = new DialogParameters
+            {
+                { nameof(SetLocationDialog.Location), savePath },
+            };
+
+            var result = await _dialogService.ShowAsync<SetLocationDialog>(
+                _languageLocalizer.Translate(TransferListContext, "Set location"),
+                parameters,
+                FormDialogOptions);
+            var dialogResult = await result.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+            {
+                return;
+            }
+
+            var location = (string)dialogResult.Data;
+            await _apiClient.SetTorrentLocation(location: location, all: null, hashes: hashArray);
         }
 
         /// <inheritdoc />

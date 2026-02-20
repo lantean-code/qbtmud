@@ -1,0 +1,21 @@
+@inherits SubmittableDialog
+@using Lantean.QBitTorrentClient.Models
+@using Lantean.QBTMud.Components.UI
+@inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <PathAutocomplete Label="@LanguageLocalizer.Translate("TransferListWidget", "Location:")"
+                                  @bind-Value="Location"
+                                  Mode="DirectoryContentMode.Directories"
+                                  data-test-id="@TestIdHelper.For("SetLocationPath")" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("SetLocationCancel")">@LanguageLocalizer.Translate("MainWindow", "Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Submit" data-test-id="@TestIdHelper.For("SetLocationSave")">@LanguageLocalizer.Translate("HttpServer", "Save")</MudButton>
+    </DialogActions>
+</MudDialog>

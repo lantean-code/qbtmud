@@ -3,7 +3,6 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
-using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -66,12 +65,11 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_RemoveAndRenameActions_WHEN_Invoked_THEN_DialogsAndNavigationExecuted()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.SetTorrentLocation("SavePath", null, Hashes("Hash"))).Returns(Task.CompletedTask);
             apiClientMock.Setup(c => c.SetTorrentName("Name", "Hash")).Returns(Task.CompletedTask);
             TestContext.UseSnackbarMock();
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             dialogWorkflowMock.Setup(d => d.InvokeDeleteTorrentDialog(false, Hashes("Hash"))).ReturnsAsync(true);
-            dialogWorkflowMock.Setup(d => d.InvokeStringFieldDialog("Set location", "Location:", "SavePath", It.IsAny<Func<string, Task>>())).Returns<string, string, string?, Func<string, Task>>((_, _, _, cb) => cb("SavePath"));
+            dialogWorkflowMock.Setup(d => d.InvokeSetLocationDialog("SavePath", Hashes("Hash"))).Returns(Task.CompletedTask);
             dialogWorkflowMock.Setup(d => d.InvokeStringFieldDialog("Rename", "New name:", "Name", It.IsAny<Func<string, Task>>())).Returns<string, string, string?, Func<string, Task>>((_, _, _, cb) => cb("Name"));
             dialogWorkflowMock.Setup(d => d.InvokeRenameFilesDialog("Hash")).Returns(Task.CompletedTask);
 
@@ -91,6 +89,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => remove.Instance.OnClick.InvokeAsync());
 
             navigation.Uri.Should().Be(navigation.BaseUri);
+            dialogWorkflowMock.Verify(d => d.InvokeSetLocationDialog("SavePath", Hashes("Hash")), Times.Once);
             dialogWorkflowMock.Verify(d => d.InvokeDeleteTorrentDialog(false, Hashes("Hash")), Times.Once);
         }
 

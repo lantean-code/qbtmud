@@ -1,5 +1,5 @@
 using Lantean.QBitTorrentClient;
-using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
