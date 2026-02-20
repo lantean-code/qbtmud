@@ -446,38 +446,17 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private void NextStep()
         {
-            TrySetActiveIndex(_activeIndex + 1, requireVisitedStep: false);
+            TrySetActiveIndex(_activeIndex + 1);
         }
 
         private void PreviousStep()
         {
-            TrySetActiveIndex(_activeIndex - 1, requireVisitedStep: false);
+            TrySetActiveIndex(_activeIndex - 1);
         }
 
         private Task OnActiveIndexChanged(int activeIndex)
         {
-            TrySetActiveIndex(activeIndex, requireVisitedStep: true);
-            return Task.CompletedTask;
-        }
-
-        private Task OnStepperPreviewInteraction(StepperInteractionEventArgs args)
-        {
-            if (args.Action != StepAction.Activate)
-            {
-                return Task.CompletedTask;
-            }
-
-            if (args.StepIndex < 0 || args.StepIndex > LastStepIndex)
-            {
-                args.Cancel = true;
-                return Task.CompletedTask;
-            }
-
-            if (!_visitedStepTokens.Contains(_flowSteps[args.StepIndex]))
-            {
-                args.Cancel = true;
-            }
-
+            TrySetActiveIndex(activeIndex);
             return Task.CompletedTask;
         }
 
@@ -645,9 +624,9 @@ namespace Lantean.QBTMud.Components.Dialogs
             _flowSteps.Add(DoneStepToken);
         }
 
-        private void TrySetActiveIndex(int activeIndex, bool requireVisitedStep)
+        private void TrySetActiveIndex(int activeIndex)
         {
-            if (!CanSetActiveIndex(activeIndex, requireVisitedStep))
+            if (!CanSetActiveIndex(activeIndex))
             {
                 return;
             }
@@ -656,14 +635,9 @@ namespace Lantean.QBTMud.Components.Dialogs
             TrackCurrentStepAsVisited();
         }
 
-        private bool CanSetActiveIndex(int activeIndex, bool requireVisitedStep)
+        private bool CanSetActiveIndex(int activeIndex)
         {
             if (activeIndex < 0 || activeIndex > LastStepIndex)
-            {
-                return false;
-            }
-
-            if (requireVisitedStep && !_visitedStepTokens.Contains(_flowSteps[activeIndex]))
             {
                 return false;
             }
