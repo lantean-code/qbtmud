@@ -56,6 +56,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
         private readonly List<string> _flowSteps = [];
+        private readonly HashSet<string> _visitedStepTokens = new(StringComparer.Ordinal);
         private int _activeIndex;
         private LanguageCatalogItem? _selectedLanguage;
         private string? _selectedLocale;
@@ -179,6 +180,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             BuildFlowSteps();
             _activeIndex = 0;
+            TrackCurrentStepAsVisited();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -291,7 +293,11 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return Color.Primary;
             }
 
-            var stepToken = _flowSteps[_activeIndex];
+            return GetStepAccentColor(_flowSteps[_activeIndex]);
+        }
+
+        private Color GetStepAccentColor(string stepToken)
+        {
             if (string.Equals(stepToken, IntroStepToken, StringComparison.Ordinal))
             {
                 return Color.Info;
@@ -440,18 +446,39 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private void NextStep()
         {
-            if (_activeIndex < LastStepIndex)
-            {
-                _activeIndex++;
-            }
+            TrySetActiveIndex(_activeIndex + 1, requireVisitedStep: false);
         }
 
         private void PreviousStep()
         {
-            if (_activeIndex > 0)
+            TrySetActiveIndex(_activeIndex - 1, requireVisitedStep: false);
+        }
+
+        private Task OnActiveIndexChanged(int activeIndex)
+        {
+            TrySetActiveIndex(activeIndex, requireVisitedStep: true);
+            return Task.CompletedTask;
+        }
+
+        private Task OnStepperPreviewInteraction(StepperInteractionEventArgs args)
+        {
+            if (args.Action != StepAction.Activate)
             {
-                _activeIndex--;
+                return Task.CompletedTask;
             }
+
+            if (args.StepIndex < 0 || args.StepIndex > LastStepIndex)
+            {
+                args.Cancel = true;
+                return Task.CompletedTask;
+            }
+
+            if (!_visitedStepTokens.Contains(_flowSteps[args.StepIndex]))
+            {
+                args.Cancel = true;
+            }
+
+            return Task.CompletedTask;
         }
 
         private Task OnBackClicked(MouseEventArgs args)
@@ -602,6 +629,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private void BuildFlowSteps()
         {
             _flowSteps.Clear();
+            _visitedStepTokens.Clear();
 
             var pendingStepIds = ResolvePendingStepIds();
             if (ShowWelcomeBackIntro)
@@ -615,6 +643,42 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             _flowSteps.Add(DoneStepToken);
+        }
+
+        private void TrySetActiveIndex(int activeIndex, bool requireVisitedStep)
+        {
+            if (!CanSetActiveIndex(activeIndex, requireVisitedStep))
+            {
+                return;
+            }
+
+            _activeIndex = activeIndex;
+            TrackCurrentStepAsVisited();
+        }
+
+        private bool CanSetActiveIndex(int activeIndex, bool requireVisitedStep)
+        {
+            if (activeIndex < 0 || activeIndex > LastStepIndex)
+            {
+                return false;
+            }
+
+            if (requireVisitedStep && !_visitedStepTokens.Contains(_flowSteps[activeIndex]))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private void TrackCurrentStepAsVisited()
+        {
+            if (_activeIndex < 0 || _activeIndex > LastStepIndex)
+            {
+                return;
+            }
+
+            _visitedStepTokens.Add(_flowSteps[_activeIndex]);
         }
 
         private IReadOnlyList<string> ResolvePendingStepIds()
@@ -675,6 +739,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             return string.Equals(_flowSteps[_activeIndex], token, StringComparison.Ordinal);
+        }
+
+        private bool IsStepHeaderDisabled(string stepToken)
+        {
+            return !_visitedStepTokens.Contains(stepToken);
         }
 
         private string TranslateWizard(string source, params object[] arguments)

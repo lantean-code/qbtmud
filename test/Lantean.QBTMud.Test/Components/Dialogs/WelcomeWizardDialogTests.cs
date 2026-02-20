@@ -198,6 +198,55 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_DefaultFlow_WHEN_DoneStepSelectedFromStepperBeforeVisitingAllSteps_THEN_DoneStepIsBlocked()
+        {
+            var dialog = await _target.RenderDialogAsync();
+
+            var stepper = dialog.Component.FindComponent<MudStepper>();
+            var stepButtons = stepper.FindAll("button.mud-step");
+            stepButtons[2].HasAttribute("disabled").Should().BeTrue();
+            await stepButtons[2].ClickAsync(new MouseEventArgs());
+
+            stepper.Instance.ActiveIndex.Should().Be(0);
+            FindButton(dialog.Component, "WelcomeWizardNext").Should().NotBeNull();
+            dialog.Component.FindComponents<MudButton>()
+                .Any(component => HasTestId(component, "WelcomeWizardFinish"))
+                .Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_DefaultFlow_WHEN_UnvisitedIntermediateStepSelectedFromStepper_THEN_SelectionIsBlocked()
+        {
+            var dialog = await _target.RenderDialogAsync();
+
+            var stepper = dialog.Component.FindComponent<MudStepper>();
+            var stepButtons = stepper.FindAll("button.mud-step");
+            stepButtons[1].HasAttribute("disabled").Should().BeTrue();
+            await stepButtons[1].ClickAsync(new MouseEventArgs());
+
+            stepper.Instance.ActiveIndex.Should().Be(0);
+            FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect").Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_DefaultFlow_WHEN_StepsWerePreviouslyVisited_THEN_StepperCanNavigateBackToThem()
+        {
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var stepper = dialog.Component.FindComponent<MudStepper>();
+            var stepButtons = stepper.FindAll("button.mud-step");
+            stepButtons[1].HasAttribute("disabled").Should().BeFalse();
+            await stepButtons[1].ClickAsync(new MouseEventArgs());
+
+            stepper.Instance.ActiveIndex.Should().Be(1);
+            FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect").Should().NotBeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_NotificationsPendingOnly_WHEN_Rendered_THEN_ShowsOnlyNotificationStep()
         {
             var dialog = await _target.RenderDialogAsync(
@@ -1111,6 +1160,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var summaryChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneNotificationsChip");
 
             GetChildContentText(summaryChip.Instance.ChildContent).Should().Be("Notifications: Disabled");
+            summaryChip.Instance.Color.Should().Be(Color.Warning);
             summaryChip.Instance.UserAttributes.Should().ContainKey("data-test-summary-color");
             summaryChip.Instance.UserAttributes["data-test-summary-color"]?.ToString().Should().Be("Default");
         }
@@ -1135,6 +1185,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var summaryChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneNotificationsChip");
 
             GetChildContentText(summaryChip.Instance.ChildContent).Should().Be("Notifications: None selected");
+            summaryChip.Instance.Color.Should().Be(Color.Warning);
             summaryChip.Instance.UserAttributes["data-test-summary-color"]?.ToString().Should().Be("Warning");
         }
 
@@ -1161,6 +1212,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var summaryChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneNotificationsChip");
 
             GetChildContentText(summaryChip.Instance.ChildContent).Should().Be("Notifications: Torrent added");
+            summaryChip.Instance.Color.Should().Be(Color.Warning);
             summaryChip.Instance.UserAttributes["data-test-summary-color"]?.ToString().Should().Be("Success");
         }
 
@@ -1184,7 +1236,24 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var summaryChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneNotificationsChip");
 
             GetChildContentText(summaryChip.Instance.ChildContent).Should().Be("Notifications: Download completed, Torrent added");
+            summaryChip.Instance.Color.Should().Be(Color.Warning);
             summaryChip.Instance.UserAttributes["data-test-summary-color"]?.ToString().Should().Be("Success");
+        }
+
+        [Fact]
+        public async Task GIVEN_LanguageAndThemeStepsIncluded_WHEN_DoneStepRendered_THEN_SummaryChipsMatchStepAccents()
+        {
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var languageChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneLanguageChip");
+            var themeChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneThemeChip");
+
+            languageChip.Instance.Color.Should().Be(Color.Info);
+            themeChip.Instance.Color.Should().Be(Color.Primary);
         }
 
         [Fact]

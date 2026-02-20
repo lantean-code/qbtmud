@@ -8,7 +8,9 @@
            data-test-id="@TestIdHelper.For($"WelcomeWizardDialog-{GetStepTitle(IntroStepToken)}")">
     <DialogContent>
         <div class="welcome-wizard-dialog__layout">
-            <MudStepper @bind-ActiveIndex="_activeIndex"
+            <MudStepper ActiveIndex="_activeIndex"
+                        ActiveIndexChanged="OnActiveIndexChanged"
+                        OnPreviewInteraction="OnStepperPreviewInteraction"
                         CurrentStepColor="@GetCurrentStepAccentColor()"
                         NonLinear="true"
                         CenterLabels="true"
@@ -16,7 +18,9 @@
                 <ChildContent>
                     @foreach (var stepToken in FlowSteps)
                     {
-                        <MudStep Title="@GetStepTitle(stepToken)" Class="welcome-wizard-dialog__step-pane">
+                        <MudStep Title="@GetStepTitle(stepToken)"
+                                 Disabled="@IsStepHeaderDisabled(stepToken)"
+                                 Class="welcome-wizard-dialog__step-pane">
                             @if (string.Equals(stepToken, "__intro__", StringComparison.Ordinal))
                             {
                                 <MudStack Class="mud-height-full" data-test-id="@TestIdHelper.For("WelcomeWizardIntroCard")">
@@ -145,14 +149,14 @@
                                         <MudStack Row="true" Wrap="Wrap.Wrap" Justify="Justify.Center" Spacing="1">
                                             @if (FlowSteps.Contains(WelcomeWizardStepCatalog.LanguageStepId, StringComparer.Ordinal) && !string.IsNullOrWhiteSpace(SelectedLanguageName))
                                             {
-                                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success" data-test-id="@TestIdHelper.For("WelcomeWizardDoneLanguageChip")">
+                                                <MudChip T="string" Variant="Variant.Outlined" Color="@GetStepAccentColor(WelcomeWizardStepCatalog.LanguageStepId)" data-test-id="@TestIdHelper.For("WelcomeWizardDoneLanguageChip")">
                                                     @LanguageLocalizer.Translate("AppWelcomeWizard", "Language: %1", SelectedLanguageName)
                                                 </MudChip>
                                             }
 
                                             @if (FlowSteps.Contains(WelcomeWizardStepCatalog.ThemeStepId, StringComparer.Ordinal) && !string.IsNullOrWhiteSpace(SelectedThemeName))
                                             {
-                                                <MudChip T="string" Variant="Variant.Outlined" Color="Color.Success" data-test-id="@TestIdHelper.For("WelcomeWizardDoneThemeChip")">
+                                                <MudChip T="string" Variant="Variant.Outlined" Color="@GetStepAccentColor(WelcomeWizardStepCatalog.ThemeStepId)" data-test-id="@TestIdHelper.For("WelcomeWizardDoneThemeChip")">
                                                     @LanguageLocalizer.Translate("AppWelcomeWizard", "Theme: %1", SelectedThemeName)
                                                 </MudChip>
                                             }
@@ -161,7 +165,7 @@
                                             {
                                                 <MudChip T="string"
                                                          Variant="Variant.Outlined"
-                                                         Color="Color.Success"
+                                                         Color="@GetStepAccentColor(WelcomeWizardStepCatalog.NotificationsStepId)"
                                                          data-test-id="@TestIdHelper.For("WelcomeWizardDoneNotificationsChip")"
                                                          data-test-summary-color="@GetNotificationSummaryColor()">
                                                     @LanguageLocalizer.Translate("AppWelcomeWizard", "Notifications: %1", GetNotificationSummaryText())
