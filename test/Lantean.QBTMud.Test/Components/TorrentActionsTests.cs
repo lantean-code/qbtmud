@@ -463,6 +463,73 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public void GIVEN_NoCategories_WHEN_Rendered_THEN_CategoryActionIsHidden()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var target = RenderMenuItems(Hashes("Hash"), Torrents(CreateTorrent("Hash")), Tags("Tag"), Categories(Array.Empty<string>()));
+
+            target.FindComponents<MudMenu>()
+                .Any(item => HasTestId(item, "Action-category"))
+                .Should().BeFalse();
+            target.FindComponents<MudMenuItem>()
+                .Any(item => HasTestId(item, "Action-category"))
+                .Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_PartialTagSelection_WHEN_Rendered_THEN_UsesPartialIconAndColor()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var target = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Children);
+                parameters.Add(p => p.ParentAction, new UIAction("tags", "Tags", Icons.Material.Filled.Label, Color.Info, string.Empty));
+                parameters.Add(p => p.Hashes, Hashes("One", "Two"));
+                parameters.Add(p => p.Torrents, Torrents(
+                    CreateTorrent("One", tags: new[] { "Tag" }),
+                    CreateTorrent("Two", tags: Array.Empty<string>())));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var tagItem = FindListItem(target, "tag-Tag");
+            tagItem.Instance.Icon.Should().Be(Icons.Material.Filled.HorizontalRule);
+            tagItem.Instance.IconColor.Should().Be(Color.Warning);
+        }
+
+        [Fact]
+        public void GIVEN_PartialCategorySelection_WHEN_Rendered_THEN_UsesPartialIconAndColor()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var target = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Children);
+                parameters.Add(p => p.ParentAction, new UIAction("category", "Category", Icons.Material.Filled.List, Color.Info, string.Empty));
+                parameters.Add(p => p.Hashes, Hashes("One", "Two"));
+                parameters.Add(p => p.Torrents, Torrents(
+                    CreateTorrent("One", category: "Category"),
+                    CreateTorrent("Two", category: "Other")));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category", "Other"));
+            });
+
+            var categoryItem = FindListItem(target, "category-Category");
+            categoryItem.Instance.Icon.Should().Be(Icons.Material.Filled.HorizontalRule);
+            categoryItem.Instance.IconColor.Should().Be(Color.Warning);
+        }
+
+        [Fact]
         public void GIVEN_MissingTorrents_WHEN_Rendered_THEN_TagAndCategoryActionsSkipped()
         {
             TestContext.UseApiClientMock();
@@ -556,6 +623,23 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_DuplicateHashes_WHEN_SequentialToggled_THEN_StateChangesOnce()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            apiClientMock.Setup(c => c.ToggleSequentialDownload(null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var torrents = Torrents(CreateTorrent("Dup", sequentialDownload: false));
+            var target = RenderMenuItems(new[] { "Dup", "Dup" }, torrents, Tags("Tag"), Categories("Category"));
+            var sequential = FindMenuItem(target, "sequentialDownload");
+
+            await target.InvokeAsync(() => sequential.Instance.OnClick.InvokeAsync());
+
+            torrents["Dup"].SequentialDownload.Should().BeTrue();
+        }
+
+        [Fact]
         public void GIVEN_MixedToolbarContents_WHEN_Rendered_THEN_NoToolbarWrapper()
         {
             TestContext.UseApiClientMock();
@@ -643,6 +727,38 @@ namespace Lantean.QBTMud.Test.Components
             target.Render(parameters => parameters.Add(p => p.RenderType, RenderType.MixedToolbar));
             await target.InvokeAsync(() => deleteHandler!(new KeyboardEvent("Delete")));
             navigation.Uri.Should().Be(navigation.BaseUri);
+        }
+
+        [Fact]
+        public async Task GIVEN_NoHashes_WHEN_DeleteShortcutPressed_THEN_DeleteNotInvoked()
+        {
+            TestContext.UseApiClientMock();
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            Func<KeyboardEvent, Task>? deleteHandler = null;
+            keyboardMock.Setup(k => k.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Delete"), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Returns<KeyboardEvent, Func<KeyboardEvent, Task>>((_, handler) =>
+                {
+                    deleteHandler = handler;
+                    return Task.CompletedTask;
+                });
+            keyboardMock.Setup(k => k.UnregisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Delete"))).Returns(Task.CompletedTask);
+            TestContext.UseSnackbarMock();
+
+            var target = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Toolbar);
+                parameters.Add(p => p.Hashes, Array.Empty<string>());
+                parameters.Add(p => p.Torrents, Torrents());
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            deleteHandler.Should().NotBeNull();
+            await target.InvokeAsync(() => deleteHandler!(new KeyboardEvent("Delete")));
+
+            dialogWorkflowMock.Verify(d => d.InvokeDeleteTorrentDialog(It.IsAny<bool>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]

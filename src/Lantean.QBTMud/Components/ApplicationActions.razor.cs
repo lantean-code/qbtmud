@@ -28,7 +28,7 @@ namespace Lantean.QBTMud.Components
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
@@ -96,7 +96,8 @@ namespace Lantean.QBTMud.Components
                 new("categories", LanguageLocalizer.Translate("AppApplicationActions", "Category Manager"), Icons.Material.Filled.List, Color.Default, "./categories"),
                 new("cookies", LanguageLocalizer.Translate("AppApplicationActions", "Cookie Manager"), Icons.Material.Filled.Cookie, Color.Default, "./cookies"),
                 new("themes", LanguageLocalizer.Translate("AppApplicationActions", "Theme Manager"), Icons.Material.Filled.Palette, Color.Default, "./themes"),
-                new("settings", LanguageLocalizer.Translate("MainWindow", "Options..."), Icons.Material.Filled.Settings, Color.Default, "./settings", separatorBefore: true),
+                new("appSettings", LanguageLocalizer.Translate("AppApplicationActions", "App Settings"), Icons.Material.Filled.Tune, Color.Default, "./app-settings", separatorBefore: true),
+                new("settings", LanguageLocalizer.Translate("MainWindow", "Options..."), Icons.Material.Filled.Settings, Color.Default, "./settings"),
                 new("darkMode", LanguageLocalizer.Translate("AppApplicationActions", "Switch to dark mode"), Icons.Material.Filled.DarkMode, Color.Info, EventCallback.Factory.Create(this, ToggleDarkMode)),
                 new("about", LanguageLocalizer.Translate("MainWindow", "About"), Icons.Material.Filled.Info, Color.Default, "./about"),
             ];
@@ -171,28 +172,28 @@ namespace Lantean.QBTMud.Components
                 switch (status)
                 {
                     case "success":
-                        Snackbar?.Add(LanguageLocalizer.Translate("AppApplicationActions", "Magnet handler registered. Magnet links will now open in qBittorrent WebUI."), Severity.Success);
+                        SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "Magnet handler registered. Magnet links will now open in qBittorrent WebUI."), Severity.Success);
                         break;
 
                     case "insecure":
-                        Snackbar?.Add(LanguageLocalizer.Translate("AppApplicationActions", "Access this WebUI over HTTPS to register the magnet handler."), Severity.Warning);
+                        SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "Access this WebUI over HTTPS to register the magnet handler."), Severity.Warning);
                         break;
 
                     case "unsupported":
-                        Snackbar?.Add(LanguageLocalizer.Translate("AppApplicationActions", "This browser does not support registering magnet handlers."), Severity.Warning);
+                        SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "This browser does not support registering magnet handlers."), Severity.Warning);
                         break;
 
                     default:
                         var message = string.IsNullOrWhiteSpace(result.Message)
                             ? LanguageLocalizer.Translate("AppApplicationActions", "Unable to register the magnet handler.")
                             : LanguageLocalizer.Translate("AppApplicationActions", "Unable to register the magnet handler: %1", result.Message);
-                        Snackbar?.Add(message, Severity.Error);
+                        SnackbarWorkflow.ShowTransientMessage(message, Severity.Error);
                         break;
                 }
             }
             catch (JSException exception)
             {
-                Snackbar?.Add(LanguageLocalizer.Translate("AppApplicationActions", "Unable to register the magnet handler: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "Unable to register the magnet handler: %1", exception.Message), Severity.Error);
             }
             finally
             {
@@ -209,7 +210,7 @@ namespace Lantean.QBTMud.Components
 
             if (MainData?.LostConnection == true)
             {
-                Snackbar?.Add(LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable"), Severity.Warning);
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable"), Severity.Warning);
                 return;
             }
 
@@ -217,11 +218,11 @@ namespace Lantean.QBTMud.Components
             try
             {
                 await ApiClient.StartAllTorrents();
-                Snackbar?.Add(LanguageLocalizer.Translate("AppApplicationActions", "All torrents started."), Severity.Success);
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents started."), Severity.Success);
             }
             catch (HttpRequestException)
             {
-                Snackbar?.Add(LanguageLocalizer.Translate("HttpServer", "Unable to start torrents."), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "Unable to start torrents."), Severity.Error);
             }
             finally
             {
@@ -238,7 +239,7 @@ namespace Lantean.QBTMud.Components
 
             if (MainData?.LostConnection == true)
             {
-                Snackbar?.Add(LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable"), Severity.Warning);
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable"), Severity.Warning);
                 return;
             }
 
@@ -246,11 +247,11 @@ namespace Lantean.QBTMud.Components
             try
             {
                 await ApiClient.StopAllTorrents();
-                Snackbar?.Add(LanguageLocalizer.Translate("AppApplicationActions", "All torrents stopped."), Severity.Info);
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents stopped."), Severity.Info);
             }
             catch (HttpRequestException)
             {
-                Snackbar?.Add(LanguageLocalizer.Translate("HttpServer", "Unable to stop torrents."), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "Unable to stop torrents."), Severity.Error);
             }
             finally
             {

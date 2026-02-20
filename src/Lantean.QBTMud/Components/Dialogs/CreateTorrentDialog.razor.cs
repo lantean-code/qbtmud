@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ILocalStorageService LocalStorage { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -105,7 +105,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (string.IsNullOrWhiteSpace(sourcePath))
             {
                 _forceSourcePathValidation = true;
-                Snackbar?.Add(Translate("Source path is required."), Severity.Warning);
+                SnackbarWorkflow.ShowTransientMessage(Translate("Source path is required."), Severity.Warning);
                 return null;
             }
 
@@ -153,7 +153,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             catch (Exception exception)
             {
-                Snackbar?.Add(Translate("Unable to load saved torrent creator settings: %1", exception.Message), Severity.Warning);
+                SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load saved torrent creator settings: %1", exception.Message), Severity.Warning);
                 return;
             }
 

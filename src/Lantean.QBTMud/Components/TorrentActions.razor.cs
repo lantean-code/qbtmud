@@ -34,7 +34,7 @@ namespace Lantean.QBTMud.Components
         public IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
-        public ISnackbar Snackbar { get; set; } = default!;
+        public ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         public ITorrentDataManager DataManager { get; set; } = default!;
@@ -193,19 +193,19 @@ namespace Lantean.QBTMud.Components
         protected async Task Stop()
         {
             await ApiClient.StopTorrents(hashes: Hashes.ToArray());
-            Snackbar.Add(TranslateApp("Torrent stopped."));
+            SnackbarWorkflow.ShowTransientMessage(TranslateApp("Torrent stopped."));
         }
 
         protected async Task Start()
         {
             await ApiClient.StartTorrents(hashes: Hashes.ToArray());
-            Snackbar.Add(TranslateApp("Torrent started."));
+            SnackbarWorkflow.ShowTransientMessage(TranslateApp("Torrent started."));
         }
 
         protected async Task ForceStart()
         {
             await ApiClient.SetForceStart(value: true, all: null, hashes: Hashes.ToArray());
-            Snackbar.Add(TranslateApp("Torrent force started."));
+            SnackbarWorkflow.ShowTransientMessage(TranslateApp("Torrent force started."));
         }
 
         protected async Task Remove()

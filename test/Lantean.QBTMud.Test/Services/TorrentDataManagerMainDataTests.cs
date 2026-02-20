@@ -64,6 +64,92 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public void GIVEN_NullTrackers_WHEN_CreateMainData_THEN_TrackersAreInitializedToEmpty()
+        {
+            var hash = "hash-null-trackers";
+            var client = new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: true,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    [hash] = new ClientModels.Torrent
+                    {
+                        Name = "Name",
+                        State = "downloading",
+                        UploadSpeed = 0,
+                        Category = string.Empty,
+                        Tags = Array.Empty<string>(),
+                        Tracker = string.Empty,
+                        TrackersCount = 0
+                    }
+                },
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: null,
+                trackersRemoved: null,
+                serverState: null);
+
+            var result = _target.CreateMainData(client);
+
+            result.Trackers.Should().BeEmpty();
+            result.TrackersState[FilterHelper.TRACKER_ALL].Should().Contain(hash);
+            result.TrackersState[FilterHelper.TRACKER_TRACKERLESS].Should().Contain(hash);
+        }
+
+        [Fact]
+        public void GIVEN_ServerStateWithNullStrings_WHEN_CreateMainData_THEN_NullsAreMappedToEmptyStrings()
+        {
+            var client = new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: true,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: new Dictionary<string, IReadOnlyList<string>>(),
+                trackersRemoved: null,
+                serverState: new ClientModels.ServerState(
+                    allTimeDownloaded: 1,
+                    allTimeUploaded: 2,
+                    averageTimeQueue: 3,
+                    connectionStatus: null,
+                    dHTNodes: 4,
+                    downloadInfoData: 5,
+                    downloadInfoSpeed: 6,
+                    downloadRateLimit: 7,
+                    freeSpaceOnDisk: 8,
+                    globalRatio: 9.5f,
+                    queuedIOJobs: 10,
+                    queuing: false,
+                    readCacheHits: 11,
+                    readCacheOverload: 12,
+                    refreshInterval: 13,
+                    totalBuffersSize: 14,
+                    totalPeerConnections: 15,
+                    totalQueuedSize: 16,
+                    totalWastedSession: 17,
+                    uploadInfoData: 18,
+                    uploadInfoSpeed: 19,
+                    uploadRateLimit: 20,
+                    useAltSpeedLimits: false,
+                    useSubcategories: false,
+                    writeCacheOverload: 21,
+                    lastExternalAddressV4: null,
+                    lastExternalAddressV6: null));
+
+            var result = _target.CreateMainData(client);
+
+            result.ServerState.ConnectionStatus.Should().Be(string.Empty);
+            result.ServerState.LastExternalAddressV4.Should().Be(string.Empty);
+            result.ServerState.LastExternalAddressV6.Should().Be(string.Empty);
+        }
+
+        [Fact]
         public void GIVEN_PopulatedInput_WHEN_CreateMainData_THEN_Maps_All_And_Builds_FilterStates()
         {
             var hash = "abc123";
@@ -1005,6 +1091,354 @@ namespace Lantean.QBTMud.Test.Services
             s.UseSubcategories.Should().BeTrue();
             s.LastExternalAddressV4.Should().Be("8.8.8.8");
             s.LastExternalAddressV6.Should().Be("fe80::1");
+        }
+
+        [Fact]
+        public void GIVEN_Existing_WHEN_ServerStateFieldsAreProvidedWithSameValues_THEN_DataChangedIsFalse()
+        {
+            var existing = _target.CreateMainData(
+                new ClientModels.MainData(0, true, null, null, null, null, null, null,
+                    new Dictionary<string, IReadOnlyList<string>>(), null,
+                    new ClientModels.ServerState(
+                        allTimeDownloaded: 1, allTimeUploaded: 2, averageTimeQueue: 3,
+                        connectionStatus: "connected", dHTNodes: 4, downloadInfoData: 5,
+                        downloadInfoSpeed: 6, downloadRateLimit: 7, freeSpaceOnDisk: 8, globalRatio: 9.0f,
+                        queuedIOJobs: 10, queuing: true, readCacheHits: 11.0f, readCacheOverload: 12.0f,
+                        refreshInterval: 13, totalBuffersSize: 14, totalPeerConnections: 15, totalQueuedSize: 16,
+                        totalWastedSession: 17, uploadInfoData: 18, uploadInfoSpeed: 19, uploadRateLimit: 20,
+                        useAltSpeedLimits: false, useSubcategories: false, writeCacheOverload: 21.0f,
+                        lastExternalAddressV4: "4", lastExternalAddressV6: "6")));
+
+            var delta = new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: false,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: null,
+                trackersRemoved: null,
+                serverState: new ClientModels.ServerState(
+                    allTimeDownloaded: 1, allTimeUploaded: 2, averageTimeQueue: 3,
+                    connectionStatus: "connected", dHTNodes: 4, downloadInfoData: 5,
+                    downloadInfoSpeed: 6, downloadRateLimit: 7, freeSpaceOnDisk: 8, globalRatio: 9.0f,
+                    queuedIOJobs: 10, queuing: true, readCacheHits: 11.0f, readCacheOverload: 12.0f,
+                    refreshInterval: 13, totalBuffersSize: 14, totalPeerConnections: 15, totalQueuedSize: 16,
+                    totalWastedSession: 17, uploadInfoData: 18, uploadInfoSpeed: 19, uploadRateLimit: 20,
+                    useAltSpeedLimits: false, useSubcategories: false, writeCacheOverload: 21.0f,
+                    lastExternalAddressV4: "4", lastExternalAddressV6: "6"));
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged);
+
+            changed.Should().BeFalse();
+            filterChanged.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_Existing_WHEN_ServerStateFieldsAreAllNull_THEN_DataChangedIsFalse()
+        {
+            var existing = _target.CreateMainData(
+                new ClientModels.MainData(0, true, null, null, null, null, null, null,
+                    new Dictionary<string, IReadOnlyList<string>>(), null,
+                    new ClientModels.ServerState(
+                        allTimeDownloaded: 1, allTimeUploaded: 2, averageTimeQueue: 3,
+                        connectionStatus: "connected", dHTNodes: 4, downloadInfoData: 5,
+                        downloadInfoSpeed: 6, downloadRateLimit: 7, freeSpaceOnDisk: 8, globalRatio: 9.0f,
+                        queuedIOJobs: 10, queuing: true, readCacheHits: 11.0f, readCacheOverload: 12.0f,
+                        refreshInterval: 13, totalBuffersSize: 14, totalPeerConnections: 15, totalQueuedSize: 16,
+                        totalWastedSession: 17, uploadInfoData: 18, uploadInfoSpeed: 19, uploadRateLimit: 20,
+                        useAltSpeedLimits: false, useSubcategories: false, writeCacheOverload: 21.0f,
+                        lastExternalAddressV4: "4", lastExternalAddressV6: "6")));
+
+            var delta = new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: false,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: null,
+                trackersRemoved: null,
+                serverState: new ClientModels.ServerState(
+                    allTimeDownloaded: null,
+                    allTimeUploaded: null,
+                    averageTimeQueue: null,
+                    connectionStatus: null,
+                    dHTNodes: null,
+                    downloadInfoData: null,
+                    downloadInfoSpeed: null,
+                    downloadRateLimit: null,
+                    freeSpaceOnDisk: null,
+                    globalRatio: null,
+                    queuedIOJobs: null,
+                    queuing: null,
+                    readCacheHits: null,
+                    readCacheOverload: null,
+                    refreshInterval: null,
+                    totalBuffersSize: null,
+                    totalPeerConnections: null,
+                    totalQueuedSize: null,
+                    totalWastedSession: null,
+                    uploadInfoData: null,
+                    uploadInfoSpeed: null,
+                    uploadRateLimit: null,
+                    useAltSpeedLimits: null,
+                    useSubcategories: null,
+                    writeCacheOverload: null,
+                    lastExternalAddressV4: null,
+                    lastExternalAddressV6: null));
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged);
+
+            changed.Should().BeFalse();
+            filterChanged.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_NewTorrentWithNonBlankName_WHEN_MergeMainDataAddsTorrent_THEN_TransitionUsesTorrentName()
+        {
+            var existing = _target.CreateMainData(
+                new ClientModels.MainData(
+                    responseId: 1,
+                    fullUpdate: true,
+                    torrents: new Dictionary<string, ClientModels.Torrent>(),
+                    torrentsRemoved: null,
+                    categories: null,
+                    categoriesRemoved: null,
+                    tags: null,
+                    tagsRemoved: null,
+                    trackers: new Dictionary<string, IReadOnlyList<string>>(),
+                    trackersRemoved: null,
+                    serverState: null));
+
+            const string hash = "named-hash";
+            var delta = new ClientModels.MainData(
+                responseId: 2,
+                fullUpdate: false,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    [hash] = new ClientModels.Torrent
+                    {
+                        Name = "Torrent Name",
+                        State = "downloading",
+                        Downloaded = 0,
+                        TotalSize = 100,
+                        UploadSpeed = 0,
+                        Category = string.Empty,
+                        Tags = Array.Empty<string>(),
+                        Tracker = string.Empty,
+                        TrackersCount = 0
+                    }
+                },
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: null,
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged, out var transitions);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeTrue();
+            transitions.Should().ContainSingle();
+            transitions[0].Name.Should().Be("Torrent Name");
+            transitions[0].IsAdded.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_ExistingTorrentWithName_WHEN_FinishedStateChanges_THEN_TransitionUsesTorrentName()
+        {
+            const string hash = "finished-name-hash";
+            var existing = _target.CreateMainData(
+                new ClientModels.MainData(
+                    responseId: 1,
+                    fullUpdate: true,
+                    torrents: new Dictionary<string, ClientModels.Torrent>
+                    {
+                        [hash] = new ClientModels.Torrent
+                        {
+                            Name = "Torrent Name",
+                            State = "downloading",
+                            Downloaded = 10,
+                            TotalSize = 100,
+                            UploadSpeed = 0,
+                            Category = string.Empty,
+                            Tags = Array.Empty<string>(),
+                            Tracker = string.Empty,
+                            TrackersCount = 0
+                        }
+                    },
+                    torrentsRemoved: null,
+                    categories: null,
+                    categoriesRemoved: null,
+                    tags: null,
+                    tagsRemoved: null,
+                    trackers: new Dictionary<string, IReadOnlyList<string>>(),
+                    trackersRemoved: null,
+                    serverState: null));
+
+            var delta = new ClientModels.MainData(
+                responseId: 2,
+                fullUpdate: false,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    [hash] = new ClientModels.Torrent
+                    {
+                        Name = "Torrent Name",
+                        State = "downloading",
+                        Downloaded = 100,
+                        TotalSize = 100,
+                        UploadSpeed = 0
+                    }
+                },
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: null,
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged, out var transitions);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeFalse();
+            transitions.Should().ContainSingle();
+            transitions[0].Hash.Should().Be(hash);
+            transitions[0].Name.Should().Be("Torrent Name");
+            transitions[0].IsAdded.Should().BeFalse();
+            transitions[0].PreviousIsFinished.Should().BeFalse();
+            transitions[0].CurrentIsFinished.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_NewTorrentWithBlankName_WHEN_MergeMainDataAddsTorrent_THEN_TransitionUsesHashDisplayName()
+        {
+            var existing = _target.CreateMainData(
+                new ClientModels.MainData(
+                    responseId: 1,
+                    fullUpdate: true,
+                    torrents: new Dictionary<string, ClientModels.Torrent>(),
+                    torrentsRemoved: null,
+                    categories: null,
+                    categoriesRemoved: null,
+                    tags: null,
+                    tagsRemoved: null,
+                    trackers: new Dictionary<string, IReadOnlyList<string>>(),
+                    trackersRemoved: null,
+                    serverState: null));
+
+            const string hash = "added-hash";
+            var delta = new ClientModels.MainData(
+                responseId: 2,
+                fullUpdate: false,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    [hash] = new ClientModels.Torrent
+                    {
+                        Name = "  ",
+                        State = "downloading",
+                        Downloaded = 0,
+                        TotalSize = 100,
+                        UploadSpeed = 0,
+                        Category = string.Empty,
+                        Tags = Array.Empty<string>(),
+                        Tracker = string.Empty,
+                        TrackersCount = 0
+                    }
+                },
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: null,
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged, out var transitions);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeTrue();
+            transitions.Should().ContainSingle();
+            transitions[0].Hash.Should().Be(hash);
+            transitions[0].Name.Should().Be(hash);
+            transitions[0].IsAdded.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_ExistingTorrentWithBlankName_WHEN_FinishedStateChanges_THEN_TransitionUsesHashDisplayName()
+        {
+            const string hash = "finished-hash";
+            var existing = _target.CreateMainData(
+                new ClientModels.MainData(
+                    responseId: 1,
+                    fullUpdate: true,
+                    torrents: new Dictionary<string, ClientModels.Torrent>
+                    {
+                        [hash] = new ClientModels.Torrent
+                        {
+                            Name = " ",
+                            State = "downloading",
+                            Downloaded = 10,
+                            TotalSize = 100,
+                            UploadSpeed = 0,
+                            Category = string.Empty,
+                            Tags = Array.Empty<string>(),
+                            Tracker = string.Empty,
+                            TrackersCount = 0
+                        }
+                    },
+                    torrentsRemoved: null,
+                    categories: null,
+                    categoriesRemoved: null,
+                    tags: null,
+                    tagsRemoved: null,
+                    trackers: new Dictionary<string, IReadOnlyList<string>>(),
+                    trackersRemoved: null,
+                    serverState: null));
+
+            var delta = new ClientModels.MainData(
+                responseId: 2,
+                fullUpdate: false,
+                torrents: new Dictionary<string, ClientModels.Torrent>
+                {
+                    [hash] = new ClientModels.Torrent
+                    {
+                        Name = " ",
+                        State = "downloading",
+                        Downloaded = 100,
+                        TotalSize = 100,
+                        UploadSpeed = 0
+                    }
+                },
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: null,
+                trackersRemoved: null,
+                serverState: null);
+
+            var changed = _target.MergeMainData(delta, existing, out var filterChanged, out var transitions);
+
+            changed.Should().BeTrue();
+            filterChanged.Should().BeFalse();
+            transitions.Should().ContainSingle();
+            transitions[0].Hash.Should().Be(hash);
+            transitions[0].Name.Should().Be(hash);
+            transitions[0].IsAdded.Should().BeFalse();
+            transitions[0].PreviousIsFinished.Should().BeFalse();
+            transitions[0].CurrentIsFinished.Should().BeTrue();
         }
     }
 }

@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Pages
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -152,7 +152,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             await ClipboardService.WriteToClipboard(message);
-            Snackbar?.Add(TranslateLog("Log entry copied to clipboard."), Severity.Info);
+            SnackbarWorkflow.ShowTransientMessage(TranslateLog("Log entry copied to clipboard."), Severity.Info);
         }
 
         protected async Task ClearResults()
@@ -164,7 +164,7 @@ namespace Lantean.QBTMud.Pages
 
             Results!.Clear();
             ContextMenuItem = null;
-            Snackbar?.Add(TranslateLog("Log view cleared."), Severity.Info);
+            SnackbarWorkflow.ShowTransientMessage(TranslateLog("Log view cleared."), Severity.Info);
             await InvokeAsync(StateHasChanged);
         }
 

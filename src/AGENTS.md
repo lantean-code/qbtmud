@@ -60,6 +60,9 @@
 - Static methods and classes are acceptable when appropriate.
 - Avoid partial classes in user code unless generated.
 - Use `record` for data-only objects.
+- Do not use positional record syntax (for example, `public record MyModel(string Name)`).
+- For records and classes with constructors, declare explicit properties and constructor bodies.
+- Constructor parameter names must use `camelCase` (even when assigned to PascalCase properties).
 - Extension methods are permitted and should follow standard naming conventions.
 
 ### Documentation
@@ -95,5 +98,6 @@
 - [ ] LINQ used for simple ops; loops for complex logic.
 - [ ] No exceptions are used for flow control.
 - [ ] Design follows DI, SOLID, DRY; security pitfalls avoided.
+- [ ] Positional records are not used; explicit properties/constructors are used and constructor parameters are camelCase.
 - [ ] Localization keys were checked against qBittorrent WebUI locale files before adding any override entries.
 - [ ] Any conflicts with existing code are reported for clarification.

@@ -126,6 +126,138 @@ namespace Lantean.QBTMud.Test.Interop
         }
 
         [Fact]
+        public async Task GIVEN_NotificationSupport_WHEN_IsNotificationsSupportedInvoked_THEN_ReturnsValue()
+        {
+            _target.EnqueueResult(true);
+
+            var result = await _target.IsNotificationsSupported(TestContext.Current.CancellationToken);
+
+            result.Should().BeTrue();
+            _target.LastIdentifier.Should().Be("qbt.isNotificationSupported");
+        }
+
+        [Fact]
+        public async Task GIVEN_GrantedPermission_WHEN_GetNotificationPermissionInvoked_THEN_ReturnsGranted()
+        {
+            _target.EnqueueResult("granted");
+
+            var result = await _target.GetNotificationPermission(TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Granted);
+            _target.LastIdentifier.Should().Be("qbt.getNotificationPermission");
+        }
+
+        [Fact]
+        public async Task GIVEN_UnsupportedPermission_WHEN_RequestNotificationPermissionInvoked_THEN_ReturnsUnsupported()
+        {
+            _target.EnqueueResult("unsupported");
+
+            var result = await _target.RequestNotificationPermission(TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Unsupported);
+            _target.LastIdentifier.Should().Be("qbt.requestNotificationPermission");
+        }
+
+        [Fact]
+        public async Task GIVEN_DeniedPermission_WHEN_GetNotificationPermissionInvoked_THEN_ReturnsDenied()
+        {
+            _target.EnqueueResult("denied");
+
+            var result = await _target.GetNotificationPermission(TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Denied);
+        }
+
+        [Fact]
+        public async Task GIVEN_DefaultPermissionWithWhitespaceAndCasing_WHEN_GetNotificationPermissionInvoked_THEN_ReturnsDefault()
+        {
+            _target.EnqueueResult("  DeFaUlT ");
+
+            var result = await _target.GetNotificationPermission(TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Default);
+        }
+
+        [Fact]
+        public async Task GIVEN_UnknownPermission_WHEN_RequestNotificationPermissionInvoked_THEN_ReturnsDefault()
+        {
+            _target.EnqueueResult("unknown");
+
+            var result = await _target.RequestNotificationPermission(TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Default);
+        }
+
+        [Fact]
+        public async Task GIVEN_NullPermission_WHEN_RequestNotificationPermissionInvoked_THEN_ReturnsDefault()
+        {
+            _target.EnqueueResult(null);
+
+            var result = await _target.RequestNotificationPermission(TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Default);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationPayload_WHEN_ShowNotificationInvoked_THEN_InvokesRuntime()
+        {
+            await _target.ShowNotification("Title", "Body", TestContext.Current.CancellationToken);
+
+            _target.LastIdentifier.Should().Be("qbt.showNotification");
+            _target.LastArguments.Should().ContainInOrder("Title", "Body");
+        }
+
+        [Fact]
+        public async Task GIVEN_StoragePrefix_WHEN_GetLocalStorageEntriesByPrefixInvoked_THEN_ReturnsEntries()
+        {
+            var expected = new[]
+            {
+                new BrowserStorageEntry("QbtMud.Key", "Value")
+            };
+            _target.EnqueueResult(expected);
+
+            var result = await _target.GetLocalStorageEntriesByPrefix("QbtMud.", TestContext.Current.CancellationToken);
+
+            result.Should().HaveCount(1);
+            result[0].Key.Should().Be("QbtMud.Key");
+            _target.LastIdentifier.Should().Be("qbt.getLocalStorageEntriesByPrefix");
+            _target.LastArguments.Should().ContainSingle().Which.Should().Be("QbtMud.");
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageEntriesAreNull_WHEN_GetLocalStorageEntriesByPrefixInvoked_THEN_ReturnsEmptyCollection()
+        {
+            _target.EnqueueResult(null);
+
+            var result = await _target.GetLocalStorageEntriesByPrefix("QbtMud.", TestContext.Current.CancellationToken);
+
+            result.Should().BeEmpty();
+            _target.LastIdentifier.Should().Be("qbt.getLocalStorageEntriesByPrefix");
+            _target.LastArguments.Should().ContainSingle().Which.Should().Be("QbtMud.");
+        }
+
+        [Fact]
+        public async Task GIVEN_Key_WHEN_RemoveLocalStorageEntryInvoked_THEN_InvokesRuntime()
+        {
+            await _target.RemoveLocalStorageEntry("QbtMud.Key", TestContext.Current.CancellationToken);
+
+            _target.LastIdentifier.Should().Be("qbt.removeLocalStorageEntry");
+            _target.LastArguments.Should().ContainSingle().Which.Should().Be("QbtMud.Key");
+        }
+
+        [Fact]
+        public async Task GIVEN_Prefix_WHEN_ClearLocalStorageEntriesByPrefixInvoked_THEN_ReturnsRemovedCount()
+        {
+            _target.EnqueueResult(2);
+
+            var removed = await _target.ClearLocalStorageEntriesByPrefix("QbtMud.", TestContext.Current.CancellationToken);
+
+            removed.Should().Be(2);
+            _target.LastIdentifier.Should().Be("qbt.clearLocalStorageEntriesByPrefix");
+            _target.LastArguments.Should().ContainSingle().Which.Should().Be("QbtMud.");
+        }
+
+        [Fact]
         public async Task GIVEN_PiecesBarInput_WHEN_RenderPiecesBarInvoked_THEN_InvokesRuntime()
         {
             var pieces = new[] { 1, 2, 3 };

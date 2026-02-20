@@ -422,6 +422,43 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public void GIVEN_ZeroSizedFiles_WHEN_MergeContentsList_THEN_DirectoryAvailabilityIsZero()
+        {
+            var contents = new Dictionary<string, ContentItem>();
+            var files = new[]
+            {
+                new FileData(3, "z/fileA", 0, 0.5f, QbtPriority.Normal, false, Array.Empty<int>(), 1.5f),
+                new FileData(4, "z/fileB", 0, 0.9f, QbtPriority.High, false, Array.Empty<int>(), 2.5f)
+            };
+
+            var changed = _target.MergeContentsList(files, contents);
+
+            changed.Should().BeTrue();
+            var dir = contents["z"];
+            dir.Size.Should().Be(0);
+            dir.Availability.Should().Be(0f);
+        }
+
+        [Fact]
+        public void GIVEN_NestedDirectoryDepth_WHEN_MergeContentsList_THEN_DirectoryPathBuildsAtMultipleLevels()
+        {
+            var contents = new Dictionary<string, ContentItem>();
+            var files = new[]
+            {
+                new FileData(12, "alpha/beta/file.bin", 100, 0.25f, QbtPriority.Normal, false, Array.Empty<int>(), 1.0f)
+            };
+
+            var changed = _target.MergeContentsList(files, contents);
+
+            changed.Should().BeTrue();
+            contents.ContainsKey("alpha").Should().BeTrue();
+            contents.ContainsKey("alpha/beta").Should().BeTrue();
+            contents["alpha"].IsFolder.Should().BeTrue();
+            contents["alpha/beta"].IsFolder.Should().BeTrue();
+            contents["alpha/beta/file.bin"].IsFolder.Should().BeFalse();
+        }
+
+        [Fact]
         public void GIVEN_ExistingDirectories_WHEN_MergeContentsList_THEN_NewFolderIndicesAreLessThanMinOfExistingAndIncoming()
         {
             // arrange

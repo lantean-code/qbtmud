@@ -3,6 +3,7 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
+using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
@@ -25,6 +26,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
         private readonly ILanguageCatalog _languageCatalog = Mock.Of<ILanguageCatalog>();
         private readonly ILanguageInitializationService _languageInitializationService = Mock.Of<ILanguageInitializationService>();
+        private readonly IAppSettingsService _appSettingsService = Mock.Of<IAppSettingsService>();
+        private readonly ITorrentCompletionNotificationService _torrentCompletionNotificationService = Mock.Of<ITorrentCompletionNotificationService>();
+        private readonly IWelcomeWizardStateService _welcomeWizardStateService = Mock.Of<IWelcomeWizardStateService>();
         private readonly IKeyboardService _keyboardService;
         private readonly Mock<IKeyboardService> _keyboardServiceMock;
         private readonly TestNavigationManager _navigationManager;
@@ -75,6 +79,21 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             languageInitializationServiceMock
                 .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettings.Default.Clone());
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((AppSettings settings, CancellationToken _) => settings.Clone());
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Default);
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Granted);
+            Mock.Get(_welcomeWizardStateService)
+                .Setup(service => service.AcknowledgeStepsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardState());
 
             _keyboardService = Mock.Of<IKeyboardService>();
             _keyboardServiceMock = Mock.Get(_keyboardService);
@@ -91,6 +110,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.RemoveAll<ILanguageCatalog>();
             TestContext.Services.RemoveAll<ILanguageInitializationService>();
             TestContext.Services.RemoveAll<IKeyboardService>();
+            TestContext.Services.RemoveAll<IAppSettingsService>();
+            TestContext.Services.RemoveAll<ITorrentCompletionNotificationService>();
+            TestContext.Services.RemoveAll<IWelcomeWizardStateService>();
 
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.AddSingleton(_themeManagerService);
@@ -98,6 +120,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.AddSingleton(_languageCatalog);
             TestContext.Services.AddSingleton(_languageInitializationService);
             TestContext.Services.AddSingleton(_keyboardService);
+            TestContext.Services.AddSingleton(_appSettingsService);
+            TestContext.Services.AddSingleton(_torrentCompletionNotificationService);
+            TestContext.Services.AddSingleton(_welcomeWizardStateService);
 
             _target = new WelcomeWizardDialogTestDriver(TestContext);
         }
@@ -128,6 +153,229 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await _target.RenderDialogAsync();
 
             _keyboardServiceMock.Verify(service => service.Focus(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ReturningUserWithPendingStep_WHEN_Rendered_THEN_ShowsWelcomeBackIntroBeforePendingStep()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                },
+                showWelcomeBackIntro: true);
+
+            FindComponentByTestId<MudStack>(dialog.Component, "WelcomeWizardIntroCard").Should().NotBeNull();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            dialog.Component.WaitForAssertion(() =>
+            {
+                FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled").Should().NotBeNull();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_WelcomeFlowWithIntroNotificationsAndDone_WHEN_ActiveStepChanges_THEN_CurrentStepColorMatchesStepAccent()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                },
+                showWelcomeBackIntro: true);
+
+            var stepper = dialog.Component.FindComponent<MudStepper>();
+            stepper.Instance.CurrentStepColor.Should().Be(Color.Info);
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            stepper.Instance.CurrentStepColor.Should().Be(Color.Warning);
+
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            stepper.Instance.CurrentStepColor.Should().Be(Color.Success);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationsPendingOnly_WHEN_Rendered_THEN_ShowsOnlyNotificationStep()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled").Should().NotBeNull();
+            var hasDownloadCompletedCheckbox = dialog.Component
+                .FindComponents<MudCheckBox<bool>>()
+                .Any(component => HasTestId(component, "WelcomeWizardDownloadFinishedNotificationsEnabled"));
+            var hasTorrentAddedCheckbox = dialog.Component
+                .FindComponents<MudCheckBox<bool>>()
+                .Any(component => HasTestId(component, "WelcomeWizardTorrentAddedNotificationsEnabled"));
+            hasDownloadCompletedCheckbox.Should().BeFalse();
+            hasTorrentAddedCheckbox.Should().BeFalse();
+
+            var hasLanguageStep = dialog.Component
+                .FindComponents<MudSelect<string>>()
+                .Any(component => HasTestId(component, "WelcomeWizardLanguageSelect"));
+            var hasThemeStep = dialog.Component
+                .FindComponents<MudSelect<string>>()
+                .Any(component => HasTestId(component, "WelcomeWizardThemeSelect"));
+
+            hasLanguageStep.Should().BeFalse();
+            hasThemeStep.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationPermissionDenied_WHEN_NotificationsEnabled_THEN_PersistsDisabledSettingAndShowsWarning()
+        {
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Denied);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => !settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(It.IsAny<string>(), Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationPermissionGranted_WHEN_NotificationsEnabled_THEN_PersistsEnabledSetting()
+        {
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Granted);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(It.IsAny<string>(), Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationPermissionGranted_WHEN_DownloadCompletedTypeUnchecked_THEN_PersistsDisabledSetting()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            var downloadCompletedCheckbox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "WelcomeWizardDownloadFinishedNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => downloadCompletedCheckbox.Instance.ValueChanged.InvokeAsync(false));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => !settings.DownloadFinishedNotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationPermissionGrantedAndAddedTypeEnabled_WHEN_SnackbarToggleEnabled_THEN_PersistsSetting()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            var torrentAddedCheckbox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "WelcomeWizardTorrentAddedNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => torrentAddedCheckbox.Instance.ValueChanged.InvokeAsync(true));
+
+            var snackbarToggle = FindSwitch(dialog.Component, "WelcomeWizardTorrentAddedSnackbarsEnabledWithNotifications");
+            await dialog.Component.InvokeAsync(() => snackbarToggle.Instance.ValueChanged.InvokeAsync(true));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => settings.TorrentAddedSnackbarsEnabledWithNotifications),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationPermissionRequestThrows_WHEN_NotificationsEnabled_THEN_PersistsDisabledSettingAndShowsError()
+        {
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new JSException("Message"));
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => !settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingWizardSteps_WHEN_Finished_THEN_AcknowledgesShownSteps()
+        {
+            await TestContext.LocalStorage.RemoveItemAsync(WelcomeWizardStorageKeys.Completed, Xunit.TestContext.Current.CancellationToken);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                },
+                showWelcomeBackIntro: true);
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            Mock.Get(_welcomeWizardStateService).Verify(
+                service => service.AcknowledgeStepsAsync(
+                    It.Is<IEnumerable<string>>(stepIds =>
+                        stepIds.Count() == 1 &&
+                        stepIds.Contains(WelcomeWizardStepCatalog.NotificationsStepId)),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]
@@ -644,6 +892,342 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             themeSelect.Instance.Value.Should().Be("theme1");
         }
 
+        [Fact]
+        public async Task GIVEN_GetPermissionThrowsOnInitialize_WHEN_NotificationsStepRendered_THEN_ShowsUnsupportedPermissionState()
+        {
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new JSException("Message"));
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            var permissionChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardNotificationPermission");
+            permissionChip.Instance.Color.Should().Be(Color.Default);
+            GetChildContentText(permissionChip.Instance.ChildContent).Should().Be("Permission: Unsupported");
+        }
+
+        [Fact]
+        public async Task GIVEN_GetPermissionReturnsUnknownEnum_WHEN_NotificationsStepRendered_THEN_UsesUnsupportedFallback()
+        {
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync((BrowserNotificationPermission)99);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            var permissionChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardNotificationPermission");
+            permissionChip.Instance.Color.Should().Be(Color.Default);
+            GetChildContentText(permissionChip.Instance.ChildContent).Should().Be("Permission: Unsupported");
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationsInitiallyEnabled_WHEN_Disabled_THEN_RefreshesPermissionAndPersistsDisabled()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false,
+                    UpdateChecksEnabled = true
+                });
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(false));
+
+            Mock.Get(_torrentCompletionNotificationService).Verify(
+                service => service.GetPermissionAsync(It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => !settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationToggleIsApplying_WHEN_EnabledAgain_THEN_SecondToggleIsIgnored()
+        {
+            var requestPermissionCompletion = new TaskCompletionSource<BrowserNotificationPermission>();
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .Returns(requestPermissionCompletion.Task);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            var firstToggleTask = dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+            var secondToggleTask = dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            requestPermissionCompletion.SetResult(BrowserNotificationPermission.Granted);
+
+            await firstToggleTask;
+            await secondToggleTask;
+
+            Mock.Get(_torrentCompletionNotificationService).Verify(
+                service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_DownloadFinishedNotificationUnchanged_WHEN_ValueChanged_THEN_DoesNotPersist()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false,
+                    UpdateChecksEnabled = true
+                });
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var downloadCompletedCheckbox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "WelcomeWizardDownloadFinishedNotificationsEnabled");
+
+            await dialog.Component.InvokeAsync(() => downloadCompletedCheckbox.Instance.ValueChanged.InvokeAsync(true));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_TorrentAddedNotificationUnchanged_WHEN_ValueChanged_THEN_DoesNotPersist()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false,
+                    UpdateChecksEnabled = true
+                });
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var torrentAddedCheckbox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "WelcomeWizardTorrentAddedNotificationsEnabled");
+
+            await dialog.Component.InvokeAsync(() => torrentAddedCheckbox.Instance.ValueChanged.InvokeAsync(false));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_TorrentAddedSnackbarPreferenceUnchanged_WHEN_ValueChanged_THEN_DoesNotPersist()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = true,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false,
+                    UpdateChecksEnabled = true
+                });
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var snackbarSwitch = FindSwitch(dialog.Component, "WelcomeWizardTorrentAddedSnackbarsEnabledWithNotifications");
+
+            await dialog.Component.InvokeAsync(() => snackbarSwitch.Instance.ValueChanged.InvokeAsync(false));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingStepIdsIncludeUnknownDuplicateAndOutOfOrder_WHEN_Rendered_THEN_StepsAreKnownUniqueAndOrdered()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId,
+                    "unknown.step",
+                    WelcomeWizardStepCatalog.ThemeStepId,
+                    $" {WelcomeWizardStepCatalog.NotificationsStepId} "
+                });
+
+            var stepTitles = dialog.Component
+                .FindComponents<MudStep>()
+                .Select(component => component.Instance.Title)
+                .ToList();
+
+            stepTitles.Should().ContainInOrder(["Theme", "Notifications", "Done"]);
+            stepTitles.Should().HaveCount(3);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationsStepIncludedAndNotificationsDisabled_WHEN_DoneStepRendered_THEN_ShowsDisabledSummary()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var summaryChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneNotificationsChip");
+
+            GetChildContentText(summaryChip.Instance.ChildContent).Should().Be("Notifications: Disabled");
+            summaryChip.Instance.UserAttributes.Should().ContainKey("data-test-summary-color");
+            summaryChip.Instance.UserAttributes["data-test-summary-color"]?.ToString().Should().Be("Default");
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationsEnabledWithNoTypesSelected_WHEN_DoneStepRendered_THEN_ShowsNoneSelectedSummary()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            var downloadCompletedCheckbox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "WelcomeWizardDownloadFinishedNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => downloadCompletedCheckbox.Instance.ValueChanged.InvokeAsync(false));
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var summaryChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneNotificationsChip");
+
+            GetChildContentText(summaryChip.Instance.ChildContent).Should().Be("Notifications: None selected");
+            summaryChip.Instance.UserAttributes["data-test-summary-color"]?.ToString().Should().Be("Warning");
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationsEnabledWithTorrentAddedOnly_WHEN_DoneStepRendered_THEN_ShowsTorrentAddedSummary()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            var downloadCompletedCheckbox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "WelcomeWizardDownloadFinishedNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => downloadCompletedCheckbox.Instance.ValueChanged.InvokeAsync(false));
+
+            var torrentAddedCheckbox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "WelcomeWizardTorrentAddedNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => torrentAddedCheckbox.Instance.ValueChanged.InvokeAsync(true));
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var summaryChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneNotificationsChip");
+
+            GetChildContentText(summaryChip.Instance.ChildContent).Should().Be("Notifications: Torrent added");
+            summaryChip.Instance.UserAttributes["data-test-summary-color"]?.ToString().Should().Be("Success");
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationsEnabledWithAllTypesSelected_WHEN_DoneStepRendered_THEN_ShowsCombinedSummary()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            var torrentAddedCheckbox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "WelcomeWizardTorrentAddedNotificationsEnabled");
+            await dialog.Component.InvokeAsync(() => torrentAddedCheckbox.Instance.ValueChanged.InvokeAsync(true));
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var summaryChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneNotificationsChip");
+
+            GetChildContentText(summaryChip.Instance.ChildContent).Should().Be("Notifications: Download completed, Torrent added");
+            summaryChip.Instance.UserAttributes["data-test-summary-color"]?.ToString().Should().Be("Success");
+        }
+
+        [Fact]
+        public async Task GIVEN_LanguageCatalogInitializationIsDeferred_WHEN_InitiallyRendered_THEN_InitialStepCollectionIsEmptyUntilInitializationCompletes()
+        {
+            var ensureInitializedCompletion = new TaskCompletionSource();
+            Mock.Get(_languageCatalog)
+                .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .Returns(ensureInitializedCompletion.Task);
+
+            var renderTask = _target.RenderDialogAsync();
+            await Task.Yield();
+            var dialog = await renderTask;
+
+            dialog.Component.FindComponents<MudStep>().Should().HaveCount(0);
+
+            ensureInitializedCompletion.SetResult();
+
+            dialog.Component.WaitForAssertion(() =>
+            {
+                dialog.Component.FindComponents<MudStep>().Should().NotBeEmpty();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_KeyboardFocusThrows_WHEN_DialogClosed_THEN_UnFocusIsNotCalled()
+        {
+            _keyboardServiceMock
+                .Setup(service => service.Focus())
+                .ThrowsAsync(new InvalidOperationException("Message"));
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+            await dialog.Reference.Result;
+
+            _keyboardServiceMock.Verify(service => service.UnFocus(), Times.Never);
+        }
+
         private static ThemeCatalogItem CreateTheme(string id, string name)
         {
             var definition = new ThemeDefinition
@@ -682,7 +1266,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             _testContext = testContext;
         }
 
-        public async Task<WelcomeWizardDialogRenderContext> RenderDialogAsync(string? initialLocale = null)
+        public async Task<WelcomeWizardDialogRenderContext> RenderDialogAsync(
+            string? initialLocale = null,
+            IReadOnlyList<string>? pendingStepIds = null,
+            bool? showWelcomeBackIntro = null)
         {
             var provider = _testContext.Render<MudDialogProvider>();
             var dialogService = _testContext.Services.GetRequiredService<IDialogService>();
@@ -691,6 +1278,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             if (!string.IsNullOrWhiteSpace(initialLocale))
             {
                 parameters.Add(nameof(WelcomeWizardDialog.InitialLocale), initialLocale);
+            }
+
+            if (pendingStepIds is not null)
+            {
+                parameters.Add(nameof(WelcomeWizardDialog.PendingStepIds), pendingStepIds);
+            }
+
+            if (showWelcomeBackIntro.HasValue)
+            {
+                parameters.Add(nameof(WelcomeWizardDialog.ShowWelcomeBackIntro), showWelcomeBackIntro.Value);
             }
 
             var reference = await dialogService.ShowAsync<WelcomeWizardDialog>(title: null, parameters);

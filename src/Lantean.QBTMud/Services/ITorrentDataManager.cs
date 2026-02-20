@@ -10,6 +10,12 @@ namespace Lantean.QBTMud.Services
 
         bool MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList, out bool filterChanged);
 
+        bool MergeMainData(
+            QBitTorrentClient.Models.MainData mainData,
+            MainData torrentList,
+            out bool filterChanged,
+            out IReadOnlyList<TorrentTransition> torrentTransitions);
+
         Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files);
 
         bool MergeContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files, Dictionary<string, ContentItem> contents);

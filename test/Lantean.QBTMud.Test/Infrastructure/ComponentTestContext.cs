@@ -22,7 +22,11 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
         private static readonly IReadOnlyDictionary<string, object?> _defaultLocalStorageValues = new Dictionary<string, object?>
         {
-            [WelcomeWizardStorageKeys.Completed] = true
+            [WelcomeWizardStorageKeys.Completed] = true,
+            [WelcomeWizardStorageKeys.State] = new WelcomeWizardState
+            {
+                AcknowledgedStepIds = new HashSet<string>(WelcomeWizardStepCatalog.KnownStepIds, StringComparer.Ordinal)
+            }
         };
 
         private readonly TestHttpMessageHandler _httpHandler;
@@ -84,6 +88,10 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddScoped<ApiClient>();
             Services.AddScoped<IApiClient, ApiClient>();
             Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
+            Services.AddScoped<IAppSettingsService, AppSettingsService>();
+            Services.AddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();
+            Services.AddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();
+            Services.AddScoped<ISnackbarWorkflow, SnackbarWorkflow>();
 
             Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
             Services.AddSingleton<IPeerDataManager, PeerDataManager>();

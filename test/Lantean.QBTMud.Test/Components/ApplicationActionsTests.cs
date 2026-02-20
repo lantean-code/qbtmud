@@ -36,9 +36,10 @@ namespace Lantean.QBTMud.Test.Components
             });
 
             var menuItems = target.FindComponents<MudMenuItem>();
-            menuItems.Should().HaveCount(19);
+            menuItems.Should().HaveCount(20);
             menuItems.Any(item => HasTestId(item, "Action-speed")).Should().BeTrue();
             menuItems.Any(item => HasTestId(item, "Action-themes")).Should().BeTrue();
+            menuItems.Any(item => HasTestId(item, "Action-appSettings")).Should().BeTrue();
             snackbarMock.Invocations.Should().BeEmpty();
             apiClientMock.VerifyNoOtherCalls();
         }
@@ -351,6 +352,26 @@ namespace Lantean.QBTMud.Test.Components
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             TestContext.JSInterop.Setup<MagnetRegistrationResult>("qbt.registerMagnetHandler", _ => true)
                 .SetResult(new MagnetRegistrationResult { Status = "unknown" });
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
+            await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("Unable to register", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RegisterMagnetHandler_WHEN_StatusIsNull_THEN_ShowsDefaultError()
+        {
+            TestContext.UseApiClientMock();
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.JSInterop.Setup<MagnetRegistrationResult>("qbt.registerMagnetHandler", _ => true)
+                .SetResult(new MagnetRegistrationResult { Status = null });
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {

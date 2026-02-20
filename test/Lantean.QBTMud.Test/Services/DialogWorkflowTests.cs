@@ -20,7 +20,8 @@ namespace Lantean.QBTMud.Test.Services
     {
         private readonly IDialogService _dialogService = Mock.Of<IDialogService>();
         private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
-        private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
+        private readonly ISnackbarWorkflow _snackbarWorkflow = Mock.Of<ISnackbarWorkflow>();
+        private readonly IAppSettingsService _appSettingsService = Mock.Of<IAppSettingsService>();
         private readonly ILanguageLocalizer _languageLocalizer;
 
         private readonly DialogWorkflow _target;
@@ -33,7 +34,16 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] arguments) => FormatLocalizerString(source, arguments));
 
-            _target = new DialogWorkflow(_dialogService, _apiClient, _snackbar, _languageLocalizer);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = false,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false
+                });
+
+            _target = new DialogWorkflow(_dialogService, _apiClient, _snackbarWorkflow, _languageLocalizer, _appSettingsService);
         }
 
         [Fact]
@@ -407,6 +417,190 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_BrowserNotificationsEnabledAndSnackbarToggleOff_WHEN_AddSucceeds_THEN_ShouldNotShowAddSnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = true,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false
+                });
+
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(new AddTorrentResult(1, 0, 0, null));
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            VerifyNoSnackbar();
+        }
+
+        [Fact]
+        public async Task GIVEN_BrowserNotificationsEnabledAndSnackbarToggleOff_WHEN_AddHasFailures_THEN_ShouldShowFailureOnlySnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = true,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false
+                });
+
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(new AddTorrentResult(2, 2, 1, null));
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            VerifySnackbar("Failed to add 2 torrents.", Severity.Error);
+        }
+
+        [Fact]
+        public async Task GIVEN_BrowserNotificationsEnabledAndSnackbarToggleOff_WHEN_AddHasSingleFailure_THEN_ShouldShowSingularFailureOnlySnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = true,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false
+                });
+
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(new AddTorrentResult(0, 1, 0, null));
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            VerifySnackbar("Failed to add 1 torrent.", Severity.Error);
+        }
+
+        [Fact]
+        public async Task GIVEN_BrowserNotificationsEnabledAndSnackbarToggleOffWithLegacyAddResponse_WHEN_AddHasFailures_THEN_ShouldShowLegacyFailureOnlySnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = true,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false
+                });
+
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(new AddTorrentResult(0, 2));
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            VerifySnackbar("Failed to add torrent(s).", Severity.Error);
+        }
+
+        [Fact]
+        public async Task GIVEN_AppSettingsLookupThrows_WHEN_AddSucceeds_THEN_ShouldFallbackToDefaultSettingsAndShowDefaultSnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Failure"));
+
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(new AddTorrentResult(1, 0, 0, null));
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            VerifySnackbar("Added 1 torrent.", Severity.Success);
+        }
+
+        [Fact]
+        public async Task GIVEN_BrowserNotificationsEnabledButTorrentAddedTypeDisabled_WHEN_AddSucceeds_THEN_ShouldShowDefaultSnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false
+                });
+
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(new AddTorrentResult(1, 0, 0, null));
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            VerifySnackbar("Added 1 torrent.", Severity.Success);
+        }
+
+        [Fact]
+        public async Task GIVEN_BrowserNotificationsEnabledAndSnackbarToggleOn_WHEN_AddHasMixedResults_THEN_ShouldShowDefaultAggregatedSnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = true,
+                    TorrentAddedSnackbarsEnabledWithNotifications = true
+                });
+
+            var options = CreateTorrentOptions(true, true);
+            var linkOptions = new AddTorrentLinkOptions("http://one", options);
+            var reference = CreateReference(DialogResult.Ok(linkOptions));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .ReturnsAsync(new AddTorrentResult(2, 2, 1, null));
+
+            await _target.InvokeAddTorrentLinkDialog();
+
+            VerifySnackbar("Added 2 torrents and failed to add 2 torrents and Pending 1 torrent.", Severity.Warning);
+        }
+
+        [Fact]
         public async Task GIVEN_DeleteWithoutConfirmation_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldDelete()
         {
             Mock.Get(_apiClient)
@@ -465,6 +659,58 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_dialogService).Verify(s => s.ShowAsync<DeleteDialog>(
                     "Remove torrent(s)",
                     It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 1, "Name")),
+                    DialogWorkflow.ConfirmDialogOptions),
+                Times.Once);
+            Mock.Get(_apiClient).Verify();
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleHashAndTorrentLookupFails_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldFallbackToHashAsName()
+        {
+            var reference = CreateReference(DialogResult.Ok(false));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
+                .ThrowsAsync(new HttpRequestException("Message"));
+            Mock.Get(_apiClient)
+                .Setup(a => a.DeleteTorrents(null, false, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            var result = await _target.InvokeDeleteTorrentDialog(true, "Hash");
+
+            result.Should().BeTrue();
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<DeleteDialog>(
+                    "Remove torrent(s)",
+                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 1, "Hash")),
+                    DialogWorkflow.ConfirmDialogOptions),
+                Times.Once);
+            Mock.Get(_apiClient).Verify();
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleHashAndTorrentLookupReturnsEmpty_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldFallbackToHashAsName()
+        {
+            var reference = CreateReference(DialogResult.Ok(false));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
+                .ReturnsAsync(Array.Empty<QbtTorrent>());
+            Mock.Get(_apiClient)
+                .Setup(a => a.DeleteTorrents(null, false, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            var result = await _target.InvokeDeleteTorrentDialog(true, "Hash");
+
+            result.Should().BeTrue();
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<DeleteDialog>(
+                    "Remove torrent(s)",
+                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 1, "Hash")),
                     DialogWorkflow.ConfirmDialogOptions),
                 Times.Once);
             Mock.Get(_apiClient).Verify();
@@ -1351,15 +1597,15 @@ namespace Lantean.QBTMud.Test.Services
 
         private void VerifySnackbar(string message, Severity severity)
         {
-            Mock.Get(_snackbar).Verify(
-                snackbar => snackbar.Add(message, severity, It.IsAny<Action<SnackbarOptions>>()),
+            Mock.Get(_snackbarWorkflow).Verify(
+                workflow => workflow.ShowMessage(message, severity, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string?>()),
                 Times.Once);
         }
 
         private void VerifyNoSnackbar()
         {
-            Mock.Get(_snackbar).Verify(
-                snackbar => snackbar.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>()),
+            Mock.Get(_snackbarWorkflow).Verify(
+                workflow => workflow.ShowMessage(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string?>()),
                 Times.Never);
         }
 

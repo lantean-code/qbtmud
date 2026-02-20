@@ -36,7 +36,7 @@ namespace Lantean.QBTMud.Pages
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
         [Inject]
-        public ISnackbar Snackbar { get; set; } = default!;
+        public ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         public ILanguageLocalizer LanguageLocalizer { get; set; } = default!;

@@ -72,10 +72,10 @@ jobs:
         run: dotnet restore --artifacts-path=/tmp/artifacts/qbtmud
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore --artifacts-path=/tmp/artifacts/qbtmud
+        run: dotnet build --configuration Release --no-restore --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=${{ env.VERSION }}
 
       - name: Run Tests with Coverage
-        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory TestResults --artifacts-path=/tmp/artifacts/qbtmud
+        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory TestResults --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=${{ env.VERSION }}
 
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
@@ -102,7 +102,7 @@ jobs:
 
       - name: Publish (English)
         if: steps.release_channel.outputs.channel != 'none'
-        run: dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output/en --artifacts-path=/tmp/artifacts/qbtmud
+        run: dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output/en --artifacts-path=/tmp/artifacts/qbtmud /p:QbtMudBuildVersion=${{ env.VERSION }}
 
       - name: Clean Generated WebUI Translation JSON (Before International)
         if: steps.release_channel.outputs.channel != 'none'
@@ -116,7 +116,7 @@ jobs:
 
       - name: Publish (International)
         if: steps.release_channel.outputs.channel != 'none'
-        run: dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output/intl --artifacts-path=/tmp/artifacts/qbtmud /p:WebUiTranslationsMode=all
+        run: dotnet publish src/Lantean.QBTMud/Lantean.QBTMud.csproj -c Release -o output/intl --artifacts-path=/tmp/artifacts/qbtmud /p:WebUiTranslationsMode=all /p:QbtMudBuildVersion=${{ env.VERSION }}
 
       - name: Validate International Locale Payload
         if: steps.release_channel.outputs.channel != 'none'

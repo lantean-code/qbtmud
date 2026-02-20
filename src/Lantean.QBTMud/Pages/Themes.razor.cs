@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Pages
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -308,7 +308,7 @@ namespace Lantean.QBTMud.Pages
                 var definition = ThemeSerialization.DeserializeDefinition(json);
                 if (definition is null)
                 {
-                    Snackbar.Add(Translate("Unable to import theme: invalid JSON."), Severity.Error);
+                    SnackbarWorkflow.ShowTransientMessage(Translate("Unable to import theme: invalid JSON."), Severity.Error);
                     return;
                 }
 
@@ -318,11 +318,11 @@ namespace Lantean.QBTMud.Pages
             }
             catch (IOException exception)
             {
-                Snackbar.Add(Translate("Unable to import theme: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(Translate("Unable to import theme: %1", exception.Message), Severity.Error);
             }
             catch (JsonException exception)
             {
-                Snackbar.Add(Translate("Unable to import theme: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(Translate("Unable to import theme: %1", exception.Message), Severity.Error);
             }
             finally
             {

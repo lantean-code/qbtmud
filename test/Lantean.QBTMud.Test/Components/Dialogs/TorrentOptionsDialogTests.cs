@@ -6,8 +6,6 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Rendering;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -20,7 +18,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
     public sealed class TorrentOptionsDialogTests : RazorComponentTestBase<TorrentOptionsDialog>
     {
         private readonly IKeyboardService _keyboardService;
-        private readonly TorrentOptionsDialogTestDriver _target;
 
         public TorrentOptionsDialogTests()
         {
@@ -32,8 +29,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             TestContext.Services.RemoveAll<IKeyboardService>();
             TestContext.Services.AddSingleton(_keyboardService);
-
-            _target = new TorrentOptionsDialogTestDriver(TestContext);
         }
 
         [Fact]
@@ -42,10 +37,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var mainData = CreateMainData(new Dictionary<string, Torrent>());
             var preferences = CreatePreferences("TempPath");
 
-            var dialog = await _target.RenderDialogAsync(mainData, preferences, "Hash");
+            var dialog = await RenderDialogAsync(mainData, preferences, "Hash");
 
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "TorrentOptionsSave");
-            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+            await dialog.Component.InvokeAsync(() => saveButton.Find("button").Click());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
@@ -61,10 +56,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             });
             var preferences = CreatePreferences("TempPath");
 
-            var dialog = await _target.RenderDialogAsync(mainData, preferences, "Hash");
+            var dialog = await RenderDialogAsync(mainData, preferences, "Hash");
 
             var cancelButton = FindComponentByTestId<MudButton>(dialog.Component, "TorrentOptionsCancel");
-            await cancelButton.Find("button").ClickAsync(new MouseEventArgs());
+            await dialog.Component.InvokeAsync(() => cancelButton.Find("button").Click());
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeTrue();
@@ -86,7 +81,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var mainData = CreateMainData(new Dictionary<string, Torrent>());
             var preferences = CreatePreferences("TempPath");
 
-            var dialog = await _target.RenderDialogAsync(mainData, preferences, "Hash");
+            var dialog = await RenderDialogAsync(mainData, preferences, "Hash");
 
             dialog.Component.WaitForAssertion(() => submitHandler.Should().NotBeNull());
 
@@ -180,26 +175,30 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 ClientModels.ShareLimitAction.Default,
                 "Comment");
         }
-    }
 
-    internal sealed class TorrentOptionsDialogTestDriver
-    {
-        private readonly ComponentTestContext _testContext;
-
-        public TorrentOptionsDialogTestDriver(ComponentTestContext testContext)
+        private async Task<TorrentOptionsDialogRenderContext> RenderDialogAsync(MainData mainData, ClientModels.Preferences preferences, string hash)
         {
-            _testContext = testContext;
-        }
-
-        public async Task<TorrentOptionsDialogRenderContext> RenderDialogAsync(MainData mainData, ClientModels.Preferences preferences, string hash)
-        {
-            var provider = _testContext.Render<TorrentOptionsDialogHost>(parameters =>
+            var provider = TestContext.Render((RenderFragment)(builder =>
             {
-                parameters.Add(p => p.MainData, mainData);
-                parameters.Add(p => p.Preferences, preferences);
-            });
+                builder.OpenComponent<CascadingValue<MainData>>(0);
+                builder.AddAttribute(1, nameof(CascadingValue<MainData>.Value), mainData);
+                builder.AddAttribute(2, nameof(CascadingValue<MainData>.IsFixed), true);
+                builder.AddAttribute(3, nameof(CascadingValue<MainData>.ChildContent), (RenderFragment)(mainDataBuilder =>
+                {
+                    mainDataBuilder.OpenComponent<CascadingValue<ClientModels.Preferences>>(0);
+                    mainDataBuilder.AddAttribute(1, nameof(CascadingValue<ClientModels.Preferences>.Value), preferences);
+                    mainDataBuilder.AddAttribute(2, nameof(CascadingValue<ClientModels.Preferences>.IsFixed), true);
+                    mainDataBuilder.AddAttribute(3, nameof(CascadingValue<ClientModels.Preferences>.ChildContent), (RenderFragment)(dialogBuilder =>
+                    {
+                        dialogBuilder.OpenComponent<MudDialogProvider>(0);
+                        dialogBuilder.CloseComponent();
+                    }));
+                    mainDataBuilder.CloseComponent();
+                }));
+                builder.CloseComponent();
+            }));
 
-            var dialogService = _testContext.Services.GetRequiredService<IDialogService>();
+            var dialogService = TestContext.Services.GetRequiredService<IDialogService>();
 
             var dialogParameters = new DialogParameters
             {
@@ -211,54 +210,21 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = provider.FindComponent<MudDialog>();
             var component = provider.FindComponent<TorrentOptionsDialog>();
 
-            return new TorrentOptionsDialogRenderContext(provider, dialog, component, reference);
-        }
-    }
-
-    internal sealed class TorrentOptionsDialogHost : ComponentBase
-    {
-        [Parameter]
-        public MainData MainData { get; set; } = default!;
-
-        [Parameter]
-        public ClientModels.Preferences Preferences { get; set; } = default!;
-
-        protected override void BuildRenderTree(RenderTreeBuilder builder)
-        {
-            builder.OpenComponent<CascadingValue<MainData>>(0);
-            builder.AddAttribute(1, "Value", MainData);
-            builder.AddAttribute(2, "IsFixed", true);
-            builder.AddAttribute(3, "ChildContent", (RenderFragment)(childBuilder =>
-            {
-                childBuilder.OpenComponent<CascadingValue<ClientModels.Preferences>>(0);
-                childBuilder.AddAttribute(1, "Value", Preferences);
-                childBuilder.AddAttribute(2, "IsFixed", true);
-                childBuilder.AddAttribute(3, "ChildContent", (RenderFragment)(dialogBuilder =>
-                {
-                    dialogBuilder.OpenComponent<MudDialogProvider>(0);
-                    dialogBuilder.CloseComponent();
-                }));
-                childBuilder.CloseComponent();
-            }));
-            builder.CloseComponent();
+            return new TorrentOptionsDialogRenderContext(dialog, component, reference);
         }
     }
 
     internal sealed class TorrentOptionsDialogRenderContext
     {
         public TorrentOptionsDialogRenderContext(
-            IRenderedComponent<TorrentOptionsDialogHost> provider,
             IRenderedComponent<MudDialog> dialog,
             IRenderedComponent<TorrentOptionsDialog> component,
             IDialogReference reference)
         {
-            Provider = provider;
             Dialog = dialog;
             Component = component;
             Reference = reference;
         }
-
-        public IRenderedComponent<TorrentOptionsDialogHost> Provider { get; }
 
         public IRenderedComponent<MudDialog> Dialog { get; }
 

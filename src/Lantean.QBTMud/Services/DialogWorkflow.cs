@@ -61,15 +61,22 @@ namespace Lantean.QBTMud.Services
 
         private readonly IDialogService _dialogService;
         private readonly IApiClient _apiClient;
-        private readonly ISnackbar _snackbar;
+        private readonly ISnackbarWorkflow _snackbarWorkflow;
         private readonly ILanguageLocalizer _languageLocalizer;
+        private readonly IAppSettingsService _appSettingsService;
 
-        public DialogWorkflow(IDialogService dialogService, IApiClient apiClient, ISnackbar snackbar, ILanguageLocalizer languageLocalizer)
+        public DialogWorkflow(
+            IDialogService dialogService,
+            IApiClient apiClient,
+            ISnackbarWorkflow snackbarWorkflow,
+            ILanguageLocalizer languageLocalizer,
+            IAppSettingsService appSettingsService)
         {
             _dialogService = dialogService;
             _apiClient = apiClient;
-            _snackbar = snackbar;
+            _snackbarWorkflow = snackbarWorkflow;
             _languageLocalizer = languageLocalizer;
+            _appSettingsService = appSettingsService;
         }
 
         /// <inheritdoc />
@@ -128,7 +135,7 @@ namespace Lantean.QBTMud.Services
                 catch (Exception exception)
                 {
                     await DisposeStreamsAsync(streams);
-                    _snackbar.Add(TranslateApp("Unable to read \"%1\": %2", file.Name, exception.Message), Severity.Error);
+                    _snackbarWorkflow.ShowTransientMessage(TranslateApp("Unable to read \"%1\": %2", file.Name, exception.Message), Severity.Error);
                     return;
                 }
             }
@@ -143,7 +150,7 @@ namespace Lantean.QBTMud.Services
             }
             catch (HttpRequestException)
             {
-                _snackbar.Add(TranslateApp("Unable to add torrent. Please try again."), Severity.Error);
+                _snackbarWorkflow.ShowTransientMessage(TranslateApp("Unable to add torrent. Please try again."), Severity.Error);
                 return;
             }
             finally
@@ -154,7 +161,7 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            ShowAddTorrentSnackbarMessage(addTorrentResult);
+            await ShowAddTorrentSnackbarMessage(addTorrentResult);
         }
 
         private static string GetUniqueFileName(string fileName, IEnumerable<string> existingNames)
@@ -209,11 +216,11 @@ namespace Lantean.QBTMud.Services
             }
             catch (HttpRequestException)
             {
-                _snackbar.Add(TranslateApp("Unable to add torrent. Please try again."), Severity.Error);
+                _snackbarWorkflow.ShowTransientMessage(TranslateApp("Unable to add torrent. Please try again."), Severity.Error);
                 return;
             }
 
-            ShowAddTorrentSnackbarMessage(addTorrentResult);
+            await ShowAddTorrentSnackbarMessage(addTorrentResult);
         }
 
         /// <inheritdoc />
@@ -726,7 +733,42 @@ namespace Lantean.QBTMud.Services
             await _dialogService.ShowAsync<ThemePreviewDialog>(_languageLocalizer.Translate("AppThemePreviewDialog", "Theme Preview"), parameters, options);
         }
 
-        private void ShowAddTorrentSnackbarMessage(QBitTorrentClient.Models.AddTorrentResult result)
+        private async Task ShowAddTorrentSnackbarMessage(QBitTorrentClient.Models.AddTorrentResult result)
+        {
+            var settings = await GetAppSettingsSafeAsync();
+            if (settings.NotificationsEnabled && settings.TorrentAddedNotificationsEnabled && !settings.TorrentAddedSnackbarsEnabledWithNotifications)
+            {
+                ShowFailureOnlyAddTorrentSnackbarMessage(result);
+                return;
+            }
+
+            ShowDefaultAddTorrentSnackbarMessage(result);
+        }
+
+        private void ShowFailureOnlyAddTorrentSnackbarMessage(QBitTorrentClient.Models.AddTorrentResult result)
+        {
+            if (result.FailureCount <= 0)
+            {
+                return;
+            }
+
+            string failureMessage;
+            if (result.SupportsAsync)
+            {
+                failureMessage = result.FailureCount == 1
+                    ? TranslateApp("failed to add %1 torrent", result.FailureCount)
+                    : TranslateApp("failed to add %1 torrents", result.FailureCount);
+            }
+            else
+            {
+                failureMessage = TranslateApp("failed to add torrent(s)");
+            }
+
+            var message = char.ToUpperInvariant(failureMessage[0]) + failureMessage[1..] + ".";
+            _snackbarWorkflow.ShowTransientMessage(message, Severity.Error);
+        }
+
+        private void ShowDefaultAddTorrentSnackbarMessage(QBitTorrentClient.Models.AddTorrentResult result)
         {
             var fragments = new List<string>(3);
             if (result.SuccessCount > 0)
@@ -793,7 +835,19 @@ namespace Lantean.QBTMud.Services
                 severity = Severity.Info;
             }
 
-            _snackbar.Add(message, severity);
+            _snackbarWorkflow.ShowTransientMessage(message, severity);
+        }
+
+        private async Task<AppSettings> GetAppSettingsSafeAsync()
+        {
+            try
+            {
+                return await _appSettingsService.GetSettingsAsync();
+            }
+            catch
+            {
+                return AppSettings.Default.Clone();
+            }
         }
 
         private string TranslateApp(string source, params object[] arguments)

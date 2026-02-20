@@ -70,6 +70,44 @@
                                 https://forum.qbittorrent.org
                             </MudLink>
                         </div>
+
+                        <MudDivider Class="my-2" />
+
+                        <MudText Typo="Typo.h6">@LanguageLocalizer.Translate("AppAbout", "qbtmud")</MudText>
+                        <MudGrid Class="mt-1 mb-0">
+                            <MudItem xs="12" md="4">
+                                <MudText Typo="Typo.body1" Class="fw-bold">@LanguageLocalizer.Translate("AppAbout", "Current build")</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="8">
+                                <MudText Typo="Typo.body1" data-test-id="@TestIdHelper.For("QbtMudCurrentBuild")">@QbtMudBuildInfo?.Version</MudText>
+                            </MudItem>
+
+                            <MudItem xs="12" md="4">
+                                <MudText Typo="Typo.body1" Class="fw-bold">@LanguageLocalizer.Translate("AppAbout", "Latest stable release")</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="8">
+                                <MudText Typo="Typo.body1" data-test-id="@TestIdHelper.For("QbtMudLatestRelease")">@(QbtMudUpdateStatus?.LatestRelease?.TagName ?? LanguageLocalizer.Translate("AppAbout", "Not available"))</MudText>
+                            </MudItem>
+
+                            <MudItem xs="12" md="4">
+                                <MudText Typo="Typo.body1" Class="fw-bold">@LanguageLocalizer.Translate("AppAbout", "Update status")</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="8">
+                                <MudText Typo="Typo.body1" data-test-id="@TestIdHelper.For("QbtMudUpdateState")">@GetQbtMudUpdateState()</MudText>
+                            </MudItem>
+
+                            @if (!string.IsNullOrWhiteSpace(QbtMudUpdateStatus?.LatestRelease?.HtmlUrl))
+                            {
+                                <MudItem xs="12" md="4">
+                                    <MudText Typo="Typo.body1" Class="fw-bold">@LanguageLocalizer.Translate("AppAbout", "Release page")</MudText>
+                                </MudItem>
+                                <MudItem xs="12" md="8">
+                                    <MudLink Href="@QbtMudUpdateStatus.LatestRelease.HtmlUrl" Target="_blank" data-test-id="@TestIdHelper.For("QbtMudReleaseLink")">
+                                        @LanguageLocalizer.Translate("AppAbout", "View release")
+                                    </MudLink>
+                                </MudItem>
+                            }
+                        </MudGrid>
                     </div>
                 </MudItem>
             </MudGrid>

@@ -66,6 +66,19 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_NullTasks_WHEN_Rendered_THEN_ShowsEmptyMessage()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentCreationTasks())
+                .Returns(Task.FromResult<IReadOnlyList<ClientModels.TorrentCreationTaskStatus>>(null!));
+
+            var target = RenderPage();
+
+            var emptyState = FindComponentByTestId<MudText>(target, "TorrentCreatorEmptyState");
+            GetChildContentText(emptyState.Instance.ChildContent).Should().Be("No torrent creation tasks.");
+        }
+
+        [Fact]
         public void GIVEN_TasksReturned_WHEN_Rendered_THEN_RendersTable()
         {
             Mock.Get(_apiClient)
@@ -569,6 +582,22 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_NoTasks_WHEN_PollingTicked_THEN_ContinuesWithoutRefreshing()
+        {
+            var handler = CapturePollHandler();
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentCreationTasks())
+                .ReturnsAsync(Array.Empty<ClientModels.TorrentCreationTaskStatus>());
+
+            RenderPage();
+
+            var result = await handler.Invoke(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Continue);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentCreationTasks(), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_CancelledToken_WHEN_PollingTicked_THEN_Stops()
         {
             var handler = CapturePollHandler();
@@ -658,6 +687,38 @@ namespace Lantean.QBTMud.Test.Pages
 
             var unknownStatus = FindComponentByTestId<MudChip<string>>(target, "TorrentCreatorStatus-TaskId2");
             unknownStatus.Instance.Text.Should().Be("Unknown");
+        }
+
+        [Fact]
+        public void GIVEN_QueuedStatus_WHEN_Rendered_THEN_ShowsQueued()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentCreationTasks())
+                .ReturnsAsync(new[]
+                {
+                    CreateTask("TaskId", "C:/Source", "Queued", 0)
+                });
+
+            var target = RenderPage();
+
+            var queuedStatus = FindComponentByTestId<MudChip<string>>(target, "TorrentCreatorStatus-TaskId");
+            queuedStatus.Instance.Text.Should().Be("Queued");
+        }
+
+        [Fact]
+        public void GIVEN_WhitespaceStatus_WHEN_Rendered_THEN_ShowsEmptyStatusText()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentCreationTasks())
+                .ReturnsAsync(new[]
+                {
+                    CreateTask("TaskId", "C:/Source", " ", 0)
+                });
+
+            var target = RenderPage();
+
+            var status = FindComponentByTestId<MudChip<string>>(target, "TorrentCreatorStatus-TaskId");
+            status.Instance.Text.Should().Be(string.Empty);
         }
 
         [Fact]

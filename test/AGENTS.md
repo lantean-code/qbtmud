@@ -71,6 +71,8 @@
 - Additions to the component under test to use a data attribute (data-test-id) is permitted to aid in element selection during testing.
 - `RazorComponentTestBase<T>` can be used as a base class for component tests to encapsulate common setup logic with helper methods for selecting components using `data-test-id`.
 - Do not use test harness components that inherit from the component under test to access protected members or invoke protected methods. Drive all behavior via UI interactions and public APIs only; if behavior cannot be reached through the UI, ask for a refactor or clarification.
+- Do not introduce host/wrapper components (for example `*Host : ComponentBase`) to render the component under test. Render the target component directly and pass parameters/cascading values via the render call.
+- Components must be tested directly through their rendered instance and UI/event callbacks. Do not call protected methods or inspect protected/private state via derived test classes.
 - CSS selectors MUST not be used to locate/assert elements. FindComponent MUST be used. The only exception is to locate a DOM element to trigger an event.
 - Do not locate components by label/text or other user-facing strings. Prefer `data-test-id` via `TestIdHelper` and `FindComponentByTestId` to avoid translation/label changes breaking tests.
 - Avoid fire-and-forget patterns in tests. If a component uses async work triggered from a sync event, use `InvokeAsync(...)` on the relevant rendered component to marshal to the dispatcher, and await it.

@@ -1,5 +1,6 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -14,7 +15,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -55,7 +56,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             catch (Exception exception)
             {
-                Snackbar.Add(TranslateApp("Failed to load search plugins: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateApp("Failed to load search plugins: %1", exception.Message), Severity.Error);
             }
             finally
             {
@@ -218,7 +219,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             try
             {
                 await operation();
-                Snackbar.Add(successMessage, Severity.Success);
+                SnackbarWorkflow.ShowTransientMessage(successMessage, Severity.Success);
                 _hasChanges = true;
                 if (refresh)
                 {
@@ -228,11 +229,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add(TranslateApp("Search plugin operation failed: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateApp("Search plugin operation failed: %1", exception.Message), Severity.Error);
             }
             catch (InvalidOperationException exception)
             {
-                Snackbar.Add(TranslateApp("Search plugin operation failed: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateApp("Search plugin operation failed: %1", exception.Message), Severity.Error);
             }
             finally
             {

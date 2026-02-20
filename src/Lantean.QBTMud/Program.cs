@@ -49,6 +49,13 @@ namespace Lantean.QBTMud
                 .RemoveAllLoggers()
                 .AddLogger<HttpLogger>(wrapHandlersPipeline: true);
             builder.Services.AddHttpClient("Assets", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
+            builder.Services.AddHttpClient("GitHubReleases", client =>
+            {
+                client.BaseAddress = new Uri("https://api.github.com/");
+                client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("qbtmud-webui");
+                client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+            });
 
             builder.Services.AddScoped<IApiClient, ApiClient>();
             builder.Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
@@ -57,6 +64,14 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IThemeManagerService, ThemeManagerService>();
             builder.Services.AddScoped<ILanguageInitializationService, LanguageInitializationService>();
             builder.Services.AddScoped<IAppWarmupService, AppWarmupService>();
+            builder.Services.AddScoped<IAppBuildInfoService, AppBuildInfoService>();
+            builder.Services.AddScoped<IAppUpdateService, AppUpdateService>();
+            builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
+            builder.Services.AddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();
+            builder.Services.AddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();
+            builder.Services.AddScoped<ITorrentCompletionNotificationService, TorrentCompletionNotificationService>();
+            builder.Services.AddScoped<IStorageDiagnosticsService, StorageDiagnosticsService>();
+            builder.Services.AddScoped<ISnackbarWorkflow, SnackbarWorkflow>();
 
             builder.Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
             builder.Services.AddSingleton<IPeerDataManager, PeerDataManager>();

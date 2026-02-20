@@ -1,4 +1,6 @@
 using Lantean.QBitTorrentClient;
+using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 
 namespace Lantean.QBTMud.Pages
@@ -10,6 +12,12 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IAppBuildInfoService AppBuildInfoService { get; set; } = default!;
+
+        [Inject]
+        protected IAppUpdateService AppUpdateService { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -31,6 +39,10 @@ namespace Lantean.QBTMud.Pages
 
         protected string? QBittorrentVersion { get; private set; }
 
+        protected AppBuildInfo? QbtMudBuildInfo { get; private set; }
+
+        protected AppUpdateStatus? QbtMudUpdateStatus { get; private set; }
+
         protected void NavigateBack()
         {
             NavigationManager.NavigateToHome();
@@ -38,6 +50,8 @@ namespace Lantean.QBTMud.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            QbtMudBuildInfo = AppBuildInfoService.GetCurrentBuildInfo();
+
             var info = await ApiClient.GetBuildInfo();
             if (Version is null)
             {
@@ -51,6 +65,32 @@ namespace Lantean.QBTMud.Pages
             ZlibVersion = info.ZLibVersion;
             QBittorrentVersion = Version;
             Bitness = info.Bitness;
+
+            try
+            {
+                QbtMudUpdateStatus = await AppUpdateService.GetUpdateStatusAsync();
+            }
+            catch
+            {
+                QbtMudUpdateStatus = null;
+            }
+        }
+
+        protected string GetQbtMudUpdateState()
+        {
+            if (QbtMudUpdateStatus is null)
+            {
+                return TranslateAbout("Not available");
+            }
+
+            return QbtMudUpdateStatus.IsUpdateAvailable
+                ? TranslateAbout("Update available")
+                : TranslateAbout("Up to date");
+        }
+
+        private string TranslateAbout(string source, params object[] arguments)
+        {
+            return LanguageLocalizer.Translate("AppAbout", source, arguments);
         }
     }
 }

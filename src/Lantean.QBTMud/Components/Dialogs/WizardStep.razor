@@ -1,0 +1,55 @@
+@using Lantean.QBTMud.Helpers
+
+<MudPaper Outlined="true"
+          Class="wizard-step mud-height-full mud-width-full d-flex flex-column"
+          Style="@RootStyle"
+          data-test-id="@TestIdHelper.For("WizardStepRoot")">
+    <MudStack Spacing="0" StretchItems="StretchItems.End" Class="mud-height-full">
+        <div class="wizard-step__hero" data-test-id="@TestIdHelper.For("WizardStepHero")">
+            <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                <MudAvatar Variant="Variant.Filled"
+                           Color="Color.Default"
+                           Size="Size.Large"
+                           Class="wizard-step__avatar"
+                           Style="@AvatarStyle"
+                           data-test-id="@TestIdHelper.For("WizardStepAvatar")">
+                    <MudIcon Icon="@Icon" data-test-id="@TestIdHelper.For("WizardStepIcon")" />
+                </MudAvatar>
+
+                <MudText Typo="Typo.h6" Align="Align.Center" data-test-id="@TestIdHelper.For("WizardStepTitle")">
+                    @Title
+                </MudText>
+
+                <MudText Typo="Typo.body2"
+                         Align="Align.Center"
+                         Class="wizard-step__subtitle"
+                         data-test-id="@TestIdHelper.For("WizardStepSubtitle")">
+                    @Subtitle
+                </MudText>
+            </MudStack>
+        </div>
+
+        <MudDivider />
+
+        <MudStack Spacing="2"
+                  AlignItems="AlignItems.Stretch"
+                  Justify="Justify.FlexStart"
+                  Class="pa-4 mud-height-full"
+                  data-test-id="@TestIdHelper.For("WizardStepBody")">
+            <MudStack Spacing="2" data-test-id="@TestIdHelper.For("WizardStepBodyMain")">
+                @ChildContent
+            </MudStack>
+
+            <MudSpacer />
+
+            @if (HasAlert)
+            {
+                <MudStack data-test-id="@TestIdHelper.For("WizardStepBodyAlert")">
+                    <MudAlert Severity="@AlertSeverity" data-test-id="@TestIdHelper.For("WizardStepAlert")">
+                        @AlertText
+                    </MudAlert>
+                </MudStack>
+            }
+        </MudStack>
+    </MudStack>
+</MudPaper>
