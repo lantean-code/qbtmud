@@ -384,6 +384,42 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_ComparableAndNoUpdate_WHEN_PageRendered_THEN_StatusTextShowsUpToDate()
+        {
+            Mock.Get(_appUpdateService)
+                .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppUpdateStatus(
+                    new AppBuildInfo("1.0.0", "AssemblyMetadata"),
+                    new AppReleaseInfo("v1.0.0", "v1.0.0", "https://example.invalid", DateTime.UtcNow),
+                    isUpdateAvailable: false,
+                    canCompareVersions: true,
+                    checkedAtUtc: DateTime.UtcNow));
+
+            var target = RenderPage();
+            var updateStatus = FindComponentByTestId<MudText>(target, "AppSettingsUpdateStatus");
+
+            GetChildContentText(updateStatus.Instance.ChildContent).Should().Be("Up to date");
+        }
+
+        [Fact]
+        public void GIVEN_UpdateStatusNotComparable_WHEN_PageRendered_THEN_StatusTextShowsNotAvailable()
+        {
+            Mock.Get(_appUpdateService)
+                .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppUpdateStatus(
+                    new AppBuildInfo("1.0.0", "AssemblyMetadata"),
+                    new AppReleaseInfo("v1.0.0-preview", "v1.0.0-preview", "https://example.invalid", DateTime.UtcNow),
+                    isUpdateAvailable: false,
+                    canCompareVersions: false,
+                    checkedAtUtc: DateTime.UtcNow));
+
+            var target = RenderPage();
+            var updateStatus = FindComponentByTestId<MudText>(target, "AppSettingsUpdateStatus");
+
+            GetChildContentText(updateStatus.Instance.ChildContent).Should().Be("Not available");
+        }
+
+        [Fact]
         public void GIVEN_DeniedPermission_WHEN_PageRendered_THEN_PermissionIndicatorUsesErrorColorAndDeniedText()
         {
             Mock.Get(_torrentCompletionNotificationService)

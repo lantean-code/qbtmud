@@ -278,7 +278,7 @@ namespace Lantean.QBTMud.Pages
 
         protected string GetUpdateStatusText()
         {
-            if (UpdateStatus is null)
+            if (UpdateStatus is null || UpdateStatus.LatestRelease is null || !UpdateStatus.CanCompareVersions)
             {
                 return TranslateUpdates("Not available");
             }

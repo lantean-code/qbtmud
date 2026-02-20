@@ -88,6 +88,10 @@ namespace Lantean.QBTMud.Services
                 var releaseName = string.IsNullOrWhiteSpace(payload.Name) ? payload.TagName : payload.Name;
                 return new AppReleaseInfo(payload.TagName.Trim(), releaseName.Trim(), payload.HtmlUrl.Trim(), publishedAtUtc);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException || ex is NotSupportedException || ex is FormatException || ex is JsonException)
             {
                 _logger.LogDebug(ex, "Unable to load qbtmud latest release information.");
