@@ -108,7 +108,7 @@ namespace Lantean.QBTMud.Test.Pages
             var nameField = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName");
             await target.InvokeAsync(() => nameField.Instance.ValueChanged.InvokeAsync(" "));
 
-            nameField.Instance.Error.Should().BeTrue();
+            nameField.Instance.GetState(x => x.Error).Should().BeTrue();
         }
 
         [Fact]
@@ -125,7 +125,7 @@ namespace Lantean.QBTMud.Test.Pages
             var fontField = FindComponentByTestId<MudAutocomplete<string>>(target, "ThemeDetailFont");
             await target.InvokeAsync(() => fontField.Instance.ValueChanged.InvokeAsync("Invalid"));
 
-            fontField.Instance.Error.Should().BeTrue();
+            fontField.Instance.GetState(x => x.Error).Should().BeTrue();
         }
 
         [Fact]
@@ -155,7 +155,7 @@ namespace Lantean.QBTMud.Test.Pages
             var resetButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailReset");
             await target.InvokeAsync(() => resetButton.Instance.OnClick.InvokeAsync());
 
-            nameField.Instance.Value.Should().Be("Name");
+            nameField.Instance.GetState(x => x.Value).Should().Be("Name");
         }
 
         [Fact]
@@ -266,7 +266,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_themeManagerService)
                 .Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Never);
-            nameField.Instance.Error.Should().BeTrue();
+            nameField.Instance.GetState(x => x.Error).Should().BeTrue();
         }
 
         [Fact]
@@ -420,7 +420,7 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
 
             var fontField = FindComponentByTestId<MudAutocomplete<string>>(target, "ThemeDetailFont");
-            fontField.Instance.Value.Should().Be("Nunito Sans");
+            fontField.Instance.GetState(x => x.Value).Should().Be("Nunito Sans");
         }
 
         private IRenderedComponent<ThemeDetail> RenderPage(string themeId, List<ThemeCatalogItem> themes, bool isDarkMode = false)

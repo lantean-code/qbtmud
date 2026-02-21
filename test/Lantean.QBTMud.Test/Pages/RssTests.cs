@@ -891,7 +891,7 @@ namespace Lantean.QBTMud.Test.Pages
             await SelectFeedNode(target, "RssFeedNode-Feed1");
             await SelectArticle(target, "Article1");
             var feedList = FindByTestId<MudList<RssTreeNode>>(target, "RssFeedListDesktop");
-            var selectedNode = feedList.Instance.SelectedValue;
+            var selectedNode = feedList.Instance.GetState(x => x.SelectedValue);
 
             await target.InvokeAsync(() => feedList.Instance.SelectedValueChanged.InvokeAsync(selectedNode));
 

@@ -48,16 +48,15 @@
             else
             {
                 <MudPaper Class="pa-4 speed-chart-container">
-                    <MudTimeSeriesChart ChartSeries="@_series"
-                                        ChartOptions="@_chartOptions"
-                                        AxisChartOptions="@_axisOptions"
-                                        TimeLabelSpacing="@_timeLabelSpacing"
-                                        Height="360px"
-                                        Width="100%"
-                                        TimeLabelFormat="''"
-                                        DataMarkerTooltipTimeLabelFormat="HH:mm:ss"
-                                        Class="speed-chart"
-                                        data-test-id="@TestIdHelper.For("SpeedChart")" />
+                    <MudChart T="double"
+                              ChartType="ChartType.Timeseries"
+                              ChartSeries="@_series"
+                              ChartOptions="@_chartOptions"
+                              MatchBoundsToSize="true"
+                              Height="360px"
+                              Width="100%"
+                              Class="speed-chart"
+                              data-test-id="@TestIdHelper.For("SpeedChart")" />
                     <MudText Typo="Typo.caption" Class="mt-2">
                         @Translate("Last updated:") @_lastUpdatedText
                     </MudText>

@@ -41,13 +41,13 @@ namespace Lantean.QBTMud.Test.Pages
             var target = TestContext.Render<Search>();
 
             var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
-            criteriaField.Instance.Value.Should().BeNull();
+            criteriaField.Instance.GetState(x => x.Value).Should().BeNull();
 
             var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "CategorySelect");
-            categorySelect.Instance.Value.Should().Be(SearchForm.AllCategoryId);
+            categorySelect.Instance.GetState(x => x.Value).Should().Be(SearchForm.AllCategoryId);
 
             var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
-            pluginSelect.Instance.SelectedValues.Should().Contain("movies");
+            pluginSelect.Instance.GetState(x => x.SelectedValues).Should().Contain("movies");
 
             var toggleAdvancedButton = FindComponentByTestId<MudButton>(target, "ToggleAdvancedFilters");
             GetChildContentText(toggleAdvancedButton.Instance.ChildContent).Should().Be("Show filters");
@@ -87,10 +87,10 @@ namespace Lantean.QBTMud.Test.Pages
             advancedFiltersCollapse.Instance.Expanded.Should().BeTrue();
 
             var searchInSelect = FindComponentByTestId<MudSelect<SearchInScope>>(target, "SearchInScopeSelect");
-            searchInSelect.Instance.Value.Should().Be(SearchInScope.Names);
+            searchInSelect.Instance.GetState(x => x.Value).Should().Be(SearchInScope.Names);
 
             var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
-            pluginSelect.Instance.SelectedValues.Should().Contain("movies");
+            pluginSelect.Instance.GetState(x => x.SelectedValues).Should().Contain("movies");
         }
 
         [Fact]
@@ -166,7 +166,7 @@ namespace Lantean.QBTMud.Test.Pages
                 GetChildContentText(toggleAdvancedButton.Instance.ChildContent).Should().Be("Show filters");
 
                 var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
-                pluginSelect.Instance.SelectedValues.Should().Contain("movies");
+                pluginSelect.Instance.GetState(x => x.SelectedValues).Should().Contain("movies");
             });
 
             var emptyStateTitle = FindComponentByTestId<MudText>(target, "SearchEmptyStateTitle");
@@ -197,10 +197,10 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
-                pluginSelect.Instance.SelectedValues.Should().BeEquivalentTo(new[] { "primary" });
+                pluginSelect.Instance.GetState(x => x.SelectedValues).Should().BeEquivalentTo(new[] { "primary" });
 
                 var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "CategorySelect");
-                categorySelect.Instance.Value.Should().Be(SearchForm.AllCategoryId);
+                categorySelect.Instance.GetState(x => x.Value).Should().Be(SearchForm.AllCategoryId);
             });
         }
 
@@ -281,7 +281,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
-                pluginSelect.Instance.SelectedValues.Should().Contain("primary");
+                pluginSelect.Instance.GetState(x => x.SelectedValues).Should().Contain("primary");
             });
 
             var storedPreferences = await TestContext.LocalStorage.GetItemAsync<SearchPreferences>(PreferencesStorageKey, Xunit.TestContext.Current.CancellationToken);
@@ -1953,7 +1953,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             var target = TestContext.Render<Search>();
             var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "CategorySelect");
-            categorySelect.Instance.Value.Should().Be(SearchForm.AllCategoryId);
+            categorySelect.Instance.GetState(x => x.Value).Should().Be(SearchForm.AllCategoryId);
         }
 
         [Fact]
@@ -2169,12 +2169,12 @@ namespace Lantean.QBTMud.Test.Pages
 
             var target = TestContext.Render<Search>();
             var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
-            await target.InvokeAsync(() => pluginSelect.Instance.SelectedValuesChanged.InvokeAsync(default(IEnumerable<string>)!));
+            await target.InvokeAsync(() => pluginSelect.Instance.SelectedValuesChanged.InvokeAsync(default(IReadOnlyCollection<string?>)!));
 
             target.WaitForAssertion(() =>
             {
-                pluginSelect.Instance.SelectedValues.Should().Contain("movies");
-                pluginSelect.Instance.SelectedValues.Should().Contain("shows");
+                pluginSelect.Instance.GetState(x => x.SelectedValues).Should().Contain("movies");
+                pluginSelect.Instance.GetState(x => x.SelectedValues).Should().Contain("shows");
             });
 
             var filterField = FindComponentByTestId<MudTextField<string>>(target, "FilterResults");

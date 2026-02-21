@@ -190,22 +190,22 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var saveToField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "RssRulesSaveTo");
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleDefault"));
-            addStopped.Instance.Value.Should().Be("default");
-            contentLayout.Instance.Value.Should().BeNull();
-            feeds.Instance.SelectedValues.Should().Contain("FeedA");
+            addStopped.Instance.GetState(x => x.Value).Should().Be("default");
+            contentLayout.Instance.GetState(x => x.Value).Should().BeNull();
+            feeds.Instance.GetState(x => x.SelectedValues).Should().Contain("FeedA");
             saveToField.Instance.Value.Should().Be("C:/Downloads");
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleAlways"));
-            addStopped.Instance.Value.Should().Be("always");
-            contentLayout.Instance.Value.Should().Be("Original");
+            addStopped.Instance.GetState(x => x.Value).Should().Be("always");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be("Original");
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleNever"));
-            addStopped.Instance.Value.Should().Be("never");
-            contentLayout.Instance.Value.Should().Be("Subfolder");
+            addStopped.Instance.GetState(x => x.Value).Should().Be("never");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be("Subfolder");
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleNoSubfolder"));
-            addStopped.Instance.Value.Should().Be("default");
-            contentLayout.Instance.Value.Should().Be("NoSubfolder");
+            addStopped.Instance.GetState(x => x.Value).Should().Be("default");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be("NoSubfolder");
         }
 
         [Fact]

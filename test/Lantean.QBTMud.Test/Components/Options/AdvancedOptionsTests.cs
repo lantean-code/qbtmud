@@ -39,18 +39,18 @@ namespace Lantean.QBTMud.Test.Components.Options
             });
 
             var resumeSelect = FindSelect<string>(target, "ResumeDataStorageType");
-            resumeSelect.Instance.Value.Should().Be("SQLite");
+            resumeSelect.Instance.GetState(x => x.Value).Should().Be("SQLite");
 
-            FindNumeric(target, "MemoryWorkingSetLimit").Instance.Value.Should().Be(512);
-            FindSelect<string>(target, "CurrentNetworkInterface").Instance.Value.Should().Be("eth0");
-            FindSelect<string>(target, "CurrentInterfaceAddress").Instance.Value.Should().Be("10.0.0.2");
-            FindNumeric(target, "SaveResumeDataInterval").Instance.Value.Should().Be(15);
-            FindNumeric(target, "TorrentFileSizeLimit").Instance.Value.Should().Be(150);
+            FindNumeric(target, "MemoryWorkingSetLimit").Instance.GetState(x => x.Value).Should().Be(512);
+            FindSelect<string>(target, "CurrentNetworkInterface").Instance.GetState(x => x.Value).Should().Be("eth0");
+            FindSelect<string>(target, "CurrentInterfaceAddress").Instance.GetState(x => x.Value).Should().Be("10.0.0.2");
+            FindNumeric(target, "SaveResumeDataInterval").Instance.GetState(x => x.Value).Should().Be(15);
+            FindNumeric(target, "TorrentFileSizeLimit").Instance.GetState(x => x.Value).Should().Be(150);
             FindSwitch(target, "RecheckCompletedTorrents").Instance.Value.Should().BeTrue();
-            FindNumeric(target, "RefreshInterval").Instance.Value.Should().Be(1500);
+            FindNumeric(target, "RefreshInterval").Instance.GetState(x => x.Value).Should().Be(1500);
             FindSwitch(target, "ResolvePeerCountries").Instance.Value.Should().BeTrue();
             FindSwitch(target, "EnableEmbeddedTracker").Instance.Value.Should().BeTrue();
-            FindNumeric(target, "EmbeddedTrackerPort").Instance.Value.Should().Be(19000);
+            FindNumeric(target, "EmbeddedTrackerPort").Instance.GetState(x => x.Value).Should().Be(19000);
             FindSwitch(target, "EmbeddedTrackerPortForwarding").Instance.Value.Should().BeTrue();
         }
 

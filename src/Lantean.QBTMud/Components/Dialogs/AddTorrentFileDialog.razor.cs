@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected void Remove(IBrowserFile file)
         {
-            Files.Remove(file);
+            Files = Files.Where(existingFile => !ReferenceEquals(existingFile, file)).ToList();
         }
 
         protected override Task Submit(KeyboardEvent keyboardEvent)

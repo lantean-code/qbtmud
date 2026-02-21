@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var component = _target.RenderComponent(required: true);
 
             var autocomplete = component.FindComponent<MudAutocomplete<string>>();
-            autocomplete.Instance.Error.Should().BeFalse();
+            autocomplete.Instance.GetState(x => x.Error).Should().BeFalse();
             autocomplete.Instance.Adornment.Should().Be(Adornment.End);
             autocomplete.Instance.AdornmentIcon.Should().Be(Icons.Material.Filled.FolderOpen);
         }
@@ -51,7 +51,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var autocomplete = component.FindComponent<MudAutocomplete<string>>();
             await component.InvokeAsync(() => autocomplete.Instance.OnBlur.InvokeAsync(new FocusEventArgs()));
 
-            autocomplete.Instance.Error.Should().BeTrue();
+            autocomplete.Instance.GetState(x => x.Error).Should().BeTrue();
             wasBlurred.Should().BeTrue();
         }
 

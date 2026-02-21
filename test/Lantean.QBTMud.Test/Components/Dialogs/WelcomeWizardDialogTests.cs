@@ -133,7 +133,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync("fr-FR");
 
             var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
-            languageSelect.Instance.Value.Should().Be("fr");
+            languageSelect.Instance.GetState(x => x.Value).Should().Be("fr");
         }
 
         [Fact]
@@ -207,7 +207,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             stepButtons[2].HasAttribute("disabled").Should().BeTrue();
             await stepButtons[2].ClickAsync(new MouseEventArgs());
 
-            stepper.Instance.ActiveIndex.Should().Be(0);
+            stepper.Instance.GetState(x => x.ActiveIndex).Should().Be(0);
             FindButton(dialog.Component, "WelcomeWizardNext").Should().NotBeNull();
             dialog.Component.FindComponents<MudButton>()
                 .Any(component => HasTestId(component, "WelcomeWizardFinish"))
@@ -224,7 +224,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             stepButtons[1].HasAttribute("disabled").Should().BeTrue();
             await stepButtons[1].ClickAsync(new MouseEventArgs());
 
-            stepper.Instance.ActiveIndex.Should().Be(0);
+            stepper.Instance.GetState(x => x.ActiveIndex).Should().Be(0);
             FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect").Should().NotBeNull();
         }
 
@@ -242,7 +242,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             stepButtons[1].HasAttribute("disabled").Should().BeFalse();
             await stepButtons[1].ClickAsync(new MouseEventArgs());
 
-            stepper.Instance.ActiveIndex.Should().Be(1);
+            stepper.Instance.GetState(x => x.ActiveIndex).Should().Be(1);
             FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect").Should().NotBeNull();
         }
 
@@ -938,7 +938,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await nextButton.Find("button").ClickAsync(new MouseEventArgs());
 
             var themeSelect = FindSelect<string>(dialog.Component, "WelcomeWizardThemeSelect");
-            themeSelect.Instance.Value.Should().Be("theme1");
+            themeSelect.Instance.GetState(x => x.Value).Should().Be("theme1");
         }
 
         [Fact]

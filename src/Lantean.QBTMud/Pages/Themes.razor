@@ -14,9 +14,13 @@
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="CreateTheme" title="@Translate("New theme")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesCreate")" />
             <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="ImportThemes" Accept=".json" MaximumFileCount="1" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesImportUpload")">
-                <ActivatorContent>
-                    <MudIconButton Icon="@Icons.Material.Filled.FileUpload" title="@Translate("Import theme")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesImport")" />
-                </ActivatorContent>
+                <CustomContent>
+                    <MudIconButton Icon="@Icons.Material.Filled.FileUpload"
+                                   title="@Translate("Import theme")"
+                                   Disabled="@IsBusy"
+                                   OnClick="@context.OpenFilePickerAsync"
+                                   data-test-id="@TestIdHelper.For("ThemesImport")" />
+                </CustomContent>
             </MudFileUpload>
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadThemes" title="@Translate("Reload server themes")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesReload")" />
             <MudSpacer />

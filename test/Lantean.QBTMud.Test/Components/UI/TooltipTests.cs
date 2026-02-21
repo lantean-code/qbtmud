@@ -133,12 +133,12 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             target.WaitForAssertion(() =>
             {
-                tooltip.Instance.Visible.Should().BeTrue();
+                tooltip.Instance.GetState(x => x.Visible).Should().BeTrue();
             });
 
             target.WaitForAssertion(() =>
             {
-                tooltip.Instance.Visible.Should().BeFalse();
+                tooltip.Instance.GetState(x => x.Visible).Should().BeFalse();
             }, TimeSpan.FromSeconds(3));
         }
 

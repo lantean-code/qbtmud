@@ -45,7 +45,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var categoryField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CategoryPropertiesCategory");
             var savePathField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "CategoryPropertiesSavePath");
 
-            categoryField.Instance.Value.Should().Be("Category");
+            categoryField.Instance.GetState(x => x.Value).Should().Be("Category");
             savePathField.Instance.Value.Should().Be("SavePath");
         }
 

@@ -27,10 +27,10 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindNumeric(target, "UpLimit").Instance.Value.Should().Be(50);
-            FindNumeric(target, "DlLimit").Instance.Value.Should().Be(120);
-            FindNumeric(target, "AltUpLimit").Instance.Value.Should().Be(10);
-            FindNumeric(target, "AltDlLimit").Instance.Value.Should().Be(30);
+            FindNumeric(target, "UpLimit").Instance.GetState(x => x.Value).Should().Be(50);
+            FindNumeric(target, "DlLimit").Instance.GetState(x => x.Value).Should().Be(120);
+            FindNumeric(target, "AltUpLimit").Instance.GetState(x => x.Value).Should().Be(10);
+            FindNumeric(target, "AltDlLimit").Instance.GetState(x => x.Value).Should().Be(30);
 
             FindSwitch(target, "SchedulerEnabled").Instance.Value.Should().BeTrue();
             FindSwitch(target, "LimitUtpRate").Instance.Value.Should().BeTrue();
@@ -40,7 +40,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindTimePicker(target, "ScheduleFrom").Instance.Time.Should().Be(TimeSpan.FromHours(1));
             FindTimePicker(target, "ScheduleTo").Instance.Time.Should().Be(TimeSpan.FromHours(5));
 
-            FindSelect<int>(target, "SchedulerDays").Instance.Value.Should().Be(1);
+            FindSelect<int>(target, "SchedulerDays").Instance.GetState(x => x.Value).Should().Be(1);
 
             update.UpLimit.Should().BeNull();
             update.SchedulerEnabled.Should().BeNull();

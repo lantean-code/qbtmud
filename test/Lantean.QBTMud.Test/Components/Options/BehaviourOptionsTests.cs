@@ -50,13 +50,13 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindSwitch(target, "PerformanceWarning").Instance.Value.Should().BeTrue();
 
             var pathField = FindTextField(target, "FileLogPath");
-            pathField.Instance.Value.Should().Be("/logs");
+            pathField.Instance.GetState(x => x.Value).Should().Be("/logs");
             pathField.Instance.Disabled.Should().BeFalse();
 
-            FindNumeric(target, "FileLogMaxSize").Instance.Value.Should().Be(4096);
-            FindNumeric(target, "FileLogAge").Instance.Value.Should().Be(7);
+            FindNumeric(target, "FileLogMaxSize").Instance.GetState(x => x.Value).Should().Be(4096);
+            FindNumeric(target, "FileLogAge").Instance.GetState(x => x.Value).Should().Be(7);
 
-            FindSelect<int>(target, "FileLogAgeType").Instance.Value.Should().Be(2);
+            FindSelect<int>(target, "FileLogAgeType").Instance.GetState(x => x.Value).Should().Be(2);
 
             lastChanged.Should().BeNull();
         }
@@ -82,7 +82,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             });
 
             var languageSelect = FindSelect<string>(target, "UserInterfaceLanguage");
-            languageSelect.Instance.Value.Should().Be("en");
+            languageSelect.Instance.GetState(x => x.Value).Should().Be("en");
             languageSelect.Instance.ToStringFunc.Should().NotBeNull();
             languageSelect.Instance.ToStringFunc!("en").Should().Be("English");
         }

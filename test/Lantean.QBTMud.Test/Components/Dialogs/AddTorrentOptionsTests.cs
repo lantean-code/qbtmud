@@ -79,20 +79,20 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            FindSelect<bool>(component, "TorrentManagementMode").Instance.Value.Should().BeFalse();
+            FindSelect<bool>(component, "TorrentManagementMode").Instance.GetState(x => x.Value).Should().BeFalse();
             GetSavePath(component).Should().Be("SavePath");
             GetUseDownloadPath(component).Should().BeTrue();
             GetDownloadPath(component).Should().Be("TempPath");
             FindFieldSwitch(component, "StartTorrent").Instance.Value.Should().BeFalse();
             FindFieldSwitch(component, "AddToTopOfQueue").Instance.Value.Should().BeFalse();
-            FindSelect<string>(component, "StopCondition").Instance.Value.Should().Be("StopCondition");
-            FindSelect<string>(component, "ContentLayout").Instance.Value.Should().Be("ContentLayout");
+            FindSelect<string>(component, "StopCondition").Instance.GetState(x => x.Value).Should().Be("StopCondition");
+            FindSelect<string>(component, "ContentLayout").Instance.GetState(x => x.Value).Should().Be("ContentLayout");
             FindFieldSwitch(component, "RatioLimitEnabled").Instance.Value.Should().BeTrue();
-            FindNumericField<float>(component, "RatioLimit").Instance.Value.Should().Be(1.5f);
+            FindNumericField<float>(component, "RatioLimit").Instance.GetState(x => x.Value).Should().Be(1.5f);
             FindFieldSwitch(component, "SeedingTimeLimitEnabled").Instance.Value.Should().BeTrue();
-            FindNumericField<int>(component, "SeedingTimeLimit").Instance.Value.Should().Be(60);
+            FindNumericField<int>(component, "SeedingTimeLimit").Instance.GetState(x => x.Value).Should().Be(60);
             FindFieldSwitch(component, "InactiveSeedingTimeLimitEnabled").Instance.Value.Should().BeTrue();
-            FindNumericField<int>(component, "InactiveSeedingTimeLimit").Instance.Value.Should().Be(120);
+            FindNumericField<int>(component, "InactiveSeedingTimeLimit").Instance.GetState(x => x.Value).Should().Be(120);
             FindSelect<string>(component, "Tags").Instance.Disabled.Should().BeFalse();
         }
 
@@ -129,7 +129,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            FindSelect<bool>(component, "TorrentManagementMode").Instance.Value.Should().BeTrue();
+            FindSelect<bool>(component, "TorrentManagementMode").Instance.GetState(x => x.Value).Should().BeTrue();
             GetSavePath(component).Should().Be("SavePath");
             GetUseDownloadPath(component).Should().BeTrue();
             GetDownloadPath(component).Should().Be("TempPath");
@@ -555,7 +555,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await component.InvokeAsync(() => field.Instance.ValueChanged.InvokeAsync(value));
         }
 
-        private static async Task SetSelectedTags(IRenderedComponent<AddTorrentOptions> component, IEnumerable<string> values)
+        private static async Task SetSelectedTags(IRenderedComponent<AddTorrentOptions> component, IReadOnlyCollection<string?> values)
         {
             var select = FindSelect<string>(component, "Tags");
             await component.InvokeAsync(() => select.Instance.SelectedValuesChanged.InvokeAsync(values));
@@ -564,7 +564,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private static async Task ClearSelectedTags(IRenderedComponent<AddTorrentOptions> component)
         {
             var select = FindSelect<string>(component, "Tags");
-            await component.InvokeAsync(() => select.Instance.SelectedValuesChanged.InvokeAsync(default(IEnumerable<string>)!));
+            await component.InvokeAsync(() => select.Instance.SelectedValuesChanged.InvokeAsync(default(IReadOnlyCollection<string?>)!));
         }
 
         private Mock<IApiClient> UseApiClientMock(

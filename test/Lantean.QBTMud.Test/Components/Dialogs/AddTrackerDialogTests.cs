@@ -43,7 +43,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await addButton.Find("button").ClickAsync(new MouseEventArgs());
 
             dialog.Component.FindComponents<MudIconButton>().Should().HaveCount(1);
-            trackerField.Instance.Value.Should().Be(string.Empty);
+            trackerField.Instance.GetState(x => x.Value).Should().Be(string.Empty);
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await addButton.Find("button").ClickAsync(new MouseEventArgs());
 
             FindComponentByTestId<MudIconButton>(dialog.Component, "AddTrackerDelete-Tracker").Should().NotBeNull();
-            trackerField.Instance.Value.Should().BeNull();
+            trackerField.Instance.GetState(x => x.Value).Should().BeNull();
             dialog.Component.FindComponents<MudIconButton>().Should().HaveCount(2);
         }
 

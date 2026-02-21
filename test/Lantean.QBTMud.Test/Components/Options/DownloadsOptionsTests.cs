@@ -28,11 +28,11 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindSelect<string>(target, "TorrentContentLayout").Instance.Value.Should().Be("Original");
+            FindSelect<string>(target, "TorrentContentLayout").Instance.GetState(x => x.Value).Should().Be("Original");
             FindSwitch(target, "AddToTopOfQueue").Instance.Value.Should().BeTrue();
             FindSwitch(target, "AutoDeleteMode").Instance.Value.Should().BeTrue();
             FindSwitch(target, "PreallocateAll").Instance.Value.Should().BeTrue();
-            FindSelect<bool>(target, "AutoTmmEnabled").Instance.Value.Should().BeTrue();
+            FindSelect<bool>(target, "AutoTmmEnabled").Instance.GetState(x => x.Value).Should().BeTrue();
             FindPathField(target, "TempPath").Instance.Disabled.Should().BeFalse();
             FindPathField(target, "ExportDir").Instance.Disabled.Should().BeFalse();
             FindSwitch(target, "MailNotificationEnabled").Instance.Value.Should().BeTrue();

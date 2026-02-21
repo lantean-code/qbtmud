@@ -273,7 +273,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await installButton.Find("button").ClickAsync(new MouseEventArgs());
 
             apiClientMock.Verify(client => client.InstallSearchPlugins("https://example.com/plugin.zip"), Times.Once);
-            urlField.Instance.Value.Should().BeEmpty();
+            urlField.Instance.GetState(x => x.Value).Should().BeEmpty();
         }
 
         [Fact]

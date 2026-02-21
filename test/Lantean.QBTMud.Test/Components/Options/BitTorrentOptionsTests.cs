@@ -39,27 +39,27 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindSwitch(target, "AddTrackersEnabled").Instance.Value.Should().BeTrue();
 
             var encryptionSelect = FindSelect<int>(target, "Encryption");
-            encryptionSelect.Instance.Value.Should().Be(1);
+            encryptionSelect.Instance.GetState(x => x.Value).Should().Be(1);
 
             var seedingActionSelect = FindSelect<int>(target, "MaxRatioAct");
-            seedingActionSelect.Instance.Value.Should().Be(2);
+            seedingActionSelect.Instance.GetState(x => x.Value).Should().Be(2);
             seedingActionSelect.Instance.Disabled.Should().BeFalse();
 
-            FindNumericInt(target, "MaxActiveCheckingTorrents").Instance.Value.Should().Be(3);
+            FindNumericInt(target, "MaxActiveCheckingTorrents").Instance.GetState(x => x.Value).Should().Be(3);
             FindNumericInt(target, "MaxActiveDownloads").Instance.Disabled.Should().BeFalse();
-            FindNumericInt(target, "MaxActiveUploads").Instance.Value.Should().Be(6);
-            FindNumericInt(target, "MaxActiveTorrents").Instance.Value.Should().Be(7);
-            FindNumericInt(target, "SlowTorrentDlRateThreshold").Instance.Value.Should().Be(12);
-            FindNumericInt(target, "SlowTorrentUlRateThreshold").Instance.Value.Should().Be(13);
-            FindNumericInt(target, "SlowTorrentInactiveTimer").Instance.Value.Should().Be(14);
+            FindNumericInt(target, "MaxActiveUploads").Instance.GetState(x => x.Value).Should().Be(6);
+            FindNumericInt(target, "MaxActiveTorrents").Instance.GetState(x => x.Value).Should().Be(7);
+            FindNumericInt(target, "SlowTorrentDlRateThreshold").Instance.GetState(x => x.Value).Should().Be(12);
+            FindNumericInt(target, "SlowTorrentUlRateThreshold").Instance.GetState(x => x.Value).Should().Be(13);
+            FindNumericInt(target, "SlowTorrentInactiveTimer").Instance.GetState(x => x.Value).Should().Be(14);
 
-            FindNumericFloat(target, "MaxRatio").Instance.Value.Should().Be(3.5f);
+            FindNumericFloat(target, "MaxRatio").Instance.GetState(x => x.Value).Should().Be(3.5f);
             FindNumericFloat(target, "MaxRatio").Instance.Disabled.Should().BeFalse();
 
             FindNumericInt(target, "MaxSeedingTime").Instance.Disabled.Should().BeTrue();
             FindNumericInt(target, "MaxInactiveSeedingTime").Instance.Disabled.Should().BeFalse();
 
-            FindTextField(target, "AddTrackers").Instance.Value.Should().Be("udp://tracker.example:80");
+            FindTextField(target, "AddTrackers").Instance.GetState(x => x.Value).Should().Be("udp://tracker.example:80");
 
             update.Dht.Should().BeNull();
             update.MaxActiveCheckingTorrents.Should().BeNull();
@@ -336,7 +336,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             });
 
             FindSwitch(target, "Dht").Instance.Value.Should().BeNull();
-            FindNumericInt(target, "MaxActiveCheckingTorrents").Instance.Value.Should().Be(0);
+            FindNumericInt(target, "MaxActiveCheckingTorrents").Instance.GetState(x => x.Value).Should().Be(0);
         }
 
         private static Preferences DeserializePreferences()

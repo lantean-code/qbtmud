@@ -6,45 +6,46 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadFiles" Accept=".torrent" MaximumFileCount="50" data-test-id="@TestIdHelper.For("AddTorrentFileUpload")">
-                    <ActivatorContent>
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>" Files="@Files" FilesChanged="UploadFiles" Accept=".torrent" MaximumFileCount="50" data-test-id="@TestIdHelper.For("AddTorrentFileUpload")">
+                    <SelectedTemplate Context="selectedFiles">
+                        @if (selectedFiles is not null && selectedFiles.Count > 0)
+                        {
+                            <MudCard Elevation="3" Class="mb-3" data-test-id="@TestIdHelper.For("AddTorrentFileList")">
+                                <MudCardHeader Class="pb-0">
+                                    @($"{LanguageLocalizer.Translate("AddNewTorrentDialog", "Select .torrent files")} ({selectedFiles.Count})")
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <MudList T="string">
+                                        @foreach (var file in selectedFiles)
+                                        {
+                                            <MudListItem>
+                                                <div class="w-100 d-flex align-center">
+                                                    <span>@file.Name</span>
+                                                    <MudSpacer />
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                   Color="Color.Error"
+                                                                   Variant="Variant.Text"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => Remove(file))"
+                                                                   data-test-id="@TestIdHelper.For($"RemoveTorrentFile-{file.Name}")" />
+                                                </div>
+                                            </MudListItem>
+                                        }
+                                    </MudList>
+                                </MudCardContent>
+                            </MudCard>
+                        }
+                    </SelectedTemplate>
+                    <CustomContent>
                         <MudButton Variant="Variant.Filled"
                                    Color="Color.Default"
                                    StartIcon="@Icons.Material.Filled.CloudUpload"
+                                   OnClick="@context.OpenFilePickerAsync"
                                    data-test-id="@TestIdHelper.For("AddTorrentFileChoose")">
                             @LanguageLocalizer.Translate("AddNewTorrentDialog", "Select .torrent files")
                         </MudButton>
-                    </ActivatorContent>
+                    </CustomContent>
                 </MudFileUpload>
-            </MudItem>
-            <MudItem xs="12">
-                @if (Files.Any())
-                {
-                    <MudCard Elevation="3" Class="mb-3" data-test-id="@TestIdHelper.For("AddTorrentFileList")">
-                        <MudCardHeader Class="pb-0">
-                            @($"{LanguageLocalizer.Translate("AddNewTorrentDialog", "Select .torrent files")} ({Files.Count})")
-                        </MudCardHeader>
-                        <MudCardContent>
-                            <MudList T="string">
-                                @foreach (var file in Files)
-                                {
-                                    <MudListItem>
-                                        <div class="w-100 d-flex align-center">
-                                            <span>@file.Name</span>
-                                            <MudSpacer />
-                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                           Color="Color.Error"
-                                                           Variant="Variant.Text"
-                                                           Size="Size.Small"
-                                                           OnClick="@(() => Remove(file))"
-                                                           data-test-id="@TestIdHelper.For($"RemoveTorrentFile-{file.Name}")" />
-                                        </div>
-                                    </MudListItem>
-                                }
-                            </MudList>
-                        </MudCardContent>
-                    </MudCard>
-                }
             </MudItem>
         </MudGrid>
         <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="true" />

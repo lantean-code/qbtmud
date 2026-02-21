@@ -35,16 +35,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = dialog.Component;
 
             FindSwitch(component, "RenameFilesRemember").Instance.Value.Should().BeFalse();
-            FindTextField(component, "RenameFilesSearch").Instance.Value.Should().Be(string.Empty);
+            FindTextField(component, "RenameFilesSearch").Instance.GetState(x => x.Value).Should().Be(string.Empty);
             FindSwitch(component, "RenameFilesUseRegex").Instance.Value.Should().BeFalse();
             FindSwitch(component, "RenameFilesMatchAll").Instance.Value.Should().BeFalse();
             FindSwitch(component, "RenameFilesCaseSensitive").Instance.Value.Should().BeFalse();
-            FindTextField(component, "RenameFilesReplacement").Instance.Value.Should().Be(string.Empty);
-            FindSelect<AppliesTo>(component, "RenameFilesAppliesTo").Instance.Value.Should().Be(AppliesTo.FilenameExtension);
+            FindTextField(component, "RenameFilesReplacement").Instance.GetState(x => x.Value).Should().Be(string.Empty);
+            FindSelect<AppliesTo>(component, "RenameFilesAppliesTo").Instance.GetState(x => x.Value).Should().Be(AppliesTo.FilenameExtension);
             FindSwitch(component, "RenameFilesIncludeFiles").Instance.Value.Should().BeTrue();
             FindSwitch(component, "RenameFilesIncludeFolders").Instance.Value.Should().BeFalse();
-            FindNumericField(component, "RenameFilesEnumerate").Instance.Value.Should().Be(0);
-            FindSelect<bool>(component, "RenameFilesReplaceType").Instance.Value.Should().BeFalse();
+            FindNumericField(component, "RenameFilesEnumerate").Instance.GetState(x => x.Value).Should().Be(0);
+            FindSelect<bool>(component, "RenameFilesReplaceType").Instance.GetState(x => x.Value).Should().BeFalse();
 
             var table = FindTable(component);
             table.Instance.Items.Should().NotBeNull();
@@ -98,16 +98,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 table.Instance.Items!.Count().Should().Be(4);
             });
 
-            FindTextField(component, "RenameFilesSearch").Instance.Value.Should().Be("Search");
+            FindTextField(component, "RenameFilesSearch").Instance.GetState(x => x.Value).Should().Be("Search");
             FindSwitch(component, "RenameFilesUseRegex").Instance.Value.Should().BeTrue();
             FindSwitch(component, "RenameFilesMatchAll").Instance.Value.Should().BeTrue();
             FindSwitch(component, "RenameFilesCaseSensitive").Instance.Value.Should().BeTrue();
-            FindTextField(component, "RenameFilesReplacement").Instance.Value.Should().Be("Replacement");
-            FindSelect<AppliesTo>(component, "RenameFilesAppliesTo").Instance.Value.Should().Be(AppliesTo.Extension);
+            FindTextField(component, "RenameFilesReplacement").Instance.GetState(x => x.Value).Should().Be("Replacement");
+            FindSelect<AppliesTo>(component, "RenameFilesAppliesTo").Instance.GetState(x => x.Value).Should().Be(AppliesTo.Extension);
             FindSwitch(component, "RenameFilesIncludeFiles").Instance.Value.Should().BeFalse();
             FindSwitch(component, "RenameFilesIncludeFolders").Instance.Value.Should().BeTrue();
-            FindNumericField(component, "RenameFilesEnumerate").Instance.Value.Should().Be(5);
-            FindSelect<bool>(component, "RenameFilesReplaceType").Instance.Value.Should().BeTrue();
+            FindNumericField(component, "RenameFilesEnumerate").Instance.GetState(x => x.Value).Should().Be(5);
+            FindSelect<bool>(component, "RenameFilesReplaceType").Instance.GetState(x => x.Value).Should().BeTrue();
 
             var names = table.Instance.Items!.Select(item => item.Name).ToList();
             names.Should().Contain(new[] { "root", "root/file.txt", "root/nested", "root/nested/file2.txt" });
@@ -136,7 +136,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetNumericValue(component, "RenameFilesEnumerate", 3);
             await SetSelectValue(component, "RenameFilesReplaceType", true);
 
-            FindTextField(component, "RenameFilesSearch").Instance.Value.Should().Be("Search");
+            FindTextField(component, "RenameFilesSearch").Instance.GetState(x => x.Value).Should().Be("Search");
             FindSwitch(component, "RenameFilesRemember").Instance.Value.Should().BeTrue();
 
             var json = await TestContext.LocalStorage.GetItemAsStringAsync(PreferencesKey, Xunit.TestContext.Current.CancellationToken);

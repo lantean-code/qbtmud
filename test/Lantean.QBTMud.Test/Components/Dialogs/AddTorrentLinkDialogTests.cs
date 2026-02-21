@@ -67,7 +67,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync("Url");
 
             var urlsField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTorrentLinkUrls");
-            urlsField.Instance.Value.Should().Be("Url");
+            urlsField.Instance.GetState(x => x.Value).Should().Be("Url");
         }
 
         [Fact]

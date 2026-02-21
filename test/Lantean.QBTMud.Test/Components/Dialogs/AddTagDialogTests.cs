@@ -41,7 +41,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var tagField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "AddTagInput");
             dialog.Component.FindComponents<MudIconButton>().Should().HaveCount(1);
-            tagField.Instance.Value.Should().BeNull();
+            tagField.Instance.GetState(x => x.Value).Should().BeNull();
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "AddTagAdd");
             await addButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            tagField.Instance.Value.Should().BeNull();
+            tagField.Instance.GetState(x => x.Value).Should().BeNull();
 
             FindComponentByTestId<MudIconButton>(dialog.Component, "DeleteTag-Tag").Should().NotBeNull();
         }

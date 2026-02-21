@@ -1,11 +1,12 @@
 using Lantean.QBTMud.Models;
 using MudBlazor;
+using MudBlazor.Charts;
 
 namespace Lantean.QBTMud.Services
 {
     internal sealed class SpeedSeriesBuilder
     {
-        public List<List<TimeSeriesChartSeries.TimeValue>> BuildSegments(IReadOnlyList<SpeedPoint> samples, DateTime windowStart, DateTime windowEnd, TimeSpan bucketSize)
+        public List<List<TimeValue<double>>> BuildSegments(IReadOnlyList<SpeedPoint> samples, DateTime windowStart, DateTime windowEnd, TimeSpan bucketSize)
         {
             var alignedStart = AlignTimestamp(windowStart, bucketSize);
             var alignedEnd = AlignTimestamp(windowEnd, bucketSize);
@@ -23,15 +24,15 @@ namespace Lantean.QBTMud.Services
                 list.Add(sample);
             }
 
-            var segments = new List<List<TimeSeriesChartSeries.TimeValue>>();
-            List<TimeSeriesChartSeries.TimeValue>? currentSegment = null;
+            var segments = new List<List<TimeValue<double>>>();
+            List<TimeValue<double>>? currentSegment = null;
 
             for (var cursor = alignedStart; cursor <= alignedEnd; cursor = cursor.Add(bucketSize))
             {
                 if (buckets.TryGetValue(cursor, out var points) && points.Count > 0)
                 {
-                    currentSegment ??= new List<TimeSeriesChartSeries.TimeValue>();
-                    currentSegment.Add(new TimeSeriesChartSeries.TimeValue(cursor, points.Average(p => p.BytesPerSecond)));
+                    currentSegment ??= new List<TimeValue<double>>();
+                    currentSegment.Add(new TimeValue<double>(cursor, points.Average(p => p.BytesPerSecond)));
                 }
                 else if (currentSegment is not null && currentSegment.Count > 0)
                 {
