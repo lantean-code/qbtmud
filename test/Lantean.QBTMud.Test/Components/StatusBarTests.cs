@@ -78,7 +78,9 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_SmallLandscapeBreakpoint_WHEN_Rendered_THEN_AutoScrollsStatusBarToEnd()
         {
-            var scrollInvocation = TestContext.JSInterop.SetupVoid("qbt.scrollElementToEnd", _ => true);
+            var scrollInvocation = TestContext.JSInterop.SetupVoid(
+                "qbt.scrollElementToEnd",
+                invocation => invocation.Arguments.Count == 1 && invocation.Arguments[0] is ".app-shell__status-bar");
             scrollInvocation.SetVoidResult();
 
             RenderStatusBar(
@@ -86,7 +88,6 @@ namespace Lantean.QBTMud.Test.Components
                 orientation: Orientation.Landscape);
 
             scrollInvocation.Invocations.Should().ContainSingle();
-            scrollInvocation.Invocations.Single().Arguments.Should().ContainSingle().Which.Should().Be(".app-shell__status-bar");
         }
 
         [Fact]
@@ -103,9 +104,11 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public void GIVEN_SmallLandscapeBreakpoint_WHEN_ReRendered_THEN_DoesNotAutoScrollStatusBarToEndAgain()
+        public void GIVEN_SmallLandscapeBreakpoint_WHEN_ReRendered_THEN_AutoScrollsStatusBarToEndAgain()
         {
-            var scrollInvocation = TestContext.JSInterop.SetupVoid("qbt.scrollElementToEnd", _ => true);
+            var scrollInvocation = TestContext.JSInterop.SetupVoid(
+                "qbt.scrollElementToEnd",
+                invocation => invocation.Arguments.Count == 1 && invocation.Arguments[0] is ".app-shell__status-bar");
             scrollInvocation.SetVoidResult();
 
             var target = RenderStatusBar(
@@ -114,7 +117,7 @@ namespace Lantean.QBTMud.Test.Components
 
             target.Render();
 
-            scrollInvocation.Invocations.Should().ContainSingle();
+            target.WaitForAssertion(() => scrollInvocation.Invocations.Should().HaveCount(2));
         }
 
         [Fact]

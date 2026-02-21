@@ -12,8 +12,6 @@ namespace Lantean.QBTMud.Components
 {
     public partial class StatusBar
     {
-        private bool _compactModeScrolledToEnd;
-
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
@@ -242,17 +240,10 @@ namespace Lantean.QBTMud.Components
             var isCompactMode = !ShowStatusLabels;
             if (!isCompactMode)
             {
-                _compactModeScrolledToEnd = false;
-                return;
-            }
-
-            if (_compactModeScrolledToEnd)
-            {
                 return;
             }
 
             await JSRuntime.ScrollElementToEnd(".app-shell__status-bar");
-            _compactModeScrolledToEnd = true;
         }
 
         private ManagedTimerState? GetTimerStatus()
