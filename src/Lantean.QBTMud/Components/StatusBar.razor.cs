@@ -1,20 +1,27 @@
 using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Components
 {
     public partial class StatusBar
     {
+        private bool _compactModeScrolledToEnd;
+
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Inject]
         protected IManagedTimerRegistry TimerRegistry { get; set; } = default!;
+
+        [Inject]
+        protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [Parameter]
         public MainData? MainData { get; set; }
@@ -226,6 +233,26 @@ namespace Lantean.QBTMud.Components
         protected Task ToggleAlternativeSpeedLimitsClicked(MouseEventArgs args)
         {
             return OnToggleAlternativeSpeedLimits.InvokeAsync();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+
+            var isCompactMode = !ShowStatusLabels;
+            if (!isCompactMode)
+            {
+                _compactModeScrolledToEnd = false;
+                return;
+            }
+
+            if (_compactModeScrolledToEnd)
+            {
+                return;
+            }
+
+            await JSRuntime.ScrollElementToEnd(".app-shell__status-bar");
+            _compactModeScrolledToEnd = true;
         }
 
         private ManagedTimerState? GetTimerStatus()

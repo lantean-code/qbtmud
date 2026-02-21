@@ -76,6 +76,48 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public void GIVEN_SmallLandscapeBreakpoint_WHEN_Rendered_THEN_AutoScrollsStatusBarToEnd()
+        {
+            var scrollInvocation = TestContext.JSInterop.SetupVoid("qbt.scrollElementToEnd", _ => true);
+            scrollInvocation.SetVoidResult();
+
+            RenderStatusBar(
+                breakpoint: Breakpoint.Sm,
+                orientation: Orientation.Landscape);
+
+            scrollInvocation.Invocations.Should().ContainSingle();
+            scrollInvocation.Invocations.Single().Arguments.Should().ContainSingle().Which.Should().Be(".app-shell__status-bar");
+        }
+
+        [Fact]
+        public void GIVEN_LargePortraitBreakpoint_WHEN_Rendered_THEN_DoesNotAutoScrollStatusBarToEnd()
+        {
+            var scrollInvocation = TestContext.JSInterop.SetupVoid("qbt.scrollElementToEnd", _ => true);
+            scrollInvocation.SetVoidResult();
+
+            RenderStatusBar(
+                breakpoint: Breakpoint.Lg,
+                orientation: Orientation.Portrait);
+
+            scrollInvocation.Invocations.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_SmallLandscapeBreakpoint_WHEN_ReRendered_THEN_DoesNotAutoScrollStatusBarToEndAgain()
+        {
+            var scrollInvocation = TestContext.JSInterop.SetupVoid("qbt.scrollElementToEnd", _ => true);
+            scrollInvocation.SetVoidResult();
+
+            var target = RenderStatusBar(
+                breakpoint: Breakpoint.Sm,
+                orientation: Orientation.Landscape);
+
+            target.Render();
+
+            scrollInvocation.Invocations.Should().ContainSingle();
+        }
+
+        [Fact]
         public void GIVEN_SmallLandscapeBreakpoint_WHEN_Rendered_THEN_ShowsReducedModeStatusTooltips()
         {
             var target = RenderStatusBar(

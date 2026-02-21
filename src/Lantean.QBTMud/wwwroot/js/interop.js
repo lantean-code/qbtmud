@@ -309,6 +309,17 @@ window.qbt.clearSelection = () => {
     }
 }
 
+window.qbt.scrollElementToEnd = (selector) => {
+    const element = getElementBySelector(selector);
+    if (!element) {
+        return;
+    }
+
+    requestAnimationFrame(() => {
+        element.scrollLeft = element.scrollWidth;
+    });
+}
+
 let supportedEvents = new Map();
 let focusInstance = null;
 
