@@ -38,6 +38,11 @@
 ## Line endings
 - Use CRLF line terminators for any files you write or modify.
 
+## Git permissions
+- Agents must not perform git write operations unless the user gives explicit permission in the current conversation.
+- Git write operations include (but are not limited to): `commit`, `push`, `pull`, `merge`, `rebase`, `cherry-pick`, `reset`, `revert`, `checkout`/`switch` that changes branch or files, tag creation/deletion, and branch creation/deletion.
+- Until explicit permission is granted, only read-only git commands are allowed (for example: `git status`, `git diff`, `git log`, `git show`).
+
 ## How to work in this repo (for agents)
 1. Read this file, then the relevant folder `AGENTS.md` (e.g., `src` or `test`).
 2. When referencing MudBlazor or qBittorrent source:
