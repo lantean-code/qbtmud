@@ -7,7 +7,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <LangVersion>latest</LangVersion>
+    <QbtMudBuildVersion Condition="'$(QbtMudBuildVersion)'==''">$(Version)</QbtMudBuildVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>QbtMudBuildVersion</_Parameter1>
+      <_Parameter2>$(QbtMudBuildVersion)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
 
   <!-- IL build you self-host (per-assembly .wasm via Webcil) -->
   <PropertyGroup Condition="'$(Configuration)'=='Release'">

@@ -543,6 +543,14 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public void GIVEN_SubcategoriesDisabled_WHEN_EnumerateCategoryKeys_THEN_ReturnsOnlyProvidedCategory()
+        {
+            var keys = TorrentDataManager.EnumerateCategoryKeys("Movies/HD/1080p", false).ToList();
+
+            keys.Should().Equal("Movies/HD/1080p");
+        }
+
+        [Fact]
         public void GIVEN_SameCategorySavePath_WHEN_UpdateCategory_THEN_ReturnsFalse()
         {
             var category = new Category("Cat", "/path");
@@ -550,6 +558,61 @@ namespace Lantean.QBTMud.Test.Services
 
             changed.Should().BeFalse();
             category.SavePath.Should().Be("/path");
+        }
+
+        [Fact]
+        public void GIVEN_NullCategorySavePath_WHEN_UpdateCategory_THEN_ReturnsFalse()
+        {
+            var category = new Category("Cat", "/path");
+            var changed = TorrentDataManager.UpdateCategory(category, new ClientModels.Category("Cat", null, null));
+
+            changed.Should().BeFalse();
+            category.SavePath.Should().Be("/path");
+        }
+
+        [Fact]
+        public void GIVEN_TrackerSetToNull_WHEN_UpdateTrackerState_THEN_TrackerFallsBackToEmptyString()
+        {
+            var trackersState = new Dictionary<string, HashSet<string>>
+            {
+                { "udp://old", new HashSet<string> { "h1" } },
+                { FilterHelper.TRACKER_ALL, new HashSet<string> { "h1" } },
+                { FilterHelper.TRACKER_TRACKERLESS, new HashSet<string>() },
+                { FilterHelper.TRACKER_ERROR, new HashSet<string>() },
+                { FilterHelper.TRACKER_WARNING, new HashSet<string>() },
+                { FilterHelper.TRACKER_ANNOUNCE_ERROR, new HashSet<string>() }
+            };
+            var main = new MainData(
+                new Dictionary<string, Torrent>(),
+                Array.Empty<string>(),
+                new Dictionary<string, Category>(),
+                new Dictionary<string, IReadOnlyList<string>>(),
+                new ServerState(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                trackersState);
+
+            var previousSnapshot = new TorrentDataManager.TorrentSnapshot("Cat", new List<string>(), "udp://old", "downloading", 0, 1, false, false, false);
+            var updatedTorrent = _target.CreateTorrent(
+                "h1",
+                new ClientModels.Torrent
+                {
+                    Name = "Name",
+                    State = "downloading",
+                    UploadSpeed = 0,
+                    Tags = Array.Empty<string>(),
+                    Category = string.Empty,
+                    Tracker = "udp://new",
+                    TrackersCount = 0
+                });
+            updatedTorrent.Tracker = null!;
+
+            TorrentDataManager.UpdateTrackerState(main, updatedTorrent, "h1", previousSnapshot);
+
+            trackersState["udp://old"].Should().BeEmpty();
+            trackersState.ContainsKey("udp://new").Should().BeFalse();
+            trackersState[FilterHelper.TRACKER_TRACKERLESS].Should().Contain("h1");
         }
 
         [Fact]
@@ -628,6 +691,147 @@ namespace Lantean.QBTMud.Test.Services
             existing.UploadSpeed.Should().Be(25);
             existing.Comment.Should().Be("Comment");
             existing.ShareLimitAction.Should().Be(ShareLimitAction.Stop);
+        }
+
+        [Fact]
+        public void GIVEN_ExistingNameStateAndUploadSpeed_WHEN_UpdateTorrentHasSameValues_THEN_NoChangesAreReported()
+        {
+            var existing = _target.CreateTorrent(
+                "hash",
+                new ClientModels.Torrent
+                {
+                    Name = "Name",
+                    State = "downloading",
+                    UploadSpeed = 25,
+                    Category = string.Empty,
+                    Tags = Array.Empty<string>(),
+                    Tracker = string.Empty,
+                    TrackersCount = 0
+                });
+
+            var delta = new ClientModels.Torrent
+            {
+                Name = "Name",
+                State = "downloading",
+                UploadSpeed = 25
+            };
+
+            var result = TorrentDataManager.UpdateTorrent(existing, delta);
+
+            result.DataChanged.Should().BeFalse();
+            result.FilterChanged.Should().BeFalse();
+            existing.Name.Should().Be("Name");
+            existing.State.Should().Be("downloading");
+            existing.UploadSpeed.Should().Be(25);
+        }
+
+        [Fact]
+        public void GIVEN_EmptyAndNonEmptyCategories_WHEN_CreateSnapshot_THEN_EmptyCategoryMapsToNull()
+        {
+            var emptyCategoryTorrent = _target.CreateTorrent(
+                "hash-1",
+                new ClientModels.Torrent
+                {
+                    Name = "Name",
+                    State = "downloading",
+                    UploadSpeed = 0,
+                    Category = string.Empty,
+                    Tags = Array.Empty<string>(),
+                    Tracker = string.Empty,
+                    TrackersCount = 0
+                });
+
+            var nonEmptyCategoryTorrent = _target.CreateTorrent(
+                "hash-2",
+                new ClientModels.Torrent
+                {
+                    Name = "Name",
+                    State = "downloading",
+                    UploadSpeed = 0,
+                    Category = "Movies",
+                    Tags = Array.Empty<string>(),
+                    Tracker = string.Empty,
+                    TrackersCount = 0
+                });
+
+            var emptySnapshot = TorrentDataManager.CreateSnapshot(emptyCategoryTorrent);
+            var nonEmptySnapshot = TorrentDataManager.CreateSnapshot(nonEmptyCategoryTorrent);
+
+            emptySnapshot.Category.Should().BeNull();
+            nonEmptySnapshot.Category.Should().Be("Movies");
+        }
+
+        [Fact]
+        public void GIVEN_NullCategory_WHEN_CreateSnapshot_THEN_CategoryIsNull()
+        {
+            var torrent = _target.CreateTorrent(
+                "hash-3",
+                new ClientModels.Torrent
+                {
+                    Name = "Name",
+                    State = "downloading",
+                    UploadSpeed = 0,
+                    Category = "Movies",
+                    Tags = Array.Empty<string>(),
+                    Tracker = string.Empty,
+                    TrackersCount = 0
+                });
+            torrent.Category = null!;
+
+            var snapshot = TorrentDataManager.CreateSnapshot(torrent);
+
+            snapshot.Category.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_NullTrackerAndState_WHEN_CreateSnapshot_THEN_TrackerAndStateFallbackToEmptyStrings()
+        {
+            var torrent = _target.CreateTorrent(
+                "hash-4",
+                new ClientModels.Torrent
+                {
+                    Name = "Name",
+                    State = "downloading",
+                    UploadSpeed = 0,
+                    Category = string.Empty,
+                    Tags = Array.Empty<string>(),
+                    Tracker = "udp://tracker",
+                    TrackersCount = 1
+                });
+            torrent.Tracker = null!;
+            torrent.State = null!;
+
+            var snapshot = TorrentDataManager.CreateSnapshot(torrent);
+
+            snapshot.Tracker.Should().Be(string.Empty);
+            snapshot.State.Should().Be(string.Empty);
+        }
+
+        [Fact]
+        public void GIVEN_NullNameStateAndUploadSpeed_WHEN_UpdateTorrent_THEN_NoChangesAreReported()
+        {
+            var existing = _target.CreateTorrent(
+                "hash",
+                new ClientModels.Torrent
+                {
+                    Name = "Name",
+                    State = "downloading",
+                    UploadSpeed = 25,
+                    Category = string.Empty,
+                    Tags = Array.Empty<string>(),
+                    Tracker = string.Empty,
+                    TrackersCount = 0
+                });
+
+            var delta = new ClientModels.Torrent();
+
+            var result = TorrentDataManager.UpdateTorrent(existing, delta);
+
+            result.DataChanged.Should().BeFalse();
+            result.FilterChanged.Should().BeFalse();
+            existing.Name.Should().Be("Name");
+            existing.State.Should().Be("downloading");
+            existing.UploadSpeed.Should().Be(25);
         }
 
         [Fact]

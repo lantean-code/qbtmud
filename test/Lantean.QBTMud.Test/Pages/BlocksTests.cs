@@ -132,6 +132,18 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_ContextMenuCopy_WHEN_ItemMissing_THEN_DoesNotCopy()
+        {
+            await OpenMenuAsync();
+
+            var copyItem = FindMenuItem(Icons.Material.Filled.ContentCopy);
+            await _target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
+
+            TestContext.Clipboard.PeekLast().Should().BeNull();
+            Mock.Get(_snackbar).Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), null, null), Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_NoResults_WHEN_ClearInvoked_THEN_NoNotification()
         {
             await OpenMenuAsync();

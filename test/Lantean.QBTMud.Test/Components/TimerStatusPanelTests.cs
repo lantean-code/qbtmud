@@ -4,7 +4,6 @@ using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -107,12 +106,27 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.Services.AddSingleton(registry.Object);
             TestContext.Services.AddSingleton(periodicTimerFactory.Object);
 
-            var target = TestContext.Render<TimerStatusPanelHost>(parameters => parameters.Add(p => p.Open, true));
+            var closed = false;
+            var callback = EventCallback.Factory.Create<bool>(this, value =>
+            {
+                if (!value)
+                {
+                    closed = true;
+                }
+            });
+
+            var target = TestContext.Render<TimerStatusPanel>(parameters =>
+            {
+                parameters.AddCascadingValue("TimerDrawerOpen", true);
+                parameters.AddCascadingValue("TimerDrawerOpenChanged", callback);
+            });
             var closeButton = target.FindComponents<MudIconButton>()
                 .Single(button => button.Instance.Icon == Icons.Material.Filled.Close);
 
             await target.InvokeAsync(() => closeButton.Find("button").Click());
 
+            closed.Should().BeTrue();
+            await target.InvokeAsync(() => target.Instance.DisposeAsync().AsTask());
             target.WaitForAssertion(() => periodicTimer.Verify(timer => timer.DisposeAsync(), Times.Once));
         }
 
@@ -288,39 +302,6 @@ namespace Lantean.QBTMud.Test.Components
             timer.SetupGet(t => t.NextTickUtc).Returns((DateTimeOffset?)null);
             timer.SetupGet(t => t.LastFault).Returns((Exception?)null);
             return timer;
-        }
-
-        private sealed class TimerStatusPanelHost : ComponentBase
-        {
-            [Parameter]
-            public bool Open { get; set; }
-
-            private Task HandleOpenChanged(bool value)
-            {
-                Open = value;
-                StateHasChanged();
-                return Task.CompletedTask;
-            }
-
-            protected override void BuildRenderTree(RenderTreeBuilder builder)
-            {
-                builder.OpenComponent<CascadingValue<bool>>(0);
-                builder.AddAttribute(1, "Name", "TimerDrawerOpen");
-                builder.AddAttribute(2, "Value", Open);
-                builder.AddAttribute(3, "ChildContent", (RenderFragment)(childBuilder =>
-                {
-                    childBuilder.OpenComponent<CascadingValue<EventCallback<bool>>>(0);
-                    childBuilder.AddAttribute(1, "Name", "TimerDrawerOpenChanged");
-                    childBuilder.AddAttribute(2, "Value", EventCallback.Factory.Create<bool>(this, HandleOpenChanged));
-                    childBuilder.AddAttribute(3, "ChildContent", (RenderFragment)(grandChildBuilder =>
-                    {
-                        grandChildBuilder.OpenComponent<TimerStatusPanel>(0);
-                        grandChildBuilder.CloseComponent();
-                    }));
-                    childBuilder.CloseComponent();
-                }));
-                builder.CloseComponent();
-            }
         }
     }
 }

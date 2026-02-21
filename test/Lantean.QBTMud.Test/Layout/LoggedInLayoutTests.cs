@@ -23,7 +23,6 @@ namespace Lantean.QBTMud.Test.Layout
     {
         private const string PendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
         private const string LastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
-        private const string WelcomeWizardCompletedStorageKey = "WelcomeWizard.Completed.v1";
         private const string PreferredLocaleStorageKey = "WebUiLocalization.PreferredLocale.v1";
 
         private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
@@ -36,6 +35,11 @@ namespace Lantean.QBTMud.Test.Layout
         private readonly IDialogService _dialogService = Mock.Of<IDialogService>();
         private readonly Mock<IDialogService> _dialogServiceMock;
         private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
+        private readonly IAppSettingsService _appSettingsService = Mock.Of<IAppSettingsService>();
+        private readonly IAppUpdateService _appUpdateService = Mock.Of<IAppUpdateService>();
+        private readonly ITorrentCompletionNotificationService _torrentCompletionNotificationService = Mock.Of<ITorrentCompletionNotificationService>();
+        private readonly IWelcomeWizardPlanBuilder _welcomeWizardPlanBuilder = Mock.Of<IWelcomeWizardPlanBuilder>();
+        private readonly IWelcomeWizardStateService _welcomeWizardStateService = Mock.Of<IWelcomeWizardStateService>();
         private readonly TestNavigationManager _navigationManager;
         private readonly IRenderedComponent<LoggedInLayout> _target;
 
@@ -81,6 +85,36 @@ namespace Lantean.QBTMud.Test.Layout
                     It.IsAny<DialogOptions>()))
                 .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
 
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettings.Default.Clone());
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.SaveDismissedReleaseTagAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettings.Default.Clone());
+            Mock.Get(_appUpdateService)
+                .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppUpdateStatus(
+                    new AppBuildInfo("1.0.0", "AssemblyMetadata"),
+                    new AppReleaseInfo("v1.0.0", "v1.0.0", "https://example.invalid", DateTime.UtcNow),
+                    false,
+                    true,
+                    DateTime.UtcNow));
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.InitializeAsync(It.IsAny<IReadOnlyDictionary<string, Torrent>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.ProcessAsync(It.IsAny<IReadOnlyDictionary<string, Torrent>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.ProcessTransitionsAsync(It.IsAny<IReadOnlyList<TorrentTransition>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(isReturningUser: false, pendingSteps: Array.Empty<WelcomeWizardStepDefinition>()));
+            Mock.Get(_welcomeWizardStateService)
+                .Setup(service => service.MarkShownAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardState());
+
             TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.RemoveAll<ITorrentDataManager>();
             TestContext.Services.RemoveAll<ISpeedHistoryService>();
@@ -89,6 +123,11 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.RemoveAll<IDialogWorkflow>();
             TestContext.Services.RemoveAll<IDialogService>();
             TestContext.Services.RemoveAll<ISnackbar>();
+            TestContext.Services.RemoveAll<IAppSettingsService>();
+            TestContext.Services.RemoveAll<IAppUpdateService>();
+            TestContext.Services.RemoveAll<ITorrentCompletionNotificationService>();
+            TestContext.Services.RemoveAll<IWelcomeWizardPlanBuilder>();
+            TestContext.Services.RemoveAll<IWelcomeWizardStateService>();
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.AddSingleton(_dataManager);
             TestContext.Services.AddSingleton(_speedHistoryService);
@@ -97,17 +136,28 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.AddSingleton(_dialogWorkflow);
             TestContext.Services.AddSingleton(_dialogService);
             TestContext.Services.AddSingleton(_snackbar);
+            TestContext.Services.AddSingleton(_appSettingsService);
+            TestContext.Services.AddSingleton(_appUpdateService);
+            TestContext.Services.AddSingleton(_torrentCompletionNotificationService);
+            TestContext.Services.AddSingleton(_welcomeWizardPlanBuilder);
+            TestContext.Services.AddSingleton(_welcomeWizardStateService);
 
             _target = RenderLayout(new List<IManagedTimer>());
         }
 
         [Fact]
-        public async Task GIVEN_WelcomeWizardIncomplete_WHEN_Rendered_THEN_ShowsWizardDialog()
+        public void GIVEN_WelcomeWizardIncomplete_WHEN_Rendered_THEN_ShowsWizardDialog()
         {
             DisposeDefaultTarget();
             _dialogService.ClearInvocations();
-
-            await TestContext.LocalStorage.RemoveItemAsync(WelcomeWizardCompletedStorageKey, Xunit.TestContext.Current.CancellationToken);
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(
+                    isReturningUser: false,
+                    pendingSteps: new[]
+                    {
+                        new WelcomeWizardStepDefinition(WelcomeWizardStepCatalog.LanguageStepId, 0)
+                    }));
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -121,12 +171,13 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public async Task GIVEN_WelcomeWizardCompleted_WHEN_Rendered_THEN_DoesNotShowWizardDialog()
+        public void GIVEN_WelcomeWizardCompleted_WHEN_Rendered_THEN_DoesNotShowWizardDialog()
         {
             DisposeDefaultTarget();
             _dialogService.ClearInvocations();
-
-            await TestContext.LocalStorage.SetItemAsync(WelcomeWizardCompletedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(isReturningUser: true, pendingSteps: Array.Empty<WelcomeWizardStepDefinition>()));
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -137,6 +188,47 @@ namespace Lantean.QBTMud.Test.Layout
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()), Times.Never);
             });
+        }
+
+        [Fact]
+        public void GIVEN_WelcomeWizardPendingSteps_WHEN_Rendered_THEN_PassesPlanParametersAndMarksShown()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+
+            var expectedStepIds = new[]
+            {
+                WelcomeWizardStepCatalog.NotificationsStepId
+            };
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(
+                    isReturningUser: true,
+                    pendingSteps:
+                    [
+                        new WelcomeWizardStepDefinition(WelcomeWizardStepCatalog.NotificationsStepId, 2)
+                    ]));
+
+            DialogParameters? capturedParameters = null;
+            _dialogServiceMock
+                .Setup(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()))
+                .Callback<string?, DialogParameters, DialogOptions?>((_, parameters, _) => capturedParameters = parameters)
+                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.WaitForAssertion(() =>
+            {
+                capturedParameters.Should().NotBeNull();
+                capturedParameters!.Get<string[]>(nameof(WelcomeWizardDialog.PendingStepIds)).Should().BeEquivalentTo(expectedStepIds);
+                capturedParameters.Get<bool>(nameof(WelcomeWizardDialog.ShowWelcomeBackIntro)).Should().BeTrue();
+            });
+
+            Mock.Get(_welcomeWizardStateService)
+                .Verify(service => service.MarkShownAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -207,6 +299,154 @@ namespace Lantean.QBTMud.Test.Layout
             await options.OnClick!(null!);
             _navigationManager.LastNavigationUri.Should().Be("./");
             _navigationManager.ForceLoad.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_UpdateAvailableAndNotDismissed_WHEN_Rendered_THEN_ShowsPersistentUpdateSnackbar()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettings.Default.Clone());
+            Mock.Get(_appUpdateService)
+                .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppUpdateStatus(
+                    new AppBuildInfo("1.0.0", "AssemblyMetadata"),
+                    new AppReleaseInfo("v1.1.0", "v1.1.0", "https://example.invalid", DateTime.UtcNow),
+                    true,
+                    true,
+                    DateTime.UtcNow));
+
+            RenderLayout(new List<IManagedTimer>());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("A new qbtmud build (v1.1.0) is available.", Severity.Info, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_UpdateDismissedTagMatchesLatest_WHEN_Rendered_THEN_DoesNotShowUpdateSnackbar()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    UpdateChecksEnabled = true,
+                    NotificationsEnabled = false,
+                    DismissedReleaseTag = "v1.1.0"
+                });
+            Mock.Get(_appUpdateService)
+                .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppUpdateStatus(
+                    new AppBuildInfo("1.0.0", "AssemblyMetadata"),
+                    new AppReleaseInfo("v1.1.0", "v1.1.0", "https://example.invalid", DateTime.UtcNow),
+                    true,
+                    true,
+                    DateTime.UtcNow));
+
+            RenderLayout(new List<IManagedTimer>());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("A new qbtmud build (v1.1.0) is available.", Severity.Info, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_UpdateSnackbarDismissAction_WHEN_Clicked_THEN_PersistsDismissedReleaseTag()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+
+            Action<SnackbarOptions>? capturedOptions = null;
+            Mock.Get(_snackbar)
+                .Setup(snackbar => snackbar.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
+                .Callback<string, Severity, Action<SnackbarOptions>, string>((_, _, options, _) => capturedOptions = options);
+
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettings.Default.Clone());
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.SaveDismissedReleaseTagAsync("v1.1.0", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    UpdateChecksEnabled = true,
+                    NotificationsEnabled = false,
+                    DismissedReleaseTag = "v1.1.0"
+                });
+            Mock.Get(_appUpdateService)
+                .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppUpdateStatus(
+                    new AppBuildInfo("1.0.0", "AssemblyMetadata"),
+                    new AppReleaseInfo("v1.1.0", "v1.1.0", "https://example.invalid", DateTime.UtcNow),
+                    true,
+                    true,
+                    DateTime.UtcNow));
+
+            RenderLayout(new List<IManagedTimer>());
+
+            capturedOptions.Should().NotBeNull();
+            var options = new SnackbarOptions(Severity.Info, new SnackbarConfiguration());
+            capturedOptions!(options);
+
+            options.RequireInteraction.Should().BeTrue();
+            options.Action.Should().Be("Dismiss");
+            options.OnClick.Should().NotBeNull();
+
+            await options.OnClick!(null!);
+
+            Mock.Get(_appSettingsService)
+                .Verify(service => service.SaveDismissedReleaseTagAsync("v1.1.0", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_UpdateChecksDisabled_WHEN_Rendered_THEN_DoesNotCallUpdateService()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+            _appUpdateService.ClearInvocations();
+
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    UpdateChecksEnabled = false,
+                    NotificationsEnabled = false
+                });
+
+            RenderLayout(new List<IManagedTimer>());
+
+            Mock.Get(_appUpdateService)
+                .Verify(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NullPreferences_WHEN_Initialized_THEN_CompletesWithoutLocaleWarning()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+            await TestContext.LocalStorage.SetItemAsStringAsync(PreferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferences()).ReturnsAsync((ClientModels.Preferences)null!);
+
+            TestContext.Render<LoggedInLayout>(parameters =>
+            {
+                parameters.Add(p => p.Body, builder => { });
+                parameters.AddCascadingValue(Breakpoint.Lg);
+                parameters.AddCascadingValue(Orientation.Landscape);
+                parameters.AddCascadingValue("DrawerOpen", false);
+                parameters.AddCascadingValue("TimerDrawerOpen", false);
+                parameters.AddCascadingValue("IsDarkMode", false);
+            });
+
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            storedLocale.Should().Be("en");
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Language preference changed on server. Click Reload to apply it.", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
         }
 
         [Fact]
@@ -765,7 +1005,8 @@ namespace Lantean.QBTMud.Test.Layout
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
             Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
-            Mock.Get(_dataManager).Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged)).Returns(false);
+            IReadOnlyList<TorrentTransition> transitions = Array.Empty<TorrentTransition>();
+            Mock.Get(_dataManager).Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged, out transitions)).Returns(false);
 
             Mock.Get(_refreshTimer)
                 .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
@@ -799,7 +1040,8 @@ namespace Lantean.QBTMud.Test.Layout
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
             Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
-            Mock.Get(_dataManager).Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged)).Returns(true);
+            IReadOnlyList<TorrentTransition> transitions = Array.Empty<TorrentTransition>();
+            Mock.Get(_dataManager).Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged, out transitions)).Returns(true);
 
             Mock.Get(_refreshTimer)
                 .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
@@ -818,6 +1060,90 @@ namespace Lantean.QBTMud.Test.Layout
             result.Action.Should().Be(ManagedTimerTickAction.Continue);
             target.Render();
             probe.Instance.TorrentsVersion.Should().BeGreaterThan(initialVersion);
+        }
+
+        [Fact]
+        public void GIVEN_InitializedLayout_WHEN_Rendered_THEN_DoesNotProcessTorrentCompletionNotifications()
+        {
+            DisposeDefaultTarget();
+            _torrentCompletionNotificationService.ClearInvocations();
+
+            RenderLayout(new List<IManagedTimer>());
+
+            Mock.Get(_torrentCompletionNotificationService).Verify(
+                service => service.ProcessTransitionsAsync(It.IsAny<IReadOnlyList<TorrentTransition>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshTick_WHEN_Ticked_THEN_ProcessesTorrentCompletionNotifications()
+        {
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            var mainData = CreateMainData(serverState: CreateServerState());
+            var filterChanged = false;
+
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+                .ReturnsAsync(CreateClientMainData(fullUpdate: false))
+                .ReturnsAsync(CreateClientMainData(fullUpdate: false));
+
+            Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
+            IReadOnlyList<TorrentTransition> transitions =
+            [
+                new TorrentTransition("Hash1", "Name1", false, false, true)
+            ];
+            Mock.Get(_dataManager).Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged, out transitions)).Returns(true);
+
+            Mock.Get(_refreshTimer)
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+            _torrentCompletionNotificationService.ClearInvocations();
+
+            handler.Should().NotBeNull();
+            await handler!(CancellationToken.None);
+
+            Mock.Get(_torrentCompletionNotificationService).Verify(
+                service => service.ProcessTransitionsAsync(It.Is<IReadOnlyList<TorrentTransition>>(batch => batch.Count == 1), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshTickNotificationProcessingFails_WHEN_Ticked_THEN_Continues()
+        {
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            var mainData = CreateMainData(serverState: CreateServerState());
+            var filterChanged = false;
+
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+                .ReturnsAsync(CreateClientMainData(fullUpdate: false))
+                .ReturnsAsync(CreateClientMainData(fullUpdate: false));
+
+            Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
+            IReadOnlyList<TorrentTransition> transitions =
+            [
+                new TorrentTransition("Hash1", "Name1", false, false, true)
+            ];
+            Mock.Get(_dataManager).Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged, out transitions)).Returns(true);
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.ProcessTransitionsAsync(It.IsAny<IReadOnlyList<TorrentTransition>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Failure"));
+
+            Mock.Get(_refreshTimer)
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+
+            handler.Should().NotBeNull();
+            var result = await handler!(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Continue);
+            Mock.Get(_torrentCompletionNotificationService).Verify(
+                service => service.ProcessTransitionsAsync(It.IsAny<IReadOnlyList<TorrentTransition>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Theory]

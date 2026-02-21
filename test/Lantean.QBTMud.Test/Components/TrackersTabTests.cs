@@ -1,7 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
-using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;

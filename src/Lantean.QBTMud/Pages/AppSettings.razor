@@ -1,0 +1,227 @@
+@page "/app-settings"
+@layout OtherLayout
+
+<div class="content-panel">
+    <div class="content-panel__toolbar">
+        <MudToolBar Gutters="false" Dense="true">
+            @if (!DrawerOpen)
+            {
+                <MudIconButton Icon="@Icons.Material.Outlined.NavigateBefore"
+                               OnClick="NavigateBack"
+                               title="@TranslateSettings("Back to torrent list")"
+                               data-test-id="@TestIdHelper.For("AppSettingsBackButton")" />
+                <MudDivider Vertical="true" />
+            }
+            <MudText Class="px-5 no-wrap">@TranslateSettings("App Settings")</MudText>
+        </MudToolBar>
+    </div>
+
+    <div class="content-panel__body">
+        @if (IsLoading)
+        {
+            <MudProgressLinear Color="Color.Primary"
+                               Indeterminate="true"
+                               Class="my-4"
+                               data-test-id="@TestIdHelper.For("AppSettingsLoading")" />
+        }
+        else
+        {
+            <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true" KeepPanelsAlive="true">
+                <MudTabPanel Text="@TranslateUpdates("Updates")">
+                    <div class="options-tab-contents">
+                        <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.subtitle2">@TranslateUpdates("Updates")</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent Class="pt-0">
+                                <MudGrid>
+                                    <MudItem xs="12">
+                                        <FieldSwitch Value="@Settings.UpdateChecksEnabled"
+                                                     ValueChanged="OnUpdateChecksChanged"
+                                                     Label="@TranslateUpdates("Check for updates on startup")"
+                                                     data-test-id="@TestIdHelper.For("AppSettingsUpdateChecksEnabled")" />
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="4">
+                                        <MudText Typo="Typo.body2" Class="fw-bold">@TranslateUpdates("Current build")</MudText>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="8">
+                                        <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsCurrentBuild")">@CurrentBuildInfo.Version</MudText>
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="4">
+                                        <MudText Typo="Typo.body2" Class="fw-bold">@TranslateUpdates("Latest stable release")</MudText>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="8">
+                                        <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsLatestRelease")">@GetLatestReleaseTag()</MudText>
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="4">
+                                        <MudText Typo="Typo.body2" Class="fw-bold">@TranslateUpdates("Update status")</MudText>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="8">
+                                        <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsUpdateStatus")">@GetUpdateStatusText()</MudText>
+                                    </MudItem>
+
+                                    @if (!string.IsNullOrWhiteSpace(UpdateStatus?.LatestRelease?.HtmlUrl))
+                                    {
+                                        <MudItem xs="12" sm="4">
+                                            <MudText Typo="Typo.body2" Class="fw-bold">@TranslateUpdates("Release page")</MudText>
+                                        </MudItem>
+                                        <MudItem xs="12" sm="8">
+                                            <MudLink Href="@UpdateStatus.LatestRelease!.HtmlUrl" Target="_blank" data-test-id="@TestIdHelper.For("AppSettingsLatestReleaseLink")">
+                                                @TranslateUpdates("View release")
+                                            </MudLink>
+                                        </MudItem>
+                                    }
+
+                                    <MudItem xs="12">
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Color="Color.Primary"
+                                                   OnClick="CheckForUpdatesNowAsync"
+                                                   Disabled="@IsCheckingUpdates"
+                                                   data-test-id="@TestIdHelper.For("AppSettingsCheckNow")">
+                                            @TranslateUpdates("Check now")
+                                        </MudButton>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudCardContent>
+                        </MudCard>
+                    </div>
+                </MudTabPanel>
+
+                <MudTabPanel Text="@TranslateNotifications("Notifications")">
+                    <div class="options-tab-contents">
+                        <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.subtitle2">@TranslateNotifications("Notifications")</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent Class="pt-0">
+                                <MudGrid>
+                                    <MudItem xs="12">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap" Spacing="2">
+                                            <FieldSwitch Value="@Settings.NotificationsEnabled"
+                                                         ValueChanged="OnNotificationsEnabledChanged"
+                                                         Label="@TranslateNotifications("Enable browser notifications")"
+                                                         data-test-id="@TestIdHelper.For("AppSettingsNotificationsEnabled")" />
+
+                                            <MudChip T="string"
+                                                     Color="@GetNotificationPermissionColor()"
+                                                     Variant="Variant.Outlined"
+                                                     data-test-id="@TestIdHelper.For("AppSettingsNotificationPermission")">
+                                                @TranslateNotifications("Permission: %1", GetNotificationPermissionText())
+                                            </MudChip>
+                                        </MudStack>
+                                    </MudItem>
+
+                                    <MudItem xs="12">
+                                        <MudText Typo="Typo.caption" Class="mud-secondary-text">
+                                            @TranslateNotifications("Enable browser notifications and choose which events trigger alerts.")
+                                        </MudText>
+                                    </MudItem>
+
+                                    @if (Settings.NotificationsEnabled)
+                                    {
+                                        <MudItem xs="12">
+                                            <MudText Typo="Typo.body2" Class="fw-bold mb-2">@TranslateNotifications("Browser notification types")</MudText>
+                                            <MudStack Spacing="1">
+                                                <MudCheckBox T="bool"
+                                                             Value="@Settings.DownloadFinishedNotificationsEnabled"
+                                                             ValueChanged="OnDownloadFinishedNotificationsChanged"
+                                                             Disabled="@IsApplyingNotificationToggle"
+                                                             Label="@TranslateNotifications("Download completed")"
+                                                             data-test-id="@TestIdHelper.For("AppSettingsDownloadFinishedNotificationsEnabled")" />
+                                                <MudCheckBox T="bool"
+                                                             Value="@Settings.TorrentAddedNotificationsEnabled"
+                                                             ValueChanged="OnTorrentAddedNotificationsChanged"
+                                                             Disabled="@IsApplyingNotificationToggle"
+                                                             Label="@TranslateNotifications("Torrent added")"
+                                                             data-test-id="@TestIdHelper.For("AppSettingsTorrentAddedNotificationsEnabled")" />
+                                            </MudStack>
+                                        </MudItem>
+
+                                        @if (Settings.TorrentAddedNotificationsEnabled)
+                                        {
+                                            <MudItem xs="12">
+                                                <FieldSwitch Value="@Settings.TorrentAddedSnackbarsEnabledWithNotifications"
+                                                             ValueChanged="OnTorrentAddedSnackbarsWithNotificationsChanged"
+                                                             Label="@TranslateNotifications("Show add-torrent snackbars when browser notifications are enabled")"
+                                                             Disabled="@IsApplyingNotificationToggle"
+                                                             data-test-id="@TestIdHelper.For("AppSettingsTorrentAddedSnackbarsEnabledWithNotifications")" />
+                                            </MudItem>
+                                        }
+                                    }
+
+                                </MudGrid>
+                            </MudCardContent>
+                        </MudCard>
+                    </div>
+                </MudTabPanel>
+
+                <MudTabPanel Text="@TranslateSettings("Local Storage")">
+                    <div class="options-tab-contents">
+                        <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.subtitle2">@TranslateSettings("Local Storage")</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent Class="pt-0">
+                                <MudStack Row="true" Class="mb-3" Spacing="2">
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Default"
+                                               OnClick="RefreshStorageEntriesAsync"
+                                               Disabled="@IsStorageBusy"
+                                               data-test-id="@TestIdHelper.For("AppSettingsStorageRefresh")">
+                                        @TranslateSettings("Refresh")
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Error"
+                                               OnClick="ClearStorageEntriesAsync"
+                                               Disabled="@(IsStorageBusy || StorageEntries.Count == 0)"
+                                               data-test-id="@TestIdHelper.For("AppSettingsStorageClearAll")">
+                                        @TranslateSettings("Clear all qbtmud data")
+                                    </MudButton>
+                                </MudStack>
+
+                                @if (StorageEntries.Count == 0)
+                                {
+                                    <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsStorageEmpty")">
+                                        @TranslateSettings("No qbtmud local storage entries found.")
+                                    </MudText>
+                                }
+                                else
+                                {
+                                    <MudTable T="AppStorageEntry" Items="@StorageEntries" Dense="true" Bordered="true" Hover="true" Elevation="0">
+                                        <HeaderContent>
+                                            <MudTh>@TranslateSettings("Key")</MudTh>
+                                            <MudTh>@TranslateSettings("Preview")</MudTh>
+                                            <MudTh>@TranslateSettings("Size")</MudTh>
+                                            <MudTh>@TranslateSettings("Actions")</MudTh>
+                                        </HeaderContent>
+                                        <RowTemplate>
+                                            <MudTd DataLabel="@TranslateSettings("Key")">@context.DisplayKey</MudTd>
+                                            <MudTd DataLabel="@TranslateSettings("Preview")">@context.Preview</MudTd>
+                                            <MudTd DataLabel="@TranslateSettings("Size")">@context.Length</MudTd>
+                                            <MudTd DataLabel="@TranslateSettings("Actions")">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                               Color="Color.Error"
+                                                               Disabled="@IsStorageBusy"
+                                                               OnClick="@(async () => await RemoveStorageEntryAsync(context.Key))"
+                                                               data-test-id="@TestIdHelper.For($"AppSettingsStorageDelete-{context.DisplayKey}")" />
+                                            </MudTd>
+                                        </RowTemplate>
+                                    </MudTable>
+                                }
+                            </MudCardContent>
+                        </MudCard>
+                    </div>
+                </MudTabPanel>
+            </MudTabs>
+        }
+    </div>
+</div>

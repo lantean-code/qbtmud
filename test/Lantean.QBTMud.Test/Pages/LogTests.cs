@@ -89,6 +89,10 @@ namespace Lantean.QBTMud.Test.Pages
             var func = select.Instance.MultiSelectionTextFunc!;
             func.Invoke(new List<string?> { "Normal", "Info", "Warning", "Critical" }).Should().Be("All");
             func.Invoke(new List<string?> { "Normal" }).Should().Be("Normal Messages");
+            func.Invoke(new List<string?> { "Info" }).Should().Be("Information Messages");
+            func.Invoke(new List<string?> { "Warning" }).Should().Be("Warning Messages");
+            func.Invoke(new List<string?> { "Critical" }).Should().Be("Critical Messages");
+            func.Invoke(new List<string?> { "Custom" }).Should().Be("Custom");
             func.Invoke(new List<string?> { "Normal", "Warning" }).Should().Be("2 items");
         }
 
@@ -131,6 +135,18 @@ namespace Lantean.QBTMud.Test.Pages
             var item = CreateLog(1, string.Empty, LogType.Normal);
 
             await TriggerLongPressAsync(item);
+            await OpenMenuAsync();
+
+            var copyItem = FindMenuItem(Icons.Material.Filled.ContentCopy);
+            await _target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
+
+            TestContext.Clipboard.PeekLast().Should().BeNull();
+            Mock.Get(_snackbar).Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), null, null), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_ContextMenuCopy_WHEN_ItemMissing_THEN_DoesNotCopy()
+        {
             await OpenMenuAsync();
 
             var copyItem = FindMenuItem(Icons.Material.Filled.ContentCopy);

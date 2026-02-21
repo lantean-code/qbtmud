@@ -141,8 +141,18 @@ namespace Lantean.QBTMud.Services
 
         public bool MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList, out bool filterChanged)
         {
+            return MergeMainData(mainData, torrentList, out filterChanged, out _);
+        }
+
+        public bool MergeMainData(
+            QBitTorrentClient.Models.MainData mainData,
+            MainData torrentList,
+            out bool filterChanged,
+            out IReadOnlyList<TorrentTransition> torrentTransitions)
+        {
             filterChanged = false;
             var dataChanged = false;
+            var transitions = new List<TorrentTransition>();
 
             if (mainData.CategoriesRemoved is not null)
             {
@@ -318,11 +328,14 @@ namespace Lantean.QBTMud.Services
                         var newTorrent = CreateTorrent(hash, torrent);
                         torrentList.Torrents.Add(hash, newTorrent);
                         AddTorrentToStates(torrentList, hash);
+                        var displayName = string.IsNullOrWhiteSpace(newTorrent.Name) ? hash : newTorrent.Name;
+                        transitions.Add(new TorrentTransition(hash, displayName, true, false, newTorrent.IsFinished()));
                         dataChanged = true;
                         filterChanged = true;
                     }
                     else
                     {
+                        var previousIsFinished = existingTorrent.IsFinished();
                         var previousSnapshot = CreateSnapshot(existingTorrent);
                         var updateResult = UpdateTorrent(existingTorrent, torrent);
                         if (updateResult.FilterChanged)
@@ -333,6 +346,13 @@ namespace Lantean.QBTMud.Services
                         if (updateResult.DataChanged)
                         {
                             dataChanged = true;
+
+                            TryAddTransition(
+                                transitions,
+                                hash,
+                                existingTorrent.Name,
+                                previousIsFinished,
+                                existingTorrent.IsFinished());
                         }
                     }
                 }
@@ -346,7 +366,32 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
+            torrentTransitions = transitions;
+
             return dataChanged;
+        }
+
+        private static void TryAddTransition(
+            IList<TorrentTransition> transitions,
+            string hash,
+            string? torrentName,
+            bool previousIsFinished,
+            bool currentIsFinished)
+        {
+            if (previousIsFinished == currentIsFinished)
+            {
+                return;
+            }
+
+            var displayName = string.IsNullOrWhiteSpace(torrentName) ? hash : torrentName;
+
+            transitions.Add(
+                new TorrentTransition(
+                    hash,
+                    displayName,
+                    false,
+                    previousIsFinished,
+                    currentIsFinished));
         }
 
         private static void AddTorrentToStates(MainData torrentList, string hash)

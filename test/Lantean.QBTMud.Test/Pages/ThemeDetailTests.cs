@@ -1,7 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
-using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
@@ -219,6 +218,115 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Once);
             Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme("ThemeId"), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ReadOnlyTheme_WHEN_SaveActionsInvoked_THEN_DoesNotPersist()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Server)
+            };
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.Themes)
+                .Returns(themes);
+
+            var target = RenderPage("ThemeId", themes);
+
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
+            var saveApplyButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSaveApply");
+
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => saveApplyButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService)
+                .Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Never);
+            Mock.Get(_themeManagerService)
+                .Verify(service => service.ApplyTheme(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_WhitespaceName_WHEN_SaveApplyInvoked_THEN_DoesNotSave()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Local)
+            };
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.Themes)
+                .Returns(themes);
+
+            var target = RenderPage("ThemeId", themes);
+
+            var nameField = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName");
+            await target.InvokeAsync(() => nameField.Instance.ValueChanged.InvokeAsync(" "));
+
+            var saveApplyButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSaveApply");
+            await target.InvokeAsync(() => saveApplyButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService)
+                .Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Never);
+            nameField.Instance.Error.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeRemovedAfterSave_WHEN_SaveInvoked_THEN_NavigatesBackToThemes()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Local)
+            };
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.Themes)
+                .Returns(themes);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
+                .Callback(() => themes.Clear())
+                .Returns(Task.CompletedTask);
+
+            var target = RenderPage("ThemeId", themes);
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/theme-edit");
+
+            var nameField = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName");
+            await target.InvokeAsync(() => nameField.Instance.ValueChanged.InvokeAsync("Updated"));
+
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().Be("http://localhost/themes");
+        }
+
+        [Fact]
+        public async Task GIVEN_SaveInProgress_WHEN_SaveInvokedAgain_THEN_SecondInvocationReturnsEarly()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Local)
+            };
+            var saveCompletion = new TaskCompletionSource<bool>();
+
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.Themes)
+                .Returns(themes);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
+                .Returns(saveCompletion.Task);
+
+            var target = RenderPage("ThemeId", themes);
+
+            var nameField = FindComponentByTestId<MudTextField<string>>(target, "ThemeDetailName");
+            await target.InvokeAsync(() => nameField.Instance.ValueChanged.InvokeAsync("Updated"));
+
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
+            var firstSaveTask = target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService)
+                .Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Once);
+
+            saveCompletion.SetResult(true);
+            await firstSaveTask;
         }
 
         [Fact]

@@ -27,6 +27,8 @@ namespace Lantean.QBTMud.Layout
         private bool _toggleAltSpeedLimitsInProgress;
         private Task? _refreshLoopTask;
         private bool _authConfirmed;
+        private bool _startupUpdateCheckRequested;
+        private bool _updateSnackbarShown;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -38,7 +40,7 @@ namespace Lantean.QBTMud.Layout
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
@@ -60,6 +62,21 @@ namespace Lantean.QBTMud.Layout
 
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
+
+        [Inject]
+        protected IAppSettingsService AppSettingsService { get; set; } = default!;
+
+        [Inject]
+        protected IAppUpdateService AppUpdateService { get; set; } = default!;
+
+        [Inject]
+        protected IWelcomeWizardPlanBuilder WelcomeWizardPlanBuilder { get; set; } = default!;
+
+        [Inject]
+        protected IWelcomeWizardStateService WelcomeWizardStateService { get; set; } = default!;
+
+        [Inject]
+        protected ITorrentCompletionNotificationService TorrentCompletionNotificationService { get; set; } = default!;
 
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
@@ -229,6 +246,12 @@ namespace Lantean.QBTMud.Layout
                 await ShowWelcomeWizardIfNeededAsync();
             }
 
+            if (!_startupUpdateCheckRequested && _authConfirmed)
+            {
+                _startupUpdateCheckRequested = true;
+                await TryRunStartupUpdateCheckAsync();
+            }
+
             if (MainData?.LostConnection == true)
             {
                 await ShowLostConnectionDialogAsync();
@@ -237,27 +260,33 @@ namespace Lantean.QBTMud.Layout
 
         private async Task ShowWelcomeWizardIfNeededAsync()
         {
-            var completed = await LocalStorage.GetItemAsync<bool?>(WelcomeWizardStorageKeys.Completed);
-            if (completed.GetValueOrDefault())
+            var plan = await WelcomeWizardPlanBuilder.BuildPlanAsync();
+            if (!plan.ShouldShowWizard)
             {
                 return;
             }
 
+            await WelcomeWizardStateService.MarkShownAsync();
+
             var parameters = new DialogParameters
             {
-                { nameof(WelcomeWizardDialog.InitialLocale), Preferences?.Locale }
+                { nameof(WelcomeWizardDialog.InitialLocale), Preferences?.Locale },
+                { nameof(WelcomeWizardDialog.PendingStepIds), plan.PendingSteps.Select(step => step.Id).ToArray() },
+                { nameof(WelcomeWizardDialog.ShowWelcomeBackIntro), plan.IsReturningUser }
             };
 
             var options = new DialogOptions
             {
                 CloseOnEscapeKey = false,
                 BackdropClick = false,
-                NoHeader = true,
+                NoHeader = false,
                 FullWidth = true,
-                MaxWidth = MaxWidth.Medium
+                MaxWidth = MaxWidth.Medium,
+                BackgroundClass = "background-blur background-blur-strong"
             };
 
-            await DialogService.ShowAsync<WelcomeWizardDialog>(title: null, parameters, options);
+            var title = LanguageLocalizer.Translate("AppWelcomeWizard", plan.IsReturningUser ? "Welcome back" : "Welcome");
+            await DialogService.ShowAsync<WelcomeWizardDialog>(title, parameters, options);
         }
 
         private async Task ShowLostConnectionDialogAsync()
@@ -322,20 +351,86 @@ namespace Lantean.QBTMud.Layout
             }
 
             _localeMismatchWarningShown = true;
-            Snackbar.Add(
+            SnackbarWorkflow.ShowActionMessage(
                 LanguageLocalizer.Translate("AppLocalization", "Language preference changed on server. Click Reload to apply it."),
                 Severity.Warning,
-                options =>
+                LanguageLocalizer.Translate("AppLocalization", "Reload"),
+                _ =>
                 {
-                    options.RequireInteraction = true;
-                    options.Action = LanguageLocalizer.Translate("AppLocalization", "Reload");
+                    NavigationManager.NavigateToHome(forceLoad: true);
+                    return Task.CompletedTask;
+                },
+                configure: options =>
+                {
                     options.CloseAfterNavigation = true;
-                    options.OnClick = _ =>
-                    {
-                        NavigationManager.NavigateToHome(forceLoad: true);
-                        return Task.CompletedTask;
-                    };
                 });
+        }
+
+        private async Task TryRunStartupUpdateCheckAsync()
+        {
+            try
+            {
+                var settings = await AppSettingsService.GetSettingsAsync(_timerCancellationToken.Token);
+                if (!settings.UpdateChecksEnabled)
+                {
+                    return;
+                }
+
+                var status = await AppUpdateService.GetUpdateStatusAsync(cancellationToken: _timerCancellationToken.Token);
+                var latestTag = status.LatestRelease?.TagName;
+                if (!status.IsUpdateAvailable || string.IsNullOrWhiteSpace(latestTag))
+                {
+                    return;
+                }
+
+                if (string.Equals(settings.DismissedReleaseTag, latestTag, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                if (_updateSnackbarShown)
+                {
+                    return;
+                }
+
+                _updateSnackbarShown = true;
+
+                SnackbarWorkflow.ShowActionMessage(
+                    LanguageLocalizer.Translate("AppUpdates", "A new qbtmud build (%1) is available.", latestTag),
+                    Severity.Info,
+                    LanguageLocalizer.Translate("AppUpdates", "Dismiss"),
+                    async _ =>
+                    {
+                        await AppSettingsService.SaveDismissedReleaseTagAsync(latestTag);
+                    },
+                    key: $"qbtmud-update-{latestTag}");
+            }
+            catch (OperationCanceledException exception) when (exception.CancellationToken == _timerCancellationToken.Token)
+            {
+            }
+            catch
+            {
+            }
+        }
+
+        private async Task TryProcessTorrentNotificationsAsync(IReadOnlyList<TorrentTransition> transitions, CancellationToken cancellationToken)
+        {
+            if (transitions.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                await TorrentCompletionNotificationService.ProcessTransitionsAsync(transitions, cancellationToken);
+            }
+            catch (OperationCanceledException exception) when (exception.CancellationToken == cancellationToken)
+            {
+                throw;
+            }
+            catch
+            {
+            }
         }
 
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
@@ -364,6 +459,7 @@ namespace Lantean.QBTMud.Layout
             }
 
             var shouldRender = false;
+            IReadOnlyList<TorrentTransition> transitionBatch = Array.Empty<TorrentTransition>();
 
             if (MainData is null || data.FullUpdate)
             {
@@ -373,7 +469,7 @@ namespace Lantean.QBTMud.Layout
             }
             else
             {
-                var dataChanged = DataManager.MergeMainData(data, MainData, out var filterChanged);
+                var dataChanged = DataManager.MergeMainData(data, MainData, out var filterChanged, out transitionBatch);
                 if (filterChanged)
                 {
                     MarkTorrentsDirty();
@@ -389,6 +485,7 @@ namespace Lantean.QBTMud.Layout
             {
                 await UpdateRefreshIntervalAsync(MainData.ServerState.RefreshInterval, cancellationToken);
                 await RecordSpeedSampleAsync(MainData.ServerState, cancellationToken);
+                await TryProcessTorrentNotificationsAsync(transitionBatch, cancellationToken);
             }
 
             _requestId = data.ResponseId;
@@ -780,11 +877,11 @@ namespace Lantean.QBTMud.Layout
                     MainData.ServerState.UseAltSpeedLimits = isEnabled;
                 }
 
-                Snackbar?.Add(BuildAlternativeSpeedLimitsStatusMessage(isEnabled), Severity.Info);
+                SnackbarWorkflow.ShowTransientMessage(BuildAlternativeSpeedLimitsStatusMessage(isEnabled), Severity.Info);
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add(
+                SnackbarWorkflow.ShowTransientMessage(
                     LanguageLocalizer.Translate("AppLoggedInLayout", "Unable to toggle alternative speed limits: %1", exception.Message),
                     Severity.Error);
             }

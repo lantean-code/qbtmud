@@ -58,7 +58,7 @@ namespace Lantean.QBTMud.Pages
         protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -211,19 +211,19 @@ namespace Lantean.QBTMud.Pages
         {
             if (!SearchFeatureAvailable)
             {
-                Snackbar.Add(SearchUnavailableMessage, Severity.Warning);
+                SnackbarWorkflow.ShowTransientMessage(SearchUnavailableMessage, Severity.Warning);
                 return;
             }
 
             if (!HasUsablePluginSelection)
             {
-                Snackbar.Add(TranslateSearch("Enable the selected plugin before searching."), Severity.Warning);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Enable the selected plugin before searching."), Severity.Warning);
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(Model.SearchText))
             {
-                Snackbar.Add(TranslateSearch("Enter search criteria to start a job."), Severity.Warning);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Enter search criteria to start a job."), Severity.Warning);
                 return;
             }
 
@@ -251,7 +251,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add(TranslateSearch("Failed to start search: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to start search: %1", exception.Message), Severity.Error);
             }
         }
 
@@ -279,7 +279,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add(TranslateSearch("Failed to stop \"%1\": %2", job.Pattern, exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to stop \"%1\": %2", job.Pattern, exception.Message), Severity.Error);
             }
         }
 
@@ -479,7 +479,7 @@ namespace Lantean.QBTMud.Pages
                 EnsureValidCategory();
                 if (showError)
                 {
-                    Snackbar.Add(TranslateSearch("Unable to load search plugins: %1", exception.Message), Severity.Warning);
+                    SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Unable to load search plugins: %1", exception.Message), Severity.Warning);
                 }
             }
         }
@@ -702,7 +702,7 @@ namespace Lantean.QBTMud.Pages
             catch (HttpRequestException exception)
             {
                 job.SetError(LanguageLocalizer.Translate("SearchJobWidget", "An error occurred during search..."));
-                Snackbar.Add(TranslateSearch("Failed to load results for \"%1\": %2", job.Pattern, exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to load results for \"%1\": %2", job.Pattern, exception.Message), Severity.Error);
                 await StopPollingIfAllJobsCompletedAsync();
             }
             catch (Exception exception)
@@ -1125,7 +1125,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             await ClipboardService.WriteToClipboard(_contextMenuResult.FileName);
-            Snackbar.Add(TranslateSearch("Name copied to clipboard."), Severity.Success);
+            SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Name copied to clipboard."), Severity.Success);
         }
 
         protected async Task CopyDownloadLinkFromContext()
@@ -1136,7 +1136,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             await ClipboardService.WriteToClipboard(_contextMenuResult.FileUrl);
-            Snackbar.Add(TranslateSearch("Download link copied to clipboard."), Severity.Success);
+            SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Download link copied to clipboard."), Severity.Success);
         }
 
         protected async Task CopyDescriptionLinkFromContext()
@@ -1147,7 +1147,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             await ClipboardService.WriteToClipboard(_contextMenuResult.DescriptionLink);
-            Snackbar.Add(TranslateSearch("Description link copied to clipboard."), Severity.Success);
+            SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Description link copied to clipboard."), Severity.Success);
         }
 
         private Task OpenLinkInNewTab(string? url)
@@ -1182,7 +1182,7 @@ namespace Lantean.QBTMud.Pages
 
             if (exception is not null)
             {
-                Snackbar.Add(TranslateSearch("Search polling stopped: %1", exception.GetBaseException().Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Search polling stopped: %1", exception.GetBaseException().Message), Severity.Error);
             }
 
             return Task.CompletedTask;

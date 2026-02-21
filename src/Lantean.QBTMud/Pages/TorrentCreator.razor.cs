@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Pages
         protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -115,7 +115,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add($"{LanguageLocalizer.Translate("TorrentCreator", "Unable to create torrent.")} {exception.Message}", Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage($"{LanguageLocalizer.Translate("TorrentCreator", "Unable to create torrent.")} {exception.Message}", Severity.Error);
                 return;
             }
 
@@ -147,7 +147,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add(TranslateTorrentCreator("Unable to delete task: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateTorrentCreator("Unable to delete task: %1", exception.Message), Severity.Error);
                 return;
             }
 
@@ -182,7 +182,7 @@ namespace Lantean.QBTMud.Pages
         {
             if (MainData?.LostConnection == true)
             {
-                Snackbar.Add($"{LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")}.", Severity.Warning);
+                SnackbarWorkflow.ShowTransientMessage($"{LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")}.", Severity.Warning);
                 _timerCancellationToken.CancelIfNotDisposed();
                 return;
             }
@@ -194,7 +194,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar.Add($"{LanguageLocalizer.Translate("TorrentCreator", "Unable to load torrent creation tasks")}: {exception.Message}", Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage($"{LanguageLocalizer.Translate("TorrentCreator", "Unable to load torrent creation tasks")}: {exception.Message}", Severity.Error);
             }
             finally
             {
@@ -226,7 +226,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (Exception exception)
             {
-                Snackbar.Add(TranslateTorrentCreator("Unable to refresh torrent creation tasks: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateTorrentCreator("Unable to refresh torrent creation tasks: %1", exception.Message), Severity.Error);
                 return ManagedTimerTickResult.Stop;
             }
 

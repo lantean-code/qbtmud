@@ -1,7 +1,6 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
-using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
@@ -16,7 +15,7 @@ namespace Lantean.QBTMud.Pages
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -143,7 +142,7 @@ namespace Lantean.QBTMud.Pages
                 await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, UpdatePreferences.Locale);
             }
 
-            Snackbar.Add(TranslateOptions("Options saved."), Severity.Success);
+            SnackbarWorkflow.ShowTransientMessage(TranslateOptions("Options saved."), Severity.Success);
 
             Preferences = await ApiClient.GetApplicationPreferences();
             UpdatePreferences = null;

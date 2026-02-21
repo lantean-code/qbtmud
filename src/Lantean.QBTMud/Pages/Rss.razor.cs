@@ -77,7 +77,7 @@ namespace Lantean.QBTMud.Pages
         protected IRssDataManager RssDataManager { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected IClipboardService ClipboardService { get; set; } = default!;
@@ -455,7 +455,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add(TranslateRss("Unable to rename RSS item: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateRss("Unable to rename RSS item: %1", exception.Message), Severity.Error);
             }
         }
 
@@ -482,7 +482,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add($"{LanguageLocalizer.Translate("RSSWidget", "Unable to update URL")}: {exception.Message}", Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage($"{LanguageLocalizer.Translate("RSSWidget", "Unable to update URL")}: {exception.Message}", Severity.Error);
             }
         }
 
@@ -509,7 +509,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add(TranslateRss("Unable to remove RSS item: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateRss("Unable to remove RSS item: %1", exception.Message), Severity.Error);
             }
         }
 
@@ -549,7 +549,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add(TranslateRss("Unable to add folder: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateRss("Unable to add folder: %1", exception.Message), Severity.Error);
             }
         }
 
@@ -561,7 +561,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             await ClipboardService.WriteToClipboard(_contextNode.Feed.Url);
-            Snackbar?.Add(TranslateRss("Feed URL copied to clipboard."), Severity.Info);
+            SnackbarWorkflow.ShowTransientMessage(TranslateRss("Feed URL copied to clipboard."), Severity.Info);
         }
 
         protected async Task DownloadItem(string? url)
@@ -616,7 +616,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException exception)
             {
-                Snackbar?.Add(TranslateRss("Unable to add feed: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateRss("Unable to add feed: %1", exception.Message), Severity.Error);
             }
         }
 

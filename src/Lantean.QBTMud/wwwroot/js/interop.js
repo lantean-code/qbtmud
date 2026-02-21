@@ -106,6 +106,99 @@ window.qbt.registerMagnetHandler = (templateUrl, handlerName) => {
     }
 };
 
+window.qbt.isNotificationSupported = () => {
+    return typeof window.Notification !== "undefined";
+}
+
+window.qbt.getNotificationPermission = () => {
+    if (typeof window.Notification === "undefined") {
+        return "unsupported";
+    }
+
+    return window.Notification.permission ?? "default";
+}
+
+window.qbt.requestNotificationPermission = async () => {
+    if (typeof window.Notification === "undefined" || typeof window.Notification.requestPermission !== "function") {
+        return "unsupported";
+    }
+
+    try {
+        const permission = await window.Notification.requestPermission();
+        return permission ?? "default";
+    } catch {
+        return window.Notification.permission ?? "default";
+    }
+}
+
+window.qbt.showNotification = (title, body) => {
+    if (typeof window.Notification === "undefined") {
+        return false;
+    }
+
+    if (window.Notification.permission !== "granted") {
+        return false;
+    }
+
+    try {
+        const options = {};
+        if (body) {
+            options.body = body;
+        }
+
+        new window.Notification(title ?? "", options);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+window.qbt.getLocalStorageEntriesByPrefix = (prefix) => {
+    const normalizedPrefix = typeof prefix === "string" ? prefix : "";
+    const entries = [];
+
+    for (let index = 0; index < localStorage.length; index++) {
+        const key = localStorage.key(index);
+        if (!key || !key.startsWith(normalizedPrefix)) {
+            continue;
+        }
+
+        entries.push({
+            key: key,
+            value: localStorage.getItem(key),
+        });
+    }
+
+    entries.sort((left, right) => left.key.localeCompare(right.key));
+    return entries;
+}
+
+window.qbt.removeLocalStorageEntry = (key) => {
+    if (!key) {
+        return;
+    }
+
+    localStorage.removeItem(key);
+}
+
+window.qbt.clearLocalStorageEntriesByPrefix = (prefix) => {
+    const normalizedPrefix = typeof prefix === "string" ? prefix : "";
+    const keysToRemove = [];
+
+    for (let index = 0; index < localStorage.length; index++) {
+        const key = localStorage.key(index);
+        if (key && key.startsWith(normalizedPrefix)) {
+            keysToRemove.push(key);
+        }
+    }
+
+    for (const key of keysToRemove) {
+        localStorage.removeItem(key);
+    }
+
+    return keysToRemove.length;
+}
+
 window.qbt.renderPiecesBar = (id, hash, pieces, downloadingColor, haveColor, borderColor) => {
     const parentElement = document.getElementById(id);
     if (!parentElement) {

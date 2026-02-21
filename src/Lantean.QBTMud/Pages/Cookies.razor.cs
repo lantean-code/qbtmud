@@ -1,8 +1,8 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -28,7 +28,7 @@ namespace Lantean.QBTMud.Pages
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -145,7 +145,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException)
             {
-                Snackbar.Add(Translate("Unable to load cookies. Please try again."), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load cookies. Please try again."), Severity.Error);
             }
             finally
             {
@@ -169,7 +169,7 @@ namespace Lantean.QBTMud.Pages
             }
             catch (HttpRequestException)
             {
-                Snackbar.Add(Translate("Unable to update cookies. Please try again."), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(Translate("Unable to update cookies. Please try again."), Severity.Error);
             }
             finally
             {

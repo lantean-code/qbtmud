@@ -64,6 +64,20 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_NullPluginResponse_WHEN_Rendered_THEN_ShowsEmptyList()
+        {
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock
+                .Setup(client => client.GetSearchPlugins())
+                .Returns(Task.FromResult<IReadOnlyList<SearchPlugin>>(null!));
+
+            var dialog = await _target.RenderDialogAsync();
+
+            dialog.Component.FindComponents<MudTable<SearchPlugin>>().Should().ContainSingle();
+            dialog.Component.FindComponents<MudTr>().Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_NoInstallSources_WHEN_InstallClicked_THEN_DoesNotCallApi()
         {
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };

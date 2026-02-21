@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Components
         protected IClipboardService ClipboardService { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
@@ -175,7 +175,7 @@ namespace Lantean.QBTMud.Components
             }
 
             await ClipboardService.WriteToClipboard($"{peer.IPAddress}:{peer.Port}");
-            Snackbar.Add(TranslateApp("Peer copied to clipboard."), Severity.Info);
+            SnackbarWorkflow.ShowTransientMessage(TranslateApp("Peer copied to clipboard."), Severity.Info);
         }
 
         protected async Task ShowContextMenu(Peer? peer, EventArgs eventArgs)

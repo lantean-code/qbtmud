@@ -1,7 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
@@ -508,6 +507,38 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
                     It.Is<ThemeDefinition>(value => value.FontFamily == "Nunito Sans")),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ImportWithoutIdThemeAndFont_WHEN_Imported_THEN_NormalizesDefaults()
+        {
+            var definition = new ThemeDefinition
+            {
+                Id = " ",
+                Name = "Name",
+                Description = " ",
+                FontFamily = " ",
+                Theme = new MudTheme()
+            };
+            var json = JsonSerializer.Serialize(definition, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            var file = new TestBrowserFile("theme.json", json);
+
+            SetupFontCatalogValid();
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderPage(new List<ThemeCatalogItem>());
+
+            var upload = target.FindComponent<MudFileUpload<IReadOnlyList<IBrowserFile>>>();
+            await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
+
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                    It.Is<ThemeDefinition>(value =>
+                        !string.IsNullOrWhiteSpace(value.Id)
+                        && value.Description == string.Empty
+                        && value.FontFamily == "Nunito Sans")),
                 Times.Once);
         }
 

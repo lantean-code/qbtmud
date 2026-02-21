@@ -276,6 +276,53 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_StoredFormStateWithWhitespaceFormatAndNegativePadding_WHEN_Rendered_THEN_UsesDefaults()
+        {
+            var state = new TorrentCreationFormState
+            {
+                SourcePath = "SourcePath",
+                Format = " ",
+                OptimizeAlignment = true,
+                PaddedFileSizeLimit = -1
+            };
+
+            await TestContext.LocalStorage.SetItemAsync(StorageKey, state, Xunit.TestContext.Current.CancellationToken);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetBuildInfo())
+                .ReturnsAsync(CreateBuildInfo("1.2.0"));
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var formatSelect = dialog.Component.FindComponents<MudSelect<string>>()
+                .Any(select => HasTestId(select, "TorrentFormat"));
+            formatSelect.Should().BeFalse();
+
+            var paddedLimit = FindNumericField(dialog.Component, "PaddedFileSizeLimit");
+            paddedLimit.Instance.Value.Should().Be(-1);
+        }
+
+        [Fact]
+        public async Task GIVEN_WhitespaceOnlyTrackersAndWebSeeds_WHEN_SubmitClicked_THEN_RequestListsAreNull()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetBuildInfo())
+                .ReturnsAsync(CreateBuildInfo("2.1.0"));
+
+            var dialog = await _target.RenderDialogAsync();
+            await SetSourcePathAsync(dialog.Component, "C:/Source");
+            await SetTextFieldAsync(dialog.Component, "TrackerUrls", " \n \r\n ");
+            await SetTextFieldAsync(dialog.Component, "WebSeedUrls", " \n \r\n ");
+
+            var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
+            await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
+
+            var result = await dialog.Reference.Result;
+            var request = result!.Data.Should().BeOfType<TorrentCreationTaskRequest>().Subject;
+            request.Trackers.Should().BeNull();
+            request.UrlSeeds.Should().BeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_InvalidVersion_WHEN_Rendered_THEN_FormatSelectHidden()
         {
             Mock.Get(_apiClient)

@@ -1,4 +1,3 @@
-using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -89,7 +88,7 @@ namespace Lantean.QBTMud.Pages
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
-        protected ISnackbar Snackbar { get; set; } = default!;
+        protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
