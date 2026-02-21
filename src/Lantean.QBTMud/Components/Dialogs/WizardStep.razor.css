@@ -19,3 +19,33 @@
 .wizard-step__subtitle {
     max-width: 52ch;
 }
+
+.wizard-step__body {
+    min-width: 0;
+}
+
+.wizard-step__body-main {
+    min-width: 0;
+}
+
+.wizard-step__body-alert {
+    min-width: 0;
+}
+
+    .wizard-step__body-alert ::deep .mud-alert {
+        width: 100%;
+    }
+
+@media (max-width: 599.95px) {
+    .wizard-step__hero {
+        padding: 20px 16px 16px;
+    }
+
+    .wizard-step__body {
+        padding: 16px !important;
+    }
+
+        .wizard-step__body ::deep .mud-spacer {
+            display: none;
+        }
+}

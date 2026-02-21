@@ -145,6 +145,21 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
         }
 
+        protected bool IsNotificationsUnavailable
+        {
+            get
+            {
+                return _notificationPermission switch
+                {
+                    BrowserNotificationPermission.Granted => false,
+                    BrowserNotificationPermission.Denied => false,
+                    BrowserNotificationPermission.Default => false,
+                    BrowserNotificationPermission.Unsupported => true,
+                    _ => true
+                };
+            }
+        }
+
         protected IReadOnlyList<string> FlowSteps
         {
             get
@@ -329,6 +344,11 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task OnNotificationsEnabledChanged(bool value)
         {
             if (_isApplyingNotificationToggle)
+            {
+                return;
+            }
+
+            if (value && IsNotificationsUnavailable)
             {
                 return;
             }

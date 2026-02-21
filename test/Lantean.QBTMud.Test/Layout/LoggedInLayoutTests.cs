@@ -232,6 +232,108 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public void GIVEN_WelcomeWizardOnSmallBreakpoint_WHEN_Rendered_THEN_UsesFullScreenDialogOptions()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(
+                    isReturningUser: false,
+                    pendingSteps:
+                    [
+                        new WelcomeWizardStepDefinition(WelcomeWizardStepCatalog.ThemeStepId, 0)
+                    ]));
+
+            DialogOptions? capturedOptions = null;
+            _dialogServiceMock
+                .Setup(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()))
+                .Callback<string?, DialogParameters, DialogOptions?>((_, _, options) => capturedOptions = options)
+                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+
+            var target = RenderLayout(new List<IManagedTimer>(), breakpoint: Breakpoint.Sm);
+
+            target.WaitForAssertion(() =>
+            {
+                capturedOptions.Should().NotBeNull();
+                capturedOptions!.FullScreen.Should().BeTrue();
+                capturedOptions.FullWidth.Should().BeTrue();
+                capturedOptions.MaxWidth.Should().Be(MaxWidth.Medium);
+            });
+        }
+
+        [Fact]
+        public void GIVEN_WelcomeWizardOnLargeBreakpoint_WHEN_Rendered_THEN_DoesNotUseFullScreenDialogOptions()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(
+                    isReturningUser: false,
+                    pendingSteps:
+                    [
+                        new WelcomeWizardStepDefinition(WelcomeWizardStepCatalog.ThemeStepId, 0)
+                    ]));
+
+            DialogOptions? capturedOptions = null;
+            _dialogServiceMock
+                .Setup(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()))
+                .Callback<string?, DialogParameters, DialogOptions?>((_, _, options) => capturedOptions = options)
+                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+
+            var target = RenderLayout(new List<IManagedTimer>(), breakpoint: Breakpoint.Lg);
+
+            target.WaitForAssertion(() =>
+            {
+                capturedOptions.Should().NotBeNull();
+                capturedOptions!.FullScreen.Should().BeFalse();
+                capturedOptions.FullWidth.Should().BeTrue();
+                capturedOptions.MaxWidth.Should().Be(MaxWidth.Medium);
+            });
+        }
+
+        [Fact]
+        public void GIVEN_WelcomeWizardOnNoneBreakpoint_WHEN_Rendered_THEN_UsesFullScreenDialogOptions()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(
+                    isReturningUser: false,
+                    pendingSteps:
+                    [
+                        new WelcomeWizardStepDefinition(WelcomeWizardStepCatalog.ThemeStepId, 0)
+                    ]));
+
+            DialogOptions? capturedOptions = null;
+            _dialogServiceMock
+                .Setup(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()))
+                .Callback<string?, DialogParameters, DialogOptions?>((_, _, options) => capturedOptions = options)
+                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+
+            var target = RenderLayout(new List<IManagedTimer>(), breakpoint: Breakpoint.None);
+
+            target.WaitForAssertion(() =>
+            {
+                capturedOptions.Should().NotBeNull();
+                capturedOptions!.FullScreen.Should().BeTrue();
+                capturedOptions.FullWidth.Should().BeTrue();
+                capturedOptions.MaxWidth.Should().Be(MaxWidth.Medium);
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_StoredLocaleMissing_WHEN_Initialized_THEN_ShouldSyncFromApiWithoutWarning()
         {
             DisposeDefaultTarget();

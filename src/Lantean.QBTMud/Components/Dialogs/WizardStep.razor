@@ -34,9 +34,11 @@
         <MudStack Spacing="2"
                   AlignItems="AlignItems.Stretch"
                   Justify="Justify.FlexStart"
-                  Class="pa-4 mud-height-full"
+                  Class="wizard-step__body pa-4 mud-height-full"
                   data-test-id="@TestIdHelper.For("WizardStepBody")">
-            <MudStack Spacing="2" data-test-id="@TestIdHelper.For("WizardStepBodyMain")">
+            <MudStack Spacing="2"
+                      Class="wizard-step__body-main"
+                      data-test-id="@TestIdHelper.For("WizardStepBodyMain")">
                 @ChildContent
             </MudStack>
 
@@ -44,7 +46,8 @@
 
             @if (HasAlert)
             {
-                <MudStack data-test-id="@TestIdHelper.For("WizardStepBodyAlert")">
+                <MudStack Class="wizard-step__body-alert"
+                          data-test-id="@TestIdHelper.For("WizardStepBodyAlert")">
                     <MudAlert Severity="@AlertSeverity" data-test-id="@TestIdHelper.For("WizardStepAlert")">
                         @AlertText
                     </MudAlert>

@@ -87,24 +87,28 @@
                                             Icon="@Icons.Material.Filled.Notifications"
                                             Title="@LanguageLocalizer.Translate("AppNotifications", "Notifications")"
                                             Subtitle="@LanguageLocalizer.Translate("AppWelcomeWizard", "Enable browser notifications and choose which events trigger alerts.")">
-                                    <MudGrid>
+                                    <MudGrid Spacing="0">
                                         <MudItem xs="12">
-                                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap" Spacing="2">
-                                                <FieldSwitch Value="@_settings.NotificationsEnabled"
-                                                             ValueChanged="OnNotificationsEnabledChanged"
-                                                             Label="@LanguageLocalizer.Translate("AppNotifications", "Enable browser notifications")"
-                                                             data-test-id="@TestIdHelper.For("WelcomeWizardNotificationsEnabled")" />
-
-                                                <MudChip T="string"
-                                                         Color="@GetNotificationPermissionColor()"
-                                                         Variant="Variant.Outlined"
-                                                         data-test-id="@TestIdHelper.For("WelcomeWizardNotificationPermission")">
-                                                    @LanguageLocalizer.Translate("AppNotifications", "Permission: %1", GetNotificationPermissionText())
-                                                </MudChip>
-                                            </MudStack>
+                                            <MudGrid Spacing="2">
+                                                <MudItem xs="12" md="8">
+                                                    <FieldSwitch Value="@_settings.NotificationsEnabled"
+                                                                 ValueChanged="OnNotificationsEnabledChanged"
+                                                                 Disabled="@IsNotificationsUnavailable"
+                                                                 Label="@LanguageLocalizer.Translate("AppNotifications", "Enable browser notifications")"
+                                                                 data-test-id="@TestIdHelper.For("WelcomeWizardNotificationsEnabled")" />
+                                                </MudItem>
+                                                <MudItem xs="12" md="4" Class="d-flex align-center justify-end">
+                                                    <MudChip T="string"
+                                                             Color="@GetNotificationPermissionColor()"
+                                                             Variant="Variant.Outlined"
+                                                             data-test-id="@TestIdHelper.For("WelcomeWizardNotificationPermission")">
+                                                        @LanguageLocalizer.Translate("AppNotifications", "Permission: %1", GetNotificationPermissionText())
+                                                    </MudChip>
+                                                </MudItem>
+                                            </MudGrid>
                                         </MudItem>
 
-                                        @if (_settings.NotificationsEnabled)
+                                        @if (_settings.NotificationsEnabled && !IsNotificationsUnavailable)
                                         {
                                             <MudItem xs="12">
                                                 <MudText Typo="Typo.body2" Class="fw-bold mb-2">@LanguageLocalizer.Translate("AppNotifications", "Browser notification types")</MudText>

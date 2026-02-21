@@ -267,6 +267,7 @@ namespace Lantean.QBTMud.Layout
             }
 
             await WelcomeWizardStateService.MarkShownAsync();
+            var useFullScreenWizardDialog = CurrentBreakpoint == Breakpoint.None || CurrentBreakpoint <= Breakpoint.Sm;
 
             var parameters = new DialogParameters
             {
@@ -281,6 +282,7 @@ namespace Lantean.QBTMud.Layout
                 BackdropClick = false,
                 NoHeader = false,
                 FullWidth = true,
+                FullScreen = useFullScreenWizardDialog,
                 MaxWidth = MaxWidth.Medium,
                 BackgroundClass = "background-blur background-blur-strong"
             };

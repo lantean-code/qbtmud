@@ -960,6 +960,24 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_NotificationPermissionUnsupported_WHEN_NotificationsStepRendered_THEN_NotificationsSwitchIsDisabled()
+        {
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Unsupported);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            notificationSwitch.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
         public async Task GIVEN_GetPermissionReturnsUnknownEnum_WHEN_NotificationsStepRendered_THEN_UsesUnsupportedFallback()
         {
             Mock.Get(_torrentCompletionNotificationService)

@@ -57,6 +57,21 @@ namespace Lantean.QBTMud.Pages
 
         protected IReadOnlyList<AppStorageEntry> StorageEntries { get; private set; } = Array.Empty<AppStorageEntry>();
 
+        protected bool IsNotificationsUnavailable
+        {
+            get
+            {
+                return NotificationPermission switch
+                {
+                    BrowserNotificationPermission.Granted => false,
+                    BrowserNotificationPermission.Denied => false,
+                    BrowserNotificationPermission.Default => false,
+                    BrowserNotificationPermission.Unsupported => true,
+                    _ => true
+                };
+            }
+        }
+
         protected override async Task OnInitializedAsync()
         {
             CurrentBuildInfo = AppBuildInfoService.GetCurrentBuildInfo();
@@ -105,6 +120,11 @@ namespace Lantean.QBTMud.Pages
         protected async Task OnNotificationsEnabledChanged(bool value)
         {
             if (IsApplyingNotificationToggle)
+            {
+                return;
+            }
+
+            if (value && IsNotificationsUnavailable)
             {
                 return;
             }

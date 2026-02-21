@@ -448,6 +448,42 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_UnsupportedPermission_WHEN_PageRendered_THEN_NotificationsSwitchIsDisabled()
+        {
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Unsupported);
+
+            var target = RenderPage();
+            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+
+            notificationsSwitch.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_UnsupportedPermission_WHEN_NotificationsEnabledRequested_THEN_RequestIsIgnored()
+        {
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Unsupported);
+
+            var target = RenderPage();
+            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+
+            _torrentCompletionNotificationService.ClearInvocations();
+            _appSettingsService.ClearInvocations();
+
+            await target.InvokeAsync(() => notificationsSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            Mock.Get(_torrentCompletionNotificationService).Verify(
+                service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()),
+                Times.Never);
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
         public void GIVEN_UnexpectedPermissionValue_WHEN_PageRendered_THEN_PermissionIndicatorFallsBackToUnsupported()
         {
             Mock.Get(_torrentCompletionNotificationService)

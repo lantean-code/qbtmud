@@ -106,6 +106,7 @@
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap" Spacing="2">
                                             <FieldSwitch Value="@Settings.NotificationsEnabled"
                                                          ValueChanged="OnNotificationsEnabledChanged"
+                                                         Disabled="@IsNotificationsUnavailable"
                                                          Label="@TranslateNotifications("Enable browser notifications")"
                                                          data-test-id="@TestIdHelper.For("AppSettingsNotificationsEnabled")" />
 
@@ -124,7 +125,7 @@
                                         </MudText>
                                     </MudItem>
 
-                                    @if (Settings.NotificationsEnabled)
+                                    @if (Settings.NotificationsEnabled && !IsNotificationsUnavailable)
                                     {
                                         <MudItem xs="12">
                                             <MudText Typo="Typo.body2" Class="fw-bold mb-2">@TranslateNotifications("Browser notification types")</MudText>
