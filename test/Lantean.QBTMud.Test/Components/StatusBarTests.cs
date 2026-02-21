@@ -76,6 +76,51 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public void GIVEN_SmallLandscapeBreakpoint_WHEN_Rendered_THEN_AutoScrollsStatusBarToEnd()
+        {
+            var scrollInvocation = TestContext.JSInterop.SetupVoid(
+                "qbt.scrollElementToEnd",
+                invocation => invocation.Arguments.Count == 1 && invocation.Arguments[0] is ".app-shell__status-bar");
+            scrollInvocation.SetVoidResult();
+
+            RenderStatusBar(
+                breakpoint: Breakpoint.Sm,
+                orientation: Orientation.Landscape);
+
+            scrollInvocation.Invocations.Should().ContainSingle();
+        }
+
+        [Fact]
+        public void GIVEN_LargePortraitBreakpoint_WHEN_Rendered_THEN_DoesNotAutoScrollStatusBarToEnd()
+        {
+            var scrollInvocation = TestContext.JSInterop.SetupVoid("qbt.scrollElementToEnd", _ => true);
+            scrollInvocation.SetVoidResult();
+
+            RenderStatusBar(
+                breakpoint: Breakpoint.Lg,
+                orientation: Orientation.Portrait);
+
+            scrollInvocation.Invocations.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_SmallLandscapeBreakpoint_WHEN_ReRendered_THEN_AutoScrollsStatusBarToEndAgain()
+        {
+            var scrollInvocation = TestContext.JSInterop.SetupVoid(
+                "qbt.scrollElementToEnd",
+                invocation => invocation.Arguments.Count == 1 && invocation.Arguments[0] is ".app-shell__status-bar");
+            scrollInvocation.SetVoidResult();
+
+            var target = RenderStatusBar(
+                breakpoint: Breakpoint.Sm,
+                orientation: Orientation.Landscape);
+
+            target.Render();
+
+            target.WaitForAssertion(() => scrollInvocation.Invocations.Should().HaveCount(2));
+        }
+
+        [Fact]
         public void GIVEN_SmallLandscapeBreakpoint_WHEN_Rendered_THEN_ShowsReducedModeStatusTooltips()
         {
             var target = RenderStatusBar(

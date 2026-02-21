@@ -299,6 +299,15 @@ namespace Lantean.QBTMud.Test.Interop
         }
 
         [Fact]
+        public async Task GIVEN_Selector_WHEN_ScrollElementToEndInvoked_THEN_InvokesRuntime()
+        {
+            await _target.ScrollElementToEnd(".app-shell__status-bar");
+
+            _target.LastIdentifier.Should().Be("qbt.scrollElementToEnd");
+            _target.LastArguments.Should().ContainSingle().Which.Should().Be(".app-shell__status-bar");
+        }
+
+        [Fact]
         public async Task GIVEN_BootstrapTheme_WHEN_RemoveInvoked_THEN_InvokesRuntime()
         {
             await _target.RemoveBootstrapTheme();

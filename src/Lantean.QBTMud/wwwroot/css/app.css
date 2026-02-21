@@ -712,6 +712,23 @@ body {
     box-sizing: border-box;
 }
 
+@media (max-width: 960px) {
+    .app-shell__status-bar.mud-appbar {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .app-shell__status-bar .mud-toolbar {
+        min-width: max-content;
+        white-space: nowrap;
+    }
+
+        .app-shell__status-bar .mud-toolbar > * {
+            flex-shrink: 0;
+        }
+}
+
 .app-shell__alt-speed-enabled .mud-icon-root {
     transform: scaleX(-1);
     transform-origin: center;

@@ -309,6 +309,23 @@ window.qbt.clearSelection = () => {
     }
 }
 
+window.qbt.scrollElementToEnd = (selector) => {
+    const element = getElementBySelector(selector);
+    if (!element) {
+        return;
+    }
+
+    ensureUserScrollTracking(element);
+
+    if (element.dataset.qbtUserScrolledStatusBar === "true") {
+        return;
+    }
+
+    requestAnimationFrame(() => {
+        element.scrollLeft = element.scrollWidth;
+    });
+}
+
 let supportedEvents = new Map();
 let focusInstance = null;
 
@@ -414,6 +431,43 @@ function getKey(keyboardEvent) {
 
 function getKeyWithoutRepeat(keyboardEvent) {
     return keyboardEvent.key + (keyboardEvent.ctrlKey ? '1' : '0') + (keyboardEvent.shiftKey ? '1' : '0') + (keyboardEvent.altKey ? '1' : '0') + (keyboardEvent.metaKey ? '1' : '0') + '0';
+}
+
+function ensureUserScrollTracking(element) {
+    if (element.dataset.qbtUserScrollTrackingEnabled === "true") {
+        return;
+    }
+
+    const scrollState = {
+        userIntent: false,
+        resetIntentTimeout: null,
+    };
+
+    const setUserScrollIntent = () => {
+        scrollState.userIntent = true;
+
+        if (scrollState.resetIntentTimeout !== null) {
+            clearTimeout(scrollState.resetIntentTimeout);
+        }
+
+        scrollState.resetIntentTimeout = window.setTimeout(() => {
+            scrollState.userIntent = false;
+            scrollState.resetIntentTimeout = null;
+        }, 500);
+    };
+
+    const lockUserScrollPosition = () => {
+        if (scrollState.userIntent) {
+            element.dataset.qbtUserScrolledStatusBar = "true";
+        }
+    };
+
+    element.addEventListener("wheel", setUserScrollIntent, { passive: true });
+    element.addEventListener("touchstart", setUserScrollIntent, { passive: true });
+    element.addEventListener("pointerdown", setUserScrollIntent, { passive: true });
+    element.addEventListener("scroll", lockUserScrollPosition, { passive: true });
+
+    element.dataset.qbtUserScrollTrackingEnabled = "true";
 }
 
 function fallbackCopyTextToClipboard(text) {

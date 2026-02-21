@@ -213,6 +213,17 @@ namespace Lantean.QBTMud.Interop
         }
 
         /// <summary>
+        /// Scrolls the first element matching the selector to its horizontal end.
+        /// </summary>
+        /// <param name="runtime">The JavaScript runtime.</param>
+        /// <param name="selector">The CSS selector for the target element.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public static async Task ScrollElementToEnd(this IJSRuntime runtime, string selector)
+        {
+            await runtime.InvokeVoidAsync("qbt.scrollElementToEnd", selector);
+        }
+
+        /// <summary>
         /// Removes the bootstrap theme style element if present.
         /// </summary>
         /// <param name="runtime">The JavaScript runtime.</param>
