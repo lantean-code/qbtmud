@@ -197,6 +197,121 @@ namespace Lantean.QBTMud.Test.Components.Options
             events.Should().BeEmpty();
         }
 
+        [Fact]
+        public async Task GIVEN_FromTimeWithOnlyMinuteChange_WHEN_Updated_THEN_ShouldOnlyUpdateMinutes()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+            var events = new List<UpdatePreferences>();
+
+            var target = TestContext.Render<SpeedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
+            });
+
+            await target.InvokeAsync(() => FindTimePicker(target, "ScheduleFrom").Instance.TimeChanged.InvokeAsync(new TimeSpan(1, 30, 0)));
+
+            events.Should().NotBeEmpty();
+            events.Should().AllSatisfy(value => value.Should().BeSameAs(update));
+            update.ScheduleFromHour.Should().BeNull();
+            update.ScheduleFromMin.Should().Be(30);
+        }
+
+        [Fact]
+        public async Task GIVEN_ToTimeWithOnlyHourChange_WHEN_Updated_THEN_ShouldOnlyUpdateHours()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+            var events = new List<UpdatePreferences>();
+
+            var target = TestContext.Render<SpeedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
+            });
+
+            await target.InvokeAsync(() => FindTimePicker(target, "ScheduleTo").Instance.TimeChanged.InvokeAsync(TimeSpan.FromHours(7)));
+
+            events.Should().NotBeEmpty();
+            events.Should().AllSatisfy(value => value.Should().BeSameAs(update));
+            update.ScheduleToHour.Should().Be(7);
+            update.ScheduleToMin.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_ValidationDelegates_WHEN_InvalidValuesProvided_THEN_ShouldReturnValidationMessages()
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var preferences = DeserializePreferences();
+
+            var target = TestContext.Render<SpeedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var upValidation = FindNumeric(target, "UpLimit").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            upValidation(-1).Should().Be("Global upload rate limit must be greater than 0 or disabled.");
+            upValidation(0).Should().BeNull();
+
+            var dlValidation = FindNumeric(target, "DlLimit").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            dlValidation(-1).Should().Be("Global download rate limit must be greater than 0 or disabled.");
+            dlValidation(0).Should().BeNull();
+
+            var altUpValidation = FindNumeric(target, "AltUpLimit").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            altUpValidation(-1).Should().Be("Alternative upload rate limit must be greater than 0 or disabled.");
+            altUpValidation(0).Should().BeNull();
+
+            var altDlValidation = FindNumeric(target, "AltDlLimit").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            altDlValidation(-1).Should().Be("Alternative download rate limit must be greater than 0 or disabled.");
+            altDlValidation(0).Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldNotPopulateValuesOrThrow()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<SpeedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindNumeric(target, "UpLimit").Instance.GetState(x => x.Value).Should().Be(0);
+            FindSwitch(target, "SchedulerEnabled").Instance.Value.Should().BeNull();
+            FindSelect<int>(target, "SchedulerDays").Instance.GetState(x => x.Value).Should().Be(0);
+        }
+
+        [Fact]
+        public void GIVEN_RenderedSchedulerDaysSelect_WHEN_InspectingItems_THEN_AllDayOptionsArePresent()
+        {
+            TestContext.Render<MudPopoverProvider>();
+            var preferences = DeserializePreferences();
+
+            var target = TestContext.Render<SpeedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var values = target.FindComponents<MudSelectItem<int>>()
+                .Select(item => item.Instance.Value)
+                .ToList();
+
+            values.Should().Equal(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        }
+
         private static Preferences DeserializePreferences()
         {
             const string json = """

@@ -1,52 +1,71 @@
 # Coverage Report
 
-Generated from full solution test execution with coverage collection.
+Generated from a full solution run:
+
+- `dotnet test --artifacts-path=/tmp/artifacts/qbtmud --collect:"XPlat Code Coverage"`
 
 ## Test Execution Summary
 
-- `Lantean.QBitTorrentClient.Test`: 325 passed
-- `Lantean.QBTMud.Test`: 1490 passed
-- Total: 1815 passed, 0 failed
+- `Blazor.BrowserCapabilities.Test`: 10 passed
+- `Lantean.QBitTorrentClient.Test`: 358 passed
+- `Lantean.QBTMud.Test`: 2037 passed
+- Total: 2405 passed, 0 failed
 
 ## Coverage Summary (Whole Solution)
 
-Coverage was collected from `XPlat Code Coverage` Cobertura outputs and aggregated per target assembly.
-
 | Scope | Line coverage | Branch coverage |
 |---|---:|---:|
-| `Lantean.QBitTorrentClient` | 2420/3383 (71.53%) | 302/366 (82.51%) |
-| `Lantean.QBTMud` | 24368/28334 (86.00%) | 6572/8018 (81.97%) |
-| **Whole solution** | **26788/31717 (84.46%)** | **6874/8384 (81.99%)** |
+| `Blazor.BrowserCapabilities` | 128/138 (92.75%) | 11/12 (91.67%) |
+| `Lantean.QBitTorrentClient` | 2574/3383 (76.09%) | 306/366 (83.61%) |
+| `Lantean.QBTMud` | 27297/30481 (89.55%) | 7473/8551 (87.39%) |
+| **Whole solution** | **29999/34002 (88.23%)** | **7790/8929 (87.24%)** |
 
-## Risk-Weighted Least-Covered Components (Highlighted Set)
+## Least-Covered Components (Top 20)
 
-Ranking is prioritized by user-impact and operational risk (core workflows, cross-cutting behavior, async/state complexity), not raw coverage alone.
+Sorted by line coverage, then branch coverage (files with at least 10 executable lines).
 
-| Rank | Priority | Component | Line % (delta) | Branch % (delta) | Risk factors |
-|---:|---|---|---:|---:|---|
-| 1 | P0 | `src/Lantean.QBTMud/Services/Localization/WebUiLocalizer.cs` | 75.86% (+75.86pp) | 72.58% (+72.58pp) | Cross-cutting localization behavior and fallback/error handling paths |
-| 2 | P0 | `src/Lantean.QBTMud/Pages/TorrentList.razor.cs` | 77.81% (+28.38pp) | 73.21% (+25.43pp) | Primary list page with heavy interaction/state transitions |
-| 3 | P0 | `src/Lantean.QBTMud/Pages/Rss.razor.cs` | 86.69% (+86.69pp) | 83.80% (+81.17pp) | Core RSS workflow; async/state-heavy paths substantially improved but still not fully saturated at file-level aggregation |
-| 4 | P0 | `src/Lantean.QBTMud/Pages/Rss.razor` | 99.15% (+99.15pp) | 100.00% (+93.55pp) | Core RSS UI surface now effectively saturated |
-| 5 | P0 | `src/Lantean.QBTMud/Filter/FilterExpressionGenerator.cs` | 100.00% (+77.56pp) | 100.00% (+92.69pp) | Filtering engine paths fully exercised |
-| 6 | P1 | `src/Lantean.QBTMud/Components/UI/DynamicTable.razor.cs` | 82.31% (+1.21pp) | 74.03% (-1.12pp) | Shared table primitive with dense keyboard/selection state machine paths |
-| 7 | P1 | `src/Lantean.QBTMud/Pages/Search.razor.cs` | 85.83% (+0.64pp) | 74.06% (-0.74pp) | Polling/job lifecycle logic; cancellation/error synchronization risk |
-| 8 | P1 | `src/Lantean.QBTMud/Components/Options/WebUIOptions.razor.cs` | 92.52% (+19.91pp) | 71.05% (+35.07pp) | Settings validation and branch-heavy option mapping |
-| 9 | P1 | `src/Lantean.QBitTorrentClient/ApiClient.cs` | 97.84% (+12.48pp) | 91.96% (+10.94pp) | API boundary methods and non-success/validation branches |
-| 10 | P1 | `src/Lantean.QBTMud/Helpers/DisplayHelpers.cs` | 99.62% (+61.46pp) | 95.50% (+80.71pp) | Shared formatting helpers used across UI surfaces |
-| 11 | P2 | `src/Lantean.QBTMud/Components/Options/BitTorrentOptions.razor.cs` | 98.36% (+32.29pp) | 96.67% (+59.89pp) | Configuration branch correctness and mapping rules |
-| 12 | P2 | `src/Lantean.QBitTorrentClient/Models/UpdatePreferences.cs` | 100.00% (+2.57pp) | 100.00% (+50.00pp) | Validation guard model; fully exercised |
+| Rank | Component | Line coverage | Branch coverage |
+|---:|---|---:|---:|
+| 1 | `src/Lantean.QBTMud/Components/PieceProgress.razor.cs` | 0.00% (0/54) | 0.00% (0/8) |
+| 2 | `src/Lantean.QBTMud/Program.cs` | 0.00% (0/67) | N/A (0/0) |
+| 3 | `src/Lantean.QBTMud/Components/ErrorDisplay.razor.cs` | 20.00% (4/20) | N/A (0/0) |
+| 4 | `src/Lantean.QBTMud/Components/Options/SpeedOptions.razor` | 46.15% (6/13) | N/A (0/0) |
+| 5 | `src/Lantean.QBTMud/Components/Options/Options.cs` | 55.17% (16/29) | 33.33% (4/12) |
+| 6 | `src/Lantean.QBTMud/Extensions.cs` | 55.77% (29/52) | 33.33% (4/12) |
+| 7 | `src/Lantean.QBTMud/Components/TorrentsListNav.razor` | 61.54% (8/13) | 50.00% (3/6) |
+| 8 | `src/Lantean.QBTMud/EventHandlers/LongPressEventArgs.cs` | 64.29% (9/14) | N/A (0/0) |
+| 9 | `src/Lantean.QBTMud/Filter/ExpressionModifier.cs` | 64.37% (56/87) | 50.00% (6/12) |
+| 10 | `src/Lantean.QBTMud/Pages/ThemeDetail.razor` | 66.67% (32/48) | 84.09% (37/44) |
+| 11 | `src/Lantean.QBitTorrentClient/Models/SaveLocation.cs` | 67.19% (43/64) | 45.45% (10/22) |
+| 12 | `src/Lantean.QBTMud/Components/EnhancedErrorBoundary.cs` | 69.23% (18/26) | 50.00% (1/2) |
+| 13 | `src/Lantean.QBTMud/Components/PiecesProgressNew.razor.cs` | 72.47% (279/385) | 49.04% (51/104) |
+| 14 | `src/Lantean.QBitTorrentClient/Converters/NullableStringFloatJsonConverter.cs` | 75.00% (18/24) | 37.50% (6/16) |
+| 15 | `src/Lantean.QBTMud/Models/FileRow.cs` | 76.47% (13/17) | 50.00% (1/2) |
+| 16 | `src/Lantean.QBTMud/Components/UI/Tooltip.razor.cs` | 76.92% (110/143) | 68.75% (33/48) |
+| 17 | `src/Lantean.QBTMud/Components/WebSeedsTab.razor.cs` | 77.33% (58/75) | 77.27% (17/22) |
+| 18 | `src/Lantean.QBTMud/Components/TrackersTab.razor` | 77.78% (14/18) | 100.00% (2/2) |
+| 19 | `src/Lantean.QBTMud/Components/Dialogs/ShareRatioDialog.razor` | 80.00% (8/10) | N/A (0/0) |
+| 20 | `src/Lantean.QBTMud/Components/Options/AdvancedOptions.razor` | 80.65% (25/31) | 100.00% (4/4) |
 
-## Baseline Comparison Notes
+## Recently Targeted Components
 
-- `FilterExpressionGenerator.cs` reached 100% line and 100% branch coverage.
-- `Rss.razor` reached 100% branch coverage and 99.15% line coverage.
-- `Rss.razor.cs` improved to 86.69% line and 83.80% branch coverage from a near-zero baseline in the original report.
-- 10 of 12 highlighted components improved for both line and branch coverage.
-- `DynamicTable.razor.cs` and `Search.razor.cs` gained line coverage but show slight branch percentage drops, indicating remaining unexercised branch paths despite added tests.
-- Largest risk reduction occurred in previously near-zero areas: `Rss.razor.cs`, `Rss.razor`, `WebUiLocalizer.cs`, and `FilterExpressionGenerator.cs`.
+These files were explicitly targeted and are now fully covered in the latest run.
+
+| Component | Line coverage | Branch coverage |
+|---|---:|---:|
+| `src/Lantean.QBTMud/Services/Localization/LanguageCatalog.cs` | 100.00% (123/123) | 100.00% (30/30) |
+| `src/Lantean.QBTMud/Components/TorrentInfo.razor.cs` | 100.00% (13/13) | 100.00% (4/4) |
+| `src/Lantean.QBitTorrentClient/ApiClientExtensions.cs` | 100.00% (92/92) | 100.00% (2/2) |
+| `src/Lantean.QBTMud/Filter/FilterOperator.cs` | 100.00% (66/66) | 100.00% (12/12) |
+| `src/Lantean.QBTMud/Components/PiecesProgressCanvas.razor.cs` | 100.00% (223/223) | 100.00% (64/64) |
+| `src/Lantean.QBTMud/Layout/OtherLayout.razor.cs` | 100.00% (10/10) | 100.00% (2/2) |
+| `src/Lantean.QBTMud/Layout/ListLayout.razor.cs` | 100.00% (14/14) | 100.00% (2/2) |
+| `src/Lantean.QBitTorrentClient/Models/TrackerEndpoint.cs` | 100.00% (12/12) | N/A (0/0) |
+| `src/Lantean.QBitTorrentClient/Models/TorrentTracker.cs` | 100.00% (36/36) | 100.00% (2/2) |
+| `src/Lantean.QBTMud/Models/KeyboardEvent.cs` | 100.00% (83/83) | 100.00% (46/46) |
 
 ## Coverage Artifacts
 
-- `test/Lantean.QBTMud.Test/TestResults/e210117d-dd76-4e76-81a3-a521bd5b7bd2/coverage.cobertura.xml`
-- `test/Lantean.QBitTorrentClient.Test/TestResults/6d9c43fa-ef5f-4e39-9458-ede658f5fc36/coverage.cobertura.xml`
+- `test/Blazor.BrowserCapabilities.Test/TestResults/8aeccd94-d715-478d-9506-f394c6e0df7f/coverage.cobertura.xml`
+- `test/Lantean.QBitTorrentClient.Test/TestResults/51748c68-d671-43b2-a693-9178ea3d9dbb/coverage.cobertura.xml`
+- `test/Lantean.QBTMud.Test/TestResults/4235d9ed-3316-4207-971a-2553852335e7/coverage.cobertura.xml`

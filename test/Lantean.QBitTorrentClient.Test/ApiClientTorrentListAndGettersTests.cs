@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Lantean.QBitTorrentClient.Models;
 using System.Net;
 
 namespace Lantean.QBitTorrentClient.Test
@@ -198,6 +199,75 @@ namespace Lantean.QBitTorrentClient.Test
 
             result.Should().NotBeNull();
             result.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_HashAndTrackerPayload_WHEN_GetTorrentTrackers_THEN_ShouldDeserializeTrackerAndEndpoints()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrents/trackers?hash=xyz");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        [
+                            {
+                                "url": "Url",
+                                "status": 2,
+                                "tier": 1,
+                                "num_peers": 3,
+                                "num_seeds": 4,
+                                "num_leeches": 5,
+                                "num_downloaded": 6,
+                                "msg": "Message",
+                                "next_announce": 7,
+                                "min_announce": 8,
+                                "endpoints": [
+                                    {
+                                        "name": "Name",
+                                        "updating": true,
+                                        "status": 3,
+                                        "msg": "Message",
+                                        "bt_version": 1,
+                                        "num_peers": 2,
+                                        "num_seeds": 3,
+                                        "num_leeches": 4,
+                                        "num_downloaded": 5,
+                                        "next_announce": 6,
+                                        "min_announce": 7
+                                    }
+                                ]
+                            }
+                        ]
+                        """)
+                });
+            };
+
+            var result = await _target.GetTorrentTrackers("xyz");
+
+            result.Should().ContainSingle();
+            result[0].Url.Should().Be("Url");
+            result[0].Status.Should().Be(TrackerStatus.Working);
+            result[0].Tier.Should().Be(1);
+            result[0].Peers.Should().Be(3);
+            result[0].Seeds.Should().Be(4);
+            result[0].Leeches.Should().Be(5);
+            result[0].Downloads.Should().Be(6);
+            result[0].Message.Should().Be("Message");
+            result[0].NextAnnounce.Should().Be(7);
+            result[0].MinAnnounce.Should().Be(8);
+            result[0].Endpoints.Should().ContainSingle();
+            result[0].Endpoints[0].Name.Should().Be("Name");
+            result[0].Endpoints[0].Updating.Should().BeTrue();
+            result[0].Endpoints[0].Status.Should().Be(TrackerStatus.Updating);
+            result[0].Endpoints[0].BitTorrentVersion.Should().Be(1);
+            result[0].Endpoints[0].Peers.Should().Be(2);
+            result[0].Endpoints[0].Seeds.Should().Be(3);
+            result[0].Endpoints[0].Leeches.Should().Be(4);
+            result[0].Endpoints[0].Downloads.Should().Be(5);
+            result[0].Endpoints[0].NextAnnounce.Should().Be(6);
+            result[0].Endpoints[0].MinAnnounce.Should().Be(7);
         }
 
         [Fact]
