@@ -6,7 +6,7 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12">
-                <MudFileUpload T="IReadOnlyList<IBrowserFile>" Files="@Files" FilesChanged="UploadFiles" Accept=".torrent" MaximumFileCount="50" data-test-id="@TestIdHelper.For("AddTorrentFileUpload")">
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>" @ref="FileUpload" Files="@Files" FilesChanged="UploadFiles" Accept=".torrent" MaximumFileCount="50" data-test-id="@TestIdHelper.For("AddTorrentFileUpload")">
                     <SelectedTemplate Context="selectedFiles">
                         @if (selectedFiles is not null && selectedFiles.Count > 0)
                         {
@@ -26,7 +26,7 @@
                                                                    Color="Color.Error"
                                                                    Variant="Variant.Text"
                                                                    Size="Size.Small"
-                                                                   OnClick="@(() => Remove(file))"
+                                                                   OnClick="@(() => RemoveAsync(file))"
                                                                    data-test-id="@TestIdHelper.For($"RemoveTorrentFile-{file.Name}")" />
                                                 </div>
                                             </MudListItem>
