@@ -76,7 +76,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             dialog.Component.WaitForAssertion(() =>
             {
                 var pathField = dialog.Component.FindComponent<MudTextField<string>>();
-                pathField.Instance.Value.Should().Be("C:/");
+                pathField.Instance.GetState(x => x.Value).Should().Be("C:/");
                 FindComponentByTestId<MudListItem<string>>(dialog.Component, "PathBrowserEntry-file.txt").Should().NotBeNull();
             });
         }
@@ -185,7 +185,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await dialog.Component.InvokeAsync(() => upButton.Instance.OnClick.InvokeAsync());
 
             var pathField = dialog.Component.FindComponent<MudTextField<string>>();
-            pathField.Instance.Value.Should().Be("C:/Folder/");
+            pathField.Instance.GetState(x => x.Value).Should().Be("C:/Folder/");
 
             Mock.Get(_apiClient).Verify(
                 client => client.GetDirectoryContent("C:/Folder/", DirectoryContentMode.Directories),
@@ -208,7 +208,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await dialog.Component.InvokeAsync(() => upButton.Instance.OnClick.InvokeAsync());
 
             var pathField = dialog.Component.FindComponent<MudTextField<string>>();
-            pathField.Instance.Value.Should().Be("Folder");
+            pathField.Instance.GetState(x => x.Value).Should().Be("Folder");
         }
 
         [Fact]
@@ -432,7 +432,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await dialog.Component.InvokeAsync(() => listItem.Instance.OnClick.InvokeAsync());
 
             var pathField = dialog.Component.FindComponent<MudTextField<string>>();
-            pathField.Instance.Value.Should().Be("C:/Folder");
+            pathField.Instance.GetState(x => x.Value).Should().Be("C:/Folder");
         }
 
         [Fact]

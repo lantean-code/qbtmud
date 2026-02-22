@@ -251,7 +251,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             pathFields[1].Instance.Value.Should().Be("TorrentFilePath");
 
             var pieceSelect = dialog.Component.FindComponent<MudSelect<int?>>();
-            pieceSelect.Instance.Value.Should().Be(65536);
+            pieceSelect.Instance.GetState(x => x.Value).Should().Be(65536);
 
             var privateSwitch = FindFieldSwitch(dialog.Component, "PrivateTorrent");
             privateSwitch.Instance.Value.Should().BeTrue();
@@ -260,19 +260,19 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             seedSwitch.Instance.Value.Should().BeFalse();
 
             var formatSelect = FindComponentByTestId<MudSelect<string>>(dialog.Component, "TorrentFormat");
-            formatSelect.Instance.Value.Should().Be("v2");
+            formatSelect.Instance.GetState(x => x.Value).Should().Be("v2");
 
             var trackers = FindTextField(dialog.Component, "TrackerUrls");
-            trackers.Instance.Value.Should().Be("Trackers");
+            trackers.Instance.GetState(x => x.Value).Should().Be("Trackers");
 
             var urlSeeds = FindTextField(dialog.Component, "WebSeedUrls");
-            urlSeeds.Instance.Value.Should().Be("UrlSeeds");
+            urlSeeds.Instance.GetState(x => x.Value).Should().Be("UrlSeeds");
 
             var comment = FindTextField(dialog.Component, "Comments");
-            comment.Instance.Value.Should().Be("Comment");
+            comment.Instance.GetState(x => x.Value).Should().Be("Comment");
 
             var source = FindTextField(dialog.Component, "Source");
-            source.Instance.Value.Should().Be("Source");
+            source.Instance.GetState(x => x.Value).Should().Be("Source");
         }
 
         [Fact]
@@ -298,7 +298,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             formatSelect.Should().BeFalse();
 
             var paddedLimit = FindNumericField(dialog.Component, "PaddedFileSizeLimit");
-            paddedLimit.Instance.Value.Should().Be(-1);
+            paddedLimit.Instance.GetState(x => x.Value).Should().Be(-1);
         }
 
         [Fact]

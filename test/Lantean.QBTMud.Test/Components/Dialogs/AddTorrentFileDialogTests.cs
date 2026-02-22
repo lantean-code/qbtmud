@@ -75,6 +75,30 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_DialogRendered_WHEN_FileUploadConfigured_THEN_ShouldUseCustomSelectedFileTemplate()
+        {
+            UseApiClientMock();
+            var dialog = await _target.RenderDialogAsync();
+
+            var upload = FindComponentByTestId<MudFileUpload<IReadOnlyList<IBrowserFile>>>(dialog.Component, "AddTorrentFileUpload");
+
+            upload.Instance.SelectedTemplate.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_CustomSelectedTemplate_WHEN_RenderedWithNullFiles_THEN_ShouldNotRenderFileListCard()
+        {
+            UseApiClientMock();
+            var dialog = await _target.RenderDialogAsync();
+
+            var upload = FindComponentByTestId<MudFileUpload<IReadOnlyList<IBrowserFile>>>(dialog.Component, "AddTorrentFileUpload");
+
+            var renderedTemplate = TestContext.Render(upload.Instance.SelectedTemplate!.Invoke(null));
+
+            renderedTemplate.FindComponents<MudCard>().Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_FilesUploaded_WHEN_RemoveClicked_THEN_FileRemoved()
         {
             UseApiClientMock();

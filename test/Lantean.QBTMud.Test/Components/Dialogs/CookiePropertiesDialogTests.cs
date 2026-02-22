@@ -47,11 +47,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var value = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CookiePropertiesValue");
             var expirationField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CookiePropertiesExpiration");
 
-            domain.Instance.Value.Should().Be("Domain");
-            path.Instance.Value.Should().Be("/Path");
-            name.Instance.Value.Should().Be("Name");
-            value.Instance.Value.Should().Be("Value");
-            expirationField.Instance.Value.Should().Be(DateTimeOffset.FromUnixTimeSeconds(expiration).LocalDateTime.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture));
+            domain.Instance.GetState(x => x.Value).Should().Be("Domain");
+            path.Instance.GetState(x => x.Value).Should().Be("/Path");
+            name.Instance.GetState(x => x.Value).Should().Be("Name");
+            value.Instance.GetState(x => x.Value).Should().Be("Value");
+            expirationField.Instance.GetState(x => x.Value).Should().Be(DateTimeOffset.FromUnixTimeSeconds(expiration).LocalDateTime.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture));
         }
 
         [Fact]

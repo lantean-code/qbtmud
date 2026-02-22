@@ -2,11 +2,11 @@
 @using Lantean.QBTMud.Helpers
 @using MudBlazor.Utilities
 <MudDialog ContentClass="theme-preview-dialog__content"
-           ContentStyle="width: min(1800px, calc(100vw - 4rem)); height: calc(100vh - 4rem);">
+           Style="width: min(1800px, calc(100vw - 4rem)); height: calc(100vh - 4rem);">
     <DialogContent>
         <MudThemeProvider Theme="PreviewTheme"
                           IsDarkMode="@_isDarkMode"
-                          ObserveSystemThemeChange="false" />
+                          ObserveSystemDarkModeChange="false" />
         <div class="theme-preview theme-preview-scope">
             <div class="theme-preview__appbar">
                 <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" data-test-id="@TestIdHelper.For("ThemePreviewMenu")" />

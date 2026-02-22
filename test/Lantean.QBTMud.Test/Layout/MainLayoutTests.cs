@@ -130,7 +130,7 @@ namespace Lantean.QBTMud.Test.Layout
             var probe = target.FindComponent<DrawerProbe>();
 
             target.WaitForAssertion(() => probe.Instance.DrawerOpen.Should().BeTrue());
-            target.FindComponent<MudThemeProvider>().Instance.IsDarkMode.Should().BeFalse();
+            target.FindComponent<MudThemeProvider>().Instance.GetState(x => x.IsDarkMode).Should().BeFalse();
 
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
         }
@@ -145,7 +145,7 @@ namespace Lantean.QBTMud.Test.Layout
             var probe = target.FindComponent<DrawerProbe>();
 
             target.WaitForAssertion(() => probe.Instance.DrawerOpen.Should().BeFalse());
-            target.FindComponent<MudThemeProvider>().Instance.IsDarkMode.Should().BeTrue();
+            target.FindComponent<MudThemeProvider>().Instance.GetState(x => x.IsDarkMode).Should().BeTrue();
         }
 
         [Fact]
@@ -235,7 +235,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             await target.InvokeAsync(() => themeProvider.Instance.SystemDarkModeChangedAsync(false));
 
-            themeProvider.Instance.IsDarkMode.Should().BeFalse();
+            themeProvider.Instance.GetState(x => x.IsDarkMode).Should().BeFalse();
         }
 
         [Fact]
@@ -284,8 +284,8 @@ namespace Lantean.QBTMud.Test.Layout
             var errorDrawer = FindErrorDrawer(target);
             var timerDrawer = FindTimerDrawer(target);
 
-            errorDrawer.Instance.Open.Should().BeTrue();
-            timerDrawer.Instance.Open.Should().BeFalse();
+            errorDrawer.Instance.GetState(x => x.Open).Should().BeTrue();
+            timerDrawer.Instance.GetState(x => x.Open).Should().BeFalse();
         }
 
         [Fact]
@@ -302,11 +302,11 @@ namespace Lantean.QBTMud.Test.Layout
             await target.InvokeAsync(() => errorIcon.Instance.OnClick.InvokeAsync());
 
             var errorDrawer = FindErrorDrawer(target);
-            errorDrawer.Instance.Open.Should().BeFalse();
+            errorDrawer.Instance.GetState(x => x.Open).Should().BeFalse();
 
             await target.InvokeAsync(() => errorIcon.Instance.OnClick.InvokeAsync());
 
-            errorDrawer.Instance.Open.Should().BeTrue();
+            errorDrawer.Instance.GetState(x => x.Open).Should().BeTrue();
         }
 
         [Fact]
@@ -322,7 +322,7 @@ namespace Lantean.QBTMud.Test.Layout
             target.Render();
 
             var errorDrawer = FindErrorDrawer(target);
-            errorDrawer.Instance.Open.Should().BeFalse();
+            errorDrawer.Instance.GetState(x => x.Open).Should().BeFalse();
         }
 
         [Fact]

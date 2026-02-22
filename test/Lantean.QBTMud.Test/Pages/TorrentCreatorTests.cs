@@ -634,7 +634,7 @@ namespace Lantean.QBTMud.Test.Pages
             status.Instance.Text.Should().Be("Running");
 
             var progress = FindComponentByTestId<MudProgressLinear>(target, "TorrentCreatorProgress-TaskId");
-            progress.Instance.Value.Should().Be(42);
+            progress.Instance.GetState(x => x.Value).Should().Be(42);
         }
 
         [Fact]
@@ -650,7 +650,7 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderPage();
 
             var progress = FindComponentByTestId<MudProgressLinear>(target, "TorrentCreatorProgress-TaskId");
-            progress.Instance.Value.Should().Be(0);
+            progress.Instance.GetState(x => x.Value).Should().Be(0);
         }
 
         [Fact]
@@ -666,7 +666,7 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderPage();
 
             var progress = FindComponentByTestId<MudProgressLinear>(target, "TorrentCreatorProgress-TaskId");
-            progress.Instance.Value.Should().Be(100);
+            progress.Instance.GetState(x => x.Value).Should().Be(100);
         }
 
         [Fact]

@@ -883,7 +883,7 @@ namespace Lantean.QBTMud.Pages
             StateHasChanged();
         }
 
-        private string? PluginsSelectionText(List<string>? selectedPlugins)
+        private string? PluginsSelectionText(IReadOnlyList<string>? selectedPlugins)
         {
             if (selectedPlugins is null)
             {

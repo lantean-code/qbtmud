@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync(null, 5, value => value.ToString());
 
             var input = FindComponentByTestId<MudTextField<string>>(dialog.Component, "SliderFieldInput");
-            input.Instance.Value.Should().Be("5");
+            input.Instance.GetState(x => x.Value).Should().Be("5");
         }
 
         [Fact]

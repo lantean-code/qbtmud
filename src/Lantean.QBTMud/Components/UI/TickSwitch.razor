@@ -1,5 +1,6 @@
 @inherits MudSwitch<T>
 @typeparam T
+@using MudBlazor.Extensions
 @{
     base.BuildRenderTree(__builder);
 }
@@ -13,7 +14,10 @@
 
     protected override void OnParametersSet()
     {
-        if (Value is null)
+        base.OnParametersSet();
+
+        var currentValue = this.GetState(x => x.Value);
+        if (currentValue is null)
         {
             ApplyHiddenState();
             return;
@@ -26,7 +30,7 @@
             _isHiddenApplied = false;
         }
 
-        if (Value is bool boolValue)
+        if (currentValue is bool boolValue)
         {
             this.ThumbIcon = boolValue ? Icons.Material.Filled.Done : Icons.Material.Filled.Close;
             this.ThumbIconColor = boolValue ? Color.Success : Color.Error;

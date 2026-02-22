@@ -2,6 +2,7 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Serialization;
 using MudBlazor;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Lantean.QBTMud.Theming
 {
@@ -10,6 +11,9 @@ namespace Lantean.QBTMud.Theming
     /// </summary>
     public static class ThemeSerialization
     {
+        private const string TypeDiscriminatorPropertyName = "$type";
+        private const string PaletteLightTypeDiscriminator = nameof(PaletteLight);
+        private const string PaletteDarkTypeDiscriminator = nameof(PaletteDark);
         private static readonly JsonSerializerOptions _defaultOptions = CreateSerializerOptions(writeIndented: false);
         private static readonly JsonSerializerOptions _indentedOptions = CreateSerializerOptions(writeIndented: true);
 
@@ -37,7 +41,8 @@ namespace Lantean.QBTMud.Theming
                 return null;
             }
 
-            return JsonSerializer.Deserialize<ThemeDefinition>(json, _defaultOptions);
+            var normalizedJson = AddMissingPaletteTypeDiscriminators(json);
+            return JsonSerializer.Deserialize<ThemeDefinition>(normalizedJson, _defaultOptions);
         }
 
         /// <summary>
@@ -71,6 +76,7 @@ namespace Lantean.QBTMud.Theming
         {
             var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
             {
+                AllowOutOfOrderMetadataProperties = true,
                 PropertyNameCaseInsensitive = true,
                 WriteIndented = writeIndented
             };
@@ -78,6 +84,84 @@ namespace Lantean.QBTMud.Theming
             options.Converters.Add(new MudColorJsonConverter());
 
             return options;
+        }
+
+        private static string AddMissingPaletteTypeDiscriminators(string json)
+        {
+            JsonNode? rootNode;
+            try
+            {
+                rootNode = JsonNode.Parse(json);
+            }
+            catch (JsonException)
+            {
+                return json;
+            }
+
+            if (rootNode is not JsonObject rootObject)
+            {
+                return json;
+            }
+
+            if (!TryGetPropertyObject(rootObject, "theme", out var themeObject) || themeObject is null)
+            {
+                return json;
+            }
+
+            var changed = false;
+            changed |= EnsureTypeDiscriminator(themeObject, "paletteLight", PaletteLightTypeDiscriminator);
+            changed |= EnsureTypeDiscriminator(themeObject, "paletteDark", PaletteDarkTypeDiscriminator);
+
+            if (!changed)
+            {
+                return json;
+            }
+
+            return rootObject.ToJsonString(_defaultOptions);
+        }
+
+        private static bool EnsureTypeDiscriminator(JsonObject themeObject, string palettePropertyName, string paletteTypeName)
+        {
+            if (!TryGetPropertyObject(themeObject, palettePropertyName, out var paletteObject) || paletteObject is null)
+            {
+                return false;
+            }
+
+            if (HasProperty(paletteObject, TypeDiscriminatorPropertyName))
+            {
+                return false;
+            }
+
+            paletteObject[TypeDiscriminatorPropertyName] = paletteTypeName;
+            return true;
+        }
+
+        private static bool TryGetPropertyObject(JsonObject jsonObject, string propertyName, out JsonObject? propertyValue)
+        {
+            foreach (var pair in jsonObject)
+            {
+                if (string.Equals(pair.Key, propertyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    propertyValue = pair.Value as JsonObject;
+                    return propertyValue is not null;
+                }
+            }
+
+            propertyValue = null;
+            return false;
+        }
+
+        private static bool HasProperty(JsonObject jsonObject, string propertyName)
+        {
+            foreach (var pair in jsonObject)
+            {
+                if (string.Equals(pair.Key, propertyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

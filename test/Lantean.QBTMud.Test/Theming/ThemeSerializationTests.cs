@@ -3,6 +3,7 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Theming;
 using MudBlazor;
 using MudBlazor.Utilities;
+using System.Text.Json.Nodes;
 
 namespace Lantean.QBTMud.Test.Theming
 {
@@ -53,6 +54,40 @@ namespace Lantean.QBTMud.Test.Theming
             result!.Id.Should().Be("Id");
             result.Name.Should().Be("Name");
             result.FontFamily.Should().Be("FontFamily");
+        }
+
+        [Fact]
+        public void GIVEN_JsonWithoutPaletteTypeDiscriminator_WHEN_Deserialized_THEN_ShouldHandleLegacyThemePayload()
+        {
+            var definition = new ThemeDefinition
+            {
+                Id = "Id",
+                Name = "Name",
+                FontFamily = "FontFamily",
+                Theme = new MudTheme()
+            };
+            definition.Theme.PaletteLight.Primary = "#123456";
+            definition.Theme.PaletteDark.Primary = "#654321";
+
+            var json = ThemeSerialization.SerializeDefinition(definition, false);
+            var root = JsonNode.Parse(json).Should().BeOfType<JsonObject>().Subject;
+            var theme = root["theme"].Should().BeOfType<JsonObject>().Subject;
+            var paletteLight = theme["paletteLight"].Should().BeOfType<JsonObject>().Subject;
+            var paletteDark = theme["paletteDark"].Should().BeOfType<JsonObject>().Subject;
+            paletteLight.Remove("$type");
+            paletteDark.Remove("$type");
+
+            var result = ThemeSerialization.DeserializeDefinition(root.ToJsonString());
+
+            result.Should().NotBeNull();
+            result!.Theme.PaletteLight.Should().BeOfType<PaletteLight>();
+            result.Theme.PaletteDark.Should().BeOfType<PaletteDark>();
+            result.Theme.PaletteLight.Primary.R.Should().Be((byte)18);
+            result.Theme.PaletteLight.Primary.G.Should().Be((byte)52);
+            result.Theme.PaletteLight.Primary.B.Should().Be((byte)86);
+            result.Theme.PaletteDark.Primary.R.Should().Be((byte)101);
+            result.Theme.PaletteDark.Primary.G.Should().Be((byte)67);
+            result.Theme.PaletteDark.Primary.B.Should().Be((byte)33);
         }
 
         [Fact]

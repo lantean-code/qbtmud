@@ -44,8 +44,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var portField = FindComponentByTestId<MudNumericField<int?>>(dialog.Component, "AddPeerPort");
 
             dialog.Component.FindComponents<MudIconButton>().Should().HaveCount(1);
-            ipField.Instance.Value.Should().BeNull();
-            portField.Instance.Value.Should().BeNull();
+            ipField.Instance.GetState(x => x.Value).Should().BeNull();
+            portField.Instance.GetState(x => x.Value).Should().BeNull();
         }
 
         [Fact]
@@ -63,8 +63,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await addButton.Find("button").ClickAsync(new MouseEventArgs());
 
             FindComponentByTestId<MudIconButton>(dialog.Component, "DeletePeer-IP-6881").Should().NotBeNull();
-            ipField.Instance.Value.Should().BeNull();
-            portField.Instance.Value.Should().BeNull();
+            ipField.Instance.GetState(x => x.Value).Should().BeNull();
+            portField.Instance.GetState(x => x.Value).Should().BeNull();
         }
 
         [Fact]

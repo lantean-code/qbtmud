@@ -62,7 +62,7 @@ namespace Lantean.QBTMud.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            var selectedTypes = await LocalStorage.GetItemAsync<IEnumerable<string>>(_selectedTypesStorageKey);
+            var selectedTypes = await LocalStorage.GetItemAsync<IReadOnlyCollection<string>>(_selectedTypesStorageKey);
             if (selectedTypes is not null)
             {
                 Model.SelectedTypes = selectedTypes;
@@ -80,14 +80,14 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateToHome();
         }
 
-        protected async Task SelectedValuesChanged(IEnumerable<string> values)
+        protected async Task SelectedValuesChanged(IReadOnlyCollection<string> values)
         {
             Model.SelectedTypes = values;
 
             await LocalStorage.SetItemAsync(_selectedTypesStorageKey, Model.SelectedTypes);
         }
 
-        protected string GenerateSelectedText(List<string> values)
+        protected string GenerateSelectedText(IReadOnlyList<string> values)
         {
             if (values.Count == 4)
             {

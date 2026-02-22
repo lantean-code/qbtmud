@@ -84,8 +84,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync(columns, selected);
 
-            FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "Column-name").Instance.Value.Should().BeTrue();
-            FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "Column-age").Instance.Value.Should().BeFalse();
+            FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "Column-name").Instance.GetState(x => x.Value).Should().BeTrue();
+            FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "Column-age").Instance.GetState(x => x.Value).Should().BeFalse();
 
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "ColumnOptionsSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
@@ -140,10 +140,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync(columns, selected, widths: widths);
 
-            FindComponentByTestId<MudTextField<string>>(dialog.Component, "Width-name").Instance.Value.Should().Be("50");
-            FindComponentByTestId<MudTextField<string>>(dialog.Component, "Width-age").Instance.Value.Should().Be("20");
-            FindComponentByTestId<MudTextField<string>>(dialog.Component, "Width-size").Instance.Value.Should().Be("auto");
-            FindComponentByTestId<MudTextField<string>>(dialog.Component, "Width-type").Instance.Value.Should().BeEmpty();
+            FindComponentByTestId<MudTextField<string>>(dialog.Component, "Width-name").Instance.GetState(x => x.Value).Should().Be("50");
+            FindComponentByTestId<MudTextField<string>>(dialog.Component, "Width-age").Instance.GetState(x => x.Value).Should().Be("20");
+            FindComponentByTestId<MudTextField<string>>(dialog.Component, "Width-size").Instance.GetState(x => x.Value).Should().Be("auto");
+            FindComponentByTestId<MudTextField<string>>(dialog.Component, "Width-type").Instance.GetState(x => x.Value).Should().BeEmpty();
         }
 
         [Fact]

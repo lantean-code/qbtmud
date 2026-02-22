@@ -102,7 +102,7 @@ namespace Lantean.QBTMud.Test.Pages
             _target.WaitForAssertion(() =>
             {
                 var tabs = _target.FindComponent<MudTabs>();
-                tabs.Instance.ActivePanelIndex.Should().Be(4);
+                tabs.Instance.GetState(x => x.ActivePanelIndex).Should().Be(4);
             });
         }
 
@@ -120,7 +120,7 @@ namespace Lantean.QBTMud.Test.Pages
             _target.WaitForAssertion(() =>
             {
                 var tabs = _target.FindComponent<MudTabs>();
-                tabs.Instance.ActivePanelIndex.Should().Be(1);
+                tabs.Instance.GetState(x => x.ActivePanelIndex).Should().Be(1);
             });
 
             var leftHandler = FindKeyboardHandler("ArrowLeft", ctrlKey: true, altKey: false);
@@ -129,7 +129,7 @@ namespace Lantean.QBTMud.Test.Pages
             _target.WaitForAssertion(() =>
             {
                 var tabs = _target.FindComponent<MudTabs>();
-                tabs.Instance.ActivePanelIndex.Should().Be(0);
+                tabs.Instance.GetState(x => x.ActivePanelIndex).Should().Be(0);
             });
         }
 

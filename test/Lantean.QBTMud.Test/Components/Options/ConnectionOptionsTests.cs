@@ -28,8 +28,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindSelect<int>(target, "BittorrentProtocol").Instance.Value.Should().Be(2);
-            FindNumericInt(target, "ListenPort").Instance.Value.Should().Be(8999);
+            FindSelect<int>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(2);
+            FindNumericInt(target, "ListenPort").Instance.GetState(x => x.Value).Should().Be(8999);
 
             FindSwitch(target, "Upnp").Instance.Value.Should().BeTrue();
             FindSwitch(target, "MaxConnecEnabled").Instance.Value.Should().BeTrue();

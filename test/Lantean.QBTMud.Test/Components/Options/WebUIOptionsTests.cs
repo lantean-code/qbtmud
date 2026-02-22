@@ -28,8 +28,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindTextField(target, "WebUiAddress").Instance.Value.Should().Be("example.com");
-            FindNumeric(target, "WebUiPort").Instance.Value.Should().Be(9090);
+            FindTextField(target, "WebUiAddress").Instance.GetState(x => x.Value).Should().Be("example.com");
+            FindNumeric(target, "WebUiPort").Instance.GetState(x => x.Value).Should().Be(9090);
 
             FindSwitch(target, "UseHttps").Instance.Value.Should().BeTrue();
             FindTextField(target, "WebUiHttpsCertPath").Instance.Disabled.Should().BeFalse();
@@ -47,7 +47,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindTextField(target, "WebUiReverseProxiesList").Instance.Disabled.Should().BeFalse();
 
             FindSwitch(target, "DyndnsEnabled").Instance.Value.Should().BeTrue();
-            FindSelect<int>(target, "DyndnsService").Instance.Value.Should().Be(0);
+            FindSelect<int>(target, "DyndnsService").Instance.GetState(x => x.Value).Should().Be(0);
         }
 
         [Fact]
@@ -342,8 +342,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindTextField(target, "WebUiAddress").Instance.Value.Should().BeNull();
-            FindNumeric(target, "WebUiPort").Instance.Value.Should().Be(0);
+            FindTextField(target, "WebUiAddress").Instance.GetState(x => x.Value).Should().BeNull();
+            FindNumeric(target, "WebUiPort").Instance.GetState(x => x.Value).Should().Be(0);
         }
 
         [Fact]
