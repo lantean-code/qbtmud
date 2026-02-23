@@ -312,6 +312,40 @@ namespace Lantean.QBTMud.Test.Components.Options
             values.Should().Equal(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
         }
 
+        [Fact]
+        public async Task GIVEN_SchedulerDaysChangedAcrossRemainingValues_WHEN_Updated_THEN_ShouldTrackLatestSelection()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+            var events = new List<UpdatePreferences>();
+
+            var target = TestContext.Render<SpeedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
+            });
+
+            var remainingValues = new[] { 2, 4, 5, 6, 7, 8, 9 };
+            var schedulerDaysSelect = FindSelect<int>(target, "SchedulerDays");
+
+            foreach (var value in remainingValues)
+            {
+                await target.InvokeAsync(() => schedulerDaysSelect.Instance.ValueChanged.InvokeAsync(value));
+
+                target.WaitForAssertion(() =>
+                {
+                    schedulerDaysSelect.Instance.GetState(x => x.Value).Should().Be(value);
+                });
+            }
+
+            update.SchedulerDays.Should().Be(9);
+            events.Should().HaveCount(remainingValues.Length);
+            events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
+        }
+
         private static Preferences DeserializePreferences()
         {
             const string json = """
