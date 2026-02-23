@@ -89,6 +89,7 @@ namespace Lantean.QBitTorrentClient.Test
                 (await ReadAsync("ssl_certificate")).Should().Be("cert");
                 (await ReadAsync("ssl_private_key")).Should().Be("key");
                 (await ReadAsync("ssl_dh_params")).Should().Be("dh");
+                (await ReadAsync("cookie")).Should().Be("sessionid=123");
 
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
@@ -121,7 +122,8 @@ namespace Lantean.QBitTorrentClient.Test
                 FilePriorities = new[] { (Priority)0, (Priority)1 },
                 SslCertificate = "cert",
                 SslPrivateKey = "key",
-                SslDhParams = "dh"
+                SslDhParams = "dh",
+                Cookie = "sessionid=123"
             };
 
             var result = await _target.AddTorrent(p);
@@ -206,6 +208,30 @@ namespace Lantean.QBitTorrentClient.Test
             result.SuccessCount.Should().Be(0);
             result.FailureCount.Should().Be(1);
             result.SupportsAsync.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_AsyncResultPayload_WHEN_AddTorrent_THEN_ShouldDeserializeAllResultFields()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    {
+                        "success_count": 1,
+                        "failure_count": 2,
+                        "pending_count": 3,
+                        "added_torrent_ids": [ "hash1", "hash2" ]
+                    }
+                    """)
+            });
+
+            var result = await _target.AddTorrent(new AddTorrentParams { Urls = new[] { "u" } });
+
+            result.SuccessCount.Should().Be(1);
+            result.FailureCount.Should().Be(2);
+            result.PendingCount.Should().Be(3);
+            result.AddedTorrentIds.Should().BeEquivalentTo(new[] { "hash1", "hash2" });
+            result.SupportsAsync.Should().BeTrue();
         }
 
         [Fact]

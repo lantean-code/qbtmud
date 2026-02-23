@@ -711,6 +711,10 @@ namespace Lantean.QBitTorrentClient
             {
                 content.AddString("ssl_dh_params", addTorrentParams.SslDhParams!);
             }
+            if (!string.IsNullOrWhiteSpace(addTorrentParams.Cookie))
+            {
+                content.AddString("cookie", addTorrentParams.Cookie!);
+            }
 
             var response = await _httpClient.PostAsync("torrents/add", content);
 

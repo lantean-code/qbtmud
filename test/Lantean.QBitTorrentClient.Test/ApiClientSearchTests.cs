@@ -86,6 +86,35 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_SearchStatusPayload_WHEN_GetSearchStatus_THEN_ShouldDeserializeStatus()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.ToString().Should().Be("http://localhost/search/status?id=5");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        [
+                            {
+                                "id": 5,
+                                "status": "Running",
+                                "total": 12
+                            }
+                        ]
+                        """)
+                });
+            };
+
+            var status = await _target.GetSearchStatus(5);
+
+            status.Should().NotBeNull();
+            status!.Id.Should().Be(5);
+            status.Status.Should().Be("Running");
+            status.Total.Should().Be(12);
+        }
+
+        [Fact]
         public async Task GIVEN_NotFound_WHEN_GetSearchStatus_THEN_ShouldReturnNull()
         {
             _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
@@ -133,6 +162,38 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_SearchStatusesPayload_WHEN_GetSearchesStatus_THEN_ShouldDeserializeList()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    [
+                        {
+                            "id": 1,
+                            "status": "Queued",
+                            "total": 4
+                        },
+                        {
+                            "id": 2,
+                            "status": "Stopped",
+                            "total": 5
+                        }
+                    ]
+                    """)
+            });
+
+            var list = await _target.GetSearchesStatus();
+
+            list.Should().HaveCount(2);
+            list[0].Id.Should().Be(1);
+            list[0].Status.Should().Be("Queued");
+            list[0].Total.Should().Be(4);
+            list[1].Id.Should().Be(2);
+            list[1].Status.Should().Be("Stopped");
+            list[1].Total.Should().Be(5);
+        }
+
+        [Fact]
         public async Task GIVEN_IdOnly_WHEN_GetSearchResults_THEN_ShouldGETWithIdOnly()
         {
             _handler.Responder = (req, _) =>
@@ -147,6 +208,53 @@ namespace Lantean.QBitTorrentClient.Test
             var results = await _target.GetSearchResults(9);
 
             results.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_SearchResultsPayload_WHEN_GetSearchResults_THEN_ShouldDeserializeResults()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.RequestUri!.ToString().Should().Be("http://localhost/search/results?id=9");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        {
+                            "results":
+                            [
+                                {
+                                    "descrLink": "https://example.com/details",
+                                    "fileName": "FileName",
+                                    "fileSize": 12345,
+                                    "fileUrl": "magnet:?xt=urn:btih:hash",
+                                    "nbLeechers": 6,
+                                    "nbSeeders": 7,
+                                    "siteUrl": "https://example.com",
+                                    "engineName": "Engine",
+                                    "pubDate": 1700000000
+                                }
+                            ],
+                            "status": "Running",
+                            "total": 1
+                        }
+                        """)
+                });
+            };
+
+            var results = await _target.GetSearchResults(9);
+
+            results.Status.Should().Be("Running");
+            results.Total.Should().Be(1);
+            results.Results.Should().ContainSingle();
+            results.Results[0].DescriptionLink.Should().Be("https://example.com/details");
+            results.Results[0].FileName.Should().Be("FileName");
+            results.Results[0].FileSize.Should().Be(12345);
+            results.Results[0].FileUrl.Should().Be("magnet:?xt=urn:btih:hash");
+            results.Results[0].Leechers.Should().Be(6);
+            results.Results[0].Seeders.Should().Be(7);
+            results.Results[0].SiteUrl.Should().Be("https://example.com");
+            results.Results[0].EngineName.Should().Be("Engine");
+            results.Results[0].PublishedOn.Should().Be(1700000000);
         }
 
         [Fact]
@@ -230,6 +338,44 @@ namespace Lantean.QBitTorrentClient.Test
             var empty = await _target.GetSearchPlugins();
             empty.Should().NotBeNull();
             empty.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_SearchPluginsPayload_WHEN_GetSearchPlugins_THEN_ShouldDeserializePlugins()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    [
+                        {
+                            "enabled": true,
+                            "fullName": "FullName",
+                            "name": "Name",
+                            "supportedCategories":
+                            [
+                                {
+                                    "id": "movies",
+                                    "name": "Movies"
+                                }
+                            ],
+                            "url": "https://example.com/plugin",
+                            "version": "1.0"
+                        }
+                    ]
+                    """)
+            });
+
+            var list = await _target.GetSearchPlugins();
+
+            list.Should().ContainSingle();
+            list[0].Enabled.Should().BeTrue();
+            list[0].FullName.Should().Be("FullName");
+            list[0].Name.Should().Be("Name");
+            list[0].SupportedCategories.Should().ContainSingle();
+            list[0].SupportedCategories[0].Id.Should().Be("movies");
+            list[0].SupportedCategories[0].Name.Should().Be("Movies");
+            list[0].Url.Should().Be("https://example.com/plugin");
+            list[0].Version.Should().Be("1.0");
         }
 
         [Fact]

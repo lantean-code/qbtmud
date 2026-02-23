@@ -198,6 +198,69 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_RssItemsPayload_WHEN_GetAllRssItems_THEN_ShouldDeserializeItemsAndArticles()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.ToString().Should().Be("http://localhost/rss/items?withData=True");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        {
+                            "FeedPath":
+                            {
+                                "articles":
+                                [
+                                    {
+                                        "category": "Category",
+                                        "comments": "Comments",
+                                        "date": "2024-01-01",
+                                        "description": "Description",
+                                        "id": "ArticleId",
+                                        "link": "https://example.com/article",
+                                        "thumbnail": "https://example.com/image.png",
+                                        "title": "Title",
+                                        "torrentURL": "magnet:?xt=urn:btih:hash",
+                                        "isRead": true
+                                    }
+                                ],
+                                "hasError": false,
+                                "IsLoading": true,
+                                "lastBuildDate": "2024-01-01",
+                                "title": "FeedTitle",
+                                "uid": "Uid",
+                                "url": "https://example.com/feed"
+                            }
+                        }
+                        """)
+                });
+            };
+
+            var dict = await _target.GetAllRssItems(true);
+
+            dict.Should().ContainKey("FeedPath");
+            var item = dict["FeedPath"];
+            item.HasError.Should().BeFalse();
+            item.IsLoading.Should().BeTrue();
+            item.LastBuildDate.Should().Be("2024-01-01");
+            item.Title.Should().Be("FeedTitle");
+            item.Uid.Should().Be("Uid");
+            item.Url.Should().Be("https://example.com/feed");
+            item.Articles.Should().ContainSingle();
+            item.Articles![0].Category.Should().Be("Category");
+            item.Articles[0].Comments.Should().Be("Comments");
+            item.Articles[0].Date.Should().Be("2024-01-01");
+            item.Articles[0].Description.Should().Be("Description");
+            item.Articles[0].Id.Should().Be("ArticleId");
+            item.Articles[0].Link.Should().Be("https://example.com/article");
+            item.Articles[0].Thumbnail.Should().Be("https://example.com/image.png");
+            item.Articles[0].Title.Should().Be("Title");
+            item.Articles[0].TorrentURL.Should().Be("magnet:?xt=urn:btih:hash");
+            item.Articles[0].IsRead.Should().BeTrue();
+        }
+
+        [Fact]
         public async Task GIVEN_NonSuccess_WHEN_GetAllRssItems_THEN_ShouldThrow()
         {
             _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)

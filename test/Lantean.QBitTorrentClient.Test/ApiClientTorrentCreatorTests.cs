@@ -190,6 +190,95 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_TorrentCreationTaskStatusPayload_WHEN_GetTorrentCreationTasks_THEN_ShouldDeserializeTasks()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrentcreator/status");
+
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        [
+                            {
+                                "taskID": "TaskId",
+                                "sourcePath": "/source",
+                                "pieceSize": 512,
+                                "private": true,
+                                "timeAdded": "2024-01-01 00:00",
+                                "format": "v2",
+                                "optimizeAlignment": false,
+                                "paddedFileSizeLimit": 4096,
+                                "status": "Running",
+                                "comment": "Comment",
+                                "torrentFilePath": "/output.torrent",
+                                "source": "Source",
+                                "trackers": [ "t1", "t2" ],
+                                "urlSeeds": [ "u1", "u2" ],
+                                "timeStarted": "2024-01-01 00:01",
+                                "timeFinished": "2024-01-01 00:02",
+                                "errorMessage": "ErrorMessage",
+                                "progress": 0.75
+                            }
+                        ]
+                        """)
+                });
+            };
+
+            var list = await _target.GetTorrentCreationTasks();
+
+            list.Should().ContainSingle();
+            list[0].TaskId.Should().Be("TaskId");
+            list[0].SourcePath.Should().Be("/source");
+            list[0].PieceSize.Should().Be(512);
+            list[0].Private.Should().BeTrue();
+            list[0].TimeAdded.Should().Be("2024-01-01 00:00");
+            list[0].Format.Should().Be("v2");
+            list[0].OptimizeAlignment.Should().BeFalse();
+            list[0].PaddedFileSizeLimit.Should().Be(4096);
+            list[0].Status.Should().Be("Running");
+            list[0].Comment.Should().Be("Comment");
+            list[0].TorrentFilePath.Should().Be("/output.torrent");
+            list[0].Source.Should().Be("Source");
+            list[0].Trackers.Should().BeEquivalentTo(new[] { "t1", "t2" });
+            list[0].UrlSeeds.Should().BeEquivalentTo(new[] { "u1", "u2" });
+            list[0].TimeStarted.Should().Be("2024-01-01 00:01");
+            list[0].TimeFinished.Should().Be("2024-01-01 00:02");
+            list[0].ErrorMessage.Should().Be("ErrorMessage");
+            list[0].Progress.Should().Be(0.75);
+        }
+
+        [Fact]
+        public async Task GIVEN_TorrentCreationTaskStatusWithNullLists_WHEN_GetTorrentCreationTasks_THEN_ShouldUseEmptyLists()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.ToString().Should().Be("http://localhost/torrentcreator/status");
+
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        [
+                            {
+                                "taskID": "TaskId",
+                                "trackers": null,
+                                "urlSeeds": null
+                            }
+                        ]
+                        """)
+                });
+            };
+
+            var list = await _target.GetTorrentCreationTasks();
+
+            list.Should().ContainSingle();
+            list[0].Trackers.Should().BeEmpty();
+            list[0].UrlSeeds.Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_BadJson_WHEN_GetTorrentCreationTasks_THEN_ShouldReturnEmptyList()
         {
             _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)

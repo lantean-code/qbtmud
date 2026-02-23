@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Lantean.QBitTorrentClient.Models;
 using System.Net;
 
 namespace Lantean.QBitTorrentClient.Test
@@ -36,6 +37,37 @@ namespace Lantean.QBitTorrentClient.Test
 
             result.Should().NotBeNull();
             result.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_LogsJson_WHEN_GetLog_THEN_ShouldDeserializeLogEntries()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.AbsolutePath.Should().Be("/log/main");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        [
+                            {
+                                "id": 7,
+                                "message": "Message",
+                                "timestamp": 1700000000,
+                                "type": 2
+                            }
+                        ]
+                        """)
+                });
+            };
+
+            var result = await _target.GetLog();
+
+            result.Should().ContainSingle();
+            result[0].Id.Should().Be(7);
+            result[0].Message.Should().Be("Message");
+            result[0].Timestamp.Should().Be(1700000000);
+            result[0].Type.Should().Be(LogType.Info);
         }
 
         [Fact]
@@ -105,6 +137,39 @@ namespace Lantean.QBitTorrentClient.Test
 
             result.Should().NotBeNull();
             result.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_PeerLogJson_WHEN_GetPeerLog_THEN_ShouldDeserializeEntries()
+        {
+            _handler.Responder = (req, _) =>
+            {
+                req.Method.Should().Be(HttpMethod.Get);
+                req.RequestUri!.AbsolutePath.Should().Be("/log/peers");
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        [
+                            {
+                                "id": 11,
+                                "ip": "127.0.0.1",
+                                "timestamp": 1700000100,
+                                "blocked": true,
+                                "reason": "Reason"
+                            }
+                        ]
+                        """)
+                });
+            };
+
+            var result = await _target.GetPeerLog();
+
+            result.Should().ContainSingle();
+            result[0].Id.Should().Be(11);
+            result[0].IPAddress.Should().Be("127.0.0.1");
+            result[0].Timestamp.Should().Be(1700000100);
+            result[0].Blocked.Should().BeTrue();
+            result[0].Reason.Should().Be("Reason");
         }
 
         [Fact]

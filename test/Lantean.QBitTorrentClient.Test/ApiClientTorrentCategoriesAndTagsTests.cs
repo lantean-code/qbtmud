@@ -39,6 +39,33 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_CategoryPayload_WHEN_GetAllCategories_THEN_ShouldDeserializeCategoryFields()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    {
+                        "Movies":
+                        {
+                            "name": "Movies",
+                            "savePath": "/downloads/movies",
+                            "download_path": "/downloads/incomplete"
+                        }
+                    }
+                    """)
+            });
+
+            var result = await _target.GetAllCategories();
+
+            result.Should().ContainKey("Movies");
+            result["Movies"].Name.Should().Be("Movies");
+            result["Movies"].SavePath.Should().Be("/downloads/movies");
+            result["Movies"].DownloadPath.Should().NotBeNull();
+            result["Movies"].DownloadPath!.Enabled.Should().BeTrue();
+            result["Movies"].DownloadPath!.Path.Should().Be("/downloads/incomplete");
+        }
+
+        [Fact]
         public async Task GIVEN_CategoryAndPath_WHEN_AddCategory_THEN_ShouldPOSTForm()
         {
             _handler.Responder = async (req, ct) =>

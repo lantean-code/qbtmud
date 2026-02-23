@@ -33,6 +33,41 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_GlobalTransferInfoPayload_WHEN_GetGlobalTransferInfo_THEN_ShouldMapAllFields()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    {
+                        "connection_status": "connected",
+                        "dht_nodes": 10,
+                        "dl_info_data": 11,
+                        "dl_info_speed": 12,
+                        "dl_rate_limit": 13,
+                        "up_info_data": 14,
+                        "up_info_speed": 15,
+                        "up_rate_limit": 16,
+                        "last_external_address_v4": "1.2.3.4",
+                        "last_external_address_v6": "::1"
+                    }
+                    """)
+            });
+
+            var result = await _target.GetGlobalTransferInfo();
+
+            result.ConnectionStatus.Should().Be("connected");
+            result.DHTNodes.Should().Be(10);
+            result.DownloadInfoData.Should().Be(11);
+            result.DownloadInfoSpeed.Should().Be(12);
+            result.DownloadRateLimit.Should().Be(13);
+            result.UploadInfoData.Should().Be(14);
+            result.UploadInfoSpeed.Should().Be(15);
+            result.UploadRateLimit.Should().Be(16);
+            result.LastExternalAddressV4.Should().Be("1.2.3.4");
+            result.LastExternalAddressV6.Should().Be("::1");
+        }
+
+        [Fact]
         public async Task GIVEN_NonSuccess_WHEN_GetGlobalTransferInfo_THEN_ShouldThrowWithStatusAndMessage()
         {
             _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadGateway)

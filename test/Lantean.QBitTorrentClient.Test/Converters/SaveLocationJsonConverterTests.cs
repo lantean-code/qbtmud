@@ -148,5 +148,104 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             round.IsWatchedFolder.Should().BeFalse();
             round.SavePath.Should().BeNull();
         }
+
+        [Fact]
+        public void GIVEN_ObjectInt_WHEN_Create_THEN_ShouldUseIntegerBranch()
+        {
+            var location = SaveLocation.Create((object)0);
+
+            location.IsWatchedFolder.Should().BeTrue();
+            location.IsDefaultFolder.Should().BeFalse();
+            location.SavePath.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_ObjectString_WHEN_Create_THEN_ShouldUseStringBranch()
+        {
+            var location = SaveLocation.Create((object)"1");
+
+            location.IsDefaultFolder.Should().BeTrue();
+            location.IsWatchedFolder.Should().BeFalse();
+            location.SavePath.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_UnsupportedObject_WHEN_Create_THEN_ShouldThrowArgumentOutOfRangeException()
+        {
+            var act = () => SaveLocation.Create((object)true);
+
+            var ex = act.Should().Throw<ArgumentOutOfRangeException>();
+            ex.Which.ParamName.Should().Be("value");
+        }
+
+        [Fact]
+        public void GIVEN_InvalidInteger_WHEN_Create_THEN_ShouldThrowArgumentOutOfRangeException()
+        {
+            var act = () => SaveLocation.Create(2);
+
+            var ex = act.Should().Throw<ArgumentOutOfRangeException>();
+            ex.Which.ParamName.Should().Be("value");
+        }
+
+        [Fact]
+        public void GIVEN_NullString_WHEN_Create_THEN_ShouldThrowArgumentOutOfRangeException()
+        {
+            var act = () => SaveLocation.Create((string?)null);
+
+            var ex = act.Should().Throw<ArgumentOutOfRangeException>();
+            ex.Which.ParamName.Should().Be("value");
+        }
+
+        [Fact]
+        public void GIVEN_StringZero_WHEN_Create_THEN_ShouldReturnWatchedFolder()
+        {
+            var location = SaveLocation.Create("0");
+
+            location.IsWatchedFolder.Should().BeTrue();
+            location.IsDefaultFolder.Should().BeFalse();
+            location.SavePath.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_WatchedFolder_WHEN_ToValue_THEN_ShouldReturnZero()
+        {
+            var value = SaveLocation.Create(0).ToValue();
+
+            value.Should().Be(0);
+        }
+
+        [Fact]
+        public void GIVEN_DefaultFolder_WHEN_ToValue_THEN_ShouldReturnOne()
+        {
+            var value = SaveLocation.Create(1).ToValue();
+
+            value.Should().Be(1);
+        }
+
+        [Fact]
+        public void GIVEN_SavePath_WHEN_ToValue_THEN_ShouldReturnPathString()
+        {
+            var value = SaveLocation.Create("/data").ToValue();
+
+            value.Should().Be("/data");
+        }
+
+        [Fact]
+        public void GIVEN_EmptySaveLocation_WHEN_ToValue_THEN_ShouldThrowInvalidOperationException()
+        {
+            var target = new SaveLocation();
+
+            var act = () => target.ToValue();
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("Invalid value.");
+        }
+
+        [Fact]
+        public void GIVEN_SavePath_WHEN_ToString_THEN_ShouldReturnPathString()
+        {
+            var result = SaveLocation.Create("/downloads").ToString();
+
+            result.Should().Be("/downloads");
+        }
     }
 }

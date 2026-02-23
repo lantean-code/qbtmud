@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBitTorrentClient.Models;
 using System.Net;
+using System.Text.Json;
 
 namespace Lantean.QBitTorrentClient.Test
 {
@@ -94,6 +95,33 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_RichBuildInfoJson_WHEN_GetBuildInfo_THEN_ShouldMapAllFields()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    {
+                        "qt": "QtVersion",
+                        "libtorrent": "LibTorrentVersion",
+                        "boost": "BoostVersion",
+                        "openssl": "OpenSslVersion",
+                        "zlib": "ZLibVersion",
+                        "bitness": 64
+                    }
+                    """)
+            });
+
+            var result = await _target.GetBuildInfo();
+
+            result.QTVersion.Should().Be("QtVersion");
+            result.LibTorrentVersion.Should().Be("LibTorrentVersion");
+            result.BoostVersion.Should().Be("BoostVersion");
+            result.OpenSSLVersion.Should().Be("OpenSslVersion");
+            result.ZLibVersion.Should().Be("ZLibVersion");
+            result.Bitness.Should().Be(64);
+        }
+
+        [Fact]
         public async Task GIVEN_NonSuccess_WHEN_GetBuildInfo_THEN_ShouldThrow()
         {
             _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound)
@@ -147,6 +175,37 @@ namespace Lantean.QBitTorrentClient.Test
             var result = await _target.GetApplicationPreferences();
 
             result.Should().NotBeNull();
+            var serialized = JsonSerializer.Serialize(result);
+            serialized.Should().Contain("\"up_limit\":0");
+        }
+
+        [Fact]
+        public async Task GIVEN_PreferencesWithScanDirs_WHEN_GetApplicationPreferences_THEN_ShouldMapSaveLocations()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    {
+                        "up_limit": 10240,
+                        "scan_dirs":
+                        {
+                            "Watch": 0,
+                            "Default": 1,
+                            "Custom": "/downloads/custom"
+                        }
+                    }
+                    """)
+            });
+
+            var result = await _target.GetApplicationPreferences();
+
+            result.UpLimit.Should().Be(10240);
+            result.ScanDirs.Should().HaveCount(3);
+            result.ScanDirs["Watch"].IsWatchedFolder.Should().BeTrue();
+            result.ScanDirs["Watch"].IsDefaultFolder.Should().BeFalse();
+            result.ScanDirs["Default"].IsWatchedFolder.Should().BeFalse();
+            result.ScanDirs["Default"].IsDefaultFolder.Should().BeTrue();
+            result.ScanDirs["Custom"].SavePath.Should().Be("/downloads/custom");
         }
 
         [Fact]
@@ -209,6 +268,34 @@ namespace Lantean.QBitTorrentClient.Test
 
             result.Should().NotBeNull();
             result.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_CookiesJson_WHEN_GetApplicationCookies_THEN_ShouldDeserializeCookies()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    [
+                        {
+                            "name": "Name",
+                            "domain": "Domain",
+                            "path": "/Path",
+                            "value": "Value",
+                            "expirationDate": 1700000000
+                        }
+                    ]
+                    """)
+            });
+
+            var result = await _target.GetApplicationCookies();
+
+            result.Should().ContainSingle();
+            result[0].Name.Should().Be("Name");
+            result[0].Domain.Should().Be("Domain");
+            result[0].Path.Should().Be("/Path");
+            result[0].Value.Should().Be("Value");
+            result[0].ExpirationDate.Should().Be(1700000000);
         }
 
         [Fact]
@@ -361,6 +448,28 @@ namespace Lantean.QBitTorrentClient.Test
 
             result.Should().NotBeNull();
             result.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GIVEN_NetworkInterfacesJson_WHEN_GetNetworkInterfaces_THEN_ShouldDeserializeInterfaces()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                    [
+                        {
+                            "name": "eth0",
+                            "value": "Ethernet 0"
+                        }
+                    ]
+                    """)
+            });
+
+            var result = await _target.GetNetworkInterfaces();
+
+            result.Should().ContainSingle();
+            result[0].Name.Should().Be("eth0");
+            result[0].Value.Should().Be("Ethernet 0");
         }
 
         [Fact]
