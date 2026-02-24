@@ -23,8 +23,8 @@ export function afterStarted(blazor) {
             return {
                 bubbles: event.bubbles,
                 cancelable: event.cancelable,
-                screenX: event.detail.screenX,
-                screenY: event.detail.screenY,
+                screenX: event.screenX,
+                screenY: event.screenY,
                 clientX: event.detail.clientX,
                 clientY: event.detail.clientY,
                 offsetX: event.detail.offsetX,
