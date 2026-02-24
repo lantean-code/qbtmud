@@ -100,6 +100,20 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_CurrentThemeIsApplied_WHEN_Rendered_THEN_ShowsAppliedChip()
+        {
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.CurrentThemeId)
+                .Returns("ThemeId");
+
+            var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
+
+            var appliedChip = FindComponentByTestId<MudChip<string>>(target, "ThemeDetailApplied");
+            GetChildContentText(appliedChip.Instance.ChildContent).Should().Be("Applied");
+        }
+
+        [Fact]
         public async Task GIVEN_NameCleared_WHEN_Changed_THEN_ShowsError()
         {
             var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
@@ -407,6 +421,25 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_FontItemTemplate_WHEN_RenderedWithFontContext_THEN_ShowsPreviewTexts()
+        {
+            SetupFontCatalog(new[] { "Nunito Sans", "Open Sans" });
+
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
+            var fontField = FindComponentByTestId<MudAutocomplete<string>>(target, "ThemeDetailFont");
+            var itemTemplate = fontField.Instance.ItemTemplate;
+
+            itemTemplate.Should().NotBeNull();
+            var renderedTemplate = TestContext.Render(itemTemplate!("Nunito Sans"));
+            var texts = renderedTemplate.FindComponents<MudText>();
+
+            texts.Should().HaveCount(2);
+            GetChildContentText(texts[0].Instance.ChildContent).Should().Be("Nunito Sans");
+            GetChildContentText(texts[1].Instance.ChildContent).Should().Be("Aa Bb Cc 123");
+        }
+
+        [Fact]
         public void GIVEN_InvalidThemeFont_WHEN_Rendered_THEN_UsesFallbackFont()
         {
             SetupFontCatalog(new[] { "Nunito Sans" });
@@ -421,6 +454,25 @@ namespace Lantean.QBTMud.Test.Pages
 
             var fontField = FindComponentByTestId<MudAutocomplete<string>>(target, "ThemeDetailFont");
             fontField.Instance.GetState(x => x.Value).Should().Be("Nunito Sans");
+        }
+
+        [Fact]
+        public async Task GIVEN_LightPaletteColorChanged_WHEN_PickerInvoked_THEN_SaveEnabled()
+        {
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            var popoverProvider = TestContext.Render<MudPopoverProvider>();
+            var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
+
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivatePanelAsync(2));
+
+            var colorItem = FindComponentByTestId<ThemeColorItem>(target, "ThemeDetailLight-Primary");
+            colorItem.Find("div.theme-color-item__row").Click();
+            var colorPicker = popoverProvider.FindComponent<MudColorPicker>();
+            await target.InvokeAsync(() => colorPicker.Instance.ValueChanged.InvokeAsync(new MudColor("#abcdef")));
+
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
+            saveButton.Instance.Disabled.Should().BeFalse();
         }
 
         private IRenderedComponent<ThemeDetail> RenderPage(string themeId, List<ThemeCatalogItem> themes, bool isDarkMode = false)

@@ -59,7 +59,7 @@
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Enable embedded tracker:")" Value="EnableEmbeddedTracker" ValueChanged="EnableEmbeddedTrackerChanged" data-test-id="@TestIdHelper.For("EnableEmbeddedTracker")" />
             </MudItem>
             <MudItem xs="12">
-                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Embedded tracker port:")" Value="EmbeddedTrackerPort" ValueChanged="EmbeddedTrackerPortChanged" Min="@Options.MinPortValue" Max="@Options.MaxPortValue" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("EmbeddedTrackerPort")" />
+                <MudNumericField T="int" Label="@LanguageLocalizer.Translate("OptionsDialog", "Embedded tracker port:")" Value="EmbeddedTrackerPort" ValueChanged="EmbeddedTrackerPortChanged" Min="@Options.MinPortValue" Max="@Options.MaxPortValue" Validation="PortValidation" Variant="Variant.Outlined" ShrinkLabel="true" Immediate="true" DebounceInterval="300" data-test-id="@TestIdHelper.For("EmbeddedTrackerPort")" />
             </MudItem>
             <MudItem xs="12">
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Enable port forwarding for embedded tracker:")" Value="EmbeddedTrackerPortForwarding" ValueChanged="EmbeddedTrackerPortForwardingChanged" data-test-id="@TestIdHelper.For("EmbeddedTrackerPortForwarding")" />

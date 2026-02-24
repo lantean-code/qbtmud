@@ -12,7 +12,7 @@ namespace Lantean.QBitTorrentClient.Converters
             {
                 JsonTokenType.Null => null,
                 JsonTokenType.String => ParseString(reader.GetString()),
-                JsonTokenType.Number => reader.TryGetSingle(out var number) ? number : null,
+                JsonTokenType.Number => reader.GetSingle(),
                 _ => null
             };
         }

@@ -1,5 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
+using Bunit.TestDoubles;
+using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Layout;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -39,10 +41,21 @@ namespace Lantean.QBTMud.Test.Layout
             _navigationManager = new TestNavigationManager();
             _navigationManager.SetUri("http://localhost/details/Hash2");
             TestContext.Services.AddSingleton<NavigationManager>(_navigationManager);
+            TestContext.ComponentFactories.AddStub<TorrentsListNav>();
 
             _torrents = CreateTorrents();
 
             _target = RenderLayout("Hash2", _torrents);
+        }
+
+        [Fact]
+        public void GIVEN_DetailsLayoutRendered_WHEN_Rendered_THEN_ShouldPassOrderedTorrentsToTorrentsListNav()
+        {
+            var navStub = _target.FindComponent<Stub<TorrentsListNav>>();
+            var orderedTorrents = navStub.Instance.Parameters.Get(parameter => parameter.Torrents);
+
+            orderedTorrents.Should().NotBeNull();
+            orderedTorrents!.Select(torrent => torrent.Hash).Should().Equal("Hash2", "Hash3", "Hash1");
         }
 
         [Fact]

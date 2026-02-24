@@ -309,6 +309,32 @@ namespace Lantean.QBTMud.Test.Components.Options
             raised.Should().NotBeEmpty();
         }
 
+        [Fact]
+        public void GIVEN_EmbeddedTrackerPortValidation_WHEN_InvalidAndValidValues_THEN_ShouldReturnValidationMessages()
+        {
+            var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
+            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<AdvancedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var embeddedTrackerPortValidation = FindNumeric(target, "EmbeddedTrackerPort").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            embeddedTrackerPortValidation(1023).Should().Be("The port used for incoming connections must be between 1024 and 65535.");
+            embeddedTrackerPortValidation(1024).Should().BeNull();
+            embeddedTrackerPortValidation(65535).Should().BeNull();
+            embeddedTrackerPortValidation(65536).Should().Be("The port used for incoming connections must be between 1024 and 65535.");
+        }
+
         private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<AdvancedOptions> target, string testId)
         {
             return FindComponentByTestId<MudNumericField<int>>(target, testId);

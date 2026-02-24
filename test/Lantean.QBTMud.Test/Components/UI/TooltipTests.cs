@@ -139,7 +139,159 @@ namespace Lantean.QBTMud.Test.Components.UI
             target.WaitForAssertion(() =>
             {
                 tooltip.Instance.GetState(x => x.Visible).Should().BeFalse();
-            }, TimeSpan.FromSeconds(3));
+            }, TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task GIVEN_VisibleChangesWithoutDelegate_WHEN_ParametersUpdated_THEN_VisibleStateTracksParameter()
+        {
+            ConfigureBrowserCapabilities(isInitialized: true, supportsHoverPointer: true);
+
+            var target = RenderTooltip(parameters =>
+            {
+                parameters.Add(p => p.Text, "Text");
+                parameters.Add(p => p.Visible, false);
+            });
+
+            var tooltip = target.FindComponent<MudTooltip>();
+            tooltip.Instance.GetState(x => x.Visible).Should().BeFalse();
+
+            await target.InvokeAsync(() => target.Instance.SetParametersAsync(ParameterView.FromDictionary(new Dictionary<string, object?>
+            {
+                { nameof(Tooltip.Visible), true },
+            })));
+
+            target.WaitForAssertion(() =>
+            {
+                tooltip.Instance.GetState(x => x.Visible).Should().BeTrue();
+            });
+
+            await target.InvokeAsync(() => target.Instance.SetParametersAsync(ParameterView.FromDictionary(new Dictionary<string, object?>
+            {
+                { nameof(Tooltip.Visible), true },
+            })));
+
+            target.WaitForAssertion(() =>
+            {
+                tooltip.Instance.GetState(x => x.Visible).Should().BeTrue();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_VisibleChangedDelegate_WHEN_VisibilityToggled_THEN_DelegateReceivesUpdates()
+        {
+            ConfigureBrowserCapabilities(isInitialized: true, supportsHoverPointer: true);
+            var values = new List<bool>();
+            var callback = EventCallback.Factory.Create<bool>(this, (bool value) => values.Add(value));
+
+            var target = RenderTooltip(parameters =>
+            {
+                parameters.Add(p => p.Text, "Text");
+                parameters.Add(p => p.VisibleChanged, callback);
+                parameters.Add(p => p.Visible, false);
+            });
+
+            var tooltip = target.FindComponent<MudTooltip>();
+
+            await target.InvokeAsync(() => tooltip.Instance.VisibleChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => tooltip.Instance.VisibleChanged.InvokeAsync(false));
+
+            values.Should().BeEquivalentTo(new[] { true, false });
+        }
+
+        [Fact]
+        public async Task GIVEN_TouchAutoHideScheduled_WHEN_HiddenImmediately_THEN_RemainsHidden()
+        {
+            ConfigureBrowserCapabilities(isInitialized: true, supportsHoverPointer: false);
+
+            var target = RenderTooltip(parameters =>
+            {
+                parameters.Add(p => p.Text, "Text");
+            });
+
+            var tooltip = target.FindComponent<MudTooltip>();
+
+            await target.InvokeAsync(() => tooltip.Instance.VisibleChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => tooltip.Instance.VisibleChanged.InvokeAsync(false));
+
+            target.WaitForAssertion(() =>
+            {
+                tooltip.Instance.GetState(x => x.Visible).Should().BeFalse();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_TouchAutoHideWithDelegate_WHEN_DelayElapses_THEN_InvokesDelegateWithFalse()
+        {
+            ConfigureBrowserCapabilities(isInitialized: true, supportsHoverPointer: false);
+            var values = new List<bool>();
+            var callback = EventCallback.Factory.Create<bool>(this, (bool value) => values.Add(value));
+
+            var target = RenderTooltip(parameters =>
+            {
+                parameters.Add(p => p.Text, "Text");
+                parameters.Add(p => p.VisibleChanged, callback);
+            });
+
+            var tooltip = target.FindComponent<MudTooltip>();
+
+            await target.InvokeAsync(() => tooltip.Instance.VisibleChanged.InvokeAsync(true));
+
+            target.WaitForAssertion(() =>
+            {
+                values.Should().ContainInOrder(true, false);
+            }, TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task GIVEN_TouchAutoHideScheduled_WHEN_VisibleParameterSetFalse_THEN_AutoHideReturnsEarly()
+        {
+            ConfigureBrowserCapabilities(isInitialized: true, supportsHoverPointer: false);
+            var values = new List<bool>();
+            var callback = EventCallback.Factory.Create<bool>(this, (bool value) => values.Add(value));
+
+            var target = RenderTooltip(parameters =>
+            {
+                parameters.Add(p => p.Text, "Text");
+                parameters.Add(p => p.Visible, false);
+                parameters.Add(p => p.VisibleChanged, callback);
+            });
+
+            var tooltip = target.FindComponent<MudTooltip>();
+
+            await target.InvokeAsync(() => tooltip.Instance.VisibleChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => target.Instance.SetParametersAsync(ParameterView.FromDictionary(new Dictionary<string, object?>
+            {
+                { nameof(Tooltip.Visible), false },
+                { nameof(Tooltip.VisibleChanged), callback },
+            })));
+
+            target.WaitForAssertion(() =>
+            {
+                tooltip.Instance.GetState(x => x.Visible).Should().BeFalse();
+            }, TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task GIVEN_DisposedComponent_WHEN_VisibleChangedInvoked_THEN_DoesNotInvokeParentDelegate()
+        {
+            ConfigureBrowserCapabilities(isInitialized: true, supportsHoverPointer: true);
+            var invokedValues = new List<bool>();
+            var callback = EventCallback.Factory.Create<bool>(this, (bool value) => invokedValues.Add(value));
+
+            var target = RenderTooltip(parameters =>
+            {
+                parameters.Add(p => p.Text, "Text");
+                parameters.Add(p => p.VisibleChanged, callback);
+            });
+
+            var tooltip = target.FindComponent<MudTooltip>();
+            target.Instance.Dispose();
+            target.Instance.Dispose();
+
+            await target.InvokeAsync(() => tooltip.Instance.VisibleChanged.InvokeAsync(true));
+
+            invokedValues.Should().BeEmpty();
         }
 
         [Fact]

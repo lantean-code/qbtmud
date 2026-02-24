@@ -310,6 +310,27 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.ListenPort.Should().BeLessThanOrEqualTo(65535);
         }
 
+        [Fact]
+        public void GIVEN_ListenPortValidation_WHEN_InvalidAndValidValues_THEN_ShouldReturnValidationMessages()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<ConnectionOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var listenValidation = FindNumericInt(target, "ListenPort").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            listenValidation(-1).Should().Be("The port used for incoming connections must be between 0 and 65535.");
+            listenValidation(6881).Should().BeNull();
+            listenValidation(65536).Should().Be("The port used for incoming connections must be between 0 and 65535.");
+        }
+
         private static IRenderedComponent<MudNumericField<int>> FindNumericInt(IRenderedComponent<ConnectionOptions> target, string testId)
         {
             return FindComponentByTestId<MudNumericField<int>>(target, testId);

@@ -291,6 +291,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 CreateFileRow(contentItems[0]),
                 CreateFileRow(contentItems[1]),
             };
+            selectedRows[0].Renamed.Should().BeFalse();
+            selectedRows[0].ErrorMessage.Should().BeNull();
+            selectedRows[0].Equals(null).Should().BeFalse();
 
             var renamedFiles = FileNameMatcher.GetRenamedFiles(
                 selectedRows,
