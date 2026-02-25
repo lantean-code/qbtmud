@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBitTorrentClient.Converters;
 using Lantean.QBitTorrentClient.Models;
+using System.Text;
 using System.Text.Json;
 
 namespace Lantean.QBitTorrentClient.Test.Converters
@@ -23,6 +24,19 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = "null";
 
             var result = JsonSerializer.Deserialize<DownloadPathOption>(json, options);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_JsonNull_WHEN_ReadDirectlyWithConverter_THEN_ShouldReturnNull()
+        {
+            var options = CreateOptions();
+            var converter = new DownloadPathOptionJsonConverter();
+            var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes("null"));
+            reader.Read();
+
+            var result = converter.Read(ref reader, typeof(DownloadPathOption), options);
 
             result.Should().BeNull();
         }
@@ -88,6 +102,21 @@ namespace Lantean.QBitTorrentClient.Test.Converters
 
             var json = JsonSerializer.Serialize(value, options);
 
+            json.Should().Be("null");
+        }
+
+        [Fact]
+        public void GIVEN_NullValue_WHEN_WrittenDirectlyWithConverter_THEN_ShouldEmitJsonNull()
+        {
+            var options = CreateOptions();
+            var converter = new DownloadPathOptionJsonConverter();
+            using var stream = new MemoryStream();
+            using var writer = new Utf8JsonWriter(stream);
+
+            converter.Write(writer, null, options);
+            writer.Flush();
+
+            var json = Encoding.UTF8.GetString(stream.ToArray());
             json.Should().Be("null");
         }
 

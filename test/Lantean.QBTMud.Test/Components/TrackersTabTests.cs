@@ -118,6 +118,24 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public void GIVEN_RenderedToolbar_WHEN_IconButtonsLoaded_THEN_ButtonsExposeExpectedTitles()
+        {
+            var target = RenderTrackersTab(active: false);
+
+            var addButton = FindIconButton(target, Icons.Material.Filled.AddCircle);
+            var editButton = FindIconButton(target, Icons.Material.Filled.Edit);
+            var removeButton = FindIconButton(target, Icons.Material.Filled.Delete);
+            var copyButton = FindIconButton(target, Icons.Material.Filled.FolderCopy);
+            var columnsButton = FindIconButton(target, Icons.Material.Outlined.ViewColumn);
+
+            GetUserAttributeValue(addButton, "title").Should().Be("Add trackers");
+            GetUserAttributeValue(editButton, "title").Should().Be("Edit tracker URL...");
+            GetUserAttributeValue(removeButton, "title").Should().Be("Remove tracker");
+            GetUserAttributeValue(copyButton, "title").Should().Be("Copy tracker URL");
+            GetUserAttributeValue(columnsButton, "title").Should().Be("Choose Columns");
+        }
+
+        [Fact]
         public async Task GIVEN_NullHash_WHEN_AddTrackerClicked_THEN_NoDialogOrApiCallsOccur()
         {
             var target = RenderTrackersTab(active: false, hash: null);
@@ -561,6 +579,16 @@ namespace Lantean.QBTMud.Test.Components
                 nextAnnounce: null,
                 minAnnounce: null,
                 endpoints: null);
+        }
+
+        private static string? GetUserAttributeValue(IRenderedComponent<MudIconButton> component, string attribute)
+        {
+            if (component.Instance.UserAttributes.TryGetValue(attribute, out var value))
+            {
+                return value?.ToString();
+            }
+
+            return null;
         }
     }
 }

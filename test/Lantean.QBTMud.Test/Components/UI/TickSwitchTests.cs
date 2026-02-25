@@ -48,5 +48,45 @@ namespace Lantean.QBTMud.Test.Components.UI
             target.Instance.ThumbIcon.Should().Be(Icons.Material.Filled.Done);
             target.Instance.ThumbIconColor.Should().Be(Color.Success);
         }
+
+        [Fact]
+        public void GIVEN_NullValueWithStyleEndingSemicolon_WHEN_ReRenderedWithNull_THEN_ShouldNotDuplicateHiddenStyle()
+        {
+            var target = TestContext.Render<TickSwitch<bool?>>(parameters =>
+            {
+                parameters.Add(p => p.Value, (bool?)null);
+                parameters.Add(p => p.Style, "opacity:0.5;");
+            });
+
+            target.Instance.Style.Should().Be("opacity:0.5;display:none;");
+
+            target.Render();
+
+            target.Instance.Style.Should().Be("opacity:0.5;display:none;");
+        }
+
+        [Fact]
+        public void GIVEN_NullValueWithStyleWithoutSemicolon_WHEN_Rendered_THEN_ShouldAppendSeparatorBeforeHiddenStyle()
+        {
+            var target = TestContext.Render<TickSwitch<bool?>>(parameters =>
+            {
+                parameters.Add(p => p.Value, (bool?)null);
+                parameters.Add(p => p.Style, "opacity:0.5");
+            });
+
+            target.Instance.Style.Should().Be("opacity:0.5;display:none;");
+        }
+
+        [Fact]
+        public void GIVEN_StringValue_WHEN_Rendered_THEN_ShouldKeepProvidedStyle()
+        {
+            var target = TestContext.Render<TickSwitch<string>>(parameters =>
+            {
+                parameters.Add(p => p.Value, "Value");
+                parameters.Add(p => p.Style, "opacity:0.5;");
+            });
+
+            target.Instance.Style.Should().Be("opacity:0.5;");
+        }
     }
 }

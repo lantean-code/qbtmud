@@ -81,6 +81,25 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_CategorySelect_WHEN_MenuOpened_THEN_RendersAllLogLevelOptions()
+        {
+            var select = FindCategorySelect();
+
+            await _target.InvokeAsync(() => select.Instance.OpenMenu());
+
+            _target.WaitForAssertion(() =>
+            {
+                var values = _target.FindComponents<MudSelectItem<string>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+                values.Should().Contain("Normal");
+                values.Should().Contain("Info");
+                values.Should().Contain("Warning");
+                values.Should().Contain("Critical");
+            });
+        }
+
+        [Fact]
         public void GIVEN_MultiSelectionTextFunc_WHEN_CountsProvided_THEN_ReturnsExpected()
         {
             var select = FindCategorySelect();

@@ -683,6 +683,100 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_MenuWithoutActivatorAndActionsMenu_WHEN_OverlayClosed_THEN_CloseMenuBranchIsExecuted()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var target = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.MenuWithoutActivator);
+                parameters.Add(p => p.Hashes, Hashes("Hash"));
+                parameters.Add(p => p.PrimaryHash, "Hash");
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("Hash")));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var actionsMenu = TestContext.Render<MudMenu>();
+            target.Instance.ActionsMenu = actionsMenu.Instance;
+
+            var overlay = target.FindComponent<MudOverlay>();
+            await target.InvokeAsync(() => overlay.Instance.VisibleChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => overlay.Instance.VisibleChanged.InvokeAsync(false));
+        }
+
+        [Fact]
+        public async Task GIVEN_MenuRenderType_WHEN_OpenChangedRaisedTwice_THEN_DeleteShortcutRegistersOnce()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            keyboardMock.Setup(k => k.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Delete"), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Returns(Task.CompletedTask);
+            keyboardMock.Setup(k => k.UnregisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Delete")))
+                .Returns(Task.CompletedTask);
+
+            var target = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Menu);
+                parameters.Add(p => p.Hashes, Hashes("Hash"));
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("Hash")));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var menu = target.FindComponent<MudMenu>();
+            await target.InvokeAsync(() => menu.Instance.OpenChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => menu.Instance.OpenChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => menu.Instance.OpenChanged.InvokeAsync(false));
+
+            keyboardMock.Verify(k => k.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Delete"), It.IsAny<Func<KeyboardEvent, Task>>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_MenuRenderTypeAndNullActionsMenu_WHEN_DeleteShortcutPressed_THEN_DeleteNotInvoked()
+        {
+            TestContext.UseApiClientMock();
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            TestContext.UseSnackbarMock();
+            var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
+            Func<KeyboardEvent, Task>? deleteHandler = null;
+            keyboardMock.Setup(k => k.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Delete"), It.IsAny<Func<KeyboardEvent, Task>>()))
+                .Returns<KeyboardEvent, Func<KeyboardEvent, Task>>((_, handler) =>
+                {
+                    deleteHandler = handler;
+                    return Task.CompletedTask;
+                });
+            keyboardMock.Setup(k => k.UnregisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Delete")))
+                .Returns(Task.CompletedTask);
+
+            var target = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Menu);
+                parameters.Add(p => p.Hashes, Hashes("Hash"));
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("Hash")));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var menu = target.FindComponent<MudMenu>();
+            await target.InvokeAsync(() => menu.Instance.OpenChanged.InvokeAsync(true));
+
+            deleteHandler.Should().NotBeNull();
+            target.Instance.ActionsMenu = null;
+
+            await target.InvokeAsync(() => deleteHandler!(new KeyboardEvent("Delete")));
+
+            dialogWorkflowMock.Verify(d => d.InvokeDeleteTorrentDialog(It.IsAny<bool>(), It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_MenuRenderType_WHEN_DeleteShortcutPressed_THEN_DeleteInvokedAndShortcutUnregistered()
         {
             var apiClientMock = TestContext.UseApiClientMock();
@@ -785,6 +879,113 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => start.Instance.OnClick.InvokeAsync());
 
             dialogMock.Verify(d => d.Close(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_AutoManagementDisabled_WHEN_Toggled_THEN_EnableCallIssued()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            apiClientMock.Setup(c => c.SetAutomaticTorrentManagement(true, null, Hashes("One", "Two"))).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.SetAutomaticTorrentManagement(false, null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
+            TestContext.UseSnackbarMock();
+
+            var torrents = Torrents(
+                CreateTorrent("One", automaticTorrentManagement: false),
+                CreateTorrent("Two", automaticTorrentManagement: false));
+
+            var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
+
+            var autoTmm = FindMenuItem(target, "autoTorrentManagement");
+            await target.InvokeAsync(() => autoTmm.Instance.OnClick.InvokeAsync());
+
+            apiClientMock.Verify(c => c.SetAutomaticTorrentManagement(true, null, Hashes("One", "Two")), Times.Once);
+            apiClientMock.Verify(c => c.SetAutomaticTorrentManagement(false, null, It.IsAny<string[]>()), Times.Never);
+        }
+
+        [Fact]
+        public void GIVEN_MixedForceStartAndAutoManagement_WHEN_Rendered_THEN_ForceStartAndAutoManagementAreHidden()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var torrents = Torrents(
+                CreateTorrent("One", forceStart: true, automaticTorrentManagement: true, state: "downloading"),
+                CreateTorrent("Two", forceStart: true, automaticTorrentManagement: false, state: "downloading"));
+
+            var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
+
+            target.FindComponents<MudMenuItem>()
+                .Any(item => HasTestId(item, "Action-forceStart"))
+                .Should().BeFalse();
+            target.FindComponents<MudMenuItem>()
+                .Any(item => HasTestId(item, "Action-autoTorrentManagement"))
+                .Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_MixedSequentialAndUniformFirstLast_WHEN_Rendered_THEN_SequentialHiddenAndFirstLastVisible()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var torrents = Torrents(
+                CreateTorrent("One", sequentialDownload: true, firstLastPiecePriority: false, state: "downloading"),
+                CreateTorrent("Two", sequentialDownload: false, firstLastPiecePriority: false, state: "downloading"));
+
+            var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
+
+            target.FindComponents<MudMenuItem>()
+                .Any(item => HasTestId(item, "Action-sequentialDownload"))
+                .Should().BeFalse();
+            target.FindComponents<MudMenuItem>()
+                .Any(item => HasTestId(item, "Action-firstLastPiecePrio"))
+                .Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_UniformSequentialAndMixedFirstLast_WHEN_Rendered_THEN_FirstLastHidden()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var torrents = Torrents(
+                CreateTorrent("One", sequentialDownload: false, firstLastPiecePriority: true, state: "downloading"),
+                CreateTorrent("Two", sequentialDownload: false, firstLastPiecePriority: false, state: "downloading"));
+
+            var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
+
+            target.FindComponents<MudMenuItem>()
+                .Any(item => HasTestId(item, "Action-firstLastPiecePrio"))
+                .Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_MissingTagStateEntries_WHEN_TagAdded_THEN_AddTagsCalledForAllHashes()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            apiClientMock.Setup(c => c.AddTorrentTags(It.Is<IEnumerable<string>>(tags => tags.Single() == "Tag"), null, "One", "Missing"))
+                .Returns(Task.CompletedTask);
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+
+            var target = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Children);
+                parameters.Add(p => p.ParentAction, new UIAction("tags", "Tags", Icons.Material.Filled.Label, Color.Info, string.Empty));
+                parameters.Add(p => p.Hashes, Hashes("One", "Missing"));
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("One", tags: Array.Empty<string>())));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var tagItem = target.FindComponents<MudListItem<string>>().First();
+            await target.InvokeAsync(() => tagItem.Instance.OnClick.InvokeAsync());
+
+            apiClientMock.Verify(c => c.AddTorrentTags(It.Is<IEnumerable<string>>(tags => tags.Single() == "Tag"), null, "One", "Missing"), Times.Once);
         }
 
         private IRenderedComponent<TorrentActions> RenderMenuItems(IEnumerable<string> hashes, Dictionary<string, TorrentModel> torrents, HashSet<string> tags, Dictionary<string, CategoryModel> categories, Preferences? preferences = null)

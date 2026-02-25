@@ -11,10 +11,10 @@
 <div class="content-panel">
     <div class="content-panel__toolbar">
         <MudToolBar Gutters="false" Dense="true">
-            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddTracker">@TranslateTrackersAddition("Add trackers")</MudIconButton>
-            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" OnClick="EditTrackerToolbar" Disabled="@(SelectedItem is null)">@TranslateTrackerList("Edit tracker URL...")</MudIconButton>
-            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="RemoveTrackerToolbar" Disabled="@(SelectedItem is null)">@TranslateTrackerList("Remove tracker")</MudIconButton>
-            <MudIconButton Icon="@Icons.Material.Filled.FolderCopy" Color="Color.Info" OnClick="CopyTrackerUrlToolbar" Disabled="@(SelectedItem is null)">@TranslateTrackerList("Copy tracker URL")</MudIconButton>
+            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Info" OnClick="AddTracker" title="@TranslateTrackersAddition("Add trackers")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" OnClick="EditTrackerToolbar" Disabled="@(SelectedItem is null)" title="@TranslateTrackerList("Edit tracker URL...")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="RemoveTrackerToolbar" Disabled="@(SelectedItem is null)" title="@TranslateTrackerList("Remove tracker")" />
+            <MudIconButton Icon="@Icons.Material.Filled.FolderCopy" Color="Color.Info" OnClick="CopyTrackerUrlToolbar" Disabled="@(SelectedItem is null)" title="@TranslateTrackerList("Copy tracker URL")" />
             <MudDivider Vertical="true" />
             <MudIconButton Icon="@Icons.Material.Outlined.ViewColumn" Color="Color.Inherit" OnClick="ColumnOptions" title="@TranslateApp("Choose Columns")" />
         </MudToolBar>

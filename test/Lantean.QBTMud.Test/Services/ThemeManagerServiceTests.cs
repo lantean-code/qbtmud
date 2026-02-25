@@ -73,6 +73,36 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_InitializedService_WHEN_EnsureInitializedCalledAgain_THEN_DoesNotReinitialize()
+        {
+            var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
+            SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
+                CreateThemeResponse("themes/theme-one.json", themeJson));
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+            await _target.EnsureInitialized();
+
+            Mock.Get(_fontCatalog)
+                .Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotInitialized_WHEN_ApplyTheme_THEN_InitializesAndPersistsSelection()
+        {
+            var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
+            SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
+                CreateThemeResponse("themes/theme-one.json", themeJson));
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.ApplyTheme("ThemeId");
+
+            _target.CurrentThemeId.Should().Be("ThemeId");
+            var storedThemeId = await _localStorage.GetItemAsync<string?>(SelectedThemeStorageKey, TestContext.Current.CancellationToken);
+            storedThemeId.Should().Be("ThemeId");
+        }
+
+        [Fact]
         public async Task GIVEN_NoThemes_WHEN_Initialized_THEN_UsesFallbackTheme()
         {
             SetupHttpClient(_notFoundResponseMessage);
@@ -82,6 +112,20 @@ namespace Lantean.QBTMud.Test.Services
 
             _target.Themes.Should().BeEmpty();
             _target.CurrentThemeId.Should().Be("default");
+        }
+
+        [Fact]
+        public async Task GIVEN_ServerTheme_WHEN_Initialized_THEN_CurrentThemePropertyReturnsAppliedTheme()
+        {
+            var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
+            SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
+                CreateThemeResponse("themes/theme-one.json", themeJson));
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.CurrentTheme.Should().NotBeNull();
+            _target.CurrentTheme!.Id.Should().Be("ThemeId");
         }
 
         [Fact]
@@ -127,6 +171,28 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_DefinitionWithNullThemeAndBlankFont_WHEN_Saved_THEN_DefaultThemeAndFontAreApplied()
+        {
+            SetupHttpClient(CreateIndexResponse());
+            SetupFontCatalogValid("Nunito Sans");
+
+            var definition = new ThemeDefinition
+            {
+                Id = "ThemeId",
+                Name = "ThemeName",
+                FontFamily = " ",
+                Theme = null!
+            };
+
+            await _target.SaveLocalTheme(definition);
+
+            _target.Themes.Should().ContainSingle(item =>
+                item.Id == "ThemeId"
+                && item.Theme.Theme != null
+                && item.Theme.FontFamily == "Nunito Sans");
+        }
+
+        [Fact]
         public async Task GIVEN_CurrentThemeDeleted_WHEN_Removed_THEN_AppliesNextTheme()
         {
             var themeJson = CreateThemeJson("ServerId", "Name", "Nunito Sans");
@@ -153,6 +219,30 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_NotInitializedAndCurrentLocalTheme_WHEN_Deleted_THEN_InitializesAndFallsBackToDefaultTheme()
+        {
+            SetupHttpClient(CreateIndexResponse());
+            SetupFontCatalogValid("Nunito Sans");
+
+            var localTheme = new ThemeDefinition
+            {
+                Id = "LocalId",
+                Name = "LocalName",
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
+            };
+            ThemeFontHelper.ApplyFont(localTheme, localTheme.FontFamily);
+
+            await _localStorage.SetItemAsync(LocalThemesStorageKey, new List<ThemeDefinition> { localTheme }, TestContext.Current.CancellationToken);
+            await _localStorage.SetItemAsync(SelectedThemeStorageKey, "LocalId", TestContext.Current.CancellationToken);
+
+            await _target.DeleteLocalTheme("LocalId");
+
+            _target.CurrentThemeId.Should().Be("default");
+            _target.Themes.Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_NotInitialized_WHEN_ReloadServerThemes_THEN_InitializesCatalog()
         {
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
@@ -163,6 +253,30 @@ namespace Lantean.QBTMud.Test.Services
             await _target.ReloadServerThemes();
 
             _target.Themes.Should().ContainSingle(theme => theme.Id == "ThemeId");
+        }
+
+        [Fact]
+        public async Task GIVEN_NotInitializedWithPendingInitialization_WHEN_ReloadServerThemes_THEN_AwaitsInitialization()
+        {
+            SetupHttpClient(CreateIndexResponse());
+
+            var gate = new TaskCompletionSource<bool>();
+            Mock.Get(_fontCatalog)
+                .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
+                .Returns(gate.Task);
+
+            var url = "Url";
+            Mock.Get(_fontCatalog)
+                .Setup(catalog => catalog.TryGetFontUrl(It.IsAny<string>(), out url))
+                .Returns(true);
+
+            var reloadTask = _target.ReloadServerThemes();
+            reloadTask.IsCompleted.Should().BeFalse();
+
+            gate.SetResult(true);
+            await reloadTask;
+
+            _target.CurrentThemeId.Should().Be("default");
         }
 
         [Fact]
@@ -187,6 +301,178 @@ namespace Lantean.QBTMud.Test.Services
             await _target.ReloadServerThemes();
 
             _target.CurrentThemeId.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_CurrentThemeStillAvailable_WHEN_ReloadingServerThemes_THEN_ReappliesAndPersistsTheme()
+        {
+            var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
+            var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
+            {
+                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { "/themes/theme-one.json", CreateThemeHttpResponse(themeJson) }
+            });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            var storedThemeIdBeforeReload = await _localStorage.GetItemAsync<string?>(SelectedThemeStorageKey, TestContext.Current.CancellationToken);
+            storedThemeIdBeforeReload.Should().BeNull();
+
+            handler.SetResponses(new Dictionary<string, HttpResponseMessage>
+            {
+                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { "/themes/theme-one.json", CreateThemeHttpResponse(themeJson) }
+            });
+
+            await _target.ReloadServerThemes();
+
+            var storedThemeIdAfterReload = await _localStorage.GetItemAsync<string?>(SelectedThemeStorageKey, TestContext.Current.CancellationToken);
+            storedThemeIdAfterReload.Should().Be("ThemeId");
+        }
+
+        [Fact]
+        public async Task GIVEN_InitializedService_WHEN_ReloadServerThemesIndexRequestThrows_THEN_ThrowsHttpRequestException()
+        {
+            var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
+            var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
+            {
+                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { "/themes/theme-one.json", CreateThemeHttpResponse(themeJson) }
+            });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            handler.SetResponses(
+                new Dictionary<string, HttpResponseMessage>(),
+                new Dictionary<string, Exception>
+                {
+                    { ThemeIndexPath, new HttpRequestException("Error") }
+                });
+
+            var action = () => _target.ReloadServerThemes();
+
+            await action.Should().ThrowAsync<HttpRequestException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_LocalThemeSharesServerId_WHEN_Initialized_THEN_LocalThemeTakesPrecedence()
+        {
+            var localTheme = new ThemeDefinition
+            {
+                Id = "SharedId",
+                Name = "LocalName",
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
+            };
+            ThemeFontHelper.ApplyFont(localTheme, localTheme.FontFamily);
+            await _localStorage.SetItemAsync(LocalThemesStorageKey, new List<ThemeDefinition> { localTheme }, TestContext.Current.CancellationToken);
+
+            var serverThemeJson = CreateThemeJson("SharedId", "ServerName", "Nunito Sans");
+            SetupHttpClient(
+                CreateIndexResponse("themes/theme-one.json"),
+                CreateThemeResponse("themes/theme-one.json", serverThemeJson));
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.Themes.Should().ContainSingle(theme => theme.Id == "SharedId" && theme.Name == "LocalName" && theme.Source == ThemeSource.Local);
+        }
+
+        [Fact]
+        public async Task GIVEN_ExistingCurrentLocalTheme_WHEN_SavedWithSameId_THEN_ReplacesAndReappliesTheme()
+        {
+            SetupHttpClient(CreateIndexResponse());
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            await _target.SaveLocalTheme(new ThemeDefinition
+            {
+                Id = "LocalId",
+                Name = "InitialName",
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
+            });
+
+            await _target.ApplyTheme("LocalId");
+
+            await _target.SaveLocalTheme(new ThemeDefinition
+            {
+                Id = "LocalId",
+                Name = "UpdatedName",
+                FontFamily = "Fira Sans",
+                Theme = new MudTheme()
+            });
+
+            _target.Themes.Should().ContainSingle(theme => theme.Id == "LocalId" && theme.Name == "UpdatedName");
+            _target.CurrentTheme.Should().NotBeNull();
+            _target.CurrentTheme!.Name.Should().Be("UpdatedName");
+            _target.CurrentFontFamily.Should().Be("Fira Sans");
+        }
+
+        [Fact]
+        public async Task GIVEN_InvalidThemeIndexJson_WHEN_Initialized_THEN_UsesFallbackTheme()
+        {
+            var invalidIndexResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{invalid json}")
+            };
+
+            SetupHttpClient(invalidIndexResponse);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.Themes.Should().BeEmpty();
+            _target.CurrentThemeId.Should().Be("default");
+        }
+
+        [Fact]
+        public async Task GIVEN_NullThemeIndexPayload_WHEN_Initialized_THEN_UsesFallbackTheme()
+        {
+            var nullIndexResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("null")
+            };
+
+            SetupHttpClient(nullIndexResponse);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.Themes.Should().BeEmpty();
+            _target.CurrentThemeId.Should().Be("default");
+        }
+
+        [Fact]
+        public async Task GIVEN_ServerThemeEntriesWithFailures_WHEN_Initialized_THEN_LoadsOnlyValidThemes()
+        {
+            var validThemeJson = CreateThemeJson("ValidId", "ValidName", "Nunito Sans");
+
+            var handler = new ThemeMessageHandler(
+                new Dictionary<string, HttpResponseMessage>
+                {
+                    { ThemeIndexPath, CreateIndexResponse(" ", "themes/not-found.json", "themes/http-exception.json", "themes/json-exception.json", "themes/null-definition.json", "themes/valid.json") },
+                    { "/themes/not-found.json", _notFoundResponseMessage },
+                    { "/themes/json-exception.json", CreateThemeHttpResponse("{invalid json}") },
+                    { "/themes/null-definition.json", CreateThemeHttpResponse("null") },
+                    { "/themes/valid.json", CreateThemeHttpResponse(validThemeJson) }
+                },
+                new Dictionary<string, Exception>
+                {
+                    { "/themes/http-exception.json", new HttpRequestException("Error") }
+                });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.Themes.Should().ContainSingle(theme => theme.Id == "ValidId");
+            _target.CurrentThemeId.Should().Be("ValidId");
         }
 
         [Fact]
@@ -304,20 +590,33 @@ namespace Lantean.QBTMud.Test.Services
         private sealed class ThemeMessageHandler : HttpMessageHandler
         {
             private IDictionary<string, HttpResponseMessage> _responses;
+            private IDictionary<string, Exception> _exceptions;
 
             public ThemeMessageHandler(IDictionary<string, HttpResponseMessage> responses)
+                : this(responses, new Dictionary<string, Exception>())
             {
-                _responses = responses;
             }
 
-            public void SetResponses(IDictionary<string, HttpResponseMessage> responses)
+            public ThemeMessageHandler(IDictionary<string, HttpResponseMessage> responses, IDictionary<string, Exception> exceptions)
             {
                 _responses = responses;
+                _exceptions = exceptions;
+            }
+
+            public void SetResponses(IDictionary<string, HttpResponseMessage> responses, IDictionary<string, Exception>? exceptions = null)
+            {
+                _responses = responses;
+                _exceptions = exceptions ?? new Dictionary<string, Exception>();
             }
 
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+                if (_exceptions.TryGetValue(path, out var exception))
+                {
+                    return Task.FromException<HttpResponseMessage>(exception);
+                }
+
                 var response = _responses.TryGetValue(path, out var value)
                     ? value
                     : _notFoundResponseMessage;

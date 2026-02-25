@@ -346,6 +346,78 @@ namespace Lantean.QBTMud.Test.Components.Options
             raised.Should().HaveCountGreaterThanOrEqualTo(2);
         }
 
+        [Fact]
+        public async Task GIVEN_PathFields_WHEN_NullValuesAreChanged_THEN_ShouldPersistEmptyStrings()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<DownloadsOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            await target.InvokeAsync(() => FindPathField(target, "SavePath").Instance.ValueChanged.InvokeAsync(null));
+            update.SavePath.Should().Be(string.Empty);
+
+            await target.InvokeAsync(() => FindPathField(target, "TempPath").Instance.ValueChanged.InvokeAsync(null));
+            update.TempPath.Should().Be(string.Empty);
+
+            await target.InvokeAsync(() => FindPathField(target, "ExportDir").Instance.ValueChanged.InvokeAsync(null));
+            update.ExportDir.Should().Be(string.Empty);
+
+            await target.InvokeAsync(() => FindPathField(target, "ExportDirFin").Instance.ValueChanged.InvokeAsync(null));
+            update.ExportDirFin.Should().Be(string.Empty);
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectMenus_WHEN_Opened_THEN_ShouldRenderAllOptionItems()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<DownloadsOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            await target.InvokeAsync(() => FindSelect<string>(target, "TorrentContentLayout").Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain("Subfolder");
+            });
+
+            await target.InvokeAsync(() => FindSelect<string>(target, "TorrentStopCondition").Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain("MetadataReceived");
+            });
+
+            await target.InvokeAsync(() => FindExistingScanDirType(target, 0).Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(string.Empty);
+            });
+
+            await target.InvokeAsync(() => FindAddedScanDirType(target, 0).Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(string.Empty);
+            });
+        }
+
         private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<DownloadsOptions> target, string testId)
         {
             return FindComponentByTestId<MudSelect<T>>(target, testId);
@@ -369,6 +441,11 @@ namespace Lantean.QBTMud.Test.Components.Options
         private static IRenderedComponent<MudSelect<string>> FindAddedScanDirType(IRenderedComponent<DownloadsOptions> target, int index)
         {
             return FindSelect<string>(target, $"AddedScanDirs[{index}].Type");
+        }
+
+        private static IRenderedComponent<MudSelect<string>> FindExistingScanDirType(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindSelect<string>(target, $"ScanDirsExisting[{index}].Type");
         }
 
         private static IRenderedComponent<PathAutocomplete> FindAddedScanDirKey(IRenderedComponent<DownloadsOptions> target, int index)

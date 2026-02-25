@@ -83,5 +83,75 @@ namespace Lantean.QBTMud.Test.Services.Localization
 
             result.Should().Be("fr");
         }
+
+        [Fact]
+        public void GIVEN_NullLocaleAndNoEnglish_WHEN_Resolved_THEN_ReturnsFirstEntry()
+        {
+            var languages = new List<LanguageCatalogItem>
+            {
+                new("fr", "French"),
+                new("de", "German")
+            };
+
+            var result = LocaleSelection.ResolveLocale(null, languages);
+
+            result.Should().Be("fr");
+        }
+
+        [Fact]
+        public void GIVEN_UnderscoreLocale_WHEN_Resolved_THEN_MatchesHyphenVariant()
+        {
+            var languages = new List<LanguageCatalogItem>
+            {
+                new("pt-BR", "Portuguese (Brazil)"),
+                new("en", "English")
+            };
+
+            var result = LocaleSelection.ResolveLocale("pt_BR", languages);
+
+            result.Should().Be("pt-BR");
+        }
+
+        [Fact]
+        public void GIVEN_LocaleWithModifier_WHEN_Resolved_THEN_UsesBaseLocale()
+        {
+            var languages = new List<LanguageCatalogItem>
+            {
+                new("_x", "Underscore Locale"),
+                new("en", "English")
+            };
+
+            var result = LocaleSelection.ResolveLocale("-x@modifier", languages);
+
+            result.Should().Be("_x");
+        }
+
+        [Fact]
+        public void GIVEN_UnderscoreRegionalLocale_WHEN_Resolved_THEN_FallsBackToUnderscoreBase()
+        {
+            var languages = new List<LanguageCatalogItem>
+            {
+                new("fr", "French"),
+                new("en", "English")
+            };
+
+            var result = LocaleSelection.ResolveLocale("fr_CA", languages);
+
+            result.Should().Be("fr");
+        }
+
+        [Fact]
+        public void GIVEN_PlainUnknownLocale_WHEN_Resolved_THEN_FallsBackToEnglish()
+        {
+            var languages = new List<LanguageCatalogItem>
+            {
+                new("en", "English"),
+                new("fr", "French")
+            };
+
+            var result = LocaleSelection.ResolveLocale("zz", languages);
+
+            result.Should().Be("en");
+        }
     }
 }

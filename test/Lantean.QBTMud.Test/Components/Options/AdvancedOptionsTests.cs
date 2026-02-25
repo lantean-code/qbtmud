@@ -335,6 +335,85 @@ namespace Lantean.QBTMud.Test.Components.Options
             embeddedTrackerPortValidation(65536).Should().Be("The port used for incoming connections must be between 1024 and 65535.");
         }
 
+        [Fact]
+        public async Task GIVEN_SelectMenus_WHEN_Opened_THEN_ShouldRenderMenuItems()
+        {
+            var api = TestContext.AddSingletonMock<IApiClient>();
+            api.Setup(a => a.GetNetworkInterfaces())
+                .ReturnsAsync(new[]
+                {
+                    new NetworkInterface("Any", string.Empty),
+                    new NetworkInterface("Ethernet", "eth0"),
+                });
+            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>()))
+                .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<AdvancedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var networkInterfaceSelect = FindSelect<string>(target, "CurrentNetworkInterface");
+            await target.InvokeAsync(() => networkInterfaceSelect.Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<string>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+                values.Should().Contain(string.Empty);
+                values.Should().Contain("eth0");
+            });
+
+            var interfaceAddressSelect = FindSelect<string>(target, "CurrentInterfaceAddress");
+            await target.InvokeAsync(() => interfaceAddressSelect.Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<string>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+                values.Should().Contain(string.Empty);
+                values.Should().Contain("0.0.0.0");
+                values.Should().Contain("::");
+            });
+
+            var diskIoTypeSelect = FindSelect<int>(target, "DiskIoType");
+            await target.InvokeAsync(() => diskIoTypeSelect.Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<int>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+                values.Should().Contain(2);
+            });
+
+            var diskIoWriteModeSelect = FindSelect<int>(target, "DiskIoWriteMode");
+            await target.InvokeAsync(() => diskIoWriteModeSelect.Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<int>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+                values.Should().Contain(1);
+            });
+
+            var uploadChokingAlgorithmSelect = FindSelect<int>(target, "UploadChokingAlgorithm");
+            await target.InvokeAsync(() => uploadChokingAlgorithmSelect.Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<int>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+                values.Should().Contain(0);
+            });
+        }
+
         private static IRenderedComponent<MudNumericField<int>> FindNumeric(IRenderedComponent<AdvancedOptions> target, string testId)
         {
             return FindComponentByTestId<MudNumericField<int>>(target, testId);
