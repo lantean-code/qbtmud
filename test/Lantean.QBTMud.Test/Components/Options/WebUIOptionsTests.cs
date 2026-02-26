@@ -299,7 +299,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
-        public void GIVEN_ValidationDelegates_WHEN_InvalidValuesProvided_THEN_ShouldReturnValidationMessages()
+        public async Task GIVEN_ValidationDelegates_WHEN_InvalidValuesProvided_THEN_ShouldReturnValidationMessages()
         {
             var preferences = DeserializePreferences();
             var update = new UpdatePreferences();
@@ -324,12 +324,22 @@ namespace Lantean.QBTMud.Test.Components.Options
 
             var certValidation = FindTextField(target, "WebUiHttpsCertPath").Instance.Validation.Should().BeOfType<Func<string?, string?>>().Subject;
             certValidation(string.Empty).Should().Be("HTTPS certificate should not be empty.");
+            certValidation("/cert.pem").Should().BeNull();
 
             var keyValidation = FindTextField(target, "WebUiHttpsKeyPath").Instance.Validation.Should().BeOfType<Func<string?, string?>>().Subject;
             keyValidation(string.Empty).Should().Be("HTTPS key should not be empty.");
+            keyValidation("/key.pem").Should().BeNull();
 
             var altPathValidation = FindTextField(target, "AlternativeWebuiPath").Instance.Validation.Should().BeOfType<Func<string?, string?>>().Subject;
             altPathValidation(string.Empty).Should().Be("The alternative WebUI files location cannot be blank.");
+            altPathValidation("/var/ui").Should().BeNull();
+
+            await target.InvokeAsync(() => FindSwitch(target, "UseHttps").Instance.ValueChanged.InvokeAsync(false));
+            certValidation(string.Empty).Should().BeNull();
+            keyValidation(string.Empty).Should().BeNull();
+
+            await target.InvokeAsync(() => FindSwitch(target, "AlternativeWebuiEnabled").Instance.ValueChanged.InvokeAsync(false));
+            altPathValidation(string.Empty).Should().BeNull();
         }
 
         [Fact]

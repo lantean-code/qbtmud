@@ -133,5 +133,26 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             invoked.Should().BeTrue();
         }
+
+        [Fact]
+        public void GIVEN_TargetAndContextMenu_WHEN_Rendered_THEN_ParametersAreSet()
+        {
+            RenderFragment contextMenu = builder =>
+            {
+                builder.OpenElement(0, "span");
+                builder.AddContent(1, "ContextMenu");
+                builder.CloseElement();
+            };
+
+            var target = TestContext.Render<CustomNavLink>(parameters =>
+            {
+                parameters.Add(p => p.Target, "_blank");
+                parameters.Add(p => p.ContextMenu, contextMenu);
+                parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "ChildContent"));
+            });
+
+            target.Instance.Target.Should().Be("_blank");
+            target.Instance.ContextMenu.Should().NotBeNull();
+        }
     }
 }

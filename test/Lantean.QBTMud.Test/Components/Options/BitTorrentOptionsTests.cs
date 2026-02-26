@@ -273,6 +273,32 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public async Task GIVEN_SeedingActionSelect_WHEN_MenuOpened_THEN_AllActionsAreAvailable()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var target = TestContext.Render<BitTorrentOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var actionSelect = FindSelect<int>(target, "MaxRatioAct");
+            await target.InvokeAsync(() => actionSelect.Instance.OpenMenu());
+
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<int>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+
+                values.Should().Contain(1);
+            });
+        }
+
+        [Fact]
         public void GIVEN_ValidationDelegates_WHEN_InvalidValuesProvided_THEN_ShouldReturnValidationMessages()
         {
             TestContext.Render<MudPopoverProvider>();

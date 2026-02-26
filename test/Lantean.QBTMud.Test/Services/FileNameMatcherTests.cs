@@ -317,6 +317,27 @@ namespace Lantean.QBTMud.Test.Services
             rows[0].NewName.Should().BeNull();
         }
 
+        [Fact]
+        public void GIVEN_MatchOptions_WHEN_Created_THEN_DefaultsAreSet()
+        {
+            var options = new MatchOptions();
+
+            options.MatchAllOccurrences.Should().BeFalse();
+            options.CaseSensitive.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_ReplaceOptions_WHEN_Created_THEN_DefaultsAreSet()
+        {
+            var options = new ReplaceOptions();
+
+            options.AppliesToOption.Should().Be(AppliesTo.FilenameExtension);
+            options.IncludeFiles.Should().BeTrue();
+            options.IncludeFolders.Should().BeFalse();
+            options.ReplaceAll.Should().BeFalse();
+            options.FileEnumerationStart.Should().Be(0);
+        }
+
         private static FileRow CreateFile(string name, string originalName)
         {
             return new FileRow

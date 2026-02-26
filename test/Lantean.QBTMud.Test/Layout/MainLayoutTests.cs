@@ -121,6 +121,76 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_CurrentFontFamilySet_WHEN_ThemeChanged_THEN_PersistsBootstrapFontFamily()
+        {
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.CurrentFontFamily)
+                .Returns("FontFamily");
+
+            var target = RenderLayout();
+
+            await target.InvokeAsync(() => RaiseThemeChanged(new MudTheme(), "FontFamily", "ThemeId"));
+
+            target.WaitForAssertion(() =>
+            {
+                var snapshot = _localStorage.Snapshot();
+                snapshot.Should().ContainKey("ThemeManager.BootstrapFontFamily");
+                snapshot["ThemeManager.BootstrapFontFamily"].Should().Be("FontFamily");
+            });
+        }
+
+        [Fact]
+        public void GIVEN_ThemeChangedDuringInitialization_WHEN_Rendered_THEN_DoesNotRequeryCurrentTheme()
+        {
+            var themeManagerMock = Mock.Get(_themeManagerService);
+            themeManagerMock
+                .Setup(service => service.EnsureInitialized())
+                .Returns(() =>
+                {
+                    RaiseThemeChanged(new MudTheme(), "FontFamily", "ThemeId");
+                    return Task.CompletedTask;
+                });
+            themeManagerMock
+                .SetupGet(service => service.CurrentTheme)
+                .Throws(new InvalidOperationException("Current theme should not be queried when already applied."));
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.FindComponent<DrawerProbe>().Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GIVEN_CurrentThemeAvailable_WHEN_Rendered_THEN_AppliesCurrentThemeOnInitialize()
+        {
+            var currentTheme = new ThemeCatalogItem(
+                id: "ThemeId",
+                name: "ThemeName",
+                theme: new ThemeDefinition
+                {
+                    Theme = new MudTheme(),
+                },
+                source: ThemeSource.Local,
+                sourcePath: null);
+
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.CurrentTheme)
+                .Returns(currentTheme);
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.CurrentFontFamily)
+                .Returns("FontFamily");
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.WaitForAssertion(() =>
+            {
+                var snapshot = _localStorage.Snapshot();
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Light");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Dark");
+                snapshot.Should().ContainKey("ThemeManager.BootstrapFontFamily");
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_StoredSettings_WHEN_Rendered_THEN_UsesStoredValues()
         {
             await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true, Xunit.TestContext.Current.CancellationToken);
@@ -179,6 +249,15 @@ namespace Lantean.QBTMud.Test.Layout
                 .Any(button => button.Instance.Icon == Icons.Material.Filled.Menu)
                 .Should()
                 .BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_DefaultRoute_WHEN_Rendered_THEN_PageTitleUsesLocalizedWebUiTitle()
+        {
+            var target = RenderLayout(CreateProbeBody());
+            var pageTitle = target.FindComponent<PageTitle>();
+
+            GetChildContentText(pageTitle.Instance.ChildContent).Should().Be("qBittorrent WebUI");
         }
 
         [Fact]
@@ -338,6 +417,35 @@ namespace Lantean.QBTMud.Test.Layout
             await target.InvokeAsync(() => provider.Instance.OnBreakpointChanged.InvokeAsync(Breakpoint.Sm));
 
             probe.Instance.DrawerOpen.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_ErrorDrawerOpenWithoutErrors_WHEN_BreakpointChanges_THEN_ErrorDrawerCloses()
+        {
+            var target = RenderLayout(CreateProbeBody());
+            var errorDrawer = FindErrorDrawer(target);
+
+            await target.InvokeAsync(() => errorDrawer.Instance.OpenChanged.InvokeAsync(true));
+            errorDrawer.Instance.GetState(x => x.Open).Should().BeTrue();
+
+            var provider = target.FindComponent<BreakpointOrientationProvider>();
+            await target.InvokeAsync(() => provider.Instance.OnBreakpointChanged.InvokeAsync(Breakpoint.Md));
+
+            errorDrawer.Instance.GetState(x => x.Open).Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_LoginRouteWithQueryAndFragment_WHEN_Rendered_THEN_HidesMenuButton()
+        {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/login?next=%2Fdetails#hash");
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.FindComponents<MudIconButton>()
+                .Any(button => button.Instance.Icon == Icons.Material.Filled.Menu)
+                .Should()
+                .BeFalse();
         }
 
         [Fact]

@@ -141,6 +141,62 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_NonDetailsUri_WHEN_AltArrowDownPressed_THEN_NoNavigationOccurs()
+        {
+            _handlers.Clear();
+            var target = RenderLayout("Hash2", _torrents, "http://localhost/log");
+
+            target.WaitForAssertion(() =>
+            {
+                _handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler("ArrowDown");
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { AltKey = true }));
+
+            _navigationManager.Uri.Should().Be("http://localhost/log");
+        }
+
+        [Fact]
+        public async Task GIVEN_DetailsUriWithQuery_WHEN_AltArrowDownPressed_THEN_NavigatesToNextTorrent()
+        {
+            _handlers.Clear();
+            var target = RenderLayout("Hash2", _torrents, "http://localhost/details/Hash2?tab=Peers");
+
+            target.WaitForAssertion(() =>
+            {
+                _handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler("ArrowDown");
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { AltKey = true }));
+
+            _navigationManager.Uri.Should().Be("http://localhost/details/Hash3");
+        }
+
+        [Fact]
+        public async Task GIVEN_TorrentsCascadeMissing_WHEN_AltArrowDownPressed_THEN_NoNavigationOccurs()
+        {
+            _handlers.Clear();
+            var target = RenderLayoutWithoutTorrents("http://localhost/details/Hash2");
+
+            var navStub = target.FindComponent<Stub<TorrentsListNav>>();
+            var orderedTorrents = navStub.Instance.Parameters.Get(parameter => parameter.Torrents);
+            orderedTorrents.Should().NotBeNull();
+            orderedTorrents!.Should().BeEmpty();
+
+            target.WaitForAssertion(() =>
+            {
+                _handlers.Should().NotBeEmpty();
+            });
+
+            var handler = FindKeyboardHandler("ArrowDown");
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { AltKey = true }));
+
+            _navigationManager.Uri.Should().Be("http://localhost/details/Hash2");
+        }
+
+        [Fact]
         public async Task GIVEN_DrawerOpenChanged_WHEN_Invoked_THEN_DrawerStateUpdated()
         {
             var drawer = _target.FindComponent<MudDrawer>();
@@ -168,9 +224,17 @@ namespace Lantean.QBTMud.Test.Layout
                 Times.Once);
         }
 
-        private IRenderedComponent<DetailsLayout> RenderLayout(string? selectedHash, IEnumerable<Torrent> torrents)
+        [Fact]
+        public async Task GIVEN_ShortcutsNotRegistered_WHEN_Disposed_THEN_DisposeCompletes()
         {
-            _navigationManager.SetUri(selectedHash is null ? "http://localhost/" : $"http://localhost/details/{selectedHash}");
+            var target = new DetailsLayout();
+
+            await target.DisposeAsync();
+        }
+
+        private IRenderedComponent<DetailsLayout> RenderLayout(string? selectedHash, IEnumerable<Torrent> torrents, string? absoluteUri = null)
+        {
+            _navigationManager.SetUri(absoluteUri ?? (selectedHash is null ? "http://localhost/" : $"http://localhost/details/{selectedHash}"));
 
             return TestContext.Render<DetailsLayout>(parameters =>
             {
@@ -178,6 +242,20 @@ namespace Lantean.QBTMud.Test.Layout
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("DrawerOpenChanged", EventCallback.Factory.Create<bool>(this, _ => { }));
                 parameters.AddCascadingValue(torrents);
+                parameters.AddCascadingValue("SortColumn", "Name");
+                parameters.AddCascadingValue("SortDirection", SortDirection.Ascending);
+            });
+        }
+
+        private IRenderedComponent<DetailsLayout> RenderLayoutWithoutTorrents(string absoluteUri)
+        {
+            _navigationManager.SetUri(absoluteUri);
+
+            return TestContext.Render<DetailsLayout>(parameters =>
+            {
+                parameters.Add(p => p.Body, builder => { });
+                parameters.AddCascadingValue("DrawerOpen", false);
+                parameters.AddCascadingValue("DrawerOpenChanged", EventCallback.Factory.Create<bool>(this, _ => { }));
                 parameters.AddCascadingValue("SortColumn", "Name");
                 parameters.AddCascadingValue("SortDirection", SortDirection.Ascending);
             });

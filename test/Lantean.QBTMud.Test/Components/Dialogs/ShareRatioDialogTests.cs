@@ -127,6 +127,27 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_ActionSelect_WHEN_MenuOpened_THEN_AllActionsAreAvailable()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var dialog = await _target.RenderDialogAsync(value: CreateShareRatioMax(1f, 5, 3, ShareLimitAction.Default));
+            var actionSelect = FindComponentByTestId<MudSelect<ShareLimitAction>>(dialog.Component, "SelectedShareLimitAction");
+
+            await dialog.Component.InvokeAsync(() => actionSelect.Instance.OpenMenu());
+
+            dialog.Provider.WaitForAssertion(() =>
+            {
+                var values = dialog.Provider.FindComponents<MudSelectItem<ShareLimitAction>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+
+                values.Should().Contain(ShareLimitAction.RemoveWithContent);
+                values.Should().Contain(ShareLimitAction.EnableSuperSeeding);
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_CustomPreset_WHEN_SelectGlobalPreset_THEN_ShouldResetCustomControls()
         {
             var baseline = CreateShareRatioMax(3.5f, 120, 45, ShareLimitAction.Remove);

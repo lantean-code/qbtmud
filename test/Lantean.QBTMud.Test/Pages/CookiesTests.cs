@@ -188,6 +188,31 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_MultipleCookies_WHEN_DeleteClicked_THEN_PreservesRemainingCookie()
+        {
+            var cookieA = new ApplicationCookie("A", "a.example", "/", "ValueA", null);
+            var cookieB = new ApplicationCookie("B", "b.example", "/", "ValueB", null);
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetApplicationCookies())
+                .ReturnsAsync(new[] { cookieA, cookieB })
+                .ReturnsAsync(new[] { cookieB });
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderPage(new[] { cookieA, cookieB }, configureApi: false);
+            var deleteButton = FindRowDeleteButton(target);
+
+            await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(
+                    It.Is<IEnumerable<ApplicationCookie>>(cookies =>
+                        cookies.Count() == 1
+                        && cookies.Single().Name == "B")),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_RefreshClicked_WHEN_Invoked_THEN_LoadsCookiesAgain()
         {
             Mock.Get(_apiClient)
@@ -250,6 +275,121 @@ namespace Lantean.QBTMud.Test.Pages
 
             pendingSave.SetResult();
             await deleteTask;
+        }
+
+        [Fact]
+        public async Task GIVEN_LoadInProgress_WHEN_AddClicked_THEN_SkipsAdd()
+        {
+            var pendingLoad = new TaskCompletionSource<IReadOnlyList<ApplicationCookie>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationCookies())
+                .Returns(pendingLoad.Task);
+
+            var target = RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
+            var addButton = FindIconButton(target, Icons.Material.Filled.Add);
+
+            await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowCookiePropertiesDialog(It.IsAny<string>(), It.IsAny<ApplicationCookie?>()), Times.Never);
+
+            pendingLoad.SetResult(Array.Empty<ApplicationCookie>());
+            target.WaitForAssertion(() =>
+            {
+                addButton.Instance.Disabled.Should().BeFalse();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_LoadInProgress_WHEN_ReloadClicked_THEN_SkipsSecondLoad()
+        {
+            var pendingLoad = new TaskCompletionSource<IReadOnlyList<ApplicationCookie>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationCookies())
+                .Returns(pendingLoad.Task);
+
+            var target = RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
+            var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
+
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationCookies(), Times.Once);
+
+            pendingLoad.SetResult(Array.Empty<ApplicationCookie>());
+            target.WaitForAssertion(() =>
+            {
+                refreshButton.Instance.Disabled.Should().BeFalse();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_SaveInProgress_WHEN_EditClicked_THEN_SkipsEdit()
+        {
+            var existingCookie = new ApplicationCookie("Existing", "example.com", "/", "Value", null);
+            var pendingSave = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationCookies())
+                .ReturnsAsync(new[] { existingCookie });
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .Returns(pendingSave.Task);
+
+            var target = RenderPage(new[] { existingCookie }, configureApi: false);
+            var deleteButton = FindRowDeleteButton(target);
+            var editButton = FindRowEditButton(target);
+
+            var deleteTask = target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                editButton.Instance.Disabled.Should().BeTrue();
+            });
+
+            await target.InvokeAsync(() => editButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowCookiePropertiesDialog(It.IsAny<string>(), It.IsAny<ApplicationCookie?>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Once);
+
+            pendingSave.SetResult();
+            await deleteTask;
+        }
+
+        [Fact]
+        public async Task GIVEN_ReloadInProgressAfterAddDialog_WHEN_AddResumes_THEN_SkipsPersist()
+        {
+            var pendingReload = new TaskCompletionSource<IReadOnlyList<ApplicationCookie>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pendingDialog = new TaskCompletionSource<ApplicationCookie?>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetApplicationCookies())
+                .ReturnsAsync(Array.Empty<ApplicationCookie>())
+                .Returns(pendingReload.Task);
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowCookiePropertiesDialog("Add Cookie", null))
+                .Returns(pendingDialog.Task);
+
+            var target = RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
+            var addButton = FindIconButton(target, Icons.Material.Filled.Add);
+            var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
+
+            var addTask = target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowCookiePropertiesDialog("Add Cookie", null), Times.Once);
+            });
+
+            var reloadTask = target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            target.WaitForAssertion(() =>
+            {
+                refreshButton.Instance.Disabled.Should().BeTrue();
+            });
+
+            pendingDialog.SetResult(new ApplicationCookie("Added", "example.com", "/", "Value", null));
+            await addTask;
+
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationCookies(It.IsAny<IEnumerable<ApplicationCookie>>()), Times.Never);
+
+            pendingReload.SetResult(Array.Empty<ApplicationCookie>());
+            await reloadTask;
         }
 
         [Fact]

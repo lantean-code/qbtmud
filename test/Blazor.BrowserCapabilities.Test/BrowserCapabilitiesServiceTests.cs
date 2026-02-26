@@ -166,6 +166,60 @@ namespace Blazor.BrowserCapabilities.Test
         }
 
         [Fact]
+        public async Task GIVEN_InitializedAndAlreadyDisposed_WHEN_DisposeCalledAgain_THEN_ShouldReturnWithoutThrowing()
+        {
+            Mock.Get(_jSModule)
+                .Setup(module => module.InvokeAsync<BrowserCapabilities?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<BrowserCapabilities?>(BrowserCapabilities.Default));
+
+            await _target.EnsureInitialized(TestContext.Current.CancellationToken);
+            await _target.DisposeAsync();
+            await _target.DisposeAsync();
+
+            Mock.Get(_jSModule).Verify(module => module.DisposeAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ModuleDisposeThrowsJsDisconnectedException_WHEN_Disposed_THEN_ShouldSwallowException()
+        {
+            Mock.Get(_jSModule)
+                .Setup(module => module.InvokeAsync<BrowserCapabilities?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<BrowserCapabilities?>(BrowserCapabilities.Default));
+            Mock.Get(_jSModule)
+                .Setup(module => module.DisposeAsync())
+                .Throws(new JSDisconnectedException("Disconnected"));
+
+            await _target.EnsureInitialized(TestContext.Current.CancellationToken);
+
+            var action = async () =>
+            {
+                await _target.DisposeAsync();
+            };
+
+            await action.Should().NotThrowAsync();
+        }
+
+        [Fact]
+        public async Task GIVEN_ModuleDisposeThrowsObjectDisposedException_WHEN_Disposed_THEN_ShouldSwallowException()
+        {
+            Mock.Get(_jSModule)
+                .Setup(module => module.InvokeAsync<BrowserCapabilities?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()))
+                .Returns(new ValueTask<BrowserCapabilities?>(BrowserCapabilities.Default));
+            Mock.Get(_jSModule)
+                .Setup(module => module.DisposeAsync())
+                .Throws(new ObjectDisposedException("JSModule"));
+
+            await _target.EnsureInitialized(TestContext.Current.CancellationToken);
+
+            var action = async () =>
+            {
+                await _target.DisposeAsync();
+            };
+
+            await action.Should().NotThrowAsync();
+        }
+
+        [Fact]
         public async Task GIVEN_Disposed_WHEN_EnsureInitialized_THEN_ShouldThrowObjectDisposedException()
         {
             await _target.DisposeAsync();

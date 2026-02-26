@@ -11,10 +11,17 @@ namespace Lantean.QBTMud.Test.Models
         {
             var job = new SearchJobViewModel(1, "Ubuntu", new[] { "movies" }, SearchForm.AllCategoryId);
 
+            job.CreatedOn.Should().NotBe(default);
+            job.IsStopped.Should().BeFalse();
+            job.IsErrored.Should().BeFalse();
+
             job.AppendResults(new[]
             {
                 new SearchResult("http://desc", "Ubuntu", 1_000_000, "http://files", 1, 10, "http://site", "movies", 1_700_000_000)
             });
+
+            job.UpdateStatus("Stopped", 1);
+            job.IsStopped.Should().BeTrue();
 
             job.UpdateStatus("Completed", 1);
 
@@ -25,6 +32,7 @@ namespace Lantean.QBTMud.Test.Models
             job.SetError("failed");
             job.Status.Should().Be("Error");
             job.ErrorMessage.Should().Be("failed");
+            job.IsErrored.Should().BeTrue();
 
             job.ResetResults(clearError: false);
             job.Results.Should().BeEmpty();

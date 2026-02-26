@@ -146,12 +146,39 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public void GIVEN_RenderedToolbar_WHEN_IconButtonsLoaded_THEN_ButtonsExposeExpectedTitles()
+        {
+            var target = RenderPeersTab(false);
+
+            var addButton = FindIconButton(target, Icons.Material.Filled.AddCircle);
+            var banButton = FindIconButton(target, Icons.Material.Filled.DisabledByDefault);
+            var columnsButton = FindIconButton(target, Icons.Material.Outlined.ViewColumn);
+
+            addButton.Should().NotBeNull();
+            banButton.Should().NotBeNull();
+            columnsButton.Instance.UserAttributes.Should().ContainKey("title");
+            columnsButton.Instance.UserAttributes!["title"].Should().Be("Choose Columns");
+        }
+
+        [Fact]
         public async Task GIVEN_NullHash_WHEN_AddPeerClicked_THEN_DialogIsNotOpened()
         {
             var target = RenderPeersTab(false, null!);
             var addButton = FindIconButton(target, Icons.Material.Filled.AddCircle);
 
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+
+            _dialogWorkflowMock.Verify(workflow => workflow.ShowAddPeersDialog(), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.AddPeers(It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<PeerId>>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NullHash_WHEN_AddPeerToolbarDomClicked_THEN_DialogIsNotOpened()
+        {
+            var target = RenderPeersTab(false, null!);
+            var addButton = FindIconButton(target, Icons.Material.Filled.AddCircle);
+
+            await target.InvokeAsync(() => addButton.Find("button").Click());
 
             _dialogWorkflowMock.Verify(workflow => workflow.ShowAddPeersDialog(), Times.Never);
             Mock.Get(_apiClient).Verify(client => client.AddPeers(It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<PeerId>>()), Times.Never);
@@ -214,6 +241,17 @@ namespace Lantean.QBTMud.Test.Components
             var banButton = FindIconButton(target, Icons.Material.Filled.DisabledByDefault);
 
             await target.InvokeAsync(() => banButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_apiClient).Verify(client => client.BanPeers(It.IsAny<IEnumerable<PeerId>>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NoSelectedPeer_WHEN_BanToolbarDomClicked_THEN_DoesNotCallApi()
+        {
+            var target = RenderPeersTab(false);
+            var banButton = FindIconButton(target, Icons.Material.Filled.DisabledByDefault);
+
+            await target.InvokeAsync(() => banButton.Find("button").Click());
 
             Mock.Get(_apiClient).Verify(client => client.BanPeers(It.IsAny<IEnumerable<PeerId>>()), Times.Never);
         }

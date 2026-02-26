@@ -159,6 +159,53 @@ namespace Lantean.QBTMud.Test.Pages
                 Times.Once);
         }
 
+        [Fact]
+        public void GIVEN_MissingTorrentHash_WHEN_Rendered_THEN_NavigatesHomeAndHidesTabs()
+        {
+            _navigationManager.NavigateTo("http://localhost/details/Missing");
+
+            var target = RenderDetails("Missing", CreateMainData(HashValue));
+
+            _navigationManager.Uri.Should().Be("http://localhost/");
+            target.FindComponents<MudTabs>().Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_NullHash_WHEN_Rendered_THEN_NavigatesHomeAndHidesTabs()
+        {
+            _navigationManager.NavigateTo("http://localhost/details/");
+
+            var target = RenderDetails(null, CreateMainData(HashValue));
+
+            _navigationManager.Uri.Should().Be("http://localhost/");
+            target.FindComponents<MudTabs>().Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_ShortcutsNotRegistered_WHEN_Disposed_THEN_DisposeCompletes()
+        {
+            var target = new Details();
+
+            await target.DisposeAsync();
+        }
+
+        private IRenderedComponent<Details> RenderDetails(string? hash, MainData mainData)
+        {
+            var preferences = CreatePreferences();
+            var theme = new MudTheme();
+
+            return TestContext.Render<Details>(parameters =>
+            {
+                parameters.Add(p => p.Hash, hash);
+                parameters.AddCascadingValue(mainData);
+                parameters.AddCascadingValue(preferences);
+                parameters.AddCascadingValue(theme);
+                parameters.AddCascadingValue("IsDarkMode", false);
+                parameters.AddCascadingValue(Breakpoint.Lg);
+                parameters.AddCascadingValue("DrawerOpen", false);
+            });
+        }
+
         private static MainData CreateMainData(string hash)
         {
             var torrents = new Dictionary<string, Torrent>

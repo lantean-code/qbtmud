@@ -15,6 +15,27 @@ namespace Lantean.QBTMud.Test.Services
             _target = new TorrentDataManager();
         }
 
+        [Fact]
+        public void GIVEN_MainData_WHEN_SelectedTorrentHashSet_THEN_ShouldStoreValue()
+        {
+            var created = _target.CreateMainData(new ClientModels.MainData(
+                responseId: 1,
+                fullUpdate: true,
+                torrents: null,
+                torrentsRemoved: null,
+                categories: null,
+                categoriesRemoved: null,
+                tags: null,
+                tagsRemoved: null,
+                trackers: null,
+                trackersRemoved: null,
+                serverState: null));
+
+            created.SelectedTorrentHash = "Hash";
+
+            created.SelectedTorrentHash.Should().Be("Hash");
+        }
+
         // -------------------- CreateMainData --------------------
 
         [Fact]

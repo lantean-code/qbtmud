@@ -477,6 +477,57 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             component.WaitForState(() => component.FindComponents<MudSelectItem<string>>().Any(item => item.Instance.Value?.ToString() == "TagValue"));
         }
 
+        [Fact]
+        public async Task GIVEN_StopConditionAndLayoutSelects_WHEN_MenusOpened_THEN_AllOptionsRendered()
+        {
+            UseApiClientMock();
+            TestContext.Render<MudPopoverProvider>();
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            await component.InvokeAsync(() => FindSelect<string>(component, "StopCondition").Instance.OpenMenu());
+            component.WaitForAssertion(() =>
+            {
+                var values = component.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain("MetadataReceived");
+            });
+
+            await component.InvokeAsync(() => FindSelect<string>(component, "ContentLayout").Instance.OpenMenu());
+            component.WaitForAssertion(() =>
+            {
+                var values = component.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain("NoSubfolder");
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_NullPathValues_WHEN_PathValueCallbacksInvoked_THEN_ValuesBecomeEmpty()
+        {
+            var preferences = CreatePreferences(
+                autoTmmEnabled: false,
+                savePath: "SavePath",
+                tempPath: "TempPath",
+                tempPathEnabled: true);
+
+            UseApiClientMock(preferences: preferences);
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            var savePathAutocomplete = FindPathAutocomplete(component, "SaveFilesLocation");
+            var downloadPathAutocomplete = FindPathAutocomplete(component, "IncompleteSavePath");
+
+            savePathAutocomplete.Should().NotBeNull();
+            downloadPathAutocomplete.Should().NotBeNull();
+
+            await component.InvokeAsync(() => savePathAutocomplete!.Instance.ValueChanged.InvokeAsync(null));
+            await component.InvokeAsync(() => downloadPathAutocomplete!.Instance.ValueChanged.InvokeAsync(null));
+
+            GetSavePath(component).Should().BeEmpty();
+            GetDownloadPath(component).Should().BeEmpty();
+        }
+
         private static void ExpandOptions(IRenderedComponent<AddTorrentOptions> component)
         {
             var toggle = FindComponentByTestId<MudSwitch<bool>>(component, "AdditionalOptions");

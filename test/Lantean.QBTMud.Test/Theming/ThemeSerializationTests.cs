@@ -57,6 +57,31 @@ namespace Lantean.QBTMud.Test.Theming
         }
 
         [Fact]
+        public void GIVEN_JsonWithoutThemeObject_WHEN_Deserialized_THEN_ReturnsDefinitionWithDefaultTheme()
+        {
+            const string json = "{\"id\":\"Id\",\"name\":\"Name\",\"fontFamily\":\"FontFamily\"}";
+
+            var result = ThemeSerialization.DeserializeDefinition(json);
+
+            result.Should().NotBeNull();
+            result!.Theme.Should().NotBeNull();
+            result.Id.Should().Be("Id");
+        }
+
+        [Fact]
+        public void GIVEN_JsonWithThemeButWithoutPalettes_WHEN_Deserialized_THEN_ReturnsDefinition()
+        {
+            const string json = "{\"id\":\"Id\",\"name\":\"Name\",\"fontFamily\":\"FontFamily\",\"theme\":{}}";
+
+            var result = ThemeSerialization.DeserializeDefinition(json);
+
+            result.Should().NotBeNull();
+            result!.Theme.Should().NotBeNull();
+            result.Theme.PaletteLight.Should().NotBeNull();
+            result.Theme.PaletteDark.Should().NotBeNull();
+        }
+
+        [Fact]
         public void GIVEN_JsonWithoutPaletteTypeDiscriminator_WHEN_Deserialized_THEN_ShouldHandleLegacyThemePayload()
         {
             var definition = new ThemeDefinition

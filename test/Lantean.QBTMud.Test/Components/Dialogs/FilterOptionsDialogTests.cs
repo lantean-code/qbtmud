@@ -43,6 +43,49 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_NoSelectedColumn_WHEN_OperatorMenuOpened_THEN_PlaceholderOptionShown()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var dialog = await _target.RenderDialogAsync(null);
+            var operatorSelect = FindComponentByTestId<MudSelect<string>>(dialog.Component, "FilterNewOperator");
+
+            await dialog.Component.InvokeAsync(() => operatorSelect.Instance.OpenMenu());
+
+            dialog.Provider.WaitForAssertion(() =>
+            {
+                dialog.Provider.FindComponents<MudSelectItem<string>>()
+                    .Any(item => string.Equals(item.Instance.Value, string.Empty, StringComparison.Ordinal))
+                    .Should()
+                    .BeTrue();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectedColumn_WHEN_OperatorMenuOpened_THEN_ColumnOperatorsShown()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var dialog = await _target.RenderDialogAsync(null);
+            var columnSelect = FindComponentByTestId<MudSelect<string>>(dialog.Component, "FilterNewColumn");
+            var operatorSelect = FindComponentByTestId<MudSelect<string>>(dialog.Component, "FilterNewOperator");
+
+            await dialog.Component.InvokeAsync(() => columnSelect.Instance.ValueChanged.InvokeAsync("Name"));
+            await dialog.Component.InvokeAsync(() => operatorSelect.Instance.OpenMenu());
+
+            var expectedOperators = FilterOperator.GetOperatorByDataType(typeof(string));
+            dialog.Provider.WaitForAssertion(() =>
+            {
+                var values = dialog.Provider.FindComponents<MudSelectItem<string>>()
+                    .Select(item => item.Instance.Value)
+                    .Where(value => value is not null)
+                    .ToList();
+
+                values.Should().Contain(expectedOperators);
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_DefinitionUpdated_WHEN_Saved_THEN_DefinitionReflectsChanges()
         {
             var operators = FilterOperator.GetOperatorByDataType(typeof(string));

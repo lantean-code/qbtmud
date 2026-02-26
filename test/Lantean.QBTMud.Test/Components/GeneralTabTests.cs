@@ -214,6 +214,30 @@ namespace Lantean.QBTMud.Test.Components
             await target.Instance.DisposeAsync();
         }
 
+        [Fact]
+        public async Task GIVEN_CancelledTickToken_WHEN_TimerHandlerRuns_THEN_ReturnsStop()
+        {
+            Mock.Get(_apiClient)
+                .Setup(c => c.GetTorrentProperties("Hash"))
+                .ReturnsAsync(CreateProperties());
+            Mock.Get(_apiClient)
+                .Setup(c => c.GetTorrentPieceStates("Hash"))
+                .ReturnsAsync(new[] { PieceState.Downloaded });
+
+            var target = RenderGeneralTab(true, "Hash");
+            var handler = GetTickHandler(target);
+            using var cancellationSource = new CancellationTokenSource();
+            cancellationSource.Cancel();
+
+            ManagedTimerTickResult result = ManagedTimerTickResult.Continue;
+            await target.InvokeAsync(async () =>
+            {
+                result = await handler(cancellationSource.Token);
+            });
+
+            result.Should().Be(ManagedTimerTickResult.Stop);
+        }
+
         private IRenderedComponent<GeneralTab> RenderGeneralTab(bool active, string? hash)
         {
             return TestContext.Render<GeneralTab>(parameters =>

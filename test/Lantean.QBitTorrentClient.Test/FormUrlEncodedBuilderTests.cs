@@ -136,6 +136,24 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_NullableConvertibleValue_WHEN_AddIfNotNullOrEmpty_Generic_THEN_ShouldUseEmptyStringWhenConversionReturnsNull()
+        {
+            NullStringConvertible? value = new NullStringConvertible();
+
+            _target.AddIfNotNullOrEmpty("count", value);
+
+            var parameters = _target.GetParameters();
+            parameters.Count.Should().Be(1);
+            parameters[0].Key.Should().Be("count");
+            parameters[0].Value.Should().Be(string.Empty);
+
+            using var content = _target.ToFormUrlEncodedContent();
+            var payload = await content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+            payload.Should().Be("count=");
+        }
+
+        [Fact]
         public void GIVEN_FluentAdd_WHEN_Used_THEN_ShouldReturnSameInstance()
         {
             var returned = _target.Add("x", "y");
@@ -171,6 +189,94 @@ namespace Lantean.QBitTorrentClient.Test
             var payload = await content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
             payload.Should().Be("a=1&b=2");
+        }
+
+        private readonly struct NullStringConvertible : IConvertible
+        {
+            public TypeCode GetTypeCode()
+            {
+                return TypeCode.Object;
+            }
+
+            public bool ToBoolean(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public byte ToByte(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public char ToChar(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public DateTime ToDateTime(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public decimal ToDecimal(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public double ToDouble(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public short ToInt16(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public int ToInt32(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public long ToInt64(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public sbyte ToSByte(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public float ToSingle(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public string ToString(IFormatProvider? provider)
+            {
+                return null!;
+            }
+
+            public object ToType(Type conversionType, IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public ushort ToUInt16(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public uint ToUInt32(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
+
+            public ulong ToUInt64(IFormatProvider? provider)
+            {
+                throw new NotSupportedException();
+            }
         }
     }
 }

@@ -42,6 +42,25 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_LeavesDefaultState()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<DownloadsOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, (Preferences?)null);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindSelect<string>(target, "TorrentContentLayout").Instance.GetState(x => x.Value).Should().BeNull();
+            FindSwitch(target, "AddToTopOfQueue").Instance.Value.Should().BeNull();
+            update.ScanDirs.Should().BeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_TogglesAndInputs_WHEN_Changed_THEN_ShouldUpdatePreferencesAndNotify()
         {
             TestContext.Render<MudPopoverProvider>();
@@ -347,6 +366,36 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public async Task GIVEN_ScanDirectoriesWithCustomPaths_WHEN_Modified_THEN_RendersAndUpdatesSavePathEditors()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<DownloadsOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            await target.InvokeAsync(() => FindExistingScanDirType(target, 0).Instance.ValueChanged.InvokeAsync("/watch-custom"));
+            await target.InvokeAsync(() => FindPathField(target, "ScanDirsExisting[0].SavePath").Instance.ValueChanged.InvokeAsync("/watch-custom-2"));
+
+            await target.InvokeAsync(() => FindAddedScanDirKey(target, 0).Instance.ValueChanged.InvokeAsync(string.Empty));
+            await target.InvokeAsync(() => FindAddedScanDirType(target, 0).Instance.ValueChanged.InvokeAsync("/added-custom"));
+            await target.InvokeAsync(() => FindPathField(target, "AddedScanDirs[0].SavePath").Instance.ValueChanged.InvokeAsync("/added-custom-2"));
+            await target.InvokeAsync(() => FindAddedScanDirAddButton(target, 0).Instance.OnClick.InvokeAsync());
+
+            FindAddedScanDirRemoveButton(target, 0).Should().NotBeNull();
+
+            update.ScanDirs.Should().NotBeNull();
+            update.ScanDirs!.ContainsKey("/watch").Should().BeTrue();
+            update.ScanDirs["/watch"].SavePath.Should().Be("/watch-custom-2");
+        }
+
+        [Fact]
         public async Task GIVEN_PathFields_WHEN_NullValuesAreChanged_THEN_ShouldPersistEmptyStrings()
         {
             TestContext.Render<MudPopoverProvider>();
@@ -418,6 +467,36 @@ namespace Lantean.QBTMud.Test.Components.Options
             });
         }
 
+        [Fact]
+        public async Task GIVEN_AddedScanDirectoryRows_WHEN_RemoveClicked_THEN_RemovesNonLastRow()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            var target = TestContext.Render<DownloadsOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindAddedScanDirKey(target, 0).Should().NotBeNull();
+            await target.InvokeAsync(() => FindAddedScanDirAddButton(target, 0).Instance.OnClick.InvokeAsync());
+            FindAddedScanDirKey(target, 1).Should().NotBeNull();
+
+            await target.InvokeAsync(() => FindAddedScanDirRemoveButton(target, 0).Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponents<PathAutocomplete>()
+                    .Count(component => HasTestId(component, "AddedScanDirs[0].Key"))
+                    .Should()
+                    .Be(1);
+            });
+        }
+
         private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<DownloadsOptions> target, string testId)
         {
             return FindComponentByTestId<MudSelect<T>>(target, testId);
@@ -456,6 +535,16 @@ namespace Lantean.QBTMud.Test.Components.Options
         private static IRenderedComponent<MudIconButton> FindExistingScanDirRemoveButton(IRenderedComponent<DownloadsOptions> target, int index)
         {
             return FindComponentByTestId<MudIconButton>(target, $"ScanDirsExisting[{index}].Remove");
+        }
+
+        private static IRenderedComponent<MudIconButton> FindAddedScanDirAddButton(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindComponentByTestId<MudIconButton>(target, $"AddedScanDirs[{index}].Add");
+        }
+
+        private static IRenderedComponent<MudIconButton> FindAddedScanDirRemoveButton(IRenderedComponent<DownloadsOptions> target, int index)
+        {
+            return FindComponentByTestId<MudIconButton>(target, $"AddedScanDirs[{index}].Remove");
         }
 
         private static Preferences DeserializePreferences()

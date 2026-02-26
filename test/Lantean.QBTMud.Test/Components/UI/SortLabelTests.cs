@@ -115,5 +115,51 @@ namespace Lantean.QBTMud.Test.Components.UI
             var icon = target.FindComponent<MudIcon>();
             icon.Instance.Class.Should().Contain("mud-direction-desc");
         }
+
+        [Fact]
+        public async Task GIVEN_DescendingDirectionAndSortingRequired_WHEN_Toggled_THEN_ShouldWrapToAscending()
+        {
+            var sortDirection = SortDirection.Descending;
+
+            var target = TestContext.Render<SortLabel>(parameters =>
+            {
+                parameters.Add(p => p.AllowUnsorted, false);
+                parameters.Add(p => p.SortDirection, sortDirection);
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => sortDirection = value));
+            });
+
+            await target.Find("span").TriggerEventAsync("onclick", new MouseEventArgs());
+
+            sortDirection.Should().Be(SortDirection.Ascending);
+        }
+
+        [Fact]
+        public async Task GIVEN_InvalidSortDirection_WHEN_Toggled_THEN_ShouldFallbackToNone()
+        {
+            var callbackDirection = SortDirection.Ascending;
+
+            var target = TestContext.Render<SortLabel>(parameters =>
+            {
+                parameters.Add(p => p.SortDirection, (SortDirection)999);
+                parameters.Add(p => p.SortDirectionChanged, EventCallback.Factory.Create<SortDirection>(this, value => callbackDirection = value));
+            });
+
+            await target.Find("span").TriggerEventAsync("onclick", new MouseEventArgs());
+
+            callbackDirection.Should().Be(SortDirection.None);
+        }
+
+        [Fact]
+        public void GIVEN_InvalidSortDirection_WHEN_Rendered_THEN_ShouldUseDefaultIconClass()
+        {
+            var target = TestContext.Render<SortLabel>(parameters =>
+            {
+                parameters.Add(p => p.SortDirection, (SortDirection)123);
+                parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "Label"));
+            });
+
+            var icon = target.FindComponent<MudIcon>();
+            icon.Instance.Class.Should().Be("mud-table-sort-label-icon");
+        }
     }
 }

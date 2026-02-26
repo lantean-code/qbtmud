@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -290,6 +291,43 @@ namespace Lantean.QBTMud.Test.Components
             GetChildContentText(FindComponentByTestId<MudText>(target, "TimerName-PausedTimer").Instance.ChildContent).Should().Be("PausedTimer");
             GetChildContentText(FindComponentByTestId<MudText>(target, "TimerName-FaultedTimer").Instance.ChildContent).Should().Be("FaultedTimer");
             GetChildContentText(FindComponentByTestId<MudText>(target, "TimerName-StoppedTimer").Instance.ChildContent).Should().Be("StoppedTimer");
+        }
+
+        [Fact]
+        public void GIVEN_UnknownStateAndHistoricTick_WHEN_Rendered_THEN_UsesFallbackStateVisualsAndDateFormat()
+        {
+            var unknownState = (ManagedTimerState)999;
+            var timer = CreateTimer("UnknownTimer", unknownState, TimeSpan.FromMilliseconds(500));
+            timer.SetupGet(t => t.LastTickUtc).Returns(new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero));
+
+            var registry = new Mock<IManagedTimerRegistry>();
+            registry.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer> { timer.Object });
+
+            TestContext.Services.RemoveAll<IManagedTimerRegistry>();
+            TestContext.Services.AddSingleton(registry.Object);
+
+            var target = TestContext.Render<TimerStatusPanel>();
+
+            target.FindComponents<MudIcon>()
+                .Any(icon => icon.Instance.Icon == Icons.Material.Filled.Timer && icon.Instance.Color == Color.Default)
+                .Should()
+                .BeTrue();
+
+            target.FindComponents<MudIconButton>()
+                .Any(button => button.Instance.Icon == Icons.Material.Filled.Block && button.Instance.Disabled)
+                .Should()
+                .BeTrue();
+
+            target.FindComponents<Tooltip>()
+                .Any(tooltip => string.Equals(tooltip.Instance.Text, "Running", StringComparison.Ordinal))
+                .Should()
+                .BeTrue();
+
+            target.FindComponents<MudText>()
+                .Select(text => GetChildContentText(text.Instance.ChildContent))
+                .Any(value => (value ?? string.Empty).Contains("2000-01-01", StringComparison.Ordinal))
+                .Should()
+                .BeTrue();
         }
 
         private static Mock<IManagedTimer> CreateTimer(string name, ManagedTimerState state, TimeSpan interval)

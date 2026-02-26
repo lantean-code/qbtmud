@@ -61,6 +61,21 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_ThemeWithSourcePath_WHEN_Rendered_THEN_PreservesSourcePath()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Server, "SourcePath")
+            };
+
+            var target = RenderPage(themes);
+            var table = target.FindComponent<DynamicTable<ThemeCatalogItem>>();
+
+            table.Instance.Items.Should().NotBeNull();
+            table.Instance.Items!.Single().SourcePath.Should().Be("SourcePath");
+        }
+
+        [Fact]
         public void GIVEN_CurrentThemeApplied_WHEN_Rendered_THEN_SelectsAppliedThemeInTable()
         {
             var themes = new List<ThemeCatalogItem>
@@ -339,6 +354,32 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_ReloadInProgress_WHEN_ClickedAgain_THEN_SkipsSecondReload()
+        {
+            var reloadTaskSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ReloadServerThemes())
+                .Returns(reloadTaskSource.Task);
+
+            var target = RenderPage(new List<ThemeCatalogItem>());
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "ThemesReload");
+
+            var firstReloadTask = target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_themeManagerService).Verify(service => service.ReloadServerThemes(), Times.Once);
+            });
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService).Verify(service => service.ReloadServerThemes(), Times.Once);
+
+            reloadTaskSource.SetResult();
+            await firstReloadTask;
+        }
+
+        [Fact]
         public async Task GIVEN_ExportInvoked_WHEN_Clicked_THEN_TriggersDownload()
         {
             var themes = new List<ThemeCatalogItem>
@@ -361,6 +402,32 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_ExportInProgress_WHEN_ClickedAgain_THEN_SkipsSecondExport()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "ThemeName", ThemeSource.Local)
+            };
+            var downloadInvocation = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            var target = RenderPage(themes);
+            var exportButton = FindComponentByTestId<MudIconButton>(target, "ThemeExport-ThemeId");
+
+            var firstExportTask = target.InvokeAsync(() => exportButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                downloadInvocation.Invocations.Should().HaveCount(1);
+            });
+
+            await target.InvokeAsync(() => exportButton.Instance.OnClick.InvokeAsync());
+
+            downloadInvocation.Invocations.Should().HaveCount(1);
+
+            downloadInvocation.SetVoidResult();
+            await firstExportTask;
+        }
+
+        [Fact]
         public async Task GIVEN_InvalidImportJson_WHEN_Imported_THEN_ShowsError()
         {
             var file = new TestBrowserFile("theme.json", "not-json");
@@ -373,6 +440,69 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
 
             Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.Is<string>(message => message.StartsWith("Unable to import theme:", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ImportNullJson_WHEN_Imported_THEN_ShowsInvalidJsonMessage()
+        {
+            var file = new TestBrowserFile("theme.json", "null");
+            Mock.Get(_snackbar)
+                .Setup(snackbar => snackbar.Add(It.Is<string>(message => message.Contains("invalid JSON", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null));
+
+            var target = RenderPage(new List<ThemeCatalogItem>());
+
+            var upload = target.FindComponent<MudFileUpload<IReadOnlyList<IBrowserFile>>>();
+            await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.Is<string>(message => message.Contains("invalid JSON", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ImportWithoutFiles_WHEN_Imported_THEN_SkipsSave()
+        {
+            var target = RenderPage(new List<ThemeCatalogItem>());
+
+            var upload = target.FindComponent<MudFileUpload<IReadOnlyList<IBrowserFile>>>();
+            await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile>()));
+
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_ImportInProgress_WHEN_ImportedAgain_THEN_SkipsSecondImport()
+        {
+            var definition = new ThemeDefinition
+            {
+                Id = "ThemeId",
+                Name = "Name",
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
+            };
+            var json = JsonSerializer.Serialize(definition, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            var file = new TestBrowserFile("theme.json", json);
+
+            SetupFontCatalogValid();
+            var saveTaskSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
+                .Returns(saveTaskSource.Task);
+
+            var target = RenderPage(new List<ThemeCatalogItem>());
+            var upload = target.FindComponent<MudFileUpload<IReadOnlyList<IBrowserFile>>>();
+
+            var firstImportTask = target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Once);
+            });
+
+            await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
+
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Once);
+
+            saveTaskSource.SetResult();
+            await firstImportTask;
         }
 
         [Fact]
@@ -619,6 +749,169 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_ApplyInProgress_WHEN_ClickedAgain_THEN_SkipsSecondApply()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Local)
+            };
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.CurrentThemeId)
+                .Returns("Other");
+            var applyTaskSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ApplyTheme("ThemeId"))
+                .Returns(applyTaskSource.Task);
+
+            var target = RenderPage(themes);
+            var applyButton = FindComponentByTestId<MudIconButton>(target, "ThemeApply-ThemeId");
+
+            var firstApplyTask = target.InvokeAsync(() => applyButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme("ThemeId"), Times.Once);
+            });
+
+            await target.InvokeAsync(() => applyButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService).Verify(service => service.ApplyTheme("ThemeId"), Times.Once);
+
+            applyTaskSource.SetResult();
+            await firstApplyTask;
+        }
+
+        [Fact]
+        public async Task GIVEN_DuplicateInProgress_WHEN_ClickedAgain_THEN_SkipsSecondDuplicate()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Local)
+            };
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog("Duplicate Theme", "Name", "Name Copy"))
+                .ReturnsAsync("Name Copy");
+            var saveTaskSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
+                .Returns(saveTaskSource.Task);
+
+            var target = RenderPage(themes);
+            var duplicateButton = FindComponentByTestId<MudIconButton>(target, "ThemeDuplicate-ThemeId");
+
+            var firstDuplicateTask = target.InvokeAsync(() => duplicateButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowStringFieldDialog("Duplicate Theme", "Name", "Name Copy"), Times.Once);
+            });
+
+            await target.InvokeAsync(() => duplicateButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowStringFieldDialog("Duplicate Theme", "Name", "Name Copy"), Times.Once);
+
+            saveTaskSource.SetResult();
+            await firstDuplicateTask;
+        }
+
+        [Fact]
+        public async Task GIVEN_RenameReadOnlyTheme_WHEN_Clicked_THEN_SkipsRename()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Server)
+            };
+
+            var target = RenderPage(themes);
+            var renameButton = FindComponentByTestId<MudIconButton>(target, "ThemeRename-ThemeId");
+
+            await target.InvokeAsync(() => renameButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_RenameInProgress_WHEN_ClickedAgain_THEN_SkipsSecondRename()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Local)
+            };
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog("Rename Theme", "Name", "Name"))
+                .ReturnsAsync("Renamed");
+            var saveTaskSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
+                .Returns(saveTaskSource.Task);
+
+            var target = RenderPage(themes);
+            var renameButton = FindComponentByTestId<MudIconButton>(target, "ThemeRename-ThemeId");
+
+            var firstRenameTask = target.InvokeAsync(() => renameButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowStringFieldDialog("Rename Theme", "Name", "Name"), Times.Once);
+            });
+
+            await target.InvokeAsync(() => renameButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowStringFieldDialog("Rename Theme", "Name", "Name"), Times.Once);
+
+            saveTaskSource.SetResult();
+            await firstRenameTask;
+        }
+
+        [Fact]
+        public async Task GIVEN_DeleteReadOnlyTheme_WHEN_Clicked_THEN_SkipsDelete()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Server)
+            };
+
+            var target = RenderPage(themes);
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "ThemeDelete-ThemeId");
+
+            await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            Mock.Get(_themeManagerService).Verify(service => service.DeleteLocalTheme(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_DeleteInProgress_WHEN_ClickedAgain_THEN_SkipsSecondDelete()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Local)
+            };
+            var confirmTaskSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowConfirmDialog("Delete theme?", "Delete 'Name'?"))
+                .Returns(confirmTaskSource.Task);
+
+            var target = RenderPage(themes);
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "ThemeDelete-ThemeId");
+
+            var firstDeleteTask = target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowConfirmDialog("Delete theme?", "Delete 'Name'?"), Times.Once);
+            });
+
+            await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowConfirmDialog("Delete theme?", "Delete 'Name'?"), Times.Once);
+
+            confirmTaskSource.SetResult(false);
+            await firstDeleteTask;
+        }
+
+        [Fact]
         public void GIVEN_ColumnDefinitions_WHEN_Referenced_THEN_ReturnsDefinitions()
         {
             var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
@@ -647,9 +940,9 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private static ThemeCatalogItem CreateTheme(string id, string name, ThemeSource source)
+        private static ThemeCatalogItem CreateTheme(string id, string name, ThemeSource source, string? sourcePath = null)
         {
-            return new ThemeCatalogItem(id, name, new ThemeDefinition { Description = "Description", FontFamily = "Nunito Sans", Theme = new MudTheme() }, source, null);
+            return new ThemeCatalogItem(id, name, new ThemeDefinition { Description = "Description", FontFamily = "Nunito Sans", Theme = new MudTheme() }, source, sourcePath);
         }
 
         private void SetupFontCatalogValid()

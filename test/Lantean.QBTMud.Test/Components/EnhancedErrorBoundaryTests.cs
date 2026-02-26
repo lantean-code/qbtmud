@@ -37,6 +37,48 @@ namespace Lantean.QBTMud.Test.Components
             target.Instance.Errors.Should().ContainSingle().Which.Should().BeSameAs(exception);
         }
 
+        [Fact]
+        public void GIVEN_DisabledBoundary_WHEN_ChildThrowsDuringRender_THEN_ShouldRethrowAndCaptureError()
+        {
+            var exception = new InvalidOperationException("RenderBoom");
+
+            var act = () => RenderBoundaryWithRenderFailure(disabled: true, exception);
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("RenderBoom");
+        }
+
+        [Fact]
+        public async Task GIVEN_EnabledBoundaryWithErrors_WHEN_RecoveredAndCleared_THEN_ShouldResetStateAndInvokeOnClear()
+        {
+            var exception = new InvalidOperationException("Boom");
+            var onClearInvoked = false;
+
+            var target = TestContext.Render<EnhancedErrorBoundary>(parameters =>
+            {
+                parameters.Add(parameter => parameter.Disabled, false);
+                parameters.Add(parameter => parameter.OnClear, EventCallback.Factory.Create(this, () => onClearInvoked = true));
+                parameters.AddChildContent(builder =>
+                {
+                    builder.OpenComponent<ThrowOnClick>(0);
+                    builder.AddAttribute(1, nameof(ThrowOnClick.Exception), exception);
+                    builder.CloseComponent();
+                });
+            });
+
+            var button = target.Find("#throw-button");
+            var act = () => button.Click();
+            act.Should().NotThrow();
+
+            target.Instance.HasErrored.Should().BeTrue();
+            target.Instance.Errors.Should().ContainSingle();
+
+            await target.InvokeAsync(() => target.Instance.RecoverAndClearErrors());
+
+            target.Instance.HasErrored.Should().BeFalse();
+            target.Instance.Errors.Should().BeEmpty();
+            onClearInvoked.Should().BeTrue();
+        }
+
         private IRenderedComponent<EnhancedErrorBoundary> RenderBoundary(bool disabled, Exception? exception)
         {
             return TestContext.Render<EnhancedErrorBoundary>(parameters =>
@@ -51,6 +93,21 @@ namespace Lantean.QBTMud.Test.Components
 
                     builder.OpenComponent<ThrowOnClick>(0);
                     builder.AddAttribute(1, nameof(ThrowOnClick.Exception), exception);
+                    builder.CloseComponent();
+                });
+            });
+        }
+
+        private IRenderedComponent<EnhancedErrorBoundary> RenderBoundaryWithRenderFailure(bool disabled, Exception exception, Action? onClear = null)
+        {
+            return TestContext.Render<EnhancedErrorBoundary>(parameters =>
+            {
+                parameters.Add(parameter => parameter.Disabled, disabled);
+                parameters.Add(parameter => parameter.OnClear, EventCallback.Factory.Create(this, () => onClear?.Invoke()));
+                parameters.AddChildContent(builder =>
+                {
+                    builder.OpenComponent<ThrowOnRender>(0);
+                    builder.AddAttribute(1, nameof(ThrowOnRender.Exception), exception);
                     builder.CloseComponent();
                 });
             });
@@ -73,6 +130,18 @@ namespace Lantean.QBTMud.Test.Components
             }
 
             private Task OnClick(MouseEventArgs args)
+            {
+                throw Exception;
+            }
+        }
+
+        private sealed class ThrowOnRender : ComponentBase
+        {
+            [Parameter]
+            [EditorRequired]
+            public Exception Exception { get; set; } = default!;
+
+            protected override void BuildRenderTree(RenderTreeBuilder builder)
             {
                 throw Exception;
             }

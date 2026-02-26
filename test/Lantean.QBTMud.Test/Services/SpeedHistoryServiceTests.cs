@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
+using System.Text.Json.Nodes;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -154,6 +155,114 @@ namespace Lantean.QBTMud.Test.Services
             target.GetSeries(SpeedPeriod.Min1, SpeedDirection.Download).Should().BeEmpty();
             localStorage.Snapshot().Keys.Should().NotContain("SpeedHistory.State");
             localStorage.Snapshot().Keys.Should().Contain("OtherKey");
+        }
+
+        [Fact]
+        public async Task GIVEN_AlreadyInitialized_WHEN_InitializeCalledAgain_THEN_DoesNotReloadState()
+        {
+            var now = DateTime.UtcNow;
+            var stale = now.AddDays(-3);
+            var initial = new SpeedHistoryService(_localStorage);
+            await initial.InitializeAsync(TestContext.Current.CancellationToken);
+            await initial.PushSampleAsync(stale, 111, 222, TestContext.Current.CancellationToken);
+            await initial.PersistAsync(TestContext.Current.CancellationToken);
+
+            await _target.InitializeAsync(TestContext.Current.CancellationToken);
+            await _target.InitializeAsync(TestContext.Current.CancellationToken);
+
+            _target.GetSeries(SpeedPeriod.Min1, SpeedDirection.Download).Should().BeEmpty();
+            _target.LastUpdatedUtc.Should().Be(stale);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotInitialized_WHEN_PushSampleCalled_THEN_InitializesAndStoresSample()
+        {
+            var sampleTime = new DateTime(2024, 1, 1, 1, 2, 3, DateTimeKind.Utc);
+
+            await _target.PushSampleAsync(sampleTime, 321, 654, TestContext.Current.CancellationToken);
+
+            _target.LastUpdatedUtc.Should().Be(sampleTime);
+            _target.GetSeries(SpeedPeriod.Min1, SpeedDirection.Download).Should().HaveCount(1);
+        }
+
+        [Fact]
+        public async Task GIVEN_PersistedBucketsForSubsetOfPeriods_WHEN_Initialized_THEN_LoadsRecentAndSkipsExpiredAndMissing()
+        {
+            var now = DateTime.UtcNow;
+            var stale = now.AddHours(-30);
+            var recent = now;
+            var initial = new SpeedHistoryService(_localStorage);
+            await initial.InitializeAsync(TestContext.Current.CancellationToken);
+            await initial.PushSampleAsync(stale, 100, 200, TestContext.Current.CancellationToken);
+            await initial.PushSampleAsync(recent, 300, 400, TestContext.Current.CancellationToken);
+            await initial.PersistAsync(TestContext.Current.CancellationToken);
+
+            var persisted = await _localStorage.GetItemAsStringAsync("SpeedHistory.State", TestContext.Current.CancellationToken);
+            persisted.Should().NotBeNull();
+
+            var root = JsonNode.Parse(persisted!)!.AsObject();
+            var buckets = root["buckets"]!.AsObject();
+            var chosenProperty = buckets.First();
+            var chosenPeriod = ParsePeriodKey(chosenProperty.Key);
+            var chosenValue = chosenProperty.Value!.DeepClone();
+            buckets.Clear();
+            buckets.Add(chosenProperty.Key, chosenValue);
+            await _localStorage.SetItemAsStringAsync("SpeedHistory.State", root.ToJsonString(), TestContext.Current.CancellationToken);
+
+            var reloaded = new SpeedHistoryService(_localStorage);
+            await reloaded.InitializeAsync(TestContext.Current.CancellationToken);
+
+            var download = reloaded.GetSeries(chosenPeriod, SpeedDirection.Download);
+            var min5Download = reloaded.GetSeries(SpeedPeriod.Min5, SpeedDirection.Download);
+
+            download.Should().NotBeEmpty();
+            download.Any(point => point.BytesPerSecond == 300).Should().BeTrue();
+            min5Download.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_PersistedBuckets_WHEN_RequestingUploadSeries_THEN_ReturnsUploadAverages()
+        {
+            var now = DateTime.UtcNow;
+            var recent = now;
+            var initial = new SpeedHistoryService(_localStorage);
+            await initial.InitializeAsync(TestContext.Current.CancellationToken);
+            await initial.PushSampleAsync(recent, 100, 4321, TestContext.Current.CancellationToken);
+            await initial.PersistAsync(TestContext.Current.CancellationToken);
+
+            var reloaded = new SpeedHistoryService(_localStorage);
+            await reloaded.InitializeAsync(TestContext.Current.CancellationToken);
+
+            var upload = reloaded.GetSeries(SpeedPeriod.Min1, SpeedDirection.Upload);
+
+            upload.Should().HaveCount(1);
+            upload[0].BytesPerSecond.Should().Be(4321);
+        }
+
+        [Fact]
+        public async Task GIVEN_PersistedSampleWithinRetentionButOutsidePeriodWindow_WHEN_Initialized_THEN_TrimsSampleByDuration()
+        {
+            var now = DateTime.UtcNow;
+            var oldSample = now.AddHours(-2);
+            var initial = new SpeedHistoryService(_localStorage);
+            await initial.InitializeAsync(TestContext.Current.CancellationToken);
+            await initial.PushSampleAsync(oldSample, 999, 111, TestContext.Current.CancellationToken);
+            await initial.PersistAsync(TestContext.Current.CancellationToken);
+
+            var reloaded = new SpeedHistoryService(_localStorage);
+            await reloaded.InitializeAsync(TestContext.Current.CancellationToken);
+
+            reloaded.GetSeries(SpeedPeriod.Min1, SpeedDirection.Download).Should().BeEmpty();
+        }
+
+        private static SpeedPeriod ParsePeriodKey(string key)
+        {
+            if (int.TryParse(key, out var numeric))
+            {
+                return (SpeedPeriod)numeric;
+            }
+
+            return Enum.Parse<SpeedPeriod>(key);
         }
     }
 }

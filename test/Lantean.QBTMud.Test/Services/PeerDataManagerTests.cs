@@ -15,6 +15,31 @@ namespace Lantean.QBTMud.Test.Services
             _target = new PeerDataManager();
         }
 
+        [Fact]
+        public void GIVEN_Peer_WHEN_EqualsNull_THEN_ReturnsFalse()
+        {
+            var peer = new Peer(
+                key: "Key",
+                client: "Client",
+                clientId: "ClientId",
+                connection: "Connection",
+                country: "Country",
+                countryCode: "CountryCode",
+                downloaded: 1,
+                downloadSpeed: 2,
+                files: "Files",
+                flags: "Flags",
+                flagsDescription: "FlagsDescription",
+                iPAddress: "IPAddress",
+                port: 10,
+                progress: 0.1f,
+                relevance: 0.2f,
+                uploaded: 3,
+                uploadSpeed: 4);
+
+            peer.Equals(null).Should().BeFalse();
+        }
+
         // ---------- CreatePeerList ----------
 
         [Fact]

@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Lantean.QBitTorrentClient.Converters;
+using System.Text;
 using System.Text.Json;
 
 namespace Lantean.QBitTorrentClient.Test.Converters
@@ -32,6 +33,19 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = "null";
 
             var result = JsonSerializer.Deserialize<IReadOnlyList<string>?>(json, options);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_NullToken_WHEN_ReadByConverter_THEN_ShouldReturnNull()
+        {
+            var converter = new CommaSeparatedJsonConverter();
+            var options = CreateOptions();
+            var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes("null"));
+            reader.Read();
+
+            var result = converter.Read(ref reader, typeof(IReadOnlyList<string>), options);
 
             result.Should().BeNull();
         }

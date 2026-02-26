@@ -78,6 +78,48 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_RefreshResultWithNullSavePath_WHEN_Reloaded_THEN_UsesEmptySavePath()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetAllCategories())
+                .ReturnsAsync(new Dictionary<string, ClientCategory>
+                {
+                    { "Category", new ClientCategory("Category", null, null) }
+                });
+
+            var refreshButton = FindIconButton(_target, Icons.Material.Filled.Refresh);
+
+            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+
+            var table = _target.FindComponent<DynamicTable<Category>>();
+            table.Instance.Items.Should().ContainSingle(category => category.Name == "Category" && category.SavePath == string.Empty);
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshInProgress_WHEN_RefreshClickedAgain_THEN_DoesNotReloadTwice()
+        {
+            var pendingLoad = new TaskCompletionSource<IReadOnlyDictionary<string, ClientCategory>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetAllCategories())
+                .Returns(pendingLoad.Task);
+
+            var refreshButton = FindIconButton(_target, Icons.Material.Filled.Refresh);
+
+            var firstRefresh = _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            _target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(client => client.GetAllCategories(), Times.Once));
+
+            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            Mock.Get(_apiClient).Verify(client => client.GetAllCategories(), Times.Once);
+
+            pendingLoad.SetResult(new Dictionary<string, ClientCategory>
+            {
+                { "Category", new ClientCategory("Category", "SavePath", null) }
+            });
+
+            await firstRefresh;
+        }
+
+        [Fact]
         public void GIVEN_CategoryProvided_WHEN_Rendered_THEN_ShowsTableItem()
         {
             var target = RenderPage(new Dictionary<string, Category>

@@ -148,6 +148,20 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_NullHash_WHEN_CopyToolbarClicked_THEN_ClipboardInteropIsNotCalled()
+        {
+            var copyInvocation = TestContext.JSInterop.SetupVoid("qbt.copyTextToClipboard", _ => true);
+            copyInvocation.SetVoidResult();
+
+            var target = RenderTrackersTab(active: false, hash: null);
+            var copyButton = FindIconButton(target, Icons.Material.Filled.FolderCopy);
+
+            await target.InvokeAsync(() => copyButton.Instance.OnClick.InvokeAsync());
+
+            copyInvocation.Invocations.Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_DialogReturnsNullTrackers_WHEN_AddTrackerClicked_THEN_ApiIsNotCalled()
         {
             _dialogWorkflowMock

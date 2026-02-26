@@ -197,6 +197,24 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_SearchFieldSelect_WHEN_MenuOpened_THEN_SavePathOptionIsRendered()
+        {
+            var target = RenderWithDefaults();
+            var searchFieldSelect = FindComponentByTestId<MudSelect<TorrentFilterField>>(target, "TorrentListSearchField");
+
+            await target.InvokeAsync(() => searchFieldSelect.Instance.OpenMenu());
+
+            _popoverProvider.WaitForAssertion(() =>
+            {
+                var values = _popoverProvider.FindComponents<MudSelectItem<TorrentFilterField>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+
+                values.Should().Contain(TorrentFilterField.SavePath);
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_RowDoubleClick_WHEN_TorrentExists_THEN_NavigatesToDetails()
         {
             var torrent = CreateTorrent("HashRow", "Row Torrent");
@@ -299,6 +317,25 @@ namespace Lantean.QBTMud.Test.Pages
                 .Single(component => component.Instance.RenderType == RenderType.MenuItems);
 
             menuActions.Instance.Hashes.Should().BeEquivalentTo(new[] { "HashSelectedA", "HashSelectedB" });
+        }
+
+        [Fact]
+        public async Task GIVEN_SelectedItemsContainDifferentInstancesWithSameHash_WHEN_ContextMenuOpened_THEN_SelectionUsesTorrentEquality()
+        {
+            var torrentA = CreateTorrent("HashDuplicate", "Duplicate A");
+            var duplicateHashTorrent = CreateTorrent("HashDuplicate", "Duplicate B");
+            var target = RenderWithDefaults(torrents: new List<Torrent> { torrentA });
+            var table = target.FindComponent<DynamicTable<Torrent>>();
+
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<Torrent> { torrentA, duplicateHashTorrent }));
+
+            var contextArgs = new TableDataContextMenuEventArgs<Torrent>(new MouseEventArgs(), new MudTd(), torrentA);
+            await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(contextArgs));
+
+            var menuActions = _popoverProvider.FindComponents<Lantean.QBTMud.Components.TorrentActions>()
+                .Single(component => component.Instance.RenderType == RenderType.MenuItems);
+
+            menuActions.Instance.Hashes.Should().Equal("HashDuplicate");
         }
 
         [Fact]
@@ -550,6 +587,16 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_dialogWorkflow).Verify(w => w.InvokeAddTorrentFileDialog(), Times.Once);
             Mock.Get(_dialogWorkflow).Verify(w => w.InvokeAddTorrentLinkDialog(null), Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_Torrent_WHEN_ComparedOrStringified_THEN_UsesHash()
+        {
+            var torrent = CreateTorrent("Hash", "Name");
+            var torrentText = torrent.ToString();
+
+            torrent.Equals(null).Should().BeFalse();
+            torrentText.Should().Be("Hash");
         }
 
         private IRenderedComponent<TorrentList> RenderWithDefaults(EventCallback<FilterSearchState>? searchCallback = null, IReadOnlyList<Torrent>? torrents = null)

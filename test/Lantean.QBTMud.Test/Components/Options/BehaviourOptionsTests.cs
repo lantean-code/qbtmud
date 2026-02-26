@@ -88,6 +88,52 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public void GIVEN_WhitespaceLocale_WHEN_FormattingDisplayName_THEN_ShouldReturnWhitespace()
+        {
+            var preferences = DeserializePreferences("""
+            {
+                "locale": "en"
+            }
+            """);
+
+            var updatePreferences = new UpdatePreferences();
+
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<BehaviourOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, updatePreferences);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var languageSelect = FindSelect<string>(target, "UserInterfaceLanguage");
+            languageSelect.Instance.ToStringFunc.Should().NotBeNull();
+            languageSelect.Instance.ToStringFunc!(" ").Should().Be(" ");
+        }
+
+        [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldKeepDefaults()
+        {
+            var updatePreferences = new UpdatePreferences();
+            UpdatePreferences? lastChanged = null;
+
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<BehaviourOptions>(parameters =>
+            {
+                parameters.Add(p => p.UpdatePreferences, updatePreferences);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => lastChanged = value));
+            });
+
+            FindSwitch(target, "ConfirmTorrentDeletion").Instance.Value.Should().BeNull();
+            FindSwitch(target, "StatusBarExternalIp").Instance.Value.Should().BeNull();
+            FindSwitch(target, "FileLogEnabled").Instance.Value.Should().BeNull();
+            FindTextField(target, "FileLogPath").Instance.GetState(x => x.Value).Should().BeNull();
+            lastChanged.Should().BeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_FileLogDisabled_WHEN_Toggled_THEN_ShouldEnableInputsAndEmitPreferences()
         {
             var preferences = DeserializePreferences("""

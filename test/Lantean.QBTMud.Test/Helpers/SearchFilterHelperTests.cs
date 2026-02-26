@@ -37,5 +37,60 @@ namespace Lantean.QBTMud.Test.Helpers
             var missing = SearchFilterHelper.ApplyFilters(new[] { result }, options with { FilterText = "missing" });
             missing.Should().BeEmpty();
         }
+
+        [Fact]
+        public void GIVEN_MaximumSeeds_WHEN_ResultExceedsLimit_THEN_ResultFilteredOut()
+        {
+            var result = new SearchResult("DescriptionLink", "FileName", 1_000, "FileUrl", 1, 20, "SiteUrl", "EngineName", null);
+            var options = new SearchFilterOptions(null, SearchInScope.Everywhere, null, 10, null, SearchSizeUnit.Bytes, null, SearchSizeUnit.Bytes);
+
+            var filtered = SearchFilterHelper.ApplyFilters(new[] { result }, options);
+
+            filtered.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_MinimumSize_WHEN_ResultIsBelowThreshold_THEN_ResultFilteredOut()
+        {
+            var result = new SearchResult("DescriptionLink", "FileName", 1_023, "FileUrl", 1, 1, "SiteUrl", "EngineName", null);
+            var options = new SearchFilterOptions(null, SearchInScope.Everywhere, null, null, 1, SearchSizeUnit.Kibibytes, null, SearchSizeUnit.Bytes);
+
+            var filtered = SearchFilterHelper.ApplyFilters(new[] { result }, options);
+
+            filtered.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_NegativeSeeders_WHEN_MinimumSeedFilterApplied_THEN_SeedersAreNormalizedToZero()
+        {
+            var result = new SearchResult("DescriptionLink", "FileName", 1_000, "FileUrl", 1, -5, "SiteUrl", "EngineName", null);
+            var options = new SearchFilterOptions(null, SearchInScope.Everywhere, 1, null, null, SearchSizeUnit.Bytes, null, SearchSizeUnit.Bytes);
+
+            var visible = SearchFilterHelper.CountVisible(new[] { result }, options);
+
+            visible.Should().Be(0);
+        }
+
+        [Fact]
+        public void GIVEN_NameSearchScopeAndMissingFileName_WHEN_FilterApplied_THEN_ResultFilteredOut()
+        {
+            var result = new SearchResult("DescriptionLink", string.Empty, 1_000, "FileUrl", 1, 1, "SiteUrl", "EngineName", null);
+            var options = new SearchFilterOptions("file", SearchInScope.Names, null, null, null, SearchSizeUnit.Bytes, null, SearchSizeUnit.Bytes);
+
+            var filtered = SearchFilterHelper.ApplyFilters(new[] { result }, options);
+
+            filtered.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_EverywhereSearchScopeAndNoSearchableMatches_WHEN_FilterApplied_THEN_ResultFilteredOut()
+        {
+            var result = new SearchResult(string.Empty, "FileName", 1_000, "FileUrl", 1, 1, string.Empty, string.Empty, null);
+            var options = new SearchFilterOptions("needle", SearchInScope.Everywhere, null, null, null, SearchSizeUnit.Bytes, null, SearchSizeUnit.Bytes);
+
+            var filtered = SearchFilterHelper.ApplyFilters(new[] { result }, options);
+
+            filtered.Should().BeEmpty();
+        }
     }
 }

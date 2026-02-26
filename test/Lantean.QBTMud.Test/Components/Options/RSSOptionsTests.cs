@@ -135,6 +135,23 @@ namespace Lantean.QBTMud.Test.Components.Options
             events.Should().ContainSingle().Which.Should().BeSameAs(update);
         }
 
+        [Fact]
+        public void GIVEN_NullPreferences_WHEN_Rendered_THEN_ShouldNotPopulateValuesOrThrow()
+        {
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<RSSOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.UpdatePreferences, new UpdatePreferences());
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            FindSwitch(target, "RssProcessingEnabled").Instance.Value.Should().BeNull();
+            FindNumeric(target, "RssRefreshInterval").Instance.GetState(x => x.Value).Should().Be(0);
+            FindTextField(target, "RssSmartEpisodeFilters").Instance.GetState(x => x.Value).Should().BeNull();
+        }
+
         private static Preferences DeserializePreferences()
         {
             const string json = """

@@ -5,6 +5,7 @@ using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -52,6 +53,29 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             name.Instance.GetState(x => x.Value).Should().Be("Name");
             value.Instance.GetState(x => x.Value).Should().Be("Value");
             expirationField.Instance.GetState(x => x.Value).Should().Be(DateTimeOffset.FromUnixTimeSeconds(expiration).LocalDateTime.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture));
+        }
+
+        [Fact]
+        public async Task GIVEN_InitializedDialog_WHEN_ParametersSetAgain_THEN_ExistingValuesRemain()
+        {
+            var initialCookie = new ApplicationCookie("Name", "Domain", "/Path", "Value", null);
+            var updatedCookie = new ApplicationCookie("Updated", "UpdatedDomain", "/UpdatedPath", "UpdatedValue", null);
+            var dialog = await _target.RenderDialogAsync(initialCookie);
+
+            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.SetParametersAsync(ParameterView.FromDictionary(new Dictionary<string, object?>
+            {
+                { nameof(CookiePropertiesDialog.Cookie), updatedCookie },
+            })));
+
+            var domain = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CookiePropertiesDomain");
+            var path = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CookiePropertiesPath");
+            var name = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CookiePropertiesName");
+            var value = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CookiePropertiesValue");
+
+            domain.Instance.GetState(x => x.Value).Should().Be("Domain");
+            path.Instance.GetState(x => x.Value).Should().Be("/Path");
+            name.Instance.GetState(x => x.Value).Should().Be("Name");
+            value.Instance.GetState(x => x.Value).Should().Be("Value");
         }
 
         [Fact]
@@ -118,6 +142,18 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
             dialog.Reference.Result.IsCompleted.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_ExpirationValidation_WHEN_ValueIsEmptyOrValid_THEN_ReturnsNoErrors()
+        {
+            var dialog = await _target.RenderDialogAsync();
+            var expirationField = FindComponentByTestId<MudTextField<string>>(dialog.Component, "CookiePropertiesExpiration");
+            var validation = expirationField.Instance.Validation as Func<string, IEnumerable<string>>;
+
+            validation.Should().NotBeNull();
+            validation!(string.Empty).Should().BeEmpty();
+            validation("2020-01-02T03:04").Should().BeEmpty();
         }
 
         [Fact]

@@ -96,6 +96,47 @@ namespace Lantean.QBTMud.Test.Components.Options
         }
 
         [Fact]
+        public async Task GIVEN_InterfaceWithAddresses_WHEN_Selected_THEN_ShouldRenderAddressItems()
+        {
+            var api = TestContext.AddSingletonMock<IApiClient>();
+            api.Setup(a => a.GetNetworkInterfaces())
+                .ReturnsAsync(new List<NetworkInterface>
+                {
+                    new NetworkInterface("Any", string.Empty),
+                    new NetworkInterface("Ethernet", "eth0")
+                });
+            api.Setup(a => a.GetNetworkInterfaceAddressList("eth0"))
+                .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
+            api.Setup(a => a.GetNetworkInterfaceAddressList(It.Is<string>(value => value != "eth0")))
+                .ReturnsAsync(Array.Empty<string>());
+
+            var preferences = DeserializePreferences();
+            var update = new UpdatePreferences();
+
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<AdvancedOptions>(parameters =>
+            {
+                parameters.Add(p => p.Preferences, preferences);
+                parameters.Add(p => p.UpdatePreferences, update);
+                parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
+            });
+
+            var interfaceSelect = FindSelect<string>(target, "CurrentNetworkInterface");
+            await target.InvokeAsync(() => interfaceSelect.Instance.ValueChanged.InvokeAsync("eth0"));
+
+            var interfaceAddressSelect = FindSelect<string>(target, "CurrentInterfaceAddress");
+            target.WaitForAssertion(() =>
+            {
+                var values = interfaceAddressSelect.FindComponents<MudSelectItem<string>>()
+                    .Select(item => item.Instance.Value)
+                    .ToList();
+                values.Should().Contain("192.168.0.10");
+                values.Should().Contain("fe80::1");
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_CoreAdvancedSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);

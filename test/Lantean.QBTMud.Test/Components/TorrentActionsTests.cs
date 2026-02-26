@@ -709,6 +709,65 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_MenuWithoutActivatorAndPrimaryHash_WHEN_Rendered_THEN_ViewDetailsMenuItemIsShown()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+            var popoverProvider = TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.MenuWithoutActivator);
+                parameters.Add(p => p.Hashes, Hashes("Hash"));
+                parameters.Add(p => p.PrimaryHash, "Hash");
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("Hash")));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var menu = target.FindComponent<MudMenu>();
+            await target.InvokeAsync(() => menu.Instance.OpenMenuAsync(new MouseEventArgs()));
+
+            popoverProvider.WaitForAssertion(() =>
+            {
+                popoverProvider.FindComponents<MudMenuItem>()
+                    .Any(item => HasTestId(item, "Action-viewDetails"))
+                    .Should().BeTrue();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_MenuWithoutActivatorAndNoPrimaryHash_WHEN_Rendered_THEN_ViewDetailsMenuItemIsHidden()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+            var popoverProvider = TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.MenuWithoutActivator);
+                parameters.Add(p => p.Hashes, Hashes("Hash"));
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("Hash")));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var menu = target.FindComponent<MudMenu>();
+            await target.InvokeAsync(() => menu.Instance.OpenMenuAsync(new MouseEventArgs()));
+
+            popoverProvider.WaitForAssertion(() =>
+            {
+                popoverProvider.FindComponents<MudMenuItem>()
+                    .Any(item => HasTestId(item, "Action-viewDetails"))
+                    .Should().BeFalse();
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_MenuRenderType_WHEN_OpenChangedRaisedTwice_THEN_DeleteShortcutRegistersOnce()
         {
             TestContext.UseApiClientMock();

@@ -202,6 +202,33 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public void GIVEN_AllStatusValues_WHEN_Rendered_THEN_DisplaysExpectedStatusLabels()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+            mainData.StatusState[Status.Completed.ToString()] = new HashSet<string> { "Hash1" };
+            mainData.StatusState[Status.Stopped.ToString()] = new HashSet<string> { "Hash1" };
+            mainData.StatusState[Status.Active.ToString()] = new HashSet<string> { "Hash1" };
+            mainData.StatusState[Status.Inactive.ToString()] = new HashSet<string> { "Hash1" };
+            mainData.StatusState[Status.StalledUploading.ToString()] = new HashSet<string> { "Hash1" };
+            mainData.StatusState[Status.StalledDownloading.ToString()] = new HashSet<string> { "Hash1" };
+            mainData.StatusState[Status.Checking.ToString()] = new HashSet<string> { "Hash1" };
+            mainData.StatusState[Status.Errored.ToString()] = new HashSet<string> { "Hash1" };
+
+            var target = RenderFiltersNav(mainData);
+
+            GetChildContentText(FindComponentByTestId<CustomNavLink>(target, "Status-Completed").Instance.ChildContent).Should().Contain("Completed");
+            GetChildContentText(FindComponentByTestId<CustomNavLink>(target, "Status-Stopped").Instance.ChildContent).Should().Contain("Stopped");
+            GetChildContentText(FindComponentByTestId<CustomNavLink>(target, "Status-Active").Instance.ChildContent).Should().Contain("Active");
+            GetChildContentText(FindComponentByTestId<CustomNavLink>(target, "Status-Inactive").Instance.ChildContent).Should().Contain("Inactive");
+            GetChildContentText(FindComponentByTestId<CustomNavLink>(target, "Status-StalledUploading").Instance.ChildContent).Should().Contain("Stalled Uploading");
+            GetChildContentText(FindComponentByTestId<CustomNavLink>(target, "Status-StalledDownloading").Instance.ChildContent).Should().Contain("Stalled Downloading");
+            GetChildContentText(FindComponentByTestId<CustomNavLink>(target, "Status-Checking").Instance.ChildContent).Should().Contain("Checking");
+            GetChildContentText(FindComponentByTestId<CustomNavLink>(target, "Status-Errored").Instance.ChildContent).Should().Contain("Errored");
+        }
+
+        [Fact]
         public async Task GIVEN_CategoryContextMenu_WHEN_TargetAllAndCustom_THEN_MenuItemsToggle()
         {
             TestContext.UseApiClientMock();

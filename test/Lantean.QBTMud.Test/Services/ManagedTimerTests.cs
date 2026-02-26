@@ -69,6 +69,14 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_InvalidInterval_WHEN_Updating_THEN_ThrowsArgumentOutOfRangeException()
+        {
+            Func<Task> action = async () => await _target.UpdateIntervalAsync(TimeSpan.Zero, CancellationToken.None);
+
+            await action.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        }
+
+        [Fact]
         public async Task GIVEN_RunningTimer_WHEN_StartAgain_THEN_ReturnsFalse()
         {
             var started = await _target.StartAsync(_ => Task.FromResult(ManagedTimerTickResult.Continue), CancellationToken.None);
@@ -220,6 +228,27 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_FirstTickContinues_WHEN_SecondTickStops_THEN_ProcessesContinueBranch()
+        {
+            var tickCount = 0;
+
+            await _target.StartAsync(
+                _ =>
+                {
+                    tickCount++;
+                    return Task.FromResult(tickCount == 1 ? ManagedTimerTickResult.Continue : ManagedTimerTickResult.Stop);
+                },
+                CancellationToken.None);
+
+            await TriggerTickAsync();
+            await TriggerTickAsync();
+            (await WaitUntilAsync(() => _target.State == ManagedTimerState.Stopped)).Should().BeTrue();
+            await _target.StopAsync(CancellationToken.None);
+
+            tickCount.Should().Be(2);
+        }
+
+        [Fact]
         public async Task GIVEN_WaitReturnsFalse_WHEN_NoTick_THEN_HandlerNotInvoked()
         {
             var tickCount = 0;
@@ -292,6 +321,83 @@ namespace Lantean.QBTMud.Test.Services
             started.Should().BeFalse();
             restarted.Should().BeFalse();
             updated.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_DisposedTimer_WHEN_PausedOrResumed_THEN_ReturnsFalse()
+        {
+            await _target.DisposeAsync();
+
+            var paused = await _target.PauseAsync(CancellationToken.None);
+            var resumed = await _target.ResumeAsync(CancellationToken.None);
+
+            paused.Should().BeFalse();
+            resumed.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_RunningTimer_WHEN_IntervalUpdated_THEN_ReconfiguresTimer()
+        {
+            await _target.StartAsync(_ => Task.FromResult(ManagedTimerTickResult.Continue), CancellationToken.None);
+            (await WaitForWaitAsync()).Should().BeTrue();
+
+            var updated = await _target.UpdateIntervalAsync(TimeSpan.FromMilliseconds(250), CancellationToken.None);
+            updated.Should().BeTrue();
+
+            (await WaitUntilAsync(() =>
+            {
+                try
+                {
+                    Mock.Get(_timerFactory).Verify(factory => factory.Create(TimeSpan.FromMilliseconds(250)), Times.AtLeastOnce);
+                    return true;
+                }
+                catch (MockException)
+                {
+                    return false;
+                }
+            })).Should().BeTrue();
+
+            await _target.StopAsync(CancellationToken.None);
+
+            Mock.Get(_timer).Verify(timer => timer.DisposeAsync(), Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task GIVEN_RunningTimer_WHEN_StoppedWhilePaused_THEN_DoesNotFault()
+        {
+            await _target.StartAsync(_ => Task.FromResult(ManagedTimerTickResult.Continue), CancellationToken.None);
+            (await WaitForWaitAsync()).Should().BeTrue();
+
+            var paused = await _target.PauseAsync(CancellationToken.None);
+            paused.Should().BeTrue();
+
+            var stopped = await _target.StopAsync(CancellationToken.None);
+            stopped.Should().BeTrue();
+            _target.LastFault.Should().BeNull();
+            _target.State.Should().Be(ManagedTimerState.Stopped);
+        }
+
+        [Fact]
+        public async Task GIVEN_WaitThrowsUnexpectedException_WHEN_Running_THEN_FaultIsCaptured()
+        {
+            Mock.Get(_timer)
+                .Setup(timer => timer.WaitForNextTickAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Failure"));
+
+            await _target.StartAsync(_ => Task.FromResult(ManagedTimerTickResult.Continue), CancellationToken.None);
+
+            (await WaitUntilAsync(() => _target.State == ManagedTimerState.Faulted)).Should().BeTrue();
+            _target.LastFault.Should().BeOfType<InvalidOperationException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_TickThrowsOperationCanceledException_WHEN_Ticked_THEN_StopsWithoutFault()
+        {
+            await _target.StartAsync(_ => throw new OperationCanceledException(), CancellationToken.None);
+
+            await TriggerTickAsync();
+            (await WaitUntilAsync(() => _target.State == ManagedTimerState.Stopped)).Should().BeTrue();
+            _target.LastFault.Should().BeNull();
         }
 
         [Fact]
