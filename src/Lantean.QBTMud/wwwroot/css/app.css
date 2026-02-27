@@ -315,7 +315,7 @@ code {
     margin-right: 5px;
 }
 
-/*. Layout helpers */
+/* Layout helpers */
 .content-panel {
     display: flex;
     flex-direction: column;
