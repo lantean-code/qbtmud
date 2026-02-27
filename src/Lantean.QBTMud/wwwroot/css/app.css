@@ -556,11 +556,38 @@ td .folder-button {
     display: none;
 }
 
-.app-menu-popover .app-menu-list {
-    max-height: calc(var(--app-viewport-height) - var(--mud-appbar-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+.app-menu-popover {
+    max-height: calc(100vh - var(--mud-appbar-height) - var(--app-status-bar-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+}
+
+@supports (height: 100svh) {
+    .app-menu-popover {
+        max-height: calc(100svh - var(--mud-appbar-height) - var(--app-status-bar-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    }
+}
+
+@supports (height: 100dvh) {
+    .app-menu-popover {
+        max-height: calc(100dvh - var(--mud-appbar-height) - var(--app-status-bar-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    }
+}
+
+.app-menu-popover > div {
+    max-height: inherit;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.app-menu-popover .app-menu-list {
+    max-height: inherit;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
 }
 
 .path-browser-dialog.mud-dialog,

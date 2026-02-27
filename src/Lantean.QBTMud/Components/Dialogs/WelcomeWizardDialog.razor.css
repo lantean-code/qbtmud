@@ -218,8 +218,17 @@
     }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (min-width: 1000px) and (max-width: 1400px) {
+@media (orientation: landscape) and (max-height: 900px) and (min-width: 960px) and (max-width: 1400px) {
+    .welcome-wizard-dialog__content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+    }
+
     .welcome-wizard-dialog__layout {
         height: 100%;
+        min-height: 0;
     }
 }
+
