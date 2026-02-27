@@ -126,7 +126,7 @@
                                           Value="@ExportDir"
                                           ValueChanged="@(value => ExportDirChanged(value ?? string.Empty))"
                                           Mode="DirectoryContentMode.Directories"
-                                          Disabled="@(TempPathEnabled != true)"
+                                          Disabled="@(ExportDirEnabled != true)"
                                           Immediate="true"
                                           DebounceInterval="300"
                                           data-test-id="@TestIdHelper.For("ExportDir")" />
