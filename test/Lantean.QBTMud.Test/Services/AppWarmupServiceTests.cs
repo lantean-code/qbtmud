@@ -73,7 +73,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ConcurrentWarmup_WHEN_InvokedTwice_THEN_RunsOnce()
         {
-            var gate = new TaskCompletionSource<bool>();
+            var gate = new TaskCompletionSource();
             var callCount = 0;
             Mock.Get(_languageInitializationService)
                 .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
@@ -89,7 +89,7 @@ namespace Lantean.QBTMud.Test.Services
 
             callCount.Should().Be(1);
 
-            gate.SetResult(true);
+            gate.SetResult();
             await Task.WhenAll(first, second);
 
             Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);

@@ -126,7 +126,7 @@
                                           Value="@ExportDir"
                                           ValueChanged="@(value => ExportDirChanged(value ?? string.Empty))"
                                           Mode="DirectoryContentMode.Directories"
-                                          Disabled="@(TempPathEnabled != true)"
+                                          Disabled="@(ExportDirEnabled != true)"
                                           Immediate="true"
                                           DebounceInterval="300"
                                           data-test-id="@TestIdHelper.For("ExportDir")" />
@@ -143,7 +143,7 @@
                                           Value="@ExportDirFin"
                                           ValueChanged="@(value => ExportDirFinChanged(value ?? string.Empty))"
                                           Mode="DirectoryContentMode.Directories"
-                                          Disabled="@(TempPathEnabled != true)"
+                                          Disabled="@(ExportDirFinEnabled != true)"
                                           Immediate="true"
                                           DebounceInterval="300"
                                           data-test-id="@TestIdHelper.For("ExportDirFin")" />

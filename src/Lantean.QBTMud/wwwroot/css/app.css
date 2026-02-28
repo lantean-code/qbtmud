@@ -315,7 +315,7 @@ code {
     margin-right: 5px;
 }
 
-/*. Layout helpers */
+/* Layout helpers */
 .content-panel {
     display: flex;
     flex-direction: column;
@@ -397,7 +397,7 @@ code {
 @supports (-webkit-touch-callout: none) {
     .torrent-list .mud-table-container {
         box-sizing: border-box;
-        padding-right: 1414px;
+        padding-right: 14px;
         padding-right: calc(14px + env(safe-area-inset-right));
     }
 
