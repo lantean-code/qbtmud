@@ -54,16 +54,17 @@ namespace Lantean.QBTMud.Services.Localization
         public async ValueTask LoadLocaleAsync(string locale, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(locale);
+            var normalizedLocale = WebUiLocaleNormalizer.Normalize(locale);
 
             await _initLock.WaitAsync(cancellationToken);
             try
             {
-                if (string.Equals(_resourceProvider.Resources.LoadedCultureName, locale, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(_resourceProvider.Resources.LoadedCultureName, normalizedLocale, StringComparison.OrdinalIgnoreCase))
                 {
                     return;
                 }
 
-                var resources = await LoadResourcesAsync(locale, cancellationToken);
+                var resources = await LoadResourcesAsync(normalizedLocale, cancellationToken);
                 _resourceProvider.SetResources(resources);
             }
             finally

@@ -50,7 +50,7 @@ jobs:
             echo "channel=stable" >> $GITHUB_OUTPUT
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "label=Release" >> $GITHUB_OUTPUT
-          elif [[ "${GITHUB_REF}" == refs/heads/release/* ]]; then
+          elif [[ "${GITHUB_REF}" == refs/heads/release/* || "${GITHUB_REF}" == refs/heads/hotfix/* ]]; then
             echo "channel=rc" >> $GITHUB_OUTPUT
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "label=RC" >> $GITHUB_OUTPUT

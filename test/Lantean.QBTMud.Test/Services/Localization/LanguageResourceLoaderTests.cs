@@ -160,6 +160,36 @@ namespace Lantean.QBTMud.Test.Services.Localization
         }
 
         [Fact]
+        public async Task GIVEN_SystemDefaultLocaleMarker_WHEN_LoadLocaleAsync_THEN_ShouldNormalizeToEnglishWithoutProbingCLocaleFile()
+        {
+            var translations = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Ctx|Source"] = "Translated"
+            };
+
+            Mock.Get(_fileResourceProvider)
+                .Setup(provider => provider.LoadDictionaryAsync("webui_aliases.json", It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(null));
+
+            Mock.Get(_assemblyResourceProvider)
+                .Setup(provider => provider.LoadDictionaryAsync("webui_en.json", It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(translations));
+
+            Mock.Get(_fileResourceProvider)
+                .Setup(provider => provider.LoadDictionaryAsync("webui_overrides_en.json", It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<Dictionary<string, string>?>(null));
+
+            await _target.LoadLocaleAsync("C", TestContext.Current.CancellationToken);
+
+            _resourceProvider.Resources.Translations.Should().ContainKey("Ctx|Source").WhoseValue.Should().Be("Translated");
+            _resourceProvider.Resources.LoadedCultureName.Should().Be("en");
+
+            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_C.json", It.IsAny<CancellationToken>()), Times.Never);
+            Mock.Get(_fileResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_en.json", It.IsAny<CancellationToken>()), Times.Never);
+            Mock.Get(_assemblyResourceProvider).Verify(provider => provider.LoadDictionaryAsync("webui_en.json", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_EnglishLocaleWithoutEmbeddedTranslations_WHEN_LoadLocaleAsync_THEN_ShouldFallbackToCandidateLocales()
         {
             var translations = new Dictionary<string, string>(StringComparer.Ordinal)

@@ -404,6 +404,40 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_ApiLocaleUsesSystemDefaultMarker_WHEN_Initialized_THEN_ShouldPersistEnglishWithoutWarning()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+
+            await TestContext.LocalStorage.RemoveItemAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "C"));
+
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            storedLocale.Should().Be("en");
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Language preference changed on server. Click Reload to apply it.", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_StoredLocaleUsesSystemDefaultMarker_WHEN_ApiLocaleMatchesNormalizedValue_THEN_ShouldNormalizeStoredLocaleWithoutWarning()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+
+            await TestContext.LocalStorage.SetItemAsStringAsync(PreferredLocaleStorageKey, "C", Xunit.TestContext.Current.CancellationToken);
+            RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "en"));
+
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            storedLocale.Should().Be("en");
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Language preference changed on server. Click Reload to apply it.", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
         public void GIVEN_UpdateAvailableAndNotDismissed_WHEN_Rendered_THEN_ShowsPersistentUpdateSnackbar()
         {
             DisposeDefaultTarget();
