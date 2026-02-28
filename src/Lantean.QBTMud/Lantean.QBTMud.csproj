@@ -46,7 +46,7 @@
 
   <PropertyGroup>
     <WebUiTranslationsMode Condition="'$(WebUiTranslationsMode)'==''">en</WebUiTranslationsMode>
-    <BlazorWebAssemblyLoadAllGlobalizationData Condition="'$(WebUiTranslationsMode)'!='en'">true</BlazorWebAssemblyLoadAllGlobalizationData>
+    <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
     <WebUiTranslationsSource>$(MSBuildThisFileDirectory)../../external/qBittorrent/src/webui/www/translations</WebUiTranslationsSource>
     <WebUiTranslationsOutput>$(MSBuildThisFileDirectory)wwwroot/i18n</WebUiTranslationsOutput>
   </PropertyGroup>
