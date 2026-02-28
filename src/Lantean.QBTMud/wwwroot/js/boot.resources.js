@@ -15,6 +15,7 @@
     const rawBase = typeof window.__cdnBase === "string" ? window.__cdnBase.trim() : "";
     const normalizedBase = ensureTrailingSlash(rawBase);
     const baseIsValid = hasValidHttpScheme(normalizedBase);
+    const assetVersion = getAssetVersion();
 
     if (requested && !baseIsValid) {
         console.warn(`${logPrefix} ReleaseAOT requested CDN mode but AotCdnBaseUrl "${rawBase}" is invalid. Falling back to local assets.`);
@@ -170,6 +171,30 @@
         return value.endsWith("/") ? value : `${value}/`;
     }
 
+    function getAssetVersion() {
+        const fromScript = getAssetVersionFromCurrentScript();
+        if (fromScript) {
+            return fromScript;
+        }
+
+        return typeof window.__assetVersion === "string" ? window.__assetVersion.trim() : "";
+    }
+
+    function getAssetVersionFromCurrentScript() {
+        const script = document.currentScript;
+        if (!script || typeof script.src !== "string" || !script.src) {
+            return "";
+        }
+
+        try {
+            const parsed = new URL(script.src, document.baseURI);
+            const version = parsed.searchParams.get("v");
+            return typeof version === "string" ? version.trim() : "";
+        } catch {
+            return "";
+        }
+    }
+
     function hasValidHttpScheme(value) {
         if (!value) {
             return false;
@@ -185,7 +210,16 @@
 
     function buildCdnUrl(name) {
         const relative = name.startsWith("_framework/") ? name : `_framework/${name}`;
-        return `${state.baseUrl}${relative}`;
+        return appendAssetVersion(`${state.baseUrl}${relative}`);
+    }
+
+    function appendAssetVersion(uri) {
+        if (!assetVersion || !uri) {
+            return uri;
+        }
+
+        const separator = uri.includes("?") ? "&" : "?";
+        return `${uri}${separator}v=${encodeURIComponent(assetVersion)}`;
     }
 
     function getFetchOptions(integrity) {
@@ -218,7 +252,7 @@
         const startPromise = Blazor.start({
             loadBootResource: (type, name, defaultUri, integrity) => {
                 if (!shouldUseCdn(type)) {
-                    return defaultUri;
+                    return appendAssetVersion(defaultUri);
                 }
 
                 const cdnUrl = buildCdnUrl(name);
@@ -233,7 +267,7 @@
                     .catch(error => {
                         logCdnFailure(`CDN fetch failed for ${cdnUrl}. Falling back to local assets.`, error);
                         state.cdnFailed = true;
-                        return defaultUri;
+                        return appendAssetVersion(defaultUri);
                     });
             }
         });

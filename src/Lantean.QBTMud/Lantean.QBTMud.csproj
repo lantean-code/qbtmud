@@ -49,6 +49,10 @@
     <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
     <WebUiTranslationsSource>$(MSBuildThisFileDirectory)../../external/qBittorrent/src/webui/www/translations</WebUiTranslationsSource>
     <WebUiTranslationsOutput>$(MSBuildThisFileDirectory)wwwroot/i18n</WebUiTranslationsOutput>
+    <WebUiTranslationsModeNormalized Condition="'$(WebUiTranslationsMode)'==''">en</WebUiTranslationsModeNormalized>
+    <WebUiTranslationsModeNormalized Condition="'$(WebUiTranslationsMode)'!=''">$(WebUiTranslationsMode)</WebUiTranslationsModeNormalized>
+    <QbtMudAssetVersion>$(QbtMudBuildVersion)-$(WebUiTranslationsModeNormalized)</QbtMudAssetVersion>
+    <QbtMudAssetVersionSafe>$([System.Text.RegularExpressions.Regex]::Replace('$(QbtMudAssetVersion)', '[^A-Za-z0-9._-]+', '-'))</QbtMudAssetVersionSafe>
   </PropertyGroup>
   
   <!-- AOT build toggles this on -->
@@ -65,11 +69,13 @@
       <_UseCdnAotJs Condition="'$(UseCdnAot)'!=''">$([System.String]::Copy('$(UseCdnAot)').ToLowerInvariant())</_UseCdnAotJs>
       <_UseCdnAotJs Condition="'$(_UseCdnAotJs)'==''">false</_UseCdnAotJs>
       <_AotCdnBaseEscaped>$([System.String]::Copy('$(AotCdnBaseUrl)').Replace("'", "\\'"))</_AotCdnBaseEscaped>
+      <_AssetVersionEscaped>$([System.String]::Copy('$(QbtMudAssetVersionSafe)').Replace("'", "\\'"))</_AssetVersionEscaped>
     </PropertyGroup>
     <!-- Make a tiny JS file with the flags -->
     <ItemGroup>
       <_AotConfigLines Include="window.__useCdnAot = $(_UseCdnAotJs);" />
       <_AotConfigLines Include="window.__cdnBase = '$(_AotCdnBaseEscaped)';" />
+      <_AotConfigLines Include="window.__assetVersion = '$(_AssetVersionEscaped)';" />
     </ItemGroup>
   
     <WriteLinesToFile File="$(IntermediateOutputPath)boot.settings.js" Lines="@(_AotConfigLines)" Overwrite="true" />
@@ -81,6 +87,31 @@
         <TargetPath>wwwroot/js/boot.settings.js</TargetPath>
       </ContentWithTargetPath>
     </ItemGroup>
+  </Target>
+  
+  <Target Name="EmitVersionedIndexToPublish" AfterTargets="Publish" Condition="'$(PublishDir)' != ''">
+    <ReadLinesFromFile File="$(MSBuildThisFileDirectory)wwwroot/index.html">
+      <Output TaskParameter="Lines" ItemName="_IndexTemplateLines" />
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <_VersionedIndexLines Include="@(_IndexTemplateLines->Replace('__QBT_CACHE_BUSTER__', '$(QbtMudAssetVersionSafe)'))" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(PublishDir)wwwroot/index.html" Lines="@(_VersionedIndexLines)" Overwrite="true" />
+  </Target>
+  
+  <Target Name="EmitBootSettingsToPublish" AfterTargets="Publish" Condition="'$(PublishDir)' != ''">
+    <PropertyGroup>
+      <_PublishUseCdnAotJs Condition="'$(UseCdnAot)'!=''">$([System.String]::Copy('$(UseCdnAot)').ToLowerInvariant())</_PublishUseCdnAotJs>
+      <_PublishUseCdnAotJs Condition="'$(_PublishUseCdnAotJs)'==''">false</_PublishUseCdnAotJs>
+      <_PublishAotCdnBaseEscaped>$([System.String]::Copy('$(AotCdnBaseUrl)').Replace("'", "\\'"))</_PublishAotCdnBaseEscaped>
+      <_PublishAssetVersionEscaped>$([System.String]::Copy('$(QbtMudAssetVersionSafe)').Replace("'", "\\'"))</_PublishAssetVersionEscaped>
+    </PropertyGroup>
+    <ItemGroup>
+      <_PublishBootSettingsLines Include="window.__useCdnAot = $(_PublishUseCdnAotJs);" />
+      <_PublishBootSettingsLines Include="window.__cdnBase = '$(_PublishAotCdnBaseEscaped)';" />
+      <_PublishBootSettingsLines Include="window.__assetVersion = '$(_PublishAssetVersionEscaped)';" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(PublishDir)wwwroot/js/boot.settings.js" Lines="@(_PublishBootSettingsLines)" Overwrite="true" />
   </Target>
   
   <Target Name="PrepareReleaseAotPayload" AfterTargets="Publish" Condition="'$(UseCdnAot)'=='true'">
