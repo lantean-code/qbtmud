@@ -20,8 +20,7 @@ namespace Lantean.QBitTorrentClient.Test.Converters
         [Fact]
         public void GIVEN_NullToken_WHEN_Read_THEN_ShouldReturnNull()
         {
-            var reader = CreateReader("null");
-            var value = _target.Read(ref reader, typeof(float?), _options);
+            var value = JsonSerializer.Deserialize<float?>("null", _options);
 
             value.Should().BeNull();
         }
@@ -96,14 +95,6 @@ namespace Lantean.QBitTorrentClient.Test.Converters
             var json = Write(1.25f);
 
             json.Should().Be("\"1.25\"");
-        }
-
-        private static Utf8JsonReader CreateReader(string json)
-        {
-            var bytes = Encoding.UTF8.GetBytes(json);
-            var reader = new Utf8JsonReader(bytes);
-            reader.Read();
-            return reader;
         }
 
         private string Write(float? value)

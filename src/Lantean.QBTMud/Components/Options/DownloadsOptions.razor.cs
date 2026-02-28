@@ -19,9 +19,9 @@ namespace Lantean.QBTMud.Components.Options
         protected string? SavePath { get; set; }
         protected bool? TempPathEnabled { get; set; }
         protected string? TempPath { get; set; }
-        protected bool? ExportDirEnabled { get; set; }
+        protected bool ExportDirEnabled { get; set; }
         protected string? ExportDir { get; set; }
-        protected bool? ExportDirFinEnabled { get; set; }
+        protected bool ExportDirFinEnabled { get; set; }
         protected string? ExportDirFin { get; set; }
         protected Dictionary<string, SaveLocation> ScanDirs { get; set; } = [];
         protected bool? ExcludedFileNamesEnabled { get; set; }
