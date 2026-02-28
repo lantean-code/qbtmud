@@ -41,17 +41,17 @@ namespace Lantean.QBTMud.Services
             var locale = await _localStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, cancellationToken);
             if (!string.IsNullOrWhiteSpace(locale))
             {
-                return locale.Trim();
+                return WebUiLocaleNormalizer.Normalize(locale);
             }
 
             if (!string.IsNullOrWhiteSpace(CultureInfo.CurrentUICulture.Name))
             {
-                return CultureInfo.CurrentUICulture.Name;
+                return WebUiLocaleNormalizer.Normalize(CultureInfo.CurrentUICulture.Name);
             }
 
             if (!string.IsNullOrWhiteSpace(CultureInfo.CurrentCulture.Name))
             {
-                return CultureInfo.CurrentCulture.Name;
+                return WebUiLocaleNormalizer.Normalize(CultureInfo.CurrentCulture.Name);
             }
 
             return "en";

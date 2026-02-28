@@ -61,6 +61,22 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_languageResourceLoader).Verify(loader => loader.LoadLocaleAsync("fr_FR", It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Theory]
+        [InlineData("C")]
+        [InlineData("POSIX")]
+        [InlineData("C.UTF-8")]
+        public async Task GIVEN_StoredLocaleUsesSystemDefaultMarker_WHEN_EnsureLanguageResourcesInitialized_THEN_ShouldNormalizeToEnglish(string locale)
+        {
+            Mock.Get(_localStorage)
+                .Setup(storage => storage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult<string?>(locale));
+
+            await _target.EnsureLanguageResourcesInitialized(TestContext.Current.CancellationToken);
+
+            Mock.Get(_languageResourceLoader).Verify(loader => loader.LoadLocaleAsync("en", It.IsAny<CancellationToken>()), Times.Once);
+            CultureInfo.CurrentUICulture.Name.Should().Be("en");
+        }
+
         [Fact]
         public async Task GIVEN_StoredLocaleMissing_WHEN_EnsureLanguageResourcesInitialized_THEN_ShouldUseCurrentUiCulture()
         {

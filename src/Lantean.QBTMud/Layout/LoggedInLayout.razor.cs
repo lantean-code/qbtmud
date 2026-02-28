@@ -331,7 +331,7 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            var apiLocale = Preferences.Locale.Trim();
+            var apiLocale = WebUiLocaleNormalizer.Normalize(Preferences.Locale);
             var storedLocale = await LocalStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale);
 
             if (string.IsNullOrWhiteSpace(storedLocale))
@@ -340,7 +340,13 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            if (string.Equals(storedLocale.Trim(), apiLocale, StringComparison.OrdinalIgnoreCase))
+            var normalizedStoredLocale = WebUiLocaleNormalizer.Normalize(storedLocale);
+            if (!string.Equals(storedLocale.Trim(), normalizedStoredLocale, StringComparison.Ordinal))
+            {
+                await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, normalizedStoredLocale);
+            }
+
+            if (string.Equals(normalizedStoredLocale, apiLocale, StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
