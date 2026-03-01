@@ -1,5 +1,6 @@
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Interop;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Theming;
@@ -11,12 +12,13 @@ namespace Lantean.QBTMud.Layout
 {
     public partial class MainLayout : IDisposable
     {
-        private const string _isDarkModeStorageKey = "MainLayout.IsDarkMode";
         private const string _drawerOpenStorageKey = "MainLayout.DrawerOpen";
         private const string _bootstrapThemeCssLightStorageKey = "ThemeManager.BootstrapCss.Light";
         private const string _bootstrapThemeCssDarkStorageKey = "ThemeManager.BootstrapCss.Dark";
         private const string _bootstrapThemeIsDarkStorageKey = "ThemeManager.BootstrapIsDark";
         private const string _bootstrapThemeFontFamilyStorageKey = "ThemeManager.BootstrapFontFamily";
+
+        private static readonly char[] _pathEndCharacters = ['?', '#'];
 
         [Inject]
         protected ILocalStorageService LocalStorage { get; set; } = default!;
@@ -26,6 +28,9 @@ namespace Lantean.QBTMud.Layout
 
         [Inject]
         protected IThemeFontCatalog ThemeFontCatalog { get; set; } = default!;
+
+        [Inject]
+        protected IAppSettingsService AppSettingsService { get; set; } = default!;
 
         [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
@@ -59,12 +64,14 @@ namespace Lantean.QBTMud.Layout
 
         private int _lastErrorCount;
         private bool _pendingThemeUpdate;
+        private bool _pendingThemeModeUpdate = true;
         private bool _pendingBootstrapThemeUpdate;
         private bool _pendingBootstrapThemeRemoval;
         private bool _bootstrapThemeRemoved;
         private string? _pendingFontFamily;
         private bool _themeInitialized;
         private bool _hasAppliedTheme;
+        private ThemeModePreference _themeModePreference = ThemeModePreference.System;
 
         private Menu Menu { get; set; } = default!;
 
@@ -96,7 +103,7 @@ namespace Lantean.QBTMud.Layout
                 return false;
             }
 
-            var queryIndex = relativeUri.IndexOfAny(new[] { '?', '#' });
+            var queryIndex = relativeUri.IndexOfAny(_pathEndCharacters);
             var path = queryIndex >= 0
                 ? relativeUri[..queryIndex]
                 : relativeUri;
@@ -109,12 +116,13 @@ namespace Lantean.QBTMud.Layout
         {
             base.OnInitialized();
             ThemeManagerService.ThemeChanged += OnThemeChanged;
+            AppSettingsService.SettingsChanged += OnAppSettingsChanged;
         }
 
         protected override async Task OnInitializedAsync()
         {
-            var isDarkMode = await LocalStorage.GetItemAsync<bool?>(_isDarkModeStorageKey);
-            IsDarkMode = isDarkMode ?? true;
+            var settings = await AppSettingsService.GetSettingsAsync();
+            _themeModePreference = NormalizeThemeModePreference(settings.ThemeModePreference);
 
             await ThemeManagerService.EnsureInitialized();
             EnsureThemeApplied();
@@ -170,6 +178,12 @@ namespace Lantean.QBTMud.Layout
                 StateHasChanged();
             }
 
+            if (_pendingThemeModeUpdate && _themeInitialized)
+            {
+                _pendingThemeModeUpdate = false;
+                await ApplyThemeModePreferenceAsync();
+            }
+
             if (_pendingThemeUpdate && _themeInitialized)
             {
                 _pendingThemeUpdate = false;
@@ -192,6 +206,11 @@ namespace Lantean.QBTMud.Layout
 
         protected Task OnSystemDarkModeChanged(bool value)
         {
+            if (_themeModePreference != ThemeModePreference.System || IsDarkMode == value)
+            {
+                return Task.CompletedTask;
+            }
+
             IsDarkMode = value;
             _pendingBootstrapThemeUpdate = true;
             StateHasChanged();
@@ -213,16 +232,10 @@ namespace Lantean.QBTMud.Layout
             _lastErrorCount = 0;
         }
 
-        protected async Task DarkModeChanged(bool value)
-        {
-            IsDarkMode = value;
-            _pendingBootstrapThemeUpdate = true;
-            await LocalStorage.SetItemAsync(_isDarkModeStorageKey, value);
-        }
-
         public void Dispose()
         {
             ThemeManagerService.ThemeChanged -= OnThemeChanged;
+            AppSettingsService.SettingsChanged -= OnAppSettingsChanged;
         }
 
         private void BreakpointChanged(Breakpoint value)
@@ -283,6 +296,19 @@ namespace Lantean.QBTMud.Layout
             StateHasChanged();
         }
 
+        private void OnAppSettingsChanged(object? sender, AppSettingsChangedEventArgs args)
+        {
+            var themeModePreference = NormalizeThemeModePreference(args.Settings.ThemeModePreference);
+            if (_themeModePreference == themeModePreference)
+            {
+                return;
+            }
+
+            _themeModePreference = themeModePreference;
+            _pendingThemeModeUpdate = true;
+            StateHasChanged();
+        }
+
         private void EnsureThemeApplied()
         {
             if (_hasAppliedTheme)
@@ -315,6 +341,25 @@ namespace Lantean.QBTMud.Layout
             await JSRuntime.LoadGoogleFont(url, fontId);
         }
 
+        private async Task ApplyThemeModePreferenceAsync()
+        {
+            var resolvedIsDarkMode = _themeModePreference switch
+            {
+                ThemeModePreference.Dark => true,
+                ThemeModePreference.Light => false,
+                _ => await MudThemeProvider.GetSystemDarkModeAsync()
+            };
+            var darkModeChanged = IsDarkMode != resolvedIsDarkMode;
+
+            IsDarkMode = resolvedIsDarkMode;
+            _pendingBootstrapThemeUpdate = true;
+
+            if (darkModeChanged)
+            {
+                StateHasChanged();
+            }
+        }
+
         private async Task PersistBootstrapThemeAsync()
         {
             var lightCss = ThemeCssBuilder.BuildCssVariables(Theme, false);
@@ -329,6 +374,13 @@ namespace Lantean.QBTMud.Layout
             {
                 await LocalStorage.SetItemAsStringAsync(_bootstrapThemeFontFamilyStorageKey, fontFamily);
             }
+        }
+
+        private static ThemeModePreference NormalizeThemeModePreference(ThemeModePreference value)
+        {
+            return Enum.IsDefined(value)
+                ? value
+                : ThemeModePreference.System;
         }
     }
 }

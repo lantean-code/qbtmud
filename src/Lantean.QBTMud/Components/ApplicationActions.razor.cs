@@ -45,12 +45,6 @@ namespace Lantean.QBTMud.Components
         [EditorRequired]
         public Preferences? Preferences { get; set; }
 
-        [Parameter]
-        public bool IsDarkMode { get; set; }
-
-        [Parameter]
-        public EventCallback<bool> DarkModeChanged { get; set; }
-
         [CascadingParameter]
         public Models.MainData? MainData { get; set; }
 
@@ -62,16 +56,6 @@ namespace Lantean.QBTMud.Components
             {
                 foreach (var action in _actions)
                 {
-                    if (action.Name == "darkMode")
-                    {
-                        var text = IsDarkMode
-                            ? LanguageLocalizer.Translate("AppApplicationActions", "Switch to light mode")
-                            : LanguageLocalizer.Translate("AppApplicationActions", "Switch to dark mode");
-                        var color = IsDarkMode ? Color.Info : Color.Inherit;
-                        yield return new UIAction(action.Name, text, action.Icon, color, action.Callback);
-                        continue;
-                    }
-
                     if (action.Name != "rss" || Preferences is not null && Preferences.RssProcessingEnabled)
                     {
                         yield return action;
@@ -97,7 +81,6 @@ namespace Lantean.QBTMud.Components
                 new("themes", LanguageLocalizer.Translate("AppApplicationActions", "Theme Manager"), Icons.Material.Filled.Palette, Color.Default, "./themes"),
                 new("appSettings", LanguageLocalizer.Translate("AppApplicationActions", "App Settings"), Icons.Material.Filled.Tune, Color.Default, "./app-settings", separatorBefore: true),
                 new("settings", LanguageLocalizer.Translate("MainWindow", "Options..."), Icons.Material.Filled.Settings, Color.Default, "./settings"),
-                new("darkMode", LanguageLocalizer.Translate("AppApplicationActions", "Switch to dark mode"), Icons.Material.Filled.DarkMode, Color.Info, EventCallback.Factory.Create(this, ToggleDarkMode)),
                 new("about", LanguageLocalizer.Translate("MainWindow", "About"), Icons.Material.Filled.Info, Color.Default, "./about"),
             ];
         }
@@ -139,17 +122,6 @@ namespace Lantean.QBTMud.Components
                 LanguageLocalizer.Translate("AppApplicationActions", "Quit?"),
                 LanguageLocalizer.Translate("AppApplicationActions", "Are you sure you want to exit qBittorrent?"),
                 ApiClient.Shutdown);
-        }
-
-        protected async Task ToggleDarkMode()
-        {
-            IsDarkMode = !IsDarkMode;
-            if (DarkModeChanged.HasDelegate)
-            {
-                await DarkModeChanged.InvokeAsync(IsDarkMode);
-            }
-
-            StateHasChanged();
         }
 
         private async Task RegisterMagnetHandler()

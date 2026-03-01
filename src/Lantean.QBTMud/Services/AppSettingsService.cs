@@ -8,6 +8,8 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class AppSettingsService : IAppSettingsService
     {
+        private const string LegacyDarkModeStorageKey = "MainLayout.IsDarkMode";
+
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
         private readonly ILocalStorageService _localStorageService;
         private AppSettings? _cachedSettings;
@@ -20,6 +22,9 @@ namespace Lantean.QBTMud.Services
         {
             _localStorageService = localStorageService;
         }
+
+        /// <inheritdoc />
+        public event EventHandler<AppSettingsChangedEventArgs>? SettingsChanged;
 
         /// <inheritdoc />
         public async Task<AppSettings> GetSettingsAsync(CancellationToken cancellationToken = default)
@@ -47,9 +52,10 @@ namespace Lantean.QBTMud.Services
                     loadedSettings = null;
                 }
 
-                _cachedSettings = loadedSettings is null
+                var normalized = loadedSettings is null
                     ? AppSettings.Default.Clone()
                     : Normalize(loadedSettings);
+                _cachedSettings = await MigrateLegacyThemeModePreference(normalized, cancellationToken);
                 return _cachedSettings.Clone();
             }
             finally
@@ -67,6 +73,13 @@ namespace Lantean.QBTMud.Services
             _cachedSettings = normalized.Clone();
 
             await _localStorageService.SetItemAsync(AppSettings.StorageKey, normalized, cancellationToken);
+
+            var settingsChanged = SettingsChanged;
+            if (settingsChanged is not null)
+            {
+                settingsChanged.Invoke(this, new AppSettingsChangedEventArgs(_cachedSettings.Clone()));
+            }
+
             return _cachedSettings.Clone();
         }
 
@@ -84,6 +97,7 @@ namespace Lantean.QBTMud.Services
             {
                 UpdateChecksEnabled = settings.UpdateChecksEnabled,
                 NotificationsEnabled = settings.NotificationsEnabled,
+                ThemeModePreference = NormalizeThemeModePreference(settings.ThemeModePreference),
                 DownloadFinishedNotificationsEnabled = settings.DownloadFinishedNotificationsEnabled,
                 TorrentAddedNotificationsEnabled = settings.TorrentAddedNotificationsEnabled,
                 TorrentAddedSnackbarsEnabledWithNotifications = settings.TorrentAddedSnackbarsEnabledWithNotifications,
@@ -91,6 +105,33 @@ namespace Lantean.QBTMud.Services
                     ? null
                     : settings.DismissedReleaseTag.Trim()
             };
+        }
+
+        private async Task<AppSettings> MigrateLegacyThemeModePreference(AppSettings settings, CancellationToken cancellationToken)
+        {
+            var legacyDarkMode = await _localStorageService.GetItemAsync<bool?>(LegacyDarkModeStorageKey, cancellationToken);
+            if (!legacyDarkMode.HasValue)
+            {
+                return settings;
+            }
+
+            if (settings.ThemeModePreference == ThemeModePreference.System)
+            {
+                settings.ThemeModePreference = legacyDarkMode.Value
+                    ? ThemeModePreference.Dark
+                    : ThemeModePreference.Light;
+                await _localStorageService.SetItemAsync(AppSettings.StorageKey, settings, cancellationToken);
+            }
+
+            await _localStorageService.RemoveItemAsync(LegacyDarkModeStorageKey, cancellationToken);
+            return settings;
+        }
+
+        private static ThemeModePreference NormalizeThemeModePreference(ThemeModePreference mode)
+        {
+            return Enum.IsDefined(mode)
+                ? mode
+                : ThemeModePreference.System;
         }
     }
 }

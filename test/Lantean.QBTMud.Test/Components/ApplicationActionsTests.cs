@@ -36,40 +36,12 @@ namespace Lantean.QBTMud.Test.Components
             });
 
             var menuItems = target.FindComponents<MudMenuItem>();
-            menuItems.Should().HaveCount(20);
+            menuItems.Should().HaveCount(19);
             menuItems.Any(item => HasTestId(item, "Action-speed")).Should().BeTrue();
             menuItems.Any(item => HasTestId(item, "Action-themes")).Should().BeTrue();
             menuItems.Any(item => HasTestId(item, "Action-appSettings")).Should().BeTrue();
             snackbarMock.Invocations.Should().BeEmpty();
             apiClientMock.VerifyNoOtherCalls();
-        }
-
-        [Fact]
-        public async Task GIVEN_DarkModeMenuItem_WHEN_Clicked_THEN_InvokesCallback()
-        {
-            TestContext.UseApiClientMock();
-            TestContext.UseSnackbarMock();
-            bool? newValue = null;
-
-            var target = TestContext.Render<ApplicationActions>(parameters =>
-            {
-                parameters.Add(p => p.IsMenu, true);
-                parameters.Add(p => p.Preferences, null);
-                parameters.Add(p => p.IsDarkMode, false);
-                parameters.Add(p => p.DarkModeChanged, EventCallback.Factory.Create<bool>(this, value => newValue = value));
-            });
-
-            var darkMode = FindMenuItem(target, "Action-darkMode");
-            await target.InvokeAsync(() => darkMode.Instance.OnClick.InvokeAsync());
-
-            var items = target.FindComponents<MudMenuItem>().ToList();
-            var darkIndex = items.FindIndex(item => HasTestId(item, "Action-darkMode"));
-            var aboutIndex = items.FindIndex(item => HasTestId(item, "Action-about"));
-            darkIndex.Should().BeGreaterThanOrEqualTo(0);
-            aboutIndex.Should().BeGreaterThan(darkIndex);
-            newValue.Should().BeTrue();
-            GetChildContentText(darkMode.Instance.ChildContent).Should().Be("Switch to light mode");
-            darkMode.Instance.IconColor.Should().Be(Color.Info);
         }
 
         [Fact]
@@ -525,7 +497,7 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public void GIVEN_NavMode_WHEN_Rendered_THEN_DarkModeToggleNotShown()
+        public void GIVEN_NavMode_WHEN_Rendered_THEN_AppSettingsActionShown()
         {
             TestContext.UseApiClientMock();
             TestContext.UseSnackbarMock();
@@ -534,12 +506,11 @@ namespace Lantean.QBTMud.Test.Components
             {
                 parameters.Add(p => p.IsMenu, false);
                 parameters.Add(p => p.Preferences, CreatePreferences(rssEnabled: true));
-                parameters.Add(p => p.IsDarkMode, true);
             });
 
             target.FindComponents<MudNavLink>()
-                .Any(item => HasTestId(item, "Action-darkMode"))
-                .Should().BeFalse();
+                .Any(item => HasTestId(item, "Action-appSettings"))
+                .Should().BeTrue();
         }
 
         private static IRenderedComponent<MudMenuItem> FindMenuItem(IRenderedComponent<ApplicationActions> target, string testId)

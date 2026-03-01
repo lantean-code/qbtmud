@@ -56,9 +56,8 @@
 
     function applyBootstrapTheme() {
         try {
-            const rawBootstrapMode = getStorageValueWithMigration("ThemeManager.BootstrapIsDark");
-            const rawIsDark = getStorageValueWithMigration("MainLayout.IsDarkMode");
-            const isDark = parseBoolean(rawBootstrapMode ?? rawIsDark);
+            const themeModePreference = getThemeModePreference();
+            const isDark = resolveBootstrapDarkMode(themeModePreference);
             const css = getStorageValueWithMigration(isDark ? "ThemeManager.BootstrapCss.Dark" : "ThemeManager.BootstrapCss.Light")
                 ?? getStorageValueWithMigration("ThemeManager.BootstrapCss");
             if (!css) {
@@ -76,6 +75,85 @@
             style.textContent = css;
             document.body.appendChild(style);
         } catch {
+        }
+    }
+
+    function getThemeModePreference() {
+        const rawSettings = getStorageValueWithMigration("AppSettings.State.v1");
+        if (!rawSettings) {
+            return null;
+        }
+
+        const parsedSettings = tryParseJson(rawSettings);
+        if (!parsedSettings || typeof parsedSettings !== "object") {
+            return null;
+        }
+
+        return normalizeThemeModePreference(parsedSettings.themeModePreference);
+    }
+
+    function normalizeThemeModePreference(value) {
+        if (typeof value === "number") {
+            return value === 2 ? "dark"
+                : value === 1 ? "light"
+                : value === 0 ? "system"
+                : null;
+        }
+
+        if (typeof value === "string") {
+            const normalized = value.trim().toLowerCase();
+            if (!normalized) {
+                return null;
+            }
+
+            if (normalized === "2" || normalized === "dark") {
+                return "dark";
+            }
+
+            if (normalized === "1" || normalized === "light") {
+                return "light";
+            }
+
+            if (normalized === "0" || normalized === "system") {
+                return "system";
+            }
+        }
+
+        return null;
+    }
+
+    function resolveBootstrapDarkMode(themeModePreference) {
+        if (themeModePreference === "dark") {
+            return true;
+        }
+
+        if (themeModePreference === "light") {
+            return false;
+        }
+
+        if (themeModePreference === "system") {
+            return getSystemDarkModePreference();
+        }
+
+        const rawIsDark = getStorageValueWithMigration("MainLayout.IsDarkMode");
+        if (rawIsDark !== null) {
+            return parseBoolean(rawIsDark);
+        }
+
+        const rawBootstrapMode = getStorageValueWithMigration("ThemeManager.BootstrapIsDark");
+        return parseBoolean(rawBootstrapMode);
+    }
+
+    function getSystemDarkModePreference() {
+        if (typeof window.matchMedia !== "function") {
+            return false;
+        }
+
+        try {
+            const match = window.matchMedia("(prefers-color-scheme: dark)");
+            return Boolean(match && match.matches);
+        } catch {
+            return false;
         }
     }
 
@@ -135,6 +213,14 @@
         }
 
         return trimmed;
+    }
+
+    function tryParseJson(value) {
+        try {
+            return JSON.parse(value);
+        } catch {
+            return null;
+        }
     }
 
     function isValidFontFamily(value) {

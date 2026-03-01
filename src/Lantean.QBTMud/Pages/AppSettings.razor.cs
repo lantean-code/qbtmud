@@ -3,8 +3,10 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
 using MudBlazor;
+using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -12,6 +14,9 @@ namespace Lantean.QBTMud.Pages
     {
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
+
+        [Inject]
+        protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
         protected IAppBuildInfoService AppBuildInfoService { get; set; } = default!;
@@ -37,6 +42,9 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
+        [CascadingParameter(Name = "LostConnection")]
+        public bool LostConnection { get; set; }
+
         protected bool IsLoading { get; private set; } = true;
 
         protected int ActiveTab { get; set; }
@@ -53,9 +61,19 @@ namespace Lantean.QBTMud.Pages
 
         protected BrowserNotificationPermission NotificationPermission { get; private set; } = BrowserNotificationPermission.Unsupported;
 
-        protected Models.AppSettings Settings { get; private set; } = Models.AppSettings.Default.Clone();
+        protected AppSettingsModel Settings { get; private set; } = AppSettingsModel.Default.Clone();
 
         protected IReadOnlyList<AppStorageEntry> StorageEntries { get; private set; } = Array.Empty<AppStorageEntry>();
+
+        protected bool HasPendingChanges
+        {
+            get
+            {
+                return !AreSettingsEquivalent(Settings, _savedSettings);
+            }
+        }
+
+        private AppSettingsModel _savedSettings = AppSettingsModel.Default.Clone();
 
         protected bool IsNotificationsUnavailable
         {
@@ -77,6 +95,7 @@ namespace Lantean.QBTMud.Pages
             CurrentBuildInfo = AppBuildInfoService.GetCurrentBuildInfo();
 
             Settings = await AppSettingsService.GetSettingsAsync();
+            _savedSettings = Settings.Clone();
 
             try
             {
@@ -106,7 +125,7 @@ namespace Lantean.QBTMud.Pages
             NavigationManager.NavigateToHome();
         }
 
-        protected async Task OnUpdateChecksChanged(bool value)
+        protected void OnUpdateChecksChanged(bool value)
         {
             if (Settings.UpdateChecksEnabled == value)
             {
@@ -114,7 +133,16 @@ namespace Lantean.QBTMud.Pages
             }
 
             Settings.UpdateChecksEnabled = value;
-            await PersistSettingsAsync();
+        }
+
+        protected void OnThemeModePreferenceChanged(ThemeModePreference value)
+        {
+            if (Settings.ThemeModePreference == value)
+            {
+                return;
+            }
+
+            Settings.ThemeModePreference = value;
         }
 
         protected async Task OnNotificationsEnabledChanged(bool value)
@@ -148,13 +176,10 @@ namespace Lantean.QBTMud.Pages
                     Settings.NotificationsEnabled = false;
                     NotificationPermission = await TorrentCompletionNotificationService.GetPermissionAsync();
                 }
-
-                await PersistSettingsAsync();
             }
             catch (JSException exception)
             {
                 Settings.NotificationsEnabled = false;
-                await PersistSettingsAsync();
                 SnackbarWorkflow.ShowTransientMessage(TranslateNotifications("Unable to update notification permission: %1", exception.Message), Severity.Error);
             }
             finally
@@ -163,7 +188,7 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        protected async Task OnTorrentAddedNotificationsChanged(bool value)
+        protected void OnTorrentAddedNotificationsChanged(bool value)
         {
             if (Settings.TorrentAddedNotificationsEnabled == value)
             {
@@ -171,10 +196,9 @@ namespace Lantean.QBTMud.Pages
             }
 
             Settings.TorrentAddedNotificationsEnabled = value;
-            await PersistSettingsAsync();
         }
 
-        protected async Task OnDownloadFinishedNotificationsChanged(bool value)
+        protected void OnDownloadFinishedNotificationsChanged(bool value)
         {
             if (Settings.DownloadFinishedNotificationsEnabled == value)
             {
@@ -182,10 +206,9 @@ namespace Lantean.QBTMud.Pages
             }
 
             Settings.DownloadFinishedNotificationsEnabled = value;
-            await PersistSettingsAsync();
         }
 
-        protected async Task OnTorrentAddedSnackbarsWithNotificationsChanged(bool value)
+        protected void OnTorrentAddedSnackbarsWithNotificationsChanged(bool value)
         {
             if (Settings.TorrentAddedSnackbarsEnabledWithNotifications == value)
             {
@@ -193,7 +216,46 @@ namespace Lantean.QBTMud.Pages
             }
 
             Settings.TorrentAddedSnackbarsEnabledWithNotifications = value;
-            await PersistSettingsAsync();
+        }
+
+        protected async Task ValidateExit(LocationChangingContext context)
+        {
+            if (!HasPendingChanges)
+            {
+                return;
+            }
+
+            var exit = await DialogWorkflow.ShowConfirmDialog(
+                TranslateSettings("Unsaved Changes"),
+                TranslateSettings("Are you sure you want to leave without saving your changes?"));
+
+            if (!exit)
+            {
+                context.PreventNavigation();
+            }
+        }
+
+        protected async Task Save()
+        {
+            if (!HasPendingChanges)
+            {
+                return;
+            }
+
+            Settings = await AppSettingsService.SaveSettingsAsync(Settings);
+            _savedSettings = Settings.Clone();
+
+            SnackbarWorkflow.ShowTransientMessage(TranslateSettings("App settings saved."), Severity.Success);
+        }
+
+        protected void Undo()
+        {
+            if (!HasPendingChanges)
+            {
+                return;
+            }
+
+            Settings = _savedSettings.Clone();
         }
 
         protected async Task CheckForUpdatesNowAsync()
@@ -332,9 +394,15 @@ namespace Lantean.QBTMud.Pages
             };
         }
 
-        private async Task PersistSettingsAsync()
+        private static bool AreSettingsEquivalent(AppSettingsModel left, AppSettingsModel right)
         {
-            Settings = await AppSettingsService.SaveSettingsAsync(Settings);
+            return left.UpdateChecksEnabled == right.UpdateChecksEnabled
+                && left.NotificationsEnabled == right.NotificationsEnabled
+                && left.ThemeModePreference == right.ThemeModePreference
+                && left.DownloadFinishedNotificationsEnabled == right.DownloadFinishedNotificationsEnabled
+                && left.TorrentAddedNotificationsEnabled == right.TorrentAddedNotificationsEnabled
+                && left.TorrentAddedSnackbarsEnabledWithNotifications == right.TorrentAddedSnackbarsEnabledWithNotifications
+                && string.Equals(left.DismissedReleaseTag, right.DismissedReleaseTag, StringComparison.Ordinal);
         }
 
         private string TranslateSettings(string source, params object[] arguments)

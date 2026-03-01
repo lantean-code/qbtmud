@@ -19,24 +19,31 @@ namespace Lantean.QBTMud.Test.Layout
 {
     public sealed class MainLayoutTests : RazorComponentTestBase<MainLayout>
     {
+        private readonly IAppSettingsService _appSettingsService;
         private readonly IThemeManagerService _themeManagerService;
         private readonly IThemeFontCatalog _themeFontCatalog;
         private readonly TestLocalStorageService _localStorage;
 
         public MainLayoutTests()
         {
+            _appSettingsService = Mock.Of<IAppSettingsService>();
             _themeManagerService = Mock.Of<IThemeManagerService>();
             _themeFontCatalog = Mock.Of<IThemeFontCatalog>();
             _localStorage = new TestLocalStorageService();
 
+            TestContext.Services.RemoveAll<IAppSettingsService>();
             TestContext.Services.RemoveAll<IThemeManagerService>();
             TestContext.Services.RemoveAll<IThemeFontCatalog>();
             TestContext.Services.RemoveAll<ILocalStorageService>();
 
+            TestContext.Services.AddSingleton(_appSettingsService);
             TestContext.Services.AddSingleton(_themeManagerService);
             TestContext.Services.AddSingleton(_themeFontCatalog);
             TestContext.Services.AddSingleton<ILocalStorageService>(_localStorage);
 
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettings.Default.Clone());
             Mock.Get(_themeManagerService)
                 .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
@@ -191,10 +198,15 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public async Task GIVEN_StoredSettings_WHEN_Rendered_THEN_UsesStoredValues()
+        public async Task GIVEN_LightThemePreference_WHEN_Rendered_THEN_UsesStoredValues()
         {
             await _localStorage.SetItemAsync("MainLayout.DrawerOpen", true, Xunit.TestContext.Current.CancellationToken);
-            await _localStorage.SetItemAsync("MainLayout.IsDarkMode", false, Xunit.TestContext.Current.CancellationToken);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    ThemeModePreference = ThemeModePreference.Light
+                });
 
             var target = RenderLayout(CreateProbeBody());
             var probe = target.FindComponent<DrawerProbe>();
@@ -206,16 +218,64 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public async Task GIVEN_DrawerOpenStoredFalse_WHEN_Rendered_THEN_UsesBreakpointDefault()
+        public async Task GIVEN_DarkThemePreferenceAndDrawerOpenStoredFalse_WHEN_Rendered_THEN_UsesBreakpointDefault()
         {
             await _localStorage.SetItemAsync("MainLayout.DrawerOpen", false, Xunit.TestContext.Current.CancellationToken);
-            await _localStorage.SetItemAsync("MainLayout.IsDarkMode", true, Xunit.TestContext.Current.CancellationToken);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    ThemeModePreference = ThemeModePreference.Dark
+                });
 
             var target = RenderLayout(CreateProbeBody());
             var probe = target.FindComponent<DrawerProbe>();
 
             target.WaitForAssertion(() => probe.Instance.DrawerOpen.Should().BeFalse());
             target.FindComponent<MudThemeProvider>().Instance.GetState(x => x.IsDarkMode).Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_SystemThemeModePreference_WHEN_Rendered_THEN_UsesSystemDarkModePreference()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    ThemeModePreference = ThemeModePreference.System
+                });
+            var systemDarkModeInvocation = TestContext.JSInterop.Setup<bool>("mudThemeProvider.isDarkMode", _ => true);
+            systemDarkModeInvocation.SetResult(true);
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<MudThemeProvider>().Instance.GetState(x => x.IsDarkMode).Should().BeTrue();
+                systemDarkModeInvocation.Invocations.Should().HaveCount(1);
+            });
+        }
+
+        [Fact]
+        public void GIVEN_LightThemeModePreference_WHEN_Rendered_THEN_DoesNotQuerySystemDarkModePreference()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    ThemeModePreference = ThemeModePreference.Light
+                });
+
+            var systemDarkModeInvocation = TestContext.JSInterop.Setup<bool>("mudThemeProvider.isDarkMode", _ => true);
+            systemDarkModeInvocation.SetResult(true);
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<MudThemeProvider>().Instance.GetState(x => x.IsDarkMode).Should().BeFalse();
+                systemDarkModeInvocation.Invocations.Should().BeEmpty();
+            });
         }
 
         [Fact]
@@ -309,6 +369,12 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public async Task GIVEN_SystemDarkModeChanged_WHEN_Invoked_THEN_UpdatesProvider()
         {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    ThemeModePreference = ThemeModePreference.System
+                });
             var target = RenderLayout(CreateProbeBody());
             var themeProvider = target.FindComponent<MudThemeProvider>();
 
@@ -318,34 +384,60 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public async Task GIVEN_MenuDarkModeChanged_WHEN_Invoked_THEN_PersistsSetting()
+        public async Task GIVEN_DarkThemePreference_WHEN_SystemDarkModeChanged_THEN_DoesNotPersistSystemValue()
         {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    ThemeModePreference = ThemeModePreference.Dark
+                });
+            var systemDarkModeInvocation = TestContext.JSInterop.Setup<bool>("mudThemeProvider.isDarkMode", _ => true);
+            systemDarkModeInvocation.SetResult(true);
+
             var target = RenderLayout(CreateProbeBody());
-            var menu = target.FindComponent<Menu>();
+            var themeProvider = target.FindComponent<MudThemeProvider>();
 
-            await target.InvokeAsync(() => menu.Instance.DarkModeChanged.InvokeAsync(false));
+            target.WaitForAssertion(() => themeProvider.Instance.GetState(x => x.IsDarkMode).Should().BeTrue());
+            var baselineSnapshot = _localStorage.Snapshot();
+            var baselineMode = baselineSnapshot.TryGetValue("ThemeManager.BootstrapIsDark", out var value)
+                ? value as bool?
+                : null;
+            baselineMode.Should().BeTrue();
 
-            var stored = await _localStorage.GetItemAsync<bool?>("MainLayout.IsDarkMode", Xunit.TestContext.Current.CancellationToken);
-            stored.Should().BeFalse();
+            await target.InvokeAsync(() => themeProvider.Instance.SystemDarkModeChangedAsync(false));
+
+            var updatedSnapshot = _localStorage.Snapshot();
+            var updatedMode = updatedSnapshot.TryGetValue("ThemeManager.BootstrapIsDark", out var updatedValue)
+                ? updatedValue as bool?
+                : null;
+            updatedMode.Should().BeTrue();
         }
 
         [Fact]
-        public async Task GIVEN_MenuDarkModeChanged_WHEN_Invoked_THEN_PersistsBootstrapThemeCss()
+        public async Task GIVEN_ThemeModePreferenceChangedInAppSettings_WHEN_NotificationRaised_THEN_UpdatesProviderWithoutReload()
         {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    ThemeModePreference = ThemeModePreference.Dark
+                });
+            var systemDarkModeInvocation = TestContext.JSInterop.Setup<bool>("mudThemeProvider.isDarkMode", _ => true);
+            systemDarkModeInvocation.SetResult(true);
+
             var target = RenderLayout(CreateProbeBody());
-            var menu = target.FindComponent<Menu>();
+            var themeProvider = target.FindComponent<MudThemeProvider>();
+            target.WaitForAssertion(() => themeProvider.Instance.GetState(x => x.IsDarkMode).Should().BeTrue());
 
-            await target.InvokeAsync(() => menu.Instance.DarkModeChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => Mock.Get(_appSettingsService).Raise(
+                service => service.SettingsChanged += null!,
+                new AppSettingsChangedEventArgs(new AppSettings
+                {
+                    ThemeModePreference = ThemeModePreference.Light
+                })));
 
-            target.WaitForAssertion(() =>
-            {
-                var snapshot = _localStorage.Snapshot();
-                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Light");
-                snapshot.Should().ContainKey("ThemeManager.BootstrapCss.Dark");
-                snapshot.Should().ContainKey("ThemeManager.BootstrapIsDark");
-                snapshot["ThemeManager.BootstrapCss.Light"].Should().BeOfType<string>().Which.Should().NotBeNullOrWhiteSpace();
-                snapshot["ThemeManager.BootstrapCss.Dark"].Should().BeOfType<string>().Which.Should().NotBeNullOrWhiteSpace();
-            });
+            target.WaitForAssertion(() => themeProvider.Instance.GetState(x => x.IsDarkMode).Should().BeFalse());
         }
 
         [Fact]

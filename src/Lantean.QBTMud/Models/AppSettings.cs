@@ -21,6 +21,7 @@ namespace Lantean.QBTMud.Models
                 {
                     UpdateChecksEnabled = true,
                     NotificationsEnabled = false,
+                    ThemeModePreference = ThemeModePreference.System,
                     DownloadFinishedNotificationsEnabled = true,
                     TorrentAddedNotificationsEnabled = false,
                     TorrentAddedSnackbarsEnabledWithNotifications = false,
@@ -38,6 +39,11 @@ namespace Lantean.QBTMud.Models
         /// Gets or sets a value indicating whether browser notifications are enabled.
         /// </summary>
         public bool NotificationsEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the visual theme mode preference.
+        /// </summary>
+        public ThemeModePreference ThemeModePreference { get; set; } = ThemeModePreference.System;
 
         /// <summary>
         /// Gets or sets a value indicating whether notifications should be shown for completed downloads.
@@ -69,6 +75,7 @@ namespace Lantean.QBTMud.Models
             {
                 UpdateChecksEnabled = UpdateChecksEnabled,
                 NotificationsEnabled = NotificationsEnabled,
+                ThemeModePreference = ThemeModePreference,
                 DownloadFinishedNotificationsEnabled = DownloadFinishedNotificationsEnabled,
                 TorrentAddedNotificationsEnabled = TorrentAddedNotificationsEnabled,
                 TorrentAddedSnackbarsEnabledWithNotifications = TorrentAddedSnackbarsEnabledWithNotifications,

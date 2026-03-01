@@ -25,6 +25,7 @@ namespace Lantean.QBTMud.Test.Services
 
             result.UpdateChecksEnabled.Should().BeTrue();
             result.NotificationsEnabled.Should().BeFalse();
+            result.ThemeModePreference.Should().Be(ThemeModePreference.System);
             result.DownloadFinishedNotificationsEnabled.Should().BeTrue();
             result.TorrentAddedNotificationsEnabled.Should().BeFalse();
             result.TorrentAddedSnackbarsEnabledWithNotifications.Should().BeFalse();
@@ -38,6 +39,7 @@ namespace Lantean.QBTMud.Test.Services
             {
                 UpdateChecksEnabled = false,
                 NotificationsEnabled = true,
+                ThemeModePreference = ThemeModePreference.Dark,
                 DownloadFinishedNotificationsEnabled = false,
                 TorrentAddedNotificationsEnabled = true,
                 TorrentAddedSnackbarsEnabledWithNotifications = true,
@@ -49,6 +51,7 @@ namespace Lantean.QBTMud.Test.Services
 
             saved.UpdateChecksEnabled.Should().BeFalse();
             saved.NotificationsEnabled.Should().BeTrue();
+            saved.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
             saved.DownloadFinishedNotificationsEnabled.Should().BeFalse();
             saved.TorrentAddedNotificationsEnabled.Should().BeTrue();
             saved.TorrentAddedSnackbarsEnabledWithNotifications.Should().BeTrue();
@@ -99,6 +102,9 @@ namespace Lantean.QBTMud.Test.Services
             localStorageService
                 .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
+            localStorageService
+                .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((bool?)null);
 
             var target = new AppSettingsService(localStorageService.Object);
 
@@ -117,6 +123,9 @@ namespace Lantean.QBTMud.Test.Services
             localStorageService
                 .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new JsonException("invalid"));
+            localStorageService
+                .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((bool?)null);
 
             var target = new AppSettingsService(localStorageService.Object);
 
@@ -139,6 +148,9 @@ namespace Lantean.QBTMud.Test.Services
                     readStarted.TrySetResult();
                     return await releaseRead.Task;
                 });
+            localStorageService
+                .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((bool?)null);
 
             var target = new AppSettingsService(localStorageService.Object);
             var firstReadTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);
@@ -168,6 +180,71 @@ namespace Lantean.QBTMud.Test.Services
             var act = async () => await _target.SaveSettingsAsync(settings!, TestContext.Current.CancellationToken);
 
             await act.Should().ThrowAsync<ArgumentNullException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_LegacyDarkModeSettingAndSystemThemeMode_WHEN_GetSettingsInvoked_THEN_MigratesToDarkAndRemovesLegacyKey()
+        {
+            await _localStorageService.SetItemAsync("MainLayout.IsDarkMode", true, TestContext.Current.CancellationToken);
+
+            var result = await _target.GetSettingsAsync(TestContext.Current.CancellationToken);
+            var legacyValue = await _localStorageService.GetItemAsync<bool?>("MainLayout.IsDarkMode", TestContext.Current.CancellationToken);
+            var persisted = await _localStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, TestContext.Current.CancellationToken);
+
+            result.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
+            legacyValue.Should().BeNull();
+            persisted.Should().NotBeNull();
+            persisted!.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
+        }
+
+        [Fact]
+        public async Task GIVEN_LegacyLightModeSettingAndSystemThemeMode_WHEN_GetSettingsInvoked_THEN_MigratesToLightAndRemovesLegacyKey()
+        {
+            await _localStorageService.SetItemAsync("MainLayout.IsDarkMode", false, TestContext.Current.CancellationToken);
+
+            var result = await _target.GetSettingsAsync(TestContext.Current.CancellationToken);
+            var legacyValue = await _localStorageService.GetItemAsync<bool?>("MainLayout.IsDarkMode", TestContext.Current.CancellationToken);
+            var persisted = await _localStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, TestContext.Current.CancellationToken);
+
+            result.ThemeModePreference.Should().Be(ThemeModePreference.Light);
+            legacyValue.Should().BeNull();
+            persisted.Should().NotBeNull();
+            persisted!.ThemeModePreference.Should().Be(ThemeModePreference.Light);
+        }
+
+        [Fact]
+        public async Task GIVEN_ExplicitThemeModePreferenceAndLegacyDarkModeSetting_WHEN_GetSettingsInvoked_THEN_ExplicitThemeModeIsNotOverridden()
+        {
+            await _localStorageService.SetItemAsync(AppSettings.StorageKey, new AppSettings
+            {
+                ThemeModePreference = ThemeModePreference.Dark
+            }, TestContext.Current.CancellationToken);
+            await _localStorageService.SetItemAsync("MainLayout.IsDarkMode", false, TestContext.Current.CancellationToken);
+
+            var result = await _target.GetSettingsAsync(TestContext.Current.CancellationToken);
+            var legacyValue = await _localStorageService.GetItemAsync<bool?>("MainLayout.IsDarkMode", TestContext.Current.CancellationToken);
+
+            result.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
+            legacyValue.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_SettingsSaved_WHEN_SaveSettingsInvoked_THEN_RaisesSettingsChangedEvent()
+        {
+            AppSettingsChangedEventArgs? raisedArgs = null;
+            _target.SettingsChanged += (_, args) =>
+            {
+                raisedArgs = args;
+            };
+
+            var saved = await _target.SaveSettingsAsync(new AppSettings
+            {
+                ThemeModePreference = ThemeModePreference.Light
+            }, TestContext.Current.CancellationToken);
+
+            raisedArgs.Should().NotBeNull();
+            raisedArgs!.Settings.ThemeModePreference.Should().Be(ThemeModePreference.Light);
+            raisedArgs.Settings.Should().NotBeSameAs(saved);
         }
     }
 }
