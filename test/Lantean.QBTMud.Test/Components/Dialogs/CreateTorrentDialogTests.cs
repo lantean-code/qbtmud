@@ -367,15 +367,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_LoadFormStateThrows_WHEN_Rendered_THEN_ShowsWarning()
         {
-            var localStorage = new Mock<ILocalStorageService>(MockBehavior.Strict);
-            localStorage
+            var settingsStorage = new Mock<ISettingsStorageService>(MockBehavior.Strict);
+            settingsStorage
                 .Setup(storage => storage.GetItemAsync<TorrentCreationFormState>(StorageKey, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Failed"));
-            localStorage
+            settingsStorage
                 .Setup(storage => storage.SetItemAsync(StorageKey, It.IsAny<TorrentCreationFormState>(), It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);
-            TestContext.Services.RemoveAll<ILocalStorageService>();
-            TestContext.Services.AddSingleton(localStorage.Object);
+            TestContext.Services.RemoveAll<ISettingsStorageService>();
+            TestContext.Services.AddSingleton(settingsStorage.Object);
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfo())

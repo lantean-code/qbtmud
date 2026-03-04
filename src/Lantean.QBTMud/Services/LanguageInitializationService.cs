@@ -8,22 +8,22 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class LanguageInitializationService : ILanguageInitializationService
     {
-        private readonly ILocalStorageService _localStorage;
+        private readonly ISettingsStorageService _settingsStorage;
         private readonly ILanguageResourceLoader _languageResourceLoader;
         private readonly ILogger<LanguageInitializationService> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LanguageInitializationService"/> class.
         /// </summary>
-        /// <param name="localStorage">The local storage service.</param>
+        /// <param name="settingsStorage">The local storage service.</param>
         /// <param name="languageResourceLoader">The language resource loader.</param>
         /// <param name="logger">The logger instance.</param>
         public LanguageInitializationService(
-            ILocalStorageService localStorage,
+            ISettingsStorageService settingsStorage,
             ILanguageResourceLoader languageResourceLoader,
             ILogger<LanguageInitializationService> logger)
         {
-            _localStorage = localStorage;
+            _settingsStorage = settingsStorage;
             _languageResourceLoader = languageResourceLoader;
             _logger = logger;
         }
@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Services
 
         private async ValueTask<string> ResolvePreferredLocaleAsync(CancellationToken cancellationToken)
         {
-            var locale = await _localStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, cancellationToken);
+            var locale = await _settingsStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, cancellationToken);
             if (!string.IsNullOrWhiteSpace(locale))
             {
                 return WebUiLocaleNormalizer.Normalize(locale);

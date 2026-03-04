@@ -63,6 +63,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
             // Deterministic infrastructure shims
             Services.AddSingleton<ILocalStorageService>(_localStorage);
+            Services.AddSingleton<ISettingsStorageService>(_localStorage);
             Services.AddSingleton<ISessionStorageService>(_sessionStorage);
             Services.AddSingleton<IClipboardService>(_clipboard);
 
@@ -89,6 +90,10 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddScoped<IApiClient, ApiClient>();
             Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
             Services.AddScoped<IAppSettingsService, AppSettingsService>();
+            Services.AddScoped<IWebApiCapabilityService, WebApiCapabilityService>();
+            Services.AddScoped<IClientDataStorageAdapter, ClientDataStorageAdapter>();
+            Services.AddSingleton<IStorageCatalogService, StorageCatalogService>();
+            Services.AddScoped<IStorageRoutingService, StorageRoutingService>();
             Services.AddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();
             Services.AddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();
             Services.AddScoped<ISnackbarWorkflow, SnackbarWorkflow>();

@@ -17,7 +17,7 @@ namespace Lantean.QBTMud.Services
 
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILocalStorageService _localStorage;
+        private readonly ISettingsStorageService _settingsStorage;
         private readonly IThemeFontCatalog _themeFontCatalog;
         private readonly ILanguageLocalizer _languageLocalizer;
         private readonly List<ThemeDefinition> _localThemes = [];
@@ -33,15 +33,15 @@ namespace Lantean.QBTMud.Services
         /// Initializes a new instance of the <see cref="ThemeManagerService"/> class.
         /// </summary>
         /// <param name="httpClientFactory">The HTTP client factory for loading server assets.</param>
-        /// <param name="localStorage">The local storage service.</param>
+        /// <param name="settingsStorage">The local storage service.</param>
         public ThemeManagerService(
             IHttpClientFactory httpClientFactory,
-            ILocalStorageService localStorage,
+            ISettingsStorageService settingsStorage,
             IThemeFontCatalog themeFontCatalog,
             ILanguageLocalizer languageLocalizer)
         {
             _httpClientFactory = httpClientFactory;
-            _localStorage = localStorage;
+            _settingsStorage = settingsStorage;
             _themeFontCatalog = themeFontCatalog;
             _languageLocalizer = languageLocalizer;
         }
@@ -162,7 +162,7 @@ namespace Lantean.QBTMud.Services
             }
 
             ApplyThemeInternal(theme);
-            await _localStorage.SetItemAsync(SelectedThemeStorageKey, theme.Id);
+            await _settingsStorage.SetItemAsync(SelectedThemeStorageKey, theme.Id);
         }
 
         /// <summary>
@@ -227,7 +227,7 @@ namespace Lantean.QBTMud.Services
 
         private async Task ApplyInitialTheme()
         {
-            var storedThemeId = await _localStorage.GetItemAsync<string?>(SelectedThemeStorageKey);
+            var storedThemeId = await _settingsStorage.GetItemAsync<string?>(SelectedThemeStorageKey);
             if (!string.IsNullOrWhiteSpace(storedThemeId))
             {
                 var storedTheme = _themes.FirstOrDefault(theme => theme.Id == storedThemeId);
@@ -269,7 +269,7 @@ namespace Lantean.QBTMud.Services
         {
             _localThemes.Clear();
 
-            var themes = await _localStorage.GetItemAsync<List<ThemeDefinition>?>(LocalThemesStorageKey);
+            var themes = await _settingsStorage.GetItemAsync<List<ThemeDefinition>?>(LocalThemesStorageKey);
             if (themes is null)
             {
                 return;
@@ -283,7 +283,7 @@ namespace Lantean.QBTMud.Services
 
         private async Task PersistLocalThemes()
         {
-            await _localStorage.SetItemAsync(LocalThemesStorageKey, _localThemes);
+            await _settingsStorage.SetItemAsync(LocalThemesStorageKey, _localThemes);
         }
 
         private async Task LoadServerThemes()

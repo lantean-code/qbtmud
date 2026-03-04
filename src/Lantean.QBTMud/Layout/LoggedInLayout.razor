@@ -12,29 +12,31 @@
 <CascadingValue Value="Torrents">
     <CascadingValue Value="_torrentsVersion" Name="TorrentsVersion">
         <CascadingValue Value="MainData">
-            <CascadingValue Value="Preferences">
-                <CascadingValue Value="SortColumnChanged" Name="SortColumnChanged">
-                    <CascadingValue Value="SortColumn" Name="SortColumn">
-                        <CascadingValue Value="SortDirectionChanged" Name="SortDirectionChanged">
-                            <CascadingValue Value="SortDirection" Name="SortDirection">
-                                <CascadingValue Value="CategoryChanged" Name="CategoryChanged">
-                                    <CascadingValue Value="StatusChanged" Name="StatusChanged">
-                                        <CascadingValue Value="TagChanged" Name="TagChanged">
-                                            <CascadingValue Value="TrackerChanged" Name="TrackerChanged">
-                                                <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
-                                                    <CascadingValue Value="@(MainData?.LostConnection ?? false)" Name="LostConnection">
-                                                        <CascadingValue Value="Version" Name="Version">
-                                                            <div class="app-shell">
-                                                                @Body
-                                                                <StatusBar MainData="MainData"
-                                                                           Preferences="Preferences"
-                                                                           IsDarkMode="IsDarkMode"
-                                                                           CurrentBreakpoint="CurrentBreakpoint"
-                                                                           CurrentOrientation="CurrentOrientation"
-                                                                           ToggleAlternativeSpeedLimitsInProgress="_toggleAltSpeedLimitsInProgress"
-                                                                           OnToggleTimerDrawer="ToggleTimerDrawerAsync"
-                                                                           OnToggleAlternativeSpeedLimits="ToggleAlternativeSpeedLimits" />
-                                                            </div>
+            <CascadingValue Value="AppSettingsState" Name="AppSettings">
+                <CascadingValue Value="Preferences">
+                    <CascadingValue Value="SortColumnChanged" Name="SortColumnChanged">
+                        <CascadingValue Value="SortColumn" Name="SortColumn">
+                            <CascadingValue Value="SortDirectionChanged" Name="SortDirectionChanged">
+                                <CascadingValue Value="SortDirection" Name="SortDirection">
+                                    <CascadingValue Value="CategoryChanged" Name="CategoryChanged">
+                                        <CascadingValue Value="StatusChanged" Name="StatusChanged">
+                                            <CascadingValue Value="TagChanged" Name="TagChanged">
+                                                <CascadingValue Value="TrackerChanged" Name="TrackerChanged">
+                                                    <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
+                                                        <CascadingValue Value="@(MainData?.LostConnection ?? false)" Name="LostConnection">
+                                                            <CascadingValue Value="Version" Name="Version">
+                                                                <div class="app-shell">
+                                                                    @Body
+                                                                    <StatusBar MainData="MainData"
+                                                                               Preferences="Preferences"
+                                                                               IsDarkMode="IsDarkMode"
+                                                                               CurrentBreakpoint="CurrentBreakpoint"
+                                                                               CurrentOrientation="CurrentOrientation"
+                                                                               ToggleAlternativeSpeedLimitsInProgress="_toggleAltSpeedLimitsInProgress"
+                                                                               OnToggleTimerDrawer="ToggleTimerDrawerAsync"
+                                                                               OnToggleAlternativeSpeedLimits="ToggleAlternativeSpeedLimits" />
+                                                                </div>
+                                                            </CascadingValue>
                                                         </CascadingValue>
                                                     </CascadingValue>
                                                 </CascadingValue>

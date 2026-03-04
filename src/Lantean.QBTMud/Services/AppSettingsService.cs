@@ -11,16 +11,16 @@ namespace Lantean.QBTMud.Services
         private const string LegacyDarkModeStorageKey = "MainLayout.IsDarkMode";
 
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
-        private readonly ILocalStorageService _localStorageService;
+        private readonly ISettingsStorageService _settingsStorageService;
         private AppSettings? _cachedSettings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppSettingsService"/> class.
         /// </summary>
-        /// <param name="localStorageService">The local storage service.</param>
-        public AppSettingsService(ILocalStorageService localStorageService)
+        /// <param name="settingsStorageService">The local storage service.</param>
+        public AppSettingsService(ISettingsStorageService settingsStorageService)
         {
-            _localStorageService = localStorageService;
+            _settingsStorageService = settingsStorageService;
         }
 
         /// <inheritdoc />
@@ -29,39 +29,27 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task<AppSettings> GetSettingsAsync(CancellationToken cancellationToken = default)
         {
-            if (_cachedSettings is not null)
+            return await LoadSettingsAsync(forceReload: false, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task<AppSettings> RefreshSettingsAsync(CancellationToken cancellationToken = default)
+        {
+            var previousSettings = _cachedSettings?.Clone();
+            var refreshedSettings = await LoadSettingsAsync(forceReload: true, cancellationToken);
+
+            if (previousSettings is not null && AreEquivalent(previousSettings, refreshedSettings))
             {
-                return _cachedSettings.Clone();
+                return refreshedSettings;
             }
 
-            await _initializationSemaphore.WaitAsync(cancellationToken);
-            try
+            var settingsChanged = SettingsChanged;
+            if (settingsChanged is not null)
             {
-                if (_cachedSettings is not null)
-                {
-                    return _cachedSettings.Clone();
-                }
-
-                AppSettings? loadedSettings = null;
-                try
-                {
-                    loadedSettings = await _localStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, cancellationToken);
-                }
-                catch (JsonException)
-                {
-                    loadedSettings = null;
-                }
-
-                var normalized = loadedSettings is null
-                    ? AppSettings.Default.Clone()
-                    : Normalize(loadedSettings);
-                _cachedSettings = await MigrateLegacyThemeModePreference(normalized, cancellationToken);
-                return _cachedSettings.Clone();
+                settingsChanged.Invoke(this, new AppSettingsChangedEventArgs(refreshedSettings.Clone()));
             }
-            finally
-            {
-                _initializationSemaphore.Release();
-            }
+
+            return refreshedSettings;
         }
 
         /// <inheritdoc />
@@ -72,7 +60,7 @@ namespace Lantean.QBTMud.Services
             var normalized = Normalize(settings);
             _cachedSettings = normalized.Clone();
 
-            await _localStorageService.SetItemAsync(AppSettings.StorageKey, normalized, cancellationToken);
+            await _settingsStorageService.SetItemAsync(AppSettings.StorageKey, normalized, cancellationToken);
 
             var settingsChanged = SettingsChanged;
             if (settingsChanged is not null)
@@ -109,7 +97,7 @@ namespace Lantean.QBTMud.Services
 
         private async Task<AppSettings> MigrateLegacyThemeModePreference(AppSettings settings, CancellationToken cancellationToken)
         {
-            var legacyDarkMode = await _localStorageService.GetItemAsync<bool?>(LegacyDarkModeStorageKey, cancellationToken);
+            var legacyDarkMode = await _settingsStorageService.GetItemAsync<bool?>(LegacyDarkModeStorageKey, cancellationToken);
             if (!legacyDarkMode.HasValue)
             {
                 return settings;
@@ -120,10 +108,10 @@ namespace Lantean.QBTMud.Services
                 settings.ThemeModePreference = legacyDarkMode.Value
                     ? ThemeModePreference.Dark
                     : ThemeModePreference.Light;
-                await _localStorageService.SetItemAsync(AppSettings.StorageKey, settings, cancellationToken);
+                await _settingsStorageService.SetItemAsync(AppSettings.StorageKey, settings, cancellationToken);
             }
 
-            await _localStorageService.RemoveItemAsync(LegacyDarkModeStorageKey, cancellationToken);
+            await _settingsStorageService.RemoveItemAsync(LegacyDarkModeStorageKey, cancellationToken);
             return settings;
         }
 
@@ -132,6 +120,54 @@ namespace Lantean.QBTMud.Services
             return Enum.IsDefined(mode)
                 ? mode
                 : ThemeModePreference.System;
+        }
+
+        private async Task<AppSettings> LoadSettingsAsync(bool forceReload, CancellationToken cancellationToken)
+        {
+            if (!forceReload && _cachedSettings is not null)
+            {
+                return _cachedSettings.Clone();
+            }
+
+            await _initializationSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                if (!forceReload && _cachedSettings is not null)
+                {
+                    return _cachedSettings.Clone();
+                }
+
+                AppSettings? loadedSettings = null;
+                try
+                {
+                    loadedSettings = await _settingsStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, cancellationToken);
+                }
+                catch (JsonException)
+                {
+                    loadedSettings = null;
+                }
+
+                var normalized = loadedSettings is null
+                    ? AppSettings.Default.Clone()
+                    : Normalize(loadedSettings);
+                _cachedSettings = await MigrateLegacyThemeModePreference(normalized, cancellationToken);
+                return _cachedSettings.Clone();
+            }
+            finally
+            {
+                _initializationSemaphore.Release();
+            }
+        }
+
+        private static bool AreEquivalent(AppSettings left, AppSettings right)
+        {
+            return left.UpdateChecksEnabled == right.UpdateChecksEnabled
+                && left.NotificationsEnabled == right.NotificationsEnabled
+                && left.ThemeModePreference == right.ThemeModePreference
+                && left.DownloadFinishedNotificationsEnabled == right.DownloadFinishedNotificationsEnabled
+                && left.TorrentAddedNotificationsEnabled == right.TorrentAddedNotificationsEnabled
+                && left.TorrentAddedSnackbarsEnabledWithNotifications == right.TorrentAddedSnackbarsEnabledWithNotifications
+                && string.Equals(left.DismissedReleaseTag, right.DismissedReleaseTag, StringComparison.Ordinal);
         }
     }
 }

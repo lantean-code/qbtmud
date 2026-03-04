@@ -96,8 +96,8 @@
         if (typeof value === "number") {
             return value === 2 ? "dark"
                 : value === 1 ? "light"
-                : value === 0 ? "system"
-                : null;
+                    : value === 0 ? "system"
+                        : null;
         }
 
         if (typeof value === "string") {

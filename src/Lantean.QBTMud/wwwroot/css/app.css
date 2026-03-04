@@ -840,3 +840,39 @@ body {
     .speed-chart .mud-chart-serie.mud-chart-line path {
         stroke-width: 2;
     }
+
+.app-settings-storage-overrides-panels {
+    margin-top: 8px;
+}
+
+    .app-settings-storage-overrides-panels .app-settings-storage-overrides-panel {
+        border: 1px solid var(--mud-palette-lines-default) !important;
+        border-radius: var(--mud-default-borderradius);
+        box-shadow: inset 0 0 0 1px var(--mud-palette-lines-default);
+        background-color: var(--mud-palette-surface);
+    }
+
+        .app-settings-storage-overrides-panels .app-settings-storage-overrides-panel .app-settings-storage-overrides-panel__header {
+            min-height: 56px;
+            padding-top: 12px !important;
+            padding-bottom: 12px !important;
+            background-color: var(--mud-palette-surface) !important;
+            border-bottom: 1px solid var(--mud-palette-lines-default);
+        }
+
+            .app-settings-storage-overrides-panels .app-settings-storage-overrides-panel .app-settings-storage-overrides-panel__header:hover {
+                background-color: color-mix(in srgb, var(--mud-palette-lines-default) 20%, var(--mud-palette-surface)) !important;
+            }
+
+        .app-settings-storage-overrides-panels .app-settings-storage-overrides-panel .mud-expand-panel-text {
+            font-weight: 600;
+        }
+
+        .app-settings-storage-overrides-panels .app-settings-storage-overrides-panel .mud-expand-panel-icon {
+            color: var(--mud-palette-text-secondary) !important;
+        }
+
+        .app-settings-storage-overrides-panels .app-settings-storage-overrides-panel .mud-expand-panel-content {
+            border-top: 1px solid var(--mud-palette-lines-default);
+            padding-top: 10px;
+        }

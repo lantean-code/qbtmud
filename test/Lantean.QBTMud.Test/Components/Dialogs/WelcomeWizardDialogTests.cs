@@ -691,13 +691,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_FinishWriteFails_WHEN_FinishClicked_THEN_ShowsSnackbarError()
         {
-            var localStorage = new Mock<ILocalStorageService>(MockBehavior.Loose);
-            localStorage
+            var settingsStorage = new Mock<ISettingsStorageService>(MockBehavior.Loose);
+            settingsStorage
                 .Setup(service => service.SetItemAsync<bool>(WelcomeWizardStorageKeys.Completed, true, It.IsAny<CancellationToken>()))
                 .Throws(new InvalidOperationException("Message"));
 
-            TestContext.Services.RemoveAll<ILocalStorageService>();
-            TestContext.Services.AddSingleton<ILocalStorageService>(localStorage.Object);
+            TestContext.Services.RemoveAll<ISettingsStorageService>();
+            TestContext.Services.AddSingleton<ISettingsStorageService>(settingsStorage.Object);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -714,13 +714,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_FinishWriteThrowsJsException_WHEN_FinishClicked_THEN_ShowsSnackbarError()
         {
-            var localStorage = new Mock<ILocalStorageService>(MockBehavior.Loose);
-            localStorage
+            var settingsStorage = new Mock<ISettingsStorageService>(MockBehavior.Loose);
+            settingsStorage
                 .Setup(service => service.SetItemAsync<bool>(WelcomeWizardStorageKeys.Completed, true, It.IsAny<CancellationToken>()))
                 .Throws(new JSException("Message"));
 
-            TestContext.Services.RemoveAll<ILocalStorageService>();
-            TestContext.Services.AddSingleton<ILocalStorageService>(localStorage.Object);
+            TestContext.Services.RemoveAll<ISettingsStorageService>();
+            TestContext.Services.AddSingleton<ISettingsStorageService>(settingsStorage.Object);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -737,13 +737,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_FinishWriteThrowsJsonException_WHEN_FinishClicked_THEN_ShowsSnackbarError()
         {
-            var localStorage = new Mock<ILocalStorageService>(MockBehavior.Loose);
-            localStorage
+            var settingsStorage = new Mock<ISettingsStorageService>(MockBehavior.Loose);
+            settingsStorage
                 .Setup(service => service.SetItemAsync<bool>(WelcomeWizardStorageKeys.Completed, true, It.IsAny<CancellationToken>()))
                 .Throws(new JsonException("Message"));
 
-            TestContext.Services.RemoveAll<ILocalStorageService>();
-            TestContext.Services.AddSingleton<ILocalStorageService>(localStorage.Object);
+            TestContext.Services.RemoveAll<ISettingsStorageService>();
+            TestContext.Services.AddSingleton<ISettingsStorageService>(settingsStorage.Object);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -763,13 +763,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             using var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
 
-            var localStorage = new Mock<ILocalStorageService>(MockBehavior.Loose);
-            localStorage
+            var settingsStorage = new Mock<ISettingsStorageService>(MockBehavior.Loose);
+            settingsStorage
                 .Setup(service => service.SetItemAsync<bool>(WelcomeWizardStorageKeys.Completed, true, It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException(cancellationTokenSource.Token));
 
-            TestContext.Services.RemoveAll<ILocalStorageService>();
-            TestContext.Services.AddSingleton<ILocalStorageService>(localStorage.Object);
+            TestContext.Services.RemoveAll<ISettingsStorageService>();
+            TestContext.Services.AddSingleton<ISettingsStorageService>(settingsStorage.Object);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -1256,6 +1256,140 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             GetChildContentText(summaryChip.Instance.ChildContent).Should().Be("Notifications: Download completed, Torrent added");
             summaryChip.Instance.Color.Should().Be(Color.Warning);
             summaryChip.Instance.UserAttributes["data-test-summary-color"]?.ToString().Should().Be("Success");
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageStepWithNoSelection_WHEN_Rendered_THEN_NextIsDisabled()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+
+            nextButton.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageStep_WHEN_Rendered_THEN_ShowsFriendlyStorageOptionNamesAndDescriptions()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var clientDataTitle = FindComponentByTestId<MudText>(dialog.Component, "WelcomeWizardStorageClientDataTitle");
+            var clientDataDescription = FindComponentByTestId<MudText>(dialog.Component, "WelcomeWizardStorageClientDataDescription");
+            var localStorageTitle = FindComponentByTestId<MudText>(dialog.Component, "WelcomeWizardStorageLocalStorageTitle");
+            var localStorageDescription = FindComponentByTestId<MudText>(dialog.Component, "WelcomeWizardStorageLocalStorageDescription");
+
+            GetChildContentText(clientDataTitle.Instance.ChildContent).Should().Be("qBittorrent client data");
+            GetChildContentText(clientDataDescription.Instance.ChildContent).Should().Be("Saves settings in qBittorrent, so they follow this server across browsers and devices.");
+            GetChildContentText(localStorageTitle.Instance.ChildContent).Should().Be("Browser local storage");
+            GetChildContentText(localStorageDescription.Instance.ChildContent).Should().Be("Saves settings only in this browser profile on this device.");
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageStepWithSelection_WHEN_FinishClicked_THEN_AppliesStorageSelection()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StorageRoutingSettings settings, CancellationToken _) => settings.Clone());
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.AddSingleton<IStorageRoutingService>(storageRoutingService.Object);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType?>>(dialog.Component, "WelcomeWizardStorageSelection");
+            await dialog.Component.InvokeAsync(() => storageSelection.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeFalse();
+
+            storageRoutingService.Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<StorageRoutingSettings>(settings =>
+                        settings.MasterStorageType == StorageType.ClientData
+                        && settings.GroupStorageTypes.Count == 0
+                        && settings.ItemStorageTypes.Count == 0),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_LocalStorageSelection_WHEN_DoneStepRendered_THEN_SummaryUsesFriendlyStorageName()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType?>>(dialog.Component, "WelcomeWizardStorageSelection");
+            await dialog.Component.InvokeAsync(() => storageSelection.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var summaryChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardDoneStorageChip");
+            GetChildContentText(summaryChip.Instance.ChildContent).Should().Be("Storage: Browser local storage");
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageSelectionSaveFails_WHEN_FinishClicked_THEN_ShowsSnackbarErrorAndSkipsCompletionWrite()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("StorageError"));
+
+            var settingsStorage = new Mock<ISettingsStorageService>(MockBehavior.Strict);
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<ISettingsStorageService>();
+            TestContext.Services.AddSingleton<IStorageRoutingService>(storageRoutingService.Object);
+            TestContext.Services.AddSingleton<ISettingsStorageService>(settingsStorage.Object);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType?>>(dialog.Component, "WelcomeWizardStorageSelection");
+            await dialog.Component.InvokeAsync(() => storageSelection.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()),
+                Times.Once);
+            settingsStorage.Verify(
+                service => service.SetItemAsync<bool>(WelcomeWizardStorageKeys.Completed, true, It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]

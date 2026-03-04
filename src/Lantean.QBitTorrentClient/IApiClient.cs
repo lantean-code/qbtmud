@@ -1,4 +1,5 @@
 using Lantean.QBitTorrentClient.Models;
+using System.Text.Json;
 
 namespace Lantean.QBitTorrentClient
 {
@@ -19,6 +20,10 @@ namespace Lantean.QBitTorrentClient
         Task<string> GetApplicationVersion();
 
         Task<string> GetAPIVersion();
+
+        Task<IReadOnlyDictionary<string, JsonElement>> LoadClientData(IEnumerable<string>? keys = null);
+
+        Task StoreClientData(IReadOnlyDictionary<string, object?> data);
 
         Task<BuildInfo> GetBuildInfo();
 

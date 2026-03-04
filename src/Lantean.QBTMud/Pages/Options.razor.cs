@@ -27,7 +27,7 @@ namespace Lantean.QBTMud.Pages
         protected IPreferencesDataManager PreferencesDataManager { get; set; } = default!;
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -139,7 +139,7 @@ namespace Lantean.QBTMud.Pages
 
             if (!string.IsNullOrWhiteSpace(UpdatePreferences.Locale))
             {
-                await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, UpdatePreferences.Locale);
+                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, UpdatePreferences.Locale);
             }
 
             SnackbarWorkflow.ShowTransientMessage(TranslateOptions("Options saved."), Severity.Success);

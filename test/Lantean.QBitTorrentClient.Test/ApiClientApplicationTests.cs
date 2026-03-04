@@ -82,6 +82,112 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
+        public async Task GIVEN_Keys_WHEN_LoadClientData_THEN_ShouldPostKeysAndReturnEntries()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.Method.Should().Be(HttpMethod.Post);
+                req.RequestUri!.ToString().Should().Be("http://localhost/clientdata/load");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().Contain("keys=");
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        {
+                            "QbtMud.AppSettings.State.v1": {"theme":"dark"},
+                            "QbtMud.WebUiLocalization.PreferredLocale.v1": "en"
+                        }
+                        """)
+                };
+            };
+
+            var result = await _target.LoadClientData(["QbtMud.AppSettings.State.v1", "QbtMud.WebUiLocalization.PreferredLocale.v1"]);
+
+            result.Should().HaveCount(2);
+            result["QbtMud.AppSettings.State.v1"].GetProperty("theme").GetString().Should().Be("dark");
+            result["QbtMud.WebUiLocalization.PreferredLocale.v1"].GetString().Should().Be("en");
+        }
+
+        [Fact]
+        public async Task GIVEN_NoKeys_WHEN_LoadClientData_THEN_ShouldPostAndReturnEntries()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.Method.Should().Be(HttpMethod.Post);
+                req.RequestUri!.ToString().Should().Be("http://localhost/clientdata/load");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().BeEmpty();
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("""
+                        {
+                            "QbtMud.AppSettings.State.v1": {"value":true}
+                        }
+                        """)
+                };
+            };
+
+            var result = await _target.LoadClientData();
+
+            result.Should().ContainKey("QbtMud.AppSettings.State.v1");
+        }
+
+        [Fact]
+        public async Task GIVEN_NonSuccess_WHEN_LoadClientData_THEN_ShouldThrow()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("load failed")
+            });
+
+            var act = async () => await _target.LoadClientData(["QbtMud.Test"]);
+
+            var ex = await act.Should().ThrowAsync<HttpRequestException>();
+            ex.Which.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            ex.Which.Message.Should().Be("load failed");
+        }
+
+        [Fact]
+        public async Task GIVEN_Data_WHEN_StoreClientData_THEN_ShouldPostDataPayload()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                req.Method.Should().Be(HttpMethod.Post);
+                req.RequestUri!.ToString().Should().Be("http://localhost/clientdata/store");
+                var body = await req.Content!.ReadAsStringAsync(ct);
+                body.Should().Contain("data=");
+                body.Should().Contain("QbtMud.AppSettings.State.v1");
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            };
+
+            await _target.StoreClientData(new Dictionary<string, object?>
+            {
+                ["QbtMud.AppSettings.State.v1"] = new { notifications = true },
+                ["QbtMud.Search.Jobs"] = null
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_NonSuccess_WHEN_StoreClientData_THEN_ShouldThrow()
+        {
+            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Conflict)
+            {
+                Content = new StringContent("store failed")
+            });
+
+            var act = async () => await _target.StoreClientData(new Dictionary<string, object?>
+            {
+                ["QbtMud.AppSettings.State.v1"] = new { value = true }
+            });
+
+            var ex = await act.Should().ThrowAsync<HttpRequestException>();
+            ex.Which.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            ex.Which.Message.Should().Be("store failed");
+        }
+
+        [Fact]
         public async Task GIVEN_OKAndJson_WHEN_GetBuildInfo_THEN_ShouldDeserialize()
         {
             _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)

@@ -89,6 +89,9 @@ namespace Lantean.QBTMud.Test.Layout
                 .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
             Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettings.Default.Clone());
+            Mock.Get(_appSettingsService)
                 .Setup(service => service.SaveDismissedReleaseTagAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
             Mock.Get(_appUpdateService)
@@ -444,7 +447,7 @@ namespace Lantean.QBTMud.Test.Layout
             _snackbar.ClearInvocations();
 
             Mock.Get(_appSettingsService)
-                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
             Mock.Get(_appUpdateService)
                 .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
@@ -469,7 +472,7 @@ namespace Lantean.QBTMud.Test.Layout
             _snackbar.ClearInvocations();
 
             Mock.Get(_appSettingsService)
-                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AppSettings
                 {
                     UpdateChecksEnabled = true,
@@ -504,7 +507,7 @@ namespace Lantean.QBTMud.Test.Layout
                 .Callback<string, Severity, Action<SnackbarOptions>, string>((_, _, options, _) => capturedOptions = options);
 
             Mock.Get(_appSettingsService)
-                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
             Mock.Get(_appSettingsService)
                 .Setup(service => service.SaveDismissedReleaseTagAsync("v1.1.0", It.IsAny<CancellationToken>()))
@@ -547,7 +550,7 @@ namespace Lantean.QBTMud.Test.Layout
             _appUpdateService.ClearInvocations();
 
             Mock.Get(_appSettingsService)
-                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AppSettings
                 {
                     UpdateChecksEnabled = false,

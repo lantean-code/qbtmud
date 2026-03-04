@@ -57,6 +57,10 @@ namespace Lantean.QBTMud
             });
 
             builder.Services.AddScoped<IApiClient, ApiClient>();
+            builder.Services.AddScoped<IWebApiCapabilityService, WebApiCapabilityService>();
+            builder.Services.AddScoped<IClientDataStorageAdapter, ClientDataStorageAdapter>();
+            builder.Services.AddSingleton<IStorageCatalogService, StorageCatalogService>();
+            builder.Services.AddScoped<IStorageRoutingService, StorageRoutingService>();
             builder.Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
             builder.Services.AddBrowserCapabilities();
             builder.Services.AddSingleton<IThemeFontCatalog, ThemeFontCatalog>();
@@ -83,6 +87,7 @@ namespace Lantean.QBTMud
 
             builder.Services.AddScoped<IBrowserStorageServiceFactory, BrowserStorageServiceFactory>();
             builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+            builder.Services.AddScoped<ISettingsStorageService, SettingsStorageService>();
             builder.Services.AddScoped<ISessionStorageService, SessionStorageService>();
             builder.Services.AddSingleton<IClipboardService, ClipboardService>();
             builder.Services.AddTransient<IKeyboardService, KeyboardService>();

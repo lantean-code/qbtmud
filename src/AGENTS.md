@@ -55,6 +55,11 @@
 - Do not call `NavigationManager.NavigateTo(..., forceLoad: true)` directly in components/services/pages; use the `NavigateToHome` helper.
 - If force-load is required, always call `NavigationManager.NavigateToHome(forceLoad: true)`.
 
+### UI Composition (MudBlazor)
+- When implementing or updating UI, prefer MudBlazor components for structure, layout, spacing, and interaction behavior.
+- Only use custom HTML/CSS for UI structure when the required result cannot be achieved with MudBlazor components.
+- Keep custom CSS focused on small visual adjustments; do not replace standard MudBlazor layout/content components unless necessary.
+
 ### Design
 - Use constructor injection only, unless absolutely necessary (for example, in Blazor).
 - Static methods and classes are acceptable when appropriate.

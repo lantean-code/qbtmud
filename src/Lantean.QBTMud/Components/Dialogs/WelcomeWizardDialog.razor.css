@@ -167,6 +167,90 @@
     height: 100%;
 }
 
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-options {
+    margin-top: 2px;
+    align-items: stretch;
+}
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-options__item {
+    display: flex;
+    align-items: stretch;
+}
+
+    .welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-options__item > .mud-card {
+        flex: 1 1 auto;
+    }
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: var(--mud-default-borderradius);
+    height: 100%;
+    min-height: 190px;
+    background-color: color-mix(in srgb, var(--mud-palette-surface) 90%, transparent);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+    .welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option:hover,
+    .welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option:focus-within {
+        border-color: color-mix(in srgb, var(--mud-palette-primary) 70%, var(--mud-palette-lines-default)) !important;
+        background-color: color-mix(in srgb, var(--mud-palette-primary) 6%, var(--mud-palette-surface));
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        transform: translateY(-1px);
+    }
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option--selected {
+    border-color: var(--mud-palette-primary);
+    background-color: color-mix(in srgb, var(--mud-palette-primary) 10%, var(--mud-palette-surface));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--mud-palette-primary) 65%, transparent);
+}
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option__content {
+    height: 100%;
+}
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option--fill {
+    width: 100%;
+    height: 100%;
+    flex: 1 1 auto;
+}
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option .mud-card-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option__header {
+    width: 100%;
+}
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option__avatar {
+    border-color: color-mix(in srgb, var(--mud-palette-lines-default) 70%, transparent) !important;
+}
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option__title {
+    line-height: 1.25;
+    color: var(--mud-palette-text-primary);
+}
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option__description {
+    max-width: 44ch;
+    line-height: 1.35;
+    color: var(--mud-palette-text-secondary);
+}
+
+.welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option__highlights {
+    margin-top: auto;
+}
+
+    .welcome-wizard-dialog__layout ::deep .welcome-wizard-storage-option__highlights .mud-typography {
+        color: var(--mud-palette-text-secondary);
+    }
+
 @media (max-width: 959.95px) {
     .welcome-wizard-dialog {
         width: 100%;
@@ -231,4 +315,3 @@
         min-height: 0;
     }
 }
-
