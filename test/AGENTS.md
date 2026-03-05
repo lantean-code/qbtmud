@@ -12,8 +12,8 @@
 - Test class name: `<ClassName>Tests`
 - Test namespace mirrors the product namespace with `.Test` inserted before the final segment.  
   Example:  
-  - Product: `SlimmingWorld.Platform.Integration.Services`  
-  - Tests: `SlimmingWorld.Platform.Integration.Test.Services`
+  - Product: `Lantean.QbtMud.Torrent.Services`  
+  - Tests: `Lantean.QbtMud.Torrent.Test.Services`
 - Test method names use Given-When-Then:  
   `GIVEN_StateOfItem_WHEN_PerformingOperation_THEN_ShouldBeExpectedState`
 
