@@ -6,7 +6,6 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
-using Microsoft.JSInterop;
 using MudBlazor;
 using System.Text.RegularExpressions;
 
@@ -28,9 +27,6 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
-
-        [Inject]
-        protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [Inject]
         protected IKeyboardService KeyboardService { get; set; } = default!;

@@ -81,6 +81,86 @@ window.qbt.getWindowSize = () => {
     };
 }
 
+window.qbt.constrainContextMenuPopover = (popoverNode, classSelector) => {
+    if (!popoverNode || !popoverNode.id || !popoverNode.id.startsWith('popover-')) {
+        return;
+    }
+
+    const id = popoverNode.id.substring(8);
+    const contextMenu = document.getElementById(`popovercontent-${id}`);
+    if (!contextMenu || !contextMenu.classList.contains('context-menu-popover') || !contextMenu.classList.contains('mud-popover-open')) {
+        return;
+    }
+
+    if (classSelector && !contextMenu.classList.contains(classSelector)) {
+        return;
+    }
+
+    const appBar = document.querySelector('.mud-appbar.mud-appbar-fixed-top');
+    const statusBar = document.querySelector('.app-shell__status-bar.mud-appbar');
+
+    let topBoundary = 0;
+    let bottomBoundary = window.innerHeight;
+
+    if (appBar instanceof HTMLElement) {
+        topBoundary = Math.max(topBoundary, Math.round(appBar.getBoundingClientRect().bottom));
+    }
+
+    if (statusBar instanceof HTMLElement) {
+        bottomBoundary = Math.min(bottomBoundary, Math.round(statusBar.getBoundingClientRect().top));
+    }
+
+    const usableHeight = Math.max(72, Math.floor(bottomBoundary - topBoundary));
+    const maxHeight = `${usableHeight}px`;
+
+    contextMenu.style.setProperty('max-height', maxHeight, 'important');
+
+    const wrapper = contextMenu.firstElementChild;
+    if (wrapper instanceof HTMLElement) {
+        wrapper.style.setProperty('max-height', maxHeight, 'important');
+    }
+
+    const list = contextMenu.querySelector('.context-menu-list, .mud-list');
+    if (list instanceof HTMLElement) {
+        list.style.setProperty('max-height', maxHeight, 'important');
+    }
+
+    const rect = contextMenu.getBoundingClientRect();
+    let targetTop = rect.top;
+
+    if (rect.bottom > bottomBoundary) {
+        targetTop -= rect.bottom - bottomBoundary;
+    }
+
+    if (targetTop < topBoundary) {
+        targetTop = topBoundary;
+    }
+
+    if (Math.abs(targetTop - rect.top) > 0.5) {
+        contextMenu.style.setProperty('top', `${Math.round(targetTop)}px`, 'important');
+    }
+};
+
+window.qbt.installContextMenuPopoverPatch = () => {
+    if (window.qbt._contextMenuPopoverPatchInstalled) {
+        return true;
+    }
+
+    if (!window.mudpopoverHelper || typeof window.mudpopoverHelper.placePopover !== 'function') {
+        return false;
+    }
+
+    const originalPlacePopover = window.mudpopoverHelper.placePopover.bind(window.mudpopoverHelper);
+
+    window.mudpopoverHelper.placePopover = function (popoverNode, classSelector) {
+        originalPlacePopover(popoverNode, classSelector);
+        window.qbt.constrainContextMenuPopover(popoverNode, classSelector);
+    };
+
+    window.qbt._contextMenuPopoverPatchInstalled = true;
+    return true;
+};
+
 window.qbt.open = (url, target) => {
     window.open(url, target);
 }

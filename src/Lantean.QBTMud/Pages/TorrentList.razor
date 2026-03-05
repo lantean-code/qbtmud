@@ -2,7 +2,7 @@
 @layout ListLayout
 @using Lantean.QBTMud.Models
 
-<MudMenu @ref="ContextMenu" Dense="true" RelativeWidth="DropdownWidth.Ignore" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable" data-test-id="@TestIdHelper.For("TorrentListContextMenu")">
+<MudMenu @ref="ContextMenu" Dense="true" RelativeWidth="DropdownWidth.Ignore" PositionAtCursor="true" ListClass="unselectable context-menu-list" PopoverClass="unselectable context-menu-popover" data-test-id="@TestIdHelper.For("TorrentListContextMenu")">
     <MudMenuItem Icon="@Icons.Material.Outlined.Info" IconColor="Color.Inherit" OnClick="ShowTorrentContextMenu" data-test-id="@TestIdHelper.For("TorrentListContextViewDetails")">View torrent details</MudMenuItem>
     <MudDivider />
     <TorrentActions RenderType="RenderType.MenuItems" Hashes="GetContextMenuTargetHashes()" PrimaryHash="@(ContextMenuItem?.Hash)" Torrents="MainData.Torrents" Preferences="Preferences" Tags="@MainData.Tags" Categories="@MainData.Categories" />

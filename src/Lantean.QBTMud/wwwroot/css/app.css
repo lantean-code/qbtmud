@@ -590,6 +590,25 @@ td .folder-button {
     touch-action: pan-y;
 }
 
+.context-menu-popover {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+    .context-menu-popover > div {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .context-menu-popover .context-menu-list {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
+
 .path-browser-dialog.mud-dialog,
 .path-browser-dialog .mud-dialog {
     display: flex;

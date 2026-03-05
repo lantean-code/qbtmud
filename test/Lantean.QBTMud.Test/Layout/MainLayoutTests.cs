@@ -52,6 +52,32 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public void GIVEN_MainLayoutRendered_WHEN_AfterRenderRuns_THEN_InstallsContextMenuPopoverPatchOnce()
+        {
+            var installPatchInvocation = TestContext.JSInterop.Setup<bool>("qbt.installContextMenuPopoverPatch", _ => true);
+            installPatchInvocation.SetResult(true);
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.WaitForAssertion(() => installPatchInvocation.Invocations.Should().HaveCount(1));
+
+            target.Render();
+
+            target.WaitForAssertion(() => installPatchInvocation.Invocations.Should().HaveCount(1));
+        }
+
+        [Fact]
+        public void GIVEN_MainLayoutRendered_WHEN_PatchInstallReturnsFalse_THEN_RetriesOnSubsequentRender()
+        {
+            var installPatchInvocation = TestContext.JSInterop.Setup<bool>("qbt.installContextMenuPopoverPatch", _ => true);
+            installPatchInvocation.SetResult(false);
+
+            var target = RenderLayout(CreateProbeBody());
+
+            target.WaitForAssertion(() => installPatchInvocation.Invocations.Count.Should().BeGreaterThan(1));
+        }
+
+        [Fact]
         public async Task GIVEN_ThemeChangedWithValidFont_WHEN_Rendered_THEN_LoadsFont()
         {
             var url = "Url";

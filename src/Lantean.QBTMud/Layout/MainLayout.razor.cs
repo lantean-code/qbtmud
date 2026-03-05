@@ -68,6 +68,7 @@ namespace Lantean.QBTMud.Layout
         private bool _pendingBootstrapThemeUpdate;
         private bool _pendingBootstrapThemeRemoval;
         private bool _bootstrapThemeRemoved;
+        private bool _contextMenuPopoverPatchInstalled;
         private string? _pendingFontFamily;
         private bool _themeInitialized;
         private bool _hasAppliedTheme;
@@ -161,6 +162,11 @@ namespace Lantean.QBTMud.Layout
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
+            if (!_contextMenuPopoverPatchInstalled)
+            {
+                _contextMenuPopoverPatchInstalled = await JSRuntime.InvokeAsync<bool>("qbt.installContextMenuPopoverPatch");
+            }
+
             if (firstRender)
             {
                 var storedDrawerOpen = await SettingsStorage.GetItemAsync<bool?>(_drawerOpenStorageKey);
