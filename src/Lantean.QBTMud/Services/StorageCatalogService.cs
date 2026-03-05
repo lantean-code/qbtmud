@@ -62,15 +62,7 @@ namespace Lantean.QBTMud.Services
                 return exactMatch;
             }
 
-            foreach (var prefixItem in _prefixItems)
-            {
-                if (normalizedKey.StartsWith(prefixItem.MatchPattern, StringComparison.Ordinal))
-                {
-                    return prefixItem;
-                }
-            }
-
-            return null;
+            return _prefixItems.FirstOrDefault(prefixItem => normalizedKey.StartsWith(prefixItem.MatchPattern, StringComparison.Ordinal));
         }
 
         private static IReadOnlyList<StorageCatalogGroupDefinition> BuildGroups()

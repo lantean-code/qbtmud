@@ -34,35 +34,38 @@ namespace Lantean.QBTMud.Services
             await _initializationSemaphore.WaitAsync(cancellationToken);
             try
             {
-                if (_cachedState is not null)
+                if (_cachedState is null)
                 {
-                    return _cachedState;
+                    string? rawVersion = null;
+                    try
+                    {
+                        rawVersion = await _apiClient.GetAPIVersion();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception)
+                    {
+                        return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
+                    }
+
+                    rawVersion = string.IsNullOrWhiteSpace(rawVersion)
+                        ? null
+                        : rawVersion.Trim();
+
+                    if (rawVersion is null || !Version.TryParse(rawVersion, out var parsedVersion))
+                    {
+                        _cachedState = new WebApiCapabilityState(rawVersion, parsedWebApiVersion: null, supportsClientData: false);
+                        return _cachedState;
+                    }
+
+                    _cachedState = new WebApiCapabilityState(
+                        rawVersion,
+                        parsedVersion,
+                        supportsClientData: parsedVersion >= ClientDataMinimumVersion);
                 }
 
-                string? rawVersion = null;
-                try
-                {
-                    rawVersion = await _apiClient.GetAPIVersion();
-                }
-                catch
-                {
-                    return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
-                }
-
-                rawVersion = string.IsNullOrWhiteSpace(rawVersion)
-                    ? null
-                    : rawVersion.Trim();
-
-                if (rawVersion is null || !Version.TryParse(rawVersion, out var parsedVersion))
-                {
-                    _cachedState = new WebApiCapabilityState(rawVersion, parsedWebApiVersion: null, supportsClientData: false);
-                    return _cachedState;
-                }
-
-                _cachedState = new WebApiCapabilityState(
-                    rawVersion,
-                    parsedVersion,
-                    supportsClientData: parsedVersion >= ClientDataMinimumVersion);
                 return _cachedState;
             }
             finally

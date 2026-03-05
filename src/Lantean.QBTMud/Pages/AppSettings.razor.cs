@@ -355,7 +355,7 @@ namespace Lantean.QBTMud.Pages
                     _isStorageEntriesLoadRequested = false;
                 }
             }
-            catch
+            catch (Exception)
             {
                 SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to refresh app settings."), Severity.Error);
             }
@@ -388,7 +388,7 @@ namespace Lantean.QBTMud.Pages
                     SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to save storage settings: %1", exception.Message), Severity.Error);
                     return;
                 }
-                catch
+                catch (Exception)
                 {
                     SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to save storage settings."), Severity.Error);
                     return;
@@ -609,7 +609,7 @@ namespace Lantean.QBTMud.Pages
             {
                 UpdateStatus = await AppUpdateService.GetUpdateStatusAsync(forceRefresh: true);
             }
-            catch
+            catch (Exception)
             {
                 SnackbarWorkflow.ShowTransientMessage(TranslateUpdates("Unable to check for updates."), Severity.Warning);
             }
@@ -633,7 +633,7 @@ namespace Lantean.QBTMud.Pages
             {
                 StorageEntries = await StorageDiagnosticsService.GetEntriesAsync();
             }
-            catch
+            catch (Exception)
             {
                 SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to load storage entries."), Severity.Error);
             }
@@ -657,7 +657,7 @@ namespace Lantean.QBTMud.Pages
                 await StorageDiagnosticsService.RemoveEntryAsync(storageType, key);
                 StorageEntries = await StorageDiagnosticsService.GetEntriesAsync();
             }
-            catch
+            catch (Exception)
             {
                 SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to remove storage entry."), Severity.Error);
             }
@@ -683,7 +683,7 @@ namespace Lantean.QBTMud.Pages
                 SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Removed %1 storage entries.", removed), Severity.Info);
                 NavigationManager.NavigateToHome(forceLoad: true);
             }
-            catch
+            catch (Exception)
             {
                 SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to clear storage entries."), Severity.Error);
             }
@@ -771,7 +771,11 @@ namespace Lantean.QBTMud.Pages
             {
                 return await WebApiCapabilityService.GetCapabilityStateAsync();
             }
-            catch
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception)
             {
                 return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
             }
@@ -787,7 +791,7 @@ namespace Lantean.QBTMud.Pages
             {
                 return BrowserNotificationPermission.Unsupported;
             }
-            catch
+            catch (Exception)
             {
                 return BrowserNotificationPermission.Unsupported;
             }
@@ -799,7 +803,7 @@ namespace Lantean.QBTMud.Pages
             {
                 return await AppUpdateService.GetUpdateStatusAsync();
             }
-            catch
+            catch (Exception)
             {
                 return null;
             }
@@ -854,16 +858,17 @@ namespace Lantean.QBTMud.Pages
 
         private int ClearGroupItemOverrides(StorageCatalogGroupDefinition group)
         {
-            var clearedOverrides = 0;
-            foreach (var item in group.Items)
+            var itemIdsWithOverrides = group.Items
+                .Where(item => StorageRoutingSettings.ItemStorageTypes.ContainsKey(item.Id))
+                .Select(item => item.Id)
+                .ToList();
+
+            foreach (var itemId in itemIdsWithOverrides)
             {
-                if (StorageRoutingSettings.ItemStorageTypes.Remove(item.Id))
-                {
-                    clearedOverrides++;
-                }
+                _ = StorageRoutingSettings.ItemStorageTypes.Remove(itemId);
             }
 
-            return clearedOverrides;
+            return itemIdsWithOverrides.Count;
         }
 
         private Task<bool> ShowDiscardChangesDialogAsync()

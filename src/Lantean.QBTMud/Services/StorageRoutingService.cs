@@ -51,22 +51,21 @@ namespace Lantean.QBTMud.Services
             await _initializationSemaphore.WaitAsync(cancellationToken);
             try
             {
-                if (_cachedSettings is not null)
+                if (_cachedSettings is null)
                 {
-                    return _cachedSettings.Clone();
+                    StorageRoutingSettings? loadedSettings;
+                    try
+                    {
+                        loadedSettings = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, cancellationToken);
+                    }
+                    catch (JsonException)
+                    {
+                        loadedSettings = null;
+                    }
+
+                    _cachedSettings = NormalizeForCatalog(loadedSettings ?? StorageRoutingSettings.Default);
                 }
 
-                StorageRoutingSettings? loadedSettings;
-                try
-                {
-                    loadedSettings = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, cancellationToken);
-                }
-                catch (JsonException)
-                {
-                    loadedSettings = null;
-                }
-
-                _cachedSettings = NormalizeForCatalog(loadedSettings ?? StorageRoutingSettings.Default);
                 return _cachedSettings.Clone();
             }
             finally
@@ -88,7 +87,8 @@ namespace Lantean.QBTMud.Services
             }
 
             var capabilityState = await _webApiCapabilityService.GetCapabilityStateAsync(cancellationToken);
-            if (!capabilityState.SupportsClientData && ContainsClientDataSelection(normalizedSettings))
+            var supportsClientData = capabilityState.SupportsClientData;
+            if (!supportsClientData && ContainsClientDataSelection(normalizedSettings))
             {
                 throw new InvalidOperationException("ClientData storage is not supported by the current Web API version.");
             }
@@ -98,6 +98,11 @@ namespace Lantean.QBTMud.Services
                 var currentStorageType = ResolveConfiguredStorageType(item, currentSettings);
                 var targetStorageType = ResolveConfiguredStorageType(item, normalizedSettings);
                 if (currentStorageType == targetStorageType)
+                {
+                    continue;
+                }
+
+                if (!supportsClientData && currentStorageType == StorageType.ClientData)
                 {
                     continue;
                 }

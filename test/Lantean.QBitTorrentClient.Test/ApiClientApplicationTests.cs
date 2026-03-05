@@ -137,10 +137,7 @@ namespace Lantean.QBitTorrentClient.Test
         [Fact]
         public async Task GIVEN_NonSuccess_WHEN_LoadClientData_THEN_ShouldThrow()
         {
-            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest)
-            {
-                Content = new StringContent("load failed")
-            });
+            _handler.Responder = (_, _) => Task.FromResult(CreateResponse(HttpStatusCode.BadRequest, "load failed"));
 
             var act = async () => await _target.LoadClientData(["QbtMud.Test"]);
 
@@ -172,10 +169,7 @@ namespace Lantean.QBitTorrentClient.Test
         [Fact]
         public async Task GIVEN_NonSuccess_WHEN_StoreClientData_THEN_ShouldThrow()
         {
-            _handler.Responder = (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Conflict)
-            {
-                Content = new StringContent("store failed")
-            });
+            _handler.Responder = (_, _) => Task.FromResult(CreateResponse(HttpStatusCode.Conflict, "store failed"));
 
             var act = async () => await _target.StoreClientData(new Dictionary<string, object?>
             {
@@ -597,6 +591,19 @@ namespace Lantean.QBitTorrentClient.Test
             result.Count.Should().Be(2);
             result[0].Should().Be("192.168.1.10");
             result[1].Should().Be("fe80::1");
+        }
+
+        private static HttpResponseMessage CreateResponse(HttpStatusCode statusCode, string? content)
+        {
+            if (content is null)
+            {
+                return new HttpResponseMessage(statusCode);
+            }
+
+            return new HttpResponseMessage(statusCode)
+            {
+                Content = new StringContent(content)
+            };
         }
     }
 }

@@ -371,6 +371,34 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_UnsupportedCapabilityAndCurrentClientData_WHEN_SavingLocalStorageRouting_THEN_ShouldSaveWithoutClientDataMigrationCalls()
+        {
+            await _localStorageService.SetItemAsync(StorageRoutingSettings.StorageKey, new StorageRoutingSettings
+            {
+                MasterStorageType = StorageType.ClientData
+            }, TestContext.Current.CancellationToken);
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.12.0", new Version(2, 12, 0), false));
+
+            var result = await _target.SaveSettingsAsync(new StorageRoutingSettings
+            {
+                MasterStorageType = StorageType.LocalStorage
+            }, TestContext.Current.CancellationToken);
+
+            result.MasterStorageType.Should().Be(StorageType.LocalStorage);
+            Mock.Get(_clientDataStorageAdapter).Verify(
+                adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+            Mock.Get(_clientDataStorageAdapter).Verify(
+                adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()),
+                Times.Never);
+            Mock.Get(_clientDataStorageAdapter).Verify(
+                adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_NullClientJsonValue_WHEN_SavingLocalStorageRouting_THEN_ShouldRemoveLocalEntry()
         {
             await _localStorageService.SetItemAsync(StorageRoutingSettings.StorageKey, new StorageRoutingSettings
