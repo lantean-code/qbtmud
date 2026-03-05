@@ -34,12 +34,12 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.RemoveAll<IAppSettingsService>();
             TestContext.Services.RemoveAll<IThemeManagerService>();
             TestContext.Services.RemoveAll<IThemeFontCatalog>();
-            TestContext.Services.RemoveAll<ILocalStorageService>();
+            TestContext.Services.RemoveAll<ISettingsStorageService>();
 
             TestContext.Services.AddSingleton(_appSettingsService);
             TestContext.Services.AddSingleton(_themeManagerService);
             TestContext.Services.AddSingleton(_themeFontCatalog);
-            TestContext.Services.AddSingleton<ILocalStorageService>(_localStorage);
+            TestContext.Services.AddSingleton<ISettingsStorageService>(_localStorage);
 
             Mock.Get(_appSettingsService)
                 .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))

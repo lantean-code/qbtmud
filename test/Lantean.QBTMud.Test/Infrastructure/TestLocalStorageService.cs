@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Infrastructure
 {
-    internal sealed class TestLocalStorageService : ILocalStorageService
+    internal sealed class TestLocalStorageService : ILocalStorageService, ISettingsStorageService
     {
         private readonly Dictionary<string, object?> _store = new(StringComparer.Ordinal);
         private readonly object _lock = new();

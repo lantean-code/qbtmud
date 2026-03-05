@@ -26,7 +26,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ITorrentDataManager DataManager { get; set; } = default!;
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -337,21 +337,21 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private async Task UpdatePreferences(Action<MultiRenamePreferences> updateAction)
         {
-            var preferences = await LocalStorage.GetItemAsync<MultiRenamePreferences>(_preferencesStorageKey) ?? new();
+            var preferences = await SettingsStorage.GetItemAsync<MultiRenamePreferences>(_preferencesStorageKey) ?? new();
             updateAction(preferences);
             if (preferences.RememberPreferences)
             {
-                await LocalStorage.SetItemAsync(_preferencesStorageKey, preferences);
+                await SettingsStorage.SetItemAsync(_preferencesStorageKey, preferences);
             }
             else
             {
-                await LocalStorage.RemoveItemAsync(_preferencesStorageKey);
+                await SettingsStorage.RemoveItemAsync(_preferencesStorageKey);
             }
         }
 
         protected override async Task OnInitializedAsync()
         {
-            var preferences = await LocalStorage.GetItemAsync<MultiRenamePreferences>(_preferencesStorageKey) ?? new();
+            var preferences = await SettingsStorage.GetItemAsync<MultiRenamePreferences>(_preferencesStorageKey) ?? new();
 
             if (preferences.RememberPreferences)
             {

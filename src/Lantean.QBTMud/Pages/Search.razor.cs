@@ -49,7 +49,7 @@ namespace Lantean.QBTMud.Pages
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [Inject]
         protected IClipboardService ClipboardService { get; set; } = default!;
@@ -788,10 +788,10 @@ namespace Lantean.QBTMud.Pages
         {
             try
             {
-                var stored = await LocalStorage.GetItemAsync<SearchPreferences>(_searchPreferencesStorageKey);
+                var stored = await SettingsStorage.GetItemAsync<SearchPreferences>(_searchPreferencesStorageKey);
                 _preferences = stored ?? new SearchPreferences();
             }
-            catch
+            catch (Exception)
             {
                 _preferences = new SearchPreferences();
             }
@@ -805,10 +805,10 @@ namespace Lantean.QBTMud.Pages
         {
             try
             {
-                var stored = await LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_searchJobsStorageKey);
+                var stored = await SettingsStorage.GetItemAsync<List<SearchJobMetadata>>(_searchJobsStorageKey);
                 _jobMetadata = stored?.ToDictionary(job => job.Id) ?? new Dictionary<int, SearchJobMetadata>();
             }
-            catch
+            catch (Exception)
             {
                 _jobMetadata = new Dictionary<int, SearchJobMetadata>();
             }
@@ -865,12 +865,12 @@ namespace Lantean.QBTMud.Pages
             _preferences.MinimumSizeUnit = Model.MinimumSizeUnit;
             _preferences.MaximumSizeUnit = Model.MaximumSizeUnit;
 
-            await LocalStorage.SetItemAsync(_searchPreferencesStorageKey, _preferences);
+            await SettingsStorage.SetItemAsync(_searchPreferencesStorageKey, _preferences);
         }
 
         private ValueTask SaveJobMetadataAsync()
         {
-            return LocalStorage.SetItemAsync(_searchJobsStorageKey, _jobMetadata.Values.ToList());
+            return SettingsStorage.SetItemAsync(_searchJobsStorageKey, _jobMetadata.Values.ToList());
         }
 
         private async Task OnPluginsChanged(IEnumerable<string> values)

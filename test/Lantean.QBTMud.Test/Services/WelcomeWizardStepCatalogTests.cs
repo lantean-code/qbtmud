@@ -11,7 +11,8 @@ namespace Lantean.QBTMud.Test.Services
             WelcomeWizardStepCatalog.KnownStepIds.Should().ContainInOrder(
                 WelcomeWizardStepCatalog.LanguageStepId,
                 WelcomeWizardStepCatalog.ThemeStepId,
-                WelcomeWizardStepCatalog.NotificationsStepId);
+                WelcomeWizardStepCatalog.NotificationsStepId,
+                WelcomeWizardStepCatalog.StorageStepId);
         }
 
         [Fact]
@@ -41,6 +42,14 @@ namespace Lantean.QBTMud.Test.Services
             var result = WelcomeWizardStepCatalog.IsKnownStepId($" {WelcomeWizardStepCatalog.NotificationsStepId} ");
 
             result.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_ClientDataUnsupported_WHEN_GetStepsInvoked_THEN_ShouldExcludeStorageStep()
+        {
+            var result = WelcomeWizardStepCatalog.GetSteps(includeStorageStep: false);
+
+            result.Select(step => step.Id).Should().NotContain(WelcomeWizardStepCatalog.StorageStepId);
         }
     }
 }

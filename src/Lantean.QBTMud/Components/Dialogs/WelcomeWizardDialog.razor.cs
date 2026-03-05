@@ -29,13 +29,16 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ILanguageInitializationService LanguageInitializationService { get; set; } = default!;
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [Inject]
         protected IThemeManagerService ThemeManagerService { get; set; } = default!;
 
         [Inject]
         protected IAppSettingsService AppSettingsService { get; set; } = default!;
+
+        [Inject]
+        protected IStorageRoutingService StorageRoutingService { get; set; } = default!;
 
         [Inject]
         protected IWelcomeWizardStateService WelcomeWizardStateService { get; set; } = default!;
@@ -66,6 +69,8 @@ namespace Lantean.QBTMud.Components.Dialogs
         private bool _isApplyingNotificationToggle;
         private BrowserNotificationPermission _notificationPermission = BrowserNotificationPermission.Unsupported;
         private AppSettings _settings = AppSettings.Default.Clone();
+        private StorageType? _storageSelection;
+        private StorageRoutingSettings _storageRoutingSettings = StorageRoutingSettings.Default.Clone();
         private bool _keyboardFocused;
         private bool _disposedValue;
 
@@ -82,6 +87,19 @@ namespace Lantean.QBTMud.Components.Dialogs
             get
             {
                 return _themeOptions.FirstOrDefault(item => string.Equals(item.Id, _selectedThemeId, StringComparison.Ordinal))?.Name ?? string.Empty;
+            }
+        }
+
+        private string SelectedStorageTypeName
+        {
+            get
+            {
+                if (!_storageSelection.HasValue)
+                {
+                    return string.Empty;
+                }
+
+                return GetStorageTypeDisplayName(_storageSelection.Value);
             }
         }
 
@@ -137,6 +155,14 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
         }
 
+        protected bool IsCurrentStorageStep
+        {
+            get
+            {
+                return IsCurrentStep(WelcomeWizardStepCatalog.StorageStepId);
+            }
+        }
+
         protected bool IsCurrentDoneStep
         {
             get
@@ -157,6 +183,14 @@ namespace Lantean.QBTMud.Components.Dialogs
                     BrowserNotificationPermission.Unsupported => true,
                     _ => true
                 };
+            }
+        }
+
+        protected bool IsNextDisabled
+        {
+            get
+            {
+                return IsCurrentStorageStep && !_storageSelection.HasValue;
             }
         }
 
@@ -183,6 +217,13 @@ namespace Lantean.QBTMud.Components.Dialogs
             _selectedThemeId = ThemeManagerService.CurrentThemeId ?? _themeOptions.FirstOrDefault()?.Id;
 
             _settings = await AppSettingsService.GetSettingsAsync();
+            _storageRoutingSettings = await StorageRoutingService.GetSettingsAsync();
+            if (_storageRoutingSettings.MasterStorageType != StorageType.LocalStorage
+                || _storageRoutingSettings.GroupStorageTypes.Count > 0
+                || _storageRoutingSettings.ItemStorageTypes.Count > 0)
+            {
+                _storageSelection = _storageRoutingSettings.MasterStorageType;
+            }
 
             try
             {
@@ -231,6 +272,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (string.Equals(stepToken, WelcomeWizardStepCatalog.NotificationsStepId, StringComparison.Ordinal))
             {
                 return TranslateNotifications("Notifications");
+            }
+
+            if (string.Equals(stepToken, WelcomeWizardStepCatalog.StorageStepId, StringComparison.Ordinal))
+            {
+                return TranslateWizard("Storage");
             }
 
             return TranslateWizard("Done");
@@ -331,6 +377,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (string.Equals(stepToken, WelcomeWizardStepCatalog.NotificationsStepId, StringComparison.Ordinal))
             {
                 return Color.Warning;
+            }
+
+            if (string.Equals(stepToken, WelcomeWizardStepCatalog.StorageStepId, StringComparison.Ordinal))
+            {
+                return Color.Info;
             }
 
             if (string.Equals(stepToken, DoneStepToken, StringComparison.Ordinal))
@@ -466,6 +517,11 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private void NextStep()
         {
+            if (IsNextDisabled)
+            {
+                return;
+            }
+
             TrySetActiveIndex(_activeIndex + 1);
         }
 
@@ -488,6 +544,11 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private Task OnNextClicked(MouseEventArgs args)
         {
+            if (IsNextDisabled)
+            {
+                return Task.CompletedTask;
+            }
+
             NextStep();
             return Task.CompletedTask;
         }
@@ -501,8 +562,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             try
             {
+                await ApplyStorageSelectionAsync();
                 await WelcomeWizardStateService.AcknowledgeStepsAsync(GetAcknowledgedStepIds());
-                await LocalStorage.SetItemAsync(WelcomeWizardStorageKeys.Completed, true);
+                await SettingsStorage.SetItemAsync(WelcomeWizardStorageKeys.Completed, true);
                 MudDialog.Close(DialogResult.Ok(true));
             }
             catch (OperationCanceledException)
@@ -578,7 +640,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                     Locale = locale
                 });
 
-                await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, locale);
+                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, locale);
                 await LanguageInitializationService.EnsureLanguageResourcesInitialized();
 
                 await InvokeAsync(StateHasChanged);
@@ -599,6 +661,47 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", ex.Message), Severity.Error);
             }
+        }
+
+        private string GetStorageTypeDisplayName(StorageType storageType)
+        {
+            return storageType == StorageType.ClientData
+                ? LanguageLocalizer.Translate("AppSettings", "qBittorrent client data")
+                : LanguageLocalizer.Translate("AppSettings", "Browser local storage");
+        }
+
+        private string GetStorageOptionCardClass(StorageType storageType)
+        {
+            var selectedClass = _storageSelection == storageType
+                ? " welcome-wizard-storage-option--selected"
+                : string.Empty;
+
+            return $"welcome-wizard-storage-option{selectedClass}";
+        }
+
+        private void OnStorageSelectionChanged(StorageType? value)
+        {
+            _storageSelection = value;
+        }
+
+        private async Task ApplyStorageSelectionAsync()
+        {
+            if (!_flowSteps.Contains(WelcomeWizardStepCatalog.StorageStepId, StringComparer.Ordinal))
+            {
+                return;
+            }
+
+            if (!_storageSelection.HasValue)
+            {
+                throw new InvalidOperationException(TranslateWizard("Select a storage type to continue."));
+            }
+
+            var selectedStorageType = _storageSelection.Value;
+            var updated = _storageRoutingSettings.Clone();
+            updated.MasterStorageType = selectedStorageType;
+            updated.GroupStorageTypes.Clear();
+            updated.ItemStorageTypes.Clear();
+            _storageRoutingSettings = await StorageRoutingService.SaveSettingsAsync(updated);
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

@@ -26,7 +26,7 @@ namespace Lantean.QBitTorrentClient
                 var response = await _httpClient.GetAsync("app/version");
                 return response.StatusCode == HttpStatusCode.OK;
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
@@ -77,6 +77,42 @@ namespace Lantean.QBitTorrentClient
             await ThrowIfNotSuccessfulStatusCode(response);
 
             return await response.Content.ReadAsStringAsync();
+        }
+
+        public async Task<IReadOnlyDictionary<string, JsonElement>> LoadClientData(IEnumerable<string>? keys = null)
+        {
+            var normalizedKeys = keys?
+                .Where(key => !string.IsNullOrWhiteSpace(key))
+                .Select(key => key.Trim())
+                .Distinct(StringComparer.Ordinal)
+                .ToArray() ?? [];
+
+            var contentBuilder = new FormUrlEncodedBuilder();
+            if (normalizedKeys.Length > 0)
+            {
+                var serializedKeys = JsonSerializer.Serialize(normalizedKeys, _options);
+                contentBuilder.Add("keys", serializedKeys);
+            }
+
+            var response = await _httpClient.PostAsync("clientdata/load", contentBuilder.ToFormUrlEncodedContent());
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+
+            return await GetJson<Dictionary<string, JsonElement>>(response.Content);
+        }
+
+        public async Task StoreClientData(IReadOnlyDictionary<string, object?> data)
+        {
+            ArgumentNullException.ThrowIfNull(data);
+
+            var serializedData = JsonSerializer.Serialize(data, _options);
+            var content = new FormUrlEncodedBuilder()
+                .Add("data", serializedData)
+                .ToFormUrlEncodedContent();
+
+            var response = await _httpClient.PostAsync("clientdata/store", content);
+
+            await ThrowIfNotSuccessfulStatusCode(response);
         }
 
         public async Task<BuildInfo> GetBuildInfo()
@@ -1729,7 +1765,7 @@ namespace Lantean.QBitTorrentClient
 
                 return items.ToList().AsReadOnly();
             }
-            catch
+            catch (Exception)
             {
                 return [];
             }
@@ -1743,7 +1779,7 @@ namespace Lantean.QBitTorrentClient
 
                 return items.AsReadOnly();
             }
-            catch
+            catch (Exception)
             {
                 return new Dictionary<TKey, TValue>().AsReadOnly();
             }

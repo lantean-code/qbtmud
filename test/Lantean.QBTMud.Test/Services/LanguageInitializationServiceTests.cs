@@ -13,7 +13,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly CultureInfo _originalCurrentUiCulture;
         private readonly CultureInfo? _originalDefaultThreadCurrentCulture;
         private readonly CultureInfo? _originalDefaultThreadCurrentUiCulture;
-        private readonly ILocalStorageService _localStorage;
+        private readonly ISettingsStorageService _settingsStorage;
         private readonly ILanguageResourceLoader _languageResourceLoader;
         private readonly ILogger<LanguageInitializationService> _logger;
         private readonly LanguageInitializationService _target;
@@ -25,11 +25,11 @@ namespace Lantean.QBTMud.Test.Services
             _originalDefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentCulture;
             _originalDefaultThreadCurrentUiCulture = CultureInfo.DefaultThreadCurrentUICulture;
 
-            _localStorage = Mock.Of<ILocalStorageService>();
+            _settingsStorage = Mock.Of<ISettingsStorageService>();
             _languageResourceLoader = Mock.Of<ILanguageResourceLoader>();
             _logger = Mock.Of<ILogger<LanguageInitializationService>>();
 
-            Mock.Get(_localStorage)
+            Mock.Get(_settingsStorage)
                 .Setup(storage => storage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<string?>("fr_FR"));
 
@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(loader => loader.LoadLocaleAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);
 
-            _target = new LanguageInitializationService(_localStorage, _languageResourceLoader, _logger);
+            _target = new LanguageInitializationService(_settingsStorage, _languageResourceLoader, _logger);
         }
 
         [Fact]
@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_StoredLocaleWithWhitespace_WHEN_EnsureLanguageResourcesInitialized_THEN_ShouldTrimStoredLocale()
         {
-            Mock.Get(_localStorage)
+            Mock.Get(_settingsStorage)
                 .Setup(storage => storage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<string?>(" fr_FR "));
 
@@ -67,7 +67,7 @@ namespace Lantean.QBTMud.Test.Services
         [InlineData("C.UTF-8")]
         public async Task GIVEN_StoredLocaleUsesSystemDefaultMarker_WHEN_EnsureLanguageResourcesInitialized_THEN_ShouldNormalizeToEnglish(string locale)
         {
-            Mock.Get(_localStorage)
+            Mock.Get(_settingsStorage)
                 .Setup(storage => storage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<string?>(locale));
 
@@ -80,7 +80,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_StoredLocaleMissing_WHEN_EnsureLanguageResourcesInitialized_THEN_ShouldUseCurrentUiCulture()
         {
-            Mock.Get(_localStorage)
+            Mock.Get(_settingsStorage)
                 .Setup(storage => storage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<string?>(null));
 
@@ -95,7 +95,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_StoredLocaleMissingAndCurrentUiCultureInvariant_WHEN_EnsureLanguageResourcesInitialized_THEN_ShouldFallbackToCurrentCulture()
         {
-            Mock.Get(_localStorage)
+            Mock.Get(_settingsStorage)
                 .Setup(storage => storage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<string?>(null));
 
@@ -110,7 +110,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_StoredLocaleMissingAndAllCulturesInvariant_WHEN_EnsureLanguageResourcesInitialized_THEN_ShouldFallbackToEnglish()
         {
-            Mock.Get(_localStorage)
+            Mock.Get(_settingsStorage)
                 .Setup(storage => storage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<string?>(null));
 
@@ -125,7 +125,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_StoredLocaleHasEmptyBasePart_WHEN_EnsureLanguageResourcesInitialized_THEN_ShouldSkipCultureApplyAndStillLoadLocale()
         {
-            Mock.Get(_localStorage)
+            Mock.Get(_settingsStorage)
                 .Setup(storage => storage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<string?>("@"));
 
@@ -149,7 +149,7 @@ namespace Lantean.QBTMud.Test.Services
         [InlineData("sr@x", "sr")]
         public async Task GIVEN_StoredLocaleWithScriptTag_WHEN_EnsureLanguageResourcesInitialized_THEN_ShouldNormalizeCultureBeforeLoad(string locale, string expectedCulture)
         {
-            Mock.Get(_localStorage)
+            Mock.Get(_settingsStorage)
                 .Setup(storage => storage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<string?>(locale));
 
@@ -162,7 +162,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_InvalidStoredLocale_WHEN_EnsureLanguageResourcesInitialized_THEN_ShouldIgnoreCultureFailureAndLoadLocale()
         {
-            Mock.Get(_localStorage)
+            Mock.Get(_settingsStorage)
                 .Setup(storage => storage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.FromResult<string?>("invalid$$"));
 

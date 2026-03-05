@@ -49,7 +49,7 @@ namespace Lantean.QBTMud.Layout
         protected IDialogService DialogService { get; set; } = default!;
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [Inject]
         protected ISessionStorageService SessionStorage { get; set; } = default!;
@@ -111,6 +111,8 @@ namespace Lantean.QBTMud.Layout
 
         protected QBitTorrentClient.Models.Preferences? Preferences { get; set; }
 
+        protected AppSettings? AppSettingsState { get; set; }
+
         protected string? SortColumn { get; set; }
 
         protected SortDirection SortDirection { get; set; }
@@ -148,6 +150,7 @@ namespace Lantean.QBTMud.Layout
             base.OnInitialized();
 
             _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(DefaultRefreshInterval));
+            AppSettingsService.SettingsChanged += OnAppSettingsChanged;
 
             if (!_navigationHandlerAttached)
             {
@@ -204,10 +207,18 @@ namespace Lantean.QBTMud.Layout
 
             await InvokeAsync(StateHasChanged);
 
-            Preferences = await ApiClient.GetApplicationPreferences();
+            var appSettingsTask = AppSettingsService.RefreshSettingsAsync(_timerCancellationToken.Token);
+            var preferencesTask = ApiClient.GetApplicationPreferences();
+            var versionTask = ApiClient.GetApplicationVersion();
+            var mainDataTask = ApiClient.GetMainData(_requestId);
+
+            await Task.WhenAll(appSettingsTask, preferencesTask, versionTask, mainDataTask);
+
+            AppSettingsState = await appSettingsTask;
+            Preferences = await preferencesTask;
             await SynchronizeLocalePreferenceAsync();
-            Version = await ApiClient.GetApplicationVersion();
-            var data = await ApiClient.GetMainData(_requestId);
+            Version = await versionTask;
+            var data = await mainDataTask;
             MainData = DataManager.CreateMainData(data);
             MarkTorrentsDirty();
 
@@ -322,28 +333,28 @@ namespace Lantean.QBTMud.Layout
 
             if (string.IsNullOrWhiteSpace(Preferences.Locale))
             {
-                var storedLocaleWhenApiMissing = await LocalStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale);
+                var storedLocaleWhenApiMissing = await SettingsStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale);
                 if (!string.IsNullOrWhiteSpace(storedLocaleWhenApiMissing))
                 {
-                    await LocalStorage.RemoveItemAsync(LanguageStorageKeys.PreferredLocale);
+                    await SettingsStorage.RemoveItemAsync(LanguageStorageKeys.PreferredLocale);
                 }
 
                 return;
             }
 
             var apiLocale = WebUiLocaleNormalizer.Normalize(Preferences.Locale);
-            var storedLocale = await LocalStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale);
+            var storedLocale = await SettingsStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale);
 
             if (string.IsNullOrWhiteSpace(storedLocale))
             {
-                await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, apiLocale);
+                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, apiLocale);
                 return;
             }
 
             var normalizedStoredLocale = WebUiLocaleNormalizer.Normalize(storedLocale);
             if (!string.Equals(storedLocale.Trim(), normalizedStoredLocale, StringComparison.Ordinal))
             {
-                await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, normalizedStoredLocale);
+                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, normalizedStoredLocale);
             }
 
             if (string.Equals(normalizedStoredLocale, apiLocale, StringComparison.OrdinalIgnoreCase))
@@ -351,7 +362,7 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            await LocalStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, apiLocale);
+            await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, apiLocale);
 
             if (_localeMismatchWarningShown)
             {
@@ -378,7 +389,7 @@ namespace Lantean.QBTMud.Layout
         {
             try
             {
-                var settings = await AppSettingsService.GetSettingsAsync(_timerCancellationToken.Token);
+                var settings = AppSettingsState ?? await AppSettingsService.GetSettingsAsync(_timerCancellationToken.Token);
                 if (!settings.UpdateChecksEnabled)
                 {
                     return;
@@ -416,7 +427,7 @@ namespace Lantean.QBTMud.Layout
             catch (OperationCanceledException exception) when (exception.CancellationToken == _timerCancellationToken.Token)
             {
             }
-            catch
+            catch (Exception)
             {
             }
         }
@@ -436,7 +447,7 @@ namespace Lantean.QBTMud.Layout
             {
                 throw;
             }
-            catch
+            catch (Exception)
             {
             }
         }
@@ -710,7 +721,7 @@ namespace Lantean.QBTMud.Layout
                 await ClearPendingDownloadAsync();
                 NavigationManager.NavigateToHome(forceLoad: true);
             }
-            catch
+            catch (Exception)
             {
                 _pendingDownloadLink = magnet;
                 await PersistPendingDownloadAsync();
@@ -962,6 +973,12 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
+        private void OnAppSettingsChanged(object? sender, AppSettingsChangedEventArgs args)
+        {
+            AppSettingsState = args.Settings.Clone();
+            StateHasChanged();
+        }
+
         protected virtual async ValueTask DisposeAsync(bool disposing)
         {
             if (_disposedValue)
@@ -985,6 +1002,8 @@ namespace Lantean.QBTMud.Layout
                     NavigationManager.LocationChanged -= NavigationManagerOnLocationChanged;
                     _navigationHandlerAttached = false;
                 }
+
+                AppSettingsService.SettingsChanged -= OnAppSettingsChanged;
             }
 
             _disposedValue = true;

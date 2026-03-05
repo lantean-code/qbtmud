@@ -9,20 +9,20 @@ namespace Lantean.QBTMud.Test.Services
 {
     public sealed class WelcomeWizardStateServiceTests
     {
-        private readonly TestLocalStorageService _localStorageService;
+        private readonly TestLocalStorageService _settingsStorageService;
         private readonly WelcomeWizardStateService _target;
 
         public WelcomeWizardStateServiceTests()
         {
-            _localStorageService = new TestLocalStorageService();
-            _target = new WelcomeWizardStateService(_localStorageService);
+            _settingsStorageService = new TestLocalStorageService();
+            _target = new WelcomeWizardStateService(_settingsStorageService);
         }
 
         [Fact]
         public async Task GIVEN_NoPersistedStateOrLegacyCompletion_WHEN_GetStateInvoked_THEN_ReturnsEmptyStateAndPersistsVersionedKey()
         {
             var state = await _target.GetStateAsync(TestContext.Current.CancellationToken);
-            var persisted = await _localStorageService.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, TestContext.Current.CancellationToken);
+            var persisted = await _settingsStorageService.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, TestContext.Current.CancellationToken);
 
             state.AcknowledgedStepIds.Should().BeEmpty();
             state.LastShownUtc.Should().BeNull();
@@ -34,7 +34,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_LegacyCompletedUserWithoutVersionedState_WHEN_GetStateInvoked_THEN_MigratesLegacyStepIdsOnly()
         {
-            await _localStorageService.SetItemAsync(WelcomeWizardStorageKeys.Completed, true, TestContext.Current.CancellationToken);
+            await _settingsStorageService.SetItemAsync(WelcomeWizardStorageKeys.Completed, true, TestContext.Current.CancellationToken);
 
             var state = await _target.GetStateAsync(TestContext.Current.CancellationToken);
 
@@ -64,7 +64,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_MarkShownInvoked_WHEN_Completed_THEN_UpdatesLastShownUtc()
         {
             var state = await _target.MarkShownAsync(TestContext.Current.CancellationToken);
-            var persisted = await _localStorageService.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, TestContext.Current.CancellationToken);
+            var persisted = await _settingsStorageService.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, TestContext.Current.CancellationToken);
 
             state.LastShownUtc.Should().NotBeNull();
             persisted.Should().NotBeNull();
@@ -82,8 +82,8 @@ namespace Lantean.QBTMud.Test.Services
                 }
             };
 
-            await _localStorageService.SetItemAsync(WelcomeWizardStorageKeys.Completed, true, TestContext.Current.CancellationToken);
-            await _localStorageService.SetItemAsync(WelcomeWizardStorageKeys.State, existing, TestContext.Current.CancellationToken);
+            await _settingsStorageService.SetItemAsync(WelcomeWizardStorageKeys.Completed, true, TestContext.Current.CancellationToken);
+            await _settingsStorageService.SetItemAsync(WelcomeWizardStorageKeys.State, existing, TestContext.Current.CancellationToken);
 
             var state = await _target.GetStateAsync(TestContext.Current.CancellationToken);
 
@@ -105,7 +105,7 @@ namespace Lantean.QBTMud.Test.Services
                 }
             };
 
-            await _localStorageService.SetItemAsync(WelcomeWizardStorageKeys.State, existing, TestContext.Current.CancellationToken);
+            await _settingsStorageService.SetItemAsync(WelcomeWizardStorageKeys.State, existing, TestContext.Current.CancellationToken);
 
             var state = await _target.GetStateAsync(TestContext.Current.CancellationToken);
 
@@ -116,18 +116,18 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_StateReadThrowsJsonException_WHEN_GetStateInvoked_THEN_UsesLegacyMigrationFallback()
         {
-            var localStorageService = new Mock<ILocalStorageService>(MockBehavior.Strict);
-            localStorageService
+            var settingsStorageService = new Mock<ISettingsStorageService>(MockBehavior.Strict);
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new JsonException("invalid"));
-            localStorageService
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<bool?>(WelcomeWizardStorageKeys.Completed, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
-            localStorageService
+            settingsStorageService
                 .Setup(service => service.SetItemAsync(WelcomeWizardStorageKeys.State, It.IsAny<WelcomeWizardState>(), It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);
 
-            var target = new WelcomeWizardStateService(localStorageService.Object);
+            var target = new WelcomeWizardStateService(settingsStorageService.Object);
 
             var state = await target.GetStateAsync(TestContext.Current.CancellationToken);
 
@@ -139,17 +139,17 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_CachedState_WHEN_GetStateInvokedAgain_THEN_ReadsStorageOnce()
         {
-            var localStorageService = new Mock<ILocalStorageService>(MockBehavior.Strict);
-            localStorageService
+            var settingsStorageService = new Mock<ISettingsStorageService>(MockBehavior.Strict);
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WelcomeWizardState());
 
-            var target = new WelcomeWizardStateService(localStorageService.Object);
+            var target = new WelcomeWizardStateService(settingsStorageService.Object);
 
             _ = await target.GetStateAsync(TestContext.Current.CancellationToken);
             _ = await target.GetStateAsync(TestContext.Current.CancellationToken);
 
-            localStorageService.Verify(
+            settingsStorageService.Verify(
                 service => service.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, It.IsAny<CancellationToken>()),
                 Times.Once);
         }
@@ -157,25 +157,25 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ConcurrentInitialStateReads_WHEN_FirstReadInitializesCache_THEN_SecondReadReturnsFromSemaphoreCache()
         {
-            var localStorageService = new Mock<ILocalStorageService>(MockBehavior.Strict);
+            var settingsStorageService = new Mock<ISettingsStorageService>(MockBehavior.Strict);
             var readStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var releaseRead = new TaskCompletionSource<WelcomeWizardState>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            localStorageService
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {
                     readStarted.TrySetResult();
                     return await releaseRead.Task;
                 });
-            localStorageService
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<bool?>(WelcomeWizardStorageKeys.Completed, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)false);
-            localStorageService
+            settingsStorageService
                 .Setup(service => service.SetItemAsync(WelcomeWizardStorageKeys.State, It.IsAny<WelcomeWizardState>(), It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);
 
-            var target = new WelcomeWizardStateService(localStorageService.Object);
+            var target = new WelcomeWizardStateService(settingsStorageService.Object);
             var firstReadTask = target.GetStateAsync(TestContext.Current.CancellationToken);
             await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
             var secondReadTask = target.GetStateAsync(TestContext.Current.CancellationToken);
@@ -193,7 +193,7 @@ namespace Lantean.QBTMud.Test.Services
 
             first.AcknowledgedStepIds.Should().Contain(WelcomeWizardStepCatalog.NotificationsStepId);
             second.AcknowledgedStepIds.Should().Contain(WelcomeWizardStepCatalog.NotificationsStepId);
-            localStorageService.Verify(
+            settingsStorageService.Verify(
                 service => service.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, It.IsAny<CancellationToken>()),
                 Times.Once);
         }

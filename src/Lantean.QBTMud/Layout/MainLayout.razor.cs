@@ -21,7 +21,7 @@ namespace Lantean.QBTMud.Layout
         private static readonly char[] _pathEndCharacters = ['?', '#'];
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [Inject]
         protected IThemeManagerService ThemeManagerService { get; set; } = default!;
@@ -136,7 +136,7 @@ namespace Lantean.QBTMud.Layout
         protected async Task ToggleDrawer()
         {
             await SetDrawerOpenAsync(!DrawerOpen);
-            await LocalStorage.SetItemAsync(_drawerOpenStorageKey, DrawerOpen);
+            await SettingsStorage.SetItemAsync(_drawerOpenStorageKey, DrawerOpen);
         }
 
         protected override void OnParametersSet()
@@ -163,7 +163,7 @@ namespace Lantean.QBTMud.Layout
         {
             if (firstRender)
             {
-                var storedDrawerOpen = await LocalStorage.GetItemAsync<bool?>(_drawerOpenStorageKey);
+                var storedDrawerOpen = await SettingsStorage.GetItemAsync<bool?>(_drawerOpenStorageKey);
 
                 if (storedDrawerOpen.GetValueOrDefault())
                 {
@@ -365,14 +365,14 @@ namespace Lantean.QBTMud.Layout
             var lightCss = ThemeCssBuilder.BuildCssVariables(Theme, false);
             var darkCss = ThemeCssBuilder.BuildCssVariables(Theme, true);
 
-            await LocalStorage.SetItemAsStringAsync(_bootstrapThemeCssLightStorageKey, lightCss);
-            await LocalStorage.SetItemAsStringAsync(_bootstrapThemeCssDarkStorageKey, darkCss);
-            await LocalStorage.SetItemAsync(_bootstrapThemeIsDarkStorageKey, IsDarkMode);
+            await SettingsStorage.SetItemAsStringAsync(_bootstrapThemeCssLightStorageKey, lightCss);
+            await SettingsStorage.SetItemAsStringAsync(_bootstrapThemeCssDarkStorageKey, darkCss);
+            await SettingsStorage.SetItemAsync(_bootstrapThemeIsDarkStorageKey, IsDarkMode);
 
             var fontFamily = ThemeManagerService.CurrentFontFamily;
             if (!string.IsNullOrWhiteSpace(fontFamily))
             {
-                await LocalStorage.SetItemAsStringAsync(_bootstrapThemeFontFamilyStorageKey, fontFamily);
+                await SettingsStorage.SetItemAsStringAsync(_bootstrapThemeFontFamilyStorageKey, fontFamily);
             }
         }
 

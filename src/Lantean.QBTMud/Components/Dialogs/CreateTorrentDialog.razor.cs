@@ -50,7 +50,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [Inject]
         protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
@@ -149,7 +149,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             TorrentCreationFormState? state;
             try
             {
-                state = await LocalStorage.GetItemAsync<TorrentCreationFormState>(StorageKey);
+                state = await SettingsStorage.GetItemAsync<TorrentCreationFormState>(StorageKey);
             }
             catch (Exception exception)
             {
@@ -189,7 +189,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 var buildInfo = await ApiClient.GetBuildInfo();
                 _supportsTorrentFormat = SupportsTorrentFormatForVersion(buildInfo.LibTorrentVersion);
             }
-            catch
+            catch (Exception)
             {
                 _supportsTorrentFormat = false;
             }
@@ -213,7 +213,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 PaddedFileSizeLimit = ConvertPaddedFileSizeLimit()
             };
 
-            await LocalStorage.SetItemAsync(StorageKey, state);
+            await SettingsStorage.SetItemAsync(StorageKey, state);
         }
 
         private int? BuildPaddedFileSizeLimit()

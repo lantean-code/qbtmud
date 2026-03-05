@@ -9,13 +9,13 @@ namespace Lantean.QBTMud.Test.Services
 {
     public sealed class AppSettingsServiceTests
     {
-        private readonly TestLocalStorageService _localStorageService;
+        private readonly TestLocalStorageService _settingsStorageService;
         private readonly AppSettingsService _target;
 
         public AppSettingsServiceTests()
         {
-            _localStorageService = new TestLocalStorageService();
-            _target = new AppSettingsService(_localStorageService);
+            _settingsStorageService = new TestLocalStorageService();
+            _target = new AppSettingsService(_settingsStorageService);
         }
 
         [Fact]
@@ -98,36 +98,73 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_CachedSettings_WHEN_GetSettingsInvokedTwice_THEN_ReadsStorageOnce()
         {
-            var localStorageService = new Mock<ILocalStorageService>(MockBehavior.Strict);
-            localStorageService
+            var settingsStorageService = new Mock<ISettingsStorageService>(MockBehavior.Strict);
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
-            localStorageService
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
 
-            var target = new AppSettingsService(localStorageService.Object);
+            var target = new AppSettingsService(settingsStorageService.Object);
 
             _ = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
             _ = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
 
-            localStorageService.Verify(
+            settingsStorageService.Verify(
                 service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_LocalStorageJsonException_WHEN_GetSettingsInvoked_THEN_ReturnsDefaults()
+        public async Task GIVEN_CachedSettings_WHEN_RefreshSettingsInvoked_THEN_ReloadsFromStorage()
         {
-            var localStorageService = new Mock<ILocalStorageService>(MockBehavior.Strict);
-            localStorageService
+            var settingsStorageService = new Mock<ISettingsStorageService>(MockBehavior.Strict);
+            var loadQueue = new Queue<AppSettings?>(
+            [
+                new AppSettings
+                {
+                    UpdateChecksEnabled = false,
+                    NotificationsEnabled = false
+                },
+                new AppSettings
+                {
+                    UpdateChecksEnabled = true,
+                    NotificationsEnabled = true
+                }
+            ]);
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new JsonException("invalid"));
-            localStorageService
+                .ReturnsAsync(() => loadQueue.Dequeue());
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
 
-            var target = new AppSettingsService(localStorageService.Object);
+            var target = new AppSettingsService(settingsStorageService.Object);
+
+            var first = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
+            var refreshed = await target.RefreshSettingsAsync(TestContext.Current.CancellationToken);
+
+            first.UpdateChecksEnabled.Should().BeFalse();
+            refreshed.UpdateChecksEnabled.Should().BeTrue();
+            refreshed.NotificationsEnabled.Should().BeTrue();
+            settingsStorageService.Verify(
+                service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task GIVEN_LocalStorageJsonException_WHEN_GetSettingsInvoked_THEN_ReturnsDefaults()
+        {
+            var settingsStorageService = new Mock<ISettingsStorageService>(MockBehavior.Strict);
+            settingsStorageService
+                .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new JsonException("invalid"));
+            settingsStorageService
+                .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((bool?)null);
+
+            var target = new AppSettingsService(settingsStorageService.Object);
 
             var result = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
 
@@ -137,22 +174,22 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ConcurrentInitialReads_WHEN_FirstReadInitializesCache_THEN_SecondReadReturnsFromSemaphoreCache()
         {
-            var localStorageService = new Mock<ILocalStorageService>(MockBehavior.Strict);
+            var settingsStorageService = new Mock<ISettingsStorageService>(MockBehavior.Strict);
             var readStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var releaseRead = new TaskCompletionSource<AppSettings>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            localStorageService
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {
                     readStarted.TrySetResult();
                     return await releaseRead.Task;
                 });
-            localStorageService
+            settingsStorageService
                 .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((bool?)null);
 
-            var target = new AppSettingsService(localStorageService.Object);
+            var target = new AppSettingsService(settingsStorageService.Object);
             var firstReadTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);
             await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
             var secondReadTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);
@@ -168,7 +205,7 @@ namespace Lantean.QBTMud.Test.Services
 
             first.NotificationsEnabled.Should().BeTrue();
             second.NotificationsEnabled.Should().BeTrue();
-            localStorageService.Verify(
+            settingsStorageService.Verify(
                 service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()),
                 Times.Once);
         }
@@ -185,11 +222,11 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_LegacyDarkModeSettingAndSystemThemeMode_WHEN_GetSettingsInvoked_THEN_MigratesToDarkAndRemovesLegacyKey()
         {
-            await _localStorageService.SetItemAsync("MainLayout.IsDarkMode", true, TestContext.Current.CancellationToken);
+            await _settingsStorageService.SetItemAsync("MainLayout.IsDarkMode", true, TestContext.Current.CancellationToken);
 
             var result = await _target.GetSettingsAsync(TestContext.Current.CancellationToken);
-            var legacyValue = await _localStorageService.GetItemAsync<bool?>("MainLayout.IsDarkMode", TestContext.Current.CancellationToken);
-            var persisted = await _localStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, TestContext.Current.CancellationToken);
+            var legacyValue = await _settingsStorageService.GetItemAsync<bool?>("MainLayout.IsDarkMode", TestContext.Current.CancellationToken);
+            var persisted = await _settingsStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, TestContext.Current.CancellationToken);
 
             result.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
             legacyValue.Should().BeNull();
@@ -200,11 +237,11 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_LegacyLightModeSettingAndSystemThemeMode_WHEN_GetSettingsInvoked_THEN_MigratesToLightAndRemovesLegacyKey()
         {
-            await _localStorageService.SetItemAsync("MainLayout.IsDarkMode", false, TestContext.Current.CancellationToken);
+            await _settingsStorageService.SetItemAsync("MainLayout.IsDarkMode", false, TestContext.Current.CancellationToken);
 
             var result = await _target.GetSettingsAsync(TestContext.Current.CancellationToken);
-            var legacyValue = await _localStorageService.GetItemAsync<bool?>("MainLayout.IsDarkMode", TestContext.Current.CancellationToken);
-            var persisted = await _localStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, TestContext.Current.CancellationToken);
+            var legacyValue = await _settingsStorageService.GetItemAsync<bool?>("MainLayout.IsDarkMode", TestContext.Current.CancellationToken);
+            var persisted = await _settingsStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, TestContext.Current.CancellationToken);
 
             result.ThemeModePreference.Should().Be(ThemeModePreference.Light);
             legacyValue.Should().BeNull();
@@ -215,14 +252,14 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ExplicitThemeModePreferenceAndLegacyDarkModeSetting_WHEN_GetSettingsInvoked_THEN_ExplicitThemeModeIsNotOverridden()
         {
-            await _localStorageService.SetItemAsync(AppSettings.StorageKey, new AppSettings
+            await _settingsStorageService.SetItemAsync(AppSettings.StorageKey, new AppSettings
             {
                 ThemeModePreference = ThemeModePreference.Dark
             }, TestContext.Current.CancellationToken);
-            await _localStorageService.SetItemAsync("MainLayout.IsDarkMode", false, TestContext.Current.CancellationToken);
+            await _settingsStorageService.SetItemAsync("MainLayout.IsDarkMode", false, TestContext.Current.CancellationToken);
 
             var result = await _target.GetSettingsAsync(TestContext.Current.CancellationToken);
-            var legacyValue = await _localStorageService.GetItemAsync<bool?>("MainLayout.IsDarkMode", TestContext.Current.CancellationToken);
+            var legacyValue = await _settingsStorageService.GetItemAsync<bool?>("MainLayout.IsDarkMode", TestContext.Current.CancellationToken);
 
             result.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
             legacyValue.Should().BeNull();
@@ -245,6 +282,45 @@ namespace Lantean.QBTMud.Test.Services
             raisedArgs.Should().NotBeNull();
             raisedArgs!.Settings.ThemeModePreference.Should().Be(ThemeModePreference.Light);
             raisedArgs.Settings.Should().NotBeSameAs(saved);
+        }
+
+        [Fact]
+        public async Task GIVEN_CachedSettingsAndDifferentReloadedSettings_WHEN_RefreshSettingsInvoked_THEN_RaisesSettingsChangedEvent()
+        {
+            var settingsStorageService = new Mock<ISettingsStorageService>(MockBehavior.Strict);
+            var loadQueue = new Queue<AppSettings?>(
+            [
+                new AppSettings
+                {
+                    UpdateChecksEnabled = false,
+                    NotificationsEnabled = false
+                },
+                new AppSettings
+                {
+                    UpdateChecksEnabled = true,
+                    NotificationsEnabled = true
+                }
+            ]);
+            settingsStorageService
+                .Setup(service => service.GetItemAsync<AppSettings>(AppSettings.StorageKey, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => loadQueue.Dequeue());
+            settingsStorageService
+                .Setup(service => service.GetItemAsync<bool?>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((bool?)null);
+
+            var target = new AppSettingsService(settingsStorageService.Object);
+            AppSettingsChangedEventArgs? raisedArgs = null;
+            target.SettingsChanged += (_, args) =>
+            {
+                raisedArgs = args;
+            };
+
+            _ = await target.GetSettingsAsync(TestContext.Current.CancellationToken);
+            var refreshed = await target.RefreshSettingsAsync(TestContext.Current.CancellationToken);
+
+            raisedArgs.Should().NotBeNull();
+            raisedArgs!.Settings.UpdateChecksEnabled.Should().Be(refreshed.UpdateChecksEnabled);
+            raisedArgs.Settings.NotificationsEnabled.Should().BeTrue();
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Lantean.QBTMud.Pages
         protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [Inject]
         protected IClipboardService ClipboardService { get; set; } = default!;
@@ -62,7 +62,7 @@ namespace Lantean.QBTMud.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            var selectedTypes = await LocalStorage.GetItemAsync<IReadOnlyCollection<string>>(_selectedTypesStorageKey);
+            var selectedTypes = await SettingsStorage.GetItemAsync<IReadOnlyCollection<string>>(_selectedTypesStorageKey);
             if (selectedTypes is not null)
             {
                 Model.SelectedTypes = selectedTypes;
@@ -84,7 +84,7 @@ namespace Lantean.QBTMud.Pages
         {
             Model.SelectedTypes = values;
 
-            await LocalStorage.SetItemAsync(_selectedTypesStorageKey, Model.SelectedTypes);
+            await SettingsStorage.SetItemAsync(_selectedTypesStorageKey, Model.SelectedTypes);
         }
 
         protected string GenerateSelectedText(IReadOnlyList<string> values)

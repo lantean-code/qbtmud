@@ -9,16 +9,16 @@ namespace Lantean.QBTMud.Services
     public sealed class WelcomeWizardStateService : IWelcomeWizardStateService
     {
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
-        private readonly ILocalStorageService _localStorageService;
+        private readonly ISettingsStorageService _settingsStorageService;
         private WelcomeWizardState? _cachedState;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WelcomeWizardStateService"/> class.
         /// </summary>
-        /// <param name="localStorageService">The local storage service.</param>
-        public WelcomeWizardStateService(ILocalStorageService localStorageService)
+        /// <param name="settingsStorageService">The local storage service.</param>
+        public WelcomeWizardStateService(ISettingsStorageService settingsStorageService)
         {
-            _localStorageService = localStorageService;
+            _settingsStorageService = settingsStorageService;
         }
 
         /// <inheritdoc />
@@ -40,7 +40,7 @@ namespace Lantean.QBTMud.Services
                 WelcomeWizardState? loadedState = null;
                 try
                 {
-                    loadedState = await _localStorageService.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, cancellationToken);
+                    loadedState = await _settingsStorageService.GetItemAsync<WelcomeWizardState>(WelcomeWizardStorageKeys.State, cancellationToken);
                 }
                 catch (JsonException)
                 {
@@ -53,10 +53,10 @@ namespace Lantean.QBTMud.Services
                     return _cachedState.Clone();
                 }
 
-                var legacyCompleted = await _localStorageService.GetItemAsync<bool?>(WelcomeWizardStorageKeys.Completed, cancellationToken);
+                var legacyCompleted = await _settingsStorageService.GetItemAsync<bool?>(WelcomeWizardStorageKeys.Completed, cancellationToken);
                 var migratedState = BuildMigratedState(legacyCompleted.GetValueOrDefault());
                 _cachedState = Normalize(migratedState);
-                await _localStorageService.SetItemAsync(WelcomeWizardStorageKeys.State, _cachedState, cancellationToken);
+                await _settingsStorageService.SetItemAsync(WelcomeWizardStorageKeys.State, _cachedState, cancellationToken);
 
                 return _cachedState.Clone();
             }
@@ -74,7 +74,7 @@ namespace Lantean.QBTMud.Services
             var normalized = Normalize(state);
             _cachedState = normalized.Clone();
 
-            await _localStorageService.SetItemAsync(WelcomeWizardStorageKeys.State, normalized, cancellationToken);
+            await _settingsStorageService.SetItemAsync(WelcomeWizardStorageKeys.State, normalized, cancellationToken);
             return _cachedState.Clone();
         }
 

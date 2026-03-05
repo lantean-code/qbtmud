@@ -24,6 +24,11 @@
                            OnClick="Undo"
                            Disabled="@(LostConnection || !HasPendingChanges)"
                            data-test-id="@TestIdHelper.For("AppSettingsUndoButton")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                           OnClick="Reload"
+                           title="@TranslateSettings("Refresh")"
+                           Disabled="@(LostConnection || IsLoading || IsReloading || IsStorageBusy)"
+                           data-test-id="@TestIdHelper.For("AppSettingsReloadButton")" />
         </MudToolBar>
     </div>
 
@@ -37,7 +42,12 @@
         }
         else
         {
-            <MudTabs Elevation="2" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="ActiveTab" Border="true" KeepPanelsAlive="true">
+            <MudTabs Elevation="2"
+                     ApplyEffectsToContainer="true"
+                     ActivePanelIndex="@ActiveTab"
+                     ActivePanelIndexChanged="OnActiveTabChanged"
+                     Border="true"
+                     KeepPanelsAlive="true">
                 <MudTabPanel Text="@TranslateSettings("Visual")"
                              data-test-id="@TestIdHelper.For("AppSettingsVisualTab")">
                     <div class="options-tab-contents">
@@ -209,64 +219,208 @@
                     </div>
                 </MudTabPanel>
 
-                <MudTabPanel Text="@TranslateSettings("Local Storage")">
-                    <div class="options-tab-contents">
-                        <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
-                            <MudCardHeader>
-                                <CardHeaderContent>
-                                    <MudText Typo="Typo.subtitle2">@TranslateSettings("Local Storage")</MudText>
-                                </CardHeaderContent>
-                            </MudCardHeader>
-                            <MudCardContent Class="pt-0">
-                                <MudStack Row="true" Class="mb-3" Spacing="2">
-                                    <MudButton Variant="Variant.Outlined"
-                                               Color="Color.Default"
-                                               OnClick="RefreshStorageEntriesAsync"
-                                               Disabled="@IsStorageBusy"
-                                               data-test-id="@TestIdHelper.For("AppSettingsStorageRefresh")">
-                                        @TranslateSettings("Refresh")
-                                    </MudButton>
-                                    <MudButton Variant="Variant.Outlined"
-                                               Color="Color.Error"
-                                               OnClick="ClearStorageEntriesAsync"
-                                               Disabled="@(IsStorageBusy || StorageEntries.Count == 0)"
-                                               data-test-id="@TestIdHelper.For("AppSettingsStorageClearAll")">
-                                        @TranslateSettings("Clear all qbtmud data")
-                                    </MudButton>
-                                </MudStack>
+                <MudTabPanel Text="@TranslateSettings("Storage")">
+                    @if (IsStorageTabActivated)
+                    {
+                        <div class="options-tab-contents">
+                            <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.subtitle2">@TranslateSettings("Storage")</MudText>
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardContent Class="pt-0">
+                                    <MudGrid Spacing="2">
+                                        <MudItem xs="12" sm="4">
+                                            <MudText Typo="Typo.body2" Class="fw-bold">@TranslateSettings("Web API version")</MudText>
+                                        </MudItem>
+                                        <MudItem xs="12" sm="8">
+                                            <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsStorageWebApiVersion")">@GetWebApiVersionText()</MudText>
+                                        </MudItem>
+                                        <MudItem xs="12" sm="4">
+                                            <MudText Typo="Typo.body2" Class="fw-bold">@TranslateSettings("ClientData support")</MudText>
+                                        </MudItem>
+                                        <MudItem xs="12" sm="8">
+                                            <MudChip T="string"
+                                                     Color="@GetClientDataSupportColor()"
+                                                     Variant="Variant.Outlined"
+                                                     data-test-id="@TestIdHelper.For("AppSettingsStorageSupport")">
+                                                @GetClientDataSupportText()
+                                            </MudChip>
+                                        </MudItem>
+                                        <MudItem xs="12">
+                                            <MudText Typo="Typo.caption" Class="mud-secondary-text">
+                                                @TranslateSettings("Choose where qbtmud stores settings data. You can set a master storage type, override by group, and then override specific items.")
+                                            </MudText>
+                                        </MudItem>
+                                        <MudItem xs="12">
+                                            <MudSelect T="StorageType"
+                                                       Label="@TranslateSettings("Master storage type")"
+                                                       Value="@StorageRoutingSettings.MasterStorageType"
+                                                       ValueChanged="OnMasterStorageTypeChanged"
+                                                       Variant="Variant.Outlined"
+                                                       ShrinkLabel="true"
+                                                       data-test-id="@TestIdHelper.For("AppSettingsStorageMasterStorageType")">
+                                                <MudSelectItem Value="@StorageType.LocalStorage">@GetStorageTypeOptionText(StorageType.LocalStorage)</MudSelectItem>
+                                                <MudSelectItem Value="@StorageType.ClientData" Disabled="@(!SupportsClientData)">@GetStorageTypeOptionText(StorageType.ClientData)</MudSelectItem>
+                                            </MudSelect>
+                                        </MudItem>
+                                    </MudGrid>
+                                </MudCardContent>
+                            </MudCard>
 
-                                @if (StorageEntries.Count == 0)
-                                {
-                                    <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsStorageEmpty")">
-                                        @TranslateSettings("No qbtmud local storage entries found.")
-                                    </MudText>
-                                }
-                                else
-                                {
-                                    <MudTable T="AppStorageEntry" Items="@StorageEntries" Dense="true" Bordered="true" Hover="true" Elevation="0">
-                                        <HeaderContent>
-                                            <MudTh>@TranslateSettings("Key")</MudTh>
-                                            <MudTh>@TranslateSettings("Preview")</MudTh>
-                                            <MudTh>@TranslateSettings("Size")</MudTh>
-                                            <MudTh>@TranslateSettings("Actions")</MudTh>
-                                        </HeaderContent>
-                                        <RowTemplate>
-                                            <MudTd DataLabel="@TranslateSettings("Key")">@context.DisplayKey</MudTd>
-                                            <MudTd DataLabel="@TranslateSettings("Preview")">@context.Preview</MudTd>
-                                            <MudTd DataLabel="@TranslateSettings("Size")">@context.Length</MudTd>
-                                            <MudTd DataLabel="@TranslateSettings("Actions")">
-                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                               Color="Color.Error"
-                                                               Disabled="@IsStorageBusy"
-                                                               OnClick="@(async () => await RemoveStorageEntryAsync(context.Key))"
-                                                               data-test-id="@TestIdHelper.For($"AppSettingsStorageDelete-{context.DisplayKey}")" />
-                                            </MudTd>
-                                        </RowTemplate>
-                                    </MudTable>
-                                }
-                            </MudCardContent>
-                        </MudCard>
-                    </div>
+                            @foreach (var group in StorageGroups)
+                            {
+                                var isGroupOverridesExpanded = IsGroupOverridesExpanded(group.Id);
+                                <MudCard Elevation="1" Class="ml-4 mr-4 mb-4">
+                                    <MudCardHeader>
+                                        <CardHeaderContent>
+                                            <MudStack Spacing="0">
+                                                <MudText Typo="Typo.subtitle2">@TranslateSettings(group.DisplayNameSource)</MudText>
+                                                <MudText Typo="Typo.caption" Class="mud-secondary-text">@TranslateSettings("Applies to all items in this group.")</MudText>
+                                            </MudStack>
+                                        </CardHeaderContent>
+                                    </MudCardHeader>
+                                    <MudCardContent Class="pt-0">
+                                        <MudGrid Spacing="2" Class="mb-1">
+                                            <MudItem xs="12" md="7">
+                                                <MudSelect T="StorageType"
+                                                           Label="@TranslateSettings("%1 storage type", TranslateSettings(group.DisplayNameSource))"
+                                                           Value="@GetGroupStorageTypeValue(group.Id)"
+                                                           ValueChanged="@(value => OnGroupStorageTypeChanged(group.Id, value))"
+                                                           Variant="Variant.Outlined"
+                                                           ShrinkLabel="true"
+                                                           data-test-id="@TestIdHelper.For($"AppSettingsStorageGroupStorageType-{group.Id}")">
+                                                    <MudSelectItem Value="@StorageType.LocalStorage">@GetStorageTypeOptionText(StorageType.LocalStorage)</MudSelectItem>
+                                                    <MudSelectItem Value="@StorageType.ClientData" Disabled="@(!SupportsClientData)">@GetStorageTypeOptionText(StorageType.ClientData)</MudSelectItem>
+                                                </MudSelect>
+                                            </MudItem>
+                                            <MudItem xs="12" md="5" Class="d-flex justify-end align-center">
+                                                <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" AlignItems="AlignItems.Center">
+                                                    <MudChip T="string"
+                                                             Variant="Variant.Outlined"
+                                                             Size="Size.Small"
+                                                             Color="Color.Info"
+                                                             data-test-id="@TestIdHelper.For($"AppSettingsStorageGroupOverrideCount-{group.Id}")">
+                                                        @TranslateSettings("Overrides: %1", GetGroupOverrideCount(group))
+                                                    </MudChip>
+                                                    <MudButton Variant="Variant.Outlined"
+                                                               Size="Size.Small"
+                                                               Color="Color.Default"
+                                                               OnClick="@(_ => OnClearGroupOverrides(group.Id))"
+                                                               Disabled="@(GetGroupOverrideCount(group) == 0)"
+                                                               data-test-id="@TestIdHelper.For($"AppSettingsStorageClearGroupOverrides-{group.Id}")">
+                                                        @TranslateSettings("Clear overrides")
+                                                    </MudButton>
+                                                </MudStack>
+                                            </MudItem>
+                                        </MudGrid>
+                                        <MudExpansionPanels MultiExpansion="true" Outlined="true" Elevation="0" Class="app-settings-storage-overrides-panels">
+                                            <MudExpansionPanel Expanded="@isGroupOverridesExpanded"
+                                                               ExpandedChanged="@(value => SetGroupOverridesExpanded(group.Id, value))"
+                                                               Class="app-settings-storage-overrides-panel"
+                                                               HeaderClass="app-settings-storage-overrides-panel__header"
+                                                               data-test-id="@TestIdHelper.For($"AppSettingsStorageGroupOverridesPanel-{group.Id}")">
+                                                <TitleContent>
+                                                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Default" Size="Size.Small" />
+                                                        <MudText Typo="Typo.body2" Class="fw-bold">@GetGroupOverridesToggleText(group)</MudText>
+                                                    </MudStack>
+                                                </TitleContent>
+                                                <ChildContent>
+                                                    @if (isGroupOverridesExpanded)
+                                                    {
+                                                        <MudGrid Spacing="2" Class="pt-2">
+                                                            @foreach (var item in group.Items)
+                                                            {
+                                                                <MudItem xs="12">
+                                                                    <MudSelect T="StorageType"
+                                                                               Label="@TranslateSettings(item.DisplayNameSource)"
+                                                                               Value="@GetItemStorageTypeValue(item)"
+                                                                               ValueChanged="@(value => OnItemStorageTypeChanged(item, value))"
+                                                                               Variant="Variant.Outlined"
+                                                                               ShrinkLabel="true"
+                                                                               data-test-id="@TestIdHelper.For($"AppSettingsStorageItemStorageType-{item.Id}")">
+                                                                        <MudSelectItem Value="@StorageType.LocalStorage">@GetStorageTypeOptionText(StorageType.LocalStorage)</MudSelectItem>
+                                                                        <MudSelectItem Value="@StorageType.ClientData" Disabled="@(!SupportsClientData)">@GetStorageTypeOptionText(StorageType.ClientData)</MudSelectItem>
+                                                                    </MudSelect>
+                                                                </MudItem>
+                                                            }
+                                                        </MudGrid>
+                                                    }
+                                                </ChildContent>
+                                            </MudExpansionPanel>
+                                        </MudExpansionPanels>
+                                    </MudCardContent>
+                                </MudCard>
+                            }
+
+                            <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.subtitle2">@TranslateSettings("Storage diagnostics")</MudText>
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardContent Class="pt-0">
+                                    <MudStack Row="true" Class="mb-3" Spacing="2">
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Color="Color.Default"
+                                                   OnClick="RefreshStorageEntriesAsync"
+                                                   Disabled="@IsStorageBusy"
+                                                   data-test-id="@TestIdHelper.For("AppSettingsStorageRefresh")">
+                                            @TranslateSettings("Refresh")
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Color="Color.Error"
+                                                   OnClick="ClearStorageEntriesAsync"
+                                                   Disabled="@(IsStorageBusy || StorageEntries.Count == 0)"
+                                                   data-test-id="@TestIdHelper.For("AppSettingsStorageClearAll")">
+                                            @TranslateSettings("Clear all qbtmud data")
+                                        </MudButton>
+                                    </MudStack>
+
+                                    @if (IsLoadingInitialStorageEntries)
+                                    {
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                            <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Primary" />
+                                            <MudText Typo="Typo.body2">@TranslateSettings("Loading storage entries...")</MudText>
+                                        </MudStack>
+                                    }
+                                    else if (StorageEntries.Count == 0)
+                                    {
+                                        <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsStorageEmpty")">
+                                            @TranslateSettings("No qbtmud storage entries found.")
+                                        </MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudTable T="AppStorageEntry" Items="@StorageEntries" Dense="true" Bordered="true" Hover="true" Elevation="0">
+                                            <HeaderContent>
+                                                <MudTh>@TranslateSettings("Storage type")</MudTh>
+                                                <MudTh>@TranslateSettings("Key")</MudTh>
+                                                <MudTh>@TranslateSettings("Preview")</MudTh>
+                                                <MudTh>@TranslateSettings("Size")</MudTh>
+                                                <MudTh>@TranslateSettings("Actions")</MudTh>
+                                            </HeaderContent>
+                                            <RowTemplate>
+                                                <MudTd DataLabel="@TranslateSettings("Storage type")">@GetStorageTypeDisplayText(context.StorageType)</MudTd>
+                                                <MudTd DataLabel="@TranslateSettings("Key")">@context.DisplayKey</MudTd>
+                                                <MudTd DataLabel="@TranslateSettings("Preview")">@context.Preview</MudTd>
+                                                <MudTd DataLabel="@TranslateSettings("Size")">@context.Length</MudTd>
+                                                <MudTd DataLabel="@TranslateSettings("Actions")">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                   Color="Color.Error"
+                                                                   Disabled="@IsStorageBusy"
+                                                                   OnClick="@(async () => await RemoveStorageEntryAsync(context.StorageType, context.Key))"
+                                                                   data-test-id="@TestIdHelper.For($"AppSettingsStorageDelete-{context.StorageType}-{context.DisplayKey}")" />
+                                                </MudTd>
+                                            </RowTemplate>
+                                        </MudTable>
+                                    }
+                                </MudCardContent>
+                            </MudCard>
+                        </div>
+                    }
                 </MudTabPanel>
             </MudTabs>
         }

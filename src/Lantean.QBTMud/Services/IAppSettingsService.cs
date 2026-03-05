@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Services
     public interface IAppSettingsService
     {
         /// <summary>
-        /// Occurs when settings are persisted.
+        /// Occurs when the effective settings value changes.
         /// </summary>
         event EventHandler<AppSettingsChangedEventArgs>? SettingsChanged;
 
@@ -18,6 +18,13 @@ namespace Lantean.QBTMud.Services
         /// <param name="cancellationToken">The cancellation token for the request.</param>
         /// <returns>The current settings.</returns>
         Task<AppSettings> GetSettingsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Reloads qbtmud app settings from persistent storage and replaces the in-memory cache.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token for the request.</param>
+        /// <returns>The reloaded settings.</returns>
+        Task<AppSettings> RefreshSettingsAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Persists qbtmud app settings.

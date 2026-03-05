@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var sortColumn = string.Empty;
             var sortDirection = SortDirection.None;
 
-            var localStorageMock = TestContext.AddSingletonMock<ILocalStorageService>(MockBehavior.Loose);
+            var settingsStorageMock = TestContext.AddSingletonMock<ISettingsStorageService>(MockBehavior.Loose);
 
             var target = RenderDynamicTable(builder =>
             {
@@ -49,7 +49,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             sortColumn.Should().Be("id");
             sortDirection.Should().Be(SortDirection.Ascending);
 
-            localStorageMock.Verify(service => service.GetItemAsync<HashSet<string>>(It.IsAny<string>()), Times.AtLeastOnce);
+            settingsStorageMock.Verify(service => service.GetItemAsync<HashSet<string>>(It.IsAny<string>()), Times.AtLeastOnce);
         }
 
         [Fact]
@@ -494,17 +494,17 @@ namespace Lantean.QBTMud.Test.Components.UI
                     It.IsAny<DialogOptions>()))
                 .ReturnsAsync(dialogReferenceMock.Object);
 
-            var localStorageMock = new Mock<ILocalStorageService>(MockBehavior.Loose);
-            localStorageMock.Setup(s => s.GetItemAsync<HashSet<string>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<HashSet<string>?>(result: null));
-            localStorageMock.Setup(s => s.GetItemAsync<Dictionary<string, int?>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<Dictionary<string, int?>?>(result: null));
-            localStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<HashSet<string>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
-            localStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
-            localStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
+            var settingsStorageMock = new Mock<ISettingsStorageService>(MockBehavior.Loose);
+            settingsStorageMock.Setup(s => s.GetItemAsync<HashSet<string>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<HashSet<string>?>(result: null));
+            settingsStorageMock.Setup(s => s.GetItemAsync<Dictionary<string, int?>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<Dictionary<string, int?>?>(result: null));
+            settingsStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<HashSet<string>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
+            settingsStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
+            settingsStorageMock.Setup(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int>>(), It.IsAny<CancellationToken>())).Returns(new ValueTask());
 
             TestContext.Services.RemoveAll<IDialogService>();
             TestContext.Services.AddSingleton(dialogServiceMock.Object);
-            TestContext.Services.RemoveAll<ILocalStorageService>();
-            TestContext.Services.AddSingleton(localStorageMock.Object);
+            TestContext.Services.RemoveAll<ISettingsStorageService>();
+            TestContext.Services.AddSingleton(settingsStorageMock.Object);
 
             var target = RenderDynamicTable(builder =>
             {
@@ -515,9 +515,9 @@ namespace Lantean.QBTMud.Test.Components.UI
             await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
 
             dialogServiceMock.VerifyAll();
-            localStorageMock.Verify(s => s.SetItemAsync(It.Is<string>(key => key.Contains("ColumnSelection", StringComparison.Ordinal)), It.Is<HashSet<string>>(value => value.Contains("name")), It.IsAny<CancellationToken>()), Times.Once);
-            localStorageMock.Verify(s => s.SetItemAsync(It.Is<string>(key => key.Contains("ColumnWidths", StringComparison.Ordinal)), It.Is<Dictionary<string, int?>>(value => value["name"] == 64), It.IsAny<CancellationToken>()), Times.Once);
-            localStorageMock.Verify(s => s.SetItemAsync(It.Is<string>(key => key.Contains("ColumnOrder", StringComparison.Ordinal)), It.Is<Dictionary<string, int>>(value => value["name"] == 1), It.IsAny<CancellationToken>()), Times.Once);
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.Is<string>(key => key.Contains("ColumnSelection", StringComparison.Ordinal)), It.Is<HashSet<string>>(value => value.Contains("name")), It.IsAny<CancellationToken>()), Times.Once);
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.Is<string>(key => key.Contains("ColumnWidths", StringComparison.Ordinal)), It.Is<Dictionary<string, int?>>(value => value["name"] == 64), It.IsAny<CancellationToken>()), Times.Once);
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.Is<string>(key => key.Contains("ColumnOrder", StringComparison.Ordinal)), It.Is<Dictionary<string, int>>(value => value["name"] == 1), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -904,9 +904,9 @@ namespace Lantean.QBTMud.Test.Components.UI
         public async Task GIVEN_ShowColumnsDialogUnchanged_WHEN_Invoked_THEN_NoPersistence()
         {
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
-            var localStorageMock = TestContext.AddSingletonMock<ILocalStorageService>(MockBehavior.Loose);
-            localStorageMock.Setup(s => s.GetItemAsync<HashSet<string>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<HashSet<string>?>(result: null));
-            localStorageMock.Setup(s => s.GetItemAsync<Dictionary<string, int?>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<Dictionary<string, int?>?>(result: null));
+            var settingsStorageMock = TestContext.AddSingletonMock<ISettingsStorageService>(MockBehavior.Loose);
+            settingsStorageMock.Setup(s => s.GetItemAsync<HashSet<string>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<HashSet<string>?>(result: null));
+            settingsStorageMock.Setup(s => s.GetItemAsync<Dictionary<string, int?>>(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new ValueTask<Dictionary<string, int?>?>(result: null));
 
             dialogWorkflowMock
                 .Setup(d => d.ShowColumnsOptionsDialog(It.IsAny<List<ColumnDefinition<TestRow>>>(), It.IsAny<HashSet<string>>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<Dictionary<string, int>>()))
@@ -921,9 +921,9 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             await target.InvokeAsync(() => target.Instance.ShowColumnOptionsDialog());
 
-            localStorageMock.Verify(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<HashSet<string>>(), It.IsAny<CancellationToken>()), Times.Never);
-            localStorageMock.Verify(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<CancellationToken>()), Times.Never);
-            localStorageMock.Verify(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int>>(), It.IsAny<CancellationToken>()), Times.Never);
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<HashSet<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int?>>(), It.IsAny<CancellationToken>()), Times.Never);
+            settingsStorageMock.Verify(s => s.SetItemAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, int>>(), It.IsAny<CancellationToken>()), Times.Never);
             dialogWorkflowMock.VerifyAll();
         }
 
@@ -1245,6 +1245,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var items = new List<TestRow> { new TestRow { Name = "Delayed", Age = 4, Score = 4 } };
             var selectedItemEvents = new List<TestRow>();
             var rowClicks = new List<TableRowClickEventArgs<TestRow>>();
+            var rowClickInvocation = new TaskCompletionSource<TableRowClickEventArgs<TestRow>>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
             {
@@ -1254,7 +1255,11 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.MultiSelection, false);
                 parameters.Add(p => p.SelectOnRowClick, true);
                 parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
-                parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
+                parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args =>
+                {
+                    rowClicks.Add(args);
+                    rowClickInvocation.TrySetResult(args);
+                }));
             });
 
             var cell = target.FindComponents<TdExtended>().First().Find("td");
@@ -1263,14 +1268,12 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             var row = target.FindComponents<MudTr>().First().Find("tr");
             await target.InvokeAsync(() => row.TriggerEventAsync("onclick", new MouseEventArgs()));
+            await rowClickInvocation.Task.WaitAsync(TimeSpan.FromSeconds(2), Xunit.TestContext.Current.CancellationToken);
 
-            target.WaitForAssertion(() =>
-            {
-                selectedItemEvents.Should().NotBeEmpty();
-                selectedItemEvents.Last().Should().Be(items[0]);
-                target.Instance.SelectedItem.Should().Be(items[0]);
-                rowClicks.Should().ContainSingle();
-            });
+            selectedItemEvents.Should().NotBeEmpty();
+            selectedItemEvents.Last().Should().Be(items[0]);
+            target.Instance.SelectedItem.Should().Be(items[0]);
+            rowClicks.Should().ContainSingle();
         }
 
         private static async Task WaitForSuppressWindowToExpireAsync()

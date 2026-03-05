@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor;
+using System.Text.Json;
 using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
 using AppSettingsPage = Lantean.QBTMud.Pages.AppSettings;
 
@@ -43,6 +44,9 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettingsModel());
             Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettingsModel());
+            Mock.Get(_appSettingsService)
                 .Setup(service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((AppSettingsModel settings, CancellationToken _) => settings.Clone());
             Mock.Get(_appUpdateService)
@@ -63,13 +67,13 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(
                 [
-                    new AppStorageEntry("QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                    new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
                 ]);
             Mock.Get(_storageDiagnosticsService)
-                .Setup(service => service.RemoveEntryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Setup(service => service.RemoveEntryAsync(It.IsAny<StorageType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             Mock.Get(_storageDiagnosticsService)
-                .Setup(service => service.ClearEntriesAsync(It.IsAny<CancellationToken>()))
+                .Setup(service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1);
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()))
@@ -180,6 +184,135 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_appSettingsService).Verify(
                 service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
                 Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NoPendingChanges_WHEN_ReloadClicked_THEN_RefreshesStateWithoutConfirmation()
+        {
+            var target = RenderPage();
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsReloadButton");
+            _appSettingsService.ClearInvocations();
+            _dialogWorkflow.ClearInvocations();
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(
+                workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingChangesAndReloadCancelled_WHEN_ReloadClicked_THEN_KeepsDraftAndSkipsRefresh()
+        {
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(false);
+
+            var target = RenderPage();
+            var updateChecksSwitch = FindSwitch(target, "AppSettingsUpdateChecksEnabled");
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsReloadButton");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+            _appSettingsService.ClearInvocations();
+
+            await target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
+            saveButton.Instance.Disabled.Should().BeFalse();
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()),
+                Times.Never);
+            saveButton.Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingChangesAndReloadConfirmed_WHEN_ReloadClicked_THEN_DiscardsDraftAndRefreshesState()
+        {
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(true);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettingsModel
+                {
+                    UpdateChecksEnabled = true,
+                    NotificationsEnabled = true,
+                    ThemeModePreference = ThemeModePreference.Dark,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false
+                });
+
+            var target = RenderPage();
+            var updateChecksSwitch = FindSwitch(target, "AppSettingsUpdateChecksEnabled");
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsReloadButton");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
+            saveButton.Instance.Disabled.Should().BeFalse();
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+            saveButton.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_ReloadInProgress_WHEN_ReloadClickedAgain_THEN_SecondCallIsIgnored()
+        {
+            var refreshTaskSource = new TaskCompletionSource<AppSettingsModel>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .Returns(refreshTaskSource.Task);
+
+            var target = RenderPage();
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsReloadButton");
+            _appSettingsService.ClearInvocations();
+
+            var firstReloadTask = target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_appSettingsService).Verify(
+                    service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()),
+                    Times.Once);
+            });
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+
+            refreshTaskSource.SetResult(AppSettingsModel());
+            await firstReloadTask;
+        }
+
+        [Fact]
+        public async Task GIVEN_ReloadFails_WHEN_ReloadClicked_THEN_ShowsErrorSnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("ReloadError"));
+
+            var target = RenderPage();
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsReloadButton");
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to refresh app settings.", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
         }
 
         [Fact]
@@ -325,18 +458,48 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_StorageActions_WHEN_DeleteAndClearInvoked_THEN_CallsStorageDiagnosticsService()
         {
             var target = RenderPage();
-            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-AppSettings.State.v1");
+            await ActivateStorageTab(target);
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v1");
             var clearButton = FindButton(target, "AppSettingsStorageClearAll");
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
             await target.InvokeAsync(() => clearButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_storageDiagnosticsService).Verify(
-                service => service.RemoveEntryAsync("QbtMud.AppSettings.State.v1", It.IsAny<CancellationToken>()),
+                service => service.RemoveEntryAsync(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", It.IsAny<CancellationToken>()),
                 Times.Once);
             Mock.Get(_storageDiagnosticsService).Verify(
-                service => service.ClearEntriesAsync(It.IsAny<CancellationToken>()),
+                service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageTabActive_WHEN_ReloadClicked_THEN_RefreshesStorageEntries()
+        {
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsReloadButton");
+            _storageDiagnosticsService.ClearInvocations();
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_storageDiagnosticsService).Verify(
+                service => service.GetEntriesAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageCleared_WHEN_ClearAllClicked_THEN_NavigatesHomeWithForceReload()
+        {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("/app-settings");
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var clearButton = FindButton(target, "AppSettingsStorageClearAll");
+
+            await target.InvokeAsync(() => clearButton.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().Be("http://localhost/");
         }
 
         [Fact]
@@ -369,6 +532,58 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_DrawerClosedWithPendingChangesAndExitCancelled_WHEN_BackClicked_THEN_RemainsOnPage()
+        {
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(false);
+
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("/app-settings");
+            var target = RenderPage(drawerOpen: false);
+            var updateChecksSwitch = FindSwitch(target, "AppSettingsUpdateChecksEnabled");
+            await target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
+
+            var backButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsBackButton");
+            await target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogWorkflow).Verify(
+                    workflow => workflow.ShowConfirmDialog(
+                        It.Is<string>(title => string.Equals(title, "Unsaved Changes", StringComparison.Ordinal)),
+                        It.Is<string>(message => string.Equals(message, "Are you sure you want to leave without saving your changes?", StringComparison.Ordinal))),
+                    Times.Once);
+            });
+            navigationManager.Uri.Should().EndWith("/app-settings");
+        }
+
+        [Fact]
+        public async Task GIVEN_DrawerClosedWithPendingChangesAndExitConfirmed_WHEN_BackClicked_THEN_NavigatesHome()
+        {
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(true);
+
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("/app-settings");
+            var target = RenderPage(drawerOpen: false);
+            var updateChecksSwitch = FindSwitch(target, "AppSettingsUpdateChecksEnabled");
+            await target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
+
+            var backButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsBackButton");
+            await target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogWorkflow).Verify(
+                    workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()),
+                    Times.Once);
+            });
+            navigationManager.Uri.Should().Be("http://localhost/");
+        }
+
+        [Fact]
         public void GIVEN_DrawerOpen_WHEN_PageRendered_THEN_BackButtonHidden()
         {
             var target = RenderPage(drawerOpen: true);
@@ -381,16 +596,90 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_NoStorageEntries_WHEN_PageRendered_THEN_ShowsEmptyStorageMessage()
+        public async Task GIVEN_NoPendingChanges_WHEN_UndoClicked_THEN_NoStateChangesOccur()
+        {
+            var target = RenderPage();
+            var undoButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsUndoButton");
+
+            await target.InvokeAsync(() => undoButton.Instance.OnClick.InvokeAsync());
+
+            undoButton.Instance.Disabled.Should().BeTrue();
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeModePreferenceUnchanged_WHEN_SystemSelected_THEN_LeavesPendingStateUnchanged()
+        {
+            var target = RenderPage();
+            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(target, "AppSettingsThemeModePreference");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => themeModeSelect.Instance.ValueChanged.InvokeAsync(ThemeModePreference.System));
+
+            saveButton.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_NoOverridesAndSameMasterStorageType_WHEN_MasterStorageTypeChanged_THEN_NoPendingChangesAreCreated()
+        {
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var masterStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => masterStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
+
+            saveButton.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_GroupOverrideSelectedThenCleared_WHEN_GroupStorageTypeChanged_THEN_PendingChangesReset()
+        {
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var groupStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageGroupStorageType-themes");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => groupStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+            saveButton.Instance.Disabled.Should().BeFalse();
+
+            await target.InvokeAsync(() => groupStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
+
+            saveButton.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_ItemOverrideSelectedThenCleared_WHEN_ItemStorageTypeChanged_THEN_PendingChangesReset()
+        {
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var overridesPanel = FindComponentByTestId<MudExpansionPanel>(target, "AppSettingsStorageGroupOverridesPanel-themes");
+            await target.InvokeAsync(() => overridesPanel.Instance.ExpandAsync());
+            var itemStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageItemStorageType-themes.selected-theme");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => itemStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+            saveButton.Instance.Disabled.Should().BeFalse();
+
+            await target.InvokeAsync(() => itemStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
+
+            saveButton.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_NoStorageEntries_WHEN_PageRendered_THEN_ShowsEmptyStorageMessage()
         {
             Mock.Get(_storageDiagnosticsService)
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<AppStorageEntry>());
 
             var target = RenderPage();
+            await ActivateStorageTab(target);
             var emptyMessage = FindComponentByTestId<MudText>(target, "AppSettingsStorageEmpty");
 
-            GetChildContentText(emptyMessage.Instance.ChildContent).Should().Be("No qbtmud local storage entries found.");
+            GetChildContentText(emptyMessage.Instance.ChildContent).Should().Be("No qbtmud storage entries found.");
         }
 
         [Fact]
@@ -854,7 +1143,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var initialEntries = new[]
             {
-                new AppStorageEntry("QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
             };
             var invocationCount = 0;
             Mock.Get(_storageDiagnosticsService)
@@ -871,6 +1160,7 @@ namespace Lantean.QBTMud.Test.Pages
                 });
 
             var target = RenderPage();
+            await ActivateStorageTab(target);
             var refreshButton = FindButton(target, "AppSettingsStorageRefresh");
             _snackbar.ClearInvocations();
 
@@ -878,7 +1168,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add(
-                    It.Is<string>(message => string.Equals(message, "Unable to load local storage entries.", StringComparison.Ordinal)),
+                    It.Is<string>(message => string.Equals(message, "Unable to load storage entries.", StringComparison.Ordinal)),
                     Severity.Error,
                     It.IsAny<Action<SnackbarOptions>>(),
                     It.IsAny<string?>()),
@@ -890,7 +1180,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var initialEntries = new[]
             {
-                new AppStorageEntry("QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
+                new AppStorageEntry(StorageType.LocalStorage, "QbtMud.AppSettings.State.v1", "AppSettings.State.v1", "{\"value\":true}", "{\"value\":true}", 14)
             };
             var refreshTaskSource = new TaskCompletionSource<IReadOnlyList<AppStorageEntry>>(TaskCreationOptions.RunContinuationsAsynchronously);
             var invocationCount = 0;
@@ -908,6 +1198,7 @@ namespace Lantean.QBTMud.Test.Pages
                 });
 
             var target = RenderPage();
+            await ActivateStorageTab(target);
             var refreshButton = FindButton(target, "AppSettingsStorageRefresh");
             _storageDiagnosticsService.ClearInvocations();
 
@@ -934,18 +1225,19 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_RemoveStorageFails_WHEN_DeleteClicked_THEN_ShowsErrorSnackbar()
         {
             Mock.Get(_storageDiagnosticsService)
-                .Setup(service => service.RemoveEntryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Setup(service => service.RemoveEntryAsync(It.IsAny<StorageType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("DeleteError"));
 
             var target = RenderPage();
-            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-AppSettings.State.v1");
+            await ActivateStorageTab(target);
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v1");
             _snackbar.ClearInvocations();
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add(
-                    It.Is<string>(message => string.Equals(message, "Unable to remove local storage entry.", StringComparison.Ordinal)),
+                    It.Is<string>(message => string.Equals(message, "Unable to remove storage entry.", StringComparison.Ordinal)),
                     Severity.Error,
                     It.IsAny<Action<SnackbarOptions>>(),
                     It.IsAny<string?>()),
@@ -957,11 +1249,12 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var removeTaskSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_storageDiagnosticsService)
-                .Setup(service => service.RemoveEntryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Setup(service => service.RemoveEntryAsync(It.IsAny<StorageType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(removeTaskSource.Task);
 
             var target = RenderPage();
-            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-AppSettings.State.v1");
+            await ActivateStorageTab(target);
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsStorageDelete-LocalStorage-AppSettings.State.v1");
             _storageDiagnosticsService.ClearInvocations();
 
             var firstDeleteTask = target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
@@ -969,14 +1262,14 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 Mock.Get(_storageDiagnosticsService).Verify(
-                    service => service.RemoveEntryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                    service => service.RemoveEntryAsync(It.IsAny<StorageType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
                     Times.Once);
             });
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_storageDiagnosticsService).Verify(
-                service => service.RemoveEntryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                service => service.RemoveEntryAsync(It.IsAny<StorageType>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
                 Times.Once);
 
             removeTaskSource.SetResult();
@@ -987,10 +1280,11 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_ClearStorageFails_WHEN_ClearClicked_THEN_ShowsErrorSnackbar()
         {
             Mock.Get(_storageDiagnosticsService)
-                .Setup(service => service.ClearEntriesAsync(It.IsAny<CancellationToken>()))
+                .Setup(service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("ClearError"));
 
             var target = RenderPage();
+            await ActivateStorageTab(target);
             var clearButton = FindButton(target, "AppSettingsStorageClearAll");
             _snackbar.ClearInvocations();
 
@@ -998,7 +1292,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add(
-                    It.Is<string>(message => string.Equals(message, "Unable to clear local storage entries.", StringComparison.Ordinal)),
+                    It.Is<string>(message => string.Equals(message, "Unable to clear storage entries.", StringComparison.Ordinal)),
                     Severity.Error,
                     It.IsAny<Action<SnackbarOptions>>(),
                     It.IsAny<string?>()),
@@ -1010,10 +1304,11 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var clearTaskSource = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_storageDiagnosticsService)
-                .Setup(service => service.ClearEntriesAsync(It.IsAny<CancellationToken>()))
+                .Setup(service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()))
                 .Returns(clearTaskSource.Task);
 
             var target = RenderPage();
+            await ActivateStorageTab(target);
             var clearButton = FindButton(target, "AppSettingsStorageClearAll");
             _storageDiagnosticsService.ClearInvocations();
 
@@ -1022,18 +1317,119 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 Mock.Get(_storageDiagnosticsService).Verify(
-                    service => service.ClearEntriesAsync(It.IsAny<CancellationToken>()),
+                    service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()),
                     Times.Once);
             });
 
             await target.InvokeAsync(() => clearButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_storageDiagnosticsService).Verify(
-                service => service.ClearEntriesAsync(It.IsAny<CancellationToken>()),
+                service => service.ClearEntriesAsync(null, It.IsAny<CancellationToken>()),
                 Times.Once);
 
             clearTaskSource.SetResult(1);
             await firstClearTask;
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageRoutingSaveThrowsInvalidOperation_WHEN_SaveClicked_THEN_ShowsStorageErrorAndSkipsSettingsSave()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default);
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns((string _, StorageRoutingSettings settings, bool supportsClientData) =>
+                {
+                    if (settings.MasterStorageType == StorageType.ClientData && !supportsClientData)
+                    {
+                        return StorageType.LocalStorage;
+                    }
+
+                    return settings.MasterStorageType;
+                });
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("StorageError"));
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var masterStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            await target.InvokeAsync(() => masterStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to save storage settings: StorageError", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageRoutingSaveThrowsUnexpectedException_WHEN_SaveClicked_THEN_ShowsGenericStorageError()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default);
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns((string _, StorageRoutingSettings settings, bool supportsClientData) =>
+                {
+                    if (settings.MasterStorageType == StorageType.ClientData && !supportsClientData)
+                    {
+                        return StorageType.LocalStorage;
+                    }
+
+                    return settings.MasterStorageType;
+                });
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new JsonException("StorageError"));
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var masterStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            await target.InvokeAsync(() => masterStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to save storage settings.", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
         }
 
         private IRenderedComponent<AppSettingsPage> RenderPage(bool drawerOpen = false)
@@ -1041,6 +1437,16 @@ namespace Lantean.QBTMud.Test.Pages
             return TestContext.Render<AppSettingsPage>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", drawerOpen);
+            });
+        }
+
+        private async Task ActivateStorageTab(IRenderedComponent<AppSettingsPage> target)
+        {
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivePanelIndexChanged.InvokeAsync(3));
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
             });
         }
 

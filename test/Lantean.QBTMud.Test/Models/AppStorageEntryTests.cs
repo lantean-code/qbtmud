@@ -9,12 +9,14 @@ namespace Lantean.QBTMud.Test.Models
         public void GIVEN_EntryWithNullValue_WHEN_Constructed_THEN_ExposesExpectedProperties()
         {
             var result = new AppStorageEntry(
+                storageType: StorageType.LocalStorage,
                 key: "QbtMud.AppSettings.State.v1",
                 displayKey: "AppSettings.State.v1",
                 value: null,
                 preview: "{}",
                 length: 2);
 
+            result.StorageType.Should().Be(StorageType.LocalStorage);
             result.Key.Should().Be("QbtMud.AppSettings.State.v1");
             result.DisplayKey.Should().Be("AppSettings.State.v1");
             result.Value.Should().BeNull();
@@ -26,6 +28,7 @@ namespace Lantean.QBTMud.Test.Models
         public void GIVEN_Entry_WHEN_ToStringInvoked_THEN_IncludesAllPrimaryValues()
         {
             var result = new AppStorageEntry(
+                storageType: StorageType.LocalStorage,
                 key: "QbtMud.AppSettings.State.v1",
                 displayKey: "AppSettings.State.v1",
                 value: "{\"value\":true}",
@@ -33,6 +36,7 @@ namespace Lantean.QBTMud.Test.Models
                 length: 14);
 
             result.ToString().Should().Contain("AppStorageEntry");
+            result.ToString().Should().Contain("LocalStorage");
             result.ToString().Should().Contain("QbtMud.AppSettings.State.v1");
             result.ToString().Should().Contain("AppSettings.State.v1");
             result.ToString().Should().Contain("{\"value\":true}");

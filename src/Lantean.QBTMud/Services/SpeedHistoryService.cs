@@ -24,16 +24,16 @@ namespace Lantean.QBTMud.Services
             { SpeedPeriod.Hour24, new BucketConfiguration(TimeSpan.FromSeconds(480), TimeSpan.FromHours(24)) }
         };
 
-        private readonly ILocalStorageService _localStorage;
+        private readonly ISettingsStorageService _settingsStorage;
         private readonly Dictionary<SpeedPeriod, Bucketizer> _bucketizers;
         private bool _isInitialized;
         private bool _stateDirty;
         private readonly TimeSpan _flushInterval;
         private DateTime? _lastPersistUtc;
 
-        public SpeedHistoryService(ILocalStorageService localStorage, TimeSpan? flushInterval = null)
+        public SpeedHistoryService(ISettingsStorageService settingsStorage, TimeSpan? flushInterval = null)
         {
-            _localStorage = localStorage;
+            _settingsStorage = settingsStorage;
             _bucketizers = BucketConfigurations.ToDictionary(
                 kvp => kvp.Key,
                 kvp => new Bucketizer(kvp.Key, kvp.Value.BucketSize, kvp.Value.MaxDuration));
@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Services
                 return;
             }
 
-            var persistedState = await _localStorage.GetItemAsync<PersistedState>(StorageKey, cancellationToken);
+            var persistedState = await _settingsStorage.GetItemAsync<PersistedState>(StorageKey, cancellationToken);
             if (persistedState is null || persistedState.SchemaVersion != SchemaVersion)
             {
                 _isInitialized = true;
@@ -122,7 +122,7 @@ namespace Lantean.QBTMud.Services
             }
 
             var state = new PersistedState(SchemaVersion, buckets, LastUpdatedUtc);
-            await _localStorage.SetItemAsync(StorageKey, state, cancellationToken);
+            await _settingsStorage.SetItemAsync(StorageKey, state, cancellationToken);
             _stateDirty = false;
             _lastPersistUtc = timestampUtc ?? DateTime.UtcNow;
         }
@@ -161,7 +161,7 @@ namespace Lantean.QBTMud.Services
 
             LastUpdatedUtc = null;
             _stateDirty = false;
-            await _localStorage.RemoveItemAsync(StorageKey, cancellationToken);
+            await _settingsStorage.RemoveItemAsync(StorageKey, cancellationToken);
         }
 
         public IReadOnlyList<SpeedPoint> GetSeries(SpeedPeriod period, SpeedDirection direction)

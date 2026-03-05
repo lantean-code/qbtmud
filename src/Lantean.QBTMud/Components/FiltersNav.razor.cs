@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Components
         protected string Tracker { get; set; } = FilterHelper.TRACKER_ALL;
 
         [Inject]
-        protected ILocalStorageService LocalStorage { get; set; } = default!;
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
@@ -96,28 +96,28 @@ namespace Lantean.QBTMud.Components
 
         protected override async Task OnInitializedAsync()
         {
-            var status = await LocalStorage.GetItemAsStringAsync(_statusSelectionStorageKey);
+            var status = await SettingsStorage.GetItemAsStringAsync(_statusSelectionStorageKey);
             if (status is not null)
             {
                 Status = status;
                 await StatusChanged.InvokeAsync(Enum.Parse<Status>(status));
             }
 
-            var category = await LocalStorage.GetItemAsStringAsync(_categorySelectionStorageKey);
+            var category = await SettingsStorage.GetItemAsStringAsync(_categorySelectionStorageKey);
             if (category is not null)
             {
                 Category = category;
                 await CategoryChanged.InvokeAsync(category);
             }
 
-            var tag = await LocalStorage.GetItemAsStringAsync(_tagSelectionStorageKey);
+            var tag = await SettingsStorage.GetItemAsStringAsync(_tagSelectionStorageKey);
             if (tag is not null)
             {
                 Tag = tag;
                 await TagChanged.InvokeAsync(tag);
             }
 
-            var tracker = await LocalStorage.GetItemAsStringAsync(_trackerSelectionStorageKey);
+            var tracker = await SettingsStorage.GetItemAsStringAsync(_trackerSelectionStorageKey);
             if (tracker is not null)
             {
                 Tracker = tracker;
@@ -132,11 +132,11 @@ namespace Lantean.QBTMud.Components
 
             if (value != Models.Status.All.ToString())
             {
-                await LocalStorage.SetItemAsStringAsync(_statusSelectionStorageKey, value);
+                await SettingsStorage.SetItemAsStringAsync(_statusSelectionStorageKey, value);
             }
             else
             {
-                await LocalStorage.RemoveItemAsync(_statusSelectionStorageKey);
+                await SettingsStorage.RemoveItemAsync(_statusSelectionStorageKey);
             }
         }
 
@@ -171,11 +171,11 @@ namespace Lantean.QBTMud.Components
 
             if (value != FilterHelper.CATEGORY_ALL)
             {
-                await LocalStorage.SetItemAsStringAsync(_categorySelectionStorageKey, value);
+                await SettingsStorage.SetItemAsStringAsync(_categorySelectionStorageKey, value);
             }
             else
             {
-                await LocalStorage.RemoveItemAsync(_categorySelectionStorageKey);
+                await SettingsStorage.RemoveItemAsync(_categorySelectionStorageKey);
             }
         }
 
@@ -211,11 +211,11 @@ namespace Lantean.QBTMud.Components
 
             if (value != FilterHelper.TAG_ALL)
             {
-                await LocalStorage.SetItemAsStringAsync(_tagSelectionStorageKey, value);
+                await SettingsStorage.SetItemAsStringAsync(_tagSelectionStorageKey, value);
             }
             else
             {
-                await LocalStorage.RemoveItemAsync(_tagSelectionStorageKey);
+                await SettingsStorage.RemoveItemAsync(_tagSelectionStorageKey);
             }
         }
 
@@ -251,11 +251,11 @@ namespace Lantean.QBTMud.Components
 
             if (value != FilterHelper.TRACKER_ALL)
             {
-                await LocalStorage.SetItemAsStringAsync(_trackerSelectionStorageKey, value);
+                await SettingsStorage.SetItemAsStringAsync(_trackerSelectionStorageKey, value);
             }
             else
             {
-                await LocalStorage.RemoveItemAsync(_trackerSelectionStorageKey);
+                await SettingsStorage.RemoveItemAsync(_trackerSelectionStorageKey);
             }
         }
 
@@ -676,15 +676,12 @@ namespace Lantean.QBTMud.Components
 
         private static string GetHostName(string tracker)
         {
-            try
+            if (Uri.TryCreate(tracker, UriKind.Absolute, out var uri))
             {
-                var uri = new Uri(tracker);
                 return uri.Host;
             }
-            catch
-            {
-                return tracker;
-            }
+
+            return tracker;
         }
     }
 }
