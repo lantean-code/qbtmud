@@ -666,15 +666,15 @@ td .folder-button {
     --app-status-bar-height: 35px;
 }
 
-@supports (height: 100svh) {
+@supports (height: 100dvh) {
     :root {
-        --app-viewport-height: 100svh;
+        --app-viewport-height: 100dvh;
     }
 }
 
-@supports ((height: 100dvh) and (not (height: 100svh))) {
+@supports ((height: 100svh) and (not (height: 100dvh))) {
     :root {
-        --app-viewport-height: 100dvh;
+        --app-viewport-height: 100svh;
     }
 }
 
@@ -778,23 +778,6 @@ body {
 .app-shell__alt-speed-enabled .mud-icon-root {
     transform: scaleX(-1);
     transform-origin: center;
-}
-
-@supports (-webkit-touch-callout: none) {
-    :root {
-        --app-viewport-height: -webkit-fill-available;
-    }
-
-    html,
-    body {
-        height: -webkit-fill-available;
-        min-height: -webkit-fill-available;
-    }
-
-    .app-shell {
-        height: -webkit-fill-available;
-        min-height: -webkit-fill-available;
-    }
 }
 
 /* Tab bar gap fix */
