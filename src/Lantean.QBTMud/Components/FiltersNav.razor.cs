@@ -676,15 +676,12 @@ namespace Lantean.QBTMud.Components
 
         private static string GetHostName(string tracker)
         {
-            try
+            if (Uri.TryCreate(tracker, UriKind.Absolute, out var uri))
             {
-                var uri = new Uri(tracker);
                 return uri.Host;
             }
-            catch
-            {
-                return tracker;
-            }
+
+            return tracker;
         }
     }
 }

@@ -189,7 +189,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 var buildInfo = await ApiClient.GetBuildInfo();
                 _supportsTorrentFormat = SupportsTorrentFormatForVersion(buildInfo.LibTorrentVersion);
             }
-            catch
+            catch (Exception)
             {
                 _supportsTorrentFormat = false;
             }

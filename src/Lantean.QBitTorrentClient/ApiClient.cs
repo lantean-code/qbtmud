@@ -26,7 +26,7 @@ namespace Lantean.QBitTorrentClient
                 var response = await _httpClient.GetAsync("app/version");
                 return response.StatusCode == HttpStatusCode.OK;
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
@@ -1765,7 +1765,7 @@ namespace Lantean.QBitTorrentClient
 
                 return items.ToList().AsReadOnly();
             }
-            catch
+            catch (Exception)
             {
                 return [];
             }
@@ -1779,7 +1779,7 @@ namespace Lantean.QBitTorrentClient
 
                 return items.AsReadOnly();
             }
-            catch
+            catch (Exception)
             {
                 return new Dictionary<TKey, TValue>().AsReadOnly();
             }

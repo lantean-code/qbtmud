@@ -427,7 +427,7 @@ namespace Lantean.QBTMud.Layout
             catch (OperationCanceledException exception) when (exception.CancellationToken == _timerCancellationToken.Token)
             {
             }
-            catch
+            catch (Exception)
             {
             }
         }
@@ -447,7 +447,7 @@ namespace Lantean.QBTMud.Layout
             {
                 throw;
             }
-            catch
+            catch (Exception)
             {
             }
         }
@@ -721,7 +721,7 @@ namespace Lantean.QBTMud.Layout
                 await ClearPendingDownloadAsync();
                 NavigationManager.NavigateToHome(forceLoad: true);
             }
-            catch
+            catch (Exception)
             {
                 _pendingDownloadLink = magnet;
                 await PersistPendingDownloadAsync();

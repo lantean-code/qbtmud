@@ -177,6 +177,30 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_ClientDataLoadCancelled_WHEN_GetItemAsync_THEN_ShouldPropagateCancellation()
+        {
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException("cancelled"));
+
+            Func<Task> action = async () =>
+            {
+                await _target.GetItemAsync<Dictionary<string, bool>>("AppSettings.State.v1", TestContext.Current.CancellationToken);
+            };
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
+        }
+
+        [Fact]
         public async Task GIVEN_ClientDataStringValue_WHEN_GetItemAsStringAsync_THEN_ShouldReturnStringValue()
         {
             Mock.Get(_storageRoutingService)
@@ -245,6 +269,30 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
 
             result.Should().Be("en_GB");
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientDataGetAsStringCancelled_WHEN_GetItemAsStringAsync_THEN_ShouldPropagateCancellation()
+        {
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException("cancelled"));
+
+            Func<Task> action = async () =>
+            {
+                await _target.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+            };
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
         }
 
         [Fact]
@@ -345,6 +393,30 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_ClientDataSetCancelled_WHEN_SetItemAsync_THEN_ShouldPropagateCancellation()
+        {
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException("cancelled"));
+
+            Func<Task> action = async () =>
+            {
+                await _target.SetItemAsync("AppSettings.State.v1", new { enabled = true }, TestContext.Current.CancellationToken);
+            };
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
+        }
+
+        [Fact]
         public async Task GIVEN_ClientDataRoutingWithSupport_WHEN_RemoveItemAsync_THEN_ShouldCallClientDataAdapter()
         {
             Mock.Get(_storageRoutingService)
@@ -441,6 +513,30 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_ClientDataSetAsStringCancelled_WHEN_SetItemAsStringAsync_THEN_ShouldPropagateCancellation()
+        {
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException("cancelled"));
+
+            Func<Task> action = async () =>
+            {
+                await _target.SetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", "en", TestContext.Current.CancellationToken);
+            };
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
+        }
+
+        [Fact]
         public async Task GIVEN_LocalStorageRouting_WHEN_RemoveItemAsync_THEN_ShouldRemoveFromLocalStorage()
         {
             await _localStorageService.SetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", "en", TestContext.Current.CancellationToken);
@@ -458,6 +554,35 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_clientDataStorageAdapter).Verify(
                 adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()),
                 Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientDataRemoveCancelled_WHEN_RemoveItemAsync_THEN_ShouldPropagateCancellation()
+        {
+            await _localStorageService.SetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", "en", TestContext.Current.CancellationToken);
+
+            Mock.Get(_storageRoutingService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = StorageType.ClientData
+                });
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException("cancelled"));
+
+            Func<Task> action = async () =>
+            {
+                await _target.RemoveItemAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+            };
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
+
+            var result = await _localStorageService.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
+            result.Should().Be("en");
         }
     }
 }

@@ -791,7 +791,7 @@ namespace Lantean.QBTMud.Pages
                 var stored = await SettingsStorage.GetItemAsync<SearchPreferences>(_searchPreferencesStorageKey);
                 _preferences = stored ?? new SearchPreferences();
             }
-            catch
+            catch (Exception)
             {
                 _preferences = new SearchPreferences();
             }
@@ -808,7 +808,7 @@ namespace Lantean.QBTMud.Pages
                 var stored = await SettingsStorage.GetItemAsync<List<SearchJobMetadata>>(_searchJobsStorageKey);
                 _jobMetadata = stored?.ToDictionary(job => job.Id) ?? new Dictionary<int, SearchJobMetadata>();
             }
-            catch
+            catch (Exception)
             {
                 _jobMetadata = new Dictionary<int, SearchJobMetadata>();
             }
