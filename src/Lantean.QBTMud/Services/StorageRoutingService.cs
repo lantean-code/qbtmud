@@ -43,29 +43,25 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task<StorageRoutingSettings> GetSettingsAsync(CancellationToken cancellationToken = default)
         {
-            if (_cachedSettings is not null)
-            {
-                return _cachedSettings.Clone();
-            }
-
             await _initializationSemaphore.WaitAsync(cancellationToken);
             try
             {
-                if (_cachedSettings is null)
+                if (_cachedSettings is not null)
                 {
-                    StorageRoutingSettings? loadedSettings;
-                    try
-                    {
-                        loadedSettings = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, cancellationToken);
-                    }
-                    catch (JsonException)
-                    {
-                        loadedSettings = null;
-                    }
-
-                    _cachedSettings = NormalizeForCatalog(loadedSettings ?? StorageRoutingSettings.Default);
+                    return _cachedSettings.Clone();
                 }
 
+                StorageRoutingSettings? loadedSettings;
+                try
+                {
+                    loadedSettings = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, cancellationToken);
+                }
+                catch (JsonException)
+                {
+                    loadedSettings = null;
+                }
+
+                _cachedSettings = NormalizeForCatalog(loadedSettings ?? StorageRoutingSettings.Default);
                 return _cachedSettings.Clone();
             }
             finally

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
 using MudBlazor;
+using System.Diagnostics;
+using System.Text.Json;
 using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
 
 namespace Lantean.QBTMud.Pages
@@ -355,8 +357,28 @@ namespace Lantean.QBTMud.Pages
                     _isStorageEntriesLoadRequested = false;
                 }
             }
-            catch (Exception)
+            catch (OperationCanceledException)
             {
+                throw;
+            }
+            catch (HttpRequestException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to refresh app settings."), Severity.Error);
+            }
+            catch (JsonException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to refresh app settings."), Severity.Error);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to refresh app settings."), Severity.Error);
+            }
+            catch (JSException exception)
+            {
+                Debug.WriteLine(exception);
                 SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to refresh app settings."), Severity.Error);
             }
             finally
@@ -388,8 +410,21 @@ namespace Lantean.QBTMud.Pages
                     SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to save storage settings: %1", exception.Message), Severity.Error);
                     return;
                 }
-                catch (Exception)
+                catch (HttpRequestException exception)
                 {
+                    Debug.WriteLine(exception);
+                    SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to save storage settings."), Severity.Error);
+                    return;
+                }
+                catch (JsonException exception)
+                {
+                    Debug.WriteLine(exception);
+                    SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to save storage settings."), Severity.Error);
+                    return;
+                }
+                catch (JSException exception)
+                {
+                    Debug.WriteLine(exception);
                     SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to save storage settings."), Severity.Error);
                     return;
                 }
@@ -609,8 +644,19 @@ namespace Lantean.QBTMud.Pages
             {
                 UpdateStatus = await AppUpdateService.GetUpdateStatusAsync(forceRefresh: true);
             }
-            catch (Exception)
+            catch (HttpRequestException exception)
             {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateUpdates("Unable to check for updates."), Severity.Warning);
+            }
+            catch (JsonException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateUpdates("Unable to check for updates."), Severity.Warning);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.WriteLine(exception);
                 SnackbarWorkflow.ShowTransientMessage(TranslateUpdates("Unable to check for updates."), Severity.Warning);
             }
             finally
@@ -633,8 +679,24 @@ namespace Lantean.QBTMud.Pages
             {
                 StorageEntries = await StorageDiagnosticsService.GetEntriesAsync();
             }
-            catch (Exception)
+            catch (HttpRequestException exception)
             {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to load storage entries."), Severity.Error);
+            }
+            catch (JsonException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to load storage entries."), Severity.Error);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to load storage entries."), Severity.Error);
+            }
+            catch (JSException exception)
+            {
+                Debug.WriteLine(exception);
                 SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to load storage entries."), Severity.Error);
             }
             finally
@@ -657,8 +719,24 @@ namespace Lantean.QBTMud.Pages
                 await StorageDiagnosticsService.RemoveEntryAsync(storageType, key);
                 StorageEntries = await StorageDiagnosticsService.GetEntriesAsync();
             }
-            catch (Exception)
+            catch (HttpRequestException exception)
             {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to remove storage entry."), Severity.Error);
+            }
+            catch (JsonException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to remove storage entry."), Severity.Error);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to remove storage entry."), Severity.Error);
+            }
+            catch (JSException exception)
+            {
+                Debug.WriteLine(exception);
                 SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to remove storage entry."), Severity.Error);
             }
             finally
@@ -683,8 +761,24 @@ namespace Lantean.QBTMud.Pages
                 SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Removed %1 storage entries.", removed), Severity.Info);
                 NavigationManager.NavigateToHome(forceLoad: true);
             }
-            catch (Exception)
+            catch (HttpRequestException exception)
             {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to clear storage entries."), Severity.Error);
+            }
+            catch (JsonException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to clear storage entries."), Severity.Error);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to clear storage entries."), Severity.Error);
+            }
+            catch (JSException exception)
+            {
+                Debug.WriteLine(exception);
                 SnackbarWorkflow.ShowTransientMessage(TranslateSettings("Unable to clear storage entries."), Severity.Error);
             }
             finally
@@ -775,7 +869,15 @@ namespace Lantean.QBTMud.Pages
             {
                 throw;
             }
-            catch (Exception)
+            catch (HttpRequestException)
+            {
+                return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
+            }
+            catch (JsonException)
+            {
+                return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
+            }
+            catch (InvalidOperationException)
             {
                 return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
             }
@@ -791,7 +893,11 @@ namespace Lantean.QBTMud.Pages
             {
                 return BrowserNotificationPermission.Unsupported;
             }
-            catch (Exception)
+            catch (InvalidOperationException)
+            {
+                return BrowserNotificationPermission.Unsupported;
+            }
+            catch (HttpRequestException)
             {
                 return BrowserNotificationPermission.Unsupported;
             }
@@ -803,7 +909,15 @@ namespace Lantean.QBTMud.Pages
             {
                 return await AppUpdateService.GetUpdateStatusAsync();
             }
-            catch (Exception)
+            catch (HttpRequestException)
+            {
+                return null;
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+            catch (InvalidOperationException)
             {
                 return null;
             }

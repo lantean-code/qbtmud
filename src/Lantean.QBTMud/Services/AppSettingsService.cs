@@ -124,38 +124,29 @@ namespace Lantean.QBTMud.Services
 
         private async Task<AppSettings> LoadSettingsAsync(bool forceReload, CancellationToken cancellationToken)
         {
-            if (!forceReload && _cachedSettings is not null)
-            {
-                return _cachedSettings.Clone();
-            }
-
             await _initializationSemaphore.WaitAsync(cancellationToken);
             try
             {
-                if (_cachedSettings is null || forceReload)
-                {
-                    AppSettings? loadedSettings = null;
-                    try
-                    {
-                        loadedSettings = await _settingsStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, cancellationToken);
-                    }
-                    catch (JsonException)
-                    {
-                        loadedSettings = null;
-                    }
-
-                    var normalized = loadedSettings is null
-                        ? AppSettings.Default.Clone()
-                        : Normalize(loadedSettings);
-                    _cachedSettings = await MigrateLegacyThemeModePreference(normalized, cancellationToken);
-                }
-
-                if (_cachedSettings is not null)
+                if (!forceReload && _cachedSettings is not null)
                 {
                     return _cachedSettings.Clone();
                 }
 
-                return AppSettings.Default.Clone();
+                AppSettings? loadedSettings = null;
+                try
+                {
+                    loadedSettings = await _settingsStorageService.GetItemAsync<AppSettings>(AppSettings.StorageKey, cancellationToken);
+                }
+                catch (JsonException)
+                {
+                    loadedSettings = null;
+                }
+
+                var normalized = loadedSettings is null
+                    ? AppSettings.Default.Clone()
+                    : Normalize(loadedSettings);
+                _cachedSettings = await MigrateLegacyThemeModePreference(normalized, cancellationToken);
+                return _cachedSettings.Clone();
             }
             finally
             {
