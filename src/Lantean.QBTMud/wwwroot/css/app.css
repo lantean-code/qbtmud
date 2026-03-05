@@ -34,7 +34,11 @@
     justify-content: center;
     gap: 1.25rem;
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--app-viewport-height);
+    min-height: var(--app-viewport-height);
     padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
     background: radial-gradient(circle at top, var(--mud-palette-background, #f6f9ff) 0%, var(--mud-palette-background-gray, #eaf2fb) 45%, var(--mud-palette-surface, #dbe8f6) 100%);
     color: var(--mud-palette-text-primary, #1b3b5d);
