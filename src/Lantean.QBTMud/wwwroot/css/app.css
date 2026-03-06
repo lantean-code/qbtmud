@@ -155,7 +155,7 @@ code {
 }
 
 .mud-drawer-fixed.mud-drawer-mini.mud-drawer-clipped-always, .mud-drawer-fixed.mud-drawer-persistent:not(.mud-drawer-clipped-never), .mud-drawer-fixed.mud-drawer-responsive.mud-drawer-clipped-always, .mud-drawer-fixed.mud-drawer-temporary.mud-drawer-clipped-always {
-    height: calc(100% - var(--mud-appbar-height) - (var(--app-status-bar-height) + env(safe-area-inset-bottom, 0px)));
+    height: calc(100% - var(--mud-appbar-height) - (var(--app-status-bar-height)));
 }
 
 .w-100 {
@@ -686,6 +686,7 @@ html,
 body {
     height: var(--app-viewport-height);
     min-height: var(--app-viewport-height);
+    background-color: var(--mud-palette-background, #dbe8f6);
 }
 
 body {
@@ -698,6 +699,7 @@ body {
 .mud-layout {
     height: 100%;
     min-height: 100%;
+    background-color: var(--mud-palette-background, #dbe8f6);
 }
 
 .app-shell {
@@ -706,6 +708,7 @@ body {
     height: var(--app-viewport-height);
     min-height: var(--app-viewport-height);
     overflow: hidden;
+    background-color: var(--mud-palette-background, #dbe8f6);
 }
 
 .app-shell__body {
@@ -735,7 +738,7 @@ body {
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
-    padding: var(--mud-appbar-height) 0 calc(var(--app-status-bar-height) + env(safe-area-inset-bottom, 0px));
+    padding: var(--mud-appbar-height) 0 calc(var(--app-status-bar-height));
     box-sizing: border-box;
 }
 
@@ -751,6 +754,7 @@ body {
     justify-content: flex-start;
     box-sizing: border-box;
     z-index: calc(var(--mud-zindex-popover) - 1);
+    bottom: calc(env(safe-area-inset-bottom, 0px) * -1);
 }
 
 .app-shell__status-bar .mud-toolbar {
