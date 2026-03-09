@@ -146,7 +146,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var deleteCheckBox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "DeleteFiles");
 
-            deleteCheckBox.Instance.Value.Should().BeTrue();
+            deleteCheckBox.Instance.GetState(x => x.Value).Should().BeTrue();
         }
 
         [Fact]
