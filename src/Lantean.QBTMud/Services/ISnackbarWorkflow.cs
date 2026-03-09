@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Services
@@ -38,5 +39,23 @@ namespace Lantean.QBTMud.Services
         /// <param name="key">An optional snackbar key used to deduplicate messages.</param>
         /// <returns>The created snackbar instance, if any.</returns>
         Snackbar? ShowMessage(string message, Severity severity = Severity.Normal, Action<SnackbarOptions>? configure = null, string? key = null);
+
+        /// <summary>
+        /// Shows a snackbar rendered from a component.
+        /// </summary>
+        /// <typeparam name="TComponent">The component type rendered in the snackbar body.</typeparam>
+        /// <param name="componentParameters">Optional component parameters.</param>
+        /// <param name="severity">The snackbar severity.</param>
+        /// <param name="configure">An optional snackbar options configurator.</param>
+        /// <param name="key">An optional snackbar key used to identify and replace an existing snackbar.</param>
+        /// <returns>The created snackbar instance, if any.</returns>
+        Snackbar? ShowComponent<TComponent>(Dictionary<string, object>? componentParameters = null, Severity severity = Severity.Normal, Action<SnackbarOptions>? configure = null, string? key = null)
+            where TComponent : IComponent;
+
+        /// <summary>
+        /// Hides a snackbar by key.
+        /// </summary>
+        /// <param name="key">The snackbar key.</param>
+        void Hide(string key);
     }
 }

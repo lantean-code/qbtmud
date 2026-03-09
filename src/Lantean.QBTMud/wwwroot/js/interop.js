@@ -2,6 +2,201 @@ if (window.qbt === undefined) {
     window.qbt = {};
 }
 
+window.qbt._pwaInstallPrompt = window.qbt._pwaInstallPrompt ?? {
+    initialized: false,
+    deferredPrompt: null,
+    subscribers: new Map(),
+    nextSubscriberId: 1,
+    displayModeMediaQuery: null,
+    displayModeChangeHandler: null,
+};
+
+window.qbt.getInstallPromptState = () => {
+    initializePwaInstallPromptInterop();
+    return buildPwaInstallPromptState();
+}
+
+window.qbt.subscribeInstallPromptState = (dotNetObjectReference) => {
+    if (!dotNetObjectReference) {
+        return 0;
+    }
+
+    initializePwaInstallPromptInterop();
+
+    const state = window.qbt._pwaInstallPrompt;
+    const subscriptionId = state.nextSubscriberId++;
+
+    state.subscribers.set(subscriptionId, dotNetObjectReference);
+    tryNotifyPwaInstallPromptSubscriber(subscriptionId, dotNetObjectReference);
+
+    return subscriptionId;
+}
+
+window.qbt.unsubscribeInstallPromptState = (subscriptionId) => {
+    const state = window.qbt._pwaInstallPrompt;
+    if (!state || !state.subscribers.has(subscriptionId)) {
+        return;
+    }
+
+    state.subscribers.delete(subscriptionId);
+}
+
+window.qbt.requestInstallPrompt = async () => {
+    initializePwaInstallPromptInterop();
+
+    const state = window.qbt._pwaInstallPrompt;
+    const deferredPrompt = state.deferredPrompt;
+    if (!deferredPrompt || typeof deferredPrompt.prompt !== "function") {
+        return "unavailable";
+    }
+
+    // A beforeinstallprompt event can only be consumed once.
+    state.deferredPrompt = null;
+    notifyPwaInstallPromptSubscribers();
+
+    try {
+        await deferredPrompt.prompt();
+        const userChoice = await deferredPrompt.userChoice;
+        const outcome = userChoice?.outcome;
+
+        notifyPwaInstallPromptSubscribers();
+
+        if (outcome === "accepted") {
+            return "accepted";
+        }
+
+        if (outcome === "dismissed") {
+            return "dismissed";
+        }
+
+        return "unknown";
+    } catch {
+        notifyPwaInstallPromptSubscribers();
+        return "error";
+    }
+}
+
+function initializePwaInstallPromptInterop() {
+    const state = window.qbt._pwaInstallPrompt;
+    if (state.initialized) {
+        return;
+    }
+
+    state.initialized = true;
+
+    window.addEventListener("beforeinstallprompt", event => {
+        event.preventDefault();
+        state.deferredPrompt = event;
+        notifyPwaInstallPromptSubscribers();
+    });
+
+    window.addEventListener("appinstalled", () => {
+        state.deferredPrompt = null;
+        notifyPwaInstallPromptSubscribers();
+    });
+
+    if (typeof window.matchMedia === "function") {
+        const mediaQuery = window.matchMedia("(display-mode: standalone)");
+        state.displayModeMediaQuery = mediaQuery;
+
+        const onDisplayModeChanged = () => {
+            notifyPwaInstallPromptSubscribers();
+        };
+
+        state.displayModeChangeHandler = onDisplayModeChanged;
+
+        if (typeof mediaQuery.addEventListener === "function") {
+            mediaQuery.addEventListener("change", onDisplayModeChanged);
+        } else if (typeof mediaQuery.addListener === "function") {
+            mediaQuery.addListener(onDisplayModeChanged);
+        }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            notifyPwaInstallPromptSubscribers();
+        }
+    });
+}
+
+function buildPwaInstallPromptState() {
+    const state = window.qbt._pwaInstallPrompt;
+
+    return {
+        isInstalled: isPwaInstalled(),
+        canPrompt: !!state.deferredPrompt,
+        isIos: isIosDevice(),
+        isSafari: isSafariBrowser(),
+    };
+}
+
+function notifyPwaInstallPromptSubscribers() {
+    const state = window.qbt._pwaInstallPrompt;
+    if (!state || state.subscribers.size === 0) {
+        return;
+    }
+
+    for (const [subscriptionId, dotNetObjectReference] of state.subscribers.entries()) {
+        tryNotifyPwaInstallPromptSubscriber(subscriptionId, dotNetObjectReference);
+    }
+}
+
+function tryNotifyPwaInstallPromptSubscriber(subscriptionId, dotNetObjectReference) {
+    if (!dotNetObjectReference || typeof dotNetObjectReference.invokeMethodAsync !== "function") {
+        const state = window.qbt._pwaInstallPrompt;
+        if (state) {
+            state.subscribers.delete(subscriptionId);
+        }
+
+        return;
+    }
+
+    dotNetObjectReference
+        .invokeMethodAsync("OnInstallPromptStateChanged", buildPwaInstallPromptState())
+        .catch(() => {
+            const state = window.qbt._pwaInstallPrompt;
+            if (state) {
+                state.subscribers.delete(subscriptionId);
+            }
+        });
+}
+
+function isPwaInstalled() {
+    const navigatorStandalone = window.navigator?.standalone === true;
+
+    if (navigatorStandalone) {
+        return true;
+    }
+
+    if (typeof window.matchMedia !== "function") {
+        return false;
+    }
+
+    return window.matchMedia("(display-mode: standalone)").matches;
+}
+
+function isIosDevice() {
+    const navigatorInstance = window.navigator;
+    if (!navigatorInstance) {
+        return false;
+    }
+
+    const userAgent = navigatorInstance.userAgent ?? "";
+    const platform = navigatorInstance.platform ?? "";
+    const hasIosUserAgent = /iPad|iPhone|iPod/i.test(userAgent);
+    const isMacTouchDevice = platform === "MacIntel" && navigatorInstance.maxTouchPoints > 1;
+
+    return hasIosUserAgent || isMacTouchDevice;
+}
+
+function isSafariBrowser() {
+    const userAgent = window.navigator?.userAgent ?? "";
+    const hasSafari = /Safari/i.test(userAgent);
+    const hasOtherEngine = /CriOS|Chrome|EdgA|EdgiOS|FxiOS|OPiOS|SamsungBrowser/i.test(userAgent);
+
+    return hasSafari && !hasOtherEngine;
+}
+
 window.qbt.triggerFileDownload = (url, fileName) => {
     const anchorElement = document.createElement('a');
     anchorElement.href = url;

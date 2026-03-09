@@ -1,9 +1,11 @@
+using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using System.Diagnostics;
@@ -15,6 +17,9 @@ namespace Lantean.QBTMud.Pages
     public partial class AppSettings
     {
         private const int StorageTabIndex = 3;
+        private const int PwaTabIndex = 4;
+        private const string PwaInstallTestSnackbarClass = "pwa-install-snackbar";
+        private const string PwaInstallTestSnackbarKey = "pwa-install-snackbar-test";
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -52,6 +57,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IPwaInstallPromptService PwaInstallPromptService { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -72,6 +80,10 @@ namespace Lantean.QBTMud.Pages
         protected bool IsStorageBusy { get; private set; }
 
         protected bool IsReloading { get; private set; }
+
+        protected bool IsLoadingPwaStatus { get; private set; }
+
+        protected bool IsRequestingPwaInstall { get; private set; }
 
         protected AppBuildInfo CurrentBuildInfo { get; private set; } = new("unknown", "Unavailable");
 
@@ -94,6 +106,12 @@ namespace Lantean.QBTMud.Pages
         protected bool IsStorageTabActivated { get; private set; }
 
         protected bool IsLoadingInitialStorageEntries => IsStorageTabActivated && !_hasLoadedInitialStorageEntries && IsStorageBusy;
+
+        protected PwaInstallPromptState PwaState { get; private set; } = new();
+
+        protected bool HasLoadedPwaStatus { get; private set; }
+
+        protected bool CanRequestPwaInstall => PwaState.CanPrompt && !PwaState.IsInstalled;
 
         protected bool HasPendingChanges
         {
@@ -165,7 +183,7 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        protected Task OnActiveTabChanged(int activeTab)
+        protected async Task OnActiveTabChanged(int activeTab)
         {
             ActiveTab = activeTab;
 
@@ -174,7 +192,156 @@ namespace Lantean.QBTMud.Pages
                 EnsureStorageTabActivated();
             }
 
-            return Task.CompletedTask;
+            await RefreshPwaStatusForTabAsync(activeTab);
+        }
+
+        protected async Task RefreshPwaStatusAsync()
+        {
+            if (IsLoadingPwaStatus)
+            {
+                return;
+            }
+
+            IsLoadingPwaStatus = true;
+            await InvokeAsync(StateHasChanged);
+
+            try
+            {
+                PwaState = await PwaInstallPromptService.GetInstallPromptStateAsync();
+                HasLoadedPwaStatus = true;
+            }
+            catch (JSException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Unable to read app install status."), Severity.Warning);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Unable to read app install status."), Severity.Warning);
+            }
+            finally
+            {
+                IsLoadingPwaStatus = false;
+            }
+        }
+
+        protected async Task RequestPwaInstallAsync()
+        {
+            if (IsRequestingPwaInstall || !CanRequestPwaInstall)
+            {
+                return;
+            }
+
+            IsRequestingPwaInstall = true;
+            await InvokeAsync(StateHasChanged);
+
+            try
+            {
+                var outcome = await PwaInstallPromptService.RequestInstallPromptAsync();
+                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Install prompt result: %1", outcome), Severity.Info);
+            }
+            catch (JSException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Unable to request app install."), Severity.Warning);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Unable to request app install."), Severity.Warning);
+            }
+            finally
+            {
+                IsRequestingPwaInstall = false;
+                await RefreshPwaStatusAsync();
+            }
+        }
+
+        protected void ShowInstallSnackbarTest()
+        {
+            var componentParameters = new Dictionary<string, object>
+            {
+                [nameof(PwaInstallPromptSnackbarContent.Message)] = TranslatePwa("Install qBittorrent Web UI for quicker access and a native-like experience."),
+                [nameof(PwaInstallPromptSnackbarContent.InstallLabel)] = TranslatePwa("Install"),
+                [nameof(PwaInstallPromptSnackbarContent.DismissLabel)] = TranslatePwa("Don't show again"),
+                [nameof(PwaInstallPromptSnackbarContent.ShowInstallButton)] = true,
+                [nameof(PwaInstallPromptSnackbarContent.OnInstallClicked)] = EventCallback.Factory.Create<MouseEventArgs>(this, RequestPwaInstallAsync),
+                [nameof(PwaInstallPromptSnackbarContent.OnDismissClicked)] = EventCallback.Factory.Create<MouseEventArgs>(this, DismissInstallSnackbarTestAsync)
+            };
+
+            SnackbarWorkflow.ShowComponent<PwaInstallPromptSnackbarContent>(
+                componentParameters,
+                Severity.Normal,
+                options =>
+                {
+                    options.RequireInteraction = true;
+                    options.ShowCloseIcon = false;
+                    options.HideIcon = true;
+                    options.SnackbarVariant = Variant.Outlined;
+                    options.SnackbarTypeClass = PwaInstallTestSnackbarClass;
+                },
+                PwaInstallTestSnackbarKey);
+        }
+
+        protected string GetPwaStatusText()
+        {
+            if (!HasLoadedPwaStatus)
+            {
+                return TranslatePwa("Unknown");
+            }
+
+            return PwaState.IsInstalled
+                ? TranslatePwa("Installed")
+                : TranslatePwa("Not installed");
+        }
+
+        protected Color GetPwaStatusColor()
+        {
+            if (!HasLoadedPwaStatus)
+            {
+                return Color.Default;
+            }
+
+            return PwaState.IsInstalled
+                ? Color.Success
+                : Color.Warning;
+        }
+
+        protected string GetPwaPromptStatusText()
+        {
+            if (!HasLoadedPwaStatus)
+            {
+                return TranslatePwa("Unknown");
+            }
+
+            return CanRequestPwaInstall
+                ? TranslatePwa("Install prompt available")
+                : TranslatePwa("Install prompt unavailable");
+        }
+
+        protected Color GetPwaPromptStatusColor()
+        {
+            if (!HasLoadedPwaStatus)
+            {
+                return Color.Default;
+            }
+
+            return CanRequestPwaInstall
+                ? Color.Success
+                : Color.Default;
+        }
+
+        protected string GetPwaPlatformText()
+        {
+            if (!HasLoadedPwaStatus)
+            {
+                return TranslatePwa("Unknown");
+            }
+
+            return PwaState.IsIos
+                ? TranslatePwa("iOS browser")
+                : TranslatePwa("Non-iOS browser");
         }
 
         protected void NavigateBack()
@@ -859,6 +1026,23 @@ namespace Lantean.QBTMud.Pages
             _isStorageEntriesLoadRequested = true;
         }
 
+        private async Task RefreshPwaStatusForTabAsync(int activeTab)
+        {
+            if (activeTab != PwaTabIndex)
+            {
+                return;
+            }
+
+            await RefreshPwaStatusAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private Task DismissInstallSnackbarTestAsync()
+        {
+            SnackbarWorkflow.Hide(PwaInstallTestSnackbarKey);
+            return Task.CompletedTask;
+        }
+
         private async Task<WebApiCapabilityState> GetWebApiCapabilityStateAsync()
         {
             try
@@ -1005,6 +1189,11 @@ namespace Lantean.QBTMud.Pages
         private string TranslateNotifications(string source, params object[] arguments)
         {
             return LanguageLocalizer.Translate("AppNotifications", source, arguments);
+        }
+
+        private string TranslatePwa(string source, params object[] arguments)
+        {
+            return LanguageLocalizer.Translate("AppPwaInstallPrompt", source, arguments);
         }
     }
 }

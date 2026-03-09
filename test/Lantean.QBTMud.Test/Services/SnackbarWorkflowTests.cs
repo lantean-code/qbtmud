@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
+using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;
 
@@ -50,6 +51,55 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add("Message", Severity.Info, configure, "message-key"),
                 Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_ComponentMessage_WHEN_ShowComponentInvoked_THEN_ForwardsToSnackbar()
+        {
+            var componentParameters = new Dictionary<string, object>
+            {
+                ["Message"] = "Value"
+            };
+
+            _target.ShowComponent<DummySnackbarComponent>(componentParameters, Severity.Info, null, "component-key");
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.RemoveByKey("component-key"),
+                Times.Once);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add<DummySnackbarComponent>(componentParameters, Severity.Info, null, "component-key"),
+                Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_NoKey_WHEN_ShowComponentInvoked_THEN_DoesNotRemoveAndAddsComponent()
+        {
+            _target.ShowComponent<DummySnackbarComponent>(new Dictionary<string, object>(), Severity.Info, null, null);
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.RemoveByKey(It.IsAny<string>()),
+                Times.Never);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add<DummySnackbarComponent>(It.IsAny<Dictionary<string, object>?>(), Severity.Info, null, null),
+                Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_Key_WHEN_HideInvoked_THEN_ForwardsToSnackbar()
+        {
+            _target.Hide("message-key");
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.RemoveByKey("message-key"),
+                Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_EmptyKey_WHEN_HideInvoked_THEN_ThrowsArgumentException()
+        {
+            var action = () => _target.Hide(string.Empty);
+
+            action.Should().Throw<ArgumentException>();
         }
 
         [Fact]
@@ -174,6 +224,18 @@ namespace Lantean.QBTMud.Test.Services
             }
 
             return result;
+        }
+
+        private sealed class DummySnackbarComponent : IComponent
+        {
+            public void Attach(RenderHandle renderHandle)
+            {
+            }
+
+            public Task SetParametersAsync(ParameterView parameters)
+            {
+                return Task.CompletedTask;
+            }
         }
     }
 }
