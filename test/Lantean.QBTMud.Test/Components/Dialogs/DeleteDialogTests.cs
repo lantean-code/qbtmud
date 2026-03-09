@@ -92,6 +92,64 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_DeleteFilesChanged_WHEN_RememberChoiceClicked_THEN_SavesPreferenceOptimistically()
+        {
+            bool? savedDeleteFiles = null;
+            async Task SavePreference(bool value)
+            {
+                await Task.CompletedTask;
+                savedDeleteFiles = value;
+            }
+
+            var dialog = await _target.RenderDialogAsync(1, "TorrentName", saveDeleteFilesPreference: SavePreference);
+            var rememberChoiceButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RememberChoice");
+            rememberChoiceButton.Instance.Disabled.Should().BeTrue();
+
+            var deleteCheckBox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "DeleteFiles");
+            deleteCheckBox.Find("input").Change(true);
+
+            rememberChoiceButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RememberChoice");
+            rememberChoiceButton.Instance.Disabled.Should().BeFalse();
+            rememberChoiceButton.Instance.Icon.Should().Be(Icons.Material.Outlined.LockOpen);
+            await rememberChoiceButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            savedDeleteFiles.Should().BeTrue();
+
+            var reloadedRememberChoiceButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RememberChoice");
+            reloadedRememberChoiceButton.Instance.Disabled.Should().BeTrue();
+            reloadedRememberChoiceButton.Instance.Icon.Should().Be(Icons.Material.Filled.Lock);
+        }
+
+        [Fact]
+        public async Task GIVEN_SavePreferenceFails_WHEN_RememberChoiceClicked_THEN_ShouldRollbackOptimisticState()
+        {
+            Task SavePreference(bool value)
+            {
+                return Task.FromException(new InvalidOperationException("failed"));
+            }
+
+            var dialog = await _target.RenderDialogAsync(1, "TorrentName", saveDeleteFilesPreference: SavePreference);
+            var deleteCheckBox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "DeleteFiles");
+            deleteCheckBox.Find("input").Change(true);
+
+            var rememberChoiceButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RememberChoice");
+            await rememberChoiceButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var reloadedRememberChoiceButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RememberChoice");
+            reloadedRememberChoiceButton.Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_DefaultDeleteFilesEnabled_WHEN_Rendered_THEN_DeleteFilesStartsChecked()
+        {
+            var dialog = await _target.RenderDialogAsync(1, "TorrentName", defaultDeleteFiles: true);
+
+            var deleteCheckBox = FindComponentByTestId<MudCheckBox<bool>>(dialog.Component, "DeleteFiles");
+
+            deleteCheckBox.Instance.Value.Should().BeTrue();
+        }
+
+        [Fact]
         public async Task GIVEN_DialogOpen_WHEN_CancelInvoked_THEN_ResultCanceled()
         {
             var dialog = await _target.RenderDialogAsync(1, "TorrentName");
@@ -154,7 +212,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             _testContext = testContext;
         }
 
-        public async Task<DeleteDialogRenderContext> RenderDialogAsync(int count, string? torrentName = null)
+        public async Task<DeleteDialogRenderContext> RenderDialogAsync(
+            int count,
+            string? torrentName = null,
+            bool defaultDeleteFiles = false,
+            Func<bool, Task>? saveDeleteFilesPreference = null)
         {
             var provider = _testContext.Render<MudDialogProvider>();
             var dialogService = _testContext.Services.GetRequiredService<IDialogService>();
@@ -162,7 +224,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var parameters = new DialogParameters
             {
                 { nameof(DeleteDialog.Count), count },
+                { nameof(DeleteDialog.DefaultDeleteFiles), defaultDeleteFiles },
             };
+            if (saveDeleteFilesPreference is not null)
+            {
+                parameters.Add(nameof(DeleteDialog.SaveDeleteFilesPreference), saveDeleteFilesPreference);
+            }
             if (!string.IsNullOrWhiteSpace(torrentName))
             {
                 parameters.Add(nameof(DeleteDialog.TorrentName), torrentName);

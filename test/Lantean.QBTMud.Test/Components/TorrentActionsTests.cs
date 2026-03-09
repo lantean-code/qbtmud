@@ -68,7 +68,7 @@ namespace Lantean.QBTMud.Test.Components
             apiClientMock.Setup(c => c.SetTorrentName("Name", "Hash")).Returns(Task.CompletedTask);
             TestContext.UseSnackbarMock();
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
-            dialogWorkflowMock.Setup(d => d.InvokeDeleteTorrentDialog(false, Hashes("Hash"))).ReturnsAsync(true);
+            dialogWorkflowMock.Setup(d => d.InvokeDeleteTorrentDialog(false, false, Hashes("Hash"))).ReturnsAsync(true);
             dialogWorkflowMock.Setup(d => d.InvokeSetLocationDialog("SavePath", Hashes("Hash"))).Returns(Task.CompletedTask);
             dialogWorkflowMock.Setup(d => d.InvokeStringFieldDialog("Rename", "New name:", "Name", It.IsAny<Func<string, Task>>())).Returns<string, string, string?, Func<string, Task>>((_, _, _, cb) => cb("Name"));
             dialogWorkflowMock.Setup(d => d.InvokeRenameFilesDialog("Hash")).Returns(Task.CompletedTask);
@@ -90,7 +90,7 @@ namespace Lantean.QBTMud.Test.Components
 
             navigation.Uri.Should().Be(navigation.BaseUri);
             dialogWorkflowMock.Verify(d => d.InvokeSetLocationDialog("SavePath", Hashes("Hash")), Times.Once);
-            dialogWorkflowMock.Verify(d => d.InvokeDeleteTorrentDialog(false, Hashes("Hash")), Times.Once);
+            dialogWorkflowMock.Verify(d => d.InvokeDeleteTorrentDialog(false, false, Hashes("Hash")), Times.Once);
         }
 
         [Fact]
@@ -840,7 +840,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock();
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
-            dialogWorkflowMock.Setup(d => d.InvokeDeleteTorrentDialog(false, Hashes("Hash"))).ReturnsAsync(true);
+            dialogWorkflowMock.Setup(d => d.InvokeDeleteTorrentDialog(false, false, Hashes("Hash"))).ReturnsAsync(true);
             var keyboardMock = TestContext.AddSingletonMock<IKeyboardService>(MockBehavior.Strict);
             Func<KeyboardEvent, Task>? deleteHandler = null;
             keyboardMock.Setup(k => k.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Delete"), It.IsAny<Func<KeyboardEvent, Task>>()))
@@ -872,7 +872,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => deleteHandler!(new KeyboardEvent("Delete")));
             await target.InvokeAsync(() => menu.Instance.CloseMenuAsync());
 
-            dialogWorkflowMock.Verify(d => d.InvokeDeleteTorrentDialog(false, Hashes("Hash")), Times.Once);
+            dialogWorkflowMock.Verify(d => d.InvokeDeleteTorrentDialog(false, false, Hashes("Hash")), Times.Once);
             keyboardMock.Verify(k => k.RegisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Delete"), It.IsAny<Func<KeyboardEvent, Task>>()), Times.Once);
             keyboardMock.Verify(k => k.UnregisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Delete")), Times.Once);
             await target.InvokeAsync(() => deleteHandler!(new KeyboardEvent("Delete")));
@@ -910,7 +910,7 @@ namespace Lantean.QBTMud.Test.Components
             deleteHandler.Should().NotBeNull();
             await target.InvokeAsync(() => deleteHandler!(new KeyboardEvent("Delete")));
 
-            dialogWorkflowMock.Verify(d => d.InvokeDeleteTorrentDialog(It.IsAny<bool>(), It.IsAny<string[]>()), Times.Never);
+            dialogWorkflowMock.Verify(d => d.InvokeDeleteTorrentDialog(It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]

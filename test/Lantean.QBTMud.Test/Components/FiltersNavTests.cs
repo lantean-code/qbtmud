@@ -603,7 +603,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Setup(c => c.StopTorrents(null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash1", "Hash2" }))))
                 .Returns(Task.CompletedTask);
             dialogMock
-                .Setup(d => d.InvokeDeleteTorrentDialog(true, "Hash1"))
+                .Setup(d => d.InvokeDeleteTorrentDialog(true, false, "Hash1"))
                 .ReturnsAsync(true);
 
             var target = RenderFiltersNav(mainData, preferences);
@@ -639,7 +639,7 @@ namespace Lantean.QBTMud.Test.Components
 
             apiClientMock.Setup(c => c.StartTorrents(null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
             apiClientMock.Setup(c => c.StopTorrents(null, It.IsAny<string[]>())).Returns(Task.CompletedTask);
-            dialogMock.Setup(d => d.InvokeDeleteTorrentDialog(false, It.IsAny<string[]>())).ReturnsAsync(true);
+            dialogMock.Setup(d => d.InvokeDeleteTorrentDialog(false, false, It.IsAny<string[]>())).ReturnsAsync(true);
 
             var target = RenderFiltersNav(mainData);
 
@@ -665,7 +665,7 @@ namespace Lantean.QBTMud.Test.Components
 
             apiClientMock.Verify(client => client.StartTorrents(null, It.IsAny<string[]>()), Times.Exactly(2));
             apiClientMock.Verify(client => client.StopTorrents(null, It.IsAny<string[]>()), Times.Once);
-            dialogMock.Verify(workflow => workflow.InvokeDeleteTorrentDialog(false, It.IsAny<string[]>()), Times.Once);
+            dialogMock.Verify(workflow => workflow.InvokeDeleteTorrentDialog(false, false, It.IsAny<string[]>()), Times.Once);
         }
 
         [Fact]

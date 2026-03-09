@@ -422,7 +422,10 @@ namespace Lantean.QBTMud.Components
         {
             var torrents = GetAffectedTorrentHashes(type);
 
-            await DialogWorkflow.InvokeDeleteTorrentDialog(Preferences?.ConfirmTorrentDeletion == true, [.. torrents]);
+            await DialogWorkflow.InvokeDeleteTorrentDialog(
+                Preferences?.ConfirmTorrentDeletion ?? false,
+                Preferences?.DeleteTorrentContentFiles ?? false,
+                [.. torrents]);
         }
 
         private Dictionary<string, int> GetTags()

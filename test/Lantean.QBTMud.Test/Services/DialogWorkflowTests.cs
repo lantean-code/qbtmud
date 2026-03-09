@@ -615,6 +615,20 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_DeleteWithoutConfirmationAndDeleteFilesPreferenceTrue_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldDeleteFiles()
+        {
+            Mock.Get(_apiClient)
+                .Setup(a => a.DeleteTorrents(null, true, It.Is<string[]>(hashes => hashes.Length == 1 && hashes[0] == "Hash")))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            var result = await _target.InvokeDeleteTorrentDialog(false, true, "Hash");
+
+            result.Should().BeTrue();
+            Mock.Get(_apiClient).Verify();
+        }
+
+        [Fact]
         public async Task GIVEN_NoHashes_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldReturnFalse()
         {
             var result = await _target.InvokeDeleteTorrentDialog(true);
@@ -653,14 +667,44 @@ namespace Lantean.QBTMud.Test.Services
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
-            var result = await _target.InvokeDeleteTorrentDialog(true, "Hash");
+            var result = await _target.InvokeDeleteTorrentDialog(true, true, "Hash");
 
             result.Should().BeTrue();
             Mock.Get(_dialogService).Verify(s => s.ShowAsync<DeleteDialog>(
                     "Remove torrent(s)",
-                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 1, "Name")),
+                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 1, "Name", true)),
                     DialogWorkflow.ConfirmDialogOptions),
                 Times.Once);
+            Mock.Get(_apiClient).Verify();
+        }
+
+        [Fact]
+        public async Task GIVEN_DeleteDialogSavePreferenceCallback_WHEN_Invoked_THEN_ShouldPersistDeleteFilesPreference()
+        {
+            DialogParameters? capturedParameters = null;
+            var reference = CreateReference(DialogResult.Cancel());
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .Callback<string, DialogParameters, DialogOptions?>((_, parameters, _) =>
+                {
+                    capturedParameters = parameters;
+                })
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
+                .ReturnsAsync(new List<QbtTorrent> { new() { Name = "Name" } });
+            Mock.Get(_apiClient)
+                .Setup(a => a.SetApplicationPreferences(It.Is<UpdatePreferences>(preferences => preferences.DeleteTorrentContentFiles ?? false)))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            await _target.InvokeDeleteTorrentDialog(true, false, "Hash");
+
+            capturedParameters.Should().NotBeNull();
+            var callback = capturedParameters![nameof(DeleteDialog.SaveDeleteFilesPreference)] as Func<bool, Task>;
+            callback.Should().NotBeNull();
+            await callback!(true);
+
             Mock.Get(_apiClient).Verify();
         }
 
@@ -684,7 +728,7 @@ namespace Lantean.QBTMud.Test.Services
             result.Should().BeTrue();
             Mock.Get(_dialogService).Verify(s => s.ShowAsync<DeleteDialog>(
                     "Remove torrent(s)",
-                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 1, "Hash")),
+                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 1, "Hash", false)),
                     DialogWorkflow.ConfirmDialogOptions),
                 Times.Once);
             Mock.Get(_apiClient).Verify();
@@ -710,7 +754,7 @@ namespace Lantean.QBTMud.Test.Services
             result.Should().BeTrue();
             Mock.Get(_dialogService).Verify(s => s.ShowAsync<DeleteDialog>(
                     "Remove torrent(s)",
-                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 1, "Hash")),
+                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 1, "Hash", false)),
                     DialogWorkflow.ConfirmDialogOptions),
                 Times.Once);
             Mock.Get(_apiClient).Verify();
@@ -733,7 +777,7 @@ namespace Lantean.QBTMud.Test.Services
             result.Should().BeTrue();
             Mock.Get(_dialogService).Verify(s => s.ShowAsync<DeleteDialog>(
                     "Remove torrent(s)",
-                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 2, null)),
+                    It.Is<DialogParameters>(parameters => HasDeleteDialogParameters(parameters, 2, null, false)),
                     DialogWorkflow.ConfirmDialogOptions),
                 Times.Once);
             Mock.Get(_apiClient).Verify();
@@ -1770,7 +1814,7 @@ namespace Lantean.QBTMud.Test.Services
                    && parameters.Stopped == false;
         }
 
-        private static bool HasDeleteDialogParameters(DialogParameters parameters, int count, string? torrentName)
+        private static bool HasDeleteDialogParameters(DialogParameters parameters, int count, string? torrentName, bool defaultDeleteFiles)
         {
             if (!HasParameter(parameters, nameof(DeleteDialog.Count)))
             {
@@ -1778,6 +1822,26 @@ namespace Lantean.QBTMud.Test.Services
             }
 
             if (!Equals(parameters[nameof(DeleteDialog.Count)], count))
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(DeleteDialog.DefaultDeleteFiles)))
+            {
+                return false;
+            }
+
+            if (!Equals(parameters[nameof(DeleteDialog.DefaultDeleteFiles)], defaultDeleteFiles))
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(DeleteDialog.SaveDeleteFilesPreference)))
+            {
+                return false;
+            }
+
+            if (parameters[nameof(DeleteDialog.SaveDeleteFilesPreference)] is not Func<bool, Task>)
             {
                 return false;
             }

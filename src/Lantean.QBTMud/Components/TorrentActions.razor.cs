@@ -209,7 +209,10 @@ namespace Lantean.QBTMud.Components
 
         protected async Task Remove()
         {
-            var deleted = await DialogWorkflow.InvokeDeleteTorrentDialog(Preferences?.ConfirmTorrentDeletion == true, Hashes.ToArray());
+            var deleted = await DialogWorkflow.InvokeDeleteTorrentDialog(
+                Preferences?.ConfirmTorrentDeletion ?? false,
+                Preferences?.DeleteTorrentContentFiles ?? false,
+                Hashes.ToArray());
 
             if (deleted)
             {
@@ -399,7 +402,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task ForceRecheck()
         {
-            await DialogWorkflow.ForceRecheckAsync(Hashes, Preferences?.ConfirmTorrentRecheck == true);
+            await DialogWorkflow.ForceRecheckAsync(Hashes, Preferences?.ConfirmTorrentRecheck ?? false);
         }
 
         protected async Task ForceReannounce()

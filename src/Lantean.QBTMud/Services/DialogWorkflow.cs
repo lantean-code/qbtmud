@@ -225,6 +225,12 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task<bool> InvokeDeleteTorrentDialog(bool confirmTorrentDeletion, params string[] hashes)
         {
+            return await InvokeDeleteTorrentDialog(confirmTorrentDeletion, false, hashes);
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> InvokeDeleteTorrentDialog(bool confirmTorrentDeletion, bool deleteTorrentContentFiles, params string[] hashes)
+        {
             if (hashes.Length == 0)
             {
                 return false;
@@ -232,7 +238,7 @@ namespace Lantean.QBTMud.Services
 
             if (!confirmTorrentDeletion)
             {
-                await _apiClient.DeleteTorrents(null, false, hashes);
+                await _apiClient.DeleteTorrents(null, deleteTorrentContentFiles, hashes);
                 return true;
             }
 
@@ -258,6 +264,8 @@ namespace Lantean.QBTMud.Services
             var parameters = new DialogParameters
             {
                 { nameof(DeleteDialog.Count), hashes.Length },
+                { nameof(DeleteDialog.DefaultDeleteFiles), deleteTorrentContentFiles },
+                { nameof(DeleteDialog.SaveDeleteFilesPreference), new Func<bool, Task>(SaveDeleteFilesPreference) },
             };
             if (hashes.Length == 1)
             {
@@ -272,8 +280,21 @@ namespace Lantean.QBTMud.Services
                 return false;
             }
 
-            await _apiClient.DeleteTorrents(null, (bool)dialogResult.Data, hashes);
+            if (dialogResult.Data is not bool deleteFiles)
+            {
+                return false;
+            }
+
+            await _apiClient.DeleteTorrents(null, deleteFiles, hashes);
             return true;
+
+            async Task SaveDeleteFilesPreference(bool deleteFiles)
+            {
+                await _apiClient.SetApplicationPreferences(new QBitTorrentClient.Models.UpdatePreferences
+                {
+                    DeleteTorrentContentFiles = deleteFiles,
+                });
+            }
         }
 
         /// <inheritdoc />
