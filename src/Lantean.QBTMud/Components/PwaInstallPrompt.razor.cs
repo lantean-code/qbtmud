@@ -189,6 +189,7 @@ namespace Lantean.QBTMud.Components
                 }
                 catch (JSException)
                 {
+                    // Ignore JS teardown failures during disposal because the component is already being destroyed.
                 }
             }
 

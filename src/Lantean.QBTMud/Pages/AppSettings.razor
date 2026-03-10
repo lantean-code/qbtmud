@@ -465,7 +465,7 @@
                                         <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsPwaPlatform")">@GetPwaPlatformText()</MudText>
                                     </MudItem>
 
-                                    @if (HasLoadedPwaStatus && PwaState.IsIos && !CanRequestPwaInstall)
+                                    @if (HasLoadedPwaStatus && PwaState.IsIos && !PwaState.IsInstalled && !CanRequestPwaInstall)
                                     {
                                         <MudItem xs="12">
                                             <MudText Typo="Typo.caption" Class="mud-secondary-text" data-test-id="@TestIdHelper.For("AppSettingsPwaIosHint")">
@@ -490,14 +490,15 @@
                                                        data-test-id="@TestIdHelper.For("AppSettingsPwaInstallNow")">
                                                 @TranslatePwa("Install now")
                                             </MudButton>
-#if DEBUG
-                                            <MudButton Variant="Variant.Text"
-                                                       Color="Color.Info"
-                                                       OnClick="ShowInstallSnackbarTest"
-                                                       data-test-id="@TestIdHelper.For("AppSettingsPwaShowSnackbarTest")">
-                                                @TranslatePwa("Show install snackbar (test)")
-                                            </MudButton>
-#endif
+                                            @if (IsDebugBuild)
+                                            {
+                                                <MudButton Variant="Variant.Text"
+                                                           Color="Color.Info"
+                                                           OnClick="ShowInstallSnackbarTest"
+                                                           data-test-id="@TestIdHelper.For("AppSettingsPwaShowSnackbarTest")">
+                                                    @TranslatePwa("Show install snackbar (test)")
+                                                </MudButton>
+                                            }
                                         </MudStack>
                                     </MudItem>
                                 </MudGrid>

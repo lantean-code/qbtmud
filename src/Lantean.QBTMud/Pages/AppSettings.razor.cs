@@ -1,21 +1,16 @@
+using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using System.Diagnostics;
 using System.Text.Json;
 using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
-
-#if DEBUG
-
-using Lantean.QBTMud.Components;
-using Microsoft.AspNetCore.Components.Web;
-
-#endif
 
 namespace Lantean.QBTMud.Pages
 {
@@ -23,10 +18,8 @@ namespace Lantean.QBTMud.Pages
     {
         private const int StorageTabIndex = 3;
         private const int PwaTabIndex = 4;
-#if DEBUG
         private const string PwaInstallTestSnackbarClass = "pwa-install-snackbar";
         private const string PwaInstallTestSnackbarKey = "pwa-install-snackbar-test";
-#endif
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -91,6 +84,18 @@ namespace Lantean.QBTMud.Pages
         protected bool IsLoadingPwaStatus { get; private set; }
 
         protected bool IsRequestingPwaInstall { get; private set; }
+
+        protected bool IsDebugBuild
+        {
+            get
+            {
+#if DEBUG
+                return true;
+#else
+                return false;
+#endif
+            }
+        }
 
         protected AppBuildInfo CurrentBuildInfo { get; private set; } = new("unknown", "Unavailable");
 
@@ -265,10 +270,9 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-#if DEBUG
-
         protected void ShowInstallSnackbarTest()
         {
+#if DEBUG
             var componentParameters = new Dictionary<string, object>
             {
                 [nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)] = true,
@@ -289,9 +293,8 @@ namespace Lantean.QBTMud.Pages
                     options.SnackbarTypeClass = PwaInstallTestSnackbarClass;
                 },
                 PwaInstallTestSnackbarKey);
-        }
-
 #endif
+        }
 
         protected string GetPwaStatusText()
         {
@@ -1046,15 +1049,11 @@ namespace Lantean.QBTMud.Pages
             await InvokeAsync(StateHasChanged);
         }
 
-#if DEBUG
-
         private Task DismissInstallSnackbarTestAsync()
         {
             SnackbarWorkflow.Hide(PwaInstallTestSnackbarKey);
             return Task.CompletedTask;
         }
-
-#endif
 
         private async Task<WebApiCapabilityState> GetWebApiCapabilityStateAsync()
         {

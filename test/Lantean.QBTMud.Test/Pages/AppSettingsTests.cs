@@ -1239,6 +1239,25 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_PwaStateIsInstalledOnIos_WHEN_PwaTabActivated_THEN_DoesNotRenderIosInstallHint()
+        {
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    IsIos = true,
+                    IsInstalled = true
+                });
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+
+            var hintTexts = target.FindComponents<MudText>()
+                .Where(component => HasTestId(component, "AppSettingsPwaIosHint"));
+            hintTexts.Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_RefreshPwaStatusThrowsJsException_WHEN_RefreshStatusClicked_THEN_ShowsWarningSnackbar()
         {
             Mock.Get(_pwaInstallPromptService)
