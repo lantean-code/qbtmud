@@ -1,4 +1,5 @@
 using Lantean.QBTMud.Services.Localization;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Services
@@ -44,6 +45,25 @@ namespace Lantean.QBTMud.Services
             ArgumentException.ThrowIfNullOrWhiteSpace(message);
 
             return _snackbar.Add(message, severity, configure, key);
+        }
+
+        /// <inheritdoc />
+        public Snackbar? ShowComponent<TComponent>(Dictionary<string, object>? componentParameters = null, Severity severity = Severity.Normal, Action<SnackbarOptions>? configure = null, string? key = null)
+            where TComponent : IComponent
+        {
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                _snackbar.RemoveByKey(key);
+            }
+
+            return _snackbar.Add<TComponent>(componentParameters, severity, configure, key);
+        }
+
+        /// <inheritdoc />
+        public void Hide(string key)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(key);
+            _snackbar.RemoveByKey(key);
         }
     }
 }

@@ -1,11 +1,25 @@
 using AwesomeAssertions;
 using Bunit;
+
+#if DEBUG
+
+using Lantean.QBTMud.Components;
+
+#endif
+
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
+
+#if DEBUG
+
+using Microsoft.AspNetCore.Components.Web;
+
+#endif
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.JSInterop;
@@ -26,6 +40,7 @@ namespace Lantean.QBTMud.Test.Pages
         private readonly IStorageDiagnosticsService _storageDiagnosticsService;
         private readonly IDialogWorkflow _dialogWorkflow;
         private readonly ISnackbar _snackbar;
+        private readonly IPwaInstallPromptService _pwaInstallPromptService;
 
         public AppSettingsTests()
         {
@@ -36,6 +51,7 @@ namespace Lantean.QBTMud.Test.Pages
             _storageDiagnosticsService = Mock.Of<IStorageDiagnosticsService>();
             _dialogWorkflow = Mock.Of<IDialogWorkflow>();
             _snackbar = Mock.Of<ISnackbar>();
+            _pwaInstallPromptService = Mock.Of<IPwaInstallPromptService>();
 
             Mock.Get(_appBuildInfoService)
                 .Setup(service => service.GetCurrentBuildInfo())
@@ -78,6 +94,12 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState());
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync("dismissed");
 
             TestContext.Services.RemoveAll<IAppBuildInfoService>();
             TestContext.Services.RemoveAll<IAppSettingsService>();
@@ -86,6 +108,7 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.RemoveAll<IStorageDiagnosticsService>();
             TestContext.Services.RemoveAll<IDialogWorkflow>();
             TestContext.Services.RemoveAll<ISnackbar>();
+            TestContext.Services.RemoveAll<IPwaInstallPromptService>();
             TestContext.Services.AddSingleton(_appBuildInfoService);
             TestContext.Services.AddSingleton(_appSettingsService);
             TestContext.Services.AddSingleton(_appUpdateService);
@@ -93,6 +116,7 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.AddSingleton(_storageDiagnosticsService);
             TestContext.Services.AddSingleton(_dialogWorkflow);
             TestContext.Services.AddSingleton(_snackbar);
+            TestContext.Services.AddSingleton(_pwaInstallPromptService);
         }
 
         [Fact]
@@ -1139,6 +1163,388 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_PwaTabActivated_WHEN_StatusLoaded_THEN_RendersPwaStatus()
+        {
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    CanPrompt = true,
+                    IsIos = true
+                });
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+
+            var statusChip = FindComponentByTestId<MudChip<string>>(target, "AppSettingsPwaStatus");
+            var promptStatusChip = FindComponentByTestId<MudChip<string>>(target, "AppSettingsPwaInstallPromptStatus");
+            var platformText = FindComponentByTestId<MudText>(target, "AppSettingsPwaPlatform");
+
+            GetChildContentText(statusChip.Instance.ChildContent).Should().Be("Not installed");
+            GetChildContentText(promptStatusChip.Instance.ChildContent).Should().Be("Install prompt available");
+            GetChildContentText(platformText.Instance.ChildContent).Should().Be("iOS browser");
+        }
+
+        [Fact]
+        public async Task GIVEN_PwaInstallAvailable_WHEN_InstallNowClicked_THEN_RequestsInstallPromptAndRefreshesStatus()
+        {
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    CanPrompt = true
+                });
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync("accepted");
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+            var installNowButton = FindButton(target, "AppSettingsPwaInstallNow");
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => installNowButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_pwaInstallPromptService).Verify(
+                service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_pwaInstallPromptService).Verify(
+                service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()),
+                Times.AtLeast(2));
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Install prompt result: accepted", StringComparison.Ordinal)),
+                    Severity.Info,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_PwaStateIsIosWithoutPrompt_WHEN_PwaTabActivated_THEN_RendersIosInstallHint()
+        {
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    IsIos = true,
+                    CanPrompt = false
+                });
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+
+            var hintText = FindComponentByTestId<MudText>(target, "AppSettingsPwaIosHint");
+            GetChildContentText(hintText.Instance.ChildContent).Should().Be("On iPhone or iPad, tap Share, then Add to Home Screen.");
+        }
+
+        [Fact]
+        public async Task GIVEN_PwaStateIsInstalledOnIos_WHEN_PwaTabActivated_THEN_DoesNotRenderIosInstallHint()
+        {
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    IsIos = true,
+                    IsInstalled = true
+                });
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+
+            var hintTexts = target.FindComponents<MudText>()
+                .Where(component => HasTestId(component, "AppSettingsPwaIosHint"));
+            hintTexts.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshPwaStatusThrowsJsException_WHEN_RefreshStatusClicked_THEN_ShowsWarningSnackbar()
+        {
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new JSException("StatusError"));
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+            var refreshStatusButton = FindButton(target, "AppSettingsPwaRefreshStatus");
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => refreshStatusButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to read app install status.", StringComparison.Ordinal)),
+                    Severity.Warning,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshPwaStatusThrowsInvalidOperationException_WHEN_RefreshStatusClicked_THEN_ShowsWarningSnackbar()
+        {
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("StatusError"));
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+            var refreshStatusButton = FindButton(target, "AppSettingsPwaRefreshStatus");
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => refreshStatusButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to read app install status.", StringComparison.Ordinal)),
+                    Severity.Warning,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RequestPwaInstallThrowsJsException_WHEN_InstallNowClicked_THEN_ShowsWarningSnackbar()
+        {
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    CanPrompt = true
+                });
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new JSException("RequestError"));
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+            var installNowButton = FindButton(target, "AppSettingsPwaInstallNow");
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => installNowButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to request app install.", StringComparison.Ordinal)),
+                    Severity.Warning,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RequestPwaInstallThrowsInvalidOperationException_WHEN_InstallNowClicked_THEN_ShowsWarningSnackbar()
+        {
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    CanPrompt = true
+                });
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("RequestError"));
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+            var installNowButton = FindButton(target, "AppSettingsPwaInstallNow");
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => installNowButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to request app install.", StringComparison.Ordinal)),
+                    Severity.Warning,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_PwaStatusRefreshInProgress_WHEN_RefreshStatusClickedTwice_THEN_SecondRefreshIsIgnored()
+        {
+            var statusTaskSource = new TaskCompletionSource<PwaInstallPromptState>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    CanPrompt = true
+                });
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+
+            var invocationCount = 0;
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    invocationCount++;
+                    return invocationCount == 1
+                        ? statusTaskSource.Task
+                        : Task.FromResult(new PwaInstallPromptState());
+                });
+
+            var refreshStatusButton = FindButton(target, "AppSettingsPwaRefreshStatus");
+            _pwaInstallPromptService.ClearInvocations();
+
+            var firstRefreshTask = target.InvokeAsync(() => refreshStatusButton.Instance.OnClick.InvokeAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                invocationCount.Should().Be(1);
+            });
+            var invocationCountBeforeSecondRefresh = invocationCount;
+
+            await target.InvokeAsync(() => refreshStatusButton.Instance.OnClick.InvokeAsync());
+
+            invocationCount.Should().Be(invocationCountBeforeSecondRefresh);
+
+            statusTaskSource.SetResult(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            });
+            await firstRefreshTask;
+        }
+
+#if DEBUG
+
+        [Fact]
+        public async Task GIVEN_TestSnackbarRequested_WHEN_ShowInstallSnackbarClicked_THEN_ShowsConfiguredComponentSnackbar()
+        {
+            Dictionary<string, object>? capturedComponentParameters = null;
+            Action<SnackbarOptions>? capturedConfigure = null;
+            string? capturedKey = null;
+            Severity? capturedSeverity = null;
+
+            Mock.Get(_snackbar)
+                .Setup(snackbar => snackbar.Add<PwaInstallPromptSnackbarContent>(
+                    It.IsAny<Dictionary<string, object>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<Action<SnackbarOptions>?>(),
+                    It.IsAny<string?>()))
+                .Callback((Dictionary<string, object>? componentParameters, Severity severity, Action<SnackbarOptions>? configure, string? key) =>
+                {
+                    capturedComponentParameters = componentParameters;
+                    capturedSeverity = severity;
+                    capturedConfigure = configure;
+                    capturedKey = key;
+                })
+                .Returns((Snackbar?)null);
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+            var testSnackbarButton = FindButton(target, "AppSettingsPwaShowSnackbarTest");
+
+            await target.InvokeAsync(() => testSnackbarButton.Instance.OnClick.InvokeAsync());
+
+            capturedComponentParameters.Should().NotBeNull();
+            capturedSeverity.Should().Be(Severity.Normal);
+            capturedKey.Should().Be("pwa-install-snackbar-test");
+            capturedComponentParameters![nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)].Should().Be(true);
+            capturedComponentParameters[nameof(PwaInstallPromptSnackbarContent.ShowIosInstructions)].Should().Be(false);
+
+            capturedConfigure.Should().NotBeNull();
+            var options = new SnackbarOptions(Severity.Normal, new SnackbarConfiguration());
+            capturedConfigure!(options);
+            options.RequireInteraction.Should().BeTrue();
+            options.ShowCloseIcon.Should().BeFalse();
+            options.HideIcon.Should().BeTrue();
+            options.SnackbarVariant.Should().Be(Variant.Outlined);
+            options.SnackbarTypeClass.Should().Be("pwa-install-snackbar");
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.RemoveByKey("pwa-install-snackbar-test"),
+                Times.Once);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add<PwaInstallPromptSnackbarContent>(
+                    It.IsAny<Dictionary<string, object>?>(),
+                    Severity.Normal,
+                    It.IsAny<Action<SnackbarOptions>?>(),
+                    "pwa-install-snackbar-test"),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_TestSnackbarDismissCallback_WHEN_DismissInvoked_THEN_HidesSnackbarByKey()
+        {
+            Dictionary<string, object>? capturedComponentParameters = null;
+
+            Mock.Get(_snackbar)
+                .Setup(snackbar => snackbar.Add<PwaInstallPromptSnackbarContent>(
+                    It.IsAny<Dictionary<string, object>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<Action<SnackbarOptions>?>(),
+                    It.IsAny<string?>()))
+                .Callback((Dictionary<string, object>? componentParameters, Severity severity, Action<SnackbarOptions>? configure, string? key) =>
+                {
+                    capturedComponentParameters = componentParameters;
+                })
+                .Returns((Snackbar?)null);
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+            var testSnackbarButton = FindButton(target, "AppSettingsPwaShowSnackbarTest");
+
+            await target.InvokeAsync(() => testSnackbarButton.Instance.OnClick.InvokeAsync());
+
+            capturedComponentParameters.Should().NotBeNull();
+            capturedComponentParameters![nameof(PwaInstallPromptSnackbarContent.OnDismissClicked)].Should().BeOfType<EventCallback<MouseEventArgs>>();
+            var onDismissClicked = (EventCallback<MouseEventArgs>)capturedComponentParameters[nameof(PwaInstallPromptSnackbarContent.OnDismissClicked)];
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => onDismissClicked.InvokeAsync(new MouseEventArgs()));
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.RemoveByKey("pwa-install-snackbar-test"),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_TestSnackbarInstallCallbackWithUnavailablePrompt_WHEN_InstallInvoked_THEN_RequestIsIgnored()
+        {
+            Dictionary<string, object>? capturedComponentParameters = null;
+
+            Mock.Get(_snackbar)
+                .Setup(snackbar => snackbar.Add<PwaInstallPromptSnackbarContent>(
+                    It.IsAny<Dictionary<string, object>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<Action<SnackbarOptions>?>(),
+                    It.IsAny<string?>()))
+                .Callback((Dictionary<string, object>? componentParameters, Severity severity, Action<SnackbarOptions>? configure, string? key) =>
+                {
+                    capturedComponentParameters = componentParameters;
+                })
+                .Returns((Snackbar?)null);
+            Mock.Get(_pwaInstallPromptService)
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    CanPrompt = false
+                });
+
+            var target = RenderPage();
+            await ActivatePwaTab(target);
+            var testSnackbarButton = FindButton(target, "AppSettingsPwaShowSnackbarTest");
+
+            await target.InvokeAsync(() => testSnackbarButton.Instance.OnClick.InvokeAsync());
+
+            capturedComponentParameters.Should().NotBeNull();
+            capturedComponentParameters![nameof(PwaInstallPromptSnackbarContent.OnInstallClicked)].Should().BeOfType<EventCallback<MouseEventArgs>>();
+            var onInstallClicked = (EventCallback<MouseEventArgs>)capturedComponentParameters[nameof(PwaInstallPromptSnackbarContent.OnInstallClicked)];
+            _pwaInstallPromptService.ClearInvocations();
+
+            await target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+
+            Mock.Get(_pwaInstallPromptService).Verify(
+                service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+#endif
+
+        [Fact]
         public async Task GIVEN_RefreshStorageFails_WHEN_RefreshClicked_THEN_ShowsErrorSnackbar()
         {
             var initialEntries = new[]
@@ -1447,6 +1853,16 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+        }
+
+        private async Task ActivatePwaTab(IRenderedComponent<AppSettingsPage> target)
+        {
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivePanelIndexChanged.InvokeAsync(4));
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudChip<string>>(target, "AppSettingsPwaStatus");
             });
         }
 

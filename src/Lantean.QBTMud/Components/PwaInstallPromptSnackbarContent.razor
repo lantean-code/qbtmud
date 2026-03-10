@@ -1,0 +1,20 @@
+<MudStack Spacing="1" Class="pwa-install-snackbar-content">
+    <MudText Typo="Typo.body1" Class="pwa-install-snackbar-message">@BuildMessage()</MudText>
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="pwa-install-snackbar-actions">
+        @if (CanPromptInstall)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Success"
+                       Class="pwa-install-snackbar-button"
+                       OnClick="OnInstallClicked">
+                @Translate("Install")
+            </MudButton>
+        }
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Warning"
+                   Class="pwa-install-snackbar-button"
+                   OnClick="OnDismissClicked">
+            @Translate("Don't show again")
+        </MudButton>
+    </MudStack>
+</MudStack>

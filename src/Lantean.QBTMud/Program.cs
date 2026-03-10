@@ -75,6 +75,7 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<ITorrentCompletionNotificationService, TorrentCompletionNotificationService>();
             builder.Services.AddScoped<IStorageDiagnosticsService, StorageDiagnosticsService>();
             builder.Services.AddScoped<ISnackbarWorkflow, SnackbarWorkflow>();
+            builder.Services.AddScoped<IPwaInstallPromptService, PwaInstallPromptService>();
 
             builder.Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
             builder.Services.AddSingleton<IPeerDataManager, PeerDataManager>();

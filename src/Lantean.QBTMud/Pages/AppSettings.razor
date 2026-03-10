@@ -422,6 +422,90 @@
                         </div>
                     }
                 </MudTabPanel>
+
+                <MudTabPanel Text="@TranslatePwa("PWA")"
+                             data-test-id="@TestIdHelper.For("AppSettingsPwaTab")">
+                    <div class="options-tab-contents">
+                        <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.subtitle2">@TranslatePwa("Installable app")</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent Class="pt-0">
+                                <MudGrid Spacing="2">
+                                    <MudItem xs="12" sm="4">
+                                        <MudText Typo="Typo.body2" Class="fw-bold">@TranslatePwa("Status")</MudText>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="8">
+                                        <MudChip T="string"
+                                                 Color="@GetPwaStatusColor()"
+                                                 Variant="Variant.Outlined"
+                                                 data-test-id="@TestIdHelper.For("AppSettingsPwaStatus")">
+                                            @GetPwaStatusText()
+                                        </MudChip>
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="4">
+                                        <MudText Typo="Typo.body2" Class="fw-bold">@TranslatePwa("Install prompt")</MudText>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="8">
+                                        <MudChip T="string"
+                                                 Color="@GetPwaPromptStatusColor()"
+                                                 Variant="Variant.Outlined"
+                                                 data-test-id="@TestIdHelper.For("AppSettingsPwaInstallPromptStatus")">
+                                            @GetPwaPromptStatusText()
+                                        </MudChip>
+                                    </MudItem>
+
+                                    <MudItem xs="12" sm="4">
+                                        <MudText Typo="Typo.body2" Class="fw-bold">@TranslatePwa("Platform")</MudText>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="8">
+                                        <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsPwaPlatform")">@GetPwaPlatformText()</MudText>
+                                    </MudItem>
+
+                                    @if (HasLoadedPwaStatus && PwaState.IsIos && !PwaState.IsInstalled && !CanRequestPwaInstall)
+                                    {
+                                        <MudItem xs="12">
+                                            <MudText Typo="Typo.caption" Class="mud-secondary-text" data-test-id="@TestIdHelper.For("AppSettingsPwaIosHint")">
+                                                @TranslatePwa("On iPhone or iPad, tap Share, then Add to Home Screen.")
+                                            </MudText>
+                                        </MudItem>
+                                    }
+
+                                    <MudItem xs="12">
+                                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                                            <MudButton Variant="Variant.Outlined"
+                                                       Color="Color.Default"
+                                                       OnClick="RefreshPwaStatusAsync"
+                                                       Disabled="@IsLoadingPwaStatus"
+                                                       data-test-id="@TestIdHelper.For("AppSettingsPwaRefreshStatus")">
+                                                @TranslatePwa("Refresh status")
+                                            </MudButton>
+                                            <MudButton Variant="Variant.Outlined"
+                                                       Color="Color.Primary"
+                                                       OnClick="RequestPwaInstallAsync"
+                                                       Disabled="@(!CanRequestPwaInstall || IsRequestingPwaInstall)"
+                                                       data-test-id="@TestIdHelper.For("AppSettingsPwaInstallNow")">
+                                                @TranslatePwa("Install now")
+                                            </MudButton>
+                                            @if (IsDebugBuild)
+                                            {
+                                                <MudButton Variant="Variant.Text"
+                                                           Color="Color.Info"
+                                                           OnClick="ShowInstallSnackbarTest"
+                                                           data-test-id="@TestIdHelper.For("AppSettingsPwaShowSnackbarTest")">
+                                                    @TranslatePwa("Show install snackbar (test)")
+                                                </MudButton>
+                                            }
+                                        </MudStack>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudCardContent>
+                        </MudCard>
+                    </div>
+                </MudTabPanel>
             </MudTabs>
         }
     </div>

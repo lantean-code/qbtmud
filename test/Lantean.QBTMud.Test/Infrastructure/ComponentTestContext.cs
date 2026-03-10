@@ -97,6 +97,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();
             Services.AddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();
             Services.AddScoped<ISnackbarWorkflow, SnackbarWorkflow>();
+            Services.AddScoped<IPwaInstallPromptService, PwaInstallPromptService>();
 
             Services.AddSingleton<ITorrentDataManager, TorrentDataManager>();
             Services.AddSingleton<IPeerDataManager, PeerDataManager>();
