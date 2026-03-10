@@ -1,13 +1,25 @@
 using AwesomeAssertions;
 using Bunit;
+
+#if DEBUG
+
 using Lantean.QBTMud.Components;
+
+#endif
+
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
+
+#if DEBUG
+
 using Microsoft.AspNetCore.Components.Web;
+
+#endif
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.JSInterop;
@@ -1158,8 +1170,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(new PwaInstallPromptState
                 {
                     CanPrompt = true,
-                    IsIos = true,
-                    IsSafari = true
+                    IsIos = true
                 });
 
             var target = RenderPage();
@@ -1378,6 +1389,8 @@ namespace Lantean.QBTMud.Test.Pages
             await firstRefreshTask;
         }
 
+#if DEBUG
+
         [Fact]
         public async Task GIVEN_TestSnackbarRequested_WHEN_ShowInstallSnackbarClicked_THEN_ShowsConfiguredComponentSnackbar()
         {
@@ -1410,10 +1423,8 @@ namespace Lantean.QBTMud.Test.Pages
             capturedComponentParameters.Should().NotBeNull();
             capturedSeverity.Should().Be(Severity.Normal);
             capturedKey.Should().Be("pwa-install-snackbar-test");
-            capturedComponentParameters![nameof(PwaInstallPromptSnackbarContent.Message)].Should().Be("Install qBittorrent Web UI for quicker access and a native-like experience.");
-            capturedComponentParameters[nameof(PwaInstallPromptSnackbarContent.InstallLabel)].Should().Be("Install");
-            capturedComponentParameters[nameof(PwaInstallPromptSnackbarContent.DismissLabel)].Should().Be("Don't show again");
-            capturedComponentParameters[nameof(PwaInstallPromptSnackbarContent.ShowInstallButton)].Should().Be(true);
+            capturedComponentParameters![nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)].Should().Be(true);
+            capturedComponentParameters[nameof(PwaInstallPromptSnackbarContent.ShowIosInstructions)].Should().Be(false);
 
             capturedConfigure.Should().NotBeNull();
             var options = new SnackbarOptions(Severity.Normal, new SnackbarConfiguration());
@@ -1511,6 +1522,8 @@ namespace Lantean.QBTMud.Test.Pages
                 service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()),
                 Times.Never);
         }
+
+#endif
 
         [Fact]
         public async Task GIVEN_RefreshStorageFails_WHEN_RefreshClicked_THEN_ShowsErrorSnackbar()

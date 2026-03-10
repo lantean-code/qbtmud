@@ -75,10 +75,8 @@ namespace Lantean.QBTMud.Test.Components
             var componentParameters = GetComponentParameters(call);
             var options = BuildSnackbarOptions(call);
 
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.Message)].Should().Be("Install qBittorrent Web UI for quicker access and a native-like experience.");
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.InstallLabel)].Should().Be("Install");
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.DismissLabel)].Should().Be("Don't show again");
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.ShowInstallButton)].Should().Be(true);
+            componentParameters[nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)].Should().Be(true);
+            componentParameters[nameof(PwaInstallPromptSnackbarContent.ShowIosInstructions)].Should().Be(false);
             call.Severity.Should().Be(Severity.Normal);
             call.Key.Should().Be(PromptSnackbarKey);
 
@@ -105,9 +103,8 @@ namespace Lantean.QBTMud.Test.Components
             var componentParameters = GetComponentParameters(call);
             var options = BuildSnackbarOptions(call);
 
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.Message)].Should().Be("Install qBittorrent Web UI from your browser menu for quicker access. On iPhone or iPad, tap Share, then Add to Home Screen.");
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.ShowInstallButton)].Should().Be(false);
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.DismissLabel)].Should().Be("Don't show again");
+            componentParameters[nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)].Should().Be(false);
+            componentParameters[nameof(PwaInstallPromptSnackbarContent.ShowIosInstructions)].Should().Be(true);
             call.Severity.Should().Be(Severity.Normal);
             options.SnackbarVariant.Should().Be(Variant.Outlined);
             options.Action.Should().BeNull();

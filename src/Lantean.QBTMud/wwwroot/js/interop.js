@@ -119,6 +119,8 @@ function initializePwaInstallPromptInterop() {
     });
 }
 
+initializePwaInstallPromptInterop();
+
 function buildPwaInstallPromptState() {
     const state = window.qbt._pwaInstallPrompt;
 
@@ -126,7 +128,6 @@ function buildPwaInstallPromptState() {
         isInstalled: isPwaInstalled(),
         canPrompt: !!state.deferredPrompt,
         isIos: isIosDevice(),
-        isSafari: isSafariBrowser(),
     };
 }
 
@@ -187,14 +188,6 @@ function isIosDevice() {
     const isMacTouchDevice = platform === "MacIntel" && navigatorInstance.maxTouchPoints > 1;
 
     return hasIosUserAgent || isMacTouchDevice;
-}
-
-function isSafariBrowser() {
-    const userAgent = window.navigator?.userAgent ?? "";
-    const hasSafari = /Safari/i.test(userAgent);
-    const hasOtherEngine = /CriOS|Chrome|EdgA|EdgiOS|FxiOS|OPiOS|SamsungBrowser/i.test(userAgent);
-
-    return hasSafari && !hasOtherEngine;
 }
 
 window.qbt.triggerFileDownload = (url, fileName) => {

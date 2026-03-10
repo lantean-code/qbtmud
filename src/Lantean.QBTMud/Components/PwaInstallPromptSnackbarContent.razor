@@ -1,43 +1,20 @@
-@using Microsoft.AspNetCore.Components.Web
-
 <MudStack Spacing="1" Class="pwa-install-snackbar-content">
-    <MudText Typo="Typo.body1" Class="pwa-install-snackbar-message">@Message</MudText>
+    <MudText Typo="Typo.body1" Class="pwa-install-snackbar-message">@BuildMessage()</MudText>
     <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" Class="pwa-install-snackbar-actions">
-        @if (ShowInstallButton)
+        @if (CanPromptInstall)
         {
             <MudButton Variant="Variant.Filled"
                        Color="Color.Success"
                        Class="pwa-install-snackbar-button"
                        OnClick="OnInstallClicked">
-                @InstallLabel
+                @Translate("Install")
             </MudButton>
         }
         <MudButton Variant="Variant.Filled"
                    Color="Color.Warning"
                    Class="pwa-install-snackbar-button"
                    OnClick="OnDismissClicked">
-            @DismissLabel
+            @Translate("Don't show again")
         </MudButton>
     </MudStack>
 </MudStack>
-
-@code
-{
-    [Parameter]
-    public string Message { get; set; } = string.Empty;
-
-    [Parameter]
-    public string InstallLabel { get; set; } = string.Empty;
-
-    [Parameter]
-    public string DismissLabel { get; set; } = string.Empty;
-
-    [Parameter]
-    public bool ShowInstallButton { get; set; }
-
-    [Parameter]
-    public EventCallback<MouseEventArgs> OnInstallClicked { get; set; }
-
-    [Parameter]
-    public EventCallback<MouseEventArgs> OnDismissClicked { get; set; }
-}

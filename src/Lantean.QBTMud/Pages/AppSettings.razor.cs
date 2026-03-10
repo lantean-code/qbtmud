@@ -1,16 +1,21 @@
-using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using System.Diagnostics;
 using System.Text.Json;
 using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
+
+#if DEBUG
+
+using Lantean.QBTMud.Components;
+using Microsoft.AspNetCore.Components.Web;
+
+#endif
 
 namespace Lantean.QBTMud.Pages
 {
@@ -18,8 +23,10 @@ namespace Lantean.QBTMud.Pages
     {
         private const int StorageTabIndex = 3;
         private const int PwaTabIndex = 4;
+#if DEBUG
         private const string PwaInstallTestSnackbarClass = "pwa-install-snackbar";
         private const string PwaInstallTestSnackbarKey = "pwa-install-snackbar-test";
+#endif
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -258,14 +265,14 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
+#if DEBUG
+
         protected void ShowInstallSnackbarTest()
         {
             var componentParameters = new Dictionary<string, object>
             {
-                [nameof(PwaInstallPromptSnackbarContent.Message)] = TranslatePwa("Install qBittorrent Web UI for quicker access and a native-like experience."),
-                [nameof(PwaInstallPromptSnackbarContent.InstallLabel)] = TranslatePwa("Install"),
-                [nameof(PwaInstallPromptSnackbarContent.DismissLabel)] = TranslatePwa("Don't show again"),
-                [nameof(PwaInstallPromptSnackbarContent.ShowInstallButton)] = true,
+                [nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)] = true,
+                [nameof(PwaInstallPromptSnackbarContent.ShowIosInstructions)] = false,
                 [nameof(PwaInstallPromptSnackbarContent.OnInstallClicked)] = EventCallback.Factory.Create<MouseEventArgs>(this, RequestPwaInstallAsync),
                 [nameof(PwaInstallPromptSnackbarContent.OnDismissClicked)] = EventCallback.Factory.Create<MouseEventArgs>(this, DismissInstallSnackbarTestAsync)
             };
@@ -283,6 +290,8 @@ namespace Lantean.QBTMud.Pages
                 },
                 PwaInstallTestSnackbarKey);
         }
+
+#endif
 
         protected string GetPwaStatusText()
         {
@@ -1037,11 +1046,15 @@ namespace Lantean.QBTMud.Pages
             await InvokeAsync(StateHasChanged);
         }
 
+#if DEBUG
+
         private Task DismissInstallSnackbarTestAsync()
         {
             SnackbarWorkflow.Hide(PwaInstallTestSnackbarKey);
             return Task.CompletedTask;
         }
+
+#endif
 
         private async Task<WebApiCapabilityState> GetWebApiCapabilityStateAsync()
         {

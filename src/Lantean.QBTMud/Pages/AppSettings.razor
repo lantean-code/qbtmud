@@ -490,12 +490,14 @@
                                                        data-test-id="@TestIdHelper.For("AppSettingsPwaInstallNow")">
                                                 @TranslatePwa("Install now")
                                             </MudButton>
+#if DEBUG
                                             <MudButton Variant="Variant.Text"
                                                        Color="Color.Info"
                                                        OnClick="ShowInstallSnackbarTest"
                                                        data-test-id="@TestIdHelper.For("AppSettingsPwaShowSnackbarTest")">
                                                 @TranslatePwa("Show install snackbar (test)")
                                             </MudButton>
+#endif
                                         </MudStack>
                                     </MudItem>
                                 </MudGrid>

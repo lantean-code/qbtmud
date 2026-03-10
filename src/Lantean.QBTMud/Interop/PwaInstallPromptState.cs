@@ -19,10 +19,5 @@ namespace Lantean.QBTMud.Interop
         /// Gets or sets a value indicating whether the current device is iOS or iPadOS.
         /// </summary>
         public bool IsIos { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the current browser is Safari.
-        /// </summary>
-        public bool IsSafari { get; set; }
     }
 }

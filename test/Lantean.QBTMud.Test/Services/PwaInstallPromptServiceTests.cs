@@ -26,8 +26,7 @@ namespace Lantean.QBTMud.Test.Services
                 {
                     IsInstalled = true,
                     CanPrompt = true,
-                    IsIos = true,
-                    IsSafari = true
+                    IsIos = true
                 });
 
             var result = await _target.GetInstallPromptStateAsync(Xunit.TestContext.Current.CancellationToken);
@@ -35,7 +34,6 @@ namespace Lantean.QBTMud.Test.Services
             result.IsInstalled.Should().BeTrue();
             result.CanPrompt.Should().BeTrue();
             result.IsIos.Should().BeTrue();
-            result.IsSafari.Should().BeTrue();
         }
 
         [Fact]
@@ -51,7 +49,6 @@ namespace Lantean.QBTMud.Test.Services
             result.IsInstalled.Should().BeFalse();
             result.CanPrompt.Should().BeFalse();
             result.IsIos.Should().BeFalse();
-            result.IsSafari.Should().BeFalse();
         }
 
         [Fact]

@@ -1,6 +1,5 @@
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Services;
-using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -25,9 +24,6 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected ISettingsStorageService SettingsStorage { get; set; } = default!;
-
-        [Inject]
-        protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [Inject]
         protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
@@ -125,23 +121,6 @@ namespace Lantean.QBTMud.Components
             await InvokeAsync(StateHasChanged);
         }
 
-        protected string BuildBodyText()
-        {
-            return ShowIosInstructions
-                ? Translate("Install qBittorrent Web UI from your browser menu for quicker access.")
-                : Translate("Install qBittorrent Web UI for quicker access and a native-like experience.");
-        }
-
-        private string BuildSnackbarMessage()
-        {
-            if (!ShowIosInstructions)
-            {
-                return BuildBodyText();
-            }
-
-            return $"{BuildBodyText()} {Translate("On iPhone or iPad, tap Share, then Add to Home Screen.")}";
-        }
-
         private void RefreshPromptSnackbar()
         {
             if (!ShouldShowPrompt)
@@ -162,13 +141,10 @@ namespace Lantean.QBTMud.Components
 
         private void ShowPromptSnackbar()
         {
-            var message = BuildSnackbarMessage();
             var componentParameters = new Dictionary<string, object>
             {
-                [nameof(PwaInstallPromptSnackbarContent.Message)] = message,
-                [nameof(PwaInstallPromptSnackbarContent.InstallLabel)] = Translate("Install"),
-                [nameof(PwaInstallPromptSnackbarContent.DismissLabel)] = Translate("Don't show again"),
-                [nameof(PwaInstallPromptSnackbarContent.ShowInstallButton)] = CanPromptInstall,
+                [nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)] = CanPromptInstall,
+                [nameof(PwaInstallPromptSnackbarContent.ShowIosInstructions)] = ShowIosInstructions,
                 [nameof(PwaInstallPromptSnackbarContent.OnInstallClicked)] = EventCallback.Factory.Create<MouseEventArgs>(this, PromptInstall),
                 [nameof(PwaInstallPromptSnackbarContent.OnDismissClicked)] = EventCallback.Factory.Create<MouseEventArgs>(this, DismissForever)
             };
@@ -195,11 +171,6 @@ namespace Lantean.QBTMud.Components
         {
             SnackbarWorkflow.Hide(_installSnackbarKey);
             _snackbarShown = false;
-        }
-
-        protected string Translate(string source, params object[] arguments)
-        {
-            return LanguageLocalizer.Translate("AppPwaInstallPrompt", source, arguments);
         }
 
         /// <summary>
