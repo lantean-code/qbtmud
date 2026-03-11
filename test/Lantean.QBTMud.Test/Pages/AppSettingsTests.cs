@@ -1176,13 +1176,13 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderPage();
             await ActivatePwaTab(target);
 
-            var statusChip = FindComponentByTestId<MudChip<string>>(target, "AppSettingsPwaStatus");
-            var promptStatusChip = FindComponentByTestId<MudChip<string>>(target, "AppSettingsPwaInstallPromptStatus");
-            var platformText = FindComponentByTestId<MudText>(target, "AppSettingsPwaPlatform");
+            var statusField = FindComponentByTestId<MudTextField<string>>(target, "AppSettingsPwaStatus");
+            var promptStatusField = FindComponentByTestId<MudTextField<string>>(target, "AppSettingsPwaInstallPromptStatus");
+            var platformField = FindComponentByTestId<MudTextField<string>>(target, "AppSettingsPwaPlatform");
 
-            GetChildContentText(statusChip.Instance.ChildContent).Should().Be("Not installed");
-            GetChildContentText(promptStatusChip.Instance.ChildContent).Should().Be("Install prompt available");
-            GetChildContentText(platformText.Instance.ChildContent).Should().Be("iOS browser");
+            statusField.Instance.GetState(x => x.Value).Should().Be("Not installed");
+            promptStatusField.Instance.GetState(x => x.Value).Should().Be("Install prompt available");
+            platformField.Instance.GetState(x => x.Value).Should().Be("iOS browser");
         }
 
         [Fact]
@@ -1838,11 +1838,391 @@ namespace Lantean.QBTMud.Test.Pages
                 Times.Once);
         }
 
-        private IRenderedComponent<AppSettingsPage> RenderPage(bool drawerOpen = false)
+        [Fact]
+        public void GIVEN_CascadedAppSettings_WHEN_PageRendered_THEN_UsesCascadedSettingsWithoutCallingGetSettings()
+        {
+            var cascadedSettings = AppSettingsModel();
+            cascadedSettings.ThemeModePreference = ThemeModePreference.Dark;
+            _appSettingsService.ClearInvocations();
+
+            var target = RenderPage(cascadedAppSettings: cascadedSettings);
+            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(target, "AppSettingsThemeModePreference");
+
+            themeModeSelect.Instance.GetState(x => x.Value).Should().Be(ThemeModePreference.Dark);
+            Mock.Get(_appSettingsService).Verify(
+                service => service.GetSettingsAsync(It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_ReloadThrowsHttpRequest_WHEN_ReloadClicked_THEN_ShowsRefreshErrorSnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new HttpRequestException("ReloadError"));
+
+            var target = RenderPage();
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsReloadButton");
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to refresh app settings.", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ReloadThrowsJson_WHEN_ReloadClicked_THEN_ShowsRefreshErrorSnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new JsonException("ReloadError"));
+
+            var target = RenderPage();
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsReloadButton");
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to refresh app settings.", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ReloadThrowsJsException_WHEN_ReloadClicked_THEN_ShowsRefreshErrorSnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new JSException("ReloadError"));
+
+            var target = RenderPage();
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsReloadButton");
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to refresh app settings.", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ReloadThrowsOperationCanceled_WHEN_ReloadClicked_THEN_DoesNotShowRefreshErrorSnackbar()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException("ReloadCanceled"));
+
+            var target = RenderPage();
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsReloadButton");
+            _snackbar.ClearInvocations();
+
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to refresh app settings.", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageSettingsChangedOnStorageTab_WHEN_SaveClicked_THEN_SavesStorageAndRefreshesTabState()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default.Clone());
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns(StorageType.LocalStorage);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StorageRoutingSettings settings, CancellationToken _) => settings.Clone());
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            _storageDiagnosticsService.ClearInvocations();
+            storageRoutingService.ClearInvocations();
+            var masterStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            await target.InvokeAsync(() => masterStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            storageRoutingService.Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<StorageRoutingSettings>(settings => settings.MasterStorageType == StorageType.ClientData),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_storageDiagnosticsService).Verify(
+                service => service.GetEntriesAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageSettingsChangedAndSavedOffStorageTab_WHEN_ReturningToStorageTab_THEN_RefreshesStorageEntries()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default.Clone());
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns(StorageType.LocalStorage);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StorageRoutingSettings settings, CancellationToken _) => settings.Clone());
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var masterStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            await target.InvokeAsync(() => masterStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivePanelIndexChanged.InvokeAsync(0));
+
+            _storageDiagnosticsService.ClearInvocations();
+
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_storageDiagnosticsService).Verify(
+                service => service.GetEntriesAsync(It.IsAny<CancellationToken>()),
+                Times.Never);
+
+            await ActivateStorageTab(target);
+
+            Mock.Get(_storageDiagnosticsService).Verify(
+                service => service.GetEntriesAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageRoutingSaveThrowsHttpRequest_WHEN_SaveClicked_THEN_ShowsGenericStorageError()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default);
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns(StorageType.LocalStorage);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new HttpRequestException("StorageError"));
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var masterStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            await target.InvokeAsync(() => masterStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to save storage settings.", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageRoutingSaveThrowsJsException_WHEN_SaveClicked_THEN_ShowsGenericStorageError()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default);
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns(StorageType.LocalStorage);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new JSException("StorageError"));
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var masterStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            await target.InvokeAsync(() => masterStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to save storage settings.", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string?>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_InitialGroupOverridesAndEqualCounts_WHEN_GroupOverrideKeyChanges_THEN_PendingChangesDetected()
+        {
+            var initialSettings = StorageRoutingSettings.Default.Clone();
+            initialSettings.GroupStorageTypes["themes"] = StorageType.ClientData;
+
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(initialSettings.Clone());
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns(StorageType.LocalStorage);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StorageRoutingSettings settings, CancellationToken _) => settings.Clone());
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var themesSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageGroupStorageType-themes");
+            var generalSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageGroupStorageType-general");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => themesSelect.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
+            await target.InvokeAsync(() => generalSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+
+            saveButton.Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_InitialItemOverridesAndEqualCounts_WHEN_ItemOverrideKeyChanges_THEN_PendingChangesDetected()
+        {
+            var initialSettings = StorageRoutingSettings.Default.Clone();
+            initialSettings.ItemStorageTypes["themes.selected-theme"] = StorageType.ClientData;
+
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(initialSettings.Clone());
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns(StorageType.LocalStorage);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StorageRoutingSettings settings, CancellationToken _) => settings.Clone());
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var overridesPanel = FindComponentByTestId<MudExpansionPanel>(target, "AppSettingsStorageGroupOverridesPanel-themes");
+            await target.InvokeAsync(() => overridesPanel.Instance.ExpandAsync());
+            var selectedThemeItemSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageItemStorageType-themes.selected-theme");
+            var localThemesItemSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageItemStorageType-themes.local-themes");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            await target.InvokeAsync(() => selectedThemeItemSelect.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
+            await target.InvokeAsync(() => localThemesItemSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+
+            saveButton.Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_LostConnectionWithPendingChanges_WHEN_PageRendered_THEN_SaveAndUndoRemainDisabled()
+        {
+            var target = RenderPage(lostConnection: true);
+            var updateChecksSwitch = FindSwitch(target, "AppSettingsUpdateChecksEnabled");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+            var undoButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsUndoButton");
+
+            await target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
+
+            saveButton.Instance.Disabled.Should().BeTrue();
+            undoButton.Instance.Disabled.Should().BeTrue();
+        }
+
+        private IRenderedComponent<AppSettingsPage> RenderPage(bool drawerOpen = false, bool lostConnection = false, AppSettingsModel? cascadedAppSettings = null)
         {
             return TestContext.Render<AppSettingsPage>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", drawerOpen);
+                parameters.AddCascadingValue("LostConnection", lostConnection);
+                if (cascadedAppSettings is not null)
+                {
+                    parameters.AddCascadingValue("AppSettings", cascadedAppSettings);
+                }
             });
         }
 
@@ -1862,7 +2242,7 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => tabs.Instance.ActivePanelIndexChanged.InvokeAsync(4));
             target.WaitForAssertion(() =>
             {
-                _ = FindComponentByTestId<MudChip<string>>(target, "AppSettingsPwaStatus");
+                _ = FindComponentByTestId<MudTextField<string>>(target, "AppSettingsPwaStatus");
             });
         }
 

@@ -1,0 +1,61 @@
+@namespace Lantean.QBTMud.Components.AppSettingsTabs
+<MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.subtitle2">@TranslateUpdates("Updates")</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="pt-0">
+        <MudGrid>
+            <MudItem xs="12">
+                <FieldSwitch Value="@Settings.UpdateChecksEnabled"
+                             ValueChanged="OnUpdateChecksChanged"
+                             Label="@TranslateUpdates("Check for updates on startup")"
+                             data-test-id="@TestIdHelper.For("AppSettingsUpdateChecksEnabled")" />
+            </MudItem>
+
+            <MudItem xs="12" sm="4">
+                <MudText Typo="Typo.body2" Class="fw-bold">@TranslateUpdates("Current build")</MudText>
+            </MudItem>
+            <MudItem xs="12" sm="8">
+                <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsCurrentBuild")">@CurrentBuildInfo.Version</MudText>
+            </MudItem>
+
+            <MudItem xs="12" sm="4">
+                <MudText Typo="Typo.body2" Class="fw-bold">@TranslateUpdates("Latest stable release")</MudText>
+            </MudItem>
+            <MudItem xs="12" sm="8">
+                <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsLatestRelease")">@GetLatestReleaseTag()</MudText>
+            </MudItem>
+
+            <MudItem xs="12" sm="4">
+                <MudText Typo="Typo.body2" Class="fw-bold">@TranslateUpdates("Update status")</MudText>
+            </MudItem>
+            <MudItem xs="12" sm="8">
+                <MudText Typo="Typo.body2" data-test-id="@TestIdHelper.For("AppSettingsUpdateStatus")">@GetUpdateStatusText()</MudText>
+            </MudItem>
+
+            @if (!string.IsNullOrWhiteSpace(UpdateStatus?.LatestRelease?.HtmlUrl))
+            {
+                <MudItem xs="12" sm="4">
+                    <MudText Typo="Typo.body2" Class="fw-bold">@TranslateUpdates("Release page")</MudText>
+                </MudItem>
+                <MudItem xs="12" sm="8">
+                    <MudLink Href="@UpdateStatus.LatestRelease!.HtmlUrl" Target="_blank" data-test-id="@TestIdHelper.For("AppSettingsLatestReleaseLink")">
+                        @TranslateUpdates("View release")
+                    </MudLink>
+                </MudItem>
+            }
+
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="CheckForUpdatesNowAsync"
+                           Disabled="@IsCheckingUpdates"
+                           data-test-id="@TestIdHelper.For("AppSettingsCheckNow")">
+                    @TranslateUpdates("Check now")
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>

@@ -1,0 +1,81 @@
+@namespace Lantean.QBTMud.Components.AppSettingsTabs
+@if (IsActive)
+{
+    <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.subtitle2">@TranslatePwa("Installable app")</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Class="pt-0">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudTextField T="string"
+                                  Label="@TranslatePwa("Status")"
+                                  Value="@GetPwaStatusText()"
+                                  Variant="Variant.Outlined"
+                                  ShrinkLabel="true"
+                                  ReadOnly="true"
+                                  data-test-id="@TestIdHelper.For("AppSettingsPwaStatus")" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField T="string"
+                                  Label="@TranslatePwa("Install prompt")"
+                                  Value="@GetPwaPromptStatusText()"
+                                  Variant="Variant.Outlined"
+                                  ShrinkLabel="true"
+                                  ReadOnly="true"
+                                  data-test-id="@TestIdHelper.For("AppSettingsPwaInstallPromptStatus")" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField T="string"
+                                  Label="@TranslatePwa("Platform")"
+                                  Value="@GetPwaPlatformText()"
+                                  Variant="Variant.Outlined"
+                                  ShrinkLabel="true"
+                                  ReadOnly="true"
+                                  data-test-id="@TestIdHelper.For("AppSettingsPwaPlatform")" />
+                </MudItem>
+
+                @if (HasLoadedPwaStatus && PwaState.IsIos && !PwaState.IsInstalled && !CanRequestPwaInstall)
+                {
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.caption" Class="mud-secondary-text" data-test-id="@TestIdHelper.For("AppSettingsPwaIosHint")">
+                            @TranslatePwa("On iPhone or iPad, tap Share, then Add to Home Screen.")
+                        </MudText>
+                    </MudItem>
+                }
+
+                <MudItem xs="12">
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Default"
+                                   OnClick="RefreshPwaStatusAsync"
+                                   Disabled="@IsLoadingPwaStatus"
+                                   data-test-id="@TestIdHelper.For("AppSettingsPwaRefreshStatus")">
+                            @TranslatePwa("Refresh status")
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   OnClick="RequestPwaInstallAsync"
+                                   Disabled="@(!CanRequestPwaInstall || IsRequestingPwaInstall)"
+                                   data-test-id="@TestIdHelper.For("AppSettingsPwaInstallNow")">
+                            @TranslatePwa("Install now")
+                        </MudButton>
+                        @if (IsDebugBuild)
+                        {
+                            <MudButton Variant="Variant.Text"
+                                       Color="Color.Info"
+                                       OnClick="ShowInstallSnackbarTest"
+                                       data-test-id="@TestIdHelper.For("AppSettingsPwaShowSnackbarTest")">
+                                @TranslatePwa("Show install snackbar (test)")
+                            </MudButton>
+                        }
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+}
