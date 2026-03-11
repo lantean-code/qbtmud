@@ -1990,6 +1990,54 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_StorageSettingsChangedAndSavedOffStorageTab_WHEN_ReturningToStorageTab_THEN_RefreshesStorageEntries()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default.Clone());
+            storageRoutingService
+                .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
+                .Returns(StorageType.LocalStorage);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StorageRoutingSettings settings, CancellationToken _) => settings.Clone());
+
+            var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            webApiCapabilityService
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.RemoveAll<IWebApiCapabilityService>();
+            TestContext.Services.AddSingleton(storageRoutingService.Object);
+            TestContext.Services.AddSingleton(webApiCapabilityService.Object);
+
+            var target = RenderPage();
+            await ActivateStorageTab(target);
+            var masterStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            await target.InvokeAsync(() => masterStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivePanelIndexChanged.InvokeAsync(0));
+
+            _storageDiagnosticsService.ClearInvocations();
+
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_storageDiagnosticsService).Verify(
+                service => service.GetEntriesAsync(It.IsAny<CancellationToken>()),
+                Times.Never);
+
+            await ActivateStorageTab(target);
+
+            Mock.Get(_storageDiagnosticsService).Verify(
+                service => service.GetEntriesAsync(It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_StorageRoutingSaveThrowsHttpRequest_WHEN_SaveClicked_THEN_ShowsGenericStorageError()
         {
             var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);

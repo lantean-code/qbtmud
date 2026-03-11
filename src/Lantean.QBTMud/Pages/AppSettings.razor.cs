@@ -247,7 +247,7 @@ namespace Lantean.QBTMud.Pages
                 _savedSettings = Settings.Clone();
             }
 
-            if (storageRoutingChanged && IsStorageTabActive)
+            if (storageRoutingChanged)
             {
                 ReloadToken++;
             }
