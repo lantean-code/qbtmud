@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Net;
 using System.Text.RegularExpressions;
 
 namespace Lantean.QBTMud.Services.Localization
@@ -68,17 +69,18 @@ namespace Lantean.QBTMud.Services.Localization
             var value = string.IsNullOrWhiteSpace(translation) ? source : translation;
             if (arguments.Length == 0)
             {
-                return value;
+                return WebUtility.HtmlDecode(value);
             }
 
             var normalized = NormalizePlaceholders(value);
             try
             {
-                return string.Format(CultureInfo.CurrentCulture, normalized, arguments);
+                var formattedValue = string.Format(CultureInfo.CurrentCulture, normalized, arguments);
+                return WebUtility.HtmlDecode(formattedValue);
             }
             catch (FormatException)
             {
-                return value;
+                return WebUtility.HtmlDecode(value);
             }
         }
 

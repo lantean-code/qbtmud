@@ -141,6 +141,39 @@ namespace Lantean.QBTMud.Test.Services.Localization
         }
 
         [Fact]
+        public async Task GIVEN_HtmlEncodedTranslation_WHEN_Translate_THEN_ShouldDecodeHtmlEntities()
+        {
+            var culture = new CultureInfo("cs-CZ");
+            var responses = new Dictionary<string, HttpResponseMessage>(StringComparer.Ordinal)
+            {
+                ["i18n/webui_aliases.json"] = JsonResponse("{}"),
+                ["i18n/webui_cs-CZ.json"] = JsonResponse("{\"Ctx|Source\":\"If &quot;mixed mode&quot; is enabled\"}"),
+                ["i18n/webui_overrides_cs-CZ.json"] = JsonResponse("{}")
+            };
+            var handler = new DictionaryHttpMessageHandler(responses);
+            using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost/") };
+            var target = CreateTarget(httpClient);
+
+            await WithCultureAsync(culture, async () =>
+            {
+                await target.ResourceLoader.EnsureInitialized();
+                target.Localizer.Translate("Ctx", "Source").Should().Be("If \"mixed mode\" is enabled");
+            });
+        }
+
+        [Fact]
+        public void GIVEN_HtmlEncodedFallbackSource_WHEN_Translate_THEN_ShouldDecodeHtmlEntities()
+        {
+            using var httpClient = new HttpClient(new DictionaryHttpMessageHandler(new Dictionary<string, HttpResponseMessage>(StringComparer.Ordinal)))
+            {
+                BaseAddress = new Uri("http://localhost/")
+            };
+            var target = CreateTarget(httpClient);
+
+            target.Localizer.Translate("Ctx", "If &quot;%1&quot; is enabled", "mixed mode").Should().Be("If \"mixed mode\" is enabled");
+        }
+
+        [Fact]
         public async Task GIVEN_SameCultureInitializedTwice_WHEN_InitializeAsync_THEN_ShouldNotReload()
         {
             var culture = new CultureInfo("pt-BR");
