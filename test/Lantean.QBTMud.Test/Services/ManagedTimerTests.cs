@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Lantean.QBTMud.Services;
 using Moq;
 using System.Diagnostics;
+using System.Threading.Channels;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -10,9 +11,10 @@ namespace Lantean.QBTMud.Test.Services
         private readonly IPeriodicTimer _timer;
         private readonly IPeriodicTimerFactory _timerFactory;
         private readonly ManagedTimer _target;
-        private TaskCompletionSource<bool>? _pendingTick;
+        private readonly Lock _waitSyncLock = new();
+        private readonly Channel<bool> _scheduledTicks = Channel.CreateUnbounded<bool>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
         private TaskCompletionSource<bool>? _waitEntered;
-        private readonly Queue<bool> _scheduledResults = new Queue<bool>();
+        private int _waiterCount;
         private bool _disposed;
 
         public ManagedTimerTests()
@@ -330,6 +332,7 @@ namespace Lantean.QBTMud.Test.Services
             await TriggerTickAsync();
             (await WaitUntilAsync(() => target.State == ManagedTimerState.Running)).Should().BeTrue();
 
+            (await WaitForWaitAsync()).Should().BeTrue();
             await TriggerTickAsync();
             (await WaitUntilAsync(() => target.State == ManagedTimerState.Faulted)).Should().BeTrue();
             target.LastFault.Should().NotBeNull();
@@ -511,61 +514,73 @@ namespace Lantean.QBTMud.Test.Services
                 .Returns(() =>
                 {
                     _disposed = true;
-                    _pendingTick?.TrySetResult(false);
+                    if (Volatile.Read(ref _waiterCount) > 0)
+                    {
+                        _scheduledTicks.Writer.TryWrite(false);
+                    }
+
                     return ValueTask.CompletedTask;
                 });
         }
 
-        private Task<bool> WaitForNextTickAsync(CancellationToken cancellationToken)
+        private async Task<bool> WaitForNextTickAsync(CancellationToken cancellationToken)
         {
             if (_disposed)
             {
-                return Task.FromResult(false);
+                return false;
             }
 
-            if (_scheduledResults.Count > 0)
+            Interlocked.Increment(ref _waiterCount);
+
+            TaskCompletionSource<bool>? waitEntered;
+            lock (_waitSyncLock)
             {
-                return Task.FromResult(_scheduledResults.Dequeue());
+                waitEntered = _waitEntered;
+                _waitEntered = null;
             }
 
-            _pendingTick = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _waitEntered?.TrySetResult(true);
-            _waitEntered = null;
-            var pendingTick = _pendingTick;
-            cancellationToken.Register(() =>
+            waitEntered?.TrySetResult(true);
+
+            try
             {
-                pendingTick.TrySetResult(false);
-                if (ReferenceEquals(_pendingTick, pendingTick))
-                {
-                    _pendingTick = null;
-                }
-            });
-            return _pendingTick.Task;
+                return await _scheduledTicks.Reader.ReadAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _waiterCount);
+            }
         }
 
         private Task TriggerTickAsync(bool result = true)
         {
-            if (_pendingTick is null)
-            {
-                _scheduledResults.Enqueue(result);
-                return Task.CompletedTask;
-            }
-
-            var pendingTick = _pendingTick;
-            _pendingTick = null;
-            pendingTick.TrySetResult(result);
+            _scheduledTicks.Writer.TryWrite(result);
             return Task.CompletedTask;
         }
 
         private Task<bool> WaitForWaitAsync()
         {
-            if (_pendingTick is not null)
+            if (Volatile.Read(ref _waiterCount) > 0)
             {
                 return Task.FromResult(true);
             }
 
-            _waitEntered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            return WaitForTaskAsync(_waitEntered.Task);
+            var waitEntered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            lock (_waitSyncLock)
+            {
+                if (_waiterCount > 0)
+                {
+                    return Task.FromResult(true);
+                }
+
+                _waitEntered = waitEntered;
+            }
+
+            return WaitForTaskAsync(waitEntered.Task);
         }
     }
 }
