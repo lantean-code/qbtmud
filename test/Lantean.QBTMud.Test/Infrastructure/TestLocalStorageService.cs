@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
     internal sealed class TestLocalStorageService : ILocalStorageService, ISettingsStorageService
     {
         private readonly Dictionary<string, object?> _store = new(StringComparer.Ordinal);
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         private readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerDefaults.Web);
         private int _writeCount;
 

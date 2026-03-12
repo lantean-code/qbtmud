@@ -5,7 +5,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class ManagedTimerRegistry : IManagedTimerRegistry
     {
-        private readonly object _syncLock = new();
+        private readonly Lock _syncLock = new();
         private readonly List<IManagedTimer> _timers = [];
 
         /// <summary>

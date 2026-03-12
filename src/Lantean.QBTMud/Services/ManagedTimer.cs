@@ -10,7 +10,7 @@ namespace Lantean.QBTMud.Services
 
         private readonly IPeriodicTimerFactory _timerFactory;
         private readonly int _retryCount;
-        private readonly object _syncLock = new();
+        private readonly Lock _syncLock = new();
 
         private bool _disposed;
         private ManagedTimerState _state;

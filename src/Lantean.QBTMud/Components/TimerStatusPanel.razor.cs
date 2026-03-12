@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Components
         private const int _pollIntervalMilliseconds = 1000;
         private const string _appContext = "AppTimerStatusPanel";
 
-        private readonly object _syncLock = new();
+        private readonly Lock _syncLock = new();
         private CancellationTokenSource? _pollingCancellationTokenSource;
         private IPeriodicTimer? _pollingTimer;
         private Task? _pollingTask;
