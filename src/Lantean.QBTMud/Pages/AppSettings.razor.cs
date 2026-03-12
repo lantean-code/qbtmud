@@ -276,7 +276,8 @@ namespace Lantean.QBTMud.Pages
                 && left.DownloadFinishedNotificationsEnabled == right.DownloadFinishedNotificationsEnabled
                 && left.TorrentAddedNotificationsEnabled == right.TorrentAddedNotificationsEnabled
                 && left.TorrentAddedSnackbarsEnabledWithNotifications == right.TorrentAddedSnackbarsEnabledWithNotifications
-                && string.Equals(left.DismissedReleaseTag, right.DismissedReleaseTag, StringComparison.Ordinal);
+                && string.Equals(left.DismissedReleaseTag, right.DismissedReleaseTag, StringComparison.Ordinal)
+                && string.Equals(left.ThemeRepositoryIndexUrl, right.ThemeRepositoryIndexUrl, StringComparison.Ordinal);
         }
 
         private static bool AreStorageRoutingEquivalent(StorageRoutingSettings left, StorageRoutingSettings right)

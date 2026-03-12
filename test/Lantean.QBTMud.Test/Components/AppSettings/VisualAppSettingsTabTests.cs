@@ -51,6 +51,28 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             themeModeSelect.Instance.HelperText.Should().Be("Choose whether qbtmud follows the system appearance or uses a fixed mode.");
         }
 
+        [Fact]
+        public async Task GIVEN_ThemeRepositoryUrlChanged_WHEN_ValidHttpsValue_THEN_UpdatesSettingsAndRaisesCallback()
+        {
+            var repositoryUrlField = FindComponentByTestId<MudTextField<string>>(_target, "AppSettingsThemeRepositoryIndexUrl");
+
+            await _target.InvokeAsync(() => repositoryUrlField.Instance.ValueChanged.InvokeAsync("https://example.com/index.json"));
+
+            _settings.ThemeRepositoryIndexUrl.Should().Be("https://example.com/index.json");
+            _settingsChangedCount.Should().Be(1);
+            repositoryUrlField.Instance.GetState(x => x.Error).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeRepositoryUrlChanged_WHEN_InvalidValue_THEN_ShowsValidationError()
+        {
+            var repositoryUrlField = FindComponentByTestId<MudTextField<string>>(_target, "AppSettingsThemeRepositoryIndexUrl");
+
+            await _target.InvokeAsync(() => repositoryUrlField.Instance.ValueChanged.InvokeAsync("ftp://example.com/index.json"));
+
+            repositoryUrlField.Instance.GetState(x => x.Error).Should().BeTrue();
+        }
+
         private IRenderedComponent<VisualAppSettingsTab> RenderTarget()
         {
             return TestContext.Render<VisualAppSettingsTab>(parameters =>

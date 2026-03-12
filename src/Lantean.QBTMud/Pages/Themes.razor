@@ -22,7 +22,7 @@
                                    data-test-id="@TestIdHelper.For("ThemesImport")" />
                 </CustomContent>
             </MudFileUpload>
-            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadThemes" title="@Translate("Reload server themes")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesReload")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadThemes" title="@Translate("Reload theme sources")" Disabled="@IsBusy" data-test-id="@TestIdHelper.For("ThemesReload")" />
             <MudSpacer />
         </MudToolBar>
     </div>
@@ -52,13 +52,9 @@
                 var theme = context.Data;
                 <div class="theme-name-cell">
                     <MudText Typo="Typo.body2">@theme.Name</MudText>
-                    @if (IsThemeApplied(theme))
-                    {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">@Translate("Applied")</MudChip>
-                    }
                     @if (theme.IsReadOnly)
                     {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">@Translate("Bundled")</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="@GetSourceChipColor(theme)" Variant="Variant.Outlined">@GetSourceLabel(theme)</MudChip>
                     }
                 </div>;
             };
@@ -104,6 +100,18 @@
                         <span class="theme-swatch" style="@GetSwatchStyle(theme, ThemePaletteColor.Secondary, true)"></span>
                     </div>
                 </div>;
+            };
+        }
+    }
+
+    private RenderFragment<RowContext<ThemeCatalogItem>> SourceColumn
+    {
+        get
+        {
+            return context => __builder =>
+            {
+                var theme = context.Data;
+                <MudChip T="string" Size="Size.Small" Color="@GetSourceChipColor(theme)" Variant="Variant.Outlined">@GetSourceLabel(theme)</MudChip>;
             };
         }
     }

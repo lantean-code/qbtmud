@@ -21,6 +21,19 @@
                     <MudSelectItem Value="@ThemeModePreference.Dark">@TranslateSettings("Dark")</MudSelectItem>
                 </MudSelect>
             </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string"
+                              Value="@Settings.ThemeRepositoryIndexUrl"
+                              ValueChanged="OnThemeRepositoryIndexUrlChanged"
+                              Immediate="true"
+                              Label="@TranslateSettings("Theme repository index URL")"
+                              Variant="Variant.Outlined"
+                              ShrinkLabel="true"
+                              HelperText="@TranslateSettings("Optional HTTPS URL to a theme index.json file. Leave blank to disable repository themes.")"
+                              Error="@(!IsThemeRepositoryIndexUrlValid)"
+                              ErrorText="@ThemeRepositoryIndexUrlErrorText"
+                              data-test-id="@TestIdHelper.For("AppSettingsThemeRepositoryIndexUrl")" />
+            </MudItem>
         </MudGrid>
     </MudCardContent>
 </MudCard>

@@ -30,6 +30,7 @@ namespace Lantean.QBTMud.Test.Services
             result.TorrentAddedNotificationsEnabled.Should().BeFalse();
             result.TorrentAddedSnackbarsEnabledWithNotifications.Should().BeFalse();
             result.DismissedReleaseTag.Should().BeNull();
+            result.ThemeRepositoryIndexUrl.Should().Be("https://lantean-code.github.io/qbtmud-themes/index.json");
         }
 
         [Fact]
@@ -43,7 +44,8 @@ namespace Lantean.QBTMud.Test.Services
                 DownloadFinishedNotificationsEnabled = false,
                 TorrentAddedNotificationsEnabled = true,
                 TorrentAddedSnackbarsEnabledWithNotifications = true,
-                DismissedReleaseTag = " v1.2.3 "
+                DismissedReleaseTag = " v1.2.3 ",
+                ThemeRepositoryIndexUrl = " https://lantean-code.github.io/qbtmud-themes/index.json "
             };
 
             var saved = await _target.SaveSettingsAsync(settings, TestContext.Current.CancellationToken);
@@ -56,6 +58,7 @@ namespace Lantean.QBTMud.Test.Services
             saved.TorrentAddedNotificationsEnabled.Should().BeTrue();
             saved.TorrentAddedSnackbarsEnabledWithNotifications.Should().BeTrue();
             saved.DismissedReleaseTag.Should().Be("v1.2.3");
+            saved.ThemeRepositoryIndexUrl.Should().Be("https://lantean-code.github.io/qbtmud-themes/index.json");
 
             reloaded.Should().BeEquivalentTo(saved);
         }
@@ -93,6 +96,30 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.SaveDismissedReleaseTagAsync("   ", TestContext.Current.CancellationToken);
 
             result.DismissedReleaseTag.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData("http://example.com/index.json")]
+        [InlineData("notaurl")]
+        public async Task GIVEN_InvalidThemeRepositoryIndexUrl_WHEN_SaveSettingsInvoked_THEN_NormalizesToEmpty(string value)
+        {
+            var settings = AppSettings.Default.Clone();
+            settings.ThemeRepositoryIndexUrl = value;
+
+            var saved = await _target.SaveSettingsAsync(settings, TestContext.Current.CancellationToken);
+
+            saved.ThemeRepositoryIndexUrl.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_BlankThemeRepositoryIndexUrl_WHEN_SaveSettingsInvoked_THEN_PreservesBlank()
+        {
+            var settings = AppSettings.Default.Clone();
+            settings.ThemeRepositoryIndexUrl = "   ";
+
+            var saved = await _target.SaveSettingsAsync(settings, TestContext.Current.CancellationToken);
+
+            saved.ThemeRepositoryIndexUrl.Should().BeEmpty();
         }
 
         [Fact]

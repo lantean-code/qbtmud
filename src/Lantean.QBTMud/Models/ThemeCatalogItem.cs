@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Models
         /// </summary>
         public bool IsReadOnly
         {
-            get { return Source == ThemeSource.Server; }
+            get { return Source != ThemeSource.Local; }
         }
     }
 }

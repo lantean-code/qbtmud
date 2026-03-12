@@ -20,5 +20,13 @@ namespace Lantean.QBTMud.Test.Models
 
             item.IsReadOnly.Should().BeFalse();
         }
+
+        [Fact]
+        public void GIVEN_RepositoryTheme_WHEN_IsReadOnlyRequested_THEN_ReturnsTrue()
+        {
+            var item = new ThemeCatalogItem("Id", "Name", new ThemeDefinition(), ThemeSource.Repository, "Path");
+
+            item.IsReadOnly.Should().BeTrue();
+        }
     }
 }

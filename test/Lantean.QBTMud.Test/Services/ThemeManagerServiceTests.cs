@@ -16,6 +16,8 @@ namespace Lantean.QBTMud.Test.Services
         private const string LocalThemesStorageKey = "ThemeManager.LocalThemes";
         private const string SelectedThemeStorageKey = "ThemeManager.SelectedThemeId";
         private const string ThemeIndexPath = "/themes/index.json";
+        private const string RepositoryIndexPath = "/qbtmud-themes/index.json";
+        private const string RepositoryIndexUrl = "https://lantean-code.github.io/qbtmud-themes/index.json";
 
         private static readonly HttpResponseMessage _notFoundResponseMessage = new HttpResponseMessage(HttpStatusCode.NotFound);
 
@@ -23,6 +25,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly IThemeFontCatalog _fontCatalog;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILanguageLocalizer _languageLocalizer;
+        private readonly IAppSettingsService _appSettingsService;
         private readonly ThemeManagerService _target;
 
         public ThemeManagerServiceTests()
@@ -31,10 +34,12 @@ namespace Lantean.QBTMud.Test.Services
             _fontCatalog = Mock.Of<IThemeFontCatalog>();
             _httpClientFactory = Mock.Of<IHttpClientFactory>();
             _languageLocalizer = Mock.Of<ILanguageLocalizer>();
+            _appSettingsService = Mock.Of<IAppSettingsService>();
             Mock.Get(_languageLocalizer)
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] _) => source);
-            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog, _languageLocalizer);
+            SetupThemeRepositoryIndexUrl(string.Empty);
+            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog, _languageLocalizer, _appSettingsService);
         }
 
         [Fact]
@@ -333,7 +338,7 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_InitializedService_WHEN_ReloadServerThemesIndexRequestThrows_THEN_ThrowsHttpRequestException()
+        public async Task GIVEN_InitializedService_WHEN_ReloadServerThemesIndexRequestThrows_THEN_DoesNotThrow()
         {
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
             var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
@@ -353,9 +358,9 @@ namespace Lantean.QBTMud.Test.Services
                     { ThemeIndexPath, new HttpRequestException("Error") }
                 });
 
-            var action = () => _target.ReloadServerThemes();
+            var action = async () => await _target.ReloadServerThemes();
 
-            await action.Should().ThrowAsync<HttpRequestException>();
+            await action.Should().NotThrowAsync();
         }
 
         [Fact]
@@ -380,6 +385,141 @@ namespace Lantean.QBTMud.Test.Services
             await _target.EnsureInitialized();
 
             _target.Themes.Should().ContainSingle(theme => theme.Id == "SharedId" && theme.Name == "LocalName" && theme.Source == ThemeSource.Local);
+        }
+
+        [Fact]
+        public async Task GIVEN_RepositoryThemeSharesBundledId_WHEN_Initialized_THEN_RepositoryThemeTakesPrecedence()
+        {
+            SetupThemeRepositoryIndexUrl(RepositoryIndexUrl);
+
+            var bundledThemeJson = CreateThemeJson("SharedId", "BundledName", "Nunito Sans");
+            var repositoryThemeJson = CreateThemeJson("SharedId", "RepositoryName", "Nunito Sans");
+
+            var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
+            {
+                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { "/themes/theme-one.json", CreateThemeHttpResponse(bundledThemeJson) },
+                { RepositoryIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { "/qbtmud-themes/themes/theme-one.json", CreateThemeHttpResponse(repositoryThemeJson) }
+            });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.Themes.Should().ContainSingle(theme => theme.Id == "SharedId" && theme.Name == "RepositoryName" && theme.Source == ThemeSource.Repository);
+        }
+
+        [Fact]
+        public async Task GIVEN_LocalThemeSharesRepositoryId_WHEN_Initialized_THEN_LocalThemeTakesPrecedence()
+        {
+            SetupThemeRepositoryIndexUrl(RepositoryIndexUrl);
+
+            var localTheme = new ThemeDefinition
+            {
+                Id = "SharedId",
+                Name = "LocalName",
+                FontFamily = "Nunito Sans",
+                Theme = new MudTheme()
+            };
+            ThemeFontHelper.ApplyFont(localTheme, localTheme.FontFamily);
+            await _localStorage.SetItemAsync(LocalThemesStorageKey, new List<ThemeDefinition> { localTheme }, TestContext.Current.CancellationToken);
+
+            var repositoryThemeJson = CreateThemeJson("SharedId", "RepositoryName", "Nunito Sans");
+            var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
+            {
+                { ThemeIndexPath, CreateIndexResponse() },
+                { RepositoryIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { "/qbtmud-themes/themes/theme-one.json", CreateThemeHttpResponse(repositoryThemeJson) }
+            });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.Themes.Should().ContainSingle(theme => theme.Id == "SharedId" && theme.Name == "LocalName" && theme.Source == ThemeSource.Local);
+        }
+
+        [Fact]
+        public async Task GIVEN_RepositoryIndexUnavailable_WHEN_InitializedAndReloaded_THEN_ReloadSetsRepositoryIssueFlag()
+        {
+            SetupThemeRepositoryIndexUrl(RepositoryIndexUrl);
+
+            var bundledThemeJson = CreateThemeJson("ThemeId", "BundledName", "Nunito Sans");
+            var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
+            {
+                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { "/themes/theme-one.json", CreateThemeHttpResponse(bundledThemeJson) },
+                { RepositoryIndexPath, _notFoundResponseMessage }
+            });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.LastReloadHadRepositoryIssues.Should().BeFalse();
+
+            await _target.ReloadServerThemes();
+
+            _target.LastReloadHadRepositoryIssues.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_RepositoryIndexRequestCanceled_WHEN_InitializedAndReloaded_THEN_DoesNotThrowAndSetsRepositoryIssueFlag()
+        {
+            SetupThemeRepositoryIndexUrl(RepositoryIndexUrl);
+
+            var bundledThemeJson = CreateThemeJson("ThemeId", "BundledName", "Nunito Sans");
+            var handler = new ThemeMessageHandler(
+                new Dictionary<string, HttpResponseMessage>
+                {
+                    { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                    { "/themes/theme-one.json", CreateThemeHttpResponse(bundledThemeJson) }
+                },
+                new Dictionary<string, Exception>
+                {
+                    { RepositoryIndexPath, new TaskCanceledException("Timeout") }
+                });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            var initializeAction = async () => await _target.EnsureInitialized();
+            await initializeAction.Should().NotThrowAsync();
+
+            _target.Themes.Should().ContainSingle(theme => theme.Id == "ThemeId" && theme.Source == ThemeSource.Server);
+            _target.LastReloadHadRepositoryIssues.Should().BeFalse();
+
+            var reloadAction = async () => await _target.ReloadServerThemes();
+            await reloadAction.Should().NotThrowAsync();
+
+            _target.LastReloadHadRepositoryIssues.Should().BeTrue();
+            _target.Themes.Should().ContainSingle(theme => theme.Id == "ThemeId" && theme.Source == ThemeSource.Server);
+        }
+
+        [Fact]
+        public async Task GIVEN_RepositoryContainsDuplicateThemeIds_WHEN_Initialized_THEN_OnlyFirstRepositoryThemeIsKept()
+        {
+            SetupThemeRepositoryIndexUrl(RepositoryIndexUrl);
+
+            var firstThemeJson = CreateThemeJson("SharedId", "RepositoryFirst", "Nunito Sans");
+            var secondThemeJson = CreateThemeJson("SharedId", "RepositorySecond", "Nunito Sans");
+
+            var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
+            {
+                { ThemeIndexPath, CreateIndexResponse() },
+                { RepositoryIndexPath, CreateIndexResponse("themes/theme-one.json", "themes/theme-two.json") },
+                { "/qbtmud-themes/themes/theme-one.json", CreateThemeHttpResponse(firstThemeJson) },
+                { "/qbtmud-themes/themes/theme-two.json", CreateThemeHttpResponse(secondThemeJson) }
+            });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.Themes.Should().ContainSingle(theme =>
+                theme.Id == "SharedId"
+                && theme.Name == "RepositoryFirst"
+                && theme.Source == ThemeSource.Repository);
         }
 
         [Fact]
@@ -538,6 +678,16 @@ namespace Lantean.QBTMud.Test.Services
             {
                 Content = new StringContent(json)
             };
+        }
+
+        private void SetupThemeRepositoryIndexUrl(string value)
+        {
+            var settings = AppSettings.Default.Clone();
+            settings.ThemeRepositoryIndexUrl = value;
+
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(settings);
         }
 
         private void SetupFontCatalogValid(string fontFamily)

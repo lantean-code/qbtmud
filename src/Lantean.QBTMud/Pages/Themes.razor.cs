@@ -20,6 +20,7 @@ namespace Lantean.QBTMud.Pages
         private const long MaxThemeUploadBytes = 1024 * 1024;
         private const string ThemeColumnId = "theme";
         private const string DescriptionColumnId = "description";
+        private const string SourceColumnId = "source";
         private const string ColorsColumnId = "colors";
         private const string ActionsColumnId = "actions";
 
@@ -85,6 +86,7 @@ namespace Lantean.QBTMud.Pages
         {
             _columnRenderFragments.Add(ThemeColumnId, NameColumn);
             _columnRenderFragments.Add(DescriptionColumnId, DescriptionColumn);
+            _columnRenderFragments.Add(SourceColumnId, SourceColumn);
             _columnRenderFragments.Add(ActionsColumnId, ActionsColumn);
             _columnRenderFragments.Add(ColorsColumnId, ColorsColumn);
         }
@@ -110,6 +112,10 @@ namespace Lantean.QBTMud.Pages
             try
             {
                 await ThemeManagerService.ReloadServerThemes();
+                if (ThemeManagerService.LastReloadHadRepositoryIssues)
+                {
+                    SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load theme repository. Showing bundled and local themes only."), Severity.Warning);
+                }
             }
             finally
             {
@@ -364,6 +370,26 @@ namespace Lantean.QBTMud.Pages
             return !theme.IsReadOnly;
         }
 
+        protected string GetSourceLabel(ThemeCatalogItem theme)
+        {
+            return theme.Source switch
+            {
+                ThemeSource.Local => Translate("Local"),
+                ThemeSource.Repository => Translate("Repository"),
+                _ => Translate("Bundled")
+            };
+        }
+
+        protected Color GetSourceChipColor(ThemeCatalogItem theme)
+        {
+            return theme.Source switch
+            {
+                ThemeSource.Local => Color.Default,
+                ThemeSource.Repository => Color.Secondary,
+                _ => Color.Info
+            };
+        }
+
         private void NavigateToDetails(string themeId)
         {
             var escaped = Uri.EscapeDataString(themeId);
@@ -476,7 +502,7 @@ namespace Lantean.QBTMud.Pages
         [
             new ColumnDefinition<ThemeCatalogItem>("Theme", t => t.Name, id: ThemeColumnId),
             new ColumnDefinition<ThemeCatalogItem>("Description", t => t.Theme.Description, id: DescriptionColumnId),
-            new ColumnDefinition<ThemeCatalogItem>("Source", t => t.Source.ToString(), id: "source"),
+            new ColumnDefinition<ThemeCatalogItem>("Source", t => t.Source.ToString(), id: SourceColumnId),
             new ColumnDefinition<ThemeCatalogItem>("Colors", t => t.Name, tdClass: "no-wrap", width: 160, id: ColorsColumnId),
             new ColumnDefinition<ThemeCatalogItem>("Actions", t => t.Name, tdClass: "no-wrap", id: ActionsColumnId)
         ];

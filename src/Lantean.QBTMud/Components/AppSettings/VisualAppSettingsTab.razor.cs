@@ -28,6 +28,44 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             await SettingsChanged.InvokeAsync();
         }
 
+        private async Task OnThemeRepositoryIndexUrlChanged(string value)
+        {
+            if (string.Equals(Settings.ThemeRepositoryIndexUrl, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            Settings.ThemeRepositoryIndexUrl = value;
+            await SettingsChanged.InvokeAsync();
+        }
+
+        private bool IsThemeRepositoryIndexUrlValid
+        {
+            get
+            {
+                var value = Settings.ThemeRepositoryIndexUrl;
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return true;
+                }
+
+                if (!Uri.TryCreate(value.Trim(), UriKind.Absolute, out var uri))
+                {
+                    return false;
+                }
+
+                return string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private string ThemeRepositoryIndexUrlErrorText
+        {
+            get
+            {
+                return TranslateSettings("Enter a valid HTTPS URL or leave blank.");
+            }
+        }
+
         private string TranslateSettings(string source, params object[] arguments)
         {
             return LanguageLocalizer.Translate("AppSettings", source, arguments);
