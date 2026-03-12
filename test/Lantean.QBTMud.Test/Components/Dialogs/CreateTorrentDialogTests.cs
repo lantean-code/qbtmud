@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 {
     public sealed class CreateTorrentDialogTests : RazorComponentTestBase<CreateTorrentDialog>
     {
-        private const string StorageKey = "TorrentCreator.FormState";
+        private const string _storageKey = "TorrentCreator.FormState";
         private readonly IApiClient _apiClient;
         private readonly ISnackbar _snackbar;
         private readonly CreateTorrentDialogTestDriver _target;
@@ -239,7 +239,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 PaddedFileSizeLimit = 2048
             };
 
-            await TestContext.LocalStorage.SetItemAsync(StorageKey, state, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_storageKey, state, Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfo())
                 .ReturnsAsync(CreateBuildInfo("2.0.0"));
@@ -286,7 +286,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 PaddedFileSizeLimit = -1
             };
 
-            await TestContext.LocalStorage.SetItemAsync(StorageKey, state, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_storageKey, state, Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfo())
                 .ReturnsAsync(CreateBuildInfo("1.2.0"));
@@ -369,10 +369,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var settingsStorage = new Mock<ISettingsStorageService>(MockBehavior.Strict);
             settingsStorage
-                .Setup(storage => storage.GetItemAsync<TorrentCreationFormState>(StorageKey, It.IsAny<CancellationToken>()))
+                .Setup(storage => storage.GetItemAsync<TorrentCreationFormState>(_storageKey, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Failed"));
             settingsStorage
-                .Setup(storage => storage.SetItemAsync(StorageKey, It.IsAny<TorrentCreationFormState>(), It.IsAny<CancellationToken>()))
+                .Setup(storage => storage.SetItemAsync(_storageKey, It.IsAny<TorrentCreationFormState>(), It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);
             TestContext.Services.RemoveAll<ISettingsStorageService>();
             TestContext.Services.AddSingleton(settingsStorage.Object);
@@ -408,7 +408,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
             await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
 
-            var stored = await TestContext.LocalStorage.GetItemAsync<TorrentCreationFormState>(StorageKey, Xunit.TestContext.Current.CancellationToken);
+            var stored = await TestContext.LocalStorage.GetItemAsync<TorrentCreationFormState>(_storageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
             stored!.SourcePath.Should().Be("C:/Source");
             stored.TorrentFilePath.Should().Be("C:/Out");

@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class ThemePreviewDialog
     {
-        private const string PreviewScope = "root .theme-preview-scope";
+        private const string _previewScope = "root .theme-preview-scope";
 
         private MudTheme _previewTheme = new();
         private bool _isDarkMode;
@@ -40,7 +40,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             _previewTheme = BuildPreviewTheme(Theme);
-            _previewTheme.PseudoCss.Scope = PreviewScope;
+            _previewTheme.PseudoCss.Scope = _previewScope;
         }
 
         protected string DarkModeIcon

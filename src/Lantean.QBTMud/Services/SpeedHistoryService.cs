@@ -8,8 +8,8 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public class SpeedHistoryService : ISpeedHistoryService
     {
-        private const string StorageKey = "SpeedHistory.State";
-        private const int SchemaVersion = 1;
+        private const string _storageKey = "SpeedHistory.State";
+        private const int _schemaVersion = 1;
         private static readonly TimeSpan DefaultFlushInterval = TimeSpan.FromSeconds(10);
         private static readonly TimeSpan MaximumRetention = TimeSpan.FromHours(24);
 
@@ -52,8 +52,8 @@ namespace Lantean.QBTMud.Services
                 return;
             }
 
-            var persistedState = await _settingsStorage.GetItemAsync<PersistedState>(StorageKey, cancellationToken);
-            if (persistedState is null || persistedState.SchemaVersion != SchemaVersion)
+            var persistedState = await _settingsStorage.GetItemAsync<PersistedState>(_storageKey, cancellationToken);
+            if (persistedState is null || persistedState.SchemaVersion != _schemaVersion)
             {
                 _isInitialized = true;
                 return;
@@ -121,8 +121,8 @@ namespace Lantean.QBTMud.Services
                 buckets[bucketizer.Key] = snapshot;
             }
 
-            var state = new PersistedState(SchemaVersion, buckets, LastUpdatedUtc);
-            await _settingsStorage.SetItemAsync(StorageKey, state, cancellationToken);
+            var state = new PersistedState(_schemaVersion, buckets, LastUpdatedUtc);
+            await _settingsStorage.SetItemAsync(_storageKey, state, cancellationToken);
             _stateDirty = false;
             _lastPersistUtc = timestampUtc ?? DateTime.UtcNow;
         }
@@ -161,7 +161,7 @@ namespace Lantean.QBTMud.Services
 
             LastUpdatedUtc = null;
             _stateDirty = false;
-            await _settingsStorage.RemoveItemAsync(StorageKey, cancellationToken);
+            await _settingsStorage.RemoveItemAsync(_storageKey, cancellationToken);
         }
 
         public IReadOnlyList<SpeedPoint> GetSeries(SpeedPeriod period, SpeedDirection direction)

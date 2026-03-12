@@ -21,9 +21,9 @@ namespace Lantean.QBTMud.Test.Layout
 {
     public sealed class LoggedInLayoutTests : RazorComponentTestBase<LoggedInLayout>
     {
-        private const string PendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
-        private const string LastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
-        private const string PreferredLocaleStorageKey = "WebUiLocalization.PreferredLocale.v1";
+        private const string _pendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
+        private const string _lastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
+        private const string _preferredLocaleStorageKey = "WebUiLocalization.PreferredLocale.v1";
 
         private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
         private readonly ITorrentDataManager _dataManager = Mock.Of<ITorrentDataManager>();
@@ -406,10 +406,10 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             _snackbar.ClearInvocations();
 
-            await TestContext.LocalStorage.RemoveItemAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.RemoveItemAsync(_preferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
             RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "fr"));
 
-            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(_preferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedLocale.Should().Be("fr");
 
             Mock.Get(_snackbar).Verify(
@@ -423,10 +423,10 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             _snackbar.ClearInvocations();
 
-            await TestContext.LocalStorage.SetItemAsStringAsync(PreferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_preferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
             RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "   "));
 
-            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(_preferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedLocale.Should().BeNull();
 
             Mock.Get(_snackbar).Verify(
@@ -439,7 +439,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             DisposeDefaultTarget();
             _snackbar.ClearInvocations();
-            await TestContext.LocalStorage.SetItemAsStringAsync(PreferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_preferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
 
             Action<SnackbarOptions>? snackbarOptions = null;
             Mock.Get(_snackbar)
@@ -447,7 +447,7 @@ namespace Lantean.QBTMud.Test.Layout
                 .Callback<string, Severity, Action<SnackbarOptions>, string>((_, _, options, _) => snackbarOptions = options);
             RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "fr"));
 
-            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(_preferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedLocale.Should().Be("fr");
 
             Mock.Get(_snackbar).Verify(
@@ -476,10 +476,10 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             _snackbar.ClearInvocations();
 
-            await TestContext.LocalStorage.RemoveItemAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.RemoveItemAsync(_preferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
             RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "C"));
 
-            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(_preferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedLocale.Should().Be("en");
 
             Mock.Get(_snackbar).Verify(
@@ -493,10 +493,10 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             _snackbar.ClearInvocations();
 
-            await TestContext.LocalStorage.SetItemAsStringAsync(PreferredLocaleStorageKey, "C", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_preferredLocaleStorageKey, "C", Xunit.TestContext.Current.CancellationToken);
             RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "en"));
 
-            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(_preferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedLocale.Should().Be("en");
 
             Mock.Get(_snackbar).Verify(
@@ -632,7 +632,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             DisposeDefaultTarget();
             _snackbar.ClearInvocations();
-            await TestContext.LocalStorage.SetItemAsStringAsync(PreferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_preferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferences()).ReturnsAsync((ClientModels.Preferences)null!);
 
             TestContext.Render<LoggedInLayout>(parameters =>
@@ -645,7 +645,7 @@ namespace Lantean.QBTMud.Test.Layout
                 parameters.AddCascadingValue("IsDarkMode", false);
             });
 
-            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(PreferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(_preferredLocaleStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedLocale.Should().Be("en");
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add("Language preference changed on server. Click Reload to apply it.", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
@@ -794,7 +794,7 @@ namespace Lantean.QBTMud.Test.Layout
         public async Task GIVEN_Unauthenticated_WHEN_Initialized_THEN_NavigatesToLoginAndShowsProgress()
         {
             DisposeDefaultTarget();
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, "magnet:?xt=urn:btih:ABC", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, "magnet:?xt=urn:btih:ABC", Xunit.TestContext.Current.CancellationToken);
 
             Mock.Get(_apiClient).Setup(c => c.CheckAuthState()).ReturnsAsync(false);
 
@@ -802,7 +802,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             _navigationManager.LastNavigationUri.Should().Be("login");
             target.FindComponent<MudProgressLinear>().Should().NotBeNull();
-            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var pending = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
         }
 
@@ -1358,11 +1358,11 @@ namespace Lantean.QBTMud.Test.Layout
         [InlineData("http://example.com/file.txt")]
         public async Task GIVEN_InvalidPendingDownload_WHEN_Initialized_THEN_Removed(string pending)
         {
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, pending, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, pending, Xunit.TestContext.Current.CancellationToken);
 
             RenderLayout(new List<IManagedTimer>());
 
-            var stored = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var stored = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
 
             stored.Should().BeNull();
         }
@@ -1371,11 +1371,11 @@ namespace Lantean.QBTMud.Test.Layout
         public async Task GIVEN_PendingDownloadTooLong_WHEN_Initialized_THEN_Removed()
         {
             var pending = new string('a', 8200);
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, pending, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, pending, Xunit.TestContext.Current.CancellationToken);
 
             RenderLayout(new List<IManagedTimer>());
 
-            var stored = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var stored = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
 
             stored.Should().BeNull();
         }
@@ -1386,15 +1386,15 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             var magnet = "magnet:?xt=urn:btih:ABC";
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
 
             Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog(magnet)).Returns(Task.CompletedTask);
 
             RenderLayout(new List<IManagedTimer>());
 
             Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(magnet), Times.Once);
-            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
-            var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(LastProcessedDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var pending = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(_lastProcessedDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
             lastProcessed.Should().Be(magnet);
         }
@@ -1405,15 +1405,15 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             var link = "http://example.com/file.torrent";
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, link, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, link, Xunit.TestContext.Current.CancellationToken);
 
             Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog(link)).Returns(Task.CompletedTask);
 
             RenderLayout(new List<IManagedTimer>());
 
             Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog(link), Times.Once);
-            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
-            var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(LastProcessedDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var pending = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var lastProcessed = await TestContext.SessionStorage.GetItemAsync<string>(_lastProcessedDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
             lastProcessed.Should().Be(link);
         }
@@ -1424,14 +1424,14 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             var magnet = "magnet:?xt=urn:btih:ABC";
-            await TestContext.SessionStorage.SetItemAsync(PendingDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
-            await TestContext.SessionStorage.SetItemAsync(LastProcessedDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.SessionStorage.SetItemAsync(_lastProcessedDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
 
             RenderLayout(new List<IManagedTimer>());
 
             _navigationManager.LastNavigationUri.Should().Be("./");
             _navigationManager.ForceLoad.Should().BeTrue();
-            var pending = await TestContext.SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var pending = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
         }
 
@@ -1491,7 +1491,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             ResetDialogInvocations();
             var magnet = "magnet:?xt=urn:btih:ABC";
-            await TestContext.SessionStorage.SetItemAsync(LastProcessedDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.SessionStorage.SetItemAsync(_lastProcessedDownloadStorageKey, magnet, Xunit.TestContext.Current.CancellationToken);
             _navigationManager.SetUri("http://localhost/#download=magnet:?xt=urn:btih:ABC");
 
             RenderLayout(new List<IManagedTimer>());

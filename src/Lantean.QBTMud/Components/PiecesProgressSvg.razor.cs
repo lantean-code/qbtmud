@@ -9,8 +9,8 @@ namespace Lantean.QBTMud.Components
 {
     public partial class PiecesProgressSvg : ComponentBase
     {
-        private const int LargePieceCountThreshold = 50000;
-        private const string AppContext = "AppPiecesProgressSvg";
+        private const int _largePieceCountThreshold = 50000;
+        private const string _appContext = "AppPiecesProgressSvg";
 
         private bool _showSvg = false;
         private string _linearBarStyle = string.Empty;
@@ -244,7 +244,7 @@ namespace Lantean.QBTMud.Components
                 while (_buildPending)
                 {
                     _buildPending = false;
-                    var shouldShowSpinner = Pieces.Count >= LargePieceCountThreshold && !PiecesLoading && !PiecesFailed;
+                    var shouldShowSpinner = Pieces.Count >= _largePieceCountThreshold && !PiecesLoading && !PiecesFailed;
                     _svgBuilding = shouldShowSpinner;
                     if (shouldShowSpinner)
                     {
@@ -494,7 +494,7 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return LanguageLocalizer.Translate(AppContext, source, arguments);
+            return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
 
         private bool UpdatePiecesSignature()

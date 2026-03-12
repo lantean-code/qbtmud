@@ -7,8 +7,8 @@ namespace Lantean.QBTMud.Theming
 {
     public static class ThemeCssBuilder
     {
-        private const string PalettePrefix = "mud-palette";
-        private const string TypographyPrefix = "mud-typography";
+        private const string _palettePrefix = "mud-palette";
+        private const string _typographyPrefix = "mud-typography";
 
         /// <summary>
         /// Builds the CSS variables for the provided theme and mode.
@@ -31,110 +31,110 @@ namespace Lantean.QBTMud.Theming
 
         private static void AppendPalette(StringBuilder builder, Palette palette)
         {
-            builder.Append($"--{PalettePrefix}-black: {palette.Black};");
-            builder.Append($"--{PalettePrefix}-white: {palette.White};");
+            builder.Append($"--{_palettePrefix}-black: {palette.Black};");
+            builder.Append($"--{_palettePrefix}-white: {palette.White};");
 
-            builder.Append($"--{PalettePrefix}-primary: {palette.Primary};");
-            builder.Append($"--{PalettePrefix}-primary-rgb: {palette.Primary.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-primary-text: {palette.PrimaryContrastText};");
-            builder.Append($"--{PalettePrefix}-primary-darken: {palette.PrimaryDarken};");
-            builder.Append($"--{PalettePrefix}-primary-lighten: {palette.PrimaryLighten};");
-            builder.Append($"--{PalettePrefix}-primary-hover: {palette.Primary.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
+            builder.Append($"--{_palettePrefix}-primary: {palette.Primary};");
+            builder.Append($"--{_palettePrefix}-primary-rgb: {palette.Primary.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-primary-text: {palette.PrimaryContrastText};");
+            builder.Append($"--{_palettePrefix}-primary-darken: {palette.PrimaryDarken};");
+            builder.Append($"--{_palettePrefix}-primary-lighten: {palette.PrimaryLighten};");
+            builder.Append($"--{_palettePrefix}-primary-hover: {palette.Primary.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
 
-            builder.Append($"--{PalettePrefix}-secondary: {palette.Secondary};");
-            builder.Append($"--{PalettePrefix}-secondary-rgb: {palette.Secondary.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-secondary-text: {palette.SecondaryContrastText};");
-            builder.Append($"--{PalettePrefix}-secondary-darken: {palette.SecondaryDarken};");
-            builder.Append($"--{PalettePrefix}-secondary-lighten: {palette.SecondaryLighten};");
-            builder.Append($"--{PalettePrefix}-secondary-hover: {palette.Secondary.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
+            builder.Append($"--{_palettePrefix}-secondary: {palette.Secondary};");
+            builder.Append($"--{_palettePrefix}-secondary-rgb: {palette.Secondary.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-secondary-text: {palette.SecondaryContrastText};");
+            builder.Append($"--{_palettePrefix}-secondary-darken: {palette.SecondaryDarken};");
+            builder.Append($"--{_palettePrefix}-secondary-lighten: {palette.SecondaryLighten};");
+            builder.Append($"--{_palettePrefix}-secondary-hover: {palette.Secondary.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
 
-            builder.Append($"--{PalettePrefix}-tertiary: {palette.Tertiary};");
-            builder.Append($"--{PalettePrefix}-tertiary-rgb: {palette.Tertiary.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-tertiary-text: {palette.TertiaryContrastText};");
-            builder.Append($"--{PalettePrefix}-tertiary-darken: {palette.TertiaryDarken};");
-            builder.Append($"--{PalettePrefix}-tertiary-lighten: {palette.TertiaryLighten};");
-            builder.Append($"--{PalettePrefix}-tertiary-hover: {palette.Tertiary.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
+            builder.Append($"--{_palettePrefix}-tertiary: {palette.Tertiary};");
+            builder.Append($"--{_palettePrefix}-tertiary-rgb: {palette.Tertiary.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-tertiary-text: {palette.TertiaryContrastText};");
+            builder.Append($"--{_palettePrefix}-tertiary-darken: {palette.TertiaryDarken};");
+            builder.Append($"--{_palettePrefix}-tertiary-lighten: {palette.TertiaryLighten};");
+            builder.Append($"--{_palettePrefix}-tertiary-hover: {palette.Tertiary.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
 
-            builder.Append($"--{PalettePrefix}-info: {palette.Info};");
-            builder.Append($"--{PalettePrefix}-info-rgb: {palette.Info.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-info-text: {palette.InfoContrastText};");
-            builder.Append($"--{PalettePrefix}-info-darken: {palette.InfoDarken};");
-            builder.Append($"--{PalettePrefix}-info-lighten: {palette.InfoLighten};");
-            builder.Append($"--{PalettePrefix}-info-hover: {palette.Info.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
+            builder.Append($"--{_palettePrefix}-info: {palette.Info};");
+            builder.Append($"--{_palettePrefix}-info-rgb: {palette.Info.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-info-text: {palette.InfoContrastText};");
+            builder.Append($"--{_palettePrefix}-info-darken: {palette.InfoDarken};");
+            builder.Append($"--{_palettePrefix}-info-lighten: {palette.InfoLighten};");
+            builder.Append($"--{_palettePrefix}-info-hover: {palette.Info.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
 
-            builder.Append($"--{PalettePrefix}-success: {palette.Success};");
-            builder.Append($"--{PalettePrefix}-success-rgb: {palette.Success.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-success-text: {palette.SuccessContrastText};");
-            builder.Append($"--{PalettePrefix}-success-darken: {palette.SuccessDarken};");
-            builder.Append($"--{PalettePrefix}-success-lighten: {palette.SuccessLighten};");
-            builder.Append($"--{PalettePrefix}-success-hover: {palette.Success.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
+            builder.Append($"--{_palettePrefix}-success: {palette.Success};");
+            builder.Append($"--{_palettePrefix}-success-rgb: {palette.Success.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-success-text: {palette.SuccessContrastText};");
+            builder.Append($"--{_palettePrefix}-success-darken: {palette.SuccessDarken};");
+            builder.Append($"--{_palettePrefix}-success-lighten: {palette.SuccessLighten};");
+            builder.Append($"--{_palettePrefix}-success-hover: {palette.Success.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
 
-            builder.Append($"--{PalettePrefix}-warning: {palette.Warning};");
-            builder.Append($"--{PalettePrefix}-warning-rgb: {palette.Warning.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-warning-text: {palette.WarningContrastText};");
-            builder.Append($"--{PalettePrefix}-warning-darken: {palette.WarningDarken};");
-            builder.Append($"--{PalettePrefix}-warning-lighten: {palette.WarningLighten};");
-            builder.Append($"--{PalettePrefix}-warning-hover: {palette.Warning.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
+            builder.Append($"--{_palettePrefix}-warning: {palette.Warning};");
+            builder.Append($"--{_palettePrefix}-warning-rgb: {palette.Warning.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-warning-text: {palette.WarningContrastText};");
+            builder.Append($"--{_palettePrefix}-warning-darken: {palette.WarningDarken};");
+            builder.Append($"--{_palettePrefix}-warning-lighten: {palette.WarningLighten};");
+            builder.Append($"--{_palettePrefix}-warning-hover: {palette.Warning.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
 
-            builder.Append($"--{PalettePrefix}-error: {palette.Error};");
-            builder.Append($"--{PalettePrefix}-error-rgb: {palette.Error.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-error-text: {palette.ErrorContrastText};");
-            builder.Append($"--{PalettePrefix}-error-darken: {palette.ErrorDarken};");
-            builder.Append($"--{PalettePrefix}-error-lighten: {palette.ErrorLighten};");
-            builder.Append($"--{PalettePrefix}-error-hover: {palette.Error.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
+            builder.Append($"--{_palettePrefix}-error: {palette.Error};");
+            builder.Append($"--{_palettePrefix}-error-rgb: {palette.Error.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-error-text: {palette.ErrorContrastText};");
+            builder.Append($"--{_palettePrefix}-error-darken: {palette.ErrorDarken};");
+            builder.Append($"--{_palettePrefix}-error-lighten: {palette.ErrorLighten};");
+            builder.Append($"--{_palettePrefix}-error-hover: {palette.Error.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
 
-            builder.Append($"--{PalettePrefix}-dark: {palette.Dark};");
-            builder.Append($"--{PalettePrefix}-dark-rgb: {palette.Dark.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-dark-text: {palette.DarkContrastText};");
-            builder.Append($"--{PalettePrefix}-dark-darken: {palette.DarkDarken};");
-            builder.Append($"--{PalettePrefix}-dark-lighten: {palette.DarkLighten};");
-            builder.Append($"--{PalettePrefix}-dark-hover: {palette.Dark.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
+            builder.Append($"--{_palettePrefix}-dark: {palette.Dark};");
+            builder.Append($"--{_palettePrefix}-dark-rgb: {palette.Dark.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-dark-text: {palette.DarkContrastText};");
+            builder.Append($"--{_palettePrefix}-dark-darken: {palette.DarkDarken};");
+            builder.Append($"--{_palettePrefix}-dark-lighten: {palette.DarkLighten};");
+            builder.Append($"--{_palettePrefix}-dark-hover: {palette.Dark.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
 
-            builder.Append($"--{PalettePrefix}-text-primary: {palette.TextPrimary};");
-            builder.Append($"--{PalettePrefix}-text-primary-rgb: {palette.TextPrimary.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-text-secondary: {palette.TextSecondary};");
-            builder.Append($"--{PalettePrefix}-text-secondary-rgb: {palette.TextSecondary.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-text-disabled: {palette.TextDisabled};");
-            builder.Append($"--{PalettePrefix}-text-disabled-rgb: {palette.TextDisabled.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-text-primary: {palette.TextPrimary};");
+            builder.Append($"--{_palettePrefix}-text-primary-rgb: {palette.TextPrimary.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-text-secondary: {palette.TextSecondary};");
+            builder.Append($"--{_palettePrefix}-text-secondary-rgb: {palette.TextSecondary.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-text-disabled: {palette.TextDisabled};");
+            builder.Append($"--{_palettePrefix}-text-disabled-rgb: {palette.TextDisabled.ToString(MudColorOutputFormats.ColorElements)};");
 
-            builder.Append($"--{PalettePrefix}-action-default: {palette.ActionDefault};");
-            builder.Append($"--{PalettePrefix}-action-default-hover: {palette.ActionDefault.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
-            builder.Append($"--{PalettePrefix}-action-disabled: {palette.ActionDisabled};");
-            builder.Append($"--{PalettePrefix}-action-disabled-background: {palette.ActionDisabledBackground};");
+            builder.Append($"--{_palettePrefix}-action-default: {palette.ActionDefault};");
+            builder.Append($"--{_palettePrefix}-action-default-hover: {palette.ActionDefault.SetAlpha(palette.HoverOpacity).ToString(MudColorOutputFormats.RGBA)};");
+            builder.Append($"--{_palettePrefix}-action-disabled: {palette.ActionDisabled};");
+            builder.Append($"--{_palettePrefix}-action-disabled-background: {palette.ActionDisabledBackground};");
 
-            builder.Append($"--{PalettePrefix}-surface: {palette.Surface};");
-            builder.Append($"--{PalettePrefix}-surface-rgb: {palette.Surface.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-background: {palette.Background};");
-            builder.Append($"--{PalettePrefix}-background-gray: {palette.BackgroundGray};");
-            builder.Append($"--{PalettePrefix}-drawer-background: {palette.DrawerBackground};");
-            builder.Append($"--{PalettePrefix}-drawer-text: {palette.DrawerText};");
-            builder.Append($"--{PalettePrefix}-drawer-icon: {palette.DrawerIcon};");
-            builder.Append($"--{PalettePrefix}-appbar-background: {palette.AppbarBackground};");
-            builder.Append($"--{PalettePrefix}-appbar-text: {palette.AppbarText};");
+            builder.Append($"--{_palettePrefix}-surface: {palette.Surface};");
+            builder.Append($"--{_palettePrefix}-surface-rgb: {palette.Surface.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-background: {palette.Background};");
+            builder.Append($"--{_palettePrefix}-background-gray: {palette.BackgroundGray};");
+            builder.Append($"--{_palettePrefix}-drawer-background: {palette.DrawerBackground};");
+            builder.Append($"--{_palettePrefix}-drawer-text: {palette.DrawerText};");
+            builder.Append($"--{_palettePrefix}-drawer-icon: {palette.DrawerIcon};");
+            builder.Append($"--{_palettePrefix}-appbar-background: {palette.AppbarBackground};");
+            builder.Append($"--{_palettePrefix}-appbar-text: {palette.AppbarText};");
 
-            builder.Append($"--{PalettePrefix}-lines-default: {palette.LinesDefault};");
-            builder.Append($"--{PalettePrefix}-lines-inputs: {palette.LinesInputs};");
-            builder.Append($"--{PalettePrefix}-table-lines: {palette.TableLines};");
-            builder.Append($"--{PalettePrefix}-table-striped: {palette.TableStriped};");
-            builder.Append($"--{PalettePrefix}-table-hover: {palette.TableHover};");
-            builder.Append($"--{PalettePrefix}-divider: {palette.Divider};");
-            builder.Append($"--{PalettePrefix}-divider-rgb: {palette.Divider.ToString(MudColorOutputFormats.ColorElements)};");
-            builder.Append($"--{PalettePrefix}-divider-light: {palette.DividerLight};");
-            builder.Append($"--{PalettePrefix}-skeleton: {palette.Skeleton};");
-            builder.Append($"--{PalettePrefix}-gray-default: {palette.GrayDefault};");
-            builder.Append($"--{PalettePrefix}-gray-light: {palette.GrayLight};");
-            builder.Append($"--{PalettePrefix}-gray-lighter: {palette.GrayLighter};");
-            builder.Append($"--{PalettePrefix}-gray-dark: {palette.GrayDark};");
-            builder.Append($"--{PalettePrefix}-gray-darker: {palette.GrayDarker};");
-            builder.Append($"--{PalettePrefix}-overlay-dark: {palette.OverlayDark};");
-            builder.Append($"--{PalettePrefix}-overlay-light: {palette.OverlayLight};");
-            builder.Append($"--{PalettePrefix}-border-opacity: {palette.BorderOpacity.ToString(CultureInfo.InvariantCulture)};");
+            builder.Append($"--{_palettePrefix}-lines-default: {palette.LinesDefault};");
+            builder.Append($"--{_palettePrefix}-lines-inputs: {palette.LinesInputs};");
+            builder.Append($"--{_palettePrefix}-table-lines: {palette.TableLines};");
+            builder.Append($"--{_palettePrefix}-table-striped: {palette.TableStriped};");
+            builder.Append($"--{_palettePrefix}-table-hover: {palette.TableHover};");
+            builder.Append($"--{_palettePrefix}-divider: {palette.Divider};");
+            builder.Append($"--{_palettePrefix}-divider-rgb: {palette.Divider.ToString(MudColorOutputFormats.ColorElements)};");
+            builder.Append($"--{_palettePrefix}-divider-light: {palette.DividerLight};");
+            builder.Append($"--{_palettePrefix}-skeleton: {palette.Skeleton};");
+            builder.Append($"--{_palettePrefix}-gray-default: {palette.GrayDefault};");
+            builder.Append($"--{_palettePrefix}-gray-light: {palette.GrayLight};");
+            builder.Append($"--{_palettePrefix}-gray-lighter: {palette.GrayLighter};");
+            builder.Append($"--{_palettePrefix}-gray-dark: {palette.GrayDark};");
+            builder.Append($"--{_palettePrefix}-gray-darker: {palette.GrayDarker};");
+            builder.Append($"--{_palettePrefix}-overlay-dark: {palette.OverlayDark};");
+            builder.Append($"--{_palettePrefix}-overlay-light: {palette.OverlayLight};");
+            builder.Append($"--{_palettePrefix}-border-opacity: {palette.BorderOpacity.ToString(CultureInfo.InvariantCulture)};");
         }
 
         private static void AppendTypography(StringBuilder builder, MudTheme theme)
         {
             var families = theme.Typography.Default.FontFamily ?? Array.Empty<string>();
-            builder.Append($"--{TypographyPrefix}-default-family: {FormatFontFamily(families)};");
+            builder.Append($"--{_typographyPrefix}-default-family: {FormatFontFamily(families)};");
         }
 
         private static string FormatFontFamily(string[] fontFamilies)

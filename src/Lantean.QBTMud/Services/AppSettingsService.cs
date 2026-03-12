@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class AppSettingsService : IAppSettingsService
     {
-        private const string LegacyDarkModeStorageKey = "MainLayout.IsDarkMode";
+        private const string _legacyDarkModeStorageKey = "MainLayout.IsDarkMode";
 
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
         private readonly ISettingsStorageService _settingsStorageService;
@@ -98,7 +98,7 @@ namespace Lantean.QBTMud.Services
 
         private async Task<AppSettings> MigrateLegacyThemeModePreference(AppSettings settings, CancellationToken cancellationToken)
         {
-            var legacyDarkMode = await _settingsStorageService.GetItemAsync<bool?>(LegacyDarkModeStorageKey, cancellationToken);
+            var legacyDarkMode = await _settingsStorageService.GetItemAsync<bool?>(_legacyDarkModeStorageKey, cancellationToken);
             if (!legacyDarkMode.HasValue)
             {
                 return settings;
@@ -112,7 +112,7 @@ namespace Lantean.QBTMud.Services
                 await _settingsStorageService.SetItemAsync(AppSettings.StorageKey, settings, cancellationToken);
             }
 
-            await _settingsStorageService.RemoveItemAsync(LegacyDarkModeStorageKey, cancellationToken);
+            await _settingsStorageService.RemoveItemAsync(_legacyDarkModeStorageKey, cancellationToken);
             return settings;
         }
 

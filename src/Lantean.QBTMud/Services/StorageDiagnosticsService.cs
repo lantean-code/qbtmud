@@ -10,7 +10,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class StorageDiagnosticsService : IStorageDiagnosticsService
     {
-        private const int PreviewMaxLength = 160;
+        private const int _previewMaxLength = 160;
 
         private readonly IJSRuntime _jsRuntime;
         private readonly IClientDataStorageAdapter _clientDataStorageAdapter;
@@ -142,9 +142,9 @@ namespace Lantean.QBTMud.Services
                 return string.Empty;
             }
 
-            return value.Length <= PreviewMaxLength
+            return value.Length <= _previewMaxLength
                 ? value
-                : string.Concat(value[..PreviewMaxLength], "...");
+                : string.Concat(value[.._previewMaxLength], "...");
         }
 
         private static string? ConvertClientValueToText(JsonElement value)

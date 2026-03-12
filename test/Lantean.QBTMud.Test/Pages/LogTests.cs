@@ -20,7 +20,7 @@ namespace Lantean.QBTMud.Test.Pages
 {
     public sealed class LogTests : RazorComponentTestBase
     {
-        private const string SelectedTypesStorageKey = "Log.SelectedTypes";
+        private const string _selectedTypesStorageKey = "Log.SelectedTypes";
         private readonly IApiClient _apiClient;
         private readonly ISnackbar _snackbar;
         private readonly IManagedTimer _timer;
@@ -76,7 +76,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await _target.InvokeAsync(() => select.Instance.SelectedValuesChanged.InvokeAsync(values));
 
-            var stored = await TestContext.LocalStorage.GetItemAsync<IEnumerable<string>>(SelectedTypesStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var stored = await TestContext.LocalStorage.GetItemAsync<IEnumerable<string>>(_selectedTypesStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().BeEquivalentTo(values);
         }
 
@@ -269,7 +269,7 @@ namespace Lantean.QBTMud.Test.Pages
             var values = new[] { "Info", "Critical" };
 
             await using var localContext = new ComponentTestContext();
-            await localContext.LocalStorage.SetItemAsync(SelectedTypesStorageKey, values, Xunit.TestContext.Current.CancellationToken);
+            await localContext.LocalStorage.SetItemAsync(_selectedTypesStorageKey, values, Xunit.TestContext.Current.CancellationToken);
 
             var apiClientMock = new Mock<IApiClient>();
             apiClientMock

@@ -10,7 +10,7 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Tags
     {
-        private const string ActionsColumnId = "actions";
+        private const string _actionsColumnId = "actions";
 
         private readonly Dictionary<string, RenderFragment<RowContext<string>>> _columnRenderFragments = [];
         private IReadOnlyList<string>? _tags;
@@ -54,7 +54,7 @@ namespace Lantean.QBTMud.Pages
 
         public Tags()
         {
-            _columnRenderFragments.Add(ActionsColumnId, ActionsColumn);
+            _columnRenderFragments.Add(_actionsColumnId, ActionsColumn);
         }
 
         protected void NavigateBack()
@@ -133,7 +133,7 @@ namespace Lantean.QBTMud.Pages
             return
             [
                 new ColumnDefinition<string>(LanguageLocalizer.Translate("TransferListModel", "Name"), l => l, id: "id"),
-                new ColumnDefinition<string>(Translate("Actions"), l => l, id: ActionsColumnId)
+                new ColumnDefinition<string>(Translate("Actions"), l => l, id: _actionsColumnId)
             ];
         }
 

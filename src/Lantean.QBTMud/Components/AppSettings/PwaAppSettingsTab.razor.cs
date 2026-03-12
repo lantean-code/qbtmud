@@ -11,8 +11,8 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
 {
     public partial class PwaAppSettingsTab
     {
-        private const string PwaInstallTestSnackbarClass = "pwa-install-snackbar";
-        private const string PwaInstallTestSnackbarKey = "pwa-install-snackbar-test";
+        private const string _pwaInstallTestSnackbarClass = "pwa-install-snackbar";
+        private const string _pwaInstallTestSnackbarKey = "pwa-install-snackbar-test";
 
         [Parameter]
         public bool IsActive { get; set; }
@@ -151,9 +151,9 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
                     options.ShowCloseIcon = false;
                     options.HideIcon = true;
                     options.SnackbarVariant = Variant.Outlined;
-                    options.SnackbarTypeClass = PwaInstallTestSnackbarClass;
+                    options.SnackbarTypeClass = _pwaInstallTestSnackbarClass;
                 },
-                PwaInstallTestSnackbarKey);
+                _pwaInstallTestSnackbarKey);
 #endif
         }
 
@@ -195,7 +195,7 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
 
         private Task DismissInstallSnackbarTestAsync()
         {
-            SnackbarWorkflow.Hide(PwaInstallTestSnackbarKey);
+            SnackbarWorkflow.Hide(_pwaInstallTestSnackbarKey);
             return Task.CompletedTask;
         }
 

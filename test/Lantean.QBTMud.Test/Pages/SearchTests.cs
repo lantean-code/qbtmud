@@ -23,8 +23,8 @@ namespace Lantean.QBTMud.Test.Pages
 {
     public sealed class SearchTests : RazorComponentTestBase<Search>
     {
-        private const string PreferencesStorageKey = "Search.Preferences";
-        private const string JobsStorageKey = "Search.Jobs";
+        private const string _preferencesStorageKey = "Search.Preferences";
+        private const string _jobsStorageKey = "Search.Jobs";
         private IRenderedComponent<MudPopoverProvider>? _popoverProvider;
 
         [Fact]
@@ -60,7 +60,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_PersistedPreferences_WHEN_Render_THEN_AdvancedFiltersExpanded()
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedCategory = "movies",
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase),
@@ -97,8 +97,8 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_PersistedJobs_WHEN_Render_THEN_JobSummaryDisplayed()
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -141,8 +141,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_CorruptStoredState_WHEN_Render_THEN_DefaultPreferencesApplied()
         {
-            await TestContext.LocalStorage.SetItemAsStringAsync(PreferencesStorageKey, "{", Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsStringAsync(JobsStorageKey, "{", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_preferencesStorageKey, "{", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_jobsStorageKey, "{", Xunit.TestContext.Current.CancellationToken);
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
@@ -176,7 +176,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DisabledPersistedPlugin_WHEN_Render_THEN_SelectsEnabledPlugins()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedCategory = "legacy",
                 SelectedPlugins = new HashSet<string>(new[] { "legacy" }, StringComparer.OrdinalIgnoreCase)
@@ -254,7 +254,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_ManagePluginsEnablesSelection_WHEN_DialogConfirmed_THEN_PreferencesPersisted()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedPlugins = new HashSet<string>(new[] { "legacy" }, StringComparer.OrdinalIgnoreCase)
             }, Xunit.TestContext.Current.CancellationToken);
@@ -284,7 +284,7 @@ namespace Lantean.QBTMud.Test.Pages
                 pluginSelect.Instance.GetState(x => x.SelectedValues).Should().Contain("primary");
             });
 
-            var storedPreferences = await TestContext.LocalStorage.GetItemAsync<SearchPreferences>(PreferencesStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var storedPreferences = await TestContext.LocalStorage.GetItemAsync<SearchPreferences>(_preferencesStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedPreferences.Should().NotBeNull();
             storedPreferences!.SelectedPlugins.Should().Contain("primary");
         }
@@ -495,7 +495,7 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Verify(client => client.StartSearch("Ubuntu", It.Is<IReadOnlyCollection<string>>(plugins => plugins.Contains("movies")), SearchForm.AllCategoryId), Times.Once());
             apiMock.Verify(client => client.GetSearchResults(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.AtLeast(2));
 
-            var storedMetadata = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(JobsStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var storedMetadata = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedMetadata.Should().NotBeNull();
             storedMetadata!.Should().Contain(metadata => metadata.Id == jobId && metadata.Pattern == "Ubuntu");
         }
@@ -505,8 +505,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var jobId = 11;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -556,8 +556,8 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var jobId = 21;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -596,7 +596,7 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Verify(client => client.StopSearch(jobId), Times.Once());
             apiMock.Verify(client => client.DeleteSearch(jobId), Times.Once());
 
-            var storedMetadata = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(JobsStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var storedMetadata = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
             storedMetadata.Should().NotBeNull();
             storedMetadata!.Should().BeEmpty();
         }
@@ -689,11 +689,11 @@ namespace Lantean.QBTMud.Test.Pages
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
             snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
 
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase)
             }, Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -790,13 +790,13 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var jobId = 61;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase),
                 FilterText = "Ubuntu",
                 SearchIn = SearchInScope.Names
             }, Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -838,7 +838,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var jobId = 62;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase),
                 MinimumSeeds = 50,
@@ -848,7 +848,7 @@ namespace Lantean.QBTMud.Test.Pages
                 MaximumSize = 1,
                 MaximumSizeUnit = SearchSizeUnit.Gibibytes
             }, Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -894,11 +894,11 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var jobId = 63;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase)
             }, Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -1077,8 +1077,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_StaleMetadata_WHEN_Render_THEN_MetadataCleared()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -1102,7 +1102,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 var snapshot = TestContext.LocalStorage.Snapshot();
-                snapshot.TryGetValue(JobsStorageKey, out var storedValue).Should().BeTrue();
+                snapshot.TryGetValue(_jobsStorageKey, out var storedValue).Should().BeTrue();
                 storedValue.Should().BeOfType<List<SearchJobMetadata>>();
                 ((List<SearchJobMetadata>)storedValue!).Should().BeEmpty();
             });
@@ -1111,13 +1111,13 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_AdvancedFiltersOnSmallScreen_WHEN_SearchStarts_THEN_CollapsesFilters()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase),
                 FilterText = "1080p",
                 MinimumSeeds = 10
             }, Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>(), Xunit.TestContext.Current.CancellationToken);
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
@@ -1162,12 +1162,12 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_StartSearchFails_WHEN_Submit_THEN_ShowsErrorSnackbar()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase),
                 FilterText = "1080p"
             }, Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>(), Xunit.TestContext.Current.CancellationToken);
 
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
@@ -1206,7 +1206,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_FilterInputs_WHEN_UserAdjustsValues_THEN_PreferencesPersisted()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase),
                 FilterText = "hdr",
@@ -1218,7 +1218,7 @@ namespace Lantean.QBTMud.Test.Pages
                 MaximumSize = 2,
                 MaximumSizeUnit = SearchSizeUnit.Gibibytes
             }, Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>(), Xunit.TestContext.Current.CancellationToken);
 
             var categories = new[]
             {
@@ -1270,7 +1270,7 @@ namespace Lantean.QBTMud.Test.Pages
             target.WaitForAssertion(() =>
             {
                 var snapshot = TestContext.LocalStorage.Snapshot();
-                snapshot.TryGetValue(PreferencesStorageKey, out var storedValue).Should().BeTrue();
+                snapshot.TryGetValue(_preferencesStorageKey, out var storedValue).Should().BeTrue();
                 storedValue.Should().BeOfType<SearchPreferences>();
                 var stored = (SearchPreferences)storedValue!;
                 stored.SelectedCategory.Should().Be("tv");
@@ -1388,8 +1388,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_SearchUnavailable_WHEN_HydrateJobsRuns_THEN_MetadataCleared()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -1407,7 +1407,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             _ = TestContext.Render<Search>();
 
-            var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(JobsStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
             stored!.Should().BeEmpty();
         }
@@ -1437,8 +1437,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_StopJobFails_WHEN_Invoke_THEN_ShowsSnackbar()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
         {
             new SearchJobMetadata
             {
@@ -1522,7 +1522,7 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => closeAllButton.Find("button").Click());
 
             target.WaitForAssertion(() => target.FindComponents<DynamicTable<SearchResult>>().Should().BeEmpty());
-            var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(JobsStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
             stored!.Should().BeEmpty();
         }
@@ -1577,7 +1577,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_SearchFormToggles_WHEN_Clicked_THEN_ExpansionStateUpdates()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
             apiMock.Setup(client => client.GetSearchPlugins()).ReturnsAsync(new List<SearchPlugin> { plugin });
@@ -1658,8 +1658,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_JobStatusVariants_WHEN_TabsRender_THEN_IconsAndColorsMatchStatus()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata { Id = 710, Pattern = "Finished", Plugins = new List<string> { "movies" } },
                 new SearchJobMetadata { Id = 711, Pattern = "Aborted", Plugins = new List<string> { "movies" } },
@@ -1714,8 +1714,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_PollingWithNoRunningJobs_WHEN_TimerTickRuns_THEN_ContinueWithoutAdditionalFetch()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -1749,8 +1749,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_PollingWithCompletedTotalZero_WHEN_TimerTickRuns_THEN_RefetchesResults()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -1760,7 +1760,7 @@ namespace Lantean.QBTMud.Test.Pages
                     Plugins = new List<string> { "movies" }
                 }
             }, Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {
@@ -1904,8 +1904,8 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_DuplicateStatusEntries_WHEN_HydratingJobs_THEN_DuplicateJobNotAdded()
         {
             var jobId = 905;
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata { Id = jobId, Pattern = "Duplicate", Plugins = new List<string> { "movies" } }
             }, Xunit.TestContext.Current.CancellationToken);
@@ -1937,7 +1937,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_StoredPreferencesWithEmptyCategory_WHEN_Rendered_THEN_DefaultCategoryApplied()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedCategory = string.Empty,
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase)
@@ -1974,8 +1974,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_TwoJobsWithSecondActive_WHEN_FirstTabClosed_THEN_ActiveIndexRebased()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata { Id = 907, Pattern = "First", Plugins = new List<string> { "movies" } },
                 new SearchJobMetadata { Id = 908, Pattern = "Second", Plugins = new List<string> { "movies" } }
@@ -2021,8 +2021,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_RunningAndCompletedJobs_WHEN_PollTickRuns_THEN_CompletedJobBatchIsNotRefetched()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata { Id = 909, Pattern = "Running", Plugins = new List<string> { "movies" } },
                 new SearchJobMetadata { Id = 910, Pattern = "Completed", Plugins = new List<string> { "movies" } }
@@ -2060,8 +2060,8 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_RunningJobAndUnexpectedResultError_WHEN_PollTickRuns_THEN_GenericPollingFailureIsHandled()
         {
             var jobId = 911;
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata { Id = jobId, Pattern = "Unexpected", Plugins = new List<string> { "movies" } }
             }, Xunit.TestContext.Current.CancellationToken);
@@ -2098,8 +2098,8 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_RunningJobAndStopFailsWithHttp_WHEN_CloseAllJobsClicked_THEN_DeleteStillExecutes()
         {
             var jobId = 912;
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata { Id = jobId, Pattern = "StopFail", Plugins = new List<string> { "movies" } }
             }, Xunit.TestContext.Current.CancellationToken);
@@ -2131,7 +2131,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_PluginSelectionDelegate_WHEN_Invoked_THEN_NullAndJoinedTextPathsReturned()
         {
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase)
             }, Xunit.TestContext.Current.CancellationToken);
@@ -2180,7 +2180,7 @@ namespace Lantean.QBTMud.Test.Pages
             var filterField = FindComponentByTestId<MudTextField<string>>(target, "FilterResults");
             await target.InvokeAsync(() => filterField.Instance.ValueChanged.InvokeAsync("   "));
 
-            var stored = await TestContext.LocalStorage.GetItemAsync<SearchPreferences>(PreferencesStorageKey, Xunit.TestContext.Current.CancellationToken);
+            var stored = await TestContext.LocalStorage.GetItemAsync<SearchPreferences>(_preferencesStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
             stored!.FilterText.Should().BeNull();
         }
@@ -2219,11 +2219,11 @@ namespace Lantean.QBTMud.Test.Pages
         private async Task<IRenderedComponent<Search>> RenderSearchWithResultsAsync(int jobId, List<SearchResult> results, string status = "Completed", int? totalOverride = null, Action<Mock<IApiClient>>? configureMock = null)
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
-            await TestContext.LocalStorage.SetItemAsync(PreferencesStorageKey, new SearchPreferences
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
             {
                 SelectedPlugins = new HashSet<string>(new[] { "movies" }, StringComparer.OrdinalIgnoreCase)
             }, Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsync(JobsStorageKey, new List<SearchJobMetadata>
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
                 new SearchJobMetadata
                 {

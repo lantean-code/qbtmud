@@ -23,10 +23,10 @@ namespace Lantean.QBTMud.Test.Components
 {
     public sealed class FiltersNavTests : RazorComponentTestBase
     {
-        private const string StatusStorageKey = "FiltersNav.Selection.Status";
-        private const string CategoryStorageKey = "FiltersNav.Selection.Category";
-        private const string TagStorageKey = "FiltersNav.Selection.Tag";
-        private const string TrackerStorageKey = "FiltersNav.Selection.Tracker";
+        private const string _statusStorageKey = "FiltersNav.Selection.Status";
+        private const string _categoryStorageKey = "FiltersNav.Selection.Category";
+        private const string _tagStorageKey = "FiltersNav.Selection.Tag";
+        private const string _trackerStorageKey = "FiltersNav.Selection.Tracker";
 
         private IRenderedComponent<MudPopoverProvider>? _popoverProvider;
 
@@ -37,10 +37,10 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
 
-            await TestContext.LocalStorage.SetItemAsStringAsync(StatusStorageKey, Status.Downloading.ToString(), Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsStringAsync(CategoryStorageKey, "Movies", Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsStringAsync(TagStorageKey, "Tag1", Xunit.TestContext.Current.CancellationToken);
-            await TestContext.LocalStorage.SetItemAsStringAsync(TrackerStorageKey, "tracker.example.com", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_statusStorageKey, Status.Downloading.ToString(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_categoryStorageKey, "Movies", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_tagStorageKey, "Tag1", Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsStringAsync(_trackerStorageKey, "tracker.example.com", Xunit.TestContext.Current.CancellationToken);
 
             Status? status = null;
             string? category = null;
@@ -114,13 +114,13 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => downloading.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             status.Should().Be(Status.Downloading);
-            (await TestContext.LocalStorage.GetItemAsStringAsync(StatusStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be(Status.Downloading.ToString());
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_statusStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be(Status.Downloading.ToString());
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Status-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             status.Should().Be(Status.All);
-            (await TestContext.LocalStorage.GetItemAsStringAsync(StatusStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_statusStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
         [Fact]
@@ -140,13 +140,13 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => movies.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             category.Should().Be("Movies");
-            (await TestContext.LocalStorage.GetItemAsStringAsync(CategoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("Movies");
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_categoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("Movies");
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Category-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             category.Should().Be(FilterHelper.CATEGORY_ALL);
-            (await TestContext.LocalStorage.GetItemAsStringAsync(CategoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_categoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
         [Fact]
@@ -166,13 +166,13 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => tagLink.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             tag.Should().Be("Tag1");
-            (await TestContext.LocalStorage.GetItemAsStringAsync(TagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("Tag1");
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_tagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("Tag1");
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Tag-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             tag.Should().Be(FilterHelper.TAG_ALL);
-            (await TestContext.LocalStorage.GetItemAsStringAsync(TagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_tagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
         [Fact]
@@ -192,13 +192,13 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => trackerLink.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             tracker.Should().Be("tracker.example.com");
-            (await TestContext.LocalStorage.GetItemAsStringAsync(TrackerStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("tracker.example.com");
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_trackerStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("tracker.example.com");
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Tracker-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             tracker.Should().Be(FilterHelper.TRACKER_ALL);
-            (await TestContext.LocalStorage.GetItemAsStringAsync(TrackerStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
+            (await TestContext.LocalStorage.GetItemAsStringAsync(_trackerStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
         [Fact]

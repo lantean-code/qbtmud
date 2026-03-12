@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
 {
     internal sealed class ComponentTestContext : BunitContext
     {
-        private const string ApiClientName = "API";
+        private const string _apiClientName = "API";
 
         private static readonly Uri _baseAddress = new Uri("http://localhost:8080");
 
@@ -75,8 +75,8 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services
                 .AddScoped(sp => sp
                     .GetRequiredService<IHttpClientFactory>()
-                    .CreateClient(ApiClientName))
-                .AddHttpClient(ApiClientName, client =>
+                    .CreateClient(_apiClientName))
+                .AddHttpClient(_apiClientName, client =>
                 {
                     client.BaseAddress = new Uri(_baseAddress, "/api/v2/");
                 })

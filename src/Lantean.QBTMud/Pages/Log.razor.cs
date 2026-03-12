@@ -14,7 +14,7 @@ namespace Lantean.QBTMud.Pages
     public partial class Log : IAsyncDisposable
     {
         private const string _selectedTypesStorageKey = "Log.SelectedTypes";
-        private const int MaxResults = 500;
+        private const int _maxResults = 500;
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
@@ -249,12 +249,12 @@ namespace Lantean.QBTMud.Pages
 
         private void TrimResults()
         {
-            if (Results is null || Results.Count <= MaxResults)
+            if (Results is null || Results.Count <= _maxResults)
             {
                 return;
             }
 
-            var removeCount = Results.Count - MaxResults;
+            var removeCount = Results.Count - _maxResults;
             Results.RemoveRange(0, removeCount);
         }
 

@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Services
 {
     internal sealed class BrowserStorageService : IBrowserStorageService
     {
-        private const string StorageKeyPrefix = "QbtMud.";
+        private const string _storageKeyPrefix = "QbtMud.";
         private static readonly JsonSerializerOptions _serializerOptions = ThemeSerialization.CreateSerializerOptions(writeIndented: false);
 
         private readonly IJSRuntime _jsRuntime;
@@ -72,12 +72,12 @@ namespace Lantean.QBTMud.Services
 
         private static string GetPrefixedKey(string key)
         {
-            if (key.StartsWith(StorageKeyPrefix, StringComparison.Ordinal))
+            if (key.StartsWith(_storageKeyPrefix, StringComparison.Ordinal))
             {
                 return key;
             }
 
-            return string.Concat(StorageKeyPrefix, key);
+            return string.Concat(_storageKeyPrefix, key);
         }
 
         private async ValueTask<string?> GetItemValueAsync(string key, CancellationToken cancellationToken)

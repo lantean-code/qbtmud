@@ -6,8 +6,8 @@ namespace Lantean.QBTMud.Components
 {
     public partial class TimerStatusPanel : IAsyncDisposable
     {
-        private const int PollIntervalMilliseconds = 1000;
-        private const string AppContext = "AppTimerStatusPanel";
+        private const int _pollIntervalMilliseconds = 1000;
+        private const string _appContext = "AppTimerStatusPanel";
 
         private readonly object _syncLock = new();
         private CancellationTokenSource? _pollingCancellationTokenSource;
@@ -176,7 +176,7 @@ namespace Lantean.QBTMud.Components
                 }
 
                 _pollingCancellationTokenSource = new CancellationTokenSource();
-                _pollingTimer = PeriodicTimerFactory.Create(TimeSpan.FromMilliseconds(PollIntervalMilliseconds));
+                _pollingTimer = PeriodicTimerFactory.Create(TimeSpan.FromMilliseconds(_pollIntervalMilliseconds));
                 _pollingTask = PollAsync(_pollingTimer, _pollingCancellationTokenSource.Token);
             }
         }
@@ -221,7 +221,7 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return LanguageLocalizer.Translate(AppContext, source, arguments);
+            return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
     }
 }

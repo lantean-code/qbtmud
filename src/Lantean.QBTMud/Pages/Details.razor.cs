@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Details : IAsyncDisposable
     {
-        private const int TabCount = 5;
+        private const int _tabCount = 5;
 
         private static readonly KeyboardEvent _backspaceKey = new("Backspace");
         private static readonly KeyboardEvent _altOneKey = new("1") { AltKey = true };
@@ -175,7 +175,7 @@ namespace Lantean.QBTMud.Pages
 
         private Task SetActiveTabAsync(int index)
         {
-            ActiveTab = Math.Clamp(index, 0, TabCount - 1);
+            ActiveTab = Math.Clamp(index, 0, _tabCount - 1);
             return InvokeAsync(StateHasChanged);
         }
 

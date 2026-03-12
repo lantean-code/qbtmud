@@ -10,10 +10,10 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class ThemeManagerService : IThemeManagerService
     {
-        private const string AppContext = "App";
-        private const string LocalThemesStorageKey = "ThemeManager.LocalThemes";
-        private const string SelectedThemeStorageKey = "ThemeManager.SelectedThemeId";
-        private const string BundledThemeIndexPath = "themes/index.json";
+        private const string _appContext = "App";
+        private const string _localThemesStorageKey = "ThemeManager.LocalThemes";
+        private const string _selectedThemeStorageKey = "ThemeManager.SelectedThemeId";
+        private const string _bundledThemeIndexPath = "themes/index.json";
 
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
         private readonly IHttpClientFactory _httpClientFactory;
@@ -181,7 +181,7 @@ namespace Lantean.QBTMud.Services
             }
 
             ApplyThemeInternal(theme);
-            await _settingsStorage.SetItemAsync(SelectedThemeStorageKey, theme.Id);
+            await _settingsStorage.SetItemAsync(_selectedThemeStorageKey, theme.Id);
         }
 
         /// <summary>
@@ -246,7 +246,7 @@ namespace Lantean.QBTMud.Services
 
         private async Task ApplyInitialTheme()
         {
-            var storedThemeId = await _settingsStorage.GetItemAsync<string?>(SelectedThemeStorageKey);
+            var storedThemeId = await _settingsStorage.GetItemAsync<string?>(_selectedThemeStorageKey);
             if (!string.IsNullOrWhiteSpace(storedThemeId))
             {
                 var storedTheme = _themes.FirstOrDefault(theme => theme.Id == storedThemeId);
@@ -288,7 +288,7 @@ namespace Lantean.QBTMud.Services
         {
             _localThemes.Clear();
 
-            var themes = await _settingsStorage.GetItemAsync<List<ThemeDefinition>?>(LocalThemesStorageKey);
+            var themes = await _settingsStorage.GetItemAsync<List<ThemeDefinition>?>(_localThemesStorageKey);
             if (themes is null)
             {
                 return;
@@ -302,7 +302,7 @@ namespace Lantean.QBTMud.Services
 
         private async Task PersistLocalThemes()
         {
-            await _settingsStorage.SetItemAsync(LocalThemesStorageKey, _localThemes);
+            await _settingsStorage.SetItemAsync(_localThemesStorageKey, _localThemes);
         }
 
         private async Task LoadBundledThemes()
@@ -322,7 +322,7 @@ namespace Lantean.QBTMud.Services
             List<string>? index;
             try
             {
-                var indexResponse = await client.GetAsync(BundledThemeIndexPath);
+                var indexResponse = await client.GetAsync(_bundledThemeIndexPath);
                 if (!indexResponse.IsSuccessStatusCode)
                 {
                     return;
@@ -603,7 +603,7 @@ namespace Lantean.QBTMud.Services
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return _languageLocalizer.Translate(AppContext, source, arguments);
+            return _languageLocalizer.Translate(_appContext, source, arguments);
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class AppBuildInfoService : IAppBuildInfoService
     {
-        private const string BuildVersionMetadataKey = "QbtMudBuildVersion";
+        private const string _buildVersionMetadataKey = "QbtMudBuildVersion";
         private readonly Assembly _assembly;
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace Lantean.QBTMud.Services
         {
             var metadataVersion = _assembly
                 .GetCustomAttributes<AssemblyMetadataAttribute>()
-                .Where(attribute => string.Equals(attribute.Key, BuildVersionMetadataKey, StringComparison.Ordinal))
+                .Where(attribute => string.Equals(attribute.Key, _buildVersionMetadataKey, StringComparison.Ordinal))
                 .Select(attribute => attribute.Value)
                 .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 

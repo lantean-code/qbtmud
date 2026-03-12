@@ -7,7 +7,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class WizardStep
     {
-        private const string PrimaryAccentCss = "var(--mud-palette-primary)";
+        private const string _primaryAccentCss = "var(--mud-palette-primary)";
 
         private static readonly Regex _hexColorPattern = new Regex(
             "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$",
@@ -21,7 +21,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             "^[a-zA-Z][a-zA-Z0-9-]*$",
             RegexOptions.Compiled);
 
-        private string _resolvedAccentCss = PrimaryAccentCss;
+        private string _resolvedAccentCss = _primaryAccentCss;
 
         [Inject]
         private ILogger<WizardStep> Logger { get; set; } = default!;
@@ -86,7 +86,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (Accent is null)
             {
                 Logger.LogWarning("WizardStep accent configuration is missing. Falling back to primary accent color.");
-                return PrimaryAccentCss;
+                return _primaryAccentCss;
             }
 
             if (Accent.Kind == WizardAccentColorKind.Palette)
@@ -94,7 +94,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 if (!Accent.PaletteColor.HasValue)
                 {
                     Logger.LogWarning("WizardStep accent kind '{AccentKind}' requires a palette color. Falling back to primary accent color.", Accent.Kind);
-                    return PrimaryAccentCss;
+                    return _primaryAccentCss;
                 }
 
                 return MapPaletteColor(Accent.PaletteColor.Value);
@@ -105,14 +105,14 @@ namespace Lantean.QBTMud.Components.Dialogs
                 if (!TryResolveCssColor(Accent.CssColor, out var cssColor))
                 {
                     Logger.LogWarning("WizardStep CSS accent color '{CssColor}' is invalid. Falling back to primary accent color.", Accent.CssColor);
-                    return PrimaryAccentCss;
+                    return _primaryAccentCss;
                 }
 
                 return cssColor;
             }
 
             Logger.LogWarning("WizardStep accent kind '{AccentKind}' is not supported. Falling back to primary accent color.", Accent.Kind);
-            return PrimaryAccentCss;
+            return _primaryAccentCss;
         }
 
         private static string MapPaletteColor(Color color)
@@ -154,13 +154,13 @@ namespace Lantean.QBTMud.Components.Dialogs
 
                 case Color.Default:
                 default:
-                    return PrimaryAccentCss;
+                    return _primaryAccentCss;
             }
         }
 
         private static bool TryResolveCssColor(string? cssColor, out string resolvedCssColor)
         {
-            resolvedCssColor = PrimaryAccentCss;
+            resolvedCssColor = _primaryAccentCss;
 
             if (string.IsNullOrWhiteSpace(cssColor))
             {

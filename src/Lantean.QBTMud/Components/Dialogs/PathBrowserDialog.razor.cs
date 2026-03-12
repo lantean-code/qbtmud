@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class PathBrowserDialog
     {
-        private const int PathChangeDebounceMs = 300;
+        private const int _pathChangeDebounceMs = 300;
         private readonly List<PathBrowseEntry> _entries = [];
         private string _currentPath = string.Empty;
         private bool _isLoading;
@@ -169,7 +169,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private async Task DebounceLoadEntriesAsync()
         {
             var version = Interlocked.Increment(ref _pathChangeVersion);
-            await Task.Delay(PathChangeDebounceMs);
+            await Task.Delay(_pathChangeDebounceMs);
             if (version != _pathChangeVersion)
             {
                 return;

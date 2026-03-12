@@ -10,8 +10,8 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class CreateTorrentDialog : SubmittableDialog
     {
-        private const int BytesPerKibibyte = 1024;
-        private const string StorageKey = "TorrentCreator.FormState";
+        private const int _bytesPerKibibyte = 1024;
+        private const string _storageKey = "TorrentCreator.FormState";
 
         private static readonly IReadOnlyList<int> _pieceSizeOptions =
         [
@@ -149,7 +149,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             TorrentCreationFormState? state;
             try
             {
-                state = await SettingsStorage.GetItemAsync<TorrentCreationFormState>(StorageKey);
+                state = await SettingsStorage.GetItemAsync<TorrentCreationFormState>(_storageKey);
             }
             catch (Exception exception)
             {
@@ -178,7 +178,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 _paddedFileSizeLimitKiB = state.PaddedFileSizeLimit.Value < 0
                     ? -1
-                    : state.PaddedFileSizeLimit.Value / BytesPerKibibyte;
+                    : state.PaddedFileSizeLimit.Value / _bytesPerKibibyte;
             }
         }
 
@@ -213,7 +213,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 PaddedFileSizeLimit = ConvertPaddedFileSizeLimit()
             };
 
-            await SettingsStorage.SetItemAsync(StorageKey, state);
+            await SettingsStorage.SetItemAsync(_storageKey, state);
         }
 
         private int? BuildPaddedFileSizeLimit()
@@ -233,12 +233,12 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return -1;
             }
 
-            if (_paddedFileSizeLimitKiB > int.MaxValue / BytesPerKibibyte)
+            if (_paddedFileSizeLimitKiB > int.MaxValue / _bytesPerKibibyte)
             {
                 return int.MaxValue;
             }
 
-            return _paddedFileSizeLimitKiB * BytesPerKibibyte;
+            return _paddedFileSizeLimitKiB * _bytesPerKibibyte;
         }
 
         private static IReadOnlyList<string>? ParseList(string? value)

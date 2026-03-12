@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Categories
     {
-        private const string ActionsColumnId = "actions";
+        private const string _actionsColumnId = "actions";
 
         private readonly Dictionary<string, RenderFragment<RowContext<Category>>> _columnRenderFragments = [];
         private IReadOnlyList<Category>? _categories;
@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Pages
 
         public Categories()
         {
-            _columnRenderFragments.Add(ActionsColumnId, ActionsColumn);
+            _columnRenderFragments.Add(_actionsColumnId, ActionsColumn);
         }
 
         protected void NavigateBack()
@@ -129,7 +129,7 @@ namespace Lantean.QBTMud.Pages
             [
                 new ColumnDefinition<Category>(LanguageLocalizer.Translate("TransferListModel", "Name"), l => l.Name, id: "name"),
                 new ColumnDefinition<Category>(LanguageLocalizer.Translate("TransferListModel", "Save path"), l => l.SavePath, id: "save_path"),
-                new ColumnDefinition<Category>(Translate("Actions"), l => l, id: ActionsColumnId)
+                new ColumnDefinition<Category>(Translate("Actions"), l => l, id: _actionsColumnId)
             ];
         }
 

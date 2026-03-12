@@ -13,8 +13,8 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class AppSettings
     {
-        private const int StorageTabIndex = 3;
-        private const int PwaTabIndex = 4;
+        private const int _storageTabIndex = 3;
+        private const int _pwaTabIndex = 4;
 
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
@@ -57,9 +57,9 @@ namespace Lantean.QBTMud.Pages
 
         protected StorageRoutingSettings StorageRoutingSettings { get; private set; } = StorageRoutingSettings.Default.Clone();
 
-        protected bool IsStorageTabActive => ActiveTab == StorageTabIndex;
+        protected bool IsStorageTabActive => ActiveTab == _storageTabIndex;
 
-        protected bool IsPwaTabActive => ActiveTab == PwaTabIndex;
+        protected bool IsPwaTabActive => ActiveTab == _pwaTabIndex;
 
         protected bool HasPendingChanges
         {

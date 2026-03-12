@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Components
 {
     public partial class GeneralTab : IAsyncDisposable
     {
-        private const string PropertiesContext = "PropertiesWidget";
+        private const string _propertiesContext = "PropertiesWidget";
 
         private readonly bool _refreshEnabled = true;
 
@@ -201,7 +201,7 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateProperties(string source, params object[] arguments)
         {
-            return LanguageLocalizer.Translate(PropertiesContext, source, arguments);
+            return LanguageLocalizer.Translate(_propertiesContext, source, arguments);
         }
 
         private string FormatWithDetail(string? value, string? detail, string formatKey)

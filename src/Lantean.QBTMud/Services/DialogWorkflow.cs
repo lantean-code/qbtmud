@@ -11,16 +11,16 @@ namespace Lantean.QBTMud.Services
 {
     public sealed class DialogWorkflow : IDialogWorkflow
     {
-        private const string AddNewTorrentDialogContext = "AddNewTorrentDialog";
-        private const string AppContext = "App";
-        private const string ConfirmRecheckContext = "confirmRecheckDialog";
-        private const string DownloadFromUrlContext = "downloadFromURL";
-        private const string PeersAdditionContext = "PeersAdditionDialog";
-        private const string SpeedLimitContext = "SpeedLimit";
-        private const string TrackersAdditionContext = "TrackersAdditionDialog";
-        private const string TransferListContext = "TransferListWidget";
+        private const string _addNewTorrentDialogContext = "AddNewTorrentDialog";
+        private const string _appContext = "App";
+        private const string _confirmRecheckContext = "confirmRecheckDialog";
+        private const string _downloadFromUrlContext = "downloadFromURL";
+        private const string _peersAdditionContext = "PeersAdditionDialog";
+        private const string _speedLimitContext = "SpeedLimit";
+        private const string _trackersAdditionContext = "TrackersAdditionDialog";
+        private const string _transferListContext = "TransferListWidget";
 
-        private const long MaxFileSize = 4194304;
+        private const long _maxFileSize = 4194304;
 
         public static readonly DialogOptions ConfirmDialogOptions = new()
         {
@@ -109,7 +109,7 @@ namespace Lantean.QBTMud.Services
         public async Task InvokeAddTorrentFileDialog()
         {
             var result = await _dialogService.ShowAsync<AddTorrentFileDialog>(
-                _languageLocalizer.Translate(AddNewTorrentDialogContext, "Add torrent"),
+                _languageLocalizer.Translate(_addNewTorrentDialogContext, "Add torrent"),
                 FormDialogOptions);
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
@@ -125,7 +125,7 @@ namespace Lantean.QBTMud.Services
             {
                 try
                 {
-                    var stream = file.OpenReadStream(MaxFileSize);
+                    var stream = file.OpenReadStream(_maxFileSize);
                     streams.Add(stream);
 
                     var fileName = GetUniqueFileName(file.Name, files.Keys);
@@ -195,7 +195,7 @@ namespace Lantean.QBTMud.Services
             };
 
             var result = await _dialogService.ShowAsync<AddTorrentLinkDialog>(
-                _languageLocalizer.Translate(DownloadFromUrlContext, "Download from URLs"),
+                _languageLocalizer.Translate(_downloadFromUrlContext, "Download from URLs"),
                 parameters,
                 FormDialogOptions);
             var dialogResult = await result.Result;
@@ -308,9 +308,9 @@ namespace Lantean.QBTMud.Services
 
             if (confirmTorrentRecheck)
             {
-                var content = _languageLocalizer.Translate(ConfirmRecheckContext, "Are you sure you want to recheck the selected torrent(s)?");
+                var content = _languageLocalizer.Translate(_confirmRecheckContext, "Are you sure you want to recheck the selected torrent(s)?");
                 var confirmed = await ShowConfirmDialog(
-                    _languageLocalizer.Translate(ConfirmRecheckContext, "Recheck confirmation"),
+                    _languageLocalizer.Translate(_confirmRecheckContext, "Recheck confirmation"),
                     content);
                 if (!confirmed)
                 {
@@ -334,13 +334,13 @@ namespace Lantean.QBTMud.Services
                 { nameof(SliderFieldDialog<long>.Value), rate / 1024 },
                 { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
                 { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
-                { nameof(SliderFieldDialog<long>.Label), _languageLocalizer.Translate(SpeedLimitContext, "Download limit:") },
+                { nameof(SliderFieldDialog<long>.Label), _languageLocalizer.Translate(_speedLimitContext, "Download limit:") },
                 { nameof(SliderFieldDialog<long>.Adornment), Adornment.End },
-                { nameof(SliderFieldDialog<long>.AdornmentText), _languageLocalizer.Translate(SpeedLimitContext, "KiB/s") },
+                { nameof(SliderFieldDialog<long>.AdornmentText), _languageLocalizer.Translate(_speedLimitContext, "KiB/s") },
             };
 
             var result = await _dialogService.ShowAsync<SliderFieldDialog<long>>(
-                _languageLocalizer.Translate(TransferListContext, "Torrent Download Speed Limiting"),
+                _languageLocalizer.Translate(_transferListContext, "Torrent Download Speed Limiting"),
                 parameters,
                 FormDialogOptions);
             var dialogResult = await result.Result;
@@ -385,7 +385,7 @@ namespace Lantean.QBTMud.Services
             };
 
             await _dialogService.ShowAsync<RenameFilesDialog>(
-                _languageLocalizer.Translate(TransferListContext, "Renaming"),
+                _languageLocalizer.Translate(_transferListContext, "Renaming"),
                 parameters,
                 FullScreenDialogOptions);
         }
@@ -411,7 +411,7 @@ namespace Lantean.QBTMud.Services
             };
 
             var result = await _dialogService.ShowAsync<SetLocationDialog>(
-                _languageLocalizer.Translate(TransferListContext, "Set location"),
+                _languageLocalizer.Translate(_transferListContext, "Set location"),
                 parameters,
                 FormDialogOptions);
             var dialogResult = await result.Result;
@@ -504,13 +504,13 @@ namespace Lantean.QBTMud.Services
                 { nameof(SliderFieldDialog<long>.Value), rate / 1024 },
                 { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
                 { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
-                { nameof(SliderFieldDialog<long>.Label), _languageLocalizer.Translate(SpeedLimitContext, "Upload limit:") },
+                { nameof(SliderFieldDialog<long>.Label), _languageLocalizer.Translate(_speedLimitContext, "Upload limit:") },
                 { nameof(SliderFieldDialog<long>.Adornment), Adornment.End },
-                { nameof(SliderFieldDialog<long>.AdornmentText), _languageLocalizer.Translate(SpeedLimitContext, "KiB/s") },
+                { nameof(SliderFieldDialog<long>.AdornmentText), _languageLocalizer.Translate(_speedLimitContext, "KiB/s") },
             };
 
             var result = await _dialogService.ShowAsync<SliderFieldDialog<long>>(
-                _languageLocalizer.Translate(TransferListContext, "Torrent Upload Speed Limiting"),
+                _languageLocalizer.Translate(_transferListContext, "Torrent Upload Speed Limiting"),
                 parameters,
                 FormDialogOptions);
             var dialogResult = await result.Result;
@@ -527,7 +527,7 @@ namespace Lantean.QBTMud.Services
         public async Task<HashSet<QBitTorrentClient.Models.PeerId>?> ShowAddPeersDialog()
         {
             var reference = await _dialogService.ShowAsync<AddPeerDialog>(
-                _languageLocalizer.Translate(PeersAdditionContext, "Add Peers"),
+                _languageLocalizer.Translate(_peersAdditionContext, "Add Peers"),
                 NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
@@ -542,7 +542,7 @@ namespace Lantean.QBTMud.Services
         public async Task<HashSet<string>?> ShowAddTagsDialog()
         {
             var reference = await _dialogService.ShowAsync<AddTagDialog>(
-                _languageLocalizer.Translate(TransferListContext, "Add tags"),
+                _languageLocalizer.Translate(_transferListContext, "Add tags"),
                 NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
@@ -557,7 +557,7 @@ namespace Lantean.QBTMud.Services
         public async Task<HashSet<string>?> ShowAddTrackersDialog()
         {
             var reference = await _dialogService.ShowAsync<AddTrackerDialog>(
-                _languageLocalizer.Translate(TrackersAdditionContext, "Add trackers"),
+                _languageLocalizer.Translate(_trackersAdditionContext, "Add trackers"),
                 NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
@@ -900,7 +900,7 @@ namespace Lantean.QBTMud.Services
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return _languageLocalizer.Translate(AppContext, source, arguments);
+            return _languageLocalizer.Translate(_appContext, source, arguments);
         }
 
         private static QBitTorrentClient.Models.AddTorrentParams CreateAddTorrentParams(TorrentOptions options)

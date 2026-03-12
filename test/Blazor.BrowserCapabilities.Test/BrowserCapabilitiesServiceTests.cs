@@ -7,8 +7,8 @@ namespace Blazor.BrowserCapabilities.Test
 {
     public sealed class BrowserCapabilitiesServiceTests
     {
-        private const string JSImportIdentifier = "import";
-        private const string JSImportPath = "./_content/Blazor.BrowserCapabilities/browser-capabilities.module.js";
+        private const string _jsImportIdentifier = "import";
+        private const string _jsImportPath = "./_content/Blazor.BrowserCapabilities/browser-capabilities.module.js";
 
         private readonly IJSRuntime _jSRuntime;
         private readonly IJSObjectReference _jSModule;
@@ -23,7 +23,7 @@ namespace Blazor.BrowserCapabilities.Test
             _target = new BrowserCapabilitiesService(_jSRuntime, _logger);
 
             Mock.Get(_jSRuntime)
-                .Setup(runtime => runtime.InvokeAsync<IJSObjectReference>(JSImportIdentifier, It.IsAny<CancellationToken>(), It.Is<object?[]?>(args => HasJSImportPath(args))))
+                .Setup(runtime => runtime.InvokeAsync<IJSObjectReference>(_jsImportIdentifier, It.IsAny<CancellationToken>(), It.Is<object?[]?>(args => HasJSImportPath(args))))
                 .Returns(new ValueTask<IJSObjectReference>(_jSModule));
         }
 
@@ -60,7 +60,7 @@ namespace Blazor.BrowserCapabilities.Test
             _target.Capabilities.Should().Be(capabilities);
 
             Mock.Get(_jSRuntime)
-                .Verify(runtime => runtime.InvokeAsync<IJSObjectReference>(JSImportIdentifier, It.IsAny<CancellationToken>(), It.Is<object?[]?>(args => HasJSImportPath(args))), Times.Once);
+                .Verify(runtime => runtime.InvokeAsync<IJSObjectReference>(_jsImportIdentifier, It.IsAny<CancellationToken>(), It.Is<object?[]?>(args => HasJSImportPath(args))), Times.Once);
             Mock.Get(_jSModule)
                 .Verify(module => module.InvokeAsync<BrowserCapabilities?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()), Times.Once);
             Mock.Get(_jSModule)
@@ -79,7 +79,7 @@ namespace Blazor.BrowserCapabilities.Test
 
             _target.IsInitialized.Should().BeTrue();
             Mock.Get(_jSRuntime)
-                .Verify(runtime => runtime.InvokeAsync<IJSObjectReference>(JSImportIdentifier, It.IsAny<CancellationToken>(), It.Is<object?[]?>(args => HasJSImportPath(args))), Times.Once);
+                .Verify(runtime => runtime.InvokeAsync<IJSObjectReference>(_jsImportIdentifier, It.IsAny<CancellationToken>(), It.Is<object?[]?>(args => HasJSImportPath(args))), Times.Once);
             Mock.Get(_jSModule)
                 .Verify(module => module.InvokeAsync<BrowserCapabilities?>("getCapabilities", It.IsAny<CancellationToken>(), It.IsAny<object?[]?>()), Times.Once);
         }
@@ -239,7 +239,7 @@ namespace Blazor.BrowserCapabilities.Test
                 return false;
             }
 
-            return string.Equals(arguments[0] as string, JSImportPath, StringComparison.Ordinal);
+            return string.Equals(arguments[0] as string, _jsImportPath, StringComparison.Ordinal);
         }
     }
 }

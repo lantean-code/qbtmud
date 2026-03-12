@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class SearchPluginsDialog
     {
-        private const string AppContext = "AppTemp";
+        private const string _appContext = "AppTemp";
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -245,7 +245,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return LanguageLocalizer.Translate(AppContext, source, arguments);
+            return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
     }
 }

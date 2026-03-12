@@ -17,12 +17,12 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Themes
     {
-        private const long MaxThemeUploadBytes = 1024 * 1024;
-        private const string ThemeColumnId = "theme";
-        private const string DescriptionColumnId = "description";
-        private const string SourceColumnId = "source";
-        private const string ColorsColumnId = "colors";
-        private const string ActionsColumnId = "actions";
+        private const long _maxThemeUploadBytes = 1024 * 1024;
+        private const string _themeColumnId = "theme";
+        private const string _descriptionColumnId = "description";
+        private const string _sourceColumnId = "source";
+        private const string _colorsColumnId = "colors";
+        private const string _actionsColumnId = "actions";
 
         private readonly Dictionary<string, RenderFragment<RowContext<ThemeCatalogItem>>> _columnRenderFragments = [];
         private bool _isBusy;
@@ -84,11 +84,11 @@ namespace Lantean.QBTMud.Pages
 
         public Themes()
         {
-            _columnRenderFragments.Add(ThemeColumnId, NameColumn);
-            _columnRenderFragments.Add(DescriptionColumnId, DescriptionColumn);
-            _columnRenderFragments.Add(SourceColumnId, SourceColumn);
-            _columnRenderFragments.Add(ActionsColumnId, ActionsColumn);
-            _columnRenderFragments.Add(ColorsColumnId, ColorsColumn);
+            _columnRenderFragments.Add(_themeColumnId, NameColumn);
+            _columnRenderFragments.Add(_descriptionColumnId, DescriptionColumn);
+            _columnRenderFragments.Add(_sourceColumnId, SourceColumn);
+            _columnRenderFragments.Add(_actionsColumnId, ActionsColumn);
+            _columnRenderFragments.Add(_colorsColumnId, ColorsColumn);
         }
 
         protected override async Task OnInitializedAsync()
@@ -306,7 +306,7 @@ namespace Lantean.QBTMud.Pages
             try
             {
                 var file = files[0];
-                await using var stream = file.OpenReadStream(MaxThemeUploadBytes);
+                await using var stream = file.OpenReadStream(_maxThemeUploadBytes);
                 using var reader = new StreamReader(stream);
                 var json = await reader.ReadToEndAsync();
 
@@ -500,11 +500,11 @@ namespace Lantean.QBTMud.Pages
 
         public static List<ColumnDefinition<ThemeCatalogItem>> ColumnsDefinitions { get; } =
         [
-            new ColumnDefinition<ThemeCatalogItem>("Theme", t => t.Name, id: ThemeColumnId),
-            new ColumnDefinition<ThemeCatalogItem>("Description", t => t.Theme.Description, id: DescriptionColumnId),
-            new ColumnDefinition<ThemeCatalogItem>("Source", t => t.Source.ToString(), id: SourceColumnId),
-            new ColumnDefinition<ThemeCatalogItem>("Colors", t => t.Name, tdClass: "no-wrap", width: 160, id: ColorsColumnId),
-            new ColumnDefinition<ThemeCatalogItem>("Actions", t => t.Name, tdClass: "no-wrap", id: ActionsColumnId)
+            new ColumnDefinition<ThemeCatalogItem>("Theme", t => t.Name, id: _themeColumnId),
+            new ColumnDefinition<ThemeCatalogItem>("Description", t => t.Theme.Description, id: _descriptionColumnId),
+            new ColumnDefinition<ThemeCatalogItem>("Source", t => t.Source.ToString(), id: _sourceColumnId),
+            new ColumnDefinition<ThemeCatalogItem>("Colors", t => t.Name, tdClass: "no-wrap", width: 160, id: _colorsColumnId),
+            new ColumnDefinition<ThemeCatalogItem>("Actions", t => t.Name, tdClass: "no-wrap", id: _actionsColumnId)
         ];
     }
 }

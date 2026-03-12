@@ -10,16 +10,16 @@ namespace Lantean.QBTMud.Components
 {
     public partial class PiecesProgressNew : ComponentBase
     {
-        private const int MinimumHeatmapColumns = 32;
-        private const int MaximumHeatmapColumns = 96;
-        private const int HeatmapColumnIncrement = 8;
-        private const int MaxHeatmapCellsTarget = 2048;
+        private const int _minimumHeatmapColumns = 32;
+        private const int _maximumHeatmapColumns = 96;
+        private const int _heatmapColumnIncrement = 8;
+        private const int _maxHeatmapCellsTarget = 2048;
         private static readonly HeatmapSegment[] EmptyHeatmapSegments = Array.Empty<HeatmapSegment>();
 
         private bool _showHeatmap;
         private bool _hasViewModelInitialized;
         private bool _shouldRender;
-        private int _heatmapColumns = MinimumHeatmapColumns;
+        private int _heatmapColumns = _minimumHeatmapColumns;
         private int _piecesPerCell = 1;
         private string _linearBarStyle = string.Empty;
         private string _linearSummary = string.Empty;
@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Components
         private string _pendingThemeSignature = string.Empty;
         private string _cachedHash = string.Empty;
         private string _pendingHash = string.Empty;
-        private const string AppContext = "AppPiecesProgressNew";
+        private const string _appContext = "AppPiecesProgressNew";
 
         [Parameter]
         [EditorRequired]
@@ -449,12 +449,12 @@ namespace Lantean.QBTMud.Components
                 return 1;
             }
 
-            if (pieceCount < MaxHeatmapCellsTarget)
+            if (pieceCount < _maxHeatmapCellsTarget)
             {
                 return 1;
             }
 
-            if (pieceCount < MaxHeatmapCellsTarget * 2)
+            if (pieceCount < _maxHeatmapCellsTarget * 2)
             {
                 return 2;
             }
@@ -466,14 +466,14 @@ namespace Lantean.QBTMud.Components
         {
             if (pieceCount <= 0)
             {
-                return MinimumHeatmapColumns;
+                return _minimumHeatmapColumns;
             }
 
             var effectivePieces = (int)Math.Ceiling((double)pieceCount / Math.Max(1, piecesPerCell));
             var target = (int)Math.Ceiling(Math.Sqrt(effectivePieces));
-            target = Math.Max(target, MinimumHeatmapColumns);
-            var rounded = RoundUpToMultiple(target, HeatmapColumnIncrement);
-            return Math.Clamp(rounded, MinimumHeatmapColumns, MaximumHeatmapColumns);
+            target = Math.Max(target, _minimumHeatmapColumns);
+            var rounded = RoundUpToMultiple(target, _heatmapColumnIncrement);
+            return Math.Clamp(rounded, _minimumHeatmapColumns, _maximumHeatmapColumns);
         }
 
         private static int RoundUpToMultiple(int value, int multiple)
@@ -546,7 +546,7 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return LanguageLocalizer.Translate(AppContext, source, arguments);
+            return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
     }
 }

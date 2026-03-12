@@ -12,7 +12,7 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Rss
     {
-        private const char PathSeparator = '\\';
+        private const char _pathSeparator = '\\';
 
         private RssTreeNode? _selectedNode;
         private RssTreeNode? _contextNode;
@@ -540,7 +540,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            var newPath = string.IsNullOrEmpty(parentPath) ? folderName : $"{parentPath}{PathSeparator}{folderName}";
+            var newPath = string.IsNullOrEmpty(parentPath) ? folderName : $"{parentPath}{_pathSeparator}{folderName}";
 
             try
             {
@@ -851,13 +851,13 @@ namespace Lantean.QBTMud.Pages
 
         private static string GetParentPath(string path)
         {
-            var lastSeparator = path.LastIndexOf(PathSeparator);
+            var lastSeparator = path.LastIndexOf(_pathSeparator);
             return lastSeparator == -1 ? string.Empty : path[..lastSeparator];
         }
 
         private static bool IsDescendantPath(string feedPath, string ancestorPath)
         {
-            return feedPath.StartsWith($"{ancestorPath}{PathSeparator}", StringComparison.Ordinal);
+            return feedPath.StartsWith($"{ancestorPath}{_pathSeparator}", StringComparison.Ordinal);
         }
 
         private string TranslateRss(string source, params object[] arguments)

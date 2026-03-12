@@ -7,7 +7,7 @@ namespace Lantean.QBTMud.Components.UI
 {
     public partial class Tooltip : IDisposable
     {
-        private const int DefaultTouchClickAutoHideDelay = 1200;
+        private const int _defaultTouchClickAutoHideDelay = 1200;
 
         private bool _effectiveVisible;
         private bool _effectiveVisibleInitialized;
@@ -234,7 +234,7 @@ namespace Lantean.QBTMud.Components.UI
         {
             try
             {
-                await Task.Delay(DefaultTouchClickAutoHideDelay, cancellationToken);
+                await Task.Delay(_defaultTouchClickAutoHideDelay, cancellationToken);
 
                 if (cancellationToken.IsCancellationRequested)
                 {

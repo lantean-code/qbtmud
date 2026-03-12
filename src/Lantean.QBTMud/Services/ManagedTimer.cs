@@ -5,8 +5,8 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class ManagedTimer : IManagedTimer
     {
-        private const string IntervalMessage = "Interval must be greater than zero.";
-        private const string RetryCountMessage = "Retry count must be zero or greater.";
+        private const string _intervalMessage = "Interval must be greater than zero.";
+        private const string _retryCountMessage = "Retry count must be zero or greater.";
 
         private readonly IPeriodicTimerFactory _timerFactory;
         private readonly int _retryCount;
@@ -38,11 +38,11 @@ namespace Lantean.QBTMud.Services
         {
             if (interval <= TimeSpan.Zero)
             {
-                throw new ArgumentOutOfRangeException(nameof(interval), interval, IntervalMessage);
+                throw new ArgumentOutOfRangeException(nameof(interval), interval, _intervalMessage);
             }
             if (retryCount < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(retryCount), retryCount, RetryCountMessage);
+                throw new ArgumentOutOfRangeException(nameof(retryCount), retryCount, _retryCountMessage);
             }
 
             _timerFactory = timerFactory;
@@ -315,7 +315,7 @@ namespace Lantean.QBTMud.Services
         {
             if (interval <= TimeSpan.Zero)
             {
-                throw new ArgumentOutOfRangeException(nameof(interval), interval, IntervalMessage);
+                throw new ArgumentOutOfRangeException(nameof(interval), interval, _intervalMessage);
             }
 
             cancellationToken.ThrowIfCancellationRequested();

@@ -23,7 +23,7 @@ namespace Lantean.QBTMud.Components
         private string _canvasAriaLabel = string.Empty;
         private int[] _pieceStates = Array.Empty<int>();
         private bool _shouldRedraw = true;
-        private const string AppContext = "AppPiecesProgressCanvas";
+        private const string _appContext = "AppPiecesProgressCanvas";
 
         [Parameter]
         [EditorRequired]
@@ -327,7 +327,7 @@ namespace Lantean.QBTMud.Components
 
         private string TranslateApp(string source, params object[] arguments)
         {
-            return LanguageLocalizer.Translate(AppContext, source, arguments);
+            return LanguageLocalizer.Translate(_appContext, source, arguments);
         }
     }
 }

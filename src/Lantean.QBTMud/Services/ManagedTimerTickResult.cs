@@ -5,7 +5,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class ManagedTimerTickResult
     {
-        private const string IntervalMessage = "Interval must be greater than zero.";
+        private const string _intervalMessage = "Interval must be greater than zero.";
 
         /// <summary>
         /// Gets a tick result that continues scheduling.
@@ -50,7 +50,7 @@ namespace Lantean.QBTMud.Services
         {
             if (updatedInterval <= TimeSpan.Zero)
             {
-                throw new ArgumentOutOfRangeException(nameof(updatedInterval), updatedInterval, IntervalMessage);
+                throw new ArgumentOutOfRangeException(nameof(updatedInterval), updatedInterval, _intervalMessage);
             }
 
             Action = action;

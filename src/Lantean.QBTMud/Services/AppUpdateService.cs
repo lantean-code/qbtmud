@@ -11,7 +11,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class AppUpdateService : IAppUpdateService
     {
-        private const string LatestReleasePath = "repos/lantean-code/qbtmud/releases/latest";
+        private const string _latestReleasePath = "repos/lantean-code/qbtmud/releases/latest";
         private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
 
         private readonly SemaphoreSlim _cacheSemaphore = new SemaphoreSlim(1, 1);
@@ -72,7 +72,7 @@ namespace Lantean.QBTMud.Services
             try
             {
                 var client = _httpClientFactory.CreateClient("GitHubReleases");
-                using var response = await client.GetAsync(LatestReleasePath, cancellationToken);
+                using var response = await client.GetAsync(_latestReleasePath, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
                     return null;

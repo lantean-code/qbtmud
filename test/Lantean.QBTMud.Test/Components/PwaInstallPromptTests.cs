@@ -14,9 +14,9 @@ namespace Lantean.QBTMud.Test.Components
 {
     public sealed class PwaInstallPromptTests : RazorComponentTestBase<PwaInstallPrompt>
     {
-        private const string DismissedStorageKey = "PwaInstallPrompt.Dismissed.v1";
-        private const string PromptSnackbarKey = "pwa-install-prompt";
-        private const string PromptSnackbarClass = "pwa-install-snackbar";
+        private const string _dismissedStorageKey = "PwaInstallPrompt.Dismissed.v1";
+        private const string _promptSnackbarKey = "pwa-install-prompt";
+        private const string _promptSnackbarClass = "pwa-install-snackbar";
 
         private readonly Mock<ISnackbar> _snackbarMock;
         private readonly Mock<IPwaInstallPromptService> _pwaInstallPromptServiceMock;
@@ -81,7 +81,7 @@ namespace Lantean.QBTMud.Test.Components
             componentParameters[nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)].Should().Be(true);
             componentParameters[nameof(PwaInstallPromptSnackbarContent.ShowIosInstructions)].Should().Be(false);
             call.Severity.Should().Be(Severity.Normal);
-            call.Key.Should().Be(PromptSnackbarKey);
+            call.Key.Should().Be(_promptSnackbarKey);
 
             options.RequireInteraction.Should().BeTrue();
             options.ShowCloseIcon.Should().BeFalse();
@@ -90,7 +90,7 @@ namespace Lantean.QBTMud.Test.Components
             options.Action.Should().BeNull();
             options.OnClick.Should().BeNull();
             options.CloseButtonClickFunc.Should().BeNull();
-            options.SnackbarTypeClass.Should().Be(PromptSnackbarClass);
+            options.SnackbarTypeClass.Should().Be(_promptSnackbarClass);
         }
 
         [Fact]
@@ -113,7 +113,7 @@ namespace Lantean.QBTMud.Test.Components
             options.Action.Should().BeNull();
             options.OnClick.Should().BeNull();
             options.CloseButtonClickFunc.Should().BeNull();
-            options.SnackbarTypeClass.Should().Be(PromptSnackbarClass);
+            options.SnackbarTypeClass.Should().Be(_promptSnackbarClass);
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace Lantean.QBTMud.Test.Components
             await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(null!));
 
             _snackbarAddCalls.Should().BeEmpty();
-            _removedSnackbarKeys.Should().Contain(PromptSnackbarKey);
+            _removedSnackbarKeys.Should().Contain(_promptSnackbarKey);
         }
 
         [Fact]
@@ -177,7 +177,7 @@ namespace Lantean.QBTMud.Test.Components
 
             _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
             _snackbarAddCalls.Should().ContainSingle();
-            _removedSnackbarKeys.Should().Contain(PromptSnackbarKey);
+            _removedSnackbarKeys.Should().Contain(_promptSnackbarKey);
         }
 
         [Fact]
@@ -297,14 +297,14 @@ namespace Lantean.QBTMud.Test.Components
             }));
 
             _snackbarAddCalls.Should().ContainSingle();
-            TestContext.LocalStorage.Snapshot().Should().ContainKey(DismissedStorageKey);
-            TestContext.LocalStorage.Snapshot()[DismissedStorageKey].Should().Be(true);
+            TestContext.LocalStorage.Snapshot().Should().ContainKey(_dismissedStorageKey);
+            TestContext.LocalStorage.Snapshot()[_dismissedStorageKey].Should().Be(true);
         }
 
         [Fact]
         public async Task GIVEN_DismissalPersistedBeforeRender_WHEN_ComponentRenders_THEN_SubscriptionIsSkipped()
         {
-            await TestContext.LocalStorage.SetItemAsync(DismissedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_dismissedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
             _pwaInstallPromptServiceMock.ClearInvocations();
 
             TestContext.Render<PwaInstallPrompt>();
@@ -356,7 +356,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_NoSubscription_WHEN_Disposed_THEN_UnsubscribeNotInvoked()
         {
-            await TestContext.LocalStorage.SetItemAsync(DismissedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_dismissedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
             _pwaInstallPromptServiceMock.ClearInvocations();
             var target = TestContext.Render<PwaInstallPrompt>();
 

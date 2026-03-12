@@ -5,7 +5,7 @@
 
 <MudDialog Class="welcome-wizard-dialog"
            ContentClass="welcome-wizard-dialog__content"
-           data-test-id="@TestIdHelper.For($"WelcomeWizardDialog-{GetStepTitle(IntroStepToken)}")">
+           data-test-id="@TestIdHelper.For($"WelcomeWizardDialog-{GetStepTitle(_introStepToken)}")">
     <DialogContent>
         <div class="welcome-wizard-dialog__layout">
             <MudStepper ActiveIndex="_activeIndex"

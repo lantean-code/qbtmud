@@ -12,7 +12,7 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Cookies
     {
-        private const string ActionsColumnHeader = "Actions";
+        private const string _actionsColumnHeader = "Actions";
 
         private readonly Dictionary<string, RenderFragment<RowContext<CookieRow>>> _columnRenderFragments = [];
         private readonly List<CookieRow> _cookies = [];
@@ -60,7 +60,7 @@ namespace Lantean.QBTMud.Pages
 
         public Cookies()
         {
-            _columnRenderFragments.Add(ActionsColumnHeader, ActionsColumn);
+            _columnRenderFragments.Add(_actionsColumnHeader, ActionsColumn);
         }
 
         protected override async Task OnInitializedAsync()
@@ -200,7 +200,7 @@ namespace Lantean.QBTMud.Pages
                     columnDefinition.RowTemplate = fragment;
                 }
 
-                if (string.Equals(columnDefinition.Header, ActionsColumnHeader, StringComparison.Ordinal))
+                if (string.Equals(columnDefinition.Header, _actionsColumnHeader, StringComparison.Ordinal))
                 {
                     columnDefinition.DisplayHeader = Translate("Actions");
                 }
@@ -223,7 +223,7 @@ namespace Lantean.QBTMud.Pages
                 new ColumnDefinition<CookieRow>(LanguageLocalizer.Translate("CookiesDialog", "Name"), row => row.Cookie.Name, id: "name"),
                 new ColumnDefinition<CookieRow>(LanguageLocalizer.Translate("CookiesDialog", "Value"), row => row.Cookie.Value, id: "value"),
                 new ColumnDefinition<CookieRow>(LanguageLocalizer.Translate("CookiesDialog", "Expiration Date"), row => row.Cookie.ExpirationDate, row => GetExpirationDateText(row.Cookie.ExpirationDate), id: "expiration_date"),
-                new ColumnDefinition<CookieRow>(ActionsColumnHeader, row => row, id: "actions")
+                new ColumnDefinition<CookieRow>(_actionsColumnHeader, row => row, id: "actions")
             ];
         }
 

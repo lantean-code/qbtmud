@@ -14,10 +14,10 @@ namespace Lantean.QBTMud.Layout
 {
     public partial class LoggedInLayout : IAsyncDisposable
     {
-        private const string PendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
-        private const string LastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
-        private const int MaxDownloadLength = 8 * 1024;
-        private const int DefaultRefreshInterval = 1500;
+        private const string _pendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
+        private const string _lastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
+        private const int _maxDownloadLength = 8 * 1024;
+        private const int _defaultRefreshInterval = 1500;
         private static readonly TimeSpan PwaInstallPromptDisplayDelay = TimeSpan.FromSeconds(2);
 
         private readonly bool _refreshEnabled = true;
@@ -152,7 +152,7 @@ namespace Lantean.QBTMud.Layout
         {
             base.OnInitialized();
 
-            _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(DefaultRefreshInterval), retryCount: 3);
+            _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(_defaultRefreshInterval), retryCount: 3);
             AppSettingsService.SettingsChanged += OnAppSettingsChanged;
 
             if (!_navigationHandlerAttached)
@@ -579,7 +579,7 @@ namespace Lantean.QBTMud.Layout
 
         private void StartRefreshLoop()
         {
-            _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(DefaultRefreshInterval), retryCount: 3);
+            _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(_defaultRefreshInterval), retryCount: 3);
             _refreshLoopTask = _refreshTimer.StartAsync(RefreshTickAsync, _timerCancellationToken.Token);
         }
 
@@ -706,10 +706,10 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            var stored = await SessionStorage.GetItemAsync<string>(PendingDownloadStorageKey);
+            var stored = await SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey);
             if (!IsValidDownloadValue(stored))
             {
-                await SessionStorage.RemoveItemAsync(PendingDownloadStorageKey);
+                await SessionStorage.RemoveItemAsync(_pendingDownloadStorageKey);
                 return;
             }
 
@@ -723,7 +723,7 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            var stored = await SessionStorage.GetItemAsync<string>(LastProcessedDownloadStorageKey);
+            var stored = await SessionStorage.GetItemAsync<string>(_lastProcessedDownloadStorageKey);
             if (string.IsNullOrWhiteSpace(stored))
             {
                 return;
@@ -741,11 +741,11 @@ namespace Lantean.QBTMud.Layout
 
             if (string.IsNullOrWhiteSpace(_pendingDownloadLink))
             {
-                await SessionStorage.RemoveItemAsync(PendingDownloadStorageKey);
+                await SessionStorage.RemoveItemAsync(_pendingDownloadStorageKey);
                 return;
             }
 
-            await SessionStorage.SetItemAsync(PendingDownloadStorageKey, _pendingDownloadLink);
+            await SessionStorage.SetItemAsync(_pendingDownloadStorageKey, _pendingDownloadLink);
         }
 
         private async Task TryProcessPendingDownloadAsync()
@@ -788,7 +788,7 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            await SessionStorage.SetItemAsync(LastProcessedDownloadStorageKey, download);
+            await SessionStorage.SetItemAsync(_lastProcessedDownloadStorageKey, download);
         }
 
         private async Task ClearPendingDownloadAsync()
@@ -796,7 +796,7 @@ namespace Lantean.QBTMud.Layout
             _pendingDownloadLink = null;
             if (SessionStorage is not null)
             {
-                await SessionStorage.RemoveItemAsync(PendingDownloadStorageKey);
+                await SessionStorage.RemoveItemAsync(_pendingDownloadStorageKey);
             }
         }
 
@@ -975,7 +975,7 @@ namespace Lantean.QBTMud.Layout
                 return false;
             }
 
-            if (value.Length > MaxDownloadLength)
+            if (value.Length > _maxDownloadLength)
             {
                 return false;
             }

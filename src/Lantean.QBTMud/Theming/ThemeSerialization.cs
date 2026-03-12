@@ -11,9 +11,9 @@ namespace Lantean.QBTMud.Theming
     /// </summary>
     public static class ThemeSerialization
     {
-        private const string TypeDiscriminatorPropertyName = "$type";
-        private const string PaletteLightTypeDiscriminator = nameof(PaletteLight);
-        private const string PaletteDarkTypeDiscriminator = nameof(PaletteDark);
+        private const string _typeDiscriminatorPropertyName = "$type";
+        private const string _paletteLightTypeDiscriminator = nameof(PaletteLight);
+        private const string _paletteDarkTypeDiscriminator = nameof(PaletteDark);
         private static readonly JsonSerializerOptions _defaultOptions = CreateSerializerOptions(writeIndented: false);
         private static readonly JsonSerializerOptions _indentedOptions = CreateSerializerOptions(writeIndented: true);
 
@@ -109,8 +109,8 @@ namespace Lantean.QBTMud.Theming
             }
 
             var changed = false;
-            changed |= EnsureTypeDiscriminator(themeObject, "paletteLight", PaletteLightTypeDiscriminator);
-            changed |= EnsureTypeDiscriminator(themeObject, "paletteDark", PaletteDarkTypeDiscriminator);
+            changed |= EnsureTypeDiscriminator(themeObject, "paletteLight", _paletteLightTypeDiscriminator);
+            changed |= EnsureTypeDiscriminator(themeObject, "paletteDark", _paletteDarkTypeDiscriminator);
 
             if (!changed)
             {
@@ -127,12 +127,12 @@ namespace Lantean.QBTMud.Theming
                 return false;
             }
 
-            if (HasProperty(paletteObject, TypeDiscriminatorPropertyName))
+            if (HasProperty(paletteObject, _typeDiscriminatorPropertyName))
             {
                 return false;
             }
 
-            paletteObject[TypeDiscriminatorPropertyName] = paletteTypeName;
+            paletteObject[_typeDiscriminatorPropertyName] = paletteTypeName;
             return true;
         }
 

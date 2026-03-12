@@ -13,11 +13,11 @@ namespace Lantean.QBTMud.Test.Services
 {
     public sealed class ThemeManagerServiceTests
     {
-        private const string LocalThemesStorageKey = "ThemeManager.LocalThemes";
-        private const string SelectedThemeStorageKey = "ThemeManager.SelectedThemeId";
-        private const string ThemeIndexPath = "/themes/index.json";
-        private const string RepositoryIndexPath = "/qbtmud-themes/index.json";
-        private const string RepositoryIndexUrl = "https://lantean-code.github.io/qbtmud-themes/index.json";
+        private const string _localThemesStorageKey = "ThemeManager.LocalThemes";
+        private const string _selectedThemeStorageKey = "ThemeManager.SelectedThemeId";
+        private const string _themeIndexPath = "/themes/index.json";
+        private const string _repositoryIndexPath = "/qbtmud-themes/index.json";
+        private const string _repositoryIndexUrl = "https://lantean-code.github.io/qbtmud-themes/index.json";
 
         private static readonly HttpResponseMessage _notFoundResponseMessage = new HttpResponseMessage(HttpStatusCode.NotFound);
 
@@ -66,7 +66,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_StoredThemeId_WHEN_Initialized_THEN_AppliesStoredTheme()
         {
-            await _localStorage.SetItemAsync(SelectedThemeStorageKey, "ThemeId", TestContext.Current.CancellationToken);
+            await _localStorage.SetItemAsync(_selectedThemeStorageKey, "ThemeId", TestContext.Current.CancellationToken);
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
             SetupHttpClient(CreateIndexResponse("themes/theme-one.json"),
                 CreateThemeResponse("themes/theme-one.json", themeJson));
@@ -103,7 +103,7 @@ namespace Lantean.QBTMud.Test.Services
             await _target.ApplyTheme("ThemeId");
 
             _target.CurrentThemeId.Should().Be("ThemeId");
-            var storedThemeId = await _localStorage.GetItemAsync<string?>(SelectedThemeStorageKey, TestContext.Current.CancellationToken);
+            var storedThemeId = await _localStorage.GetItemAsync<string?>(_selectedThemeStorageKey, TestContext.Current.CancellationToken);
             storedThemeId.Should().Be("ThemeId");
         }
 
@@ -170,7 +170,7 @@ namespace Lantean.QBTMud.Test.Services
                 && themeItem.Theme.FontFamily == "Nunito Sans"
                 && themeItem.Theme.Description == "Description");
 
-            var stored = await _localStorage.GetItemAsync<List<ThemeDefinition>>(LocalThemesStorageKey, TestContext.Current.CancellationToken);
+            var stored = await _localStorage.GetItemAsync<List<ThemeDefinition>>(_localThemesStorageKey, TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
             stored!.Should().ContainSingle(item => item.Name == "Untitled Theme" && item.FontFamily == "Nunito Sans" && item.Description == "Description");
         }
@@ -238,8 +238,8 @@ namespace Lantean.QBTMud.Test.Services
             };
             ThemeFontHelper.ApplyFont(localTheme, localTheme.FontFamily);
 
-            await _localStorage.SetItemAsync(LocalThemesStorageKey, new List<ThemeDefinition> { localTheme }, TestContext.Current.CancellationToken);
-            await _localStorage.SetItemAsync(SelectedThemeStorageKey, "LocalId", TestContext.Current.CancellationToken);
+            await _localStorage.SetItemAsync(_localThemesStorageKey, new List<ThemeDefinition> { localTheme }, TestContext.Current.CancellationToken);
+            await _localStorage.SetItemAsync(_selectedThemeStorageKey, "LocalId", TestContext.Current.CancellationToken);
 
             await _target.DeleteLocalTheme("LocalId");
 
@@ -290,7 +290,7 @@ namespace Lantean.QBTMud.Test.Services
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
             var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
             {
-                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { _themeIndexPath, CreateIndexResponse("themes/theme-one.json") },
                 { "/themes/theme-one.json", CreateThemeHttpResponse(themeJson) }
             });
             SetupHttpClient(handler);
@@ -300,7 +300,7 @@ namespace Lantean.QBTMud.Test.Services
 
             handler.SetResponses(new Dictionary<string, HttpResponseMessage>
             {
-                { ThemeIndexPath, CreateIndexResponse() }
+                { _themeIndexPath, CreateIndexResponse() }
             });
 
             await _target.ReloadServerThemes();
@@ -314,7 +314,7 @@ namespace Lantean.QBTMud.Test.Services
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
             var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
             {
-                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { _themeIndexPath, CreateIndexResponse("themes/theme-one.json") },
                 { "/themes/theme-one.json", CreateThemeHttpResponse(themeJson) }
             });
             SetupHttpClient(handler);
@@ -322,18 +322,18 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.EnsureInitialized();
 
-            var storedThemeIdBeforeReload = await _localStorage.GetItemAsync<string?>(SelectedThemeStorageKey, TestContext.Current.CancellationToken);
+            var storedThemeIdBeforeReload = await _localStorage.GetItemAsync<string?>(_selectedThemeStorageKey, TestContext.Current.CancellationToken);
             storedThemeIdBeforeReload.Should().BeNull();
 
             handler.SetResponses(new Dictionary<string, HttpResponseMessage>
             {
-                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { _themeIndexPath, CreateIndexResponse("themes/theme-one.json") },
                 { "/themes/theme-one.json", CreateThemeHttpResponse(themeJson) }
             });
 
             await _target.ReloadServerThemes();
 
-            var storedThemeIdAfterReload = await _localStorage.GetItemAsync<string?>(SelectedThemeStorageKey, TestContext.Current.CancellationToken);
+            var storedThemeIdAfterReload = await _localStorage.GetItemAsync<string?>(_selectedThemeStorageKey, TestContext.Current.CancellationToken);
             storedThemeIdAfterReload.Should().Be("ThemeId");
         }
 
@@ -343,7 +343,7 @@ namespace Lantean.QBTMud.Test.Services
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");
             var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
             {
-                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { _themeIndexPath, CreateIndexResponse("themes/theme-one.json") },
                 { "/themes/theme-one.json", CreateThemeHttpResponse(themeJson) }
             });
             SetupHttpClient(handler);
@@ -355,7 +355,7 @@ namespace Lantean.QBTMud.Test.Services
                 new Dictionary<string, HttpResponseMessage>(),
                 new Dictionary<string, Exception>
                 {
-                    { ThemeIndexPath, new HttpRequestException("Error") }
+                    { _themeIndexPath, new HttpRequestException("Error") }
                 });
 
             var action = async () => await _target.ReloadServerThemes();
@@ -374,7 +374,7 @@ namespace Lantean.QBTMud.Test.Services
                 Theme = new MudTheme()
             };
             ThemeFontHelper.ApplyFont(localTheme, localTheme.FontFamily);
-            await _localStorage.SetItemAsync(LocalThemesStorageKey, new List<ThemeDefinition> { localTheme }, TestContext.Current.CancellationToken);
+            await _localStorage.SetItemAsync(_localThemesStorageKey, new List<ThemeDefinition> { localTheme }, TestContext.Current.CancellationToken);
 
             var serverThemeJson = CreateThemeJson("SharedId", "ServerName", "Nunito Sans");
             SetupHttpClient(
@@ -390,16 +390,16 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_RepositoryThemeSharesBundledId_WHEN_Initialized_THEN_RepositoryThemeTakesPrecedence()
         {
-            SetupThemeRepositoryIndexUrl(RepositoryIndexUrl);
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
 
             var bundledThemeJson = CreateThemeJson("SharedId", "BundledName", "Nunito Sans");
             var repositoryThemeJson = CreateThemeJson("SharedId", "RepositoryName", "Nunito Sans");
 
             var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
             {
-                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { _themeIndexPath, CreateIndexResponse("themes/theme-one.json") },
                 { "/themes/theme-one.json", CreateThemeHttpResponse(bundledThemeJson) },
-                { RepositoryIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { _repositoryIndexPath, CreateIndexResponse("themes/theme-one.json") },
                 { "/qbtmud-themes/themes/theme-one.json", CreateThemeHttpResponse(repositoryThemeJson) }
             });
             SetupHttpClient(handler);
@@ -413,7 +413,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_LocalThemeSharesRepositoryId_WHEN_Initialized_THEN_LocalThemeTakesPrecedence()
         {
-            SetupThemeRepositoryIndexUrl(RepositoryIndexUrl);
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
 
             var localTheme = new ThemeDefinition
             {
@@ -423,13 +423,13 @@ namespace Lantean.QBTMud.Test.Services
                 Theme = new MudTheme()
             };
             ThemeFontHelper.ApplyFont(localTheme, localTheme.FontFamily);
-            await _localStorage.SetItemAsync(LocalThemesStorageKey, new List<ThemeDefinition> { localTheme }, TestContext.Current.CancellationToken);
+            await _localStorage.SetItemAsync(_localThemesStorageKey, new List<ThemeDefinition> { localTheme }, TestContext.Current.CancellationToken);
 
             var repositoryThemeJson = CreateThemeJson("SharedId", "RepositoryName", "Nunito Sans");
             var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
             {
-                { ThemeIndexPath, CreateIndexResponse() },
-                { RepositoryIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { _themeIndexPath, CreateIndexResponse() },
+                { _repositoryIndexPath, CreateIndexResponse("themes/theme-one.json") },
                 { "/qbtmud-themes/themes/theme-one.json", CreateThemeHttpResponse(repositoryThemeJson) }
             });
             SetupHttpClient(handler);
@@ -443,14 +443,14 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_RepositoryIndexUnavailable_WHEN_InitializedAndReloaded_THEN_ReloadSetsRepositoryIssueFlag()
         {
-            SetupThemeRepositoryIndexUrl(RepositoryIndexUrl);
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
 
             var bundledThemeJson = CreateThemeJson("ThemeId", "BundledName", "Nunito Sans");
             var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
             {
-                { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { _themeIndexPath, CreateIndexResponse("themes/theme-one.json") },
                 { "/themes/theme-one.json", CreateThemeHttpResponse(bundledThemeJson) },
-                { RepositoryIndexPath, _notFoundResponseMessage }
+                { _repositoryIndexPath, _notFoundResponseMessage }
             });
             SetupHttpClient(handler);
             SetupFontCatalogValid("Nunito Sans");
@@ -467,18 +467,18 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_RepositoryIndexRequestCanceled_WHEN_InitializedAndReloaded_THEN_DoesNotThrowAndSetsRepositoryIssueFlag()
         {
-            SetupThemeRepositoryIndexUrl(RepositoryIndexUrl);
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
 
             var bundledThemeJson = CreateThemeJson("ThemeId", "BundledName", "Nunito Sans");
             var handler = new ThemeMessageHandler(
                 new Dictionary<string, HttpResponseMessage>
                 {
-                    { ThemeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                    { _themeIndexPath, CreateIndexResponse("themes/theme-one.json") },
                     { "/themes/theme-one.json", CreateThemeHttpResponse(bundledThemeJson) }
                 },
                 new Dictionary<string, Exception>
                 {
-                    { RepositoryIndexPath, new TaskCanceledException("Timeout") }
+                    { _repositoryIndexPath, new TaskCanceledException("Timeout") }
                 });
             SetupHttpClient(handler);
             SetupFontCatalogValid("Nunito Sans");
@@ -499,15 +499,15 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_RepositoryContainsDuplicateThemeIds_WHEN_Initialized_THEN_OnlyFirstRepositoryThemeIsKept()
         {
-            SetupThemeRepositoryIndexUrl(RepositoryIndexUrl);
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
 
             var firstThemeJson = CreateThemeJson("SharedId", "RepositoryFirst", "Nunito Sans");
             var secondThemeJson = CreateThemeJson("SharedId", "RepositorySecond", "Nunito Sans");
 
             var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
             {
-                { ThemeIndexPath, CreateIndexResponse() },
-                { RepositoryIndexPath, CreateIndexResponse("themes/theme-one.json", "themes/theme-two.json") },
+                { _themeIndexPath, CreateIndexResponse() },
+                { _repositoryIndexPath, CreateIndexResponse("themes/theme-one.json", "themes/theme-two.json") },
                 { "/qbtmud-themes/themes/theme-one.json", CreateThemeHttpResponse(firstThemeJson) },
                 { "/qbtmud-themes/themes/theme-two.json", CreateThemeHttpResponse(secondThemeJson) }
             });
@@ -596,7 +596,7 @@ namespace Lantean.QBTMud.Test.Services
             var handler = new ThemeMessageHandler(
                 new Dictionary<string, HttpResponseMessage>
                 {
-                    { ThemeIndexPath, CreateIndexResponse(" ", "themes/not-found.json", "themes/http-exception.json", "themes/json-exception.json", "themes/null-definition.json", "themes/valid.json") },
+                    { _themeIndexPath, CreateIndexResponse(" ", "themes/not-found.json", "themes/http-exception.json", "themes/json-exception.json", "themes/null-definition.json", "themes/valid.json") },
                     { "/themes/not-found.json", _notFoundResponseMessage },
                     { "/themes/json-exception.json", CreateThemeHttpResponse("{invalid json}") },
                     { "/themes/null-definition.json", CreateThemeHttpResponse("null") },
@@ -718,7 +718,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var responseMap = new Dictionary<string, HttpResponseMessage>
             {
-                { ThemeIndexPath, indexResponse }
+                { _themeIndexPath, indexResponse }
             };
 
             foreach (var response in responses)

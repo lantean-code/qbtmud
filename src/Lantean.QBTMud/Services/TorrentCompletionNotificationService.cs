@@ -10,7 +10,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class TorrentCompletionNotificationService : ITorrentCompletionNotificationService
     {
-        private const string AppNotificationsContext = "AppNotifications";
+        private const string _appNotificationsContext = "AppNotifications";
 
         private readonly IJSRuntime _jsRuntime;
         private readonly IAppSettingsService _appSettingsService;
@@ -206,7 +206,7 @@ namespace Lantean.QBTMud.Services
 
         private string Translate(string source, params object[] arguments)
         {
-            return _languageLocalizer.Translate(AppNotificationsContext, source, arguments);
+            return _languageLocalizer.Translate(_appNotificationsContext, source, arguments);
         }
 
         private readonly struct TorrentSnapshotState

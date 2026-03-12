@@ -17,7 +17,7 @@ namespace Lantean.QBTMud.Test.Pages
 {
     public sealed class DetailsTests : RazorComponentTestBase<Details>
     {
-        private const string HashValue = "Hash";
+        private const string _hashValue = "Hash";
 
         private readonly IKeyboardService _keyboardService = Mock.Of<IKeyboardService>();
         private readonly TestNavigationManager _navigationManager;
@@ -30,16 +30,16 @@ namespace Lantean.QBTMud.Test.Pages
 
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             apiClientMock
-                .Setup(c => c.GetTorrentProperties(HashValue))
+                .Setup(c => c.GetTorrentProperties(_hashValue))
                 .ReturnsAsync(CreateTorrentProperties());
             apiClientMock
-                .Setup(c => c.GetTorrentPieceStates(HashValue))
+                .Setup(c => c.GetTorrentPieceStates(_hashValue))
                 .ReturnsAsync(Array.Empty<ClientModels.PieceState>());
             apiClientMock
-                .Setup(c => c.GetTorrentTrackers(HashValue))
+                .Setup(c => c.GetTorrentTrackers(_hashValue))
                 .ReturnsAsync(Array.Empty<ClientModels.TorrentTracker>());
             apiClientMock
-                .Setup(c => c.GetTorrentContents(HashValue, It.IsAny<int[]>()))
+                .Setup(c => c.GetTorrentContents(_hashValue, It.IsAny<int[]>()))
                 .ReturnsAsync(Array.Empty<ClientModels.FileData>());
 
             var keyboardServiceMock = Mock.Get(_keyboardService);
@@ -58,13 +58,13 @@ namespace Lantean.QBTMud.Test.Pages
             _navigationManager.NavigateTo("http://localhost/details/Hash");
             TestContext.Services.AddSingleton<NavigationManager>(_navigationManager);
 
-            var mainData = CreateMainData(HashValue);
+            var mainData = CreateMainData(_hashValue);
             var preferences = CreatePreferences();
             var theme = new MudTheme();
 
             _target = TestContext.Render<Details>(parameters =>
             {
-                parameters.Add(p => p.Hash, HashValue);
+                parameters.Add(p => p.Hash, _hashValue);
                 parameters.AddCascadingValue(mainData);
                 parameters.AddCascadingValue(preferences);
                 parameters.AddCascadingValue(theme);
@@ -164,7 +164,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _navigationManager.NavigateTo("http://localhost/details/Missing");
 
-            var target = RenderDetails("Missing", CreateMainData(HashValue));
+            var target = RenderDetails("Missing", CreateMainData(_hashValue));
 
             _navigationManager.Uri.Should().Be("http://localhost/");
             target.FindComponents<MudTabs>().Should().BeEmpty();
@@ -175,7 +175,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _navigationManager.NavigateTo("http://localhost/details/");
 
-            var target = RenderDetails(null, CreateMainData(HashValue));
+            var target = RenderDetails(null, CreateMainData(_hashValue));
 
             _navigationManager.Uri.Should().Be("http://localhost/");
             target.FindComponents<MudTabs>().Should().BeEmpty();

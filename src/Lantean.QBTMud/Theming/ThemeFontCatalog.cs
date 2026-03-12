@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Theming
     /// </summary>
     public sealed class ThemeFontCatalog : IThemeFontCatalog
     {
-        private const string FontCatalogPath = "fonts/theme-fonts.json";
+        private const string _fontCatalogPath = "fonts/theme-fonts.json";
 
         private static readonly Regex _fontNamePattern = new("^[a-zA-Z0-9][a-zA-Z0-9\\s\\-]*$", RegexOptions.Compiled);
         private static readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerDefaults.Web);
@@ -137,7 +137,7 @@ namespace Lantean.QBTMud.Theming
 
             try
             {
-                var response = await client.GetAsync(FontCatalogPath, cancellationToken);
+                var response = await client.GetAsync(_fontCatalogPath, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
                     return Array.Empty<string>();

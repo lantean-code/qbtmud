@@ -14,7 +14,7 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class TorrentCreator : IAsyncDisposable
     {
-        private const int PollIntervalMilliseconds = 1500;
+        private const int _pollIntervalMilliseconds = 1500;
 
         private static readonly StringComparison StatusComparison = StringComparison.OrdinalIgnoreCase;
 
@@ -88,7 +88,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            _refreshTimer ??= ManagedTimerFactory.Create("TorrentCreatorPolling", TimeSpan.FromMilliseconds(PollIntervalMilliseconds));
+            _refreshTimer ??= ManagedTimerFactory.Create("TorrentCreatorPolling", TimeSpan.FromMilliseconds(_pollIntervalMilliseconds));
             await _refreshTimer.StartAsync(PollTasksAsync, _timerCancellationToken.Token);
         }
 

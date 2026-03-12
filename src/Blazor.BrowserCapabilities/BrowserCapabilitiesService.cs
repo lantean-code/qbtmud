@@ -8,10 +8,10 @@ namespace Blazor.BrowserCapabilities
     /// </summary>
     public sealed class BrowserCapabilitiesService : IBrowserCapabilitiesService, IAsyncDisposable
     {
-        private const string JSImportIdentifier = "import";
-        private const string JSImportPath = "./_content/Blazor.BrowserCapabilities/browser-capabilities.module.js";
-        private const string BrowserCapabilitiesExport = "getCapabilities";
-        private const string SupportsHoverPointerExport = "supportsHoverPointer";
+        private const string _jsImportIdentifier = "import";
+        private const string _jsImportPath = "./_content/Blazor.BrowserCapabilities/browser-capabilities.module.js";
+        private const string _browserCapabilitiesExport = "getCapabilities";
+        private const string _supportsHoverPointerExport = "supportsHoverPointer";
 
         private readonly SemaphoreSlim _initializationLock = new SemaphoreSlim(1, 1);
         private readonly IJSRuntime _jSRuntime;
@@ -113,7 +113,7 @@ namespace Blazor.BrowserCapabilities
             try
             {
                 var module = await GetModule(cancellationToken);
-                var capabilities = await module.InvokeAsync<BrowserCapabilities?>(BrowserCapabilitiesExport, cancellationToken);
+                var capabilities = await module.InvokeAsync<BrowserCapabilities?>(_browserCapabilitiesExport, cancellationToken);
                 return capabilities ?? BrowserCapabilities.Default;
             }
             catch (JSException ex)
@@ -124,7 +124,7 @@ namespace Blazor.BrowserCapabilities
             try
             {
                 var module = await GetModule(cancellationToken);
-                var supportsHoverPointer = await module.InvokeAsync<bool>(SupportsHoverPointerExport, cancellationToken);
+                var supportsHoverPointer = await module.InvokeAsync<bool>(_supportsHoverPointerExport, cancellationToken);
                 return new BrowserCapabilities(
                     SupportsHoverPointer: supportsHoverPointer,
                     SupportsHover: supportsHoverPointer,
@@ -159,7 +159,7 @@ namespace Blazor.BrowserCapabilities
                 return _module;
             }
 
-            _module = await _jSRuntime.InvokeAsync<IJSObjectReference>(JSImportIdentifier, cancellationToken, JSImportPath);
+            _module = await _jSRuntime.InvokeAsync<IJSObjectReference>(_jsImportIdentifier, cancellationToken, _jsImportPath);
             return _module;
         }
     }

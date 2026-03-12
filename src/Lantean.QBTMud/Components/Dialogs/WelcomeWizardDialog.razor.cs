@@ -13,8 +13,8 @@ namespace Lantean.QBTMud.Components.Dialogs
 {
     public partial class WelcomeWizardDialog : IAsyncDisposable
     {
-        private const string IntroStepToken = "__intro__";
-        private const string DoneStepToken = "__done__";
+        private const string _introStepToken = "__intro__";
+        private const string _doneStepToken = "__done__";
 
         [Inject]
         protected QBitTorrentClient.IApiClient ApiClient { get; set; } = default!;
@@ -122,7 +122,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             get
             {
-                return IsCurrentStep(IntroStepToken);
+                return IsCurrentStep(_introStepToken);
             }
         }
 
@@ -162,7 +162,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             get
             {
-                return IsCurrentStep(DoneStepToken);
+                return IsCurrentStep(_doneStepToken);
             }
         }
 
@@ -234,7 +234,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected string GetStepTitle(string stepToken)
         {
-            if (string.Equals(stepToken, IntroStepToken, StringComparison.Ordinal))
+            if (string.Equals(stepToken, _introStepToken, StringComparison.Ordinal))
             {
                 return ShowWelcomeBackIntro
                     ? TranslateWizard("Welcome back")
@@ -341,7 +341,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private Color GetStepAccentColor(string stepToken)
         {
-            if (string.Equals(stepToken, IntroStepToken, StringComparison.Ordinal))
+            if (string.Equals(stepToken, _introStepToken, StringComparison.Ordinal))
             {
                 return Color.Info;
             }
@@ -366,7 +366,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return Color.Info;
             }
 
-            if (string.Equals(stepToken, DoneStepToken, StringComparison.Ordinal))
+            if (string.Equals(stepToken, _doneStepToken, StringComparison.Ordinal))
             {
                 return Color.Success;
             }
@@ -714,7 +714,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             var pendingStepIds = ResolvePendingStepIds();
             if (ShowWelcomeBackIntro)
             {
-                _flowSteps.Add(IntroStepToken);
+                _flowSteps.Add(_introStepToken);
             }
 
             foreach (var stepId in pendingStepIds)
@@ -722,7 +722,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 _flowSteps.Add(stepId);
             }
 
-            _flowSteps.Add(DoneStepToken);
+            _flowSteps.Add(_doneStepToken);
         }
 
         private void TrySetActiveIndex(int activeIndex)

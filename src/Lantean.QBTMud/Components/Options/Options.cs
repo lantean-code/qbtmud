@@ -6,8 +6,8 @@ namespace Lantean.QBTMud.Components.Options
 {
     public abstract class Options : ComponentBase
     {
-        private const string HttpServerContext = "HttpServer";
-        private const string AppContext = "App";
+        private const string _httpServerContext = "HttpServer";
+        private const string _appContext = "App";
 
         private bool _preferencesRead;
 
@@ -59,7 +59,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (port < MinNonNegativePortValue || port > MaxPortValue)
             {
-                return LanguageLocalizer.Translate(HttpServerContext, "The port used for incoming connections must be between 0 and 65535.");
+                return LanguageLocalizer.Translate(_httpServerContext, "The port used for incoming connections must be between 0 and 65535.");
             }
 
             return null;
@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Components.Options
         {
             if (port < MinPortValue || port > MaxPortValue)
             {
-                return LanguageLocalizer.Translate(AppContext, "The port used for incoming connections must be between %1 and %2.", MinPortValue, MaxPortValue);
+                return LanguageLocalizer.Translate(_appContext, "The port used for incoming connections must be between %1 and %2.", MinPortValue, MaxPortValue);
             }
 
             return null;
