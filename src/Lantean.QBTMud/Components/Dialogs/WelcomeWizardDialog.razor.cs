@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private bool _isApplyingNotificationToggle;
         private BrowserNotificationPermission _notificationPermission = BrowserNotificationPermission.Unsupported;
         private AppSettings _settings = AppSettings.Default.Clone();
-        private StorageType? _storageSelection;
+        private StorageType _storageSelection = StorageType.LocalStorage;
         private StorageRoutingSettings _storageRoutingSettings = StorageRoutingSettings.Default.Clone();
         private bool _keyboardFocused;
         private bool _disposedValue;
@@ -94,12 +94,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             get
             {
-                if (!_storageSelection.HasValue)
-                {
-                    return string.Empty;
-                }
-
-                return GetStorageTypeDisplayName(_storageSelection.Value);
+                return GetStorageTypeDisplayName(_storageSelection);
             }
         }
 
@@ -186,14 +181,6 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
         }
 
-        protected bool IsNextDisabled
-        {
-            get
-            {
-                return IsCurrentStorageStep && !_storageSelection.HasValue;
-            }
-        }
-
         protected IReadOnlyList<string> FlowSteps
         {
             get
@@ -218,12 +205,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             _settings = await AppSettingsService.GetSettingsAsync();
             _storageRoutingSettings = await StorageRoutingService.GetSettingsAsync();
-            if (_storageRoutingSettings.MasterStorageType != StorageType.LocalStorage
-                || _storageRoutingSettings.GroupStorageTypes.Count > 0
-                || _storageRoutingSettings.ItemStorageTypes.Count > 0)
-            {
-                _storageSelection = _storageRoutingSettings.MasterStorageType;
-            }
+            _storageSelection = NormalizeStorageType(_storageRoutingSettings.MasterStorageType);
 
             try
             {
@@ -517,11 +499,6 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private void NextStep()
         {
-            if (IsNextDisabled)
-            {
-                return;
-            }
-
             TrySetActiveIndex(_activeIndex + 1);
         }
 
@@ -544,11 +521,6 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private Task OnNextClicked(MouseEventArgs args)
         {
-            if (IsNextDisabled)
-            {
-                return Task.CompletedTask;
-            }
-
             NextStep();
             return Task.CompletedTask;
         }
@@ -622,6 +594,17 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
         }
 
+        private async Task OnThemeModePreferenceChanged(ThemeModePreference value)
+        {
+            if (_settings.ThemeModePreference == value)
+            {
+                return;
+            }
+
+            _settings.ThemeModePreference = value;
+            await PersistAppSettingsAsync();
+        }
+
         private async Task OnLocaleChanged(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -679,9 +662,9 @@ namespace Lantean.QBTMud.Components.Dialogs
             return $"welcome-wizard-storage-option{selectedClass}";
         }
 
-        private void OnStorageSelectionChanged(StorageType? value)
+        private void OnStorageSelectionChanged(StorageType value)
         {
-            _storageSelection = value;
+            _storageSelection = NormalizeStorageType(value);
         }
 
         private async Task ApplyStorageSelectionAsync()
@@ -691,12 +674,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            if (!_storageSelection.HasValue)
-            {
-                throw new InvalidOperationException(TranslateWizard("Select a storage type to continue."));
-            }
-
-            var selectedStorageType = _storageSelection.Value;
+            var selectedStorageType = NormalizeStorageType(_storageSelection);
             var updated = _storageRoutingSettings.Clone();
             updated.MasterStorageType = selectedStorageType;
             updated.GroupStorageTypes.Clear();
@@ -851,6 +829,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         private string TranslateNotifications(string source, params object[] arguments)
         {
             return LanguageLocalizer.Translate("AppNotifications", source, arguments);
+        }
+
+        private static StorageType NormalizeStorageType(StorageType value)
+        {
+            return value == StorageType.LocalStorage || value == StorageType.ClientData
+                ? value
+                : StorageType.LocalStorage;
         }
     }
 }

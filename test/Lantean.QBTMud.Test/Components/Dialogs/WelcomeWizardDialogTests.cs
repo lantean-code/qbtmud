@@ -576,6 +576,59 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_ThemeModePreferenceStored_WHEN_ThemeStepRendered_THEN_SelectUsesStoredValue()
+        {
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    ThemeModePreference = ThemeModePreference.Light
+                });
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var themeModeSelect = FindSelect<ThemeModePreference>(dialog.Component, "WelcomeWizardThemeModePreference");
+            themeModeSelect.Instance.GetState(x => x.Value).Should().Be(ThemeModePreference.Light);
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeStep_WHEN_ThemeModePreferenceChanged_THEN_PersistsAppSettings()
+        {
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var themeModeSelect = FindSelect<ThemeModePreference>(dialog.Component, "WelcomeWizardThemeModePreference");
+            await dialog.Component.InvokeAsync(() => themeModeSelect.Instance.ValueChanged.InvokeAsync(ThemeModePreference.Dark));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => settings.ThemeModePreference == ThemeModePreference.Dark),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeStep_WHEN_ThemeModePreferenceUnchanged_THEN_DoesNotPersistAppSettings()
+        {
+            var dialog = await _target.RenderDialogAsync();
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var themeModeSelect = FindSelect<ThemeModePreference>(dialog.Component, "WelcomeWizardThemeModePreference");
+            await dialog.Component.InvokeAsync(() => themeModeSelect.Instance.ValueChanged.InvokeAsync(ThemeModePreference.System));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_ThemeStep_WHEN_ThemeSelectionIsEmpty_THEN_DoesNotApplyTheme()
         {
             var dialog = await _target.RenderDialogAsync();
@@ -1259,7 +1312,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_StorageStepWithNoSelection_WHEN_Rendered_THEN_NextIsDisabled()
+        public async Task GIVEN_StorageStep_WHEN_Rendered_THEN_BrowserLocalStorageIsSelectedAndNextIsEnabled()
         {
             var dialog = await _target.RenderDialogAsync(
                 pendingStepIds: new[]
@@ -1267,9 +1320,51 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     WelcomeWizardStepCatalog.StorageStepId
                 });
 
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType>>(dialog.Component, "WelcomeWizardStorageSelection");
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
 
-            nextButton.Instance.Disabled.Should().BeTrue();
+            storageSelection.Instance.Value.Should().Be(StorageType.LocalStorage);
+            nextButton.Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageStep_WHEN_Rendered_THEN_BrowserLocalStorageCardIsRenderedFirst()
+        {
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var cards = dialog.Component.FindComponents<MudCard>();
+
+            cards.Should().HaveCount(2);
+            HasTestId(cards[0], "WelcomeWizardStorageLocalStorageCard").Should().BeTrue();
+            HasTestId(cards[1], "WelcomeWizardStorageClientDataCard").Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_StorageStepWithInvalidPersistedMasterStorageType_WHEN_Rendered_THEN_DefaultsToLocalStorageSelection()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StorageRoutingSettings
+                {
+                    MasterStorageType = (StorageType)99
+                });
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.AddSingleton<IStorageRoutingService>(storageRoutingService.Object);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType>>(dialog.Component, "WelcomeWizardStorageSelection");
+            storageSelection.Instance.Value.Should().Be(StorageType.LocalStorage);
         }
 
         [Fact]
@@ -1312,7 +1407,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     WelcomeWizardStepCatalog.StorageStepId
                 });
 
-            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType?>>(dialog.Component, "WelcomeWizardStorageSelection");
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType>>(dialog.Component, "WelcomeWizardStorageSelection");
             await dialog.Component.InvokeAsync(() => storageSelection.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
 
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
@@ -1334,6 +1429,44 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_StorageStepWithDefaultSelection_WHEN_FinishClicked_THEN_AppliesLocalStorageSelection()
+        {
+            var storageRoutingService = new Mock<IStorageRoutingService>(MockBehavior.Strict);
+            storageRoutingService
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(StorageRoutingSettings.Default);
+            storageRoutingService
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<StorageRoutingSettings>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StorageRoutingSettings settings, CancellationToken _) => settings.Clone());
+
+            TestContext.Services.RemoveAll<IStorageRoutingService>();
+            TestContext.Services.AddSingleton<IStorageRoutingService>(storageRoutingService.Object);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.StorageStepId
+                });
+
+            var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
+            await nextButton.Find("button").ClickAsync(new MouseEventArgs());
+            var finishButton = FindButton(dialog.Component, "WelcomeWizardFinish");
+            await finishButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var result = await dialog.Reference.Result;
+            result!.Canceled.Should().BeFalse();
+
+            storageRoutingService.Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<StorageRoutingSettings>(settings =>
+                        settings.MasterStorageType == StorageType.LocalStorage
+                        && settings.GroupStorageTypes.Count == 0
+                        && settings.ItemStorageTypes.Count == 0),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_LocalStorageSelection_WHEN_DoneStepRendered_THEN_SummaryUsesFriendlyStorageName()
         {
             var dialog = await _target.RenderDialogAsync(
@@ -1342,7 +1475,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     WelcomeWizardStepCatalog.StorageStepId
                 });
 
-            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType?>>(dialog.Component, "WelcomeWizardStorageSelection");
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType>>(dialog.Component, "WelcomeWizardStorageSelection");
             await dialog.Component.InvokeAsync(() => storageSelection.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
 
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
@@ -1376,7 +1509,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     WelcomeWizardStepCatalog.StorageStepId
                 });
 
-            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType?>>(dialog.Component, "WelcomeWizardStorageSelection");
+            var storageSelection = FindComponentByTestId<MudRadioGroup<StorageType>>(dialog.Component, "WelcomeWizardStorageSelection");
             await dialog.Component.InvokeAsync(() => storageSelection.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
 
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
