@@ -33,6 +33,11 @@ namespace Lantean.QBTMud.Services
         string CurrentFontFamily { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the most recent theme-source reload had repository issues.
+        /// </summary>
+        bool LastReloadHadRepositoryIssues { get; }
+
+        /// <summary>
         /// Ensures the theme catalog has been loaded.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>

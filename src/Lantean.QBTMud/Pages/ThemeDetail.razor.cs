@@ -309,6 +309,13 @@ namespace Lantean.QBTMud.Pages
             return ThemeManagerService.CurrentThemeId == theme.Id;
         }
 
+        protected string GetReadOnlySourceLabel(ThemeCatalogItem theme)
+        {
+            return theme.Source == ThemeSource.Repository
+                ? Translate("Repository")
+                : Translate("Bundled");
+        }
+
         private Task LoadTheme()
         {
             if (string.IsNullOrWhiteSpace(ThemeId))

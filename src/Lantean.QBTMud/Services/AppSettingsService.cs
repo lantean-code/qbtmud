@@ -91,7 +91,8 @@ namespace Lantean.QBTMud.Services
                 TorrentAddedSnackbarsEnabledWithNotifications = settings.TorrentAddedSnackbarsEnabledWithNotifications,
                 DismissedReleaseTag = string.IsNullOrWhiteSpace(settings.DismissedReleaseTag)
                     ? null
-                    : settings.DismissedReleaseTag.Trim()
+                    : settings.DismissedReleaseTag.Trim(),
+                ThemeRepositoryIndexUrl = NormalizeThemeRepositoryIndexUrl(settings.ThemeRepositoryIndexUrl)
             };
         }
 
@@ -120,6 +121,27 @@ namespace Lantean.QBTMud.Services
             return Enum.IsDefined(mode)
                 ? mode
                 : ThemeModePreference.System;
+        }
+
+        private static string NormalizeThemeRepositoryIndexUrl(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            var trimmed = value.Trim();
+            if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+            {
+                return string.Empty;
+            }
+
+            if (!string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            return uri.AbsoluteUri;
         }
 
         private async Task<AppSettings> LoadSettingsAsync(bool forceReload, CancellationToken cancellationToken)
@@ -162,7 +184,8 @@ namespace Lantean.QBTMud.Services
                 && left.DownloadFinishedNotificationsEnabled == right.DownloadFinishedNotificationsEnabled
                 && left.TorrentAddedNotificationsEnabled == right.TorrentAddedNotificationsEnabled
                 && left.TorrentAddedSnackbarsEnabledWithNotifications == right.TorrentAddedSnackbarsEnabledWithNotifications
-                && string.Equals(left.DismissedReleaseTag, right.DismissedReleaseTag, StringComparison.Ordinal);
+                && string.Equals(left.DismissedReleaseTag, right.DismissedReleaseTag, StringComparison.Ordinal)
+                && string.Equals(left.ThemeRepositoryIndexUrl, right.ThemeRepositoryIndexUrl, StringComparison.Ordinal);
         }
     }
 }

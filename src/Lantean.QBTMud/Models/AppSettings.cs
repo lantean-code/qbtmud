@@ -25,7 +25,8 @@ namespace Lantean.QBTMud.Models
                     DownloadFinishedNotificationsEnabled = true,
                     TorrentAddedNotificationsEnabled = false,
                     TorrentAddedSnackbarsEnabledWithNotifications = false,
-                    DismissedReleaseTag = null
+                    DismissedReleaseTag = null,
+                    ThemeRepositoryIndexUrl = "https://lantean-code.github.io/qbtmud-themes/index.json"
                 };
             }
         }
@@ -66,6 +67,11 @@ namespace Lantean.QBTMud.Models
         public string? DismissedReleaseTag { get; set; }
 
         /// <summary>
+        /// Gets or sets the optional theme repository index URL.
+        /// </summary>
+        public string ThemeRepositoryIndexUrl { get; set; } = "https://lantean-code.github.io/qbtmud-themes/index.json";
+
+        /// <summary>
         /// Creates a deep copy of the current settings.
         /// </summary>
         /// <returns>A copied instance.</returns>
@@ -79,7 +85,8 @@ namespace Lantean.QBTMud.Models
                 DownloadFinishedNotificationsEnabled = DownloadFinishedNotificationsEnabled,
                 TorrentAddedNotificationsEnabled = TorrentAddedNotificationsEnabled,
                 TorrentAddedSnackbarsEnabledWithNotifications = TorrentAddedSnackbarsEnabledWithNotifications,
-                DismissedReleaseTag = DismissedReleaseTag
+                DismissedReleaseTag = DismissedReleaseTag,
+                ThemeRepositoryIndexUrl = ThemeRepositoryIndexUrl
             };
         }
     }

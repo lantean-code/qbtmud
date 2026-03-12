@@ -13,18 +13,21 @@ namespace Lantean.QBTMud.Services
         private const string AppContext = "App";
         private const string LocalThemesStorageKey = "ThemeManager.LocalThemes";
         private const string SelectedThemeStorageKey = "ThemeManager.SelectedThemeId";
-        private const string ThemeIndexPath = "themes/index.json";
+        private const string BundledThemeIndexPath = "themes/index.json";
 
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ISettingsStorageService _settingsStorage;
         private readonly IThemeFontCatalog _themeFontCatalog;
         private readonly ILanguageLocalizer _languageLocalizer;
+        private readonly IAppSettingsService _appSettingsService;
         private readonly List<ThemeDefinition> _localThemes = [];
-        private readonly List<ThemeCatalogItem> _serverThemes = [];
+        private readonly List<ThemeCatalogItem> _repositoryThemes = [];
+        private readonly List<ThemeCatalogItem> _bundledThemes = [];
         private readonly List<ThemeCatalogItem> _themes = [];
         private IReadOnlyList<ThemeCatalogItem> _themesView = [];
         private bool _initialized;
+        private bool _lastReloadHadRepositoryIssues;
         private ThemeCatalogItem? _currentTheme;
         private string? _currentThemeId;
         private string _currentFontFamily = "Nunito Sans";
@@ -32,18 +35,23 @@ namespace Lantean.QBTMud.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="ThemeManagerService"/> class.
         /// </summary>
-        /// <param name="httpClientFactory">The HTTP client factory for loading server assets.</param>
+        /// <param name="httpClientFactory">The HTTP client factory for loading theme assets.</param>
         /// <param name="settingsStorage">The local storage service.</param>
+        /// <param name="themeFontCatalog">The theme font catalog.</param>
+        /// <param name="languageLocalizer">The language localizer.</param>
+        /// <param name="appSettingsService">The app settings service.</param>
         public ThemeManagerService(
             IHttpClientFactory httpClientFactory,
             ISettingsStorageService settingsStorage,
             IThemeFontCatalog themeFontCatalog,
-            ILanguageLocalizer languageLocalizer)
+            ILanguageLocalizer languageLocalizer,
+            IAppSettingsService appSettingsService)
         {
             _httpClientFactory = httpClientFactory;
             _settingsStorage = settingsStorage;
             _themeFontCatalog = themeFontCatalog;
             _languageLocalizer = languageLocalizer;
+            _appSettingsService = appSettingsService;
         }
 
         /// <summary>
@@ -84,6 +92,14 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <summary>
+        /// Gets a value indicating whether the most recent reload had repository loading issues.
+        /// </summary>
+        public bool LastReloadHadRepositoryIssues
+        {
+            get { return _lastReloadHadRepositoryIssues; }
+        }
+
+        /// <summary>
         /// Ensures the theme catalog has been loaded.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
@@ -105,10 +121,12 @@ namespace Lantean.QBTMud.Services
                 await _themeFontCatalog.EnsureInitialized();
 
                 await LoadLocalThemes();
-                await LoadServerThemes();
+                await LoadBundledThemes();
+                await LoadRepositoryThemes(captureIssues: false);
                 RebuildCatalog();
                 await ApplyInitialTheme();
 
+                _lastReloadHadRepositoryIssues = false;
                 _initialized = true;
             }
             finally
@@ -118,7 +136,7 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <summary>
-        /// Reloads server-provided themes and rebuilds the catalog.
+        /// Reloads theme sources and rebuilds the catalog.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task ReloadServerThemes()
@@ -129,7 +147,8 @@ namespace Lantean.QBTMud.Services
                 return;
             }
 
-            await LoadServerThemes();
+            await LoadBundledThemes();
+            _lastReloadHadRepositoryIssues = await LoadRepositoryThemes(captureIssues: true);
             RebuildCatalog();
 
             if (_currentThemeId is not null && !_themes.Any(theme => theme.Id == _currentThemeId))
@@ -286,28 +305,41 @@ namespace Lantean.QBTMud.Services
             await _settingsStorage.SetItemAsync(LocalThemesStorageKey, _localThemes);
         }
 
-        private async Task LoadServerThemes()
+        private async Task LoadBundledThemes()
         {
-            _serverThemes.Clear();
+            _bundledThemes.Clear();
 
-            var client = _httpClientFactory.CreateClient("Assets");
-            var indexResponse = await client.GetAsync(ThemeIndexPath);
-
-            if (!indexResponse.IsSuccessStatusCode)
+            HttpClient client;
+            try
+            {
+                client = _httpClientFactory.CreateClient("Assets");
+            }
+            catch (InvalidOperationException)
             {
                 return;
             }
 
-            var indexJson = await indexResponse.Content.ReadAsStringAsync();
             List<string>? index;
             try
             {
+                var indexResponse = await client.GetAsync(BundledThemeIndexPath);
+                if (!indexResponse.IsSuccessStatusCode)
+                {
+                    return;
+                }
+
+                var indexJson = await indexResponse.Content.ReadAsStringAsync();
                 index = JsonSerializer.Deserialize<List<string>>(indexJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            }
+            catch (HttpRequestException)
+            {
+                return;
             }
             catch (JsonException)
             {
                 return;
             }
+
             if (index is null || index.Count == 0)
             {
                 return;
@@ -320,35 +352,122 @@ namespace Lantean.QBTMud.Services
                     continue;
                 }
 
-                ThemeDefinition? definition;
-                try
+                var item = await TryLoadThemeCatalogItem(client, path.Trim(), path.Trim(), ThemeSource.Server);
+                if (item is not null)
                 {
-                    var response = await client.GetAsync(path);
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        continue;
-                    }
-
-                    var json = await response.Content.ReadAsStringAsync();
-                    definition = ThemeSerialization.DeserializeDefinition(json);
+                    _bundledThemes.Add(item);
                 }
-                catch (HttpRequestException)
-                {
-                    continue;
-                }
-                catch (JsonException)
-                {
-                    continue;
-                }
-
-                if (definition is null)
-                {
-                    continue;
-                }
-
-                definition = NormalizeDefinition(definition);
-                _serverThemes.Add(new ThemeCatalogItem(definition.Id, definition.Name, definition, ThemeSource.Server, path));
             }
+        }
+
+        private async Task<bool> LoadRepositoryThemes(bool captureIssues)
+        {
+            _repositoryThemes.Clear();
+
+            var settings = await _appSettingsService.GetSettingsAsync();
+            if (string.IsNullOrWhiteSpace(settings.ThemeRepositoryIndexUrl))
+            {
+                return false;
+            }
+
+            if (!TryCreateHttpsAbsoluteUri(settings.ThemeRepositoryIndexUrl, out var indexUri))
+            {
+                return captureIssues;
+            }
+
+            HttpClient client;
+            try
+            {
+                client = _httpClientFactory.CreateClient("Assets");
+            }
+            catch (InvalidOperationException)
+            {
+                return captureIssues;
+            }
+
+            List<string>? index;
+            try
+            {
+                var indexResponse = await client.GetAsync(indexUri);
+                if (!indexResponse.IsSuccessStatusCode)
+                {
+                    return captureIssues;
+                }
+
+                var indexJson = await indexResponse.Content.ReadAsStringAsync();
+                index = JsonSerializer.Deserialize<List<string>>(indexJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            }
+            catch (HttpRequestException)
+            {
+                return captureIssues;
+            }
+            catch (JsonException)
+            {
+                return captureIssues;
+            }
+
+            if (index is null)
+            {
+                return captureIssues;
+            }
+
+            var hadIssues = false;
+            foreach (var path in index)
+            {
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    continue;
+                }
+
+                if (!TryResolveRepositoryThemeUri(indexUri, path.Trim(), out var themeUri))
+                {
+                    hadIssues = true;
+                    continue;
+                }
+
+                var item = await TryLoadThemeCatalogItem(client, themeUri.AbsoluteUri, themeUri.AbsoluteUri, ThemeSource.Repository);
+                if (item is null)
+                {
+                    hadIssues = true;
+                    continue;
+                }
+
+                _repositoryThemes.Add(item);
+            }
+
+            return captureIssues && hadIssues;
+        }
+
+        private async Task<ThemeCatalogItem?> TryLoadThemeCatalogItem(HttpClient client, string requestPath, string sourcePath, ThemeSource source)
+        {
+            ThemeDefinition? definition;
+            try
+            {
+                var response = await client.GetAsync(requestPath);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                definition = ThemeSerialization.DeserializeDefinition(json);
+            }
+            catch (HttpRequestException)
+            {
+                return null;
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+
+            if (definition is null)
+            {
+                return null;
+            }
+
+            definition = NormalizeDefinition(definition);
+            return new ThemeCatalogItem(definition.Id, definition.Name, definition, source, sourcePath);
         }
 
         private void RebuildCatalog()
@@ -361,9 +480,20 @@ namespace Lantean.QBTMud.Services
             }
 
             var localIds = _themes.Select(theme => theme.Id).ToHashSet(StringComparer.Ordinal);
-            foreach (var theme in _serverThemes)
+            foreach (var theme in _repositoryThemes)
             {
                 if (localIds.Contains(theme.Id))
+                {
+                    continue;
+                }
+
+                _themes.Add(theme);
+            }
+
+            var existingIds = _themes.Select(theme => theme.Id).ToHashSet(StringComparer.Ordinal);
+            foreach (var theme in _bundledThemes)
+            {
+                if (existingIds.Contains(theme.Id))
                 {
                     continue;
                 }
@@ -406,6 +536,58 @@ namespace Lantean.QBTMud.Services
                 DrawerElevation = definition.DrawerElevation,
                 DrawerClipMode = definition.DrawerClipMode
             };
+        }
+
+        private static bool TryCreateHttpsAbsoluteUri(string value, out Uri uri)
+        {
+            uri = null!;
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            if (!Uri.TryCreate(value.Trim(), UriKind.Absolute, out var parsed))
+            {
+                return false;
+            }
+
+            if (!string.Equals(parsed.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            uri = parsed;
+            return true;
+        }
+
+        private static bool TryResolveRepositoryThemeUri(Uri indexUri, string path, out Uri uri)
+        {
+            uri = null!;
+
+            if (Uri.TryCreate(path, UriKind.Absolute, out var absolute))
+            {
+                if (!string.Equals(absolute.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                uri = absolute;
+                return true;
+            }
+
+            if (!Uri.TryCreate(indexUri, path, out var resolved))
+            {
+                return false;
+            }
+
+            if (!string.Equals(resolved.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            uri = resolved;
+            return true;
         }
 
         private string TranslateApp(string source, params object[] arguments)

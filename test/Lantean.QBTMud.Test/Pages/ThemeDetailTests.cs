@@ -260,6 +260,31 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_RepositoryTheme_WHEN_SaveActionsInvoked_THEN_DoesNotPersist()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Repository)
+            };
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.Themes)
+                .Returns(themes);
+
+            var target = RenderPage("ThemeId", themes);
+
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
+            var saveApplyButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSaveApply");
+
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => saveApplyButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService)
+                .Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Never);
+            Mock.Get(_themeManagerService)
+                .Verify(service => service.ApplyTheme(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_WhitespaceName_WHEN_SaveApplyInvoked_THEN_DoesNotSave()
         {
             var themes = new List<ThemeCatalogItem>

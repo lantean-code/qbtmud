@@ -97,6 +97,25 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_CurrentThemeAppliedLocal_WHEN_Rendered_THEN_DoesNotRenderAppliedChip()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Local)
+            };
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.CurrentThemeId)
+                .Returns("ThemeId");
+
+            var target = RenderPage(themes);
+
+            var chips = target.FindComponents<MudChip<string>>();
+
+            chips.Should().HaveCount(1);
+            chips[0].Instance.Color.Should().Be(Color.Default);
+        }
+
+        [Fact]
         public void GIVEN_NoCurrentTheme_WHEN_Rendered_THEN_DoesNotSelectThemeInTable()
         {
             var themes = new List<ThemeCatalogItem>
@@ -377,6 +396,26 @@ namespace Lantean.QBTMud.Test.Pages
 
             reloadTaskSource.SetResult();
             await firstReloadTask;
+        }
+
+        [Fact]
+        public async Task GIVEN_ReloadWithRepositoryIssues_WHEN_Clicked_THEN_ShowsWarning()
+        {
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ReloadServerThemes())
+                .Returns(Task.CompletedTask);
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.LastReloadHadRepositoryIssues)
+                .Returns(true);
+            Mock.Get(_snackbar)
+                .Setup(snackbar => snackbar.Add("Unable to load theme repository. Showing bundled and local themes only.", Severity.Warning, null, null));
+
+            var target = RenderPage(new List<ThemeCatalogItem>());
+
+            var reloadButton = FindComponentByTestId<MudIconButton>(target, "ThemesReload");
+            await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add("Unable to load theme repository. Showing bundled and local themes only.", Severity.Warning, null, null), Times.Once);
         }
 
         [Fact]
@@ -832,6 +871,23 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_RenameRepositoryTheme_WHEN_Clicked_THEN_SkipsRename()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Repository)
+            };
+
+            var target = RenderPage(themes);
+            var renameButton = FindComponentByTestId<MudIconButton>(target, "ThemeRename-ThemeId");
+
+            await target.InvokeAsync(() => renameButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()), Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_RenameInProgress_WHEN_ClickedAgain_THEN_SkipsSecondRename()
         {
             var themes = new List<ThemeCatalogItem>
@@ -870,6 +926,23 @@ namespace Lantean.QBTMud.Test.Pages
             var themes = new List<ThemeCatalogItem>
             {
                 CreateTheme("ThemeId", "Name", ThemeSource.Server)
+            };
+
+            var target = RenderPage(themes);
+            var deleteButton = FindComponentByTestId<MudIconButton>(target, "ThemeDelete-ThemeId");
+
+            await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            Mock.Get(_themeManagerService).Verify(service => service.DeleteLocalTheme(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_DeleteRepositoryTheme_WHEN_Clicked_THEN_SkipsDelete()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Repository)
             };
 
             var target = RenderPage(themes);

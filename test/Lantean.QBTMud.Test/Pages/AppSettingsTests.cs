@@ -167,6 +167,20 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_ThemeRepositoryUrlChanged_WHEN_ValidHttpsSelected_THEN_TracksSettingWithoutPersisting()
+        {
+            var target = RenderPage();
+            var repositoryUrlField = FindComponentByTestId<MudTextField<string>>(target, "AppSettingsThemeRepositoryIndexUrl");
+            _appSettingsService.ClearInvocations();
+
+            await target.InvokeAsync(() => repositoryUrlField.Instance.ValueChanged.InvokeAsync("https://example.com/index.json"));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_TrackedChanges_WHEN_SaveClicked_THEN_PersistsPendingSettings()
         {
             var target = RenderPage();
@@ -2255,7 +2269,8 @@ namespace Lantean.QBTMud.Test.Pages
                 ThemeModePreference = ThemeModePreference.System,
                 DownloadFinishedNotificationsEnabled = true,
                 TorrentAddedNotificationsEnabled = false,
-                TorrentAddedSnackbarsEnabledWithNotifications = false
+                TorrentAddedSnackbarsEnabledWithNotifications = false,
+                ThemeRepositoryIndexUrl = "https://lantean-code.github.io/qbtmud-themes/index.json"
             };
         }
     }

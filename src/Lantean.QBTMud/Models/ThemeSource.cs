@@ -6,6 +6,7 @@ namespace Lantean.QBTMud.Models
     public enum ThemeSource
     {
         Local,
-        Server
+        Server,
+        Repository
     }
 }
