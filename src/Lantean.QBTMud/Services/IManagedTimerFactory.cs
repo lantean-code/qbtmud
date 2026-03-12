@@ -10,7 +10,10 @@ namespace Lantean.QBTMud.Services
         /// </summary>
         /// <param name="name">The timer name.</param>
         /// <param name="interval">The timer interval.</param>
+        /// <param name="retryCount">
+        /// The number of consecutive unhandled tick exceptions to tolerate before faulting the timer.
+        /// </param>
         /// <returns>A new <see cref="IManagedTimer"/> instance.</returns>
-        IManagedTimer Create(string name, TimeSpan interval);
+        IManagedTimer Create(string name, TimeSpan interval, int retryCount = 0);
     }
 }

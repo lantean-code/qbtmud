@@ -73,7 +73,12 @@ namespace Lantean.QBTMud.Components
         public Task OnInstallPromptStateChanged(PwaInstallPromptState state)
         {
             InstallPromptState = state ?? new PwaInstallPromptState();
-            RefreshPromptSnackbar();
+
+            if (!_promptInProgress)
+            {
+                RefreshPromptSnackbar();
+            }
+
             return InvokeAsync(StateHasChanged);
         }
 
@@ -101,7 +106,6 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            _snackbarShown = false;
             _promptInProgress = true;
             try
             {
@@ -111,6 +115,8 @@ namespace Lantean.QBTMud.Components
                     await HideForSession();
                     return;
                 }
+
+                InstallPromptState = await PwaInstallPromptService.GetInstallPromptStateAsync();
             }
             finally
             {

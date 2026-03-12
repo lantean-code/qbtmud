@@ -24,10 +24,13 @@ namespace Lantean.QBTMud.Services
         /// </summary>
         /// <param name="name">The timer name.</param>
         /// <param name="interval">The timer interval.</param>
+        /// <param name="retryCount">
+        /// The number of consecutive unhandled tick exceptions to tolerate before faulting the timer.
+        /// </param>
         /// <returns>A new <see cref="IManagedTimer"/> instance.</returns>
-        public IManagedTimer Create(string name, TimeSpan interval)
+        public IManagedTimer Create(string name, TimeSpan interval, int retryCount = 0)
         {
-            var timer = new RegisteredManagedTimer(new ManagedTimer(_timerFactory, name, interval), _registry);
+            var timer = new RegisteredManagedTimer(new ManagedTimer(_timerFactory, name, interval, retryCount), _registry);
             _registry.Register(timer);
             return timer;
         }

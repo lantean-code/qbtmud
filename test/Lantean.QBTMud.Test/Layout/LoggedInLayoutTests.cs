@@ -67,7 +67,7 @@ namespace Lantean.QBTMud.Test.Layout
             refreshTimerMock.Setup(t => t.UpdateIntervalAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             var managedTimerFactoryMock = Mock.Get(_managedTimerFactory);
-            managedTimerFactoryMock.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(_refreshTimer);
+            managedTimerFactoryMock.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<int>())).Returns(_refreshTimer);
 
             var timerRegistryMock = Mock.Get(_timerRegistry);
             timerRegistryMock.Setup(r => r.GetTimers()).Returns(new List<IManagedTimer>());
@@ -78,7 +78,7 @@ namespace Lantean.QBTMud.Test.Layout
                     It.IsAny<string?>(),
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()))
-                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+                .ReturnsAsync(CreateDialogReference(DialogResult.Ok(true)));
             _dialogServiceMock
                 .Setup(service => service.ShowAsync<LostConnectionDialog>(
                     It.IsAny<string?>(),
@@ -194,6 +194,70 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public void GIVEN_WelcomeWizardPreviouslyCompleted_WHEN_Rendered_THEN_ShowsPwaPromptAfterDelay()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(isReturningUser: true, pendingSteps: Array.Empty<WelcomeWizardStepDefinition>()));
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.FindComponents<PwaInstallPrompt>().Should().BeEmpty();
+            target.WaitForAssertion(
+                () => target.FindComponents<PwaInstallPrompt>().Should().ContainSingle(),
+                timeout: TimeSpan.FromSeconds(5));
+
+            Mock.Get(_dialogService).Verify(service => service.ShowAsync<WelcomeWizardDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogParameters>(),
+                It.IsAny<DialogOptions?>()), Times.Never);
+        }
+
+        [Fact]
+        public void GIVEN_WelcomeWizardPendingSteps_WHEN_Finished_THEN_ShowsPwaPromptAfterDelay()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+
+            var dialogResultTaskSource = new TaskCompletionSource<DialogResult?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(
+                    isReturningUser: false,
+                    pendingSteps:
+                    [
+                        new WelcomeWizardStepDefinition(WelcomeWizardStepCatalog.LanguageStepId, 0)
+                    ]));
+
+            _dialogServiceMock
+                .Setup(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()))
+                .ReturnsAsync(CreateDialogReference(dialogResultTaskSource.Task));
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogService).Verify(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()), Times.Once);
+            });
+
+            target.FindComponents<PwaInstallPrompt>().Should().BeEmpty();
+
+            dialogResultTaskSource.SetResult(DialogResult.Ok(true));
+
+            target.WaitForAssertion(
+                () => target.FindComponents<PwaInstallPrompt>().Should().ContainSingle(),
+                timeout: TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
         public void GIVEN_WelcomeWizardPendingSteps_WHEN_Rendered_THEN_PassesPlanParametersAndMarksShown()
         {
             DisposeDefaultTarget();
@@ -219,7 +283,7 @@ namespace Lantean.QBTMud.Test.Layout
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()))
                 .Callback<string?, DialogParameters, DialogOptions?>((_, parameters, _) => capturedParameters = parameters)
-                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+                .ReturnsAsync(CreateDialogReference(DialogResult.Ok(true)));
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -255,7 +319,7 @@ namespace Lantean.QBTMud.Test.Layout
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()))
                 .Callback<string?, DialogParameters, DialogOptions?>((_, _, options) => capturedOptions = options)
-                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+                .ReturnsAsync(CreateDialogReference(DialogResult.Ok(true)));
 
             var target = RenderLayout(new List<IManagedTimer>(), breakpoint: Breakpoint.Sm);
 
@@ -289,7 +353,7 @@ namespace Lantean.QBTMud.Test.Layout
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()))
                 .Callback<string?, DialogParameters, DialogOptions?>((_, _, options) => capturedOptions = options)
-                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+                .ReturnsAsync(CreateDialogReference(DialogResult.Ok(true)));
 
             var target = RenderLayout(new List<IManagedTimer>(), breakpoint: Breakpoint.Lg);
 
@@ -323,7 +387,7 @@ namespace Lantean.QBTMud.Test.Layout
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()))
                 .Callback<string?, DialogParameters, DialogOptions?>((_, _, options) => capturedOptions = options)
-                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+                .ReturnsAsync(CreateDialogReference(DialogResult.Ok(true)));
 
             var target = RenderLayout(new List<IManagedTimer>(), breakpoint: Breakpoint.None);
 
@@ -1528,7 +1592,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             var timer = new Mock<IManagedTimer>();
             timer.Setup(t => t.DisposeAsync()).Returns(ValueTask.CompletedTask);
-            Mock.Get(_managedTimerFactory).Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(timer.Object);
+            Mock.Get(_managedTimerFactory).Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<int>())).Returns(timer.Object);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -1657,6 +1721,18 @@ namespace Lantean.QBTMud.Test.Layout
                 return component.Instance.UserAttributes.TryGetValue("data-test-id", out var value)
                     && string.Equals(value?.ToString(), expected, StringComparison.Ordinal);
             });
+        }
+
+        private static IDialogReference CreateDialogReference(DialogResult? result)
+        {
+            return CreateDialogReference(Task.FromResult(result));
+        }
+
+        private static IDialogReference CreateDialogReference(Task<DialogResult?> resultTask)
+        {
+            var reference = new Mock<IDialogReference>(MockBehavior.Strict);
+            reference.SetupGet(dialogReference => dialogReference.Result).Returns(resultTask);
+            return reference.Object;
         }
 
         private static IManagedTimer CreateTimer(ManagedTimerState state)

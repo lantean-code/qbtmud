@@ -58,6 +58,9 @@ namespace Lantean.QBTMud.Test.Components
             _pwaInstallPromptServiceMock
                 .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync("dismissed");
+            _pwaInstallPromptServiceMock
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState());
 
             _target = TestContext.Render<PwaInstallPrompt>();
         }
@@ -178,23 +181,32 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public async Task GIVEN_InstallActionClicked_WHEN_PromptDismissed_THEN_ShowsPromptAgain()
+        public async Task GIVEN_InstallActionClicked_WHEN_PromptDismissedAndStateStillPromptable_THEN_KeepsPromptVisibleWithoutRecreatingSnackbar()
         {
             _pwaInstallPromptServiceMock.ClearInvocations();
             _pwaInstallPromptServiceMock
                 .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync("dismissed");
+            _pwaInstallPromptServiceMock
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    CanPrompt = true
+                });
 
             await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
+            var removeCountBeforeClick = _removedSnackbarKeys.Count;
 
             var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
             await _target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
 
             _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
-            _snackbarAddCalls.Count.Should().Be(2);
+            _pwaInstallPromptServiceMock.Verify(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()), Times.Once);
+            _snackbarAddCalls.Should().ContainSingle();
+            _removedSnackbarKeys.Count.Should().Be(removeCountBeforeClick);
         }
 
         [Fact]
@@ -226,6 +238,47 @@ namespace Lantean.QBTMud.Test.Components
 
             requestInstallPromptTaskSource.SetResult("dismissed");
             await Task.WhenAll(firstClickTask, secondClickTask);
+        }
+
+        [Fact]
+        public async Task GIVEN_InstallRequestInProgress_WHEN_StateChanges_THEN_DoesNotHideOrRecreateSnackbarUntilRequestCompletes()
+        {
+            var requestInstallPromptTaskSource = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _pwaInstallPromptServiceMock.ClearInvocations();
+            _pwaInstallPromptServiceMock
+                .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
+                .Returns(requestInstallPromptTaskSource.Task);
+            _pwaInstallPromptServiceMock
+                .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    CanPrompt = true
+                });
+
+            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            }));
+            var removeCountBeforeInstall = _removedSnackbarKeys.Count;
+
+            var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
+            var clickTask = _target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+
+            _target.WaitForAssertion(() =>
+            {
+                _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
+            });
+
+            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState()));
+
+            _snackbarAddCalls.Should().ContainSingle();
+            _removedSnackbarKeys.Count.Should().Be(removeCountBeforeInstall);
+
+            requestInstallPromptTaskSource.SetResult("dismissed");
+            await clickTask;
+
+            _snackbarAddCalls.Should().ContainSingle();
+            _removedSnackbarKeys.Count.Should().Be(removeCountBeforeInstall);
         }
 
         [Fact]

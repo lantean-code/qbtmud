@@ -6,8 +6,10 @@ namespace Lantean.QBTMud.Services
     public sealed class ManagedTimer : IManagedTimer
     {
         private const string IntervalMessage = "Interval must be greater than zero.";
+        private const string RetryCountMessage = "Retry count must be zero or greater.";
 
         private readonly IPeriodicTimerFactory _timerFactory;
+        private readonly int _retryCount;
         private readonly object _syncLock = new();
 
         private bool _disposed;
@@ -23,6 +25,7 @@ namespace Lantean.QBTMud.Services
         private TaskCompletionSource<bool>? _resumeSignal;
         private bool _intervalChangeRequested;
         private bool _waitCanceled;
+        private int _consecutiveUnhandledTickFailures;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ManagedTimer"/> class.
@@ -30,14 +33,20 @@ namespace Lantean.QBTMud.Services
         /// <param name="timerFactory">The timer factory to create periodic timers.</param>
         /// <param name="name">The timer name.</param>
         /// <param name="interval">The initial interval.</param>
-        public ManagedTimer(IPeriodicTimerFactory timerFactory, string name, TimeSpan interval)
+        /// <param name="retryCount">The number of consecutive unhandled tick exceptions to tolerate before faulting.</param>
+        public ManagedTimer(IPeriodicTimerFactory timerFactory, string name, TimeSpan interval, int retryCount = 0)
         {
             if (interval <= TimeSpan.Zero)
             {
                 throw new ArgumentOutOfRangeException(nameof(interval), interval, IntervalMessage);
             }
+            if (retryCount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(retryCount), retryCount, RetryCountMessage);
+            }
 
             _timerFactory = timerFactory;
+            _retryCount = retryCount;
             Name = name;
             _interval = interval;
             _state = ManagedTimerState.Stopped;
@@ -144,6 +153,7 @@ namespace Lantean.QBTMud.Services
                 _nextTickUtc = null;
                 _intervalChangeRequested = false;
                 _waitCanceled = false;
+                _consecutiveUnhandledTickFailures = 0;
                 _resumeSignal = null;
                 _runCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 _state = ManagedTimerState.Running;
@@ -184,6 +194,7 @@ namespace Lantean.QBTMud.Services
                 _nextTickUtc = null;
                 _intervalChangeRequested = false;
                 _waitCanceled = false;
+                _consecutiveUnhandledTickFailures = 0;
                 _resumeSignal = null;
                 _runCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 _state = ManagedTimerState.Running;
@@ -434,9 +445,16 @@ namespace Lantean.QBTMud.Services
                     }
                     catch (Exception exception)
                     {
-                        SetFault(exception);
-                        break;
+                        if (!ShouldRetryTickFailure())
+                        {
+                            SetFault(exception);
+                            break;
+                        }
+
+                        continue;
                     }
+
+                    ResetTickFailureCount();
 
                     if (!ApplyTickResult(tickResult))
                     {
@@ -597,6 +615,28 @@ namespace Lantean.QBTMud.Services
             }
         }
 
+        private bool ShouldRetryTickFailure()
+        {
+            lock (_syncLock)
+            {
+                if (_consecutiveUnhandledTickFailures >= _retryCount)
+                {
+                    return false;
+                }
+
+                _consecutiveUnhandledTickFailures++;
+                return true;
+            }
+        }
+
+        private void ResetTickFailureCount()
+        {
+            lock (_syncLock)
+            {
+                _consecutiveUnhandledTickFailures = 0;
+            }
+        }
+
         private void CancelWait()
         {
             CancellationTokenSource? waitCancellation;
@@ -637,6 +677,7 @@ namespace Lantean.QBTMud.Services
                 _resumeSignal = null;
                 _intervalChangeRequested = false;
                 _waitCanceled = false;
+                _consecutiveUnhandledTickFailures = 0;
             }
 
             runCancellation?.Dispose();

@@ -18,6 +18,7 @@ namespace Lantean.QBTMud.Layout
         private const string LastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
         private const int MaxDownloadLength = 8 * 1024;
         private const int DefaultRefreshInterval = 1500;
+        private static readonly TimeSpan PwaInstallPromptDisplayDelay = TimeSpan.FromSeconds(2);
 
         private readonly bool _refreshEnabled = true;
         private int _requestId = 0;
@@ -144,12 +145,14 @@ namespace Lantean.QBTMud.Layout
         private bool _welcomeWizardLaunched;
         private bool _lostConnectionDialogShown;
         private bool _localeMismatchWarningShown;
+        private bool _showPwaInstallPrompt;
+        private Task? _pwaInstallPromptDelayTask;
 
         protected override void OnInitialized()
         {
             base.OnInitialized();
 
-            _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(DefaultRefreshInterval));
+            _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(DefaultRefreshInterval), retryCount: 3);
             AppSettingsService.SettingsChanged += OnAppSettingsChanged;
 
             if (!_navigationHandlerAttached)
@@ -254,7 +257,7 @@ namespace Lantean.QBTMud.Layout
             if (!_welcomeWizardLaunched && IsAuthenticated && Preferences is not null)
             {
                 _welcomeWizardLaunched = true;
-                await ShowWelcomeWizardIfNeededAsync();
+                await LaunchWelcomeWizardFlowAsync();
             }
 
             if (!_startupUpdateCheckRequested && _authConfirmed)
@@ -269,12 +272,56 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
-        private async Task ShowWelcomeWizardIfNeededAsync()
+        private async Task LaunchWelcomeWizardFlowAsync()
+        {
+            var canShowPwaInstallPrompt = await ShowWelcomeWizardIfNeededAsync();
+            if (!canShowPwaInstallPrompt)
+            {
+                return;
+            }
+
+            SchedulePwaInstallPromptDisplay();
+        }
+
+        private void SchedulePwaInstallPromptDisplay()
+        {
+            if (_showPwaInstallPrompt || _pwaInstallPromptDelayTask is not null)
+            {
+                return;
+            }
+
+            _pwaInstallPromptDelayTask = ShowPwaInstallPromptAfterDelayAsync(_timerCancellationToken.Token);
+        }
+
+        private async Task ShowPwaInstallPromptAfterDelayAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(PwaInstallPromptDisplayDelay, cancellationToken);
+                _showPwaInstallPrompt = true;
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (OperationCanceledException exception) when (exception.CancellationToken == cancellationToken)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            finally
+            {
+                _pwaInstallPromptDelayTask = null;
+            }
+        }
+
+        private async Task<bool> ShowWelcomeWizardIfNeededAsync()
         {
             var plan = await WelcomeWizardPlanBuilder.BuildPlanAsync();
             if (!plan.ShouldShowWizard)
             {
-                return;
+                return true;
             }
 
             await WelcomeWizardStateService.MarkShownAsync();
@@ -299,7 +346,10 @@ namespace Lantean.QBTMud.Layout
             };
 
             var title = LanguageLocalizer.Translate("AppWelcomeWizard", plan.IsReturningUser ? "Welcome back" : "Welcome");
-            await DialogService.ShowAsync<WelcomeWizardDialog>(title, parameters, options);
+            var dialogReference = await DialogService.ShowAsync<WelcomeWizardDialog>(title, parameters, options);
+            var dialogResult = await dialogReference.Result;
+
+            return dialogResult is { Canceled: false };
         }
 
         private async Task ShowLostConnectionDialogAsync()
@@ -529,7 +579,7 @@ namespace Lantean.QBTMud.Layout
 
         private void StartRefreshLoop()
         {
-            _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(DefaultRefreshInterval));
+            _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(DefaultRefreshInterval), retryCount: 3);
             _refreshLoopTask = _refreshTimer.StartAsync(RefreshTickAsync, _timerCancellationToken.Token);
         }
 
@@ -989,6 +1039,18 @@ namespace Lantean.QBTMud.Layout
             if (disposing)
             {
                 _timerCancellationToken.Cancel();
+
+                if (_pwaInstallPromptDelayTask is not null)
+                {
+                    try
+                    {
+                        await _pwaInstallPromptDelayTask;
+                    }
+                    catch (OperationCanceledException exception) when (exception.CancellationToken == _timerCancellationToken.Token)
+                    {
+                    }
+                }
+
                 _timerCancellationToken.Dispose();
 
                 if (_refreshTimer is not null)

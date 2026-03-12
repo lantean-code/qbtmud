@@ -32,6 +32,14 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public void GIVEN_InvalidRetryCount_WHEN_Constructing_THEN_ThrowsArgumentOutOfRangeException()
+        {
+            Action action = () => new ManagedTimer(_timerFactory, "Name", TimeSpan.FromMilliseconds(100), -1);
+
+            action.Should().Throw<ArgumentOutOfRangeException>();
+        }
+
+        [Fact]
         public async Task GIVEN_StoppedTimer_WHEN_PauseResumeStop_THEN_ReturnsFalse()
         {
             var paused = await _target.PauseAsync(CancellationToken.None);
@@ -279,6 +287,54 @@ namespace Lantean.QBTMud.Test.Services
 
             _target.LastFault.Should().NotBeNull();
             _target.State.Should().Be(ManagedTimerState.Faulted);
+        }
+
+        [Fact]
+        public async Task GIVEN_RetryCountConfigured_WHEN_FirstTickThrows_THEN_ShouldRetryAndNotFault()
+        {
+            var target = new ManagedTimer(_timerFactory, "RetryTarget", TimeSpan.FromMilliseconds(100), retryCount: 1);
+            var tickCount = 0;
+
+            await target.StartAsync(
+                _ =>
+                {
+                    tickCount++;
+                    if (tickCount == 1)
+                    {
+                        throw new InvalidOperationException("Failure");
+                    }
+
+                    return Task.FromResult(ManagedTimerTickResult.Stop);
+                },
+                CancellationToken.None);
+
+            await TriggerTickAsync();
+            (await WaitUntilAsync(() => tickCount == 1)).Should().BeTrue();
+            target.State.Should().Be(ManagedTimerState.Running);
+            target.LastFault.Should().BeNull();
+
+            await TriggerTickAsync();
+            (await WaitUntilAsync(() => target.State == ManagedTimerState.Stopped)).Should().BeTrue();
+            target.LastFault.Should().BeNull();
+
+            await target.DisposeAsync();
+        }
+
+        [Fact]
+        public async Task GIVEN_RetryCountConfigured_WHEN_RetryLimitExceeded_THEN_ShouldFault()
+        {
+            var target = new ManagedTimer(_timerFactory, "RetryTarget", TimeSpan.FromMilliseconds(100), retryCount: 1);
+
+            await target.StartAsync(_ => throw new InvalidOperationException("Failure"), CancellationToken.None);
+
+            await TriggerTickAsync();
+            (await WaitUntilAsync(() => target.State == ManagedTimerState.Running)).Should().BeTrue();
+
+            await TriggerTickAsync();
+            (await WaitUntilAsync(() => target.State == ManagedTimerState.Faulted)).Should().BeTrue();
+            target.LastFault.Should().NotBeNull();
+
+            await target.DisposeAsync();
         }
 
         [Fact]

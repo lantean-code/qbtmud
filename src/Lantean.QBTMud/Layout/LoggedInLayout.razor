@@ -35,7 +35,10 @@
                                                                                ToggleAlternativeSpeedLimitsInProgress="_toggleAltSpeedLimitsInProgress"
                                                                                OnToggleTimerDrawer="ToggleTimerDrawerAsync"
                                                                                OnToggleAlternativeSpeedLimits="ToggleAlternativeSpeedLimits" />
-                                                                    <PwaInstallPrompt />
+                                                                    @if (_showPwaInstallPrompt)
+                                                                    {
+                                                                        <PwaInstallPrompt />
+                                                                    }
                                                                 </div>
                                                             </CascadingValue>
                                                         </CascadingValue>
