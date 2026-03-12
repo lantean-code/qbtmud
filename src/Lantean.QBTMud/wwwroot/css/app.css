@@ -577,6 +577,10 @@ td .folder-button {
     border: 1px solid var(--mud-palette-lines-default, var(--mud-palette-divider));
 }
 
+.mud-dialog:not(.mud-dialog-fullscreen) {
+    border: 1px solid var(--mud-palette-lines-default, var(--mud-palette-divider));
+}
+
 .app-menu-popover {
     max-height: calc(100vh - var(--mud-appbar-height) - var(--app-status-bar-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     overflow-y: auto;
