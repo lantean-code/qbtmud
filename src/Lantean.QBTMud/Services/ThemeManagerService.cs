@@ -335,6 +335,10 @@ namespace Lantean.QBTMud.Services
             {
                 return;
             }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
             catch (JsonException)
             {
                 return;
@@ -401,6 +405,10 @@ namespace Lantean.QBTMud.Services
             {
                 return captureIssues;
             }
+            catch (OperationCanceledException)
+            {
+                return captureIssues;
+            }
             catch (JsonException)
             {
                 return captureIssues;
@@ -456,6 +464,10 @@ namespace Lantean.QBTMud.Services
             {
                 return null;
             }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
             catch (JsonException)
             {
                 return null;
@@ -479,10 +491,10 @@ namespace Lantean.QBTMud.Services
                 _themes.Add(new ThemeCatalogItem(theme.Id, theme.Name, theme, ThemeSource.Local, null));
             }
 
-            var localIds = _themes.Select(theme => theme.Id).ToHashSet(StringComparer.Ordinal);
+            var existingIds = _themes.Select(theme => theme.Id).ToHashSet(StringComparer.Ordinal);
             foreach (var theme in _repositoryThemes)
             {
-                if (localIds.Contains(theme.Id))
+                if (!existingIds.Add(theme.Id))
                 {
                     continue;
                 }
@@ -490,10 +502,9 @@ namespace Lantean.QBTMud.Services
                 _themes.Add(theme);
             }
 
-            var existingIds = _themes.Select(theme => theme.Id).ToHashSet(StringComparer.Ordinal);
             foreach (var theme in _bundledThemes)
             {
-                if (existingIds.Contains(theme.Id))
+                if (!existingIds.Add(theme.Id))
                 {
                     continue;
                 }
