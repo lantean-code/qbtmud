@@ -1,6 +1,7 @@
 using Blazor.BrowserCapabilities;
 using Bunit;
 using Lantean.QBitTorrentClient;
+using Lantean.QBTMud.Configuration;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -66,7 +67,10 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddSingleton<ISettingsStorageService>(_localStorage);
             Services.AddSingleton<ISessionStorageService>(_sessionStorage);
             Services.AddSingleton<IClipboardService>(_clipboard);
-
+            Services.AddSingleton<IApiUrlResolver>(new ApiUrlResolver(new Uri(_baseAddress, "/api/v2/")));
+            Services.AddSingleton(typeof(RoutingMode), RoutingMode.Path);
+            Services.AddScoped<IInternalUrlProvider, InternalUrlProvider>();
+            Services.AddScoped<IMagnetLinkService, MagnetLinkService>();
             // Message handlers used by your HttpClient pipeline
             Services.AddTransient<CookieHandler>();
             Services.AddScoped<HttpLogger>();

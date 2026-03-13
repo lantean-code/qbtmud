@@ -44,6 +44,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
+            TestContext.Services.RemoveAll<IApiUrlResolver>();
+            TestContext.Services.AddSingleton<IApiUrlResolver>(new ApiUrlResolver(new Uri("https://api.example/qbt/api/v2/")));
             TestContext.Services.RemoveAll<IDialogService>();
             TestContext.Services.AddSingleton(_dialogService);
             TestContext.Services.RemoveAll<ISnackbar>();
@@ -283,7 +285,7 @@ namespace Lantean.QBTMud.Test.Pages
             var arguments = downloadInvocation.Invocations
                 .Select(invocation => invocation.Arguments.OfType<string>().ToList())
                 .Single();
-            arguments.Should().Equal("api/v2/torrentcreator/torrentFile?taskID=TaskId", "File.txt.torrent");
+            arguments.Should().Equal("https://api.example/qbt/api/v2/torrentcreator/torrentFile?taskID=TaskId", "File.txt.torrent");
         }
 
         [Fact]

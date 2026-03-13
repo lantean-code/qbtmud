@@ -35,6 +35,9 @@ namespace Lantean.QBTMud.Pages
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
+        protected IApiUrlResolver ApiUrlResolver { get; set; } = default!;
+
+        [Inject]
         protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [Inject]
@@ -306,10 +309,10 @@ namespace Lantean.QBTMud.Pages
             return Color.Default;
         }
 
-        private static string BuildDownloadUrl(string taskId)
+        private string BuildDownloadUrl(string taskId)
         {
             var escaped = Uri.EscapeDataString(taskId);
-            return $"api/v2/torrentcreator/torrentFile?taskID={escaped}";
+            return ApiUrlResolver.BuildAbsoluteUrl($"torrentcreator/torrentFile?taskID={escaped}");
         }
 
         private static string ResolveFileName(TorrentCreationTaskStatus task)
