@@ -8,7 +8,6 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
-using System.Net;
 
 namespace Lantean.QBTMud.Layout
 {
@@ -16,7 +15,6 @@ namespace Lantean.QBTMud.Layout
     {
         private const string _pendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
         private const string _lastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
-        private const int _maxDownloadLength = 8 * 1024;
         private const int _defaultRefreshInterval = 1500;
         private static readonly TimeSpan PwaInstallPromptDisplayDelay = TimeSpan.FromSeconds(2);
 
@@ -69,6 +67,9 @@ namespace Lantean.QBTMud.Layout
 
         [Inject]
         protected IPreferencesUpdateService PreferencesUpdateService { get; set; } = default!;
+
+        [Inject]
+        protected IMagnetLinkService MagnetLinkService { get; set; } = default!;
 
         [Inject]
         protected IAppUpdateService AppUpdateService { get; set; } = default!;
@@ -610,93 +611,18 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            var downloadValue = ExtractDownloadParameter(uri);
+            var downloadValue = MagnetLinkService.ExtractDownloadLink(uri);
             if (string.IsNullOrWhiteSpace(downloadValue))
             {
                 return;
             }
 
-            var decoded = WebUtility.UrlDecode(downloadValue);
-            if (string.IsNullOrWhiteSpace(decoded))
+            if (HasAlreadyProcessed(downloadValue))
             {
                 return;
             }
 
-            if (!IsValidDownloadValue(decoded))
-            {
-                return;
-            }
-
-            if (HasAlreadyProcessed(decoded))
-            {
-                return;
-            }
-
-            _pendingDownloadLink = decoded;
-        }
-
-        private static string? ExtractDownloadParameter(string uri)
-        {
-            if (!Uri.TryCreate(uri, UriKind.Absolute, out var absoluteUri))
-            {
-                return null;
-            }
-
-            var fragmentValue = ExtractDownloadParameterFromComponent(absoluteUri.Fragment);
-            if (!string.IsNullOrWhiteSpace(fragmentValue))
-            {
-                return fragmentValue;
-            }
-
-            var queryValue = ExtractDownloadParameterFromComponent(absoluteUri.Query);
-            if (!string.IsNullOrWhiteSpace(queryValue))
-            {
-                return queryValue;
-            }
-
-            return null;
-        }
-
-        private static string? ExtractDownloadParameterFromComponent(string component)
-        {
-            if (string.IsNullOrEmpty(component))
-            {
-                return null;
-            }
-
-            var trimmed = component.StartsWith("#", StringComparison.Ordinal) || component.StartsWith("?", StringComparison.Ordinal)
-                ? component[1..]
-                : component;
-
-            if (string.IsNullOrEmpty(trimmed))
-            {
-                return null;
-            }
-
-            var segments = trimmed.Split('&', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var segment in segments)
-            {
-                var separatorIndex = segment.IndexOf('=');
-                string key;
-                string value;
-                if (separatorIndex >= 0)
-                {
-                    key = segment[..separatorIndex];
-                    value = separatorIndex < segment.Length - 1 ? segment[(separatorIndex + 1)..] : string.Empty;
-                }
-                else
-                {
-                    key = segment;
-                    value = string.Empty;
-                }
-
-                if (string.Equals(key, "download", StringComparison.OrdinalIgnoreCase))
-                {
-                    return value;
-                }
-            }
-
-            return null;
+            _pendingDownloadLink = downloadValue;
         }
 
         private async Task RestorePendingDownloadAsync()
@@ -712,7 +638,7 @@ namespace Lantean.QBTMud.Layout
             }
 
             var stored = await SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey);
-            if (!IsValidDownloadValue(stored))
+            if (!MagnetLinkService.IsSupportedDownloadLink(stored))
             {
                 await SessionStorage.RemoveItemAsync(_pendingDownloadStorageKey);
                 return;
@@ -971,43 +897,6 @@ namespace Lantean.QBTMud.Layout
         {
             _torrentsDirty = true;
             IncrementTorrentsVersion();
-        }
-
-        private static bool IsValidDownloadValue(string? value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return false;
-            }
-
-            if (value.Length > _maxDownloadLength)
-            {
-                return false;
-            }
-
-            if (value.IndexOfAny(new[] { '\r', '\n' }) >= 0)
-            {
-                return false;
-            }
-
-            if (value.StartsWith("magnet:", StringComparison.OrdinalIgnoreCase))
-            {
-                // Require a magnet URN for basic validation.
-                return value.Contains("xt=urn:btih", StringComparison.OrdinalIgnoreCase);
-            }
-
-            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
-            {
-                return false;
-            }
-
-            if (!string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return uri.AbsolutePath.EndsWith(".torrent", StringComparison.OrdinalIgnoreCase);
         }
 
         private bool HasAlreadyProcessed(string download)

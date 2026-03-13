@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using System.Diagnostics;
 using System.Text.Json;
 using ClientModels = Lantean.QBitTorrentClient.Models;
 
@@ -191,6 +192,101 @@ namespace Lantean.QBTMud.Test.Layout
                     It.IsAny<DialogParameters>(),
                     It.IsAny<DialogOptions?>()), Times.Never);
             });
+        }
+
+        [Fact]
+        public async Task GIVEN_WelcomeWizardCanceled_WHEN_Rendered_THEN_DoesNotShowPwaPrompt()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(
+                    isReturningUser: false,
+                    pendingSteps:
+                    [
+                        new WelcomeWizardStepDefinition(WelcomeWizardStepCatalog.LanguageStepId, 0)
+                    ]));
+            _dialogServiceMock
+                .Setup(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()))
+                .ReturnsAsync(CreateDialogReference(DialogResult.Cancel()));
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogService).Verify(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()), Times.Once);
+            });
+
+            await WaitForDurationAsync(TimeSpan.FromSeconds(3));
+
+            target.FindComponents<PwaInstallPrompt>().Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_WelcomeWizardPendingStepsAndLocale_WHEN_Rendered_THEN_ShowsWizardDialog()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(
+                    isReturningUser: false,
+                    pendingSteps:
+                    [
+                        new WelcomeWizardStepDefinition(WelcomeWizardStepCatalog.LanguageStepId, 0)
+                    ]));
+
+            var target = RenderLayout(new List<IManagedTimer>(), preferences: CreatePreferences(locale: "en"));
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogService).Verify(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()), Times.Once);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_WelcomeWizardReturnsNullResult_WHEN_Rendered_THEN_DoesNotShowPwaPrompt()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(
+                    isReturningUser: false,
+                    pendingSteps:
+                    [
+                        new WelcomeWizardStepDefinition(WelcomeWizardStepCatalog.LanguageStepId, 0)
+                    ]));
+            _dialogServiceMock
+                .Setup(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()))
+                .ReturnsAsync(CreateDialogReference(Task.FromResult<DialogResult?>(null)));
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.WaitForAssertion(() =>
+            {
+                Mock.Get(_dialogService).Verify(service => service.ShowAsync<WelcomeWizardDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogParameters>(),
+                    It.IsAny<DialogOptions?>()), Times.Once);
+            });
+
+            await WaitForDurationAsync(TimeSpan.FromSeconds(3));
+
+            target.FindComponents<PwaInstallPrompt>().Should().BeEmpty();
         }
 
         [Fact]
@@ -804,6 +900,28 @@ namespace Lantean.QBTMud.Test.Layout
             target.FindComponent<MudProgressLinear>().Should().NotBeNull();
             var pending = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().BeNull();
+        }
+
+        [Fact]
+        public void GIVEN_DataManagerReturnsNullMainData_WHEN_RenderedWithProbe_THEN_ProvidesEmptyTorrentList()
+        {
+            DisposeDefaultTarget();
+
+            var target = RenderLayout(new List<IManagedTimer>(), body: CreateProbeBody(), configureMainData: false);
+            var probe = target.FindComponent<LayoutProbe>();
+
+            probe.Instance.Torrents.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GIVEN_Rendered_WHEN_PageTitleResolved_THEN_UsesLocalizedWebUiTitleAndVersion()
+        {
+            DisposeDefaultTarget();
+
+            var target = RenderLayout(new List<IManagedTimer>());
+            var pageTitle = target.FindComponent<PageTitle>();
+
+            GetChildContentText(pageTitle.Instance.ChildContent).Should().Be("qBittorrent Version WebUI");
         }
 
         [Fact]
@@ -1487,6 +1605,19 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public void GIVEN_DownloadInHashRouteQuery_WHEN_Initialized_THEN_InvokesDialogWorkflow()
+        {
+            DisposeDefaultTarget();
+            ResetDialogInvocations();
+            _navigationManager.SetUri("http://localhost/#/?download=magnet:?xt=urn:btih:ABC");
+            Mock.Get(_dialogWorkflow).Setup(d => d.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC")).Returns(Task.CompletedTask);
+
+            RenderLayout(new List<IManagedTimer>());
+
+            Mock.Get(_dialogWorkflow).Verify(d => d.InvokeAddTorrentLinkDialog("magnet:?xt=urn:btih:ABC"), Times.Once);
+        }
+
+        [Fact]
         public void GIVEN_DownloadInQuery_WHEN_Initialized_THEN_InvokesDialogWorkflow()
         {
             DisposeDefaultTarget();
@@ -1608,12 +1739,74 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_AppSettingsSaved_WHEN_SettingsChanged_THEN_UpdatesCascadingAppSettings()
+        {
+            DisposeDefaultTarget();
+            var target = RenderLayout(new List<IManagedTimer>(), body: CreateProbeBody());
+            var updatedSettings = AppSettings.Default.Clone();
+            updatedSettings.ThemeModePreference = ThemeModePreference.Dark;
+
+            await target.InvokeAsync(() =>
+            {
+                Mock.Get(_appSettingsService).Raise(
+                    service => service.SettingsChanged += null,
+                    _appSettingsService,
+                    new AppSettingsChangedEventArgs(updatedSettings));
+            });
+
+            target.WaitForAssertion(() =>
+            {
+                var probe = target.FindComponent<LayoutProbe>();
+                probe.Instance.AppSettings.Should().NotBeNull();
+                probe.Instance.AppSettings!.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_PwaPromptDelayScheduled_WHEN_Disposed_THEN_DoesNotThrow()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+            Mock.Get(_welcomeWizardPlanBuilder)
+                .Setup(service => service.BuildPlanAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WelcomeWizardPlan(isReturningUser: true, pendingSteps: Array.Empty<WelcomeWizardStepDefinition>()));
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.WaitForState(() => target.FindComponents<MudAppBar>().Any());
+
+            var action = async () => await target.Instance.DisposeAsync();
+
+            await action.Should().NotThrowAsync();
+        }
+
+        [Fact]
         public void GIVEN_MenuProvided_WHEN_Initialized_THEN_MenuShown()
         {
             var menu = TestContext.Render<Menu>();
             var target = RenderLayout(new List<IManagedTimer>(), menu: menu.Instance);
 
             target.WaitForAssertion(() => menu.FindComponents<MudMenu>().Should().NotBeEmpty());
+        }
+
+        [Fact]
+        public async Task GIVEN_MenuProvided_WHEN_PreferencesUpdated_THEN_CompletesWithoutError()
+        {
+            DisposeDefaultTarget();
+            var menu = TestContext.Render<Menu>();
+            var target = RenderLayout(new List<IManagedTimer>(), menu: menu.Instance);
+            var updatedPreferences = CreatePreferences(locale: "en");
+
+            target.WaitForAssertion(() => menu.FindComponents<MudMenu>().Should().ContainSingle());
+
+            var action = async () => await target.InvokeAsync(async () =>
+            {
+                await TestContext.Services.GetRequiredService<IPreferencesUpdateService>()
+                    .PublishAsync(updatedPreferences);
+            });
+
+            await action.Should().NotThrowAsync();
+            menu.FindComponents<MudMenu>().Should().ContainSingle();
         }
 
         [Fact]
@@ -1725,6 +1918,15 @@ namespace Lantean.QBTMud.Test.Layout
         private void ResetDialogInvocations()
         {
             _dialogWorkflow.ClearInvocations();
+        }
+
+        private static async Task WaitForDurationAsync(TimeSpan duration)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            while (stopwatch.Elapsed < duration)
+            {
+                await Task.Yield();
+            }
         }
 
         private static IRenderedComponent<MudIconButton> FindTimerButton(IRenderedComponent<LoggedInLayout> target, string icon)
@@ -1913,6 +2115,12 @@ namespace Lantean.QBTMud.Test.Layout
 
             [CascadingParameter]
             public MainData? MainData { get; set; }
+
+            [CascadingParameter(Name = "AppSettings")]
+            public AppSettings? AppSettings { get; set; }
+
+            [CascadingParameter]
+            public ClientModels.Preferences? Preferences { get; set; }
 
             [CascadingParameter(Name = "SortColumn")]
             public string? SortColumn { get; set; }

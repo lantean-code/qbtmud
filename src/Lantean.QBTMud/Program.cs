@@ -1,4 +1,5 @@
 using Lantean.QBitTorrentClient;
+using Lantean.QBTMud.Configuration;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Theming;
@@ -16,6 +17,13 @@ namespace Lantean.QBTMud
             builder.RootComponents.Add<App>("#app");
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
+            var routingMode = RoutingModeConfiguration.GetRoutingMode(builder.Configuration);
+            if (routingMode == RoutingMode.Hash)
+            {
+                builder.Services.AddHashRouting();
+            }
+
+            builder.Services.AddSingleton(typeof(RoutingMode), routingMode);
             builder.Services.AddMudServices();
             builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
             builder.Services.AddOptions<WebUiLocalizationOptions>();
@@ -28,22 +36,28 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<ILanguageLocalizer, LanguageLocalizer>();
             builder.Services.AddScoped<ILanguageCatalog, LanguageCatalog>();
 
-            Uri baseAddress;
+            var applicationBaseAddress = new Uri(builder.HostEnvironment.BaseAddress);
+            Uri defaultApiHostBaseAddress;
 #if DEBUG
 #pragma warning disable S1075 // URIs should not be hardcoded - used for debugging only
-            baseAddress = new Uri("http://localhost:8080");
+            defaultApiHostBaseAddress = new Uri("http://localhost:8080");
 #pragma warning restore S1075 // URIs should not be hardcoded
 #else
-            baseAddress = new Uri(builder.HostEnvironment.BaseAddress);
+            defaultApiHostBaseAddress = applicationBaseAddress;
 #endif
+            var apiBaseAddress = ApiUrlConfiguration.GetApiBaseAddress(
+                builder.Configuration,
+                applicationBaseAddress,
+                defaultApiHostBaseAddress);
 
             builder.Services.AddTransient<CookieHandler>();
             builder.Services.AddScoped<HttpLogger>();
+            builder.Services.AddSingleton<IApiUrlResolver>(new ApiUrlResolver(apiBaseAddress));
             builder.Services
                 .AddScoped(sp => sp
                     .GetRequiredService<IHttpClientFactory>()
                     .CreateClient("API"))
-                .AddHttpClient("API", client => client.BaseAddress = new Uri(baseAddress, "api/v2/"))
+                .AddHttpClient("API", (sp, client) => client.BaseAddress = sp.GetRequiredService<IApiUrlResolver>().ApiBaseAddress)
                 .AddHttpMessageHandler<CookieHandler>()
                 .RemoveAllLoggers()
                 .AddLogger<HttpLogger>(wrapHandlersPipeline: true);
@@ -70,6 +84,8 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IAppBuildInfoService, AppBuildInfoService>();
             builder.Services.AddScoped<IAppUpdateService, AppUpdateService>();
             builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
+            builder.Services.AddScoped<IInternalUrlProvider, InternalUrlProvider>();
+            builder.Services.AddScoped<IMagnetLinkService, MagnetLinkService>();
             builder.Services.AddScoped<IPreferencesUpdateService, PreferencesUpdateService>();
             builder.Services.AddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();
             builder.Services.AddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();

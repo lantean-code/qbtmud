@@ -361,6 +361,25 @@
         setupLoadingProgress(startPromise);
     }
 
+    function migrateLegacyDownloadHash() {
+        const hash = window.location.hash;
+        if (!hash || !hash.startsWith("#")) {
+            return;
+        }
+
+        const value = hash.substring(1);
+        if (!/^download(?:=|&|$)/i.test(value)) {
+            return;
+        }
+
+        const canonicalHash = `#/?${value}`;
+        if (hash === canonicalHash) {
+            return;
+        }
+
+        history.replaceState(history.state, "", canonicalHash);
+    }
+
     function setupLoadingProgress(startPromise) {
         const root = document.documentElement;
         let intervalId = 0;
@@ -397,6 +416,7 @@
 
     applyBootstrapFont();
     applyBootstrapTheme();
+    migrateLegacyDownloadHash();
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", startBlazor);

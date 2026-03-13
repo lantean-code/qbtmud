@@ -3,6 +3,7 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Configuration;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Services;
@@ -414,7 +415,36 @@ namespace Lantean.QBTMud.Test.Components
             var registerInvocation = TestContext.JSInterop.Setup<MagnetRegistrationResult>(
                 "qbt.registerMagnetHandler",
                 invocation => invocation.Arguments.Count == 2
-                    && invocation.Arguments.ElementAt(0) as string == "http://localhost/#download=%s"
+                    && invocation.Arguments.ElementAt(0) as string == "http://localhost/?download=%s"
+                    && invocation.Arguments.ElementAt(1) as string == "qBittorrent WebUI magnet handler");
+            registerInvocation.SetResult(new MagnetRegistrationResult { Status = "success" });
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var registerItem = FindMenuItem(target, "RegisterMagnetHandler");
+            await target.InvokeAsync(() => registerItem.Instance.OnClick.InvokeAsync());
+
+            registerInvocation.Invocations.Should().ContainSingle();
+        }
+
+        [Fact]
+        public async Task GIVEN_HashRouting_WHEN_RegisterMagnetHandlerInvoked_THEN_UsesHashTemplate()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.Services.RemoveAll<RoutingMode>();
+            TestContext.Services.RemoveAll<IInternalUrlProvider>();
+            TestContext.Services.AddSingleton(typeof(RoutingMode), RoutingMode.Hash);
+            TestContext.Services.AddScoped<IInternalUrlProvider, InternalUrlProvider>();
+
+            var registerInvocation = TestContext.JSInterop.Setup<MagnetRegistrationResult>(
+                "qbt.registerMagnetHandler",
+                invocation => invocation.Arguments.Count == 2
+                    && invocation.Arguments.ElementAt(0) as string == "http://localhost/#/?download=%s"
                     && invocation.Arguments.ElementAt(1) as string == "qBittorrent WebUI magnet handler");
             registerInvocation.SetResult(new MagnetRegistrationResult { Status = "success" });
 
