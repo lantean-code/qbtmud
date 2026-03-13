@@ -94,6 +94,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddScoped<IClientDataStorageAdapter, ClientDataStorageAdapter>();
             Services.AddSingleton<IStorageCatalogService, StorageCatalogService>();
             Services.AddScoped<IStorageRoutingService, StorageRoutingService>();
+            Services.AddScoped<IPreferencesUpdateService, PreferencesUpdateService>();
             Services.AddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();
             Services.AddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();
             Services.AddScoped<ISnackbarWorkflow, SnackbarWorkflow>();
@@ -151,6 +152,13 @@ namespace Lantean.QBTMud.Test.Infrastructure
                 .Setup(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             Services.AddSingleton(languageCatalog);
+
+            var languageInitializationService = Mock.Of<ILanguageInitializationService>();
+            var languageInitializationMock = Mock.Get(languageInitializationService);
+            languageInitializationMock
+                .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.CompletedTask);
+            Services.AddSingleton(languageInitializationService);
         }
 
         public TestLocalStorageService LocalStorage => _localStorage;

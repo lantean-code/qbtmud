@@ -70,6 +70,7 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IAppBuildInfoService, AppBuildInfoService>();
             builder.Services.AddScoped<IAppUpdateService, AppUpdateService>();
             builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
+            builder.Services.AddScoped<IPreferencesUpdateService, PreferencesUpdateService>();
             builder.Services.AddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();
             builder.Services.AddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();
             builder.Services.AddScoped<ITorrentCompletionNotificationService, TorrentCompletionNotificationService>();

@@ -930,6 +930,44 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_PreferencesPublished_WHEN_UpdateReceived_THEN_StatusBarReflectsUpdatedPreference()
+        {
+            DisposeDefaultTarget();
+            var mainData = CreateMainData(serverState: CreateServerState(v4: "1.1.1.1", v6: string.Empty));
+            var target = RenderLayout(
+                new List<IManagedTimer>(),
+                mainData: mainData,
+                preferences: CreatePreferences(statusBarExternalIp: false),
+                breakpoint: Breakpoint.Lg,
+                orientation: Orientation.Portrait);
+            var preferencesUpdateService = TestContext.Services.GetRequiredService<IPreferencesUpdateService>();
+
+            HasComponentWithTestId<MudText>(target, "Status-ExternalIp").Should().BeFalse();
+
+            await target.InvokeAsync(async () => await preferencesUpdateService.PublishAsync(CreatePreferences(statusBarExternalIp: true)));
+
+            target.WaitForAssertion(() =>
+            {
+                var externalIp = FindComponentByTestId<MudText>(target, "Status-ExternalIp");
+                GetChildContentText(externalIp.Instance.ChildContent).Should().Be("External IP: 1.1.1.1");
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_DisposedLayout_WHEN_PreferencesPublished_THEN_DoesNotThrow()
+        {
+            DisposeDefaultTarget();
+            var target = RenderLayout(new List<IManagedTimer>());
+            var preferencesUpdateService = TestContext.Services.GetRequiredService<IPreferencesUpdateService>();
+
+            await target.Instance.DisposeAsync();
+
+            var action = async () => await preferencesUpdateService.PublishAsync(CreatePreferences(statusBarExternalIp: true));
+
+            await action.Should().NotThrowAsync();
+        }
+
+        [Fact]
         public void GIVEN_ConnectionStatusFirewalled_WHEN_Rendered_THEN_ShowsWarningIcon()
         {
             var mainData = CreateMainData(serverState: CreateServerState(connectionStatus: "firewalled"));

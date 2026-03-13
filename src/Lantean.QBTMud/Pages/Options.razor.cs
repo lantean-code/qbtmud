@@ -11,6 +11,8 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Options
     {
+        private bool _suppressNavigationPrompt;
+
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
@@ -28,6 +30,12 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ISettingsStorageService SettingsStorage { get; set; } = default!;
+
+        [Inject]
+        protected ILanguageInitializationService LanguageInitializationService { get; set; } = default!;
+
+        [Inject]
+        protected IPreferencesUpdateService PreferencesUpdateService { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -69,6 +77,11 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task ValidateExit(LocationChangingContext context)
         {
+            if (_suppressNavigationPrompt)
+            {
+                return;
+            }
+
             if (UpdatePreferences is null)
             {
                 return;
@@ -135,19 +148,24 @@ namespace Lantean.QBTMud.Pages
             {
                 return;
             }
+
+            var selectedLocale = UpdatePreferences.Locale;
             await ApiClient.SetApplicationPreferences(UpdatePreferences);
 
-            if (!string.IsNullOrWhiteSpace(UpdatePreferences.Locale))
+            if (!string.IsNullOrWhiteSpace(selectedLocale))
             {
-                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, UpdatePreferences.Locale);
+                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, selectedLocale);
+                await LanguageInitializationService.EnsureLanguageResourcesInitialized();
             }
 
             SnackbarWorkflow.ShowTransientMessage(TranslateOptions("Options saved."), Severity.Success);
 
-            Preferences = await ApiClient.GetApplicationPreferences();
+            var refreshedPreferences = await ApiClient.GetApplicationPreferences();
+            Preferences = refreshedPreferences;
             UpdatePreferences = null;
-
-            NavigationManager.NavigateToHome(forceLoad: true);
+            _suppressNavigationPrompt = true;
+            await PreferencesUpdateService.PublishAsync(refreshedPreferences);
+            NavigationManager.NavigateToHome();
         }
 
         private string TranslateOptions(string source, params object[] arguments)

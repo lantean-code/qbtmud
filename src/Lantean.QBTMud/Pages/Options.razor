@@ -2,7 +2,7 @@
 @layout OtherLayout
 @inject Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer
 
-<NavigationLock ConfirmExternalNavigation="@(UpdatePreferences is not null)" OnBeforeInternalNavigation="ValidateExit" />
+<NavigationLock ConfirmExternalNavigation="@(UpdatePreferences is not null && !_suppressNavigationPrompt)" OnBeforeInternalNavigation="ValidateExit" />
 
 <div class="content-panel">
     <div class="content-panel__toolbar">

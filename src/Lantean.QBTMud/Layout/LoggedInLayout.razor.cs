@@ -68,6 +68,9 @@ namespace Lantean.QBTMud.Layout
         protected IAppSettingsService AppSettingsService { get; set; } = default!;
 
         [Inject]
+        protected IPreferencesUpdateService PreferencesUpdateService { get; set; } = default!;
+
+        [Inject]
         protected IAppUpdateService AppUpdateService { get; set; } = default!;
 
         [Inject]
@@ -160,6 +163,8 @@ namespace Lantean.QBTMud.Layout
                 NavigationManager.LocationChanged += NavigationManagerOnLocationChanged;
                 _navigationHandlerAttached = true;
             }
+
+            PreferencesUpdateService.PreferencesUpdated += OnPreferencesUpdated;
         }
 
         private IReadOnlyList<Torrent> GetTorrents()
@@ -1029,6 +1034,15 @@ namespace Lantean.QBTMud.Layout
             StateHasChanged();
         }
 
+        private async ValueTask OnPreferencesUpdated(QBitTorrentClient.Models.Preferences preferences)
+        {
+            ArgumentNullException.ThrowIfNull(preferences);
+
+            Preferences = preferences;
+            Menu?.ShowMenu(preferences);
+            await InvokeAsync(StateHasChanged);
+        }
+
         protected virtual async ValueTask DisposeAsync(bool disposing)
         {
             if (_disposedValue)
@@ -1066,6 +1080,7 @@ namespace Lantean.QBTMud.Layout
                 }
 
                 AppSettingsService.SettingsChanged -= OnAppSettingsChanged;
+                PreferencesUpdateService.PreferencesUpdated -= OnPreferencesUpdated;
             }
 
             _disposedValue = true;
