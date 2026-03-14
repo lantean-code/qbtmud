@@ -117,7 +117,10 @@ namespace Lantean.QBTMud
 #endif
 
             var host = builder.Build();
-            await host.InitializeHashRoutingAsync();
+            if (routingMode == RoutingMode.Hash)
+            {
+                await host.InitializeHashRoutingAsync();
+            }
             await host.Services.GetRequiredService<IAppWarmupService>().WarmupAsync();
             await host.RunAsync();
         }
