@@ -42,6 +42,9 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_themeManagerService)
                 .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ReloadServerThemes())
+                .Returns(Task.CompletedTask);
 
             SetupFontCatalog(new[] { "Nunito Sans", "Open Sans" });
         }
@@ -479,6 +482,23 @@ namespace Lantean.QBTMud.Test.Pages
 
             var fontField = FindComponentByTestId<MudAutocomplete<string>>(target, "ThemeDetailFont");
             fontField.Instance.GetState(x => x.Value).Should().Be("Nunito Sans");
+        }
+
+        [Fact]
+        public void GIVEN_FontItemTemplateWithBlankFont_WHEN_Rendered_THEN_UsesEmptyPreviewStyle()
+        {
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
+            var fontField = FindComponentByTestId<MudAutocomplete<string>>(target, "ThemeDetailFont");
+            var itemTemplate = fontField.Instance.ItemTemplate;
+
+            itemTemplate.Should().NotBeNull();
+            var renderedTemplate = TestContext.Render(itemTemplate!(string.Empty));
+            var texts = renderedTemplate.FindComponents<MudText>();
+
+            texts.Should().HaveCount(2);
+            texts[0].Instance.Style.Should().BeEmpty();
+            texts[1].Instance.Style.Should().BeEmpty();
         }
 
         [Fact]

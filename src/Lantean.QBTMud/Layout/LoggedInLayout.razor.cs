@@ -8,6 +8,7 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
+using System.Net;
 
 namespace Lantean.QBTMud.Layout
 {
@@ -16,7 +17,7 @@ namespace Lantean.QBTMud.Layout
         private const string _pendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
         private const string _lastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
         private const int _defaultRefreshInterval = 1500;
-        private static readonly TimeSpan PwaInstallPromptDisplayDelay = TimeSpan.FromSeconds(2);
+        private static readonly TimeSpan _pwaInstallPromptDisplayDelay = TimeSpan.FromSeconds(2);
 
         private readonly bool _refreshEnabled = true;
         private int _requestId = 0;
@@ -303,7 +304,7 @@ namespace Lantean.QBTMud.Layout
         {
             try
             {
-                await Task.Delay(PwaInstallPromptDisplayDelay, cancellationToken);
+                await Task.Delay(_pwaInstallPromptDisplayDelay, cancellationToken);
                 _showPwaInstallPrompt = true;
                 await InvokeAsync(StateHasChanged);
             }
@@ -520,8 +521,14 @@ namespace Lantean.QBTMud.Layout
             {
                 data = await ApiClient.GetMainData(_requestId);
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException exception)
             {
+                if (exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                {
+                    await HandleAuthenticationFailureAsync();
+                    return ManagedTimerTickResult.Stop;
+                }
+
                 if (MainData is not null)
                 {
                     MainData.LostConnection = true;
@@ -571,6 +578,21 @@ namespace Lantean.QBTMud.Layout
             }
 
             return ManagedTimerTickResult.Continue;
+        }
+
+        private async Task HandleAuthenticationFailureAsync()
+        {
+            IsAuthenticated = false;
+            _authConfirmed = false;
+
+            if (MainData is not null)
+            {
+                MainData.LostConnection = false;
+            }
+
+            await ClearPendingDownloadAsync();
+            _timerCancellationToken.CancelIfNotDisposed();
+            await InvokeAsync(() => NavigationManager.NavigateTo("login"));
         }
 
         private Task UpdateRefreshIntervalAsync(int newInterval, CancellationToken cancellationToken)

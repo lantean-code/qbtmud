@@ -195,5 +195,24 @@ namespace Lantean.QBTMud.Test.Services
             _target.IsCompleted.Should().BeTrue();
             _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.BrowserCapabilities && failure.Message == "BrowserCapabilitiesFailure");
         }
+
+        [Fact]
+        public async Task GIVEN_DebugLoggingEnabled_WHEN_WarmupInvoked_THEN_ShouldLogCompletedSteps()
+        {
+            Mock.Get(_logger)
+                .Setup(logger => logger.IsEnabled(LogLevel.Debug))
+                .Returns(true);
+
+            await _target.WarmupAsync(TestContext.Current.CancellationToken);
+
+            Mock.Get(_logger).Verify(
+                logger => logger.Log(
+                    LogLevel.Debug,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains("Warmup step", StringComparison.Ordinal)),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Exactly(4));
+        }
     }
 }

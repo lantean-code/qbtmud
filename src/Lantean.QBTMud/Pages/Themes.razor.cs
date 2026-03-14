@@ -94,6 +94,7 @@ namespace Lantean.QBTMud.Pages
         protected override async Task OnInitializedAsync()
         {
             await ThemeManagerService.EnsureInitialized();
+            await ThemeManagerService.ReloadServerThemes();
         }
 
         protected void NavigateBack()

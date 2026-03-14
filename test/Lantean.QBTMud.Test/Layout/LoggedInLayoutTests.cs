@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using System.Diagnostics;
+using System.Net;
 using System.Text.Json;
 using ClientModels = Lantean.QBitTorrentClient.Models;
 
@@ -724,6 +725,75 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public void GIVEN_RefreshSettingsReturnsNull_WHEN_Rendered_THEN_UsesFallbackSettingsForUpdateCheck()
+        {
+            DisposeDefaultTarget();
+
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync((AppSettings)null!);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    UpdateChecksEnabled = false,
+                    NotificationsEnabled = false
+                });
+
+            RenderLayout(new List<IManagedTimer>());
+
+            Mock.Get(_appSettingsService).Verify(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_UpdateAvailableWithoutReleaseTag_WHEN_Rendered_THEN_DoesNotShowUpdateSnackbar()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettings.Default.Clone());
+            Mock.Get(_appUpdateService)
+                .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppUpdateStatus(
+                    new AppBuildInfo("1.0.0", "AssemblyMetadata"),
+                    latestRelease: null,
+                    true,
+                    true,
+                    DateTime.UtcNow));
+
+            RenderLayout(new List<IManagedTimer>());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(It.IsAny<string>(), Severity.Info, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_StartupUpdateCheckCanceledOnDispose_WHEN_Rendered_THEN_SwallowsCancellation()
+        {
+            DisposeDefaultTarget();
+            var updateCheckStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_appUpdateService)
+                .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .Returns(async (bool _, CancellationToken cancellationToken) =>
+                {
+                    updateCheckStarted.SetResult(true);
+                    await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                    return null!;
+                });
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            await updateCheckStarted.Task;
+
+            var action = async () => await target.Instance.DisposeAsync();
+
+            await action.Should().NotThrowAsync();
+        }
+
+        [Fact]
         public async Task GIVEN_NullPreferences_WHEN_Initialized_THEN_CompletesWithoutLocaleWarning()
         {
             DisposeDefaultTarget();
@@ -1317,6 +1387,76 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_RefreshTickUnauthorized_WHEN_Ticked_THEN_NavigatesToLoginWithoutLostConnectionDialog()
+        {
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            var probeBody = CreateProbeBody();
+            var mainData = CreateMainData(serverState: CreateServerState());
+            _dialogService.ClearInvocations();
+
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+                .ReturnsAsync(CreateClientMainData())
+                .ThrowsAsync(new HttpRequestException("Unauthorized", null, HttpStatusCode.Unauthorized));
+
+            Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
+
+            Mock.Get(_refreshTimer)
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, body: probeBody);
+            var probe = target.FindComponent<LayoutProbe>();
+
+            target.WaitForAssertion(() => handler.Should().NotBeNull());
+
+            var result = await handler!(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Stop);
+            target.WaitForAssertion(() => _navigationManager.LastNavigationUri.Should().Be("login"));
+            _navigationManager.ForceLoad.Should().BeFalse();
+            probe.Instance.MainData!.LostConnection.Should().BeFalse();
+            _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshTickForbidden_WHEN_Ticked_THEN_NavigatesToLoginWithoutLostConnectionDialog()
+        {
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            var probeBody = CreateProbeBody();
+            var mainData = CreateMainData(serverState: CreateServerState());
+            _dialogService.ClearInvocations();
+
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+                .ReturnsAsync(CreateClientMainData())
+                .ThrowsAsync(new HttpRequestException("Forbidden", null, HttpStatusCode.Forbidden));
+
+            Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
+
+            Mock.Get(_refreshTimer)
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, body: probeBody);
+            var probe = target.FindComponent<LayoutProbe>();
+
+            target.WaitForAssertion(() => handler.Should().NotBeNull());
+
+            var result = await handler!(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Stop);
+            target.WaitForAssertion(() => _navigationManager.LastNavigationUri.Should().Be("login"));
+            _navigationManager.ForceLoad.Should().BeFalse();
+            probe.Instance.MainData!.LostConnection.Should().BeFalse();
+            _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_RefreshTickFullUpdate_WHEN_Ticked_THEN_RecreatesMainData()
         {
             Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
@@ -1856,7 +1996,142 @@ namespace Lantean.QBTMud.Test.Layout
             await firstClick;
         }
 
+        [Fact]
+        public void GIVEN_UpdateStatusThrows_WHEN_Rendered_THEN_SwallowsExceptionWithoutSnackbar()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+            Mock.Get(_appUpdateService)
+                .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Failure"));
+
+            RenderLayout(new List<IManagedTimer>());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("A new qbtmud build (v1.1.0) is available.", Severity.Info, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public void GIVEN_UpdateStatusCanceled_WHEN_Rendered_THEN_SwallowsCancellationWithoutSnackbar()
+        {
+            DisposeDefaultTarget();
+            _snackbar.ClearInvocations();
+            Mock.Get(_appUpdateService)
+                .Setup(service => service.GetUpdateStatusAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .Returns((bool _, CancellationToken cancellationToken) => Task.FromCanceled<AppUpdateStatus>(cancellationToken));
+
+            RenderLayout(new List<IManagedTimer>());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("A new qbtmud build (v1.1.0) is available.", Severity.Info, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshTickNotificationProcessingCanceled_WHEN_Ticked_THEN_RethrowsCancellation()
+        {
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            var mainData = CreateMainData(serverState: CreateServerState());
+            var filterChanged = false;
+
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+                .ReturnsAsync(CreateClientMainData(fullUpdate: false))
+                .ReturnsAsync(CreateClientMainData(fullUpdate: false));
+
+            Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
+            IReadOnlyList<TorrentTransition> transitions =
+            [
+                new TorrentTransition("Hash1", "Name1", false, false, true)
+            ];
+            Mock.Get(_dataManager).Setup(m => m.MergeMainData(It.IsAny<ClientModels.MainData>(), mainData, out filterChanged, out transitions)).Returns(true);
+            Mock.Get(_torrentCompletionNotificationService)
+                .Setup(service => service.ProcessTransitionsAsync(It.IsAny<IReadOnlyList<TorrentTransition>>(), It.IsAny<CancellationToken>()))
+                .Returns((IReadOnlyList<TorrentTransition> _, CancellationToken cancellationToken) => Task.FromCanceled(cancellationToken));
+
+            Mock.Get(_refreshTimer)
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+
+            handler.Should().NotBeNull();
+            using var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+            var action = async () => await handler!(cancellationTokenSource.Token);
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
+        }
+
+        [Fact]
+        public void GIVEN_BlankVersion_WHEN_PageTitleResolved_THEN_OmitsVersionText()
+        {
+            DisposeDefaultTarget();
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationVersion()).ReturnsAsync(" ");
+
+            var target = RenderLayout(new List<IManagedTimer>());
+            var pageTitle = target.FindComponent<PageTitle>();
+
+            GetChildContentText(pageTitle.Instance.ChildContent).Should().Be("qBittorrent WebUI");
+        }
+
+        [Fact]
+        public void GIVEN_RefreshTimerMissingDuringInitialization_WHEN_Rendered_THEN_CreatesTimerOnFirstRender()
+        {
+            DisposeDefaultTarget();
+            var deferredRefreshTimer = new Mock<IManagedTimer>(MockBehavior.Strict);
+            deferredRefreshTimer
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            deferredRefreshTimer
+                .Setup(t => t.DisposeAsync())
+                .Returns(ValueTask.CompletedTask);
+            Mock.Get(_managedTimerFactory)
+                .SetupSequence(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<int>()))
+                .Returns((IManagedTimer)null!)
+                .Returns(deferredRefreshTimer.Object);
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.WaitForAssertion(() =>
+            {
+                deferredRefreshTimer.Verify(
+                    t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),
+                    Times.Once);
+            });
+        }
+
         private IRenderedComponent<LoggedInLayout> RenderLayout(
+            IReadOnlyList<IManagedTimer> timers,
+            MainData? mainData = null,
+            ClientModels.Preferences? preferences = null,
+            Breakpoint breakpoint = Breakpoint.Lg,
+            Orientation orientation = Orientation.Landscape,
+            bool isDarkMode = false,
+            bool timerDrawerOpen = false,
+            EventCallback<bool>? timerDrawerOpenChanged = null,
+            RenderFragment? body = null,
+            Menu? menu = null,
+            bool configureMainData = true)
+        {
+            return RenderLayout(
+                TestContext,
+                timers,
+                mainData,
+                preferences,
+                breakpoint,
+                orientation,
+                isDarkMode,
+                timerDrawerOpen,
+                timerDrawerOpenChanged,
+                body,
+                menu,
+                configureMainData);
+        }
+
+        private IRenderedComponent<LoggedInLayout> RenderLayout(
+            ComponentTestContext context,
             IReadOnlyList<IManagedTimer> timers,
             MainData? mainData = null,
             ClientModels.Preferences? preferences = null,
@@ -1876,7 +2151,7 @@ namespace Lantean.QBTMud.Test.Layout
             }
             Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferences()).ReturnsAsync(preferences ?? CreatePreferences());
 
-            return TestContext.Render<LoggedInLayout>(parameters =>
+            return context.Render<LoggedInLayout>(parameters =>
             {
                 parameters.Add(p => p.Body, body ?? (builder => { }));
                 parameters.AddCascadingValue(breakpoint);

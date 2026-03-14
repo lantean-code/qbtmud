@@ -182,6 +182,12 @@ namespace Lantean.QBTMud.Pages
         {
             await ThemeManagerService.EnsureInitialized();
             await LoadTheme();
+
+            if (_theme is null)
+            {
+                await ThemeManagerService.ReloadServerThemes();
+                await LoadTheme();
+            }
         }
 
         protected void NavigateBack()

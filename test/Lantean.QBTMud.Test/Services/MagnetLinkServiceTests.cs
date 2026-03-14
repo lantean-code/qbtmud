@@ -114,6 +114,14 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public void GIVEN_QueryContainsSegmentWithoutSeparator_WHEN_ExtractDownloadLink_THEN_ShouldSkipSegment()
+        {
+            var result = _target.ExtractDownloadLink("http://localhost/?view&download=https%3A%2F%2Fexample.com%2Ffile.torrent");
+
+            result.Should().Be("https://example.com/file.torrent");
+        }
+
+        [Fact]
         public void GIVEN_UnsupportedOrInvalidUrls_WHEN_ExtractDownloadLink_THEN_ShouldReturnNull()
         {
             _target.ExtractDownloadLink(null).Should().BeNull();

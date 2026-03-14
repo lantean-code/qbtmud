@@ -110,7 +110,7 @@ namespace Lantean.QBTMud.Components
                 await ApiClient.Logout();
                 await SpeedHistoryService.ClearAsync();
 
-                NavigationManager.NavigateToHome(forceLoad: true);
+                NavigationManager.NavigateTo("login");
             });
         }
 

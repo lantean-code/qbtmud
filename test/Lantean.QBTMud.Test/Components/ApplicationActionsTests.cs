@@ -503,6 +503,7 @@ namespace Lantean.QBTMud.Test.Components
 
             apiClientMock.Verify(c => c.Logout(), Times.Once);
             speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Once);
+            TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/login");
         }
 
         [Fact]

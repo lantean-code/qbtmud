@@ -43,6 +43,9 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_themeManagerService)
                 .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.ReloadServerThemes())
+                .Returns(Task.CompletedTask);
         }
 
         [Fact]
@@ -185,6 +188,45 @@ namespace Lantean.QBTMud.Test.Pages
                         && definition.Description == string.Empty)),
                 Times.Once);
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/themes/");
+        }
+
+        [Fact]
+        public async Task GIVEN_CreateWithCurrentTheme_WHEN_Invoked_THEN_ClonesCurrentTheme()
+        {
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog("New Theme", "Name", null))
+                .ReturnsAsync("Name");
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.CurrentTheme)
+                .Returns(
+                    new ThemeCatalogItem(
+                        "CurrentId",
+                        "Current",
+                        new ThemeDefinition
+                        {
+                            Id = "CurrentId",
+                            Name = "Current",
+                            Description = "Description",
+                            FontFamily = "Open Sans",
+                            Theme = new MudTheme()
+                        },
+                        ThemeSource.Local,
+                        null));
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderPage(new List<ThemeCatalogItem>());
+
+            var createButton = FindComponentByTestId<MudIconButton>(target, "ThemesCreate");
+            await target.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_themeManagerService).Verify(service => service.SaveLocalTheme(
+                    It.Is<ThemeDefinition>(definition =>
+                        definition.Name == "Name"
+                        && definition.Description == string.Empty
+                        && definition.FontFamily == "Open Sans")),
+                Times.Once);
         }
 
         [Fact]
@@ -365,6 +407,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Returns(Task.CompletedTask);
 
             var target = RenderPage(new List<ThemeCatalogItem>());
+            _themeManagerService.ClearInvocations();
 
             var reloadButton = FindComponentByTestId<MudIconButton>(target, "ThemesReload");
             await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
@@ -381,6 +424,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Returns(reloadTaskSource.Task);
 
             var target = RenderPage(new List<ThemeCatalogItem>());
+            _themeManagerService.ClearInvocations();
             var reloadButton = FindComponentByTestId<MudIconButton>(target, "ThemesReload");
 
             var firstReloadTask = target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
@@ -709,6 +753,35 @@ namespace Lantean.QBTMud.Test.Pages
                         && value.Description == string.Empty
                         && value.FontFamily == "Nunito Sans")),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ImportWithNullTheme_WHEN_Imported_THEN_ThrowsNullReferenceException()
+        {
+            var definition = new ThemeDefinition
+            {
+                Id = "ThemeId",
+                Name = "Name",
+                FontFamily = "Nunito Sans",
+                Theme = null!
+            };
+            var json = JsonSerializer.Serialize(definition, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            var file = new TestBrowserFile("theme.json", json);
+
+            SetupFontCatalogValid();
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.SaveLocalTheme(It.IsAny<ThemeDefinition>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderPage(new List<ThemeCatalogItem>());
+
+            var upload = target.FindComponent<MudFileUpload<IReadOnlyList<IBrowserFile>>>();
+            Func<Task> action = async () =>
+            {
+                await target.InvokeAsync(() => upload.Instance.FilesChanged.InvokeAsync(new List<IBrowserFile> { file }));
+            };
+
+            await action.Should().ThrowAsync<NullReferenceException>();
         }
 
         [Fact]

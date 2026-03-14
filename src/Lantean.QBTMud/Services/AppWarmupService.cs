@@ -105,7 +105,10 @@ namespace Lantean.QBTMud.Services
             try
             {
                 await action();
-                _logger.LogDebug("Warmup step {Step} completed in {ElapsedMilliseconds}ms.", step, stopwatch.ElapsedMilliseconds);
+                if (_logger.IsEnabled(LogLevel.Debug))
+                {
+                    _logger.LogDebug("Warmup step {Step} completed in {ElapsedMilliseconds}ms.", step, stopwatch.ElapsedMilliseconds);
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -124,7 +127,10 @@ namespace Lantean.QBTMud.Services
             try
             {
                 await action();
-                _logger.LogDebug("Warmup step {Step} completed in {ElapsedMilliseconds}ms.", step, stopwatch.ElapsedMilliseconds);
+                if (_logger.IsEnabled(LogLevel.Debug))
+                {
+                    _logger.LogDebug("Warmup step {Step} completed in {ElapsedMilliseconds}ms.", step, stopwatch.ElapsedMilliseconds);
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
