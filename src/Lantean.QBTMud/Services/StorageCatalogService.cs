@@ -84,6 +84,7 @@ namespace Lantean.QBTMud.Services
                     items:
                     [
                         new StorageCatalogItemDefinition("themes.selected-theme", "themes", "Selected theme", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.SelectedThemeId", StorageItemSerializationMode.Json),
+                        new StorageCatalogItemDefinition("themes.selected-theme-definition", "themes", "Selected theme snapshot", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.SelectedThemeDefinition", StorageItemSerializationMode.Json),
                         new StorageCatalogItemDefinition("themes.local-themes", "themes", "Custom themes", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.LocalThemes", StorageItemSerializationMode.Json),
                         new StorageCatalogItemDefinition("themes.bootstrap-css-light", "themes", "Bootstrap CSS (light)", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapCss.Light", StorageItemSerializationMode.RawString),
                         new StorageCatalogItemDefinition("themes.bootstrap-css-dark", "themes", "Bootstrap CSS (dark)", StorageCatalogItemMatchMode.ExactKey, "ThemeManager.BootstrapCss.Dark", StorageItemSerializationMode.RawString),

@@ -13,6 +13,7 @@ namespace Lantean.QBTMud.Services
         private const string _appContext = "App";
         private const string _localThemesStorageKey = "ThemeManager.LocalThemes";
         private const string _selectedThemeStorageKey = "ThemeManager.SelectedThemeId";
+        private const string _selectedThemeDefinitionStorageKey = "ThemeManager.SelectedThemeDefinition";
         private const string _bundledThemeIndexPath = "themes/index.json";
 
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
@@ -122,7 +123,6 @@ namespace Lantean.QBTMud.Services
 
                 await LoadLocalThemes();
                 await LoadBundledThemes();
-                await LoadRepositoryThemes(captureIssues: false);
                 RebuildCatalog();
                 await ApplyInitialTheme();
 
@@ -153,7 +153,7 @@ namespace Lantean.QBTMud.Services
 
             if (_currentThemeId is not null && !_themes.Any(theme => theme.Id == _currentThemeId))
             {
-                _currentThemeId = null;
+                await ClearSelectedThemeSelectionAsync();
             }
 
             if (_currentThemeId is not null)
@@ -182,6 +182,7 @@ namespace Lantean.QBTMud.Services
 
             ApplyThemeInternal(theme);
             await _settingsStorage.SetItemAsync(_selectedThemeStorageKey, theme.Id);
+            await _settingsStorage.SetItemAsync(_selectedThemeDefinitionStorageKey, ThemeSerialization.CloneDefinition(theme.Theme));
         }
 
         /// <summary>
@@ -249,12 +250,27 @@ namespace Lantean.QBTMud.Services
             var storedThemeId = await _settingsStorage.GetItemAsync<string?>(_selectedThemeStorageKey);
             if (!string.IsNullOrWhiteSpace(storedThemeId))
             {
+                _currentThemeId = storedThemeId;
                 var storedTheme = _themes.FirstOrDefault(theme => theme.Id == storedThemeId);
                 if (storedTheme is not null)
                 {
                     ApplyThemeInternal(storedTheme);
+                    await _settingsStorage.SetItemAsync(_selectedThemeDefinitionStorageKey, ThemeSerialization.CloneDefinition(storedTheme.Theme));
                     return;
                 }
+
+                if (await HasRepositoryThemesConfigured())
+                {
+                    var cachedSelectedTheme = await LoadSelectedThemeSnapshotAsync(storedThemeId);
+                    if (cachedSelectedTheme is not null)
+                    {
+                        ApplyThemeInternal(cachedSelectedTheme);
+                    }
+
+                    return;
+                }
+
+                await ClearSelectedThemeSelectionAsync();
             }
 
             if (_themes.Count > 0)
@@ -270,6 +286,41 @@ namespace Lantean.QBTMud.Services
                 ThemeSource.Server,
                 null);
             ApplyThemeInternal(fallbackTheme);
+        }
+
+        private async Task<bool> HasRepositoryThemesConfigured()
+        {
+            var settings = await _appSettingsService.GetSettingsAsync();
+            return !string.IsNullOrWhiteSpace(settings.ThemeRepositoryIndexUrl);
+        }
+
+        private async Task<ThemeCatalogItem?> LoadSelectedThemeSnapshotAsync(string selectedThemeId)
+        {
+            var storedDefinition = await _settingsStorage.GetItemAsync<ThemeDefinition?>(_selectedThemeDefinitionStorageKey);
+            if (storedDefinition is null)
+            {
+                return null;
+            }
+
+            var normalizedDefinition = NormalizeDefinition(storedDefinition);
+            if (!string.Equals(normalizedDefinition.Id, selectedThemeId, StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            return new ThemeCatalogItem(
+                normalizedDefinition.Id,
+                normalizedDefinition.Name,
+                normalizedDefinition,
+                ThemeSource.Repository,
+                null);
+        }
+
+        private async Task ClearSelectedThemeSelectionAsync()
+        {
+            _currentThemeId = null;
+            await _settingsStorage.RemoveItemAsync(_selectedThemeStorageKey);
+            await _settingsStorage.RemoveItemAsync(_selectedThemeDefinitionStorageKey);
         }
 
         private void ApplyThemeInternal(ThemeCatalogItem theme)

@@ -1,11 +1,9 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
-using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Components
@@ -30,10 +28,10 @@ namespace Lantean.QBTMud.Components
         protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
-        protected IJSRuntime JSRuntime { get; set; } = default!;
+        protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
 
         [Inject]
-        protected ISpeedHistoryService SpeedHistoryService { get; set; } = default!;
+        protected IMagnetLinkService MagnetLinkService { get; set; } = default!;
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
@@ -112,7 +110,7 @@ namespace Lantean.QBTMud.Components
                 await ApiClient.Logout();
                 await SpeedHistoryService.ClearAsync();
 
-                NavigationManager.NavigateToHome(forceLoad: true);
+                NavigationManager.NavigateTo("login");
             });
         }
 
@@ -135,22 +133,20 @@ namespace Lantean.QBTMud.Components
 
             try
             {
-                var templateUrl = BuildMagnetHandlerTemplateUrl();
                 var handlerName = LanguageLocalizer.Translate("AppApplicationActions", "qBittorrent WebUI magnet handler");
-                var result = await JSRuntime.RegisterMagnetHandler(templateUrl, handlerName);
+                var result = await MagnetLinkService.RegisterHandler(handlerName);
 
-                var status = (result.Status ?? string.Empty).ToLowerInvariant();
-                switch (status)
+                switch (result.Status)
                 {
-                    case "success":
+                    case MagnetHandlerRegistrationStatus.Success:
                         SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "Magnet handler registered. Magnet links will now open in qBittorrent WebUI."), Severity.Success);
                         break;
 
-                    case "insecure":
+                    case MagnetHandlerRegistrationStatus.Insecure:
                         SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "Access this WebUI over HTTPS to register the magnet handler."), Severity.Warning);
                         break;
 
-                    case "unsupported":
+                    case MagnetHandlerRegistrationStatus.Unsupported:
                         SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "This browser does not support registering magnet handlers."), Severity.Warning);
                         break;
 
@@ -161,10 +157,6 @@ namespace Lantean.QBTMud.Components
                         SnackbarWorkflow.ShowTransientMessage(message, Severity.Error);
                         break;
                 }
-            }
-            catch (JSException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "Unable to register the magnet handler: %1", exception.Message), Severity.Error);
             }
             finally
             {
@@ -228,13 +220,6 @@ namespace Lantean.QBTMud.Components
             {
                 _stopAllInProgress = false;
             }
-        }
-
-        private string BuildMagnetHandlerTemplateUrl()
-        {
-            var trimmedBase = NavigationManager.BaseUri.TrimEnd('/');
-
-            return $"{trimmedBase}/#download=%s";
         }
     }
 }
