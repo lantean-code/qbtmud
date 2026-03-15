@@ -5,27 +5,22 @@ namespace Lantean.QBTMud.Test.Services
 {
     public sealed class ManagedTimerTickResultTests
     {
-        private readonly ManagedTimerTickResult _target;
-
-        public ManagedTimerTickResultTests()
-        {
-            _target = new ManagedTimerTickResult(ManagedTimerTickAction.Continue);
-        }
-
         [Fact]
         public void GIVEN_ActionOnlyConstructor_WHEN_Created_THEN_SetsActionAndNoInterval()
         {
-            _target.Action.Should().Be(ManagedTimerTickAction.Continue);
-            _target.UpdatedInterval.Should().BeNull();
+            var target = new ManagedTimerTickResult(ManagedTimerTickAction.Continue);
+
+            target.Action.Should().Be(ManagedTimerTickAction.Continue);
+            target.UpdatedInterval.Should().BeNull();
         }
 
         [Fact]
         public void GIVEN_ActionAndIntervalConstructor_WHEN_Created_THEN_SetsInterval()
         {
-            var result = new ManagedTimerTickResult(ManagedTimerTickAction.Stop, TimeSpan.FromMilliseconds(250));
+            var target = new ManagedTimerTickResult(ManagedTimerTickAction.Stop, TimeSpan.FromMilliseconds(250));
 
-            result.Action.Should().Be(ManagedTimerTickAction.Stop);
-            result.UpdatedInterval.Should().Be(TimeSpan.FromMilliseconds(250));
+            target.Action.Should().Be(ManagedTimerTickAction.Stop);
+            target.UpdatedInterval.Should().Be(TimeSpan.FromMilliseconds(250));
         }
 
         [Fact]
@@ -39,10 +34,10 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public void GIVEN_UpdateIntervalFactory_WHEN_Called_THEN_ReturnsContinueWithInterval()
         {
-            var result = ManagedTimerTickResult.UpdateInterval(TimeSpan.FromSeconds(2));
+            var target = ManagedTimerTickResult.UpdateInterval(TimeSpan.FromSeconds(2));
 
-            result.Action.Should().Be(ManagedTimerTickAction.Continue);
-            result.UpdatedInterval.Should().Be(TimeSpan.FromSeconds(2));
+            target.Action.Should().Be(ManagedTimerTickAction.Continue);
+            target.UpdatedInterval.Should().Be(TimeSpan.FromSeconds(2));
         }
 
         [Fact]

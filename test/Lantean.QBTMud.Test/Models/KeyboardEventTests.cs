@@ -6,23 +6,18 @@ namespace Lantean.QBTMud.Test.Models
 {
     public sealed class KeyboardEventTests
     {
-        private readonly KeyboardEvent _target;
-
-        public KeyboardEventTests()
-        {
-            _target = new KeyboardEvent("Key");
-        }
-
         [Fact]
         public void GIVEN_KeyOnlyConstructor_WHEN_Constructed_THEN_ShouldSetKeyAndCode()
         {
-            _target.Key.Should().Be("Key");
-            _target.Code.Should().Be("Key");
-            _target.Repeat.Should().BeFalse();
-            _target.CtrlKey.Should().BeFalse();
-            _target.ShiftKey.Should().BeFalse();
-            _target.AltKey.Should().BeFalse();
-            _target.MetaKey.Should().BeFalse();
+            var target = new KeyboardEvent("Key");
+
+            target.Key.Should().Be("Key");
+            target.Code.Should().Be("Key");
+            target.Repeat.Should().BeFalse();
+            target.CtrlKey.Should().BeFalse();
+            target.ShiftKey.Should().BeFalse();
+            target.AltKey.Should().BeFalse();
+            target.MetaKey.Should().BeFalse();
         }
 
         [Fact]
@@ -76,7 +71,9 @@ namespace Lantean.QBTMud.Test.Models
         [Fact]
         public void GIVEN_NonKeyboardEventObject_WHEN_EqualsInvoked_THEN_ShouldReturnFalse()
         {
-            var result = _target.Equals("Key");
+            var target = CreateEvent();
+
+            var result = target.Equals("Key");
 
             result.Should().BeFalse();
         }
@@ -84,9 +81,10 @@ namespace Lantean.QBTMud.Test.Models
         [Fact]
         public void GIVEN_EquivalentKeyboardEvents_WHEN_EqualsInvoked_THEN_ShouldReturnTrue()
         {
+            var target = CreateEvent();
             var compare = CreateEvent();
 
-            var result = _target.Equals(compare);
+            var result = target.Equals(compare);
 
             result.Should().BeTrue();
         }
@@ -94,9 +92,10 @@ namespace Lantean.QBTMud.Test.Models
         [Fact]
         public void GIVEN_DifferentKey_WHEN_EqualsInvoked_THEN_ShouldReturnFalse()
         {
+            var target = CreateEvent();
             var compare = CreateEvent(key: "Other");
 
-            var result = _target.Equals(compare);
+            var result = target.Equals(compare);
 
             result.Should().BeFalse();
         }
@@ -104,9 +103,10 @@ namespace Lantean.QBTMud.Test.Models
         [Fact]
         public void GIVEN_DifferentRepeat_WHEN_EqualsInvoked_THEN_ShouldReturnFalse()
         {
+            var target = CreateEvent();
             var compare = CreateEvent(repeat: true);
 
-            var result = _target.Equals(compare);
+            var result = target.Equals(compare);
 
             result.Should().BeFalse();
         }
@@ -114,9 +114,10 @@ namespace Lantean.QBTMud.Test.Models
         [Fact]
         public void GIVEN_DifferentCtrlKey_WHEN_EqualsInvoked_THEN_ShouldReturnFalse()
         {
+            var target = CreateEvent();
             var compare = CreateEvent(ctrlKey: true);
 
-            var result = _target.Equals(compare);
+            var result = target.Equals(compare);
 
             result.Should().BeFalse();
         }
@@ -124,9 +125,10 @@ namespace Lantean.QBTMud.Test.Models
         [Fact]
         public void GIVEN_DifferentShiftKey_WHEN_EqualsInvoked_THEN_ShouldReturnFalse()
         {
+            var target = CreateEvent();
             var compare = CreateEvent(shiftKey: true);
 
-            var result = _target.Equals(compare);
+            var result = target.Equals(compare);
 
             result.Should().BeFalse();
         }
@@ -134,9 +136,10 @@ namespace Lantean.QBTMud.Test.Models
         [Fact]
         public void GIVEN_DifferentAltKey_WHEN_EqualsInvoked_THEN_ShouldReturnFalse()
         {
+            var target = CreateEvent();
             var compare = CreateEvent(altKey: true);
 
-            var result = _target.Equals(compare);
+            var result = target.Equals(compare);
 
             result.Should().BeFalse();
         }
@@ -144,9 +147,10 @@ namespace Lantean.QBTMud.Test.Models
         [Fact]
         public void GIVEN_DifferentMetaKey_WHEN_EqualsInvoked_THEN_ShouldReturnFalse()
         {
+            var target = CreateEvent();
             var compare = CreateEvent(metaKey: true);
 
-            var result = _target.Equals(compare);
+            var result = target.Equals(compare);
 
             result.Should().BeFalse();
         }
@@ -154,9 +158,10 @@ namespace Lantean.QBTMud.Test.Models
         [Fact]
         public void GIVEN_DifferentCode_WHEN_EqualsInvoked_THEN_ShouldReturnFalse()
         {
+            var target = CreateEvent();
             var compare = CreateEvent(code: "Code");
 
-            var result = _target.Equals(compare);
+            var result = target.Equals(compare);
 
             result.Should().BeFalse();
         }
@@ -164,15 +169,18 @@ namespace Lantean.QBTMud.Test.Models
         [Fact]
         public void GIVEN_EqualEvents_WHEN_GetHashCodeInvoked_THEN_ShouldReturnSameValue()
         {
+            var target = CreateEvent();
             var compare = CreateEvent();
 
-            _target.GetHashCode().Should().Be(compare.GetHashCode());
+            target.GetHashCode().Should().Be(compare.GetHashCode());
         }
 
         [Fact]
         public void GIVEN_Key_WHEN_ToStringInvoked_THEN_ShouldReturnKey()
         {
-            _target.ToString().Should().Be("Key");
+            var target = CreateEvent();
+
+            target.ToString().Should().Be("Key");
         }
 
         [Fact]

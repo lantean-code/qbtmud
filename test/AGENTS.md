@@ -19,8 +19,10 @@
 
 ## Test Class Structure
 
-- For non-component unit tests, the system under test is a readonly field named `_target`.
-- For non-component unit tests, `_target` is constructed in the test class constructor.
+- For non-component unit tests, use a readonly field named `_target` only when one shared constructor setup genuinely serves most tests in the class.
+- When `_target` is used, construct it in the test class constructor.
+- When constructor arguments, dependency behavior, or lifetime vary per test and that local construction is the common case for the class, do not force a class-level `_target`; construct the system under test inside each test and store it in a method-local variable named `target`.
+- Local `target` instances are allowed in classes that also use `_target` when they are the minority case and the altered construction is part of the scenario under test.
 - Mocks used across tests are private readonly fields created with `Mock.Of<T>()`.
 - Mocks that are local to a single test method should use `new Mock<T>()`.
 
@@ -89,7 +91,7 @@
 - [ ] Class name is `<ClassName>Tests`.
 - [ ] Namespace mirrors the product namespace with `.Test` inserted appropriately.
 - [ ] Methods follow `GIVEN_..._WHEN_..._THEN_...` naming.
-- [ ] For non-component unit tests, `_target` exists as a readonly field and is constructed in the test class constructor.
+- [ ] For non-component unit tests, `_target` is used only when one shared constructor setup serves most tests in the class; otherwise the system under test is created per test in a local `target`.
 - [ ] For bUnit component tests, the rendered component under test is created per test and stored in a local variable named `target`.
 - [ ] Class-level mocks are `Mock.Of<T>()`; method-local mocks use `new Mock<T>()`.
 - [ ] Strings use property names as values; dates use `2000-01-01 00:00` with correct `DateTimeKind`; numbers are sensible.
