@@ -243,10 +243,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             return builder =>
             {
                 builder.OpenComponent<MudSelect<string>>(0);
-                builder.AddAttribute(1, nameof(MudSelect<string>.Label), "User interface language:");
-                builder.AddAttribute(2, nameof(MudSelect<string>.Value), "English");
-                builder.AddAttribute(3, nameof(MudSelect<string>.Variant), Variant.Outlined);
-                builder.AddAttribute(4, nameof(MudSelect<string>.ShrinkLabel), true);
+                builder.AddAttribute(1, nameof(MudSelect<>.Label), "User interface language:");
+                builder.AddAttribute(2, nameof(MudSelect<>.Value), "English");
+                builder.AddAttribute(3, nameof(MudSelect<>.Variant), Variant.Outlined);
+                builder.AddAttribute(4, nameof(MudSelect<>.ShrinkLabel), true);
                 builder.AddAttribute(5, "data-test-id", TestIdHelper.For("WizardStepChildSelect"));
                 builder.CloseComponent();
             };

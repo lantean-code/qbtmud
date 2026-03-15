@@ -954,6 +954,104 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_DialogConfirmed_WHEN_InvokeGlobalDownloadRateDialog_THEN_ShouldUpdateRateAndReturnAppliedValue()
+        {
+            var reference = CreateReference(DialogResult.Ok(5L));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Global Download Speed Limit", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.SetGlobalDownloadLimit(5120))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            var result = await _target.InvokeGlobalDownloadRateDialog(2048);
+
+            result.Should().Be(5120);
+            Mock.Get(_apiClient).Verify();
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogCanceled_WHEN_InvokeGlobalDownloadRateDialog_THEN_ShouldNotUpdateRate()
+        {
+            var reference = CreateReference(DialogResult.Cancel());
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Global Download Speed Limit", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            var result = await _target.InvokeGlobalDownloadRateDialog(2048);
+
+            result.Should().BeNull();
+            Mock.Get(_apiClient).Verify(a => a.SetGlobalDownloadLimit(It.IsAny<long>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_GlobalDownloadRateDialog_WHEN_BuildingParameters_THEN_UsesGlobalRangeAndValueFuncs()
+        {
+            var reference = CreateReference(DialogResult.Cancel());
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Global Download Speed Limit", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            await _target.InvokeGlobalDownloadRateDialog(1024);
+
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<SliderFieldDialog<long>>(
+                    "Global Download Speed Limit",
+                    It.Is<DialogParameters>(parameters => HasGlobalRateDialogParameters(parameters, "Download limit:", 10000L)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogConfirmed_WHEN_InvokeGlobalUploadRateDialog_THEN_ShouldUpdateRateAndReturnAppliedValue()
+        {
+            var reference = CreateReference(DialogResult.Ok(6L));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Global Upload Speed Limit", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.SetGlobalUploadLimit(6144))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            var result = await _target.InvokeGlobalUploadRateDialog(1024);
+
+            result.Should().Be(6144);
+            Mock.Get(_apiClient).Verify();
+        }
+
+        [Fact]
+        public async Task GIVEN_DialogCanceled_WHEN_InvokeGlobalUploadRateDialog_THEN_ShouldNotUpdateRate()
+        {
+            var reference = CreateReference(DialogResult.Cancel());
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Global Upload Speed Limit", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            var result = await _target.InvokeGlobalUploadRateDialog(1024);
+
+            result.Should().BeNull();
+            Mock.Get(_apiClient).Verify(a => a.SetGlobalUploadLimit(It.IsAny<long>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_GlobalUploadRateDialog_WHEN_BuildingParameters_THEN_UsesGlobalRangeAndValueFuncs()
+        {
+            var reference = CreateReference(DialogResult.Cancel());
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Global Upload Speed Limit", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            await _target.InvokeGlobalUploadRateDialog(1024);
+
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<SliderFieldDialog<long>>(
+                    "Global Upload Speed Limit",
+                    It.Is<DialogParameters>(parameters => HasGlobalRateDialogParameters(parameters, "Upload limit:", 10000L)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_CategoryFound_WHEN_InvokeEditCategoryDialog_THEN_ShouldCallApi()
         {
             var categories = new Dictionary<string, QbtCategory>
@@ -1858,50 +1956,66 @@ namespace Lantean.QBTMud.Test.Services
 
         private static bool HasDownloadRateDialogValueFunctions(DialogParameters parameters)
         {
-            if (!HasParameter(parameters, nameof(SliderFieldDialog<long>.ValueDisplayFunc)))
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueDisplayFunc)))
             {
                 return false;
             }
 
-            var display = parameters[nameof(SliderFieldDialog<long>.ValueDisplayFunc)] as Func<long, string>;
+            var display = parameters[nameof(SliderFieldDialog<>.ValueDisplayFunc)] as Func<long, string>;
             if (display == null || display(Limits.NoLimit) != "∞" || display(2048) != "2048")
             {
                 return false;
             }
 
-            if (!HasParameter(parameters, nameof(SliderFieldDialog<long>.ValueGetFunc)))
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueGetFunc)))
             {
                 return false;
             }
 
-            var getter = parameters[nameof(SliderFieldDialog<long>.ValueGetFunc)] as Func<string, long>;
+            var getter = parameters[nameof(SliderFieldDialog<>.ValueGetFunc)] as Func<string, long>;
             return getter != null
-                   && getter("∞") == Limits.NoLimit
+                   && getter("∞") == 0
                    && getter("5") == 5;
         }
 
         private static bool HasUploadRateDialogValueFunctions(DialogParameters parameters)
         {
-            if (!HasParameter(parameters, nameof(SliderFieldDialog<long>.ValueDisplayFunc)))
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueDisplayFunc)))
             {
                 return false;
             }
 
-            var display = parameters[nameof(SliderFieldDialog<long>.ValueDisplayFunc)] as Func<long, string>;
+            var display = parameters[nameof(SliderFieldDialog<>.ValueDisplayFunc)] as Func<long, string>;
             if (display == null || display(Limits.NoLimit) != "∞" || display(1024) != "1024")
             {
                 return false;
             }
 
-            if (!HasParameter(parameters, nameof(SliderFieldDialog<long>.ValueGetFunc)))
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueGetFunc)))
             {
                 return false;
             }
 
-            var getter = parameters[nameof(SliderFieldDialog<long>.ValueGetFunc)] as Func<string, long>;
+            var getter = parameters[nameof(SliderFieldDialog<>.ValueGetFunc)] as Func<string, long>;
             return getter != null
-                   && getter("∞") == Limits.NoLimit
+                   && getter("∞") == 0
                    && getter("7") == 7;
+        }
+
+        private static bool HasGlobalRateDialogParameters(DialogParameters parameters, string label, long max)
+        {
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.Min))
+                || !HasParameter(parameters, nameof(SliderFieldDialog<>.Max))
+                || !HasParameter(parameters, nameof(SliderFieldDialog<>.Label)))
+            {
+                return false;
+            }
+
+            return parameters[nameof(SliderFieldDialog<>.Min)] is 0L
+                   && parameters[nameof(SliderFieldDialog<>.Max)] is long actualMax
+                   && actualMax == max
+                   && string.Equals(parameters[nameof(SliderFieldDialog<>.Label)]?.ToString(), label, StringComparison.Ordinal)
+                   && HasDownloadRateDialogValueFunctions(parameters);
         }
 
         private static bool HasDistinctShareRatioDialogParameters(DialogParameters parameters)

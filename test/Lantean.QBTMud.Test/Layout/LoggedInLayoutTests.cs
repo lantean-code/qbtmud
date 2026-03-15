@@ -1318,6 +1318,130 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_GlobalDownloadRateDialogConfirmed_WHEN_StatusBarIndicatorClicked_THEN_UpdatesStateAndRenderedText()
+        {
+            var serverState = CreateServerState();
+            serverState.DownloadRateLimit = 2048;
+            var mainData = CreateMainData(serverState: serverState);
+
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.InvokeGlobalDownloadRateDialog(2048))
+                .ReturnsAsync(4096)
+                .Verifiable();
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+            var button = target.Find($"[data-test-id='{TestIdHelper.For("Status-DownloadButton")}']");
+
+            await target.InvokeAsync(() => button.Click());
+
+            target.WaitForAssertion(() =>
+            {
+                mainData.ServerState.DownloadRateLimit.Should().Be(4096);
+                Mock.Get(_dialogWorkflow).Verify();
+
+                var text = FindComponentByTestId<MudText>(target, "Status-Download");
+                GetChildContentText(text.Instance.ChildContent).Should().Be(
+                    $"{DisplayHelpers.Speed(10)} [{DisplayHelpers.Speed(4096)}] ({DisplayHelpers.Size(100)})");
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_GlobalUploadRateDialogConfirmed_WHEN_StatusBarIndicatorClicked_THEN_UpdatesStateAndRenderedText()
+        {
+            var serverState = CreateServerState();
+            serverState.UploadRateLimit = 1024;
+            var mainData = CreateMainData(serverState: serverState);
+
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.InvokeGlobalUploadRateDialog(1024))
+                .ReturnsAsync(3072)
+                .Verifiable();
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+            var button = target.Find($"[data-test-id='{TestIdHelper.For("Status-UploadButton")}']");
+
+            await target.InvokeAsync(() => button.Click());
+
+            target.WaitForAssertion(() =>
+            {
+                mainData.ServerState.UploadRateLimit.Should().Be(3072);
+                Mock.Get(_dialogWorkflow).Verify();
+
+                var text = FindComponentByTestId<MudText>(target, "Status-Upload");
+                GetChildContentText(text.Instance.ChildContent).Should().Be(
+                    $"{DisplayHelpers.Speed(20)} [{DisplayHelpers.Speed(3072)}] ({DisplayHelpers.Size(200)})");
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_GlobalRateDialogsCanceled_WHEN_StatusBarIndicatorsClicked_THEN_LeavesStateUnchanged()
+        {
+            var serverState = CreateServerState();
+            serverState.DownloadRateLimit = 2048;
+            serverState.UploadRateLimit = 1024;
+            var mainData = CreateMainData(serverState: serverState);
+
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.InvokeGlobalDownloadRateDialog(2048))
+                .ReturnsAsync((long?)null)
+                .Verifiable();
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.InvokeGlobalUploadRateDialog(1024))
+                .ReturnsAsync((long?)null)
+                .Verifiable();
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+            var downloadButton = target.Find($"[data-test-id='{TestIdHelper.For("Status-DownloadButton")}']");
+            var uploadButton = target.Find($"[data-test-id='{TestIdHelper.For("Status-UploadButton")}']");
+
+            await target.InvokeAsync(() => downloadButton.Click());
+            await target.InvokeAsync(() => uploadButton.Click());
+
+            target.WaitForAssertion(() =>
+            {
+                mainData.ServerState.DownloadRateLimit.Should().Be(2048);
+                mainData.ServerState.UploadRateLimit.Should().Be(1024);
+                Mock.Get(_dialogWorkflow).Verify();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_GlobalRateDialogFails_WHEN_StatusBarIndicatorsClicked_THEN_ShowsErrorSnackbarAndLeavesStateUnchanged()
+        {
+            var serverState = CreateServerState();
+            serverState.DownloadRateLimit = 2048;
+            serverState.UploadRateLimit = 1024;
+            var mainData = CreateMainData(serverState: serverState);
+            _snackbar.ClearInvocations();
+
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.InvokeGlobalDownloadRateDialog(2048))
+                .ThrowsAsync(new HttpRequestException("DownloadFail"));
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.InvokeGlobalUploadRateDialog(1024))
+                .ThrowsAsync(new HttpRequestException("UploadFail"));
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+            var downloadButton = target.Find($"[data-test-id='{TestIdHelper.For("Status-DownloadButton")}']");
+            var uploadButton = target.Find($"[data-test-id='{TestIdHelper.For("Status-UploadButton")}']");
+
+            await target.InvokeAsync(() => downloadButton.Click());
+            await target.InvokeAsync(() => uploadButton.Click());
+
+            target.WaitForAssertion(() =>
+            {
+                mainData.ServerState.DownloadRateLimit.Should().Be(2048);
+                mainData.ServerState.UploadRateLimit.Should().Be(1024);
+            });
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Unable to set global download rate limit: DownloadFail", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Unable to set global upload rate limit: UploadFail", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
         public void GIVEN_RefreshIntervalZero_WHEN_Initialized_THEN_DoesNotUpdateInterval()
         {
             var mainData = CreateMainData(serverState: CreateServerState());

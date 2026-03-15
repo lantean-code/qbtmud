@@ -45,6 +45,12 @@ namespace Lantean.QBTMud.Components
         [Parameter]
         public EventCallback OnToggleAlternativeSpeedLimits { get; set; }
 
+        [Parameter]
+        public EventCallback OnShowGlobalDownloadRateLimit { get; set; }
+
+        [Parameter]
+        public EventCallback OnShowGlobalUploadRateLimit { get; set; }
+
         protected bool ShowStatusLabels =>
             (CurrentBreakpoint >= Breakpoint.Lg && CurrentOrientation == Orientation.Portrait) ||
             (CurrentBreakpoint >= Breakpoint.Md && CurrentOrientation == Orientation.Landscape);
@@ -231,6 +237,16 @@ namespace Lantean.QBTMud.Components
         protected Task ToggleAlternativeSpeedLimitsClicked(MouseEventArgs args)
         {
             return OnToggleAlternativeSpeedLimits.InvokeAsync();
+        }
+
+        protected Task ShowGlobalDownloadRateLimitClicked()
+        {
+            return OnShowGlobalDownloadRateLimit.InvokeAsync();
+        }
+
+        protected Task ShowGlobalUploadRateLimitClicked()
+        {
+            return OnShowGlobalUploadRateLimit.InvokeAsync();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)

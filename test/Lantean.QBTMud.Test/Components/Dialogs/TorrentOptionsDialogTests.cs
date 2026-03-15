@@ -181,14 +181,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var provider = TestContext.Render((RenderFragment)(builder =>
             {
                 builder.OpenComponent<CascadingValue<MainData>>(0);
-                builder.AddAttribute(1, nameof(CascadingValue<MainData>.Value), mainData);
-                builder.AddAttribute(2, nameof(CascadingValue<MainData>.IsFixed), true);
-                builder.AddAttribute(3, nameof(CascadingValue<MainData>.ChildContent), (RenderFragment)(mainDataBuilder =>
+                builder.AddAttribute(1, nameof(CascadingValue<>.Value), mainData);
+                builder.AddAttribute(2, nameof(CascadingValue<>.IsFixed), true);
+                builder.AddAttribute(3, nameof(CascadingValue<>.ChildContent), (RenderFragment)(mainDataBuilder =>
                 {
                     mainDataBuilder.OpenComponent<CascadingValue<ClientModels.Preferences>>(0);
-                    mainDataBuilder.AddAttribute(1, nameof(CascadingValue<ClientModels.Preferences>.Value), preferences);
-                    mainDataBuilder.AddAttribute(2, nameof(CascadingValue<ClientModels.Preferences>.IsFixed), true);
-                    mainDataBuilder.AddAttribute(3, nameof(CascadingValue<ClientModels.Preferences>.ChildContent), (RenderFragment)(dialogBuilder =>
+                    mainDataBuilder.AddAttribute(1, nameof(CascadingValue<>.Value), preferences);
+                    mainDataBuilder.AddAttribute(2, nameof(CascadingValue<>.IsFixed), true);
+                    mainDataBuilder.AddAttribute(3, nameof(CascadingValue<>.ChildContent), (RenderFragment)(dialogBuilder =>
                     {
                         dialogBuilder.OpenComponent<MudDialogProvider>(0);
                         dialogBuilder.CloseComponent();

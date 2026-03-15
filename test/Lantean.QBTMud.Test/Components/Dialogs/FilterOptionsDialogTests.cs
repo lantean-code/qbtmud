@@ -321,7 +321,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             if (definitions is not null)
             {
-                parameters.Add(nameof(FilterOptionsDialog<FilterItem>.FilterDefinitions), definitions);
+                parameters.Add(nameof(FilterOptionsDialog<>.FilterDefinitions), definitions);
             }
 
             var reference = await dialogService.ShowAsync<FilterOptionsDialog<FilterItem>>("Filter", parameters);

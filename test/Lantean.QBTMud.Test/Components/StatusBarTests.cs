@@ -536,6 +536,58 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_DownloadIndicatorClicked_WHEN_CallbackProvided_THEN_InvokesShowGlobalDownloadRateLimit()
+        {
+            var clicked = false;
+            var target = RenderStatusBar(onShowGlobalDownloadRateLimit: () =>
+            {
+                clicked = true;
+                return Task.CompletedTask;
+            });
+            var button = target.Find($"[data-test-id='{TestIdHelper.For("Status-DownloadButton")}']");
+
+            await target.InvokeAsync(() => button.Click());
+
+            clicked.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_DownloadIndicatorRendered_WHEN_UsingMudBlazorInteraction_THEN_RendersMudButton()
+        {
+            var target = RenderStatusBar();
+            var button = FindComponentByTestId<MudButton>(target, "Status-DownloadButton");
+
+            button.Instance.ButtonType.Should().Be(ButtonType.Button);
+            button.Instance.Variant.Should().Be(Variant.Text);
+        }
+
+        [Fact]
+        public async Task GIVEN_UploadIndicatorClicked_WHEN_CallbackProvided_THEN_InvokesShowGlobalUploadRateLimit()
+        {
+            var clicked = false;
+            var target = RenderStatusBar(onShowGlobalUploadRateLimit: () =>
+            {
+                clicked = true;
+                return Task.CompletedTask;
+            });
+            var button = target.Find($"[data-test-id='{TestIdHelper.For("Status-UploadButton")}']");
+
+            await target.InvokeAsync(() => button.Click());
+
+            clicked.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_UploadIndicatorRendered_WHEN_UsingMudBlazorInteraction_THEN_RendersMudButton()
+        {
+            var target = RenderStatusBar();
+            var button = FindComponentByTestId<MudButton>(target, "Status-UploadButton");
+
+            button.Instance.ButtonType.Should().Be(ButtonType.Button);
+            button.Instance.Variant.Should().Be(Variant.Text);
+        }
+
+        [Fact]
         public void GIVEN_DarkModeEnabled_WHEN_Rendered_THEN_DividersUseLightVariant()
         {
             var target = RenderStatusBar(isDarkMode: true);
@@ -592,7 +644,9 @@ namespace Lantean.QBTMud.Test.Components
             Orientation orientation = Orientation.Portrait,
             bool toggleAlternativeSpeedLimitsInProgress = false,
             Func<Task>? onToggleTimerDrawer = null,
-            Func<Task>? onToggleAlternativeSpeedLimits = null)
+            Func<Task>? onToggleAlternativeSpeedLimits = null,
+            Func<Task>? onShowGlobalDownloadRateLimit = null,
+            Func<Task>? onShowGlobalUploadRateLimit = null)
         {
             _timerRegistryMock.Setup(registry => registry.GetTimers()).Returns(timers ?? new List<IManagedTimer>());
 
@@ -606,6 +660,8 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(parameter => parameter.ToggleAlternativeSpeedLimitsInProgress, toggleAlternativeSpeedLimitsInProgress);
                 parameters.Add(parameter => parameter.OnToggleTimerDrawer, EventCallback.Factory.Create(this, onToggleTimerDrawer ?? (() => Task.CompletedTask)));
                 parameters.Add(parameter => parameter.OnToggleAlternativeSpeedLimits, EventCallback.Factory.Create(this, onToggleAlternativeSpeedLimits ?? (() => Task.CompletedTask)));
+                parameters.Add(parameter => parameter.OnShowGlobalDownloadRateLimit, EventCallback.Factory.Create(this, onShowGlobalDownloadRateLimit ?? (() => Task.CompletedTask)));
+                parameters.Add(parameter => parameter.OnShowGlobalUploadRateLimit, EventCallback.Factory.Create(this, onShowGlobalUploadRateLimit ?? (() => Task.CompletedTask)));
             });
         }
 
