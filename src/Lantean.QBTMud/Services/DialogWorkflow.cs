@@ -328,7 +328,8 @@ namespace Lantean.QBTMud.Services
                 rate,
                 _languageLocalizer.Translate(_transferListContext, "Torrent Download Speed Limiting"),
                 _languageLocalizer.Translate(_speedLimitContext, "Download limit:"),
-                4096L);
+                4096L,
+                Limits.NoLimit);
             if (!appliedRate.HasValue)
             {
                 return;
@@ -344,7 +345,8 @@ namespace Lantean.QBTMud.Services
                 rate,
                 _languageLocalizer.Translate("MainWindow", "Global Download Speed Limit"),
                 _languageLocalizer.Translate(_speedLimitContext, "Download limit:"),
-                10000L);
+                10000L,
+                0L);
             if (!appliedRate.HasValue)
             {
                 return null;
@@ -500,7 +502,8 @@ namespace Lantean.QBTMud.Services
                 rate,
                 _languageLocalizer.Translate(_transferListContext, "Torrent Upload Speed Limiting"),
                 _languageLocalizer.Translate(_speedLimitContext, "Upload limit:"),
-                4096L);
+                4096L,
+                Limits.NoLimit);
             if (!appliedRate.HasValue)
             {
                 return;
@@ -516,7 +519,8 @@ namespace Lantean.QBTMud.Services
                 rate,
                 _languageLocalizer.Translate("MainWindow", "Global Upload Speed Limit"),
                 _languageLocalizer.Translate(_speedLimitContext, "Upload limit:"),
-                10000L);
+                10000L,
+                0L);
             if (!appliedRate.HasValue)
             {
                 return null;
@@ -902,16 +906,16 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        private async Task<long?> ShowRateLimitDialog(long rate, string title, string label, long max)
+        private async Task<long?> ShowRateLimitDialog(long rate, string title, string label, long max, long noLimitValue)
         {
-            Func<long, string> valueDisplayFunc = v => v <= 0 ? "∞" : v.ToString();
-            Func<string, long> valueGetFunc = v => v == "∞" ? 0L : long.Parse(v);
+            Func<long, string> valueDisplayFunc = v => v == noLimitValue ? "∞" : v.ToString();
+            Func<string, long> valueGetFunc = v => v == "∞" ? noLimitValue : long.Parse(v);
 
             var parameters = new DialogParameters
             {
-                { nameof(SliderFieldDialog<>.Min), 0L },
+                { nameof(SliderFieldDialog<>.Min), noLimitValue },
                 { nameof(SliderFieldDialog<>.Max), max },
-                { nameof(SliderFieldDialog<>.Value), Math.Max(rate, 0L) / 1024 },
+                { nameof(SliderFieldDialog<>.Value), rate / 1024 },
                 { nameof(SliderFieldDialog<>.ValueDisplayFunc), valueDisplayFunc },
                 { nameof(SliderFieldDialog<>.ValueGetFunc), valueGetFunc },
                 { nameof(SliderFieldDialog<>.Label), label },

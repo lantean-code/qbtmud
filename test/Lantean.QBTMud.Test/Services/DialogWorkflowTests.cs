@@ -1956,7 +1956,13 @@ namespace Lantean.QBTMud.Test.Services
 
         private static bool HasDownloadRateDialogValueFunctions(DialogParameters parameters)
         {
-            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueDisplayFunc)))
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.Min))
+                || !HasParameter(parameters, nameof(SliderFieldDialog<>.ValueDisplayFunc)))
+            {
+                return false;
+            }
+
+            if (parameters[nameof(SliderFieldDialog<>.Min)] is not -1L)
             {
                 return false;
             }
@@ -1974,13 +1980,19 @@ namespace Lantean.QBTMud.Test.Services
 
             var getter = parameters[nameof(SliderFieldDialog<>.ValueGetFunc)] as Func<string, long>;
             return getter != null
-                   && getter("∞") == 0
+                   && getter("∞") == Limits.NoLimit
                    && getter("5") == 5;
         }
 
         private static bool HasUploadRateDialogValueFunctions(DialogParameters parameters)
         {
-            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueDisplayFunc)))
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.Min))
+                || !HasParameter(parameters, nameof(SliderFieldDialog<>.ValueDisplayFunc)))
+            {
+                return false;
+            }
+
+            if (parameters[nameof(SliderFieldDialog<>.Min)] is not -1L)
             {
                 return false;
             }
@@ -1998,7 +2010,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var getter = parameters[nameof(SliderFieldDialog<>.ValueGetFunc)] as Func<string, long>;
             return getter != null
-                   && getter("∞") == 0
+                   && getter("∞") == Limits.NoLimit
                    && getter("7") == 7;
         }
 
@@ -2015,7 +2027,31 @@ namespace Lantean.QBTMud.Test.Services
                    && parameters[nameof(SliderFieldDialog<>.Max)] is long actualMax
                    && actualMax == max
                    && string.Equals(parameters[nameof(SliderFieldDialog<>.Label)]?.ToString(), label, StringComparison.Ordinal)
-                   && HasDownloadRateDialogValueFunctions(parameters);
+                   && HasGlobalRateDialogValueFunctions(parameters);
+        }
+
+        private static bool HasGlobalRateDialogValueFunctions(DialogParameters parameters)
+        {
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueDisplayFunc)))
+            {
+                return false;
+            }
+
+            var display = parameters[nameof(SliderFieldDialog<>.ValueDisplayFunc)] as Func<long, string>;
+            if (display == null || display(0) != "∞" || display(2048) != "2048")
+            {
+                return false;
+            }
+
+            if (!HasParameter(parameters, nameof(SliderFieldDialog<>.ValueGetFunc)))
+            {
+                return false;
+            }
+
+            var getter = parameters[nameof(SliderFieldDialog<>.ValueGetFunc)] as Func<string, long>;
+            return getter != null
+                   && getter("∞") == 0
+                   && getter("5") == 5;
         }
 
         private static bool HasDistinctShareRatioDialogParameters(DialogParameters parameters)
