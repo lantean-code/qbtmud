@@ -27,7 +27,6 @@ namespace Lantean.QBTMud.Test.Pages
         private readonly IManagedTimerFactory _timerFactory;
         private Func<CancellationToken, Task<ManagedTimerTickResult>>? _tickHandler;
         private readonly IRenderedComponent<MudPopoverProvider> _popoverProvider;
-        private readonly IRenderedComponent<LogPage> _target;
 
         public LogTests()
         {
@@ -55,26 +54,24 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(new List<LogEntry>());
-
-            _target = TestContext.Render<LogPage>(parameters =>
-            {
-                parameters.AddCascadingValue("DrawerOpen", false);
-            });
         }
 
         [Fact]
         public void GIVEN_DefaultLoad_WHEN_Rendered_THEN_LogRequestedWithNormal()
         {
+            _ = RenderTarget();
+
             Mock.Get(_apiClient).Verify(c => c.GetLog(true, false, false, false, It.Is<int?>(id => id == null)), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_SelectedValuesChanged_WHEN_Invoked_THEN_Persisted()
         {
+            var target = RenderTarget();
             var values = new[] { "Info", "Warning" };
-            var select = FindCategorySelect();
+            var select = FindCategorySelect(target);
 
-            await _target.InvokeAsync(() => select.Instance.SelectedValuesChanged.InvokeAsync(values));
+            await target.InvokeAsync(() => select.Instance.SelectedValuesChanged.InvokeAsync(values));
 
             var stored = await TestContext.LocalStorage.GetItemAsync<IEnumerable<string>>(_selectedTypesStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().BeEquivalentTo(values);
@@ -83,13 +80,14 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_CategorySelect_WHEN_MenuOpened_THEN_RendersAllLogLevelOptions()
         {
-            var select = FindCategorySelect();
+            var target = RenderTarget();
+            var select = FindCategorySelect(target);
 
-            await _target.InvokeAsync(() => select.Instance.OpenMenu());
+            await target.InvokeAsync(() => select.Instance.OpenMenu());
 
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                var values = _target.FindComponents<MudSelectItem<string>>()
+                var values = target.FindComponents<MudSelectItem<string>>()
                     .Select(item => item.Instance.Value)
                     .ToList();
                 values.Should().Contain("Normal");
@@ -102,7 +100,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_MultiSelectionTextFunc_WHEN_CountsProvided_THEN_ReturnsExpected()
         {
-            var select = FindCategorySelect();
+            var target = RenderTarget();
+            var select = FindCategorySelect(target);
             select.Instance.MultiSelectionTextFunc.Should().NotBeNull();
 
             var func = select.Instance.MultiSelectionTextFunc!;
@@ -118,14 +117,15 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_TimerTick_WHEN_ResultsReturned_THEN_TableUpdated()
         {
+            var target = RenderTarget();
             var results = new List<LogEntry> { CreateLog(1, "Message", LogType.Warning) };
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await TriggerTimerTickAsync();
+            await TriggerTimerTickAsync(target);
 
-            var table = _target.FindComponent<DynamicTable<LogEntry>>();
+            var table = target.FindComponent<DynamicTable<LogEntry>>();
             table.WaitForAssertion(() =>
             {
                 var items = table.Instance.Items.Should().NotBeNull().And.Subject;
@@ -136,13 +136,14 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_ContextMenuCopy_WHEN_MessagePresent_THEN_CopiesAndNotifies()
         {
+            var target = RenderTarget();
             var item = CreateLog(1, "Message", LogType.Normal);
 
-            await TriggerContextMenuAsync(item);
-            await OpenMenuAsync();
+            await TriggerContextMenuAsync(target, item);
+            await OpenMenuAsync(target);
 
             var copyItem = FindMenuItem(Icons.Material.Filled.ContentCopy);
-            await _target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
 
             TestContext.Clipboard.PeekLast().Should().Be("Message");
             Mock.Get(_snackbar).Verify(s => s.Add("Log entry copied to clipboard.", Severity.Info, null, null), Times.Once);
@@ -151,13 +152,14 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_ContextMenuCopy_WHEN_MessageMissing_THEN_DoesNotCopy()
         {
+            var target = RenderTarget();
             var item = CreateLog(1, string.Empty, LogType.Normal);
 
-            await TriggerLongPressAsync(item);
-            await OpenMenuAsync();
+            await TriggerLongPressAsync(target, item);
+            await OpenMenuAsync(target);
 
             var copyItem = FindMenuItem(Icons.Material.Filled.ContentCopy);
-            await _target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
 
             TestContext.Clipboard.PeekLast().Should().BeNull();
             Mock.Get(_snackbar).Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), null, null), Times.Never);
@@ -166,10 +168,12 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_ContextMenuCopy_WHEN_ItemMissing_THEN_DoesNotCopy()
         {
-            await OpenMenuAsync();
+            var target = RenderTarget();
+
+            await OpenMenuAsync(target);
 
             var copyItem = FindMenuItem(Icons.Material.Filled.ContentCopy);
-            await _target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => copyItem.Instance.OnClick.InvokeAsync());
 
             TestContext.Clipboard.PeekLast().Should().BeNull();
             Mock.Get(_snackbar).Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), null, null), Times.Never);
@@ -179,10 +183,11 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_NavigateBack_WHEN_Clicked_THEN_NavigatesHome()
         {
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
-            var backButton = _target.FindComponents<MudIconButton>()
+            var target = RenderTarget();
+            var backButton = target.FindComponents<MudIconButton>()
                 .Single(button => button.Instance.Icon == Icons.Material.Outlined.NavigateBefore);
 
-            await _target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
 
             navigationManager.Uri.Should().EndWith("/");
         }
@@ -190,10 +195,12 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_NoResults_WHEN_ClearInvoked_THEN_NoNotification()
         {
-            await OpenMenuAsync();
+            var target = RenderTarget();
+
+            await OpenMenuAsync(target);
 
             var clearItem = FindMenuItem(Icons.Material.Filled.Clear);
-            await _target.InvokeAsync(() => clearItem.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => clearItem.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_snackbar).Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), null, null), Times.Never);
         }
@@ -201,24 +208,25 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_Results_WHEN_ClearInvoked_THEN_TableCleared()
         {
+            var target = RenderTarget();
             var results = new List<LogEntry> { CreateLog(1, "Message", LogType.Info) };
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await InvokeSubmitAsync();
+            await InvokeSubmitAsync(target);
 
-            var table = _target.FindComponent<DynamicTable<LogEntry>>();
+            var table = target.FindComponent<DynamicTable<LogEntry>>();
             table.WaitForAssertion(() =>
             {
                 var items = table.Instance.Items.Should().NotBeNull().And.Subject;
                 items.Count().Should().Be(1);
             });
 
-            await OpenMenuAsync();
+            await OpenMenuAsync(target);
 
             var clearItem = FindMenuItem(Icons.Material.Filled.Clear);
-            await _target.InvokeAsync(() => clearItem.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => clearItem.Instance.OnClick.InvokeAsync());
 
             var clearedItems = table.Instance.Items.Should().NotBeNull().And.Subject;
             clearedItems.Should().BeEmpty();
@@ -228,7 +236,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_RowClassFunc_WHEN_LogTypesProvided_THEN_ReturnsExpected()
         {
-            var table = _target.FindComponent<DynamicTable<LogEntry>>();
+            var target = RenderTarget();
+            var table = target.FindComponent<DynamicTable<LogEntry>>();
             var func = table.Instance.RowClassFunc;
             func.Should().NotBeNull();
 
@@ -239,14 +248,15 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_MoreThanMaxResults_WHEN_Fetched_THEN_TrimsOldest()
         {
+            var target = RenderTarget();
             var results = CreateLogs(501, LogType.Warning);
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
-            await TriggerTimerTickAsync();
+            await TriggerTimerTickAsync(target);
 
-            var table = _target.FindComponent<DynamicTable<LogEntry>>();
+            var table = target.FindComponent<DynamicTable<LogEntry>>();
             table.WaitForAssertion(() =>
             {
                 var items = table.Instance.Items.Should().NotBeNull().And.Subject.ToList();
@@ -258,7 +268,9 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_FormSubmitted_WHEN_SubmitInvoked_THEN_LogsRequested()
         {
-            await InvokeSubmitAsync();
+            var target = RenderTarget();
+
+            await InvokeSubmitAsync(target);
 
             Mock.Get(_apiClient).Verify(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()), Times.AtLeast(2));
         }
@@ -302,12 +314,13 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_TimerTick_WHEN_Forbidden_THEN_NoCrash()
         {
+            var target = RenderTarget();
             var exception = new HttpRequestException("Message", null, System.Net.HttpStatusCode.Forbidden);
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ThrowsAsync(exception);
 
-            await TriggerTimerTickAsync();
+            await TriggerTimerTickAsync(target);
 
             Mock.Get(_apiClient).Verify(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()), Times.AtLeastOnce);
         }
@@ -315,44 +328,54 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DisposeInvoked_WHEN_Disposed_THEN_NoCrash()
         {
-            await _target.Instance.DisposeAsync();
+            var target = RenderTarget();
+
+            await target.Instance.DisposeAsync();
         }
 
-        private IRenderedComponent<MudSelect<string>> FindCategorySelect()
+        private IRenderedComponent<LogPage> RenderTarget()
         {
-            return FindComponentByTestId<MudSelect<string>>(_target, "Categories");
+            return TestContext.Render<LogPage>(parameters =>
+            {
+                parameters.AddCascadingValue("DrawerOpen", false);
+            });
         }
 
-        private async Task InvokeSubmitAsync()
+        private IRenderedComponent<MudSelect<string>> FindCategorySelect(IRenderedComponent<LogPage> target)
         {
-            var form = _target.FindComponent<EditForm>();
-            await _target.InvokeAsync(() => form.Instance.OnSubmit.InvokeAsync(form.Instance.EditContext));
+            return FindComponentByTestId<MudSelect<string>>(target, "Categories");
         }
 
-        private async Task TriggerContextMenuAsync(LogEntry item)
+        private async Task InvokeSubmitAsync(IRenderedComponent<LogPage> target)
         {
-            var table = _target.FindComponent<DynamicTable<LogEntry>>();
+            var form = target.FindComponent<EditForm>();
+            await target.InvokeAsync(() => form.Instance.OnSubmit.InvokeAsync(form.Instance.EditContext));
+        }
+
+        private async Task TriggerContextMenuAsync(IRenderedComponent<LogPage> target, LogEntry item)
+        {
+            var table = target.FindComponent<DynamicTable<LogEntry>>();
             var args = new TableDataContextMenuEventArgs<LogEntry>(new MouseEventArgs(), new MudTd(), item);
-            await _target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(args));
+            await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(args));
         }
 
-        private async Task TriggerLongPressAsync(LogEntry item)
+        private async Task TriggerLongPressAsync(IRenderedComponent<LogPage> target, LogEntry item)
         {
-            var table = _target.FindComponent<DynamicTable<LogEntry>>();
+            var table = target.FindComponent<DynamicTable<LogEntry>>();
             var args = new TableDataLongPressEventArgs<LogEntry>(new LongPressEventArgs(), new MudTd(), item);
-            await _target.InvokeAsync(() => table.Instance.OnTableDataLongPress.InvokeAsync(args));
+            await target.InvokeAsync(() => table.Instance.OnTableDataLongPress.InvokeAsync(args));
         }
 
-        private async Task OpenMenuAsync()
+        private async Task OpenMenuAsync(IRenderedComponent<LogPage> target)
         {
-            var menu = _target.FindComponent<MudMenu>();
-            await _target.InvokeAsync(() => menu.Instance.OpenMenuAsync(new MouseEventArgs()));
+            var menu = target.FindComponent<MudMenu>();
+            await target.InvokeAsync(() => menu.Instance.OpenMenuAsync(new MouseEventArgs()));
         }
 
-        private async Task TriggerTimerTickAsync()
+        private async Task TriggerTimerTickAsync(IRenderedComponent<LogPage> target)
         {
-            var handler = GetTickHandler();
-            await _target.InvokeAsync(() => handler(CancellationToken.None));
+            var handler = GetTickHandler(target);
+            await target.InvokeAsync(() => handler(CancellationToken.None));
         }
 
         private static IRenderedComponent<TComponent> FindComponentByTestId<TComponent>(IRenderedComponent<LogPage> target, string testId)
@@ -365,9 +388,9 @@ namespace Lantean.QBTMud.Test.Pages
                     && string.Equals(value?.ToString(), expected, StringComparison.Ordinal));
         }
 
-        private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler()
+        private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler(IRenderedComponent<LogPage> target)
         {
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
                 Mock.Get(_timer).Verify(
                     timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),

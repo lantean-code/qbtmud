@@ -18,7 +18,6 @@ namespace Lantean.QBTMud.Test.Components
     {
         private readonly IDialogService _dialogService;
         private readonly Mock<ILanguageLocalizer> _languageLocalizerMock;
-        private readonly IRenderedComponent<ErrorDisplay> _target;
 
         public ErrorDisplayTests()
         {
@@ -39,14 +38,13 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.Services.RemoveAll<ILanguageLocalizer>();
             TestContext.Services.AddSingleton(_dialogService);
             TestContext.Services.AddSingleton(_languageLocalizerMock.Object);
-
-            _target = RenderErrorDisplay(CreateErrorBoundary());
         }
 
         [Fact]
         public void GIVEN_ErrorBoundaryWithoutErrors_WHEN_Rendered_THEN_RendersOnlyActionItems()
         {
-            var listItems = _target.FindComponents<MudListItem<string>>();
+            var target = RenderErrorDisplay(CreateErrorBoundary());
+            var listItems = target.FindComponents<MudListItem<string>>();
 
             listItems.Should().HaveCount(2);
             GetChildContentText(listItems[0].Instance.ChildContent).Should().Be("Clear Errors");

@@ -17,7 +17,6 @@ namespace Lantean.QBTMud.Test.Pages
     public sealed class LoginTests : RazorComponentTestBase<Login>
     {
         private readonly IApiClient _apiClient;
-        private readonly IRenderedComponent<Login> _target;
 
         public LoginTests()
         {
@@ -25,8 +24,6 @@ namespace Lantean.QBTMud.Test.Pages
 
             TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
-
-            _target = RenderPage();
         }
 
         [Fact]
@@ -34,12 +31,13 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/login");
+            var target = RenderPage();
 
-            await SetCredentials(_target, "Username", "Password");
+            await SetCredentials(target, "Username", "Password");
 
-            var form = _target.FindComponent<EditForm>();
+            var form = target.FindComponent<EditForm>();
 
-            await _target.InvokeAsync(() => form.Instance.OnValidSubmit.InvokeAsync());
+            await target.InvokeAsync(() => form.Instance.OnValidSubmit.InvokeAsync());
 
             Mock.Get(_apiClient).Verify(client => client.Login("Username", "Password"), Times.Once);
             navigationManager.Uri.Should().Be("http://localhost/");
@@ -52,15 +50,16 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.Login("Username", "Password"))
                 .ThrowsAsync(new HttpRequestException("Failure", null, HttpStatusCode.BadRequest));
 
-            await SetCredentials(_target, "Username", "Password");
+            var target = RenderPage();
+            await SetCredentials(target, "Username", "Password");
 
-            var form = _target.FindComponent<EditForm>();
+            var form = target.FindComponent<EditForm>();
 
-            await _target.InvokeAsync(() => form.Instance.OnValidSubmit.InvokeAsync());
+            await target.InvokeAsync(() => form.Instance.OnValidSubmit.InvokeAsync());
 
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                var alert = FindComponentByTestId<MudAlert>(_target, "LoginError");
+                var alert = FindComponentByTestId<MudAlert>(target, "LoginError");
                 GetChildContentText(alert.Instance.ChildContent).Should().Be("Invalid Username or Password.");
             });
         }
@@ -72,15 +71,16 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.Login("Username", "Password"))
                 .ThrowsAsync(new HttpRequestException("Failure", null, HttpStatusCode.Forbidden));
 
-            await SetCredentials(_target, "Username", "Password");
+            var target = RenderPage();
+            await SetCredentials(target, "Username", "Password");
 
-            var form = _target.FindComponent<EditForm>();
+            var form = target.FindComponent<EditForm>();
 
-            await _target.InvokeAsync(() => form.Instance.OnValidSubmit.InvokeAsync());
+            await target.InvokeAsync(() => form.Instance.OnValidSubmit.InvokeAsync());
 
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                var alert = FindComponentByTestId<MudAlert>(_target, "LoginError");
+                var alert = FindComponentByTestId<MudAlert>(target, "LoginError");
                 GetChildContentText(alert.Instance.ChildContent).Should().Be("Unable to log in, server is probably unreachable.");
             });
         }
@@ -92,15 +92,16 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.Login("Username", "Password"))
                 .ThrowsAsync(new InvalidOperationException("Failure"));
 
-            await SetCredentials(_target, "Username", "Password");
+            var target = RenderPage();
+            await SetCredentials(target, "Username", "Password");
 
-            var form = _target.FindComponent<EditForm>();
+            var form = target.FindComponent<EditForm>();
 
-            await _target.InvokeAsync(() => form.Instance.OnValidSubmit.InvokeAsync());
+            await target.InvokeAsync(() => form.Instance.OnValidSubmit.InvokeAsync());
 
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                var alert = FindComponentByTestId<MudAlert>(_target, "LoginError");
+                var alert = FindComponentByTestId<MudAlert>(target, "LoginError");
                 GetChildContentText(alert.Instance.ChildContent).Should().Be("Unable to log in, server is probably unreachable.");
             });
         }
@@ -108,21 +109,24 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_NoError_WHEN_Rendered_THEN_HidesAlert()
         {
-            _target.FindComponents<MudAlert>().Should().BeEmpty();
+            var target = RenderPage();
+
+            target.FindComponents<MudAlert>().Should().BeEmpty();
         }
 
         [Fact]
         public async Task GIVEN_HiddenPassword_WHEN_ToggleVisibilityClicked_THEN_ShouldTogglePasswordInputType()
         {
-            var passwordField = FindComponentByTestId<MudTextField<string>>(_target, "Password");
+            var target = RenderPage();
+            var passwordField = FindComponentByTestId<MudTextField<string>>(target, "Password");
 
             passwordField.Instance.InputType.Should().Be(InputType.Password);
 
-            await _target.InvokeAsync(() => passwordField.Instance.OnAdornmentClick.InvokeAsync(new MouseEventArgs()));
+            await target.InvokeAsync(() => passwordField.Instance.OnAdornmentClick.InvokeAsync(new MouseEventArgs()));
 
             passwordField.Instance.InputType.Should().Be(InputType.Text);
 
-            await _target.InvokeAsync(() => passwordField.Instance.OnAdornmentClick.InvokeAsync(new MouseEventArgs()));
+            await target.InvokeAsync(() => passwordField.Instance.OnAdornmentClick.InvokeAsync(new MouseEventArgs()));
 
             passwordField.Instance.InputType.Should().Be(InputType.Password);
         }

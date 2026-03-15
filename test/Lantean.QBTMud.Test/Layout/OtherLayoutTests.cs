@@ -10,24 +10,19 @@ namespace Lantean.QBTMud.Test.Layout
 {
     public sealed class OtherLayoutTests : RazorComponentTestBase<OtherLayout>
     {
-        private readonly IRenderedComponent<OtherLayout> _target;
         private bool? _drawerCallbackValue;
-
-        public OtherLayoutTests()
-        {
-            _target = RenderLayout(
-                drawerOpen: false,
-                drawerOpenChanged: EventCallback.Factory.Create<bool>(this, value => _drawerCallbackValue = value));
-        }
 
         [Fact]
         public async Task GIVEN_DrawerOpenChangedDelegate_WHEN_DrawerOpenChangedInvoked_THEN_UpdatesStateAndInvokesDelegate()
         {
-            var drawer = _target.FindComponent<MudDrawer>();
+            var target = RenderLayout(
+                drawerOpen: false,
+                drawerOpenChanged: EventCallback.Factory.Create<bool>(this, value => _drawerCallbackValue = value));
+            var drawer = target.FindComponent<MudDrawer>();
 
-            await _target.InvokeAsync(() => drawer.Instance.OpenChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => drawer.Instance.OpenChanged.InvokeAsync(true));
 
-            _target.Instance.DrawerOpen.Should().BeTrue();
+            target.Instance.DrawerOpen.Should().BeTrue();
             _drawerCallbackValue.Should().BeTrue();
         }
 
@@ -46,10 +41,13 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public void GIVEN_RenderedLayout_WHEN_InspectingChildren_THEN_RendersDrawerAndApplicationActions()
         {
-            _target.FindComponent<MudDrawer>();
-            var actions = _target.FindComponent<ApplicationActions>();
+            var target = RenderLayout(
+                drawerOpen: false,
+                drawerOpenChanged: EventCallback.Factory.Create<bool>(this, value => _drawerCallbackValue = value));
+            target.FindComponent<MudDrawer>();
+            var actions = target.FindComponent<ApplicationActions>();
 
-            _target.Instance.DrawerOpen.Should().BeFalse();
+            target.Instance.DrawerOpen.Should().BeFalse();
             actions.Instance.IsMenu.Should().BeFalse();
             actions.Instance.Preferences.Should().BeNull();
         }

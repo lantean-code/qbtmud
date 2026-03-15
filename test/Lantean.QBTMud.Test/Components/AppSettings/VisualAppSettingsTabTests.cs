@@ -12,21 +12,20 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
     public sealed class VisualAppSettingsTabTests : RazorComponentTestBase<VisualAppSettingsTab>
     {
         private readonly AppSettingsModel _settings;
-        private readonly IRenderedComponent<VisualAppSettingsTab> _target;
         private int _settingsChangedCount;
 
         public VisualAppSettingsTabTests()
         {
             _settings = AppSettingsModel.Default.Clone();
-            _target = RenderTarget();
         }
 
         [Fact]
         public async Task GIVEN_ThemeModeChanged_WHEN_DarkSelected_THEN_UpdatesSettingsAndRaisesCallback()
         {
-            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(_target, "AppSettingsThemeModePreference");
+            var target = RenderTarget();
+            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(target, "AppSettingsThemeModePreference");
 
-            await _target.InvokeAsync(() => themeModeSelect.Instance.ValueChanged.InvokeAsync(ThemeModePreference.Dark));
+            await target.InvokeAsync(() => themeModeSelect.Instance.ValueChanged.InvokeAsync(ThemeModePreference.Dark));
 
             _settings.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
             _settingsChangedCount.Should().Be(1);
@@ -35,9 +34,10 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public async Task GIVEN_ThemeModeChanged_WHEN_LightSelected_THEN_UpdatesSettingsAndRaisesCallback()
         {
-            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(_target, "AppSettingsThemeModePreference");
+            var target = RenderTarget();
+            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(target, "AppSettingsThemeModePreference");
 
-            await _target.InvokeAsync(() => themeModeSelect.Instance.ValueChanged.InvokeAsync(ThemeModePreference.Light));
+            await target.InvokeAsync(() => themeModeSelect.Instance.ValueChanged.InvokeAsync(ThemeModePreference.Light));
 
             _settings.ThemeModePreference.Should().Be(ThemeModePreference.Light);
             _settingsChangedCount.Should().Be(1);
@@ -46,7 +46,8 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public void GIVEN_RenderedControl_WHEN_ThemeModeSelectLoaded_THEN_UsesHelperText()
         {
-            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(_target, "AppSettingsThemeModePreference");
+            var target = RenderTarget();
+            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(target, "AppSettingsThemeModePreference");
 
             themeModeSelect.Instance.HelperText.Should().Be("Choose whether qbtmud follows the system appearance or uses a fixed mode.");
         }
@@ -54,9 +55,10 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public async Task GIVEN_ThemeRepositoryUrlChanged_WHEN_ValidHttpsValue_THEN_UpdatesSettingsAndRaisesCallback()
         {
-            var repositoryUrlField = FindComponentByTestId<MudTextField<string>>(_target, "AppSettingsThemeRepositoryIndexUrl");
+            var target = RenderTarget();
+            var repositoryUrlField = FindComponentByTestId<MudTextField<string>>(target, "AppSettingsThemeRepositoryIndexUrl");
 
-            await _target.InvokeAsync(() => repositoryUrlField.Instance.ValueChanged.InvokeAsync("https://example.com/index.json"));
+            await target.InvokeAsync(() => repositoryUrlField.Instance.ValueChanged.InvokeAsync("https://example.com/index.json"));
 
             _settings.ThemeRepositoryIndexUrl.Should().Be("https://example.com/index.json");
             _settingsChangedCount.Should().Be(1);
@@ -66,9 +68,10 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public async Task GIVEN_ThemeRepositoryUrlChanged_WHEN_InvalidValue_THEN_ShowsValidationError()
         {
-            var repositoryUrlField = FindComponentByTestId<MudTextField<string>>(_target, "AppSettingsThemeRepositoryIndexUrl");
+            var target = RenderTarget();
+            var repositoryUrlField = FindComponentByTestId<MudTextField<string>>(target, "AppSettingsThemeRepositoryIndexUrl");
 
-            await _target.InvokeAsync(() => repositoryUrlField.Instance.ValueChanged.InvokeAsync("ftp://example.com/index.json"));
+            await target.InvokeAsync(() => repositoryUrlField.Instance.ValueChanged.InvokeAsync("ftp://example.com/index.json"));
 
             repositoryUrlField.Instance.GetState(x => x.Error).Should().BeTrue();
         }

@@ -4,7 +4,6 @@ using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
-using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -23,7 +22,6 @@ namespace Lantean.QBTMud.Test.Components
         private readonly IManagedTimerFactory _timerFactory;
         private readonly ILanguageLocalizer _languageLocalizer;
         private Func<CancellationToken, Task<ManagedTimerTickResult>>? _tickHandler;
-        private readonly IRenderedComponent<WebSeedsTab> _target;
 
         public WebSeedsTabTests()
         {
@@ -49,45 +47,42 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns((string _, string source, object[] __) => source);
             TestContext.Services.RemoveAll<ILanguageLocalizer>();
             TestContext.Services.AddSingleton(_languageLocalizer);
-
-            _target = TestContext.Render<WebSeedsTab>(parameters =>
-            {
-                parameters.Add(p => p.Active, false);
-                parameters.Add(p => p.Hash, "Hash");
-                parameters.AddCascadingValue("RefreshInterval", 10);
-            });
         }
 
         [Fact]
         public async Task GIVEN_InactiveTab_WHEN_TimerTicks_THEN_DoesNotRender()
         {
-            var initialRenderCount = _target.RenderCount;
+            var target = RenderTarget();
+            var initialRenderCount = target.RenderCount;
 
-            var result = await TriggerTimerTickAsync(global::Xunit.TestContext.Current.CancellationToken);
+            var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Continue);
-            _target.RenderCount.Should().Be(initialRenderCount);
+            target.RenderCount.Should().Be(initialRenderCount);
             Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_ActiveTabWithHash_WHEN_ParametersSet_THEN_LoadsWebSeeds()
         {
+            var target = RenderTarget();
             var webSeeds = new[] { new WebSeed("http://seed-1") };
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentWebSeeds("Hash"))
                 .ReturnsAsync(webSeeds);
 
-            await SetParametersAsync(active: true, hash: "Hash");
+            await SetParametersAsync(target, active: true, hash: "Hash");
 
-            GetSeedUrls().Should().BeEquivalentTo(new[] { "http://seed-1" });
+            GetSeedUrls(target).Should().BeEquivalentTo(new[] { "http://seed-1" });
             Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds("Hash"), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_ActiveTabWithoutHash_WHEN_ParametersSet_THEN_DoesNotLoadWebSeeds()
         {
-            await SetParametersAsync(active: true, hash: null);
+            var target = RenderTarget();
+
+            await SetParametersAsync(target, active: true, hash: null);
 
             Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
         }
@@ -95,7 +90,9 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_InactiveTabWithHash_WHEN_ParametersSet_THEN_DoesNotLoadWebSeeds()
         {
-            await SetParametersAsync(active: false, hash: "Hash");
+            var target = RenderTarget();
+
+            await SetParametersAsync(target, active: false, hash: "Hash");
 
             Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
         }
@@ -103,9 +100,11 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_ActiveTabWithoutHash_WHEN_TimerTicks_THEN_ReturnsContinueWithoutApiCall()
         {
-            await SetParametersAsync(active: true, hash: null);
+            var target = RenderTarget();
 
-            var result = await TriggerTimerTickAsync(global::Xunit.TestContext.Current.CancellationToken);
+            await SetParametersAsync(target, active: true, hash: null);
+
+            var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Continue);
             Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
@@ -114,31 +113,33 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_ActiveTab_WHEN_TimerTickSucceeds_THEN_ReturnsContinueAndUpdatesSeeds()
         {
+            var target = RenderTarget();
             Mock.Get(_apiClient)
                 .SetupSequence(client => client.GetTorrentWebSeeds("Hash"))
                 .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
                 .ReturnsAsync(new[] { new WebSeed("http://seed-2") });
 
-            await SetParametersAsync(active: true, hash: "Hash");
+            await SetParametersAsync(target, active: true, hash: "Hash");
 
-            var result = await TriggerTimerTickAsync(global::Xunit.TestContext.Current.CancellationToken);
+            var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Continue);
-            GetSeedUrls().Should().BeEquivalentTo(new[] { "http://seed-2" });
+            GetSeedUrls(target).Should().BeEquivalentTo(new[] { "http://seed-2" });
             Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds("Hash"), Times.Exactly(2));
         }
 
         [Fact]
         public async Task GIVEN_ActiveTab_WHEN_TimerTickGetsForbidden_THEN_ReturnsStop()
         {
+            var target = RenderTarget();
             Mock.Get(_apiClient)
                 .SetupSequence(client => client.GetTorrentWebSeeds("Hash"))
                 .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
                 .ThrowsAsync(new HttpRequestException("Forbidden", null, HttpStatusCode.Forbidden));
 
-            await SetParametersAsync(active: true, hash: "Hash");
+            await SetParametersAsync(target, active: true, hash: "Hash");
 
-            var result = await TriggerTimerTickAsync(global::Xunit.TestContext.Current.CancellationToken);
+            var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
         }
@@ -146,14 +147,15 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_ActiveTab_WHEN_TimerTickGetsNotFound_THEN_ReturnsStop()
         {
+            var target = RenderTarget();
             Mock.Get(_apiClient)
                 .SetupSequence(client => client.GetTorrentWebSeeds("Hash"))
                 .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
                 .ThrowsAsync(new HttpRequestException("Not Found", null, HttpStatusCode.NotFound));
 
-            await SetParametersAsync(active: true, hash: "Hash");
+            await SetParametersAsync(target, active: true, hash: "Hash");
 
-            var result = await TriggerTimerTickAsync(global::Xunit.TestContext.Current.CancellationToken);
+            var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
         }
@@ -161,10 +163,11 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_CancelledToken_WHEN_TimerTicks_THEN_ReturnsStop()
         {
+            var target = RenderTarget();
             using var cancellationSource = new CancellationTokenSource();
             cancellationSource.Cancel();
 
-            var result = await TriggerTimerTickAsync(cancellationSource.Token);
+            var result = await TriggerTimerTickAsync(target, cancellationSource.Token);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
         }
@@ -172,7 +175,9 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_RerenderAfterFirstRender_WHEN_TimerInitialized_THEN_StartHappensOnce()
         {
-            _target.Render();
+            var target = RenderTarget();
+
+            target.Render();
 
             Mock.Get(_timerFactory).Verify(factory => factory.Create("WebSeedsTabRefresh", TimeSpan.FromMilliseconds(10)), Times.Once);
             Mock.Get(_timer).Verify(
@@ -183,8 +188,10 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_ComponentDisposedTwice_WHEN_DisposeInvoked_THEN_TimerDisposedOnce()
         {
-            await _target.Instance.DisposeAsync();
-            await _target.Instance.DisposeAsync();
+            var target = RenderTarget();
+
+            await target.Instance.DisposeAsync();
+            await target.Instance.DisposeAsync();
 
             Mock.Get(_timer).Verify(timer => timer.DisposeAsync(), Times.Once);
         }
@@ -192,14 +199,15 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_ColumnsBuilt_WHEN_TableRendered_THEN_ColumnUsesWebSeedUrl()
         {
+            var target = RenderTarget();
             var webSeeds = new[] { new WebSeed("http://seed-1") };
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentWebSeeds("Hash"))
                 .ReturnsAsync(webSeeds);
 
-            await SetParametersAsync(active: true, hash: "Hash");
+            await SetParametersAsync(target, active: true, hash: "Hash");
 
-            var table = _target.FindComponent<DynamicTable<WebSeed>>();
+            var table = target.FindComponent<DynamicTable<WebSeed>>();
             var column = table.Instance.ColumnDefinitions.Should().ContainSingle().Subject;
             var context = column.GetRowContext(webSeeds[0]);
 
@@ -209,30 +217,40 @@ namespace Lantean.QBTMud.Test.Components
             context.GetValue().Should().Be("http://seed-1");
         }
 
-        private async Task SetParametersAsync(bool active, string? hash)
+        private IRenderedComponent<WebSeedsTab> RenderTarget()
         {
-            await _target.InvokeAsync(() => _target.Instance.SetParametersAsync(ParameterView.FromDictionary(new Dictionary<string, object?>
+            return TestContext.Render<WebSeedsTab>(parameters =>
+            {
+                parameters.Add(p => p.Active, false);
+                parameters.Add(p => p.Hash, "Hash");
+                parameters.AddCascadingValue("RefreshInterval", 10);
+            });
+        }
+
+        private async Task SetParametersAsync(IRenderedComponent<WebSeedsTab> target, bool active, string? hash)
+        {
+            await target.InvokeAsync(() => target.Instance.SetParametersAsync(ParameterView.FromDictionary(new Dictionary<string, object?>
             {
                 { nameof(WebSeedsTab.Active), active },
                 { nameof(WebSeedsTab.Hash), hash },
             })));
         }
 
-        private IReadOnlyList<string> GetSeedUrls()
+        private IReadOnlyList<string> GetSeedUrls(IRenderedComponent<WebSeedsTab> target)
         {
-            var table = _target.FindComponent<DynamicTable<WebSeed>>();
+            var table = target.FindComponent<DynamicTable<WebSeed>>();
             return table.Instance.Items?.Select(seed => seed.Url).ToList() ?? new List<string>();
         }
 
-        private async Task<ManagedTimerTickResult> TriggerTimerTickAsync(CancellationToken cancellationToken = default)
+        private async Task<ManagedTimerTickResult> TriggerTimerTickAsync(IRenderedComponent<WebSeedsTab> target, CancellationToken cancellationToken = default)
         {
-            var handler = GetTickHandler();
-            return await _target.InvokeAsync(() => handler(cancellationToken));
+            var handler = GetTickHandler(target);
+            return await target.InvokeAsync(() => handler(cancellationToken));
         }
 
-        private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler()
+        private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler(IRenderedComponent<WebSeedsTab> target)
         {
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
                 Mock.Get(_timer).Verify(
                     timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),

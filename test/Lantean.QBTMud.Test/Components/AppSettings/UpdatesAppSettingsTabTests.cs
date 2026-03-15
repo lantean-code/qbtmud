@@ -17,7 +17,6 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         private readonly Mock<IAppBuildInfoService> _appBuildInfoServiceMock;
         private readonly Mock<IAppUpdateService> _appUpdateServiceMock;
         private readonly AppSettingsModel _settings;
-        private readonly IRenderedComponent<UpdatesAppSettingsTab> _target;
         private int _settingsChangedCount;
 
         public UpdatesAppSettingsTabTests()
@@ -37,7 +36,6 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
                     checkedAtUtc: DateTime.UtcNow));
 
             _settings = AppSettingsModel.Default.Clone();
-            _target = RenderTarget();
         }
 
         [Fact]
@@ -54,9 +52,10 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public async Task GIVEN_UpdateChecksChanged_WHEN_Disabled_THEN_UpdatesSettingsAndRaisesCallback()
         {
-            var updateChecksSwitch = FindSwitch(_target, "AppSettingsUpdateChecksEnabled");
+            var target = RenderTarget();
+            var updateChecksSwitch = FindSwitch(target, "AppSettingsUpdateChecksEnabled");
 
-            await _target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
+            await target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
 
             _settings.UpdateChecksEnabled.Should().BeFalse();
             _settingsChangedCount.Should().Be(1);
@@ -99,9 +98,10 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
                 .Setup(service => service.GetUpdateStatusAsync(true, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new HttpRequestException("UpdateUnavailable"));
 
-            var checkNowButton = FindButton(_target, "AppSettingsCheckNow");
+            var target = RenderTarget();
+            var checkNowButton = FindButton(target, "AppSettingsCheckNow");
 
-            await _target.InvokeAsync(() => checkNowButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => checkNowButton.Instance.OnClick.InvokeAsync());
 
             _appUpdateServiceMock.Verify(
                 service => service.GetUpdateStatusAsync(true, It.IsAny<CancellationToken>()),
@@ -115,9 +115,10 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
                 .Setup(service => service.GetUpdateStatusAsync(true, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new JsonException("UpdateUnavailable"));
 
-            var checkNowButton = FindButton(_target, "AppSettingsCheckNow");
+            var target = RenderTarget();
+            var checkNowButton = FindButton(target, "AppSettingsCheckNow");
 
-            await _target.InvokeAsync(() => checkNowButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => checkNowButton.Instance.OnClick.InvokeAsync());
 
             _appUpdateServiceMock.Verify(
                 service => service.GetUpdateStatusAsync(true, It.IsAny<CancellationToken>()),

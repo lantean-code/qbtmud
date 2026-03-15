@@ -16,7 +16,6 @@ namespace Lantean.QBTMud.Test.Components
     public sealed class TorrentsListNavTests : RazorComponentTestBase<TorrentsListNav>
     {
         private readonly Mock<ILanguageLocalizer> _languageLocalizerMock;
-        private readonly IRenderedComponent<TorrentsListNav> _target;
 
         public TorrentsListNavTests()
         {
@@ -27,15 +26,14 @@ namespace Lantean.QBTMud.Test.Components
 
             TestContext.Services.RemoveAll<ILanguageLocalizer>();
             TestContext.Services.AddSingleton(_languageLocalizerMock.Object);
-
-            _target = TestContext.Render<TorrentsListNav>();
         }
 
         [Fact]
         public void GIVEN_TorrentsAreNull_WHEN_Rendered_THEN_ShouldShowBackLinkAndSkeletons()
         {
-            var navLinks = _target.FindComponents<MudNavLink>();
-            var skeletons = _target.FindComponents<MudSkeleton>();
+            var target = TestContext.Render<TorrentsListNav>();
+            var navLinks = target.FindComponents<MudNavLink>();
+            var skeletons = target.FindComponents<MudSkeleton>();
 
             navLinks.Should().ContainSingle();
             navLinks[0].Instance.Icon.Should().Be(Icons.Material.Outlined.NavigateBefore);
@@ -68,10 +66,11 @@ namespace Lantean.QBTMud.Test.Components
         {
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("details/Hash1");
+            var target = TestContext.Render<TorrentsListNav>();
 
-            var backLink = _target.FindComponents<MudNavLink>().Single();
+            var backLink = target.FindComponents<MudNavLink>().Single();
 
-            await _target.InvokeAsync(() => backLink.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
+            await target.InvokeAsync(() => backLink.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             navigationManager.Uri.Should().Be(navigationManager.BaseUri);
         }

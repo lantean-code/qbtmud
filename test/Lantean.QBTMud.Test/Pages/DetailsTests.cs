@@ -22,7 +22,6 @@ namespace Lantean.QBTMud.Test.Pages
         private readonly IKeyboardService _keyboardService = Mock.Of<IKeyboardService>();
         private readonly TestNavigationManager _navigationManager;
         private readonly List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)> _handlers;
-        private readonly IRenderedComponent<Details> _target;
 
         public DetailsTests()
         {
@@ -61,29 +60,19 @@ namespace Lantean.QBTMud.Test.Pages
             var mainData = CreateMainData(_hashValue);
             var preferences = CreatePreferences();
             var theme = new MudTheme();
-
-            _target = TestContext.Render<Details>(parameters =>
-            {
-                parameters.Add(p => p.Hash, _hashValue);
-                parameters.AddCascadingValue(mainData);
-                parameters.AddCascadingValue(preferences);
-                parameters.AddCascadingValue(theme);
-                parameters.AddCascadingValue("IsDarkMode", false);
-                parameters.AddCascadingValue(Breakpoint.Lg);
-                parameters.AddCascadingValue("DrawerOpen", false);
-            });
         }
 
         [Fact]
         public async Task GIVEN_DetailsRendered_WHEN_BackspacePressed_THEN_NavigatesToHome()
         {
-            _target.WaitForAssertion(() =>
+            var target = RenderDetails(_hashValue, CreateMainData(_hashValue));
+            target.WaitForAssertion(() =>
             {
                 _handlers.Should().NotBeEmpty();
             });
 
             var handler = FindKeyboardHandler("Backspace", ctrlKey: false, altKey: false);
-            await _target.InvokeAsync(() => handler(new KeyboardEvent("Backspace")));
+            await target.InvokeAsync(() => handler(new KeyboardEvent("Backspace")));
 
             _navigationManager.Uri.Should().Be("http://localhost/");
         }
@@ -91,17 +80,18 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DetailsRendered_WHEN_AltNumberPressed_THEN_ActivatesRequestedTab()
         {
-            _target.WaitForAssertion(() =>
+            var target = RenderDetails(_hashValue, CreateMainData(_hashValue));
+            target.WaitForAssertion(() =>
             {
                 _handlers.Should().NotBeEmpty();
             });
 
             var handler = FindKeyboardHandler("5", ctrlKey: false, altKey: true);
-            await _target.InvokeAsync(() => handler(new KeyboardEvent("5") { AltKey = true }));
+            await target.InvokeAsync(() => handler(new KeyboardEvent("5") { AltKey = true }));
 
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                var tabs = _target.FindComponent<MudTabs>();
+                var tabs = target.FindComponent<MudTabs>();
                 tabs.Instance.GetState(x => x.ActivePanelIndex).Should().Be(4);
             });
         }
@@ -109,26 +99,27 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DetailsRendered_WHEN_AltArrowPressed_THEN_ActivatesAdjacentTabs()
         {
-            _target.WaitForAssertion(() =>
+            var target = RenderDetails(_hashValue, CreateMainData(_hashValue));
+            target.WaitForAssertion(() =>
             {
                 _handlers.Should().NotBeEmpty();
             });
 
             var rightHandler = FindKeyboardHandler("ArrowRight", ctrlKey: true, altKey: false);
-            await _target.InvokeAsync(() => rightHandler(new KeyboardEvent("ArrowRight") { CtrlKey = true }));
+            await target.InvokeAsync(() => rightHandler(new KeyboardEvent("ArrowRight") { CtrlKey = true }));
 
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                var tabs = _target.FindComponent<MudTabs>();
+                var tabs = target.FindComponent<MudTabs>();
                 tabs.Instance.GetState(x => x.ActivePanelIndex).Should().Be(1);
             });
 
             var leftHandler = FindKeyboardHandler("ArrowLeft", ctrlKey: true, altKey: false);
-            await _target.InvokeAsync(() => leftHandler(new KeyboardEvent("ArrowLeft") { CtrlKey = true }));
+            await target.InvokeAsync(() => leftHandler(new KeyboardEvent("ArrowLeft") { CtrlKey = true }));
 
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                var tabs = _target.FindComponent<MudTabs>();
+                var tabs = target.FindComponent<MudTabs>();
                 tabs.Instance.GetState(x => x.ActivePanelIndex).Should().Be(0);
             });
         }
@@ -136,7 +127,8 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DetailsDisposed_WHEN_DisposeAsync_THEN_UnregistersShortcut()
         {
-            _target.WaitForAssertion(() =>
+            var target = RenderDetails(_hashValue, CreateMainData(_hashValue));
+            target.WaitForAssertion(() =>
             {
                 var hasBackspaceHandler = false;
 
@@ -152,7 +144,7 @@ namespace Lantean.QBTMud.Test.Pages
                 hasBackspaceHandler.Should().BeTrue();
             });
 
-            await _target.InvokeAsync(() => _target.Instance.DisposeAsync().AsTask());
+            await target.InvokeAsync(() => target.Instance.DisposeAsync().AsTask());
 
             Mock.Get(_keyboardService).Verify(
                 s => s.UnregisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "Backspace")),

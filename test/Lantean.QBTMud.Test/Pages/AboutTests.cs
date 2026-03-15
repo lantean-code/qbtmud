@@ -19,7 +19,6 @@ namespace Lantean.QBTMud.Test.Pages
         private readonly IApiClient _apiClient;
         private readonly IAppBuildInfoService _appBuildInfoService;
         private readonly IAppUpdateService _appUpdateService;
-        private readonly IRenderedComponent<About> _target;
 
         public AboutTests()
         {
@@ -60,35 +59,35 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.AddSingleton(_appBuildInfoService);
             TestContext.Services.RemoveAll<IAppUpdateService>();
             TestContext.Services.AddSingleton(_appUpdateService);
-
-            _target = RenderPage();
         }
 
         [Fact]
         public void GIVEN_VersionNotProvided_WHEN_Rendered_THEN_ShowsBuildInfoAndVersion()
         {
-            GetChildContentText(FindComponentByTestId<MudText>(_target, "AboutVersionTitle").Instance.ChildContent)
+            var target = RenderPage();
+
+            GetChildContentText(FindComponentByTestId<MudText>(target, "AboutVersionTitle").Instance.ChildContent)
                 .Should()
                 .Be("qBittorrent Version WebUI (64-bit)");
-            GetChildContentText(FindComponentByTestId<MudText>(_target, "QbtMudCurrentBuild").Instance.ChildContent)
+            GetChildContentText(FindComponentByTestId<MudText>(target, "QbtMudCurrentBuild").Instance.ChildContent)
                 .Should()
                 .Be("1.0.0");
-            GetChildContentText(FindComponentByTestId<MudText>(_target, "QbtMudLatestRelease").Instance.ChildContent)
+            GetChildContentText(FindComponentByTestId<MudText>(target, "QbtMudLatestRelease").Instance.ChildContent)
                 .Should()
                 .Be("v1.1.0");
-            GetChildContentText(FindComponentByTestId<MudText>(_target, "QbtMudUpdateState").Instance.ChildContent)
+            GetChildContentText(FindComponentByTestId<MudText>(target, "QbtMudUpdateState").Instance.ChildContent)
                 .Should()
                 .Be("Update available");
 
-            ActivateTab(5);
+            ActivateTab(target, 5);
 
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                GetChildContentText(FindComponentByTestId<MudText>(_target, "QtVersion").Instance.ChildContent).Should().Be("QTVersion");
-                GetChildContentText(FindComponentByTestId<MudText>(_target, "LibtorrentVersion").Instance.ChildContent).Should().Be("LibTorrentVersion");
-                GetChildContentText(FindComponentByTestId<MudText>(_target, "BoostVersion").Instance.ChildContent).Should().Be("BoostVersion");
-                GetChildContentText(FindComponentByTestId<MudText>(_target, "OpenSslVersion").Instance.ChildContent).Should().Be("OpenSSLVersion");
-                GetChildContentText(FindComponentByTestId<MudText>(_target, "ZLibVersion").Instance.ChildContent).Should().Be("ZLibVersion");
+                GetChildContentText(FindComponentByTestId<MudText>(target, "QtVersion").Instance.ChildContent).Should().Be("QTVersion");
+                GetChildContentText(FindComponentByTestId<MudText>(target, "LibtorrentVersion").Instance.ChildContent).Should().Be("LibTorrentVersion");
+                GetChildContentText(FindComponentByTestId<MudText>(target, "BoostVersion").Instance.ChildContent).Should().Be("BoostVersion");
+                GetChildContentText(FindComponentByTestId<MudText>(target, "OpenSslVersion").Instance.ChildContent).Should().Be("OpenSSLVersion");
+                GetChildContentText(FindComponentByTestId<MudText>(target, "ZLibVersion").Instance.ChildContent).Should().Be("ZLibVersion");
             });
 
             Mock.Get(_apiClient).Verify(client => client.GetBuildInfo(), Times.Once);
@@ -118,11 +117,12 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/other");
+            var target = RenderPage();
 
-            var backButton = _target.FindComponents<MudIconButton>()
+            var backButton = target.FindComponents<MudIconButton>()
                 .Single(button => button.Instance.Icon == Icons.Material.Outlined.NavigateBefore);
 
-            await _target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
 
             navigationManager.Uri.Should().Be("http://localhost/");
         }
@@ -232,15 +232,16 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_AuthorsTab_WHEN_Activated_THEN_ShowsMaintainerAndOriginalAuthorLinks()
         {
-            ActivateTab(1);
+            var target = RenderPage();
+            ActivateTab(target, 1);
 
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
-                _target.FindComponents<MudLink>()
+                target.FindComponents<MudLink>()
                     .Any(component => string.Equals(component.Instance.Href, "mailto:sledgehammer999@qbittorrent.org", StringComparison.Ordinal))
                     .Should()
                     .BeTrue();
-                _target.FindComponents<MudLink>()
+                target.FindComponents<MudLink>()
                     .Any(component => string.Equals(component.Instance.Href, "mailto:chris@qbittorrent.org", StringComparison.Ordinal))
                     .Should()
                     .BeTrue();
@@ -259,9 +260,9 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private void ActivateTab(int tabIndex)
+        private static void ActivateTab(IRenderedComponent<About> target, int tabIndex)
         {
-            var tab = _target.FindAll("div.mud-tab")[tabIndex];
+            var tab = target.FindAll("div.mud-tab")[tabIndex];
 
             tab.Click();
         }

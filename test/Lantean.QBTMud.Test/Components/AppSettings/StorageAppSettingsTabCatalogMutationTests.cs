@@ -14,7 +14,6 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
     {
         private readonly List<StorageCatalogGroupDefinition> _storageCatalogGroups;
         private readonly StorageRoutingSettings _storageRoutingSettings;
-        private readonly IRenderedComponent<StorageAppSettingsTab> _target;
         private int _storageRoutingChangedCount;
 
         public StorageAppSettingsTabCatalogMutationTests()
@@ -54,21 +53,21 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
                 .ReturnsAsync(new WebApiCapabilityState("2.11.0", new Version(2, 11, 0), true));
 
             _storageRoutingSettings = StorageRoutingSettings.Default.Clone();
-            _target = RenderTarget();
-            _target.WaitForAssertion(() =>
-            {
-                _ = FindComponentByTestId<MudSelect<StorageType>>(_target, "AppSettingsStorageGroupStorageType-themes");
-            });
         }
 
         [Fact]
         public async Task GIVEN_GroupRemovedAfterRender_WHEN_GroupStorageTypeChanged_THEN_ChangeSavesWithoutGroupLookup()
         {
-            var groupStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(_target, "AppSettingsStorageGroupStorageType-themes");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageGroupStorageType-themes");
+            });
+            var groupStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageGroupStorageType-themes");
             var callbackCountBeforeChange = _storageRoutingChangedCount;
 
             _storageCatalogGroups.Clear();
-            await _target.InvokeAsync(() => groupStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+            await target.InvokeAsync(() => groupStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
 
             _storageRoutingSettings.GroupStorageTypes["themes"].Should().Be(StorageType.ClientData);
             _storageRoutingChangedCount.Should().Be(callbackCountBeforeChange + 1);
@@ -78,12 +77,17 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         public async Task GIVEN_GroupRemovedAfterRender_WHEN_ClearOverridesClicked_THEN_ClearReturnsWithoutChanges()
         {
             _storageRoutingSettings.ItemStorageTypes["themes.selected-theme"] = StorageType.ClientData;
-            _target.Render();
-            var clearButton = FindButton(_target, "AppSettingsStorageClearGroupOverrides-themes");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageGroupStorageType-themes");
+            });
+            target.Render();
+            var clearButton = FindButton(target, "AppSettingsStorageClearGroupOverrides-themes");
             var callbackCountBeforeClear = _storageRoutingChangedCount;
 
             _storageCatalogGroups.Clear();
-            await _target.InvokeAsync(() => clearButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => clearButton.Instance.OnClick.InvokeAsync());
 
             _storageRoutingSettings.ItemStorageTypes.Should().ContainKey("themes.selected-theme");
             _storageRoutingChangedCount.Should().Be(callbackCountBeforeClear);

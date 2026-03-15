@@ -22,7 +22,6 @@ namespace Lantean.QBTMud.Test.Pages
         private readonly ISnackbar _snackbar;
         private readonly ILanguageInitializationService _languageInitializationService;
         private readonly IPreferencesUpdateService _preferencesUpdateService;
-        private readonly IRenderedComponent<Options> _target;
 
         public OptionsTests()
         {
@@ -57,8 +56,6 @@ namespace Lantean.QBTMud.Test.Pages
                 .Returns(ValueTask.CompletedTask);
 
             TestContext.Render<MudPopoverProvider>();
-
-            _target = RenderPage();
         }
 
         [Fact]

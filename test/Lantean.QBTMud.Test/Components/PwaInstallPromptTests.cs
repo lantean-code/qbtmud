@@ -22,7 +22,6 @@ namespace Lantean.QBTMud.Test.Components
         private readonly Mock<IPwaInstallPromptService> _pwaInstallPromptServiceMock;
         private readonly List<SnackbarAddCall> _snackbarAddCalls;
         private readonly List<string> _removedSnackbarKeys;
-        private readonly IRenderedComponent<PwaInstallPrompt> _target;
 
         public PwaInstallPromptTests()
         {
@@ -61,14 +60,14 @@ namespace Lantean.QBTMud.Test.Components
             _pwaInstallPromptServiceMock
                 .Setup(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new PwaInstallPromptState());
-
-            _target = TestContext.Render<PwaInstallPrompt>();
         }
 
         [Fact]
         public async Task GIVEN_StateCanPrompt_WHEN_OnInstallPromptStateChanged_THEN_ShowsCenteredInstallSnackbar()
         {
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            var target = RenderTarget();
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
@@ -96,7 +95,9 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_StateIsIosWithoutPrompt_WHEN_OnInstallPromptStateChanged_THEN_ShowsInstructionSnackbarWithoutInstallAction()
         {
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            var target = RenderTarget();
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 IsIos = true
             }));
@@ -119,7 +120,9 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_StateChangeReceivesNull_WHEN_OnInstallPromptStateChanged_THEN_RemovesPromptSnackbar()
         {
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(null!));
+            var target = RenderTarget();
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(null!));
 
             _snackbarAddCalls.Should().BeEmpty();
             _removedSnackbarKeys.Should().Contain(_promptSnackbarKey);
@@ -128,11 +131,13 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_SnackbarAlreadyVisibleInSameMode_WHEN_StateUpdates_THEN_DoesNotDuplicateSnackbar()
         {
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            var target = RenderTarget();
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
@@ -143,11 +148,13 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_SnackbarVisible_WHEN_StateChangesMode_THEN_RecreatesSnackbar()
         {
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            var target = RenderTarget();
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 IsIos = true
             }));
@@ -158,19 +165,20 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_InstallActionClicked_WHEN_PromptAccepted_THEN_HidesForSession()
         {
+            var target = RenderTarget();
             _pwaInstallPromptServiceMock.ClearInvocations();
             _pwaInstallPromptServiceMock
                 .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync("accepted");
 
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
 
             var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
-            await _target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            await target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
@@ -183,6 +191,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_InstallActionClicked_WHEN_PromptDismissedAndStateStillPromptable_THEN_KeepsPromptVisibleWithoutRecreatingSnackbar()
         {
+            var target = RenderTarget();
             _pwaInstallPromptServiceMock.ClearInvocations();
             _pwaInstallPromptServiceMock
                 .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
@@ -194,14 +203,14 @@ namespace Lantean.QBTMud.Test.Components
                     CanPrompt = true
                 });
 
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
             var removeCountBeforeClick = _removedSnackbarKeys.Count;
 
             var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
-            await _target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+            await target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
 
             _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
             _pwaInstallPromptServiceMock.Verify(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -213,25 +222,26 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_InstallRequestInProgress_WHEN_ActionClickedTwice_THEN_SecondPromptRequestIsIgnored()
         {
             var requestInstallPromptTaskSource = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var target = RenderTarget();
             _pwaInstallPromptServiceMock.ClearInvocations();
             _pwaInstallPromptServiceMock
                 .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
                 .Returns(requestInstallPromptTaskSource.Task);
 
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
 
             var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
-            var firstClickTask = _target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
-            _target.WaitForAssertion(() =>
+            var firstClickTask = target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+            target.WaitForAssertion(() =>
             {
                 _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
             });
 
-            var secondClickTask = _target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
-            _target.WaitForAssertion(() =>
+            var secondClickTask = target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+            target.WaitForAssertion(() =>
             {
                 _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
             });
@@ -244,6 +254,7 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_InstallRequestInProgress_WHEN_StateChanges_THEN_DoesNotHideOrRecreateSnackbarUntilRequestCompletes()
         {
             var requestInstallPromptTaskSource = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var target = RenderTarget();
             _pwaInstallPromptServiceMock.ClearInvocations();
             _pwaInstallPromptServiceMock
                 .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
@@ -255,21 +266,21 @@ namespace Lantean.QBTMud.Test.Components
                     CanPrompt = true
                 });
 
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
             var removeCountBeforeInstall = _removedSnackbarKeys.Count;
 
             var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
-            var clickTask = _target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+            var clickTask = target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
 
-            _target.WaitForAssertion(() =>
+            target.WaitForAssertion(() =>
             {
                 _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
             });
 
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState()));
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState()));
 
             _snackbarAddCalls.Should().ContainSingle();
             _removedSnackbarKeys.Count.Should().Be(removeCountBeforeInstall);
@@ -284,14 +295,16 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_DismissButtonClicked_WHEN_DismissHandlerInvoked_THEN_DismissesForever()
         {
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            var target = RenderTarget();
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
 
             var onDismissClicked = GetOnDismissClicked(_snackbarAddCalls.Single());
-            await _target.InvokeAsync(() => onDismissClicked.InvokeAsync(new MouseEventArgs()));
-            await _target.InvokeAsync(() => _target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            await target.InvokeAsync(() => onDismissClicked.InvokeAsync(new MouseEventArgs()));
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
@@ -317,8 +330,9 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_ComponentRerendered_WHEN_NotFirstRender_THEN_SubscribeIsNotRepeated()
         {
+            var target = RenderTarget();
             _pwaInstallPromptServiceMock.ClearInvocations();
-            _target.Render();
+            target.Render();
 
             _pwaInstallPromptServiceMock.Verify(
                 service => service.SubscribeInstallPromptStateAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()),
@@ -328,9 +342,10 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_SubscriptionExists_WHEN_Disposed_THEN_UnsubscribeInvoked()
         {
+            var target = RenderTarget();
             _pwaInstallPromptServiceMock.ClearInvocations();
 
-            await _target.InvokeAsync(() => _target.Instance.DisposeAsync().AsTask());
+            await target.InvokeAsync(() => target.Instance.DisposeAsync().AsTask());
 
             _pwaInstallPromptServiceMock.Verify(
                 service => service.UnsubscribeInstallPromptStateAsync(17, It.IsAny<CancellationToken>()),
@@ -365,6 +380,11 @@ namespace Lantean.QBTMud.Test.Components
             _pwaInstallPromptServiceMock.Verify(
                 service => service.UnsubscribeInstallPromptStateAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()),
                 Times.Never);
+        }
+
+        private IRenderedComponent<PwaInstallPrompt> RenderTarget()
+        {
+            return TestContext.Render<PwaInstallPrompt>();
         }
 
         private static SnackbarOptions BuildSnackbarOptions(SnackbarAddCall call)

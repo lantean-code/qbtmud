@@ -17,7 +17,6 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         private readonly Mock<IStorageDiagnosticsService> _storageDiagnosticsServiceMock;
         private readonly Mock<IWebApiCapabilityService> _webApiCapabilityServiceMock;
         private readonly StorageRoutingSettings _storageRoutingSettings;
-        private readonly IRenderedComponent<StorageAppSettingsTab> _target;
         private int _storageRoutingChangedCount;
         private int _busyChangedCount;
 
@@ -35,20 +34,19 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             _storageRoutingSettings = StorageRoutingSettings.Default.Clone();
             _storageRoutingSettings.GroupStorageTypes["themes"] = StorageType.ClientData;
             _storageRoutingSettings.ItemStorageTypes["themes.selected-theme"] = StorageType.ClientData;
-
-            _target = RenderTarget();
-            _target.WaitForAssertion(() =>
-            {
-                _ = FindComponentByTestId<MudSelect<StorageType>>(_target, "AppSettingsStorageMasterStorageType");
-            });
         }
 
         [Fact]
         public async Task GIVEN_MasterStorageTypeChanged_WHEN_ClientDataSelected_THEN_ClearsOverridesAndRaisesCallback()
         {
-            var masterStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(_target, "AppSettingsStorageMasterStorageType");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var masterStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
 
-            await _target.InvokeAsync(() => masterStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+            await target.InvokeAsync(() => masterStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
 
             _storageRoutingSettings.MasterStorageType.Should().Be(StorageType.ClientData);
             _storageRoutingSettings.GroupStorageTypes.Should().BeEmpty();
@@ -59,7 +57,12 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public void GIVEN_GroupStorageTypeControl_WHEN_Rendered_THEN_UsesHelperText()
         {
-            var groupStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(_target, "AppSettingsStorageGroupStorageType-themes");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var groupStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageGroupStorageType-themes");
 
             groupStorageTypeSelect.Instance.HelperText.Should().Be("Applies to all items in this group.");
         }
@@ -67,10 +70,15 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public async Task GIVEN_GroupStorageTypeUnchangedAndNoOverrides_WHEN_ValueSelected_THEN_DoesNotRaiseCallback()
         {
-            var groupStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(_target, "AppSettingsStorageGroupStorageType-general");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var groupStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageGroupStorageType-general");
             var callbackCountBeforeChange = _storageRoutingChangedCount;
 
-            await _target.InvokeAsync(() => groupStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
+            await target.InvokeAsync(() => groupStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
 
             _storageRoutingChangedCount.Should().Be(callbackCountBeforeChange);
         }
@@ -92,10 +100,15 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public async Task GIVEN_GroupContainsItemOverrides_WHEN_GroupStorageTypeSetToMaster_THEN_ClearsOverridesAndRaisesCallback()
         {
-            var groupStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(_target, "AppSettingsStorageGroupStorageType-themes");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var groupStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageGroupStorageType-themes");
             var callbackCountBeforeChange = _storageRoutingChangedCount;
 
-            await _target.InvokeAsync(() => groupStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
+            await target.InvokeAsync(() => groupStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.LocalStorage));
 
             _storageRoutingSettings.ItemStorageTypes.Should().BeEmpty();
             _storageRoutingChangedCount.Should().Be(callbackCountBeforeChange + 1);
@@ -105,13 +118,18 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         public async Task GIVEN_ItemStorageTypeUnchanged_WHEN_SameValueSelected_THEN_DoesNotRaiseCallback()
         {
             _storageRoutingSettings.GroupStorageTypes.Remove("themes");
-            _target.Render();
-            var overridesPanel = FindComponentByTestId<MudExpansionPanel>(_target, "AppSettingsStorageGroupOverridesPanel-themes");
-            await _target.InvokeAsync(() => overridesPanel.Instance.ExpandAsync());
-            var itemStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(_target, "AppSettingsStorageItemStorageType-themes.selected-theme");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            target.Render();
+            var overridesPanel = FindComponentByTestId<MudExpansionPanel>(target, "AppSettingsStorageGroupOverridesPanel-themes");
+            await target.InvokeAsync(() => overridesPanel.Instance.ExpandAsync());
+            var itemStorageTypeSelect = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageItemStorageType-themes.selected-theme");
             var callbackCountBeforeChange = _storageRoutingChangedCount;
 
-            await _target.InvokeAsync(() => itemStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
+            await target.InvokeAsync(() => itemStorageTypeSelect.Instance.ValueChanged.InvokeAsync(StorageType.ClientData));
 
             _storageRoutingChangedCount.Should().Be(callbackCountBeforeChange);
         }
@@ -119,10 +137,15 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public async Task GIVEN_GroupOverridesPanelExpanded_WHEN_Collapsed_THEN_CollapsesWithoutErrors()
         {
-            var overridesPanel = FindComponentByTestId<MudExpansionPanel>(_target, "AppSettingsStorageGroupOverridesPanel-themes");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var overridesPanel = FindComponentByTestId<MudExpansionPanel>(target, "AppSettingsStorageGroupOverridesPanel-themes");
 
-            await _target.InvokeAsync(() => overridesPanel.Instance.ExpandAsync());
-            await _target.InvokeAsync(() => overridesPanel.Instance.CollapseAsync());
+            await target.InvokeAsync(() => overridesPanel.Instance.ExpandAsync());
+            await target.InvokeAsync(() => overridesPanel.Instance.CollapseAsync());
 
             overridesPanel.Instance.Expanded.Should().BeFalse();
         }
@@ -130,10 +153,15 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public async Task GIVEN_GroupHasNoItemOverrides_WHEN_ClearOverridesClicked_THEN_DoesNotRaiseCallback()
         {
-            var clearButton = FindButton(_target, "AppSettingsStorageClearGroupOverrides-general");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var clearButton = FindButton(target, "AppSettingsStorageClearGroupOverrides-general");
             var callbackCountBeforeClear = _storageRoutingChangedCount;
 
-            await _target.InvokeAsync(() => clearButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => clearButton.Instance.OnClick.InvokeAsync());
 
             _storageRoutingChangedCount.Should().Be(callbackCountBeforeClear);
         }
@@ -141,10 +169,15 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public async Task GIVEN_GroupHasItemOverrides_WHEN_ClearOverridesClicked_THEN_ClearsOverridesAndRaisesCallback()
         {
-            var clearButton = FindButton(_target, "AppSettingsStorageClearGroupOverrides-themes");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var clearButton = FindButton(target, "AppSettingsStorageClearGroupOverrides-themes");
             var callbackCountBeforeClear = _storageRoutingChangedCount;
 
-            await _target.InvokeAsync(() => clearButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => clearButton.Instance.OnClick.InvokeAsync());
 
             _storageRoutingSettings.ItemStorageTypes.Should().BeEmpty();
             _storageRoutingChangedCount.Should().Be(callbackCountBeforeClear + 1);
@@ -175,9 +208,14 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             _storageDiagnosticsServiceMock
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new HttpRequestException("StorageError"));
-            var refreshButton = FindButton(_target, "AppSettingsStorageRefresh");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var refreshButton = FindButton(target, "AppSettingsStorageRefresh");
 
-            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
             _busyChangedCount.Should().BeGreaterThan(0);
         }
@@ -188,9 +226,14 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             _storageDiagnosticsServiceMock
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new JsonException("StorageError"));
-            var refreshButton = FindButton(_target, "AppSettingsStorageRefresh");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var refreshButton = FindButton(target, "AppSettingsStorageRefresh");
 
-            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
             _busyChangedCount.Should().BeGreaterThan(0);
         }
@@ -201,9 +244,14 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             _storageDiagnosticsServiceMock
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("StorageError"));
-            var refreshButton = FindButton(_target, "AppSettingsStorageRefresh");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var refreshButton = FindButton(target, "AppSettingsStorageRefresh");
 
-            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
             _busyChangedCount.Should().BeGreaterThan(0);
         }
@@ -214,9 +262,14 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             _storageDiagnosticsServiceMock
                 .Setup(service => service.GetEntriesAsync(It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new JSException("StorageError"));
-            var refreshButton = FindButton(_target, "AppSettingsStorageRefresh");
+            var target = RenderTarget();
+            target.WaitForAssertion(() =>
+            {
+                _ = FindComponentByTestId<MudSelect<StorageType>>(target, "AppSettingsStorageMasterStorageType");
+            });
+            var refreshButton = FindButton(target, "AppSettingsStorageRefresh");
 
-            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
             _busyChangedCount.Should().BeGreaterThan(0);
         }

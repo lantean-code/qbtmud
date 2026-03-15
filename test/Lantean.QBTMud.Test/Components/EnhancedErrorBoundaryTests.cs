@@ -10,18 +10,13 @@ namespace Lantean.QBTMud.Test.Components
 {
     public sealed class EnhancedErrorBoundaryTests : RazorComponentTestBase
     {
-        private readonly IRenderedComponent<EnhancedErrorBoundary> _target;
-
-        public EnhancedErrorBoundaryTests()
-        {
-            _target = RenderBoundary(disabled: false, exception: null);
-        }
-
         [Fact]
         public void GIVEN_NewBoundary_WHEN_Rendered_THEN_ShouldNotBeErrored()
         {
-            _target.Instance.HasErrored.Should().BeFalse();
-            _target.Instance.Errors.Should().BeEmpty();
+            var target = RenderBoundary(disabled: false, exception: null);
+
+            target.Instance.HasErrored.Should().BeFalse();
+            target.Instance.Errors.Should().BeEmpty();
         }
 
         [Fact]

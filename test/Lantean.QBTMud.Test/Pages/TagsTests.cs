@@ -18,7 +18,6 @@ namespace Lantean.QBTMud.Test.Pages
     {
         private readonly IApiClient _apiClient;
         private readonly IDialogWorkflow _dialogWorkflow;
-        private readonly IRenderedComponent<Tags> _target;
 
         public TagsTests()
         {
@@ -29,8 +28,6 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.RemoveAll<IDialogWorkflow>();
             TestContext.Services.AddSingleton(_dialogWorkflow);
-
-            _target = RenderPage();
         }
 
         [Fact]
@@ -40,9 +37,10 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowStringFieldDialog("New Tag", "Tag:", null))
                 .ReturnsAsync((string?)null);
 
-            var addButton = FindIconButton(_target, Icons.Material.Filled.NewLabel);
+            var target = RenderPage();
+            var addButton = FindIconButton(target, Icons.Material.Filled.NewLabel);
 
-            await _target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_apiClient).Verify(client => client.GetAllTags(), Times.Never);
             Mock.Get(_apiClient).Verify(client => client.CreateTags(It.IsAny<IEnumerable<string>>()), Times.Never);
@@ -58,9 +56,10 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetAllTags())
                 .ReturnsAsync(new[] { "Tag" });
 
-            var addButton = FindIconButton(_target, Icons.Material.Filled.NewLabel);
+            var target = RenderPage();
+            var addButton = FindIconButton(target, Icons.Material.Filled.NewLabel);
 
-            await _target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_apiClient).Verify(client => client.GetAllTags(), Times.Once);
             Mock.Get(_apiClient).Verify(client => client.CreateTags(It.IsAny<IEnumerable<string>>()), Times.Never);
@@ -76,9 +75,10 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetAllTags())
                 .ReturnsAsync(new[] { "Other" });
 
-            var addButton = FindIconButton(_target, Icons.Material.Filled.NewLabel);
+            var target = RenderPage();
+            var addButton = FindIconButton(target, Icons.Material.Filled.NewLabel);
 
-            await _target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_apiClient).Verify(client => client.GetAllTags(), Times.Once);
             Mock.Get(_apiClient).Verify(
@@ -169,10 +169,11 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/other");
+            var target = RenderPage();
 
-            var backButton = FindIconButton(_target, Icons.Material.Outlined.NavigateBefore);
+            var backButton = FindIconButton(target, Icons.Material.Outlined.NavigateBefore);
 
-            await _target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
 
             navigationManager.Uri.Should().Be("http://localhost/");
         }
@@ -184,13 +185,14 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetAllTags())
                 .ReturnsAsync(["Tag"]);
 
-            var refreshButton = FindIconButton(_target, Icons.Material.Filled.Refresh);
+            var target = RenderPage();
+            var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
 
-            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_apiClient).Verify(client => client.GetAllTags(), Times.Once);
 
-            var table = _target.FindComponent<DynamicTable<string>>();
+            var table = target.FindComponent<DynamicTable<string>>();
             table.Instance.Items.Should().ContainSingle(tag => tag == "Tag");
         }
 

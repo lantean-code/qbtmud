@@ -15,7 +15,6 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
     {
         private readonly Mock<ITorrentCompletionNotificationService> _notificationServiceMock;
         private readonly AppSettingsModel _settings;
-        private readonly IRenderedComponent<NotificationsAppSettingsTab> _target;
         private int _settingsChangedCount;
 
         public NotificationsAppSettingsTabTests()
@@ -29,14 +28,14 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
                 .ReturnsAsync(BrowserNotificationPermission.Granted);
 
             _settings = AppSettingsModel.Default.Clone();
-            _target = RenderTarget();
         }
 
         [Fact]
         public void GIVEN_DefaultPermission_WHEN_Rendered_THEN_ShowsWarningPermissionIndicatorAndHelperText()
         {
-            var permissionIndicator = FindComponentByTestId<MudChip<string>>(_target, "AppSettingsNotificationPermission");
-            var notificationsSwitch = FindSwitch(_target, "AppSettingsNotificationsEnabled");
+            var target = RenderTarget();
+            var permissionIndicator = FindComponentByTestId<MudChip<string>>(target, "AppSettingsNotificationPermission");
+            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
 
             permissionIndicator.Instance.Color.Should().Be(Color.Warning);
             notificationsSwitch.Instance.HelperText.Should().Be("Enable browser notifications and choose which events trigger alerts.");
@@ -45,9 +44,10 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public async Task GIVEN_EnableNotifications_WHEN_PermissionGranted_THEN_UpdatesSettingsAndRaisesCallback()
         {
-            var notificationsSwitch = FindSwitch(_target, "AppSettingsNotificationsEnabled");
+            var target = RenderTarget();
+            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
 
-            await _target.InvokeAsync(() => notificationsSwitch.Instance.ValueChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => notificationsSwitch.Instance.ValueChanged.InvokeAsync(true));
 
             _settings.NotificationsEnabled.Should().BeTrue();
             _settingsChangedCount.Should().Be(1);

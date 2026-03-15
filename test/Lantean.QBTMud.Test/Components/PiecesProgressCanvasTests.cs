@@ -15,22 +15,21 @@ namespace Lantean.QBTMud.Test.Components
 {
     public sealed class PiecesProgressCanvasTests : RazorComponentTestBase<PiecesProgressCanvas>
     {
-        private readonly IRenderedComponent<PiecesProgressCanvas> _target;
         private readonly MudTheme _theme;
 
         public PiecesProgressCanvasTests()
         {
             _theme = CreateTheme();
-            _target = RenderComponent(Array.Empty<PieceState>(), Breakpoint.Lg);
         }
 
         [Fact]
         public void GIVEN_NoPieces_WHEN_InitiallyRendered_THEN_ShowsUnavailableSummaryAndExpandedCanvas()
         {
-            var collapse = _target.FindComponent<MudCollapse>();
-            var tooltip = _target.FindComponent<MudTooltip>();
-            var icon = _target.FindComponent<MudIcon>();
-            var textValues = GetMudTextContent(_target);
+            var target = RenderComponent(Array.Empty<PieceState>(), Breakpoint.Lg);
+            var collapse = target.FindComponent<MudCollapse>();
+            var tooltip = target.FindComponent<MudTooltip>();
+            var icon = target.FindComponent<MudIcon>();
+            var textValues = GetMudTextContent(target);
 
             collapse.Instance.Expanded.Should().BeTrue();
             tooltip.Instance.Text.Should().Be("Pieces data unavailable");

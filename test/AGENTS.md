@@ -19,8 +19,8 @@
 
 ## Test Class Structure
 
-- The system under test is a readonly field named `_target`.
-- `_target` is constructed in the test class constructor.
+- For non-component unit tests, the system under test is a readonly field named `_target`.
+- For non-component unit tests, `_target` is constructed in the test class constructor.
 - Mocks used across tests are private readonly fields created with `Mock.Of<T>()`.
 - Mocks that are local to a single test method should use `new Mock<T>()`.
 
@@ -62,7 +62,9 @@
 ## Blazor Components
 
 - Use `bUnit` for testing Blazor components.
-- Follow the same naming and structuring conventions as above.
+- Follow the same naming conventions as above.
+- Render the component under test inside each test by default.
+- Store the rendered component under test in a method-local variable named `target`.
 - Use `TestContext` for component rendering and dependency injection.
 - Mock services using `Mock.Of<T>()` and register them in the `TestContext.Services`.
 - Use `IRenderedComponent<T>` to interact with and assert against rendered components.
@@ -70,6 +72,9 @@
 - Raise any uncertainties for clarification before proceeding with component tests.
 - Additions to the component under test to use a data attribute (data-test-id) is permitted to aid in element selection during testing.
 - `RazorComponentTestBase<T>` can be used as a base class for component tests to encapsulate common setup logic with helper methods for selecting components using `data-test-id`.
+- Shared render setup may be extracted into `RenderTarget(...)` or similar helper methods when that improves clarity and avoids duplication.
+- Class-level rendered component `_target` fields must not be used for the component under test.
+- Class fields remain valid for supporting fixture state such as mocks, models, navigation managers, popover/dialog providers, counters, and callback capture state.
 - Do not use test harness components that inherit from the component under test to access protected members or invoke protected methods. Drive all behavior via UI interactions and public APIs only; if behavior cannot be reached through the UI, ask for a refactor or clarification.
 - Do not introduce host/wrapper components (for example `*Host : ComponentBase`) to render the component under test. Render the target component directly and pass parameters/cascading values via the render call.
 - Components must be tested directly through their rendered instance and UI/event callbacks. Do not call protected methods or inspect protected/private state via derived test classes.
@@ -84,7 +89,8 @@
 - [ ] Class name is `<ClassName>Tests`.
 - [ ] Namespace mirrors the product namespace with `.Test` inserted appropriately.
 - [ ] Methods follow `GIVEN_..._WHEN_..._THEN_...` naming.
-- [ ] `_target` exists as a readonly field and is constructed in the test class constructor.
+- [ ] For non-component unit tests, `_target` exists as a readonly field and is constructed in the test class constructor.
+- [ ] For bUnit component tests, the rendered component under test is created per test and stored in a local variable named `target`.
 - [ ] Class-level mocks are `Mock.Of<T>()`; method-local mocks use `new Mock<T>()`.
 - [ ] Strings use property names as values; dates use `2000-01-01 00:00` with correct `DateTimeKind`; numbers are sensible.
 - [ ] No expression-bodied members; braces are always present.

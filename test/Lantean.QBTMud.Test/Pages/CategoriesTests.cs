@@ -19,7 +19,6 @@ namespace Lantean.QBTMud.Test.Pages
     {
         private readonly IApiClient _apiClient;
         private readonly IDialogWorkflow _dialogWorkflow;
-        private readonly IRenderedComponent<Categories> _target;
 
         public CategoriesTests()
         {
@@ -30,16 +29,15 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.RemoveAll<IDialogWorkflow>();
             TestContext.Services.AddSingleton(_dialogWorkflow);
-
-            _target = RenderPage();
         }
 
         [Fact]
         public async Task GIVEN_AddClicked_WHEN_Invoked_THEN_ShowsAddCategoryDialog()
         {
-            var addButton = FindIconButton(_target, Icons.Material.Filled.PlaylistAdd);
+            var target = RenderPage();
+            var addButton = FindIconButton(target, Icons.Material.Filled.PlaylistAdd);
 
-            await _target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_dialogWorkflow).Verify(workflow => workflow.InvokeAddCategoryDialog(null, null), Times.Once);
         }
@@ -49,10 +47,11 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/other");
+            var target = RenderPage();
 
-            var backButton = FindIconButton(_target, Icons.Material.Outlined.NavigateBefore);
+            var backButton = FindIconButton(target, Icons.Material.Outlined.NavigateBefore);
 
-            await _target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => backButton.Instance.OnClick.InvokeAsync());
 
             navigationManager.Uri.Should().Be("http://localhost/");
         }
@@ -67,13 +66,14 @@ namespace Lantean.QBTMud.Test.Pages
                     { "Category", new ClientCategory("Category", "SavePath", null) }
                 });
 
-            var refreshButton = FindIconButton(_target, Icons.Material.Filled.Refresh);
+            var target = RenderPage();
+            var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
 
-            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_apiClient).Verify(client => client.GetAllCategories(), Times.Once);
 
-            var table = _target.FindComponent<DynamicTable<Category>>();
+            var table = target.FindComponent<DynamicTable<Category>>();
             table.Instance.Items.Should().ContainSingle(category => category.Name == "Category");
         }
 
@@ -87,11 +87,12 @@ namespace Lantean.QBTMud.Test.Pages
                     { "Category", new ClientCategory("Category", null, null) }
                 });
 
-            var refreshButton = FindIconButton(_target, Icons.Material.Filled.Refresh);
+            var target = RenderPage();
+            var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
 
-            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
-            var table = _target.FindComponent<DynamicTable<Category>>();
+            var table = target.FindComponent<DynamicTable<Category>>();
             table.Instance.Items.Should().ContainSingle(category => category.Name == "Category" && category.SavePath == string.Empty);
         }
 
@@ -103,12 +104,13 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetAllCategories())
                 .Returns(pendingLoad.Task);
 
-            var refreshButton = FindIconButton(_target, Icons.Material.Filled.Refresh);
+            var target = RenderPage();
+            var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
 
-            var firstRefresh = _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
-            _target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(client => client.GetAllCategories(), Times.Once));
+            var firstRefresh = target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(client => client.GetAllCategories(), Times.Once));
 
-            await _target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
             Mock.Get(_apiClient).Verify(client => client.GetAllCategories(), Times.Once);
 
             pendingLoad.SetResult(new Dictionary<string, ClientCategory>

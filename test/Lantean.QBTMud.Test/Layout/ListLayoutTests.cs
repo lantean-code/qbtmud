@@ -11,12 +11,12 @@ namespace Lantean.QBTMud.Test.Layout
 {
     public sealed class ListLayoutTests : RazorComponentTestBase<ListLayout>
     {
-        private readonly IRenderedComponent<ListLayout> _target;
         private bool? _drawerCallbackValue;
 
-        public ListLayoutTests()
+        [Fact]
+        public async Task GIVEN_DrawerOpenChangedDelegate_WHEN_DrawerOpenChangedInvoked_THEN_UpdatesStateAndInvokesDelegate()
         {
-            _target = RenderLayout(
+            var target = RenderLayout(
                 drawerOpen: false,
                 drawerOpenChanged: EventCallback.Factory.Create<bool>(this, value => _drawerCallbackValue = value),
                 statusChanged: EventCallback.Factory.Create<Status>(this, _ => { }),
@@ -24,16 +24,11 @@ namespace Lantean.QBTMud.Test.Layout
                 tagChanged: EventCallback.Factory.Create<string>(this, _ => { }),
                 trackerChanged: EventCallback.Factory.Create<string>(this, _ => { }),
                 searchTermChanged: EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
-        }
+            var drawer = target.FindComponent<MudDrawer>();
 
-        [Fact]
-        public async Task GIVEN_DrawerOpenChangedDelegate_WHEN_DrawerOpenChangedInvoked_THEN_UpdatesStateAndInvokesDelegate()
-        {
-            var drawer = _target.FindComponent<MudDrawer>();
+            await target.InvokeAsync(() => drawer.Instance.OpenChanged.InvokeAsync(true));
 
-            await _target.InvokeAsync(() => drawer.Instance.OpenChanged.InvokeAsync(true));
-
-            _target.Instance.DrawerOpen.Should().BeTrue();
+            target.Instance.DrawerOpen.Should().BeTrue();
             _drawerCallbackValue.Should().BeTrue();
         }
 
@@ -59,8 +54,16 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public void GIVEN_RenderedLayout_WHEN_InspectingChildren_THEN_RendersFiltersAndSearchCascade()
         {
-            var filters = _target.FindComponent<FiltersNav>();
-            var searchCascade = _target.FindComponents<CascadingValue<EventCallback<FilterSearchState>>>()
+            var target = RenderLayout(
+                drawerOpen: false,
+                drawerOpenChanged: EventCallback.Factory.Create<bool>(this, value => _drawerCallbackValue = value),
+                statusChanged: EventCallback.Factory.Create<Status>(this, _ => { }),
+                categoryChanged: EventCallback.Factory.Create<string>(this, _ => { }),
+                tagChanged: EventCallback.Factory.Create<string>(this, _ => { }),
+                trackerChanged: EventCallback.Factory.Create<string>(this, _ => { }),
+                searchTermChanged: EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
+            var filters = target.FindComponent<FiltersNav>();
+            var searchCascade = target.FindComponents<CascadingValue<EventCallback<FilterSearchState>>>()
                 .Single(component => string.Equals(component.Instance.Name, "SearchTermChanged", StringComparison.Ordinal));
 
             filters.Instance.StatusChanged.HasDelegate.Should().BeTrue();

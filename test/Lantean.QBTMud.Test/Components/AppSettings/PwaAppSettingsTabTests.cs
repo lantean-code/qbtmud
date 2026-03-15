@@ -13,7 +13,6 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
     public sealed class PwaAppSettingsTabTests : RazorComponentTestBase<PwaAppSettingsTab>
     {
         private readonly Mock<IPwaInstallPromptService> _pwaInstallPromptServiceMock;
-        private readonly IRenderedComponent<PwaAppSettingsTab> _target;
 
         public PwaAppSettingsTabTests()
         {
@@ -29,16 +28,16 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             _pwaInstallPromptServiceMock
                 .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync("accepted");
-
-            _target = RenderTarget();
         }
 
         [Fact]
         public void GIVEN_ActiveComponent_WHEN_InstallStateLoaded_THEN_DisplaysInstalledStatus()
         {
-            _target.WaitForAssertion(() =>
+            var target = RenderTarget();
+
+            target.WaitForAssertion(() =>
             {
-                var statusField = FindComponentByTestId<MudTextField<string>>(_target, "AppSettingsPwaStatus");
+                var statusField = FindComponentByTestId<MudTextField<string>>(target, "AppSettingsPwaStatus");
                 statusField.Instance.GetState(x => x.Value).Should().Be("Installed");
             });
         }
@@ -84,9 +83,10 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public void GIVEN_ActiveComponent_WHEN_ReloadTokenUnchanged_THEN_DoesNotRefreshStatusAgain()
         {
+            var target = RenderTarget();
             _pwaInstallPromptServiceMock.ClearInvocations();
 
-            _target.Render(parameters =>
+            target.Render(parameters =>
             {
                 parameters.Add(component => component.IsActive, true);
                 parameters.Add(component => component.ReloadToken, 0);
@@ -100,9 +100,10 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
         [Fact]
         public void GIVEN_ActiveComponent_WHEN_ReloadTokenChanges_THEN_RefreshesStatusAgain()
         {
+            var target = RenderTarget();
             _pwaInstallPromptServiceMock.ClearInvocations();
 
-            _target.Render(parameters =>
+            target.Render(parameters =>
             {
                 parameters.Add(component => component.IsActive, true);
                 parameters.Add(component => component.ReloadToken, 1);

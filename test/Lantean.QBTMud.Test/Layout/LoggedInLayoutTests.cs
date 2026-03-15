@@ -43,7 +43,6 @@ namespace Lantean.QBTMud.Test.Layout
         private readonly IWelcomeWizardPlanBuilder _welcomeWizardPlanBuilder = Mock.Of<IWelcomeWizardPlanBuilder>();
         private readonly IWelcomeWizardStateService _welcomeWizardStateService = Mock.Of<IWelcomeWizardStateService>();
         private readonly TestNavigationManager _navigationManager;
-        private readonly IRenderedComponent<LoggedInLayout> _target;
 
         public LoggedInLayoutTests()
         {
@@ -146,8 +145,6 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.AddSingleton(_torrentCompletionNotificationService);
             TestContext.Services.AddSingleton(_welcomeWizardPlanBuilder);
             TestContext.Services.AddSingleton(_welcomeWizardStateService);
-
-            _target = RenderLayout(new List<IManagedTimer>());
         }
 
         [Fact]
@@ -821,7 +818,8 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public void GIVEN_NoTimers_WHEN_LoggedInLayoutRendered_THEN_TimerIconShowsDefault()
         {
-            var button = FindTimerButton(_target, Icons.Material.Filled.TimerOff);
+            var target = RenderLayout(new List<IManagedTimer>());
+            var button = FindTimerButton(target, Icons.Material.Filled.TimerOff);
 
             button.Instance.Color.Should().Be(Color.Default);
         }
@@ -908,7 +906,8 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public void GIVEN_NoTimers_WHEN_Rendered_THEN_TimerTooltipShowsEmptyMessage()
         {
-            var tooltip = FindTimerTooltip(_target);
+            var target = RenderLayout(new List<IManagedTimer>());
+            var tooltip = FindTimerTooltip(target);
 
             tooltip.Instance.Text.Should().Be("No timers registered.");
         }
@@ -2076,9 +2075,11 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public async Task GIVEN_DefaultRender_WHEN_Disposed_THEN_Disposes()
         {
-            await _target.Instance.DisposeAsync();
+            var target = RenderLayout(new List<IManagedTimer>());
 
-            await _target.Instance.DisposeAsync();
+            await target.Instance.DisposeAsync();
+
+            await target.Instance.DisposeAsync();
         }
 
         [Fact]
@@ -2311,7 +2312,6 @@ namespace Lantean.QBTMud.Test.Layout
 
         private void DisposeDefaultTarget()
         {
-            _target.Dispose();
         }
 
         private void ResetDialogInvocations()

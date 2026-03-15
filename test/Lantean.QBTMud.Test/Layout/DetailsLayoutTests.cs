@@ -19,7 +19,6 @@ namespace Lantean.QBTMud.Test.Layout
         private readonly IKeyboardService _keyboardService = Mock.Of<IKeyboardService>();
         private readonly TestNavigationManager _navigationManager;
         private readonly List<(KeyboardEvent Criteria, Func<KeyboardEvent, Task> Handler)> _handlers;
-        private readonly IRenderedComponent<DetailsLayout> _target;
         private readonly IReadOnlyList<Torrent> _torrents;
 
         public DetailsLayoutTests()
@@ -44,14 +43,13 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.ComponentFactories.AddStub<TorrentsListNav>();
 
             _torrents = CreateTorrents();
-
-            _target = RenderLayout("Hash2", _torrents);
         }
 
         [Fact]
         public void GIVEN_DetailsLayoutRendered_WHEN_Rendered_THEN_ShouldPassOrderedTorrentsToTorrentsListNav()
         {
-            var navStub = _target.FindComponent<Stub<TorrentsListNav>>();
+            var target = RenderLayout("Hash2", _torrents);
+            var navStub = target.FindComponent<Stub<TorrentsListNav>>();
             var orderedTorrents = navStub.Instance.Parameters.Get(parameter => parameter.Torrents);
 
             orderedTorrents.Should().NotBeNull();
@@ -61,13 +59,14 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public async Task GIVEN_DetailsLayoutRendered_WHEN_AltArrowDownPressed_THEN_NavigatesToNextTorrent()
         {
-            _target.WaitForAssertion(() =>
+            var target = RenderLayout("Hash2", _torrents);
+            target.WaitForAssertion(() =>
             {
                 _handlers.Should().NotBeEmpty();
             });
 
             var handler = FindKeyboardHandler("ArrowDown");
-            await _target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { AltKey = true }));
+            await target.InvokeAsync(() => handler(new KeyboardEvent("ArrowDown") { AltKey = true }));
 
             _navigationManager.Uri.Should().Be("http://localhost/details/Hash3");
         }
@@ -199,22 +198,24 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public async Task GIVEN_DrawerOpenChanged_WHEN_Invoked_THEN_DrawerStateUpdated()
         {
-            var drawer = _target.FindComponent<MudDrawer>();
+            var target = RenderLayout("Hash2", _torrents);
+            var drawer = target.FindComponent<MudDrawer>();
 
-            await _target.InvokeAsync(() => drawer.Instance.OpenChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => drawer.Instance.OpenChanged.InvokeAsync(true));
 
-            _target.Instance.DrawerOpen.Should().BeTrue();
+            target.Instance.DrawerOpen.Should().BeTrue();
         }
 
         [Fact]
         public async Task GIVEN_DetailsLayoutDisposed_WHEN_DisposeAsync_THEN_UnregistersShortcuts()
         {
-            _target.WaitForAssertion(() =>
+            var target = RenderLayout("Hash2", _torrents);
+            target.WaitForAssertion(() =>
             {
                 _handlers.Should().NotBeEmpty();
             });
 
-            await _target.InvokeAsync(() => _target.Instance.DisposeAsync().AsTask());
+            await target.InvokeAsync(() => target.Instance.DisposeAsync().AsTask());
 
             Mock.Get(_keyboardService).Verify(
                 s => s.UnregisterKeypressEvent(It.Is<KeyboardEvent>(e => e.Key == "ArrowUp" && e.AltKey)),

@@ -19,7 +19,6 @@ namespace Lantean.QBTMud.Test.Components
     {
         private readonly IManagedTimerRegistry _timerRegistry;
         private readonly Mock<IManagedTimerRegistry> _timerRegistryMock;
-        private readonly IRenderedComponent<StatusBar> _target;
 
         public StatusBarTests()
         {
@@ -29,8 +28,6 @@ namespace Lantean.QBTMud.Test.Components
 
             TestContext.Services.RemoveAll(typeof(IManagedTimerRegistry));
             TestContext.Services.AddSingleton(_timerRegistry);
-
-            _target = RenderStatusBar();
         }
 
         [Fact]
@@ -359,8 +356,9 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_NoTimers_WHEN_Rendered_THEN_ShowsDefaultTimerStatus()
         {
-            var timerButton = FindComponentByTestId<MudIconButton>(_target, "Status-TimerButton");
-            var timerTooltip = FindComponentByTestId<MudTooltip>(_target, "Status-TimerTooltip");
+            var target = RenderStatusBar();
+            var timerButton = FindComponentByTestId<MudIconButton>(target, "Status-TimerButton");
+            var timerTooltip = FindComponentByTestId<MudTooltip>(target, "Status-TimerTooltip");
 
             timerButton.Instance.Icon.Should().Be(Icons.Material.Filled.TimerOff);
             timerButton.Instance.Color.Should().Be(Color.Default);
@@ -600,7 +598,8 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_DarkModeDisabled_WHEN_Rendered_THEN_DividersDoNotUseLightVariant()
         {
-            var dividers = _target.FindComponents<MudDivider>();
+            var target = RenderStatusBar();
+            var dividers = target.FindComponents<MudDivider>();
 
             dividers.Should().NotBeEmpty();
             dividers.Should().OnlyContain(divider => !divider.Instance.Light);

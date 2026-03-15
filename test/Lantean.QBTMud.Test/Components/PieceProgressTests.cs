@@ -20,7 +20,6 @@ namespace Lantean.QBTMud.Test.Components
         private readonly Mock<IBrowserViewportService> _viewportServiceMock;
         private IBrowserViewportObserver? _observer;
         private readonly MudTheme _theme;
-        private readonly IRenderedComponent<PieceProgress> _target;
 
         public PieceProgressTests()
         {
@@ -35,8 +34,6 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns(Task.CompletedTask);
             TestContext.Services.RemoveAll<IBrowserViewportService>();
             TestContext.Services.AddSingleton(_viewportServiceMock.Object);
-
-            _target = RenderPieceProgress(Array.Empty<PieceState>(), false, "Hash");
         }
 
         [Fact]
@@ -178,7 +175,8 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_ObserverInterface_WHEN_ReadingProperties_THEN_IdAndResizeOptionsAreValid()
         {
-            var observer = (IBrowserViewportObserver)_target.Instance;
+            var target = RenderPieceProgress(Array.Empty<PieceState>(), false, "Hash");
+            var observer = (IBrowserViewportObserver)target.Instance;
 
             observer.Id.Should().NotBe(Guid.Empty);
             observer.ResizeOptions.Should().NotBeNull();
