@@ -57,6 +57,13 @@ namespace Lantean.QBTMud.Services
         Task InvokeDownloadRateDialog(long rate, IEnumerable<string> hashes);
 
         /// <summary>
+        /// Shows the dialog for setting the global download rate limit.
+        /// </summary>
+        /// <param name="rate">The current rate limit in bytes per second.</param>
+        /// <returns>The applied rate limit in bytes per second, or <c>null</c> if canceled.</returns>
+        Task<long?> InvokeGlobalDownloadRateDialog(long rate);
+
+        /// <summary>
         /// Shows the edit category dialog and applies changes when confirmed.
         /// </summary>
         /// <param name="categoryName">The category name to edit.</param>
@@ -102,6 +109,13 @@ namespace Lantean.QBTMud.Services
         /// <param name="rate">The current rate limit in bytes per second.</param>
         /// <param name="hashes">The torrent hashes to update.</param>
         Task InvokeUploadRateDialog(long rate, IEnumerable<string> hashes);
+
+        /// <summary>
+        /// Shows the dialog for setting the global upload rate limit.
+        /// </summary>
+        /// <param name="rate">The current rate limit in bytes per second.</param>
+        /// <returns>The applied rate limit in bytes per second, or <c>null</c> if canceled.</returns>
+        Task<long?> InvokeGlobalUploadRateDialog(long rate);
 
         /// <summary>
         /// Shows the add peers dialog.

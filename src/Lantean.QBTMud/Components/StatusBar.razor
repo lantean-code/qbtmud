@@ -88,9 +88,27 @@
     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
     <MudSpacer />
     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
-    <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Success" />
-    <MudText Class="mr-1" data-test-id="@TestIdHelper.For("Status-Download")">@BuildTransferInfo(MainData?.ServerState.DownloadInfoSpeed, MainData?.ServerState.DownloadRateLimit, MainData?.ServerState.DownloadInfoData)</MudText>
+    <MudButton Variant="Variant.Text"
+               Color="Color.Inherit"
+               ButtonType="ButtonType.Button"
+               Class="mx-1"
+               StartIcon="@Icons.Material.Filled.KeyboardDoubleArrowDown"
+               IconColor="Color.Success"
+               OnClick="ShowGlobalDownloadRateLimitClicked"
+               aria-label="@LanguageLocalizer.Translate("MainWindow", "Global Download Speed Limit")"
+               data-test-id="@TestIdHelper.For("Status-DownloadButton")">
+        <MudText data-test-id="@TestIdHelper.For("Status-Download")">@BuildTransferInfo(MainData?.ServerState.DownloadInfoSpeed, MainData?.ServerState.DownloadRateLimit, MainData?.ServerState.DownloadInfoData)</MudText>
+    </MudButton>
     <MudDivider Vertical="true" Light="@UseLightStatusBarDividers" />
-    <MudIcon Class="ml-1" Icon="@Icons.Material.Filled.KeyboardDoubleArrowUp" Color="Color.Info" />
-    <MudText Class="mr-1" data-test-id="@TestIdHelper.For("Status-Upload")">@BuildTransferInfo(MainData?.ServerState.UploadInfoSpeed, MainData?.ServerState.UploadRateLimit, MainData?.ServerState.UploadInfoData)</MudText>
+    <MudButton Variant="Variant.Text"
+               Color="Color.Inherit"
+               ButtonType="ButtonType.Button"
+               Class="ml-1"
+               StartIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp"
+               IconColor="Color.Info"
+               OnClick="ShowGlobalUploadRateLimitClicked"
+               aria-label="@LanguageLocalizer.Translate("MainWindow", "Global Upload Speed Limit")"
+               data-test-id="@TestIdHelper.For("Status-UploadButton")">
+        <MudText data-test-id="@TestIdHelper.For("Status-Upload")">@BuildTransferInfo(MainData?.ServerState.UploadInfoSpeed, MainData?.ServerState.UploadRateLimit, MainData?.ServerState.UploadInfoData)</MudText>
+    </MudButton>
 </MudAppBar>

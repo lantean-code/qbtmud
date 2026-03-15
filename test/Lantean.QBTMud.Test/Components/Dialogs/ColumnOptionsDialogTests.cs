@@ -440,18 +440,18 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var parameters = new DialogParameters
             {
-                { nameof(ColumnOptionsDialog<string>.Columns), columns },
-                { nameof(ColumnOptionsDialog<string>.SelectedColumns), selectedColumns },
+                { nameof(ColumnOptionsDialog<>.Columns), columns },
+                { nameof(ColumnOptionsDialog<>.SelectedColumns), selectedColumns },
             };
 
             if (widths is not null)
             {
-                parameters.Add(nameof(ColumnOptionsDialog<string>.Widths), widths);
+                parameters.Add(nameof(ColumnOptionsDialog<>.Widths), widths);
             }
 
             if (order is not null)
             {
-                parameters.Add(nameof(ColumnOptionsDialog<string>.Order), order);
+                parameters.Add(nameof(ColumnOptionsDialog<>.Order), order);
             }
 
             var reference = await dialogService.ShowAsync<ColumnOptionsDialog<string>>("Column Options", parameters);

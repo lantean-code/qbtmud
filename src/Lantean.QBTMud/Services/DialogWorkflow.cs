@@ -324,33 +324,37 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task InvokeDownloadRateDialog(long rate, IEnumerable<string> hashes)
         {
-            Func<long, string> valueDisplayFunc = v => v == Limits.NoLimit ? "∞" : v.ToString();
-            Func<string, long> valueGetFunc = v => v == "∞" ? Limits.NoLimit : long.Parse(v);
-
-            var parameters = new DialogParameters
-            {
-                { nameof(SliderFieldDialog<long>.Min), -1L },
-                { nameof(SliderFieldDialog<long>.Max), 4096L },
-                { nameof(SliderFieldDialog<long>.Value), rate / 1024 },
-                { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
-                { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
-                { nameof(SliderFieldDialog<long>.Label), _languageLocalizer.Translate(_speedLimitContext, "Download limit:") },
-                { nameof(SliderFieldDialog<long>.Adornment), Adornment.End },
-                { nameof(SliderFieldDialog<long>.AdornmentText), _languageLocalizer.Translate(_speedLimitContext, "KiB/s") },
-            };
-
-            var result = await _dialogService.ShowAsync<SliderFieldDialog<long>>(
+            var appliedRate = await ShowRateLimitDialog(
+                rate,
                 _languageLocalizer.Translate(_transferListContext, "Torrent Download Speed Limiting"),
-                parameters,
-                FormDialogOptions);
-            var dialogResult = await result.Result;
-            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+                _languageLocalizer.Translate(_speedLimitContext, "Download limit:"),
+                4096L,
+                Limits.NoLimit);
+            if (!appliedRate.HasValue)
             {
                 return;
             }
 
-            var kibs = (long)dialogResult.Data;
-            await _apiClient.SetTorrentDownloadLimit(kibs * 1024, null, hashes.ToArray());
+            await _apiClient.SetTorrentDownloadLimit(appliedRate.Value, null, hashes.ToArray());
+        }
+
+        /// <inheritdoc />
+        public async Task<long?> InvokeGlobalDownloadRateDialog(long rate)
+        {
+            var appliedRate = await ShowRateLimitDialog(
+                rate,
+                _languageLocalizer.Translate("MainWindow", "Global Download Speed Limit"),
+                _languageLocalizer.Translate(_speedLimitContext, "Download limit:"),
+                10000L,
+                0L);
+            if (!appliedRate.HasValue)
+            {
+                return null;
+            }
+
+            await _apiClient.SetGlobalDownloadLimit(appliedRate.Value);
+
+            return appliedRate.Value;
         }
 
         /// <inheritdoc />
@@ -494,33 +498,37 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task InvokeUploadRateDialog(long rate, IEnumerable<string> hashes)
         {
-            Func<long, string> valueDisplayFunc = v => v == Limits.NoLimit ? "∞" : v.ToString();
-            Func<string, long> valueGetFunc = v => v == "∞" ? Limits.NoLimit : long.Parse(v);
-
-            var parameters = new DialogParameters
-            {
-                { nameof(SliderFieldDialog<long>.Min), -1L },
-                { nameof(SliderFieldDialog<long>.Max), 4096L },
-                { nameof(SliderFieldDialog<long>.Value), rate / 1024 },
-                { nameof(SliderFieldDialog<long>.ValueDisplayFunc), valueDisplayFunc },
-                { nameof(SliderFieldDialog<long>.ValueGetFunc), valueGetFunc },
-                { nameof(SliderFieldDialog<long>.Label), _languageLocalizer.Translate(_speedLimitContext, "Upload limit:") },
-                { nameof(SliderFieldDialog<long>.Adornment), Adornment.End },
-                { nameof(SliderFieldDialog<long>.AdornmentText), _languageLocalizer.Translate(_speedLimitContext, "KiB/s") },
-            };
-
-            var result = await _dialogService.ShowAsync<SliderFieldDialog<long>>(
+            var appliedRate = await ShowRateLimitDialog(
+                rate,
                 _languageLocalizer.Translate(_transferListContext, "Torrent Upload Speed Limiting"),
-                parameters,
-                FormDialogOptions);
-            var dialogResult = await result.Result;
-            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+                _languageLocalizer.Translate(_speedLimitContext, "Upload limit:"),
+                4096L,
+                Limits.NoLimit);
+            if (!appliedRate.HasValue)
             {
                 return;
             }
 
-            var kibs = (long)dialogResult.Data;
-            await _apiClient.SetTorrentUploadLimit(kibs * 1024, null, hashes.ToArray());
+            await _apiClient.SetTorrentUploadLimit(appliedRate.Value, null, hashes.ToArray());
+        }
+
+        /// <inheritdoc />
+        public async Task<long?> InvokeGlobalUploadRateDialog(long rate)
+        {
+            var appliedRate = await ShowRateLimitDialog(
+                rate,
+                _languageLocalizer.Translate("MainWindow", "Global Upload Speed Limit"),
+                _languageLocalizer.Translate(_speedLimitContext, "Upload limit:"),
+                10000L,
+                0L);
+            if (!appliedRate.HasValue)
+            {
+                return null;
+            }
+
+            await _apiClient.SetGlobalUploadLimit(appliedRate.Value);
+
+            return appliedRate.Value;
         }
 
         /// <inheritdoc />
@@ -577,10 +585,10 @@ namespace Lantean.QBTMud.Services
         {
             var parameters = new DialogParameters
             {
-                { nameof(ColumnOptionsDialog<T>.Columns), columnDefinitions },
-                { nameof(ColumnOptionsDialog<T>.SelectedColumns), selectedColumns },
-                { nameof(ColumnOptionsDialog<T>.Widths), widths },
-                { nameof(ColumnOptionsDialog<T>.Order), order },
+                { nameof(ColumnOptionsDialog<>.Columns), columnDefinitions },
+                { nameof(ColumnOptionsDialog<>.SelectedColumns), selectedColumns },
+                { nameof(ColumnOptionsDialog<>.Widths), widths },
+                { nameof(ColumnOptionsDialog<>.Order), order },
             };
 
             var reference = await _dialogService.ShowAsync<ColumnOptionsDialog<T>>(
@@ -646,7 +654,7 @@ namespace Lantean.QBTMud.Services
         {
             var parameters = new DialogParameters
             {
-                { nameof(FilterOptionsDialog<T>.FilterDefinitions), propertyFilterDefinitions },
+                { nameof(FilterOptionsDialog<>.FilterDefinitions), propertyFilterDefinitions },
             };
 
             var result = await _dialogService.ShowAsync<FilterOptionsDialog<T>>(
@@ -896,6 +904,37 @@ namespace Lantean.QBTMud.Services
             {
                 return AppSettings.Default.Clone();
             }
+        }
+
+        private async Task<long?> ShowRateLimitDialog(long rate, string title, string label, long max, long noLimitValue)
+        {
+            Func<long, string> valueDisplayFunc = v => v == noLimitValue ? "∞" : v.ToString();
+            Func<string, long> valueGetFunc = v => v == "∞" ? noLimitValue : long.Parse(v);
+
+            var parameters = new DialogParameters
+            {
+                { nameof(SliderFieldDialog<>.Min), noLimitValue },
+                { nameof(SliderFieldDialog<>.Max), max },
+                { nameof(SliderFieldDialog<>.Value), rate / 1024 },
+                { nameof(SliderFieldDialog<>.ValueDisplayFunc), valueDisplayFunc },
+                { nameof(SliderFieldDialog<>.ValueGetFunc), valueGetFunc },
+                { nameof(SliderFieldDialog<>.Label), label },
+                { nameof(SliderFieldDialog<>.Adornment), Adornment.End },
+                { nameof(SliderFieldDialog<>.AdornmentText), _languageLocalizer.Translate(_speedLimitContext, "KiB/s") },
+            };
+
+            var result = await _dialogService.ShowAsync<SliderFieldDialog<long>>(
+                title,
+                parameters,
+                FormDialogOptions);
+            var dialogResult = await result.Result;
+            if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
+            {
+                return null;
+            }
+
+            var kibs = (long)dialogResult.Data;
+            return kibs * 1024;
         }
 
         private string TranslateApp(string source, params object[] arguments)

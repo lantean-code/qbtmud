@@ -181,23 +181,23 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var parameters = new DialogParameters
             {
-                { nameof(SliderFieldDialog<int>.Label), label },
-                { nameof(SliderFieldDialog<int>.Value), value },
+                { nameof(SliderFieldDialog<>.Label), label },
+                { nameof(SliderFieldDialog<>.Value), value },
             };
 
             if (valueDisplayFunc is not null)
             {
-                parameters.Add(nameof(SliderFieldDialog<int>.ValueDisplayFunc), valueDisplayFunc);
+                parameters.Add(nameof(SliderFieldDialog<>.ValueDisplayFunc), valueDisplayFunc);
             }
 
             if (valueGetFunc is not null)
             {
-                parameters.Add(nameof(SliderFieldDialog<int>.ValueGetFunc), valueGetFunc);
+                parameters.Add(nameof(SliderFieldDialog<>.ValueGetFunc), valueGetFunc);
             }
 
             if (min.HasValue)
             {
-                parameters.Add(nameof(SliderFieldDialog<int>.Min), min.Value);
+                parameters.Add(nameof(SliderFieldDialog<>.Min), min.Value);
             }
 
             var reference = await dialogService.ShowAsync<SliderFieldDialog<int>>("Slider Field", parameters);

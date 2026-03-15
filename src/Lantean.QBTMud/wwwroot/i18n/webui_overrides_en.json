@@ -384,6 +384,8 @@
   "AppTimerStatusPanel|Paused": "Paused",
   "AppTimerStatusPanel|Stopped": "Stopped",
   "AppTimerStatusPanel|Timers: %1 running, %2 paused, %3 stopped, %4 faulted": "Timers: %1 running, %2 paused, %3 stopped, %4 faulted",
+  "AppLoggedInLayout|Unable to set global download rate limit: %1": "Unable to set global download rate limit: %1",
+  "AppLoggedInLayout|Unable to set global upload rate limit: %1": "Unable to set global upload rate limit: %1",
   "AppLoggedInLayout|Unable to toggle alternative speed limits: %1": "Unable to toggle alternative speed limits: %1",
   "AppPiecesProgressCanvas|Pieces data unavailable": "Pieces data unavailable",
   "AppPiecesProgressCanvas|Pieces data unavailable.": "Pieces data unavailable.",

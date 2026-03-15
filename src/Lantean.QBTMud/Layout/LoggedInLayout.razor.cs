@@ -915,6 +915,50 @@ namespace Lantean.QBTMud.Layout
             await InvokeAsync(StateHasChanged);
         }
 
+        protected async Task ShowGlobalDownloadRateLimit()
+        {
+            try
+            {
+                var appliedRate = await DialogWorkflow.InvokeGlobalDownloadRateDialog(MainData?.ServerState.DownloadRateLimit ?? 0);
+                if (!appliedRate.HasValue || MainData is null)
+                {
+                    return;
+                }
+
+                MainData.ServerState.DownloadRateLimit = appliedRate.Value;
+            }
+            catch (HttpRequestException exception)
+            {
+                SnackbarWorkflow.ShowTransientMessage(
+                    LanguageLocalizer.Translate("AppLoggedInLayout", "Unable to set global download rate limit: %1", exception.Message),
+                    Severity.Error);
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+
+        protected async Task ShowGlobalUploadRateLimit()
+        {
+            try
+            {
+                var appliedRate = await DialogWorkflow.InvokeGlobalUploadRateDialog(MainData?.ServerState.UploadRateLimit ?? 0);
+                if (!appliedRate.HasValue || MainData is null)
+                {
+                    return;
+                }
+
+                MainData.ServerState.UploadRateLimit = appliedRate.Value;
+            }
+            catch (HttpRequestException exception)
+            {
+                SnackbarWorkflow.ShowTransientMessage(
+                    LanguageLocalizer.Translate("AppLoggedInLayout", "Unable to set global upload rate limit: %1", exception.Message),
+                    Severity.Error);
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+
         private void MarkTorrentsDirty()
         {
             _torrentsDirty = true;

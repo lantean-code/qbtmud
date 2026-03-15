@@ -154,23 +154,23 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var parameters = new DialogParameters
             {
-                { nameof(NumericFieldDialog<int>.Label), label },
-                { nameof(NumericFieldDialog<int>.Value), value },
+                { nameof(NumericFieldDialog<>.Label), label },
+                { nameof(NumericFieldDialog<>.Value), value },
             };
 
             if (valueDisplayFunc is not null)
             {
-                parameters.Add(nameof(NumericFieldDialog<int>.ValueDisplayFunc), valueDisplayFunc);
+                parameters.Add(nameof(NumericFieldDialog<>.ValueDisplayFunc), valueDisplayFunc);
             }
 
             if (valueGetFunc is not null)
             {
-                parameters.Add(nameof(NumericFieldDialog<int>.ValueGetFunc), valueGetFunc);
+                parameters.Add(nameof(NumericFieldDialog<>.ValueGetFunc), valueGetFunc);
             }
 
             if (min.HasValue)
             {
-                parameters.Add(nameof(NumericFieldDialog<int>.Min), min.Value);
+                parameters.Add(nameof(NumericFieldDialog<>.Min), min.Value);
             }
 
             var reference = await dialogService.ShowAsync<NumericFieldDialog<int>>("Numeric Field", parameters);
