@@ -242,13 +242,19 @@ namespace Lantean.QBTMud.Services
                 return true;
             }
 
-            string? torrentName = null;
+            var parameters = new DialogParameters
+            {
+                { nameof(DeleteDialog.Count), hashes.Length },
+                { nameof(DeleteDialog.DefaultDeleteFiles), deleteTorrentContentFiles },
+                { nameof(DeleteDialog.SaveDeleteFilesPreference), new Func<bool, Task>(SaveDeleteFilesPreference) },
+            };
             if (hashes.Length == 1)
             {
+                string? torrentName = null;
                 try
                 {
-                    var torrents = await _apiClient.GetTorrentList(hashes: hashes[0]);
-                    torrentName = torrents.FirstOrDefault()?.Name;
+                    var torrents = await _apiClient.GetTorrent(hashes[0]);
+                    torrentName = torrents?.Name;
                 }
                 catch (HttpRequestException)
                 {
@@ -259,16 +265,6 @@ namespace Lantean.QBTMud.Services
                 {
                     torrentName = hashes[0];
                 }
-            }
-
-            var parameters = new DialogParameters
-            {
-                { nameof(DeleteDialog.Count), hashes.Length },
-                { nameof(DeleteDialog.DefaultDeleteFiles), deleteTorrentContentFiles },
-                { nameof(DeleteDialog.SaveDeleteFilesPreference), new Func<bool, Task>(SaveDeleteFilesPreference) },
-            };
-            if (hashes.Length == 1)
-            {
                 parameters.Add(nameof(DeleteDialog.TorrentName), torrentName);
             }
 
