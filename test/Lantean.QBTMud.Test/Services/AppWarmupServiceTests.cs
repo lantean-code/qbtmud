@@ -36,6 +36,9 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_themeManagerService)
                 .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
+            Mock.Get(_themeManagerService)
+                .Setup(service => service.PreloadRepositoryThemes())
+                .Returns(Task.CompletedTask);
 
             Mock.Get(_browserCapabilitiesService)
                 .Setup(service => service.EnsureInitialized(It.IsAny<CancellationToken>()))
@@ -55,6 +58,7 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_languageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+            Mock.Get(_themeManagerService).Verify(service => service.PreloadRepositoryThemes(), Times.Once);
             Mock.Get(_browserCapabilitiesService).Verify(service => service.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -67,6 +71,7 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_languageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+            Mock.Get(_themeManagerService).Verify(service => service.PreloadRepositoryThemes(), Times.Once);
             Mock.Get(_browserCapabilitiesService).Verify(service => service.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -109,6 +114,7 @@ namespace Lantean.QBTMud.Test.Services
 
             Mock.Get(_languageCatalog).Verify(catalog => catalog.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+            Mock.Get(_themeManagerService).Verify(service => service.PreloadRepositoryThemes(), Times.Once);
             Mock.Get(_browserCapabilitiesService).Verify(service => service.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -166,6 +172,7 @@ namespace Lantean.QBTMud.Test.Services
             _target.IsCompleted.Should().BeTrue();
             _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.LanguageCatalog && failure.Message == "CatalogFailure");
             Mock.Get(_themeManagerService).Verify(service => service.EnsureInitialized(), Times.Once);
+            Mock.Get(_themeManagerService).Verify(service => service.PreloadRepositoryThemes(), Times.Once);
             Mock.Get(_browserCapabilitiesService).Verify(service => service.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -180,6 +187,7 @@ namespace Lantean.QBTMud.Test.Services
 
             _target.IsCompleted.Should().BeTrue();
             _target.Failures.Should().ContainSingle(failure => failure.Step == AppWarmupStep.ThemeManager && failure.Message == "ThemeFailure");
+            Mock.Get(_themeManagerService).Verify(service => service.PreloadRepositoryThemes(), Times.Never);
             Mock.Get(_browserCapabilitiesService).Verify(service => service.EnsureInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 

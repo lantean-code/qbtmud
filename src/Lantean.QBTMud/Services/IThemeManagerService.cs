@@ -44,6 +44,18 @@ namespace Lantean.QBTMud.Services
         Task EnsureInitialized();
 
         /// <summary>
+        /// Starts a non-blocking preload of repository themes when needed.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        Task PreloadRepositoryThemes();
+
+        /// <summary>
+        /// Ensures repository themes have been loaded, retrying after a failed preload when needed.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        Task EnsureRepositoryThemesLoaded();
+
+        /// <summary>
         /// Reloads server-provided themes and rebuilds the catalog.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>

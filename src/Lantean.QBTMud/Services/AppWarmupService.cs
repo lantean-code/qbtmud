@@ -83,7 +83,11 @@ namespace Lantean.QBTMud.Services
 
                 await RunStep(
                     AppWarmupStep.ThemeManager,
-                    () => _themeManagerService.EnsureInitialized(),
+                    new Func<Task>(async () =>
+                    {
+                        await _themeManagerService.EnsureInitialized();
+                        await _themeManagerService.PreloadRepositoryThemes();
+                    }),
                     cancellationToken);
 
                 await RunStep(

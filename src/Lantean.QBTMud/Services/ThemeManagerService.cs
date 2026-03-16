@@ -17,17 +17,21 @@ namespace Lantean.QBTMud.Services
         private const string _bundledThemeIndexPath = "themes/index.json";
 
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
+        private readonly Lock _repositoryLoadLock = new();
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ISettingsStorageService _settingsStorage;
         private readonly IThemeFontCatalog _themeFontCatalog;
         private readonly ILanguageLocalizer _languageLocalizer;
         private readonly IAppSettingsService _appSettingsService;
+        private readonly ILogger<ThemeManagerService> _logger;
         private readonly List<ThemeDefinition> _localThemes = [];
         private readonly List<ThemeCatalogItem> _repositoryThemes = [];
         private readonly List<ThemeCatalogItem> _bundledThemes = [];
         private readonly List<ThemeCatalogItem> _themes = [];
         private IReadOnlyList<ThemeCatalogItem> _themesView = [];
+        private Task? _repositoryLoadTask;
         private bool _initialized;
+        private bool _repositoryThemesLoaded;
         private bool _lastReloadHadRepositoryIssues;
         private ThemeCatalogItem? _currentTheme;
         private string? _currentThemeId;
@@ -41,18 +45,21 @@ namespace Lantean.QBTMud.Services
         /// <param name="themeFontCatalog">The theme font catalog.</param>
         /// <param name="languageLocalizer">The language localizer.</param>
         /// <param name="appSettingsService">The app settings service.</param>
+        /// <param name="logger">The logger instance.</param>
         public ThemeManagerService(
             IHttpClientFactory httpClientFactory,
             ISettingsStorageService settingsStorage,
             IThemeFontCatalog themeFontCatalog,
             ILanguageLocalizer languageLocalizer,
-            IAppSettingsService appSettingsService)
+            IAppSettingsService appSettingsService,
+            ILogger<ThemeManagerService> logger)
         {
             _httpClientFactory = httpClientFactory;
             _settingsStorage = settingsStorage;
             _themeFontCatalog = themeFontCatalog;
             _languageLocalizer = languageLocalizer;
             _appSettingsService = appSettingsService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -136,6 +143,55 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <summary>
+        /// Starts a non-blocking preload of repository themes when needed.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task PreloadRepositoryThemes()
+        {
+            if (!_initialized)
+            {
+                await EnsureInitialized();
+            }
+
+            var repositoryLoadTask = StartRepositoryLoad(forceReload: false, updateIssueFlag: false, logFailures: true);
+            if (repositoryLoadTask.IsCompleted)
+            {
+                await repositoryLoadTask;
+            }
+        }
+
+        /// <summary>
+        /// Ensures repository themes have been loaded, retrying after a failed preload when needed.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task EnsureRepositoryThemesLoaded()
+        {
+            if (!_initialized)
+            {
+                await EnsureInitialized();
+            }
+
+            if (_repositoryThemesLoaded)
+            {
+                _lastReloadHadRepositoryIssues = false;
+                return;
+            }
+
+            var inProgressLoad = GetInProgressRepositoryLoad();
+            if (inProgressLoad is not null)
+            {
+                await inProgressLoad;
+                if (_repositoryThemesLoaded)
+                {
+                    _lastReloadHadRepositoryIssues = false;
+                    return;
+                }
+            }
+
+            await StartRepositoryLoad(forceReload: false, updateIssueFlag: true, logFailures: false);
+        }
+
+        /// <summary>
         /// Reloads theme sources and rebuilds the catalog.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
@@ -144,22 +200,9 @@ namespace Lantean.QBTMud.Services
             if (!_initialized)
             {
                 await EnsureInitialized();
-                return;
             }
 
-            await LoadBundledThemes();
-            _lastReloadHadRepositoryIssues = await LoadRepositoryThemes(captureIssues: true);
-            RebuildCatalog();
-
-            if (_currentThemeId is not null && !_themes.Any(theme => theme.Id == _currentThemeId))
-            {
-                await ClearSelectedThemeSelectionAsync();
-            }
-
-            if (_currentThemeId is not null)
-            {
-                await ApplyTheme(_currentThemeId);
-            }
+            await StartRepositoryLoad(forceReload: true, updateIssueFlag: true, logFailures: false);
         }
 
         /// <summary>
@@ -415,19 +458,19 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        private async Task<bool> LoadRepositoryThemes(bool captureIssues)
+        private async Task<(bool Loaded, bool HadIssues)> LoadRepositoryThemes(bool captureIssues)
         {
             _repositoryThemes.Clear();
 
             var settings = await _appSettingsService.GetSettingsAsync();
             if (string.IsNullOrWhiteSpace(settings.ThemeRepositoryIndexUrl))
             {
-                return false;
+                return (false, false);
             }
 
             if (!TryCreateHttpsAbsoluteUri(settings.ThemeRepositoryIndexUrl, out var indexUri))
             {
-                return captureIssues;
+                return (false, captureIssues);
             }
 
             HttpClient client;
@@ -437,7 +480,7 @@ namespace Lantean.QBTMud.Services
             }
             catch (InvalidOperationException)
             {
-                return captureIssues;
+                return (false, captureIssues);
             }
 
             List<string>? index;
@@ -446,7 +489,7 @@ namespace Lantean.QBTMud.Services
                 var indexResponse = await client.GetAsync(indexUri);
                 if (!indexResponse.IsSuccessStatusCode)
                 {
-                    return captureIssues;
+                    return (false, captureIssues);
                 }
 
                 var indexJson = await indexResponse.Content.ReadAsStringAsync();
@@ -454,20 +497,20 @@ namespace Lantean.QBTMud.Services
             }
             catch (HttpRequestException)
             {
-                return captureIssues;
+                return (false, captureIssues);
             }
             catch (OperationCanceledException)
             {
-                return captureIssues;
+                return (false, captureIssues);
             }
             catch (JsonException)
             {
-                return captureIssues;
+                return (false, captureIssues);
             }
 
             if (index is null)
             {
-                return captureIssues;
+                return (false, captureIssues);
             }
 
             var hadIssues = false;
@@ -494,7 +537,93 @@ namespace Lantean.QBTMud.Services
                 _repositoryThemes.Add(item);
             }
 
-            return captureIssues && hadIssues;
+            return (true, captureIssues && hadIssues);
+        }
+
+        private Task? GetInProgressRepositoryLoad()
+        {
+            lock (_repositoryLoadLock)
+            {
+                if (_repositoryLoadTask is null || _repositoryLoadTask.IsCompleted)
+                {
+                    return null;
+                }
+
+                return _repositoryLoadTask;
+            }
+        }
+
+        private Task StartRepositoryLoad(bool forceReload, bool updateIssueFlag, bool logFailures)
+        {
+            lock (_repositoryLoadLock)
+            {
+                if (!forceReload && _repositoryThemesLoaded)
+                {
+                    return Task.CompletedTask;
+                }
+
+                if (_repositoryLoadTask is not null && !_repositoryLoadTask.IsCompleted)
+                {
+                    return _repositoryLoadTask;
+                }
+
+                _repositoryLoadTask = logFailures
+                    ? LoadRepositoryThemesWithLogging()
+                    : LoadServerThemesCore(updateIssueFlag, captureIssues: updateIssueFlag);
+                return _repositoryLoadTask;
+            }
+        }
+
+        private async Task LoadRepositoryThemesWithLogging()
+        {
+            try
+            {
+                await LoadServerThemesCore(updateIssueFlag: false, captureIssues: true);
+            }
+            catch (Exception ex)
+            {
+                _repositoryThemesLoaded = false;
+                _logger.LogWarning(ex, "Background repository theme preload failed.");
+            }
+        }
+
+        private async Task LoadServerThemesCore(bool updateIssueFlag, bool captureIssues)
+        {
+            await LoadBundledThemes();
+            var (loaded, hadIssues) = await LoadRepositoryThemes(captureIssues);
+            _repositoryThemesLoaded = loaded;
+
+            if (updateIssueFlag)
+            {
+                _lastReloadHadRepositoryIssues = hadIssues;
+            }
+
+            RebuildCatalog();
+
+            if (!updateIssueFlag && hadIssues)
+            {
+                _logger.LogWarning("Background repository theme preload completed with repository issues.");
+            }
+
+            if (string.Equals(_currentThemeId, "default", StringComparison.Ordinal))
+            {
+                if (_themes.Count > 0)
+                {
+                    await ApplyTheme(_themes[0].Id);
+                }
+
+                return;
+            }
+
+            if (_currentThemeId is not null && !_themes.Any(theme => theme.Id == _currentThemeId))
+            {
+                await ClearSelectedThemeSelectionAsync();
+            }
+
+            if (_currentThemeId is not null)
+            {
+                await ApplyTheme(_currentThemeId);
+            }
         }
 
         private async Task<ThemeCatalogItem?> TryLoadThemeCatalogItem(HttpClient client, string requestPath, string sourcePath, ThemeSource source)

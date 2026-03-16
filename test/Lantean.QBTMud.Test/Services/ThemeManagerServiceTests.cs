@@ -4,6 +4,7 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Lantean.QBTMud.Theming;
+using Microsoft.Extensions.Logging;
 using Moq;
 using MudBlazor;
 using System.Net;
@@ -27,6 +28,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILanguageLocalizer _languageLocalizer;
         private readonly IAppSettingsService _appSettingsService;
+        private readonly ILogger<ThemeManagerService> _logger;
         private readonly ThemeManagerService _target;
 
         public ThemeManagerServiceTests()
@@ -36,11 +38,12 @@ namespace Lantean.QBTMud.Test.Services
             _httpClientFactory = Mock.Of<IHttpClientFactory>();
             _languageLocalizer = Mock.Of<ILanguageLocalizer>();
             _appSettingsService = Mock.Of<IAppSettingsService>();
+            _logger = Mock.Of<ILogger<ThemeManagerService>>();
             Mock.Get(_languageLocalizer)
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] _) => source);
             SetupThemeRepositoryIndexUrl(string.Empty);
-            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog, _languageLocalizer, _appSettingsService);
+            _target = new ThemeManagerService(_httpClientFactory, _localStorage, _fontCatalog, _languageLocalizer, _appSettingsService, _logger);
         }
 
         [Fact]
@@ -416,6 +419,32 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_RepositoryConfigured_WHEN_PreloadedAndEnsured_THEN_LoadsRepositoryThemesWithoutIssueFlag()
+        {
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
+
+            var bundledThemeJson = CreateThemeJson("BundledId", "BundledName", "Nunito Sans");
+            var repositoryThemeJson = CreateThemeJson("RepositoryId", "RepositoryName", "Nunito Sans");
+
+            var handler = new ThemeMessageHandler(new Dictionary<string, HttpResponseMessage>
+            {
+                { _themeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                { "/themes/theme-one.json", CreateThemeHttpResponse(bundledThemeJson) },
+                { _repositoryIndexPath, CreateIndexResponse("themes/repository-theme.json") },
+                { "/qbtmud-themes/themes/repository-theme.json", CreateThemeHttpResponse(repositoryThemeJson) }
+            });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+            await _target.PreloadRepositoryThemes();
+            await _target.EnsureRepositoryThemesLoaded();
+
+            _target.LastReloadHadRepositoryIssues.Should().BeFalse();
+            _target.Themes.Should().Contain(theme => theme.Id == "RepositoryId" && theme.Source == ThemeSource.Repository);
+        }
+
+        [Fact]
         public async Task GIVEN_StoredRepositoryThemeId_WHEN_Initialized_THEN_PreservesThemeIdUntilRepositoryReload()
         {
             SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
@@ -599,6 +628,83 @@ namespace Lantean.QBTMud.Test.Services
             await _target.ReloadServerThemes();
 
             _target.LastReloadHadRepositoryIssues.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_PreloadFails_WHEN_Preloaded_THEN_LogsWarning()
+        {
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
+            Mock.Get(_logger)
+                .Setup(logger => logger.IsEnabled(LogLevel.Warning))
+                .Returns(true);
+
+            var handler = new ThemeMessageHandler(
+                new Dictionary<string, HttpResponseMessage>
+                {
+                    { _themeIndexPath, CreateIndexResponse() }
+                },
+                new Dictionary<string, Exception>
+                {
+                    { _repositoryIndexPath, new HttpRequestException("Failure") }
+                });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+            await _target.PreloadRepositoryThemes();
+            await _target.EnsureRepositoryThemesLoaded();
+
+            Mock.Get(_logger).Verify(
+                logger => logger.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains("Background repository theme preload", StringComparison.Ordinal)),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_PreloadFails_WHEN_ThemesEnsured_THEN_RetriesAndSetsIssueFlagFromRetry()
+        {
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
+
+            var bundledThemeJson = CreateThemeJson("BundledId", "BundledName", "Nunito Sans");
+            var repositoryThemeJson = CreateThemeJson("RepositoryId", "RepositoryName", "Nunito Sans");
+            var repositoryIndexRequests = 0;
+
+            var handler = new ThemeMessageHandler(
+                new Dictionary<string, HttpResponseMessage>
+                {
+                    { _themeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                    { "/themes/theme-one.json", CreateThemeHttpResponse(bundledThemeJson) },
+                    { "/qbtmud-themes/themes/repository-theme.json", CreateThemeHttpResponse(repositoryThemeJson) }
+                },
+                customResponses: request =>
+                {
+                    if (string.Equals(request.RequestUri?.AbsolutePath, _repositoryIndexPath, StringComparison.Ordinal))
+                    {
+                        repositoryIndexRequests++;
+                        if (repositoryIndexRequests == 1)
+                        {
+                            throw new HttpRequestException("Failure");
+                        }
+
+                        return CreateIndexResponse("themes/repository-theme.json");
+                    }
+
+                    return null;
+                });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+            await _target.PreloadRepositoryThemes();
+            await _target.EnsureRepositoryThemesLoaded();
+
+            repositoryIndexRequests.Should().Be(2);
+            _target.LastReloadHadRepositoryIssues.Should().BeFalse();
+            _target.Themes.Should().Contain(theme => theme.Id == "RepositoryId" && theme.Source == ThemeSource.Repository);
         }
 
         [Fact]
@@ -1076,6 +1182,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             private IDictionary<string, HttpResponseMessage> _responses;
             private IDictionary<string, Exception> _exceptions;
+            private readonly Func<HttpRequestMessage, HttpResponseMessage?>? _customResponses;
 
             public ThemeMessageHandler(IDictionary<string, HttpResponseMessage> responses)
                 : this(responses, new Dictionary<string, Exception>())
@@ -1083,9 +1190,20 @@ namespace Lantean.QBTMud.Test.Services
             }
 
             public ThemeMessageHandler(IDictionary<string, HttpResponseMessage> responses, IDictionary<string, Exception> exceptions)
+                : this(responses, exceptions, null)
+            {
+            }
+
+            public ThemeMessageHandler(IDictionary<string, HttpResponseMessage> responses, Func<HttpRequestMessage, HttpResponseMessage?> customResponses)
+                : this(responses, new Dictionary<string, Exception>(), customResponses)
+            {
+            }
+
+            public ThemeMessageHandler(IDictionary<string, HttpResponseMessage> responses, IDictionary<string, Exception> exceptions, Func<HttpRequestMessage, HttpResponseMessage?>? customResponses)
             {
                 _responses = responses;
                 _exceptions = exceptions;
+                _customResponses = customResponses;
             }
 
             public void SetResponses(IDictionary<string, HttpResponseMessage> responses, IDictionary<string, Exception>? exceptions = null)
@@ -1097,6 +1215,22 @@ namespace Lantean.QBTMud.Test.Services
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+                if (_customResponses is not null)
+                {
+                    try
+                    {
+                        var customResponse = _customResponses(request);
+                        if (customResponse is not null)
+                        {
+                            return Task.FromResult(customResponse);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        return Task.FromException<HttpResponseMessage>(ex);
+                    }
+                }
+
                 if (_exceptions.TryGetValue(path, out var exception))
                 {
                     return Task.FromException<HttpResponseMessage>(exception);

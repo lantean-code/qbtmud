@@ -34,7 +34,7 @@
     @TorrentControls(_trackerType)
 </MudMenu>
 
-<MudNavMenu Dense="true">
+<MudNavMenu Dense="true" Bordered="true" Margin="Margin.Dense">
     <MudNavGroup Title="@LanguageLocalizer.Translate("TransferListFiltersWidget", "Status")" @bind-Expanded="_statusExpanded">
         @foreach (var (status, count) in Statuses)
         {

@@ -43,6 +43,9 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
             Mock.Get(_themeManagerService)
+                .Setup(service => service.EnsureRepositoryThemesLoaded())
+                .Returns(Task.CompletedTask);
+            Mock.Get(_themeManagerService)
                 .Setup(service => service.ReloadServerThemes())
                 .Returns(Task.CompletedTask);
 

@@ -94,7 +94,11 @@ namespace Lantean.QBTMud.Pages
         protected override async Task OnInitializedAsync()
         {
             await ThemeManagerService.EnsureInitialized();
-            await ThemeManagerService.ReloadServerThemes();
+            await ThemeManagerService.EnsureRepositoryThemesLoaded();
+            if (ThemeManagerService.LastReloadHadRepositoryIssues)
+            {
+                SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load theme repository. Showing bundled and local themes only."), Severity.Warning);
+            }
         }
 
         protected void NavigateBack()

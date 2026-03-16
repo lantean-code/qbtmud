@@ -52,10 +52,6 @@
                 var theme = context.Data;
                 <div class="theme-name-cell">
                     <MudText Typo="Typo.body2">@theme.Name</MudText>
-                    @if (theme.IsReadOnly)
-                    {
-                        <MudChip T="string" Size="Size.Small" Color="@GetSourceChipColor(theme)" Variant="Variant.Outlined">@GetSourceLabel(theme)</MudChip>
-                    }
                 </div>;
             };
         }

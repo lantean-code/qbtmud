@@ -44,6 +44,9 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(service => service.EnsureInitialized())
                 .Returns(Task.CompletedTask);
             Mock.Get(_themeManagerService)
+                .Setup(service => service.EnsureRepositoryThemesLoaded())
+                .Returns(Task.CompletedTask);
+            Mock.Get(_themeManagerService)
                 .Setup(service => service.ReloadServerThemes())
                 .Returns(Task.CompletedTask);
         }
@@ -116,6 +119,36 @@ namespace Lantean.QBTMud.Test.Pages
 
             chips.Should().HaveCount(1);
             chips[0].Instance.Color.Should().Be(Color.Default);
+        }
+
+        [Fact]
+        public void GIVEN_ReadOnlyTheme_WHEN_Rendered_THEN_RendersSingleSourceChip()
+        {
+            var themes = new List<ThemeCatalogItem>
+            {
+                CreateTheme("ThemeId", "Name", ThemeSource.Server)
+            };
+
+            var target = RenderPage(themes);
+
+            var chips = target.FindComponents<MudChip<string>>();
+
+            chips.Should().HaveCount(1);
+            chips[0].Instance.Color.Should().Be(Color.Info);
+        }
+
+        [Fact]
+        public void GIVEN_InitialRepositoryIssues_WHEN_Rendered_THEN_ShowsWarning()
+        {
+            Mock.Get(_themeManagerService)
+                .SetupGet(service => service.LastReloadHadRepositoryIssues)
+                .Returns(true);
+            Mock.Get(_snackbar)
+                .Setup(snackbar => snackbar.Add("Unable to load theme repository. Showing bundled and local themes only.", Severity.Warning, null, null));
+
+            RenderPage(new List<ThemeCatalogItem>());
+
+            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add("Unable to load theme repository. Showing bundled and local themes only.", Severity.Warning, null, null), Times.Once);
         }
 
         [Fact]
@@ -455,6 +488,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(snackbar => snackbar.Add("Unable to load theme repository. Showing bundled and local themes only.", Severity.Warning, null, null));
 
             var target = RenderPage(new List<ThemeCatalogItem>());
+            _snackbar.ClearInvocations();
 
             var reloadButton = FindComponentByTestId<MudIconButton>(target, "ThemesReload");
             await target.InvokeAsync(() => reloadButton.Instance.OnClick.InvokeAsync());
