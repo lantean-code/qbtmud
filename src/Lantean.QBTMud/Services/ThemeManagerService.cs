@@ -16,6 +16,8 @@ namespace Lantean.QBTMud.Services
         private const string _selectedThemeDefinitionStorageKey = "ThemeManager.SelectedThemeDefinition";
         private const string _bundledThemeIndexPath = "themes/index.json";
 
+        private static readonly JsonSerializerOptions _webSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
         private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
         private readonly Lock _repositoryLoadLock = new();
         private readonly IHttpClientFactory _httpClientFactory;
@@ -153,7 +155,7 @@ namespace Lantean.QBTMud.Services
                 await EnsureInitialized();
             }
 
-            var repositoryLoadTask = StartRepositoryLoad(forceReload: false, updateIssueFlag: false, logFailures: true);
+            var repositoryLoadTask = StartRepositoryLoad(forceReload: false, updateIssueFlag: false, logFailures: true, queueBackgroundLoad: true);
             if (repositoryLoadTask.IsCompleted)
             {
                 await repositoryLoadTask;
@@ -188,7 +190,7 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            await StartRepositoryLoad(forceReload: false, updateIssueFlag: true, logFailures: false);
+            await StartRepositoryLoad(forceReload: false, updateIssueFlag: true, logFailures: false, queueBackgroundLoad: false);
         }
 
         /// <summary>
@@ -202,7 +204,7 @@ namespace Lantean.QBTMud.Services
                 await EnsureInitialized();
             }
 
-            await StartRepositoryLoad(forceReload: true, updateIssueFlag: true, logFailures: false);
+            await StartRepositoryLoad(forceReload: true, updateIssueFlag: true, logFailures: false, queueBackgroundLoad: false);
         }
 
         /// <summary>
@@ -423,7 +425,7 @@ namespace Lantean.QBTMud.Services
                 }
 
                 var indexJson = await indexResponse.Content.ReadAsStringAsync();
-                index = JsonSerializer.Deserialize<List<string>>(indexJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+                index = JsonSerializer.Deserialize<List<string>>(indexJson, _webSerializerOptions);
             }
             catch (HttpRequestException)
             {
@@ -493,7 +495,7 @@ namespace Lantean.QBTMud.Services
                 }
 
                 var indexJson = await indexResponse.Content.ReadAsStringAsync();
-                index = JsonSerializer.Deserialize<List<string>>(indexJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+                index = JsonSerializer.Deserialize<List<string>>(indexJson, _webSerializerOptions);
             }
             catch (HttpRequestException)
             {
@@ -553,7 +555,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        private Task StartRepositoryLoad(bool forceReload, bool updateIssueFlag, bool logFailures)
+        private Task StartRepositoryLoad(bool forceReload, bool updateIssueFlag, bool logFailures, bool queueBackgroundLoad)
         {
             lock (_repositoryLoadLock)
             {
@@ -564,6 +566,13 @@ namespace Lantean.QBTMud.Services
 
                 if (_repositoryLoadTask is not null && !_repositoryLoadTask.IsCompleted)
                 {
+                    return _repositoryLoadTask;
+                }
+
+                if (queueBackgroundLoad)
+                {
+                    // Queue the preload explicitly so it continues after startup warmup returns.
+                    _repositoryLoadTask = Task.Run(LoadRepositoryThemesWithLogging);
                     return _repositoryLoadTask;
                 }
 
