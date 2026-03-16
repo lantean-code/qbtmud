@@ -445,6 +445,50 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_RepositoryConfigured_WHEN_PreloadedAndEnsured_THEN_DoesNotReloadBundledThemes()
+        {
+            SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);
+
+            var bundledIndexRequests = 0;
+            var bundledThemeRequests = 0;
+            var bundledThemeJson = CreateThemeJson("BundledId", "BundledName", "Nunito Sans");
+            var repositoryThemeJson = CreateThemeJson("RepositoryId", "RepositoryName", "Nunito Sans");
+
+            var handler = new ThemeMessageHandler(
+                new Dictionary<string, HttpResponseMessage>
+                {
+                    { _themeIndexPath, CreateIndexResponse("themes/theme-one.json") },
+                    { "/themes/theme-one.json", CreateThemeHttpResponse(bundledThemeJson) },
+                    { _repositoryIndexPath, CreateIndexResponse("themes/repository-theme.json") },
+                    { "/qbtmud-themes/themes/repository-theme.json", CreateThemeHttpResponse(repositoryThemeJson) }
+                },
+                customResponses: request =>
+                {
+                    var path = request.RequestUri?.AbsolutePath;
+                    if (string.Equals(path, _themeIndexPath, StringComparison.Ordinal))
+                    {
+                        bundledIndexRequests++;
+                    }
+
+                    if (string.Equals(path, "/themes/theme-one.json", StringComparison.Ordinal))
+                    {
+                        bundledThemeRequests++;
+                    }
+
+                    return null;
+                });
+            SetupHttpClient(handler);
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+            await _target.PreloadRepositoryThemes();
+            await _target.EnsureRepositoryThemesLoaded();
+
+            bundledIndexRequests.Should().Be(1);
+            bundledThemeRequests.Should().Be(1);
+        }
+
+        [Fact]
         public async Task GIVEN_StoredRepositoryThemeId_WHEN_Initialized_THEN_PreservesThemeIdUntilRepositoryReload()
         {
             SetupThemeRepositoryIndexUrl(_repositoryIndexUrl);

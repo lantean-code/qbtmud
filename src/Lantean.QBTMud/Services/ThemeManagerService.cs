@@ -155,7 +155,7 @@ namespace Lantean.QBTMud.Services
                 await EnsureInitialized();
             }
 
-            var repositoryLoadTask = StartRepositoryLoad(forceReload: false, updateIssueFlag: false, logFailures: true, queueBackgroundLoad: true);
+            var repositoryLoadTask = StartRepositoryLoad(forceReload: false, updateIssueFlag: false, logFailures: true, queueBackgroundLoad: true, reloadBundledThemes: false);
             if (repositoryLoadTask.IsCompleted)
             {
                 await repositoryLoadTask;
@@ -190,7 +190,7 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            await StartRepositoryLoad(forceReload: false, updateIssueFlag: true, logFailures: false, queueBackgroundLoad: false);
+            await StartRepositoryLoad(forceReload: false, updateIssueFlag: true, logFailures: false, queueBackgroundLoad: false, reloadBundledThemes: false);
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace Lantean.QBTMud.Services
                 await EnsureInitialized();
             }
 
-            await StartRepositoryLoad(forceReload: true, updateIssueFlag: true, logFailures: false, queueBackgroundLoad: false);
+            await StartRepositoryLoad(forceReload: true, updateIssueFlag: true, logFailures: false, queueBackgroundLoad: false, reloadBundledThemes: true);
         }
 
         /// <summary>
@@ -555,7 +555,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        private Task StartRepositoryLoad(bool forceReload, bool updateIssueFlag, bool logFailures, bool queueBackgroundLoad)
+        private Task StartRepositoryLoad(bool forceReload, bool updateIssueFlag, bool logFailures, bool queueBackgroundLoad, bool reloadBundledThemes)
         {
             lock (_repositoryLoadLock)
             {
@@ -572,22 +572,22 @@ namespace Lantean.QBTMud.Services
                 if (queueBackgroundLoad)
                 {
                     // Queue the preload explicitly so it continues after startup warmup returns.
-                    _repositoryLoadTask = Task.Run(LoadRepositoryThemesWithLogging);
+                    _repositoryLoadTask = Task.Run(() => LoadRepositoryThemesWithLogging(reloadBundledThemes));
                     return _repositoryLoadTask;
                 }
 
                 _repositoryLoadTask = logFailures
-                    ? LoadRepositoryThemesWithLogging()
-                    : LoadServerThemesCore(updateIssueFlag, captureIssues: updateIssueFlag);
+                    ? LoadRepositoryThemesWithLogging(reloadBundledThemes)
+                    : LoadServerThemesCore(updateIssueFlag, captureIssues: updateIssueFlag, reloadBundledThemes);
                 return _repositoryLoadTask;
             }
         }
 
-        private async Task LoadRepositoryThemesWithLogging()
+        private async Task LoadRepositoryThemesWithLogging(bool reloadBundledThemes)
         {
             try
             {
-                await LoadServerThemesCore(updateIssueFlag: false, captureIssues: true);
+                await LoadServerThemesCore(updateIssueFlag: false, captureIssues: true, reloadBundledThemes);
             }
             catch (Exception ex)
             {
@@ -596,9 +596,13 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        private async Task LoadServerThemesCore(bool updateIssueFlag, bool captureIssues)
+        private async Task LoadServerThemesCore(bool updateIssueFlag, bool captureIssues, bool reloadBundledThemes)
         {
-            await LoadBundledThemes();
+            if (reloadBundledThemes)
+            {
+                await LoadBundledThemes();
+            }
+
             var (loaded, hadIssues) = await LoadRepositoryThemes(captureIssues);
             _repositoryThemesLoaded = loaded;
 
