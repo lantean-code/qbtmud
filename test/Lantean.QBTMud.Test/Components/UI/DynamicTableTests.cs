@@ -994,6 +994,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.MultiSelection, false);
                 parameters.Add(p => p.SelectOnRowClick, true);
                 parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
+                parameters.Add(p => p.OnTableDataLongPress, EventCallback.Factory.Create<TableDataLongPressEventArgs<TestRow>>(this, _ => Task.CompletedTask));
                 parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args => rowClicks.Add(args)));
             });
 
@@ -1255,6 +1256,7 @@ namespace Lantean.QBTMud.Test.Components.UI
                 parameters.Add(p => p.MultiSelection, false);
                 parameters.Add(p => p.SelectOnRowClick, true);
                 parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, value => selectedItemEvents.Add(value)));
+                parameters.Add(p => p.OnTableDataLongPress, EventCallback.Factory.Create<TableDataLongPressEventArgs<TestRow>>(this, _ => Task.CompletedTask));
                 parameters.Add(p => p.OnRowClick, EventCallback.Factory.Create<TableRowClickEventArgs<TestRow>>(this, args =>
                 {
                     rowClicks.Add(args);
@@ -1366,6 +1368,108 @@ namespace Lantean.QBTMud.Test.Components.UI
             var row = target.FindComponents<MudTr>().First();
             var style = row.Instance.Style;
             style.Should().Contain("background-color");
+        }
+
+        [Fact]
+        public void GIVEN_RowNotInteractive_WHEN_Rendered_THEN_RowStyleDoesNotContainPointerCursor()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleNoInteraction");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.SelectOnRowClick, false);
+                parameters.Add(p => p.MultiSelection, false);
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var style = row.Instance.Style;
+            style.Should().NotContain("cursor: pointer");
+            row.Instance.Class.Should().NotContain("mud-table-row-clickable");
+        }
+
+        [Fact]
+        public void GIVEN_NoLongPressHandler_WHEN_Rendered_THEN_RowStyleAllowsTextSelectionAndCellDoesNotAttachLongPress()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleSelectableText");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var cell = target.FindComponent<TdExtended>();
+
+            row.Instance.Style.Should().NotContain("user-select: none");
+            cell.Instance.Class.Should().NotContain("unselectable");
+            cell.Instance.OnLongPress.HasDelegate.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_LongPressHandler_WHEN_Rendered_THEN_RowStyleDisablesTextSelectionAndCellAttachesLongPress()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleUnselectableText");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.OnTableDataLongPress, EventCallback.Factory.Create<TableDataLongPressEventArgs<TestRow>>(this, _ => Task.CompletedTask));
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            var cell = target.FindComponent<TdExtended>();
+
+            row.Instance.Style.Should().Contain("user-select: none");
+            cell.Instance.Class.Should().Contain("unselectable");
+            cell.Instance.OnLongPress.HasDelegate.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_NoContextMenuHandlerEvenWithCodeBehindSelection_WHEN_Rendered_THEN_CellDoesNotAttachContextMenu()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "NoContextMenuHandler");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.SelectedItemChanged, EventCallback.Factory.Create<TestRow>(this, _ => Task.CompletedTask));
+            });
+
+            var cell = target.FindComponent<TdExtended>();
+
+            cell.Instance.Class.Should().NotContain("no-default-context-menu");
+            cell.Instance.OnContextMenu.HasDelegate.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GIVEN_MultiSelectionEnabled_WHEN_Rendered_THEN_RowClassContainsClickableClass()
+        {
+            var columns = CreateColumns();
+            var item = new TestRow { Name = "Styled", Age = 1, Score = 1 };
+
+            var target = TestContext.Render<DynamicTable<TestRow>>(parameters =>
+            {
+                parameters.Add(p => p.ColumnDefinitions, columns);
+                parameters.Add(p => p.TableId, "RowStyleMultiSelection");
+                parameters.Add(p => p.Items, new List<TestRow> { item });
+                parameters.Add(p => p.MultiSelection, true);
+            });
+
+            var row = target.FindComponents<MudTr>().First();
+            row.Instance.Class.Should().Contain("mud-table-row-clickable");
         }
 
         [Fact]

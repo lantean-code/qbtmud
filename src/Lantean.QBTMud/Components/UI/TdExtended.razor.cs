@@ -6,6 +6,18 @@ namespace Lantean.QBTMud.Components.UI
 {
     public partial class TdExtended : MudTd
     {
+        private bool PreventDefaultOnLongPress => OnLongPress.HasDelegate;
+
+        private bool PreventDefaultOnContextMenu => OnContextMenu.HasDelegate;
+
+        private EventCallback<LongPressEventArgs> EffectiveOnLongPress => OnLongPress.HasDelegate
+            ? EventCallback.Factory.Create<LongPressEventArgs>(this, OnLongPressInternal)
+            : default;
+
+        private EventCallback<MouseEventArgs> EffectiveOnContextMenu => OnContextMenu.HasDelegate
+            ? EventCallback.Factory.Create<MouseEventArgs>(this, OnContextMenuInternal)
+            : default;
+
         [Parameter]
         public EventCallback<CellLongPressEventArgs> OnLongPress { get; set; }
 

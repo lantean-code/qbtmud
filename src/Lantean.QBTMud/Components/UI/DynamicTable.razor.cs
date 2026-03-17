@@ -116,6 +116,26 @@ namespace Lantean.QBTMud.Components.UI
 
         protected HashSet<string> SelectedColumns { get; set; } = [];
 
+        private bool IsRowInteractive => MultiSelection || SelectOnRowClick || OnRowClick.HasDelegate;
+
+        private EventCallback<TableRowClickEventArgs<T>> EffectiveOnRowClick => IsRowInteractive
+            ? EventCallback.Factory.Create<TableRowClickEventArgs<T>>(this, OnRowClickInternal)
+            : default;
+
+        private EventCallback<CellMouseEventArgs> GetContextMenuCallback(T item)
+        {
+            return OnTableDataContextMenu.HasDelegate
+                ? EventCallback.Factory.Create<CellMouseEventArgs>(this, eventArgs => OnContextMenuInternal(eventArgs, item))
+                : default;
+        }
+
+        private EventCallback<CellLongPressEventArgs> GetLongPressCallback(T item)
+        {
+            return OnTableDataLongPress.HasDelegate
+                ? EventCallback.Factory.Create<CellLongPressEventArgs>(this, eventArgs => OnLongPressInternal(eventArgs, item))
+                : default;
+        }
+
         private IReadOnlyDictionary<string, object?> TableAttributes => BuildTableAttributes();
 
         private Dictionary<string, int?> _columnWidths = [];
@@ -466,10 +486,10 @@ namespace Lantean.QBTMud.Components.UI
 
         protected string RowStyleFuncInternal(T item, int index)
         {
-            var style = "-webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;";
-            if (SelectOnRowClick || OnRowClick.HasDelegate)
+            var style = string.Empty;
+            if (OnTableDataLongPress.HasDelegate)
             {
-                style += " cursor: pointer;";
+                style += "-webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;";
             }
             if ((SelectOnRowClick || HighlightSelectedItem) && IsItemSelected(item))
             {

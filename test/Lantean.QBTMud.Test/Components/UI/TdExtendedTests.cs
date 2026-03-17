@@ -48,5 +48,17 @@ namespace Lantean.QBTMud.Test.Components.UI
 
             invoked.Should().BeTrue();
         }
+
+        [Fact]
+        public void GIVEN_NoHandlers_WHEN_Rendered_THEN_ShouldNotPreventNativeInteractions()
+        {
+            var target = TestContext.Render<TdExtended>(parameters =>
+            {
+                parameters.Add(p => p.ChildContent, builder => builder.AddContent(0, "ChildContent"));
+            });
+
+            target.Instance.OnLongPress.HasDelegate.Should().BeFalse();
+            target.Instance.OnContextMenu.HasDelegate.Should().BeFalse();
+        }
     }
 }

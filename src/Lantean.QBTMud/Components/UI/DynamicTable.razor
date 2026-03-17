@@ -19,7 +19,7 @@
     SelectOnRowClick="false" 
     Loading="@(Items is null)"
     MultiSelection="MultiSelection"
-    OnRowClick="OnRowClickInternal"
+    OnRowClick="EffectiveOnRowClick"
     RowStyleFunc="RowStyleFuncInternal"
     RowClassFunc="RowClassFuncInternal"
     Class="@Class"
@@ -67,8 +67,8 @@
             DataLabel="@column.DisplayHeader"
             Class="@(GetColumnClass(column, context))"
             Style="@(GetColumnStyle(column))"
-            OnLongPress="@(c => OnLongPressInternal(c, context))"
-            OnContextMenu="@(c => OnContextMenuInternal(c, context))"
+            OnLongPress="@(GetLongPressCallback(context))"
+            OnContextMenu="@(GetContextMenuCallback(context))"
             data-test-id="@GetRowTestId(context)">
             @column.RowTemplate(column.GetRowContext(context))
         </TdExtended>
