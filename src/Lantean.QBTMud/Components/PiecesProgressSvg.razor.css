@@ -1,8 +1,8 @@
 .pieces-progress-svg {
     --pieces-progress-svg-linear-height: 44px;
     --pieces-progress-svg-linear-padding-y: var(--mud-spacing-1);
-    padding: var(--mud-spacing-3);
-    border-radius: 16px;
+    padding: 0;
+    border-radius: 12px;
     background-color: transparent;
     display: block;
 }
@@ -27,6 +27,11 @@
     .pieces-progress-svg__linear:hover {
         transform: translateY(-1px);
     }
+
+.pieces-progress-svg__linear--expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
 
 .pieces-progress-svg__linear-bar {
     position: absolute;
@@ -54,11 +59,18 @@
 }
 
 .pieces-progress-svg__surface {
-    margin-top: var(--mud-spacing-3);
     padding: var(--mud-spacing-3);
     border-radius: 12px;
     border: 1px solid var(--mud-palette-lines-default);
     background-color: var(--mud-palette-surface);
+}
+
+.pieces-progress-svg__surface--expanded {
+    border-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
 }
 
 .mud-theme-dark .pieces-progress-svg__surface {
@@ -69,7 +81,7 @@
     display: block;
     width: 100%;
     height: auto;
-    border-radius: 8px;
+    border-radius: 8px 8px 4px 4px;
 }
 
 .pieces-progress-svg__rect {

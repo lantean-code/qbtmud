@@ -3,12 +3,12 @@
 @using System.Globalization
 @using Lantean.QBTMud.Helpers
 
-<MudPaper Class="pieces-progress-svg" Elevation="0">
-    <MudStack Spacing="1">
+<MudPaper Class="@RootClass" Elevation="0">
+    <MudStack Spacing="0">
         <Tooltip Text="@LinearTooltip" Placement="Placement.Top">
-            <div class="pieces-progress-svg__linear" role="button" tabindex="0" aria-expanded="@_showSvg.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" data-test-id="@TestIdHelper.For("PiecesToggle")" @onclick="ToggleSvg" @onkeydown="HandleLinearKeyDown" @onkeydown:preventDefault="true">
+            <div class="@LinearClass" role="button" tabindex="0" aria-expanded="@_showSvg.ToString().ToLowerInvariant()" aria-label="@LinearAriaLabel" data-test-id="@TestIdHelper.For("PiecesToggle")" @onclick="ToggleSvg" @onkeydown="HandleLinearKeyDown" @onkeydown:preventDefault="true">
                 <div class="pieces-progress-svg__linear-bar" style="@LinearBarStyle" aria-hidden="true"></div>
-                <div class="pieces-progress-svg__linear-overlay">
+                <div class="pieces-progress-svg__linear-overlay" style="@LinearOverlayStyle" data-test-id="@TestIdHelper.For("PiecesLinearOverlay")">
                     <MudText Typo="Typo.body2"
                              Class="pl-2"
                              data-test-id="@TestIdHelper.For("PiecesLinearSummary")"
@@ -19,7 +19,7 @@
         </Tooltip>
 
         <MudCollapse Expanded="@_showSvg">
-            <MudPaper Class="pieces-progress-svg__surface" Elevation="0">
+            <MudPaper Class="@SurfaceClass" Elevation="0">
                 @if (PiecesLoading)
                 {
                     <MudText Typo="Typo.body2"
@@ -48,16 +48,17 @@
                 else
                 {
                     <svg class="pieces-progress-svg__grid"
+                         style="@GridStyle"
                          role="img"
                          aria-label="@SvgAriaLabel"
                          viewBox="@_viewBox"
                          preserveAspectRatio="xMidYMid meet">
                         <defs>
                             <style>
-                                .pieces-progress-svg__rect { stroke: @StrokeColor; stroke-width: 0.03; }
-                                .pieces-progress-svg__rect--downloaded { fill: @DownloadedColor; }
-                                .pieces-progress-svg__rect--downloading { fill: @DownloadingColor; }
-                                .pieces-progress-svg__rect--pending { fill: @PendingFillColor; stroke: @PendingStrokeColor; stroke-width: 0.06; stroke-dasharray: 0.4 0.9; stroke-linecap: round; }
+                                .pieces-progress-svg__rect { stroke-width: 0.03; stroke-linejoin: round; }
+                                .pieces-progress-svg__rect--downloaded { fill: @DownloadedColor; stroke: @DownloadedColor; }
+                                .pieces-progress-svg__rect--downloading { fill: @DownloadingColor; stroke: @DownloadingColor; }
+                                .pieces-progress-svg__rect--pending { fill: transparent; stroke: @PendingStrokeColor; }
                             </style>
                         </defs>
                         @foreach (var cell in Cells)

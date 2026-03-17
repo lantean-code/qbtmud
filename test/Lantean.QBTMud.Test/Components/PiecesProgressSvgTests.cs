@@ -211,6 +211,101 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public void GIVEN_LightMode_WHEN_Rendered_THEN_LinearOverlayUsesDarkPaletteTextColor()
+        {
+            var pieces = Enumerable.Repeat(PieceState.Downloaded, 4).ToList();
+            var theme = new MudTheme
+            {
+                PaletteLight = new PaletteLight
+                {
+                    TextPrimary = "rgba(210, 220, 230, 1)",
+                },
+                PaletteDark = new PaletteDark
+                {
+                    TextPrimary = "rgba(12, 34, 56, 1)",
+                },
+            };
+
+            var target = RenderComponent(pieces, theme: theme);
+
+            var overlay = target.Find("[data-test-id=\"PiecesLinearOverlay\"]");
+
+            overlay.GetAttribute("style").Should().Contain("color: rgba(12,34,56,1);");
+        }
+
+        [Fact]
+        public void GIVEN_DarkMode_WHEN_Rendered_THEN_LinearOverlayUsesLightPaletteTextColor()
+        {
+            var pieces = Enumerable.Repeat(PieceState.Downloaded, 4).ToList();
+            var theme = new MudTheme
+            {
+                PaletteLight = new PaletteLight
+                {
+                    TextPrimary = "rgba(210, 220, 230, 1)",
+                },
+                PaletteDark = new PaletteDark
+                {
+                    TextPrimary = "rgba(12, 34, 56, 1)",
+                },
+            };
+
+            var target = RenderComponent(pieces, isDarkMode: true, theme: theme);
+
+            var overlay = target.Find("[data-test-id=\"PiecesLinearOverlay\"]");
+
+            overlay.GetAttribute("style").Should().Contain("color: rgba(210,220,230,1);");
+        }
+
+        [Fact]
+        public void GIVEN_ExpandedState_WHEN_Toggled_THEN_UsesExpandedShapeClasses()
+        {
+            var pieces = Enumerable.Repeat(PieceState.Downloaded, 4).ToList();
+
+            var target = RenderComponent(pieces);
+
+            var root = target.FindComponents<MudPaper>().First();
+            root.Instance.Class.Should().Contain("pieces-progress-svg");
+            root.Instance.Class.Should().NotContain("pieces-progress-svg--expanded");
+
+            var toggleElement = FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("[data-test-id=\"PiecesToggle\"]");
+            toggleElement.Click();
+
+            target.WaitForAssertion(() =>
+            {
+                var papers = target.FindComponents<MudPaper>();
+                papers.First().Instance.Class.Should().Contain("pieces-progress-svg--expanded");
+                papers.Last().Instance.Class.Should().Contain("pieces-progress-svg__surface--expanded");
+            });
+        }
+
+        [Fact]
+        public void GIVEN_NotDownloadedPieces_WHEN_Expanded_THEN_PendingCellsUseSurfaceFillOverDistinctGridBackground()
+        {
+            var pieces = Enumerable.Repeat(PieceState.NotDownloaded, 4).ToList();
+
+            var target = RenderComponent(pieces);
+
+            var toggleElement = FindComponentByTestId<MudTooltip>(target, "PiecesToggle").Find("[data-test-id=\"PiecesToggle\"]");
+            toggleElement.Click();
+
+            target.WaitForAssertion(() =>
+            {
+                var style = target.Find("style").TextContent;
+                var grid = target.FindAll("svg").Single(svg => svg.ClassList.Contains("pieces-progress-svg__grid"));
+                var rects = target.FindAll("rect");
+                style.Should().Contain(".pieces-progress-svg__rect--pending");
+                style.Should().Contain(".pieces-progress-svg__rect { stroke-width: 0.03;");
+                style.Should().Contain(".pieces-progress-svg__rect--downloaded { fill:");
+                style.Should().Contain(".pieces-progress-svg__rect--downloaded { fill:");
+                style.Should().Contain(".pieces-progress-svg__rect--pending { fill: transparent; stroke:");
+                style.Should().NotContain("stroke-dasharray");
+                style.Should().NotContain("stroke: none;");
+                grid.GetAttribute("style").Should().Contain("background-color:");
+                rects.Count.Should().Be(4);
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_BuildInProgress_WHEN_ParametersChange_THEN_DoesNotStartSecondBuild()
         {
             var pieces = Enumerable.Repeat(PieceState.Downloaded, 60000).ToList();
@@ -245,7 +340,7 @@ namespace Lantean.QBTMud.Test.Components
             return grid.GetAttribute("viewBox");
         }
 
-        private IRenderedComponent<PiecesProgressSvg> RenderComponent(IReadOnlyList<PieceState> pieces, bool loading = false, bool failed = false, Breakpoint breakpoint = Breakpoint.Lg)
+        private IRenderedComponent<PiecesProgressSvg> RenderComponent(IReadOnlyList<PieceState> pieces, bool loading = false, bool failed = false, Breakpoint breakpoint = Breakpoint.Lg, bool isDarkMode = false, MudTheme? theme = null)
         {
             return TestContext.Render<PiecesProgressSvg>(parameters =>
             {
@@ -253,8 +348,8 @@ namespace Lantean.QBTMud.Test.Components
                 parameters.Add(p => p.Pieces, pieces);
                 parameters.Add(p => p.PiecesLoading, loading);
                 parameters.Add(p => p.PiecesFailed, failed);
-                parameters.AddCascadingValue(new MudTheme());
-                parameters.AddCascadingValue("IsDarkMode", false);
+                parameters.AddCascadingValue(theme ?? new MudTheme());
+                parameters.AddCascadingValue("IsDarkMode", isDarkMode);
                 parameters.AddCascadingValue(breakpoint);
             });
         }

@@ -11,6 +11,7 @@ namespace Lantean.QBTMud.Components
     {
         private const int _largePieceCountThreshold = 50000;
         private const string _appContext = "AppPiecesProgressSvg";
+        private const string _pendingCssClass = "pieces-progress-svg__rect--pending";
 
         private bool _showSvg = false;
         private string _linearBarStyle = string.Empty;
@@ -61,11 +62,21 @@ namespace Lantean.QBTMud.Components
 
         protected string LinearBarStyle => _linearBarStyle;
 
+        protected string RootClass => new CssBuilder("pieces-progress-svg")
+            .AddClass("pieces-progress-svg--expanded", _showSvg)
+            .Build();
+
+        protected string LinearClass => new CssBuilder("pieces-progress-svg__linear")
+            .AddClass("pieces-progress-svg__linear--expanded", _showSvg)
+            .Build();
+
         protected string LinearSummary => _linearSummary;
 
         protected string LinearTooltip => _linearTooltip;
 
         protected string LinearAriaLabel => _linearAriaLabel;
+
+        protected string LinearOverlayStyle => $"color: {LinearOverlayColor};";
 
         protected string SvgEmptyText => _svgEmptyText;
 
@@ -75,6 +86,12 @@ namespace Lantean.QBTMud.Components
 
         protected string SvgAriaLabel => _svgAriaLabel;
 
+        protected string SurfaceClass => new CssBuilder("pieces-progress-svg__surface")
+            .AddClass("pieces-progress-svg__surface--expanded", _showSvg)
+            .Build();
+
+        protected string GridStyle => $"background-color: {GridBackgroundColor};";
+
         protected string ToggleIcon => _showSvg ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore;
 
         protected IReadOnlyList<PieceCell> Cells => _cells;
@@ -83,11 +100,11 @@ namespace Lantean.QBTMud.Components
 
         private MudColor LinesColor => IsDarkMode ? Theme.PaletteDark.LinesDefault : Theme.PaletteLight.LinesDefault;
 
-        private string StrokeColor => LinesColor.ToString(MudColorOutputFormats.RGBA);
-
-        private string PendingFillColor => "transparent";
-
         private string PendingStrokeColor => LinesColor.SetAlpha(IsDarkMode ? 0.35 : 0.25).ToString(MudColorOutputFormats.RGBA);
+
+        private string GridBackgroundColor => ToCssColor(IsDarkMode ? Theme.PaletteDark.BackgroundGray : Theme.PaletteLight.BackgroundGray);
+
+        private string LinearOverlayColor => ToCssColor(IsDarkMode ? Theme.PaletteLight.TextPrimary : Theme.PaletteDark.TextPrimary);
 
         private string DimmedDownloadedColor => DimColor(IsDarkMode ? Theme.PaletteDark.Success : Theme.PaletteLight.Success);
 
@@ -467,7 +484,7 @@ namespace Lantean.QBTMud.Components
             {
                 PieceState.Downloaded => "pieces-progress-svg__rect--downloaded",
                 PieceState.Downloading => "pieces-progress-svg__rect--downloading",
-                _ => "pieces-progress-svg__rect--pending"
+                _ => _pendingCssClass
             };
         }
 
