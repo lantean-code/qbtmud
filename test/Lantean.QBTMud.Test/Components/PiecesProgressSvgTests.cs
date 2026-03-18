@@ -211,18 +211,19 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public void GIVEN_LightMode_WHEN_Rendered_THEN_LinearOverlayUsesDarkPaletteTextColor()
+        public void GIVEN_LightModeWithDownloadedPieces_WHEN_Rendered_THEN_LinearOverlayUsesSuccessContrastText()
         {
             var pieces = Enumerable.Repeat(PieceState.Downloaded, 4).ToList();
             var theme = new MudTheme
             {
                 PaletteLight = new PaletteLight
                 {
+                    SuccessContrastText = "rgba(12, 34, 56, 1)",
                     TextPrimary = "rgba(210, 220, 230, 1)",
                 },
                 PaletteDark = new PaletteDark
                 {
-                    TextPrimary = "rgba(12, 34, 56, 1)",
+                    SuccessContrastText = "rgba(101, 102, 103, 1)",
                 },
             };
 
@@ -234,22 +235,43 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public void GIVEN_DarkMode_WHEN_Rendered_THEN_LinearOverlayUsesLightPaletteTextColor()
+        public void GIVEN_DarkModeWithDownloadedPieces_WHEN_Rendered_THEN_LinearOverlayUsesSuccessContrastText()
         {
             var pieces = Enumerable.Repeat(PieceState.Downloaded, 4).ToList();
             var theme = new MudTheme
             {
                 PaletteLight = new PaletteLight
                 {
-                    TextPrimary = "rgba(210, 220, 230, 1)",
+                    SuccessContrastText = "rgba(210, 220, 230, 1)",
                 },
                 PaletteDark = new PaletteDark
                 {
-                    TextPrimary = "rgba(12, 34, 56, 1)",
+                    SuccessContrastText = "rgba(12, 34, 56, 1)",
+                    TextPrimary = "rgba(101, 102, 103, 1)",
                 },
             };
 
             var target = RenderComponent(pieces, isDarkMode: true, theme: theme);
+
+            var overlay = target.Find("[data-test-id=\"PiecesLinearOverlay\"]");
+
+            overlay.GetAttribute("style").Should().Contain("color: rgba(12,34,56,1);");
+        }
+
+        [Fact]
+        public void GIVEN_PendingPieces_WHEN_Rendered_THEN_LinearOverlayUsesTextPrimary()
+        {
+            var pieces = Enumerable.Repeat(PieceState.NotDownloaded, 4).ToList();
+            var theme = new MudTheme
+            {
+                PaletteLight = new PaletteLight
+                {
+                    SuccessContrastText = "rgba(12, 34, 56, 1)",
+                    TextPrimary = "rgba(210, 220, 230, 1)",
+                },
+            };
+
+            var target = RenderComponent(pieces, theme: theme);
 
             var overlay = target.Find("[data-test-id=\"PiecesLinearOverlay\"]");
 

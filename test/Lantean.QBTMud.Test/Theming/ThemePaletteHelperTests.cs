@@ -121,36 +121,76 @@ namespace Lantean.QBTMud.Test.Theming
                 var color = new MudColor(entry.Value);
                 switch (entry.Key)
                 {
+                    case ThemePaletteColor.Black:
+                        palette.Black = color;
+                        break;
+
+                    case ThemePaletteColor.White:
+                        palette.White = color;
+                        break;
+
                     case ThemePaletteColor.Primary:
                         palette.Primary = color;
+                        break;
+
+                    case ThemePaletteColor.PrimaryContrastText:
+                        palette.PrimaryContrastText = color;
                         break;
 
                     case ThemePaletteColor.Secondary:
                         palette.Secondary = color;
                         break;
 
+                    case ThemePaletteColor.SecondaryContrastText:
+                        palette.SecondaryContrastText = color;
+                        break;
+
                     case ThemePaletteColor.Tertiary:
                         palette.Tertiary = color;
+                        break;
+
+                    case ThemePaletteColor.TertiaryContrastText:
+                        palette.TertiaryContrastText = color;
                         break;
 
                     case ThemePaletteColor.Info:
                         palette.Info = color;
                         break;
 
+                    case ThemePaletteColor.InfoContrastText:
+                        palette.InfoContrastText = color;
+                        break;
+
                     case ThemePaletteColor.Success:
                         palette.Success = color;
+                        break;
+
+                    case ThemePaletteColor.SuccessContrastText:
+                        palette.SuccessContrastText = color;
                         break;
 
                     case ThemePaletteColor.Warning:
                         palette.Warning = color;
                         break;
 
+                    case ThemePaletteColor.WarningContrastText:
+                        palette.WarningContrastText = color;
+                        break;
+
                     case ThemePaletteColor.Error:
                         palette.Error = color;
                         break;
 
+                    case ThemePaletteColor.ErrorContrastText:
+                        palette.ErrorContrastText = color;
+                        break;
+
                     case ThemePaletteColor.Dark:
                         palette.Dark = color;
+                        break;
+
+                    case ThemePaletteColor.DarkContrastText:
+                        palette.DarkContrastText = color;
                         break;
 
                     case ThemePaletteColor.Surface:
@@ -193,12 +233,56 @@ namespace Lantean.QBTMud.Test.Theming
                         palette.LinesInputs = color;
                         break;
 
+                    case ThemePaletteColor.TableLines:
+                        palette.TableLines = color;
+                        break;
+
+                    case ThemePaletteColor.TableStriped:
+                        palette.TableStriped = color;
+                        break;
+
+                    case ThemePaletteColor.TableHover:
+                        palette.TableHover = color;
+                        break;
+
                     case ThemePaletteColor.Divider:
                         palette.Divider = color;
                         break;
 
                     case ThemePaletteColor.DividerLight:
                         palette.DividerLight = color;
+                        break;
+
+                    case ThemePaletteColor.Skeleton:
+                        palette.Skeleton = color;
+                        break;
+
+                    case ThemePaletteColor.GrayDefault:
+                        palette.GrayDefault = entry.Value;
+                        break;
+
+                    case ThemePaletteColor.GrayLight:
+                        palette.GrayLight = entry.Value;
+                        break;
+
+                    case ThemePaletteColor.GrayLighter:
+                        palette.GrayLighter = entry.Value;
+                        break;
+
+                    case ThemePaletteColor.GrayDark:
+                        palette.GrayDark = entry.Value;
+                        break;
+
+                    case ThemePaletteColor.GrayDarker:
+                        palette.GrayDarker = entry.Value;
+                        break;
+
+                    case ThemePaletteColor.OverlayDark:
+                        palette.OverlayDark = entry.Value;
+                        break;
+
+                    case ThemePaletteColor.OverlayLight:
+                        palette.OverlayLight = entry.Value;
                         break;
 
                     case ThemePaletteColor.TextPrimary:
@@ -232,14 +316,24 @@ namespace Lantean.QBTMud.Test.Theming
         {
             return colorType switch
             {
+                ThemePaletteColor.Black => palette.Black,
+                ThemePaletteColor.White => palette.White,
                 ThemePaletteColor.Primary => palette.Primary,
+                ThemePaletteColor.PrimaryContrastText => palette.PrimaryContrastText,
                 ThemePaletteColor.Secondary => palette.Secondary,
+                ThemePaletteColor.SecondaryContrastText => palette.SecondaryContrastText,
                 ThemePaletteColor.Tertiary => palette.Tertiary,
+                ThemePaletteColor.TertiaryContrastText => palette.TertiaryContrastText,
                 ThemePaletteColor.Info => palette.Info,
+                ThemePaletteColor.InfoContrastText => palette.InfoContrastText,
                 ThemePaletteColor.Success => palette.Success,
+                ThemePaletteColor.SuccessContrastText => palette.SuccessContrastText,
                 ThemePaletteColor.Warning => palette.Warning,
+                ThemePaletteColor.WarningContrastText => palette.WarningContrastText,
                 ThemePaletteColor.Error => palette.Error,
+                ThemePaletteColor.ErrorContrastText => palette.ErrorContrastText,
                 ThemePaletteColor.Dark => palette.Dark,
+                ThemePaletteColor.DarkContrastText => palette.DarkContrastText,
                 ThemePaletteColor.Surface => palette.Surface,
                 ThemePaletteColor.Background => palette.Background,
                 ThemePaletteColor.BackgroundGray => palette.BackgroundGray,
@@ -250,8 +344,19 @@ namespace Lantean.QBTMud.Test.Theming
                 ThemePaletteColor.AppbarBackground => palette.AppbarBackground,
                 ThemePaletteColor.LinesDefault => palette.LinesDefault,
                 ThemePaletteColor.LinesInputs => palette.LinesInputs,
+                ThemePaletteColor.TableLines => palette.TableLines,
+                ThemePaletteColor.TableStriped => palette.TableStriped,
+                ThemePaletteColor.TableHover => palette.TableHover,
                 ThemePaletteColor.Divider => palette.Divider,
                 ThemePaletteColor.DividerLight => palette.DividerLight,
+                ThemePaletteColor.Skeleton => palette.Skeleton,
+                ThemePaletteColor.GrayDefault => palette.GrayDefault,
+                ThemePaletteColor.GrayLight => palette.GrayLight,
+                ThemePaletteColor.GrayLighter => palette.GrayLighter,
+                ThemePaletteColor.GrayDark => palette.GrayDark,
+                ThemePaletteColor.GrayDarker => palette.GrayDarker,
+                ThemePaletteColor.OverlayDark => palette.OverlayDark,
+                ThemePaletteColor.OverlayLight => palette.OverlayLight,
                 ThemePaletteColor.TextPrimary => palette.TextPrimary,
                 ThemePaletteColor.TextSecondary => palette.TextSecondary,
                 ThemePaletteColor.TextDisabled => palette.TextDisabled,
@@ -265,14 +370,24 @@ namespace Lantean.QBTMud.Test.Theming
         private static readonly IReadOnlyDictionary<ThemePaletteColor, string> ColorMap =
             new Dictionary<ThemePaletteColor, string>
             {
+                { ThemePaletteColor.Black, "#010101" },
+                { ThemePaletteColor.White, "#FEFEFE" },
                 { ThemePaletteColor.Primary, "#111111" },
+                { ThemePaletteColor.PrimaryContrastText, "#121111" },
                 { ThemePaletteColor.Secondary, "#222222" },
+                { ThemePaletteColor.SecondaryContrastText, "#232222" },
                 { ThemePaletteColor.Tertiary, "#333333" },
+                { ThemePaletteColor.TertiaryContrastText, "#343333" },
                 { ThemePaletteColor.Info, "#444444" },
+                { ThemePaletteColor.InfoContrastText, "#454444" },
                 { ThemePaletteColor.Success, "#555555" },
+                { ThemePaletteColor.SuccessContrastText, "#565555" },
                 { ThemePaletteColor.Warning, "#666666" },
+                { ThemePaletteColor.WarningContrastText, "#676666" },
                 { ThemePaletteColor.Error, "#777777" },
+                { ThemePaletteColor.ErrorContrastText, "#787777" },
                 { ThemePaletteColor.Dark, "#888888" },
+                { ThemePaletteColor.DarkContrastText, "#898888" },
                 { ThemePaletteColor.Surface, "#999999" },
                 { ThemePaletteColor.Background, "#101010" },
                 { ThemePaletteColor.BackgroundGray, "#111122" },
@@ -283,8 +398,19 @@ namespace Lantean.QBTMud.Test.Theming
                 { ThemePaletteColor.AppbarBackground, "#161616" },
                 { ThemePaletteColor.LinesDefault, "#171717" },
                 { ThemePaletteColor.LinesInputs, "#181818" },
+                { ThemePaletteColor.TableLines, "#181919" },
+                { ThemePaletteColor.TableStriped, "#181A1A" },
+                { ThemePaletteColor.TableHover, "#181B1B" },
                 { ThemePaletteColor.Divider, "#191919" },
                 { ThemePaletteColor.DividerLight, "#202020" },
+                { ThemePaletteColor.Skeleton, "#202121" },
+                { ThemePaletteColor.GrayDefault, "#212222" },
+                { ThemePaletteColor.GrayLight, "#222323" },
+                { ThemePaletteColor.GrayLighter, "#232424" },
+                { ThemePaletteColor.GrayDark, "#242525" },
+                { ThemePaletteColor.GrayDarker, "#252626" },
+                { ThemePaletteColor.OverlayDark, "#262727" },
+                { ThemePaletteColor.OverlayLight, "#272828" },
                 { ThemePaletteColor.TextPrimary, "#212121" },
                 { ThemePaletteColor.TextSecondary, "#222233" },
                 { ThemePaletteColor.TextDisabled, "#232323" },
@@ -296,14 +422,24 @@ namespace Lantean.QBTMud.Test.Theming
         private static readonly IReadOnlyDictionary<ThemePaletteColor, string> DarkColorMap =
             new Dictionary<ThemePaletteColor, string>
             {
+                { ThemePaletteColor.Black, "#0A0A0A" },
+                { ThemePaletteColor.White, "#F0F0F0" },
                 { ThemePaletteColor.Primary, "#AAAAAA" },
+                { ThemePaletteColor.PrimaryContrastText, "#ABA0AA" },
                 { ThemePaletteColor.Secondary, "#BBBBBB" },
+                { ThemePaletteColor.SecondaryContrastText, "#BCB0BB" },
                 { ThemePaletteColor.Tertiary, "#CCCCCC" },
+                { ThemePaletteColor.TertiaryContrastText, "#CDC0CC" },
                 { ThemePaletteColor.Info, "#DDDDDD" },
+                { ThemePaletteColor.InfoContrastText, "#DED0DD" },
                 { ThemePaletteColor.Success, "#EEEEEE" },
+                { ThemePaletteColor.SuccessContrastText, "#EFE0EE" },
                 { ThemePaletteColor.Warning, "#FAFAFA" },
+                { ThemePaletteColor.WarningContrastText, "#FBE0FA" },
                 { ThemePaletteColor.Error, "#ABABAB" },
+                { ThemePaletteColor.ErrorContrastText, "#ACA0AB" },
                 { ThemePaletteColor.Dark, "#BCBCBC" },
+                { ThemePaletteColor.DarkContrastText, "#BDB0BC" },
                 { ThemePaletteColor.Surface, "#CDCDCD" },
                 { ThemePaletteColor.Background, "#DEDEDE" },
                 { ThemePaletteColor.BackgroundGray, "#EFEFEF" },
@@ -314,8 +450,19 @@ namespace Lantean.QBTMud.Test.Theming
                 { ThemePaletteColor.AppbarBackground, "#555EEE" },
                 { ThemePaletteColor.LinesDefault, "#666FFF" },
                 { ThemePaletteColor.LinesInputs, "#777AAA" },
+                { ThemePaletteColor.TableLines, "#788AAA" },
+                { ThemePaletteColor.TableStriped, "#799AAA" },
+                { ThemePaletteColor.TableHover, "#7AAAAA" },
                 { ThemePaletteColor.Divider, "#888BBB" },
                 { ThemePaletteColor.DividerLight, "#999CCC" },
+                { ThemePaletteColor.Skeleton, "#9AACCC" },
+                { ThemePaletteColor.GrayDefault, "#AAB0CC" },
+                { ThemePaletteColor.GrayLight, "#ABB0DD" },
+                { ThemePaletteColor.GrayLighter, "#ACB0EE" },
+                { ThemePaletteColor.GrayDark, "#ADB0FA" },
+                { ThemePaletteColor.GrayDarker, "#AEB0FB" },
+                { ThemePaletteColor.OverlayDark, "#AFB0FC" },
+                { ThemePaletteColor.OverlayLight, "#B0B0FD" },
                 { ThemePaletteColor.TextPrimary, "#AAAFFF" },
                 { ThemePaletteColor.TextSecondary, "#BBBEEE" },
                 { ThemePaletteColor.TextDisabled, "#CCCDDD" },

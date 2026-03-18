@@ -523,6 +523,85 @@ namespace Lantean.QBTMud.Test.Pages
             saveButton.Instance.Disabled.Should().BeFalse();
         }
 
+        [Fact]
+        public async Task GIVEN_ThemeDetail_WHEN_DarkColorsShown_THEN_RendersContrastTextColorItems()
+        {
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
+
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivatePanelAsync(1));
+
+            FindComponentByTestId<ThemeColorItem>(target, "ThemeDetailDark-SuccessContrastText");
+            FindComponentByTestId<ThemeColorItem>(target, "ThemeDetailDark-DarkContrastText");
+        }
+
+        [Fact]
+        public async Task GIVEN_ThemeDetail_WHEN_DarkColorsShown_THEN_RendersRemainingPaletteColorItems()
+        {
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
+
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivatePanelAsync(1));
+
+            FindComponentByTestId<ThemeColorItem>(target, "ThemeDetailDark-Black");
+            FindComponentByTestId<ThemeColorItem>(target, "ThemeDetailDark-TableHover");
+            FindComponentByTestId<ThemeColorItem>(target, "ThemeDetailDark-OverlayLight");
+        }
+
+        [Fact]
+        public async Task GIVEN_DerivedPaletteColorChanged_WHEN_PickerInvoked_THEN_SaveEnabled()
+        {
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            var popoverProvider = TestContext.Render<MudPopoverProvider>();
+            var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
+
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivatePanelAsync(1));
+
+            var colorItem = FindComponentByTestId<ThemeColorItem>(target, "ThemeDetailDark-PrimaryDarken");
+            colorItem.Find("div.theme-color-item__row").Click();
+            var colorPicker = popoverProvider.FindComponent<MudColorPicker>();
+            await target.InvokeAsync(() => colorPicker.Instance.ValueChanged.InvokeAsync(new MudColor("#123456")));
+
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
+            saveButton.Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_DerivedPaletteColorOverride_WHEN_AutoInvoked_THEN_SaveEnabled()
+        {
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            theme.Theme.Theme.PaletteDark.PrimaryDarken = "#123456";
+            var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
+
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivatePanelAsync(1));
+
+            var autoButton = FindComponentByTestId<MudButton>(target, "ThemeDetailDark-PrimaryDarken-Auto");
+            await target.InvokeAsync(() => autoButton.Instance.OnClick.InvokeAsync());
+
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
+            saveButton.Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_ScalarPaletteValueChanged_WHEN_ValueChanged_THEN_SaveEnabled()
+        {
+            var theme = CreateTheme("ThemeId", "Name", ThemeSource.Local);
+            var target = RenderPage("ThemeId", new List<ThemeCatalogItem> { theme });
+
+            var tabs = target.FindComponent<MudTabs>();
+            await target.InvokeAsync(() => tabs.Instance.ActivatePanelAsync(1));
+
+            var opacityField = FindComponentByTestId<MudNumericField<double>>(target, "ThemeDetailDark-BorderOpacity");
+            await target.InvokeAsync(() => opacityField.Instance.ValueChanged.InvokeAsync(0.55));
+
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "ThemeDetailSave");
+            saveButton.Instance.Disabled.Should().BeFalse();
+        }
+
         private IRenderedComponent<ThemeDetail> RenderPage(string themeId, List<ThemeCatalogItem> themes, bool isDarkMode = false)
         {
             Mock.Get(_themeManagerService)

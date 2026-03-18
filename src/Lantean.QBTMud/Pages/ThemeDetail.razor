@@ -135,6 +135,52 @@
                                 }
                             </MudGrid>
                         }
+                        @foreach (var group in DerivedColorGroups)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="theme-color-group__title">@Translate(group.Title)</MudText>
+                            <MudGrid Spacing="2">
+                                @foreach (var item in group.Items)
+                                {
+                                    var derivedState = GetDerivedPaletteColor(item.Color, true);
+                                    <MudItem xs="12" sm="6" md="4" lg="3">
+                                        <MudStack Spacing="1">
+                                            <ThemeColorItem Name="@Translate(item.Name)"
+                                                            Color="@derivedState.Color"
+                                                            ColorChanged="@(value => UpdateDerivedPaletteColor(item.Color, value, true))"
+                                                            Disabled="@(!CanEditTheme || IsBusy)"
+                                                            ColorPickerView="ColorPickerView.Spectrum"
+                                                            data-test-id="@TestIdHelper.For($"ThemeDetailDark-{item.Color}")" />
+                                            <MudButton Variant="Variant.Text"
+                                                       Size="Size.Small"
+                                                       Disabled="@(!CanEditTheme || IsBusy || derivedState.IsAuto)"
+                                                       OnClick="@(() => ResetDerivedPaletteColor(item.Color, true))"
+                                                       data-test-id="@TestIdHelper.For($"ThemeDetailDark-{item.Color}-Auto")">@Translate("Auto")</MudButton>
+                                        </MudStack>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                        @foreach (var group in ScalarGroups)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="theme-color-group__title">@Translate(group.Title)</MudText>
+                            <MudGrid Spacing="2">
+                                @foreach (var item in group.Items)
+                                {
+                                    <MudItem xs="12" sm="6" md="4" lg="3">
+                                        <MudNumericField T="double"
+                                                         Label="@Translate(item.Name)"
+                                                         Value="@GetScalarValue(item.Scalar, true)"
+                                                         ValueChanged="@(value => UpdateScalarValue(item.Scalar, value, true))"
+                                                         Immediate="true"
+                                                         Min="@item.Min"
+                                                         Max="@item.Max"
+                                                         Step="@item.Step"
+                                                         Disabled="@(!CanEditTheme || IsBusy)"
+                                                         data-test-id="@TestIdHelper.For($"ThemeDetailDark-{item.Scalar}")" />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
                     </MudContainer>
                 </MudTabPanel>
                 <MudTabPanel Text="@Translate("Light Colors")">
@@ -152,6 +198,52 @@
                                                         Disabled="@(!CanEditTheme || IsBusy)"
                                                         ColorPickerView="ColorPickerView.Spectrum"
                                                         data-test-id="@TestIdHelper.For($"ThemeDetailLight-{item.Color}")" />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                        @foreach (var group in DerivedColorGroups)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="theme-color-group__title">@Translate(group.Title)</MudText>
+                            <MudGrid Spacing="2">
+                                @foreach (var item in group.Items)
+                                {
+                                    var derivedState = GetDerivedPaletteColor(item.Color, false);
+                                    <MudItem xs="12" sm="6" md="4" lg="3">
+                                        <MudStack Spacing="1">
+                                            <ThemeColorItem Name="@Translate(item.Name)"
+                                                            Color="@derivedState.Color"
+                                                            ColorChanged="@(value => UpdateDerivedPaletteColor(item.Color, value, false))"
+                                                            Disabled="@(!CanEditTheme || IsBusy)"
+                                                            ColorPickerView="ColorPickerView.Spectrum"
+                                                            data-test-id="@TestIdHelper.For($"ThemeDetailLight-{item.Color}")" />
+                                            <MudButton Variant="Variant.Text"
+                                                       Size="Size.Small"
+                                                       Disabled="@(!CanEditTheme || IsBusy || derivedState.IsAuto)"
+                                                       OnClick="@(() => ResetDerivedPaletteColor(item.Color, false))"
+                                                       data-test-id="@TestIdHelper.For($"ThemeDetailLight-{item.Color}-Auto")">@Translate("Auto")</MudButton>
+                                        </MudStack>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                        @foreach (var group in ScalarGroups)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="theme-color-group__title">@Translate(group.Title)</MudText>
+                            <MudGrid Spacing="2">
+                                @foreach (var item in group.Items)
+                                {
+                                    <MudItem xs="12" sm="6" md="4" lg="3">
+                                        <MudNumericField T="double"
+                                                         Label="@Translate(item.Name)"
+                                                         Value="@GetScalarValue(item.Scalar, false)"
+                                                         ValueChanged="@(value => UpdateScalarValue(item.Scalar, value, false))"
+                                                         Immediate="true"
+                                                         Min="@item.Min"
+                                                         Max="@item.Max"
+                                                         Step="@item.Step"
+                                                         Disabled="@(!CanEditTheme || IsBusy)"
+                                                         data-test-id="@TestIdHelper.For($"ThemeDetailLight-{item.Scalar}")" />
                                     </MudItem>
                                 }
                             </MudGrid>

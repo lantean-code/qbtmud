@@ -18,14 +18,24 @@ namespace Lantean.QBTMud.Pages
                 "Theme Colors",
                 new List<(string, ThemePaletteColor)>
                 {
+                    ("Black", ThemePaletteColor.Black),
+                    ("White", ThemePaletteColor.White),
                     ("Primary", ThemePaletteColor.Primary),
+                    ("Primary Contrast Text", ThemePaletteColor.PrimaryContrastText),
                     ("Secondary", ThemePaletteColor.Secondary),
+                    ("Secondary Contrast Text", ThemePaletteColor.SecondaryContrastText),
                     ("Tertiary", ThemePaletteColor.Tertiary),
+                    ("Tertiary Contrast Text", ThemePaletteColor.TertiaryContrastText),
                     ("Info", ThemePaletteColor.Info),
+                    ("Info Contrast Text", ThemePaletteColor.InfoContrastText),
                     ("Success", ThemePaletteColor.Success),
+                    ("Success Contrast Text", ThemePaletteColor.SuccessContrastText),
                     ("Warning", ThemePaletteColor.Warning),
+                    ("Warning Contrast Text", ThemePaletteColor.WarningContrastText),
                     ("Error", ThemePaletteColor.Error),
-                    ("Dark", ThemePaletteColor.Dark)
+                    ("Error Contrast Text", ThemePaletteColor.ErrorContrastText),
+                    ("Dark", ThemePaletteColor.Dark),
+                    ("Dark Contrast Text", ThemePaletteColor.DarkContrastText)
                 }
             ),
             (
@@ -48,8 +58,25 @@ namespace Lantean.QBTMud.Pages
                     ("Background Gray", ThemePaletteColor.BackgroundGray),
                     ("Lines Default", ThemePaletteColor.LinesDefault),
                     ("Lines Inputs", ThemePaletteColor.LinesInputs),
+                    ("Table Lines", ThemePaletteColor.TableLines),
+                    ("Table Striped", ThemePaletteColor.TableStriped),
+                    ("Table Hover", ThemePaletteColor.TableHover),
                     ("Divider", ThemePaletteColor.Divider),
-                    ("Divider Light", ThemePaletteColor.DividerLight)
+                    ("Divider Light", ThemePaletteColor.DividerLight),
+                    ("Skeleton", ThemePaletteColor.Skeleton)
+                }
+            ),
+            (
+                "Neutral Scale",
+                new List<(string, ThemePaletteColor)>
+                {
+                    ("Gray Default", ThemePaletteColor.GrayDefault),
+                    ("Gray Light", ThemePaletteColor.GrayLight),
+                    ("Gray Lighter", ThemePaletteColor.GrayLighter),
+                    ("Gray Dark", ThemePaletteColor.GrayDark),
+                    ("Gray Darker", ThemePaletteColor.GrayDarker),
+                    ("Overlay Dark", ThemePaletteColor.OverlayDark),
+                    ("Overlay Light", ThemePaletteColor.OverlayLight)
                 }
             ),
             (
@@ -62,6 +89,46 @@ namespace Lantean.QBTMud.Pages
                     ("Action Default", ThemePaletteColor.ActionDefault),
                     ("Action Disabled", ThemePaletteColor.ActionDisabled),
                     ("Disabled Background", ThemePaletteColor.ActionDisabledBackground)
+                }
+            )
+        ];
+
+        private static readonly IReadOnlyList<(string Title, IReadOnlyList<(string Name, ThemePaletteDerivedColor Color)> Items)> _derivedColorGroups =
+        [
+            (
+                "Derived Colors",
+                new List<(string, ThemePaletteDerivedColor)>
+                {
+                    ("Primary Darken", ThemePaletteDerivedColor.PrimaryDarken),
+                    ("Primary Lighten", ThemePaletteDerivedColor.PrimaryLighten),
+                    ("Secondary Darken", ThemePaletteDerivedColor.SecondaryDarken),
+                    ("Secondary Lighten", ThemePaletteDerivedColor.SecondaryLighten),
+                    ("Tertiary Darken", ThemePaletteDerivedColor.TertiaryDarken),
+                    ("Tertiary Lighten", ThemePaletteDerivedColor.TertiaryLighten),
+                    ("Info Darken", ThemePaletteDerivedColor.InfoDarken),
+                    ("Info Lighten", ThemePaletteDerivedColor.InfoLighten),
+                    ("Success Darken", ThemePaletteDerivedColor.SuccessDarken),
+                    ("Success Lighten", ThemePaletteDerivedColor.SuccessLighten),
+                    ("Warning Darken", ThemePaletteDerivedColor.WarningDarken),
+                    ("Warning Lighten", ThemePaletteDerivedColor.WarningLighten),
+                    ("Error Darken", ThemePaletteDerivedColor.ErrorDarken),
+                    ("Error Lighten", ThemePaletteDerivedColor.ErrorLighten),
+                    ("Dark Darken", ThemePaletteDerivedColor.DarkDarken),
+                    ("Dark Lighten", ThemePaletteDerivedColor.DarkLighten)
+                }
+            )
+        ];
+
+        private static readonly IReadOnlyList<(string Title, IReadOnlyList<(string Name, ThemePaletteScalar Scalar, double Min, double Max, double Step)> Items)> _scalarGroups =
+        [
+            (
+                "Effects",
+                new List<(string, ThemePaletteScalar, double, double, double)>
+                {
+                    ("Border Opacity", ThemePaletteScalar.BorderOpacity, 0, 1, 0.01),
+                    ("Hover Opacity", ThemePaletteScalar.HoverOpacity, 0, 1, 0.01),
+                    ("Ripple Opacity", ThemePaletteScalar.RippleOpacity, 0, 1, 0.01),
+                    ("Ripple Opacity Secondary", ThemePaletteScalar.RippleOpacitySecondary, 0, 1, 0.01)
                 }
             )
         ];
@@ -176,6 +243,16 @@ namespace Lantean.QBTMud.Pages
         protected IReadOnlyList<(string Title, IReadOnlyList<(string Name, ThemePaletteColor Color)> Items)> ColorGroups
         {
             get { return _colorGroups; }
+        }
+
+        protected IReadOnlyList<(string Title, IReadOnlyList<(string Name, ThemePaletteDerivedColor Color)> Items)> DerivedColorGroups
+        {
+            get { return _derivedColorGroups; }
+        }
+
+        protected IReadOnlyList<(string Title, IReadOnlyList<(string Name, ThemePaletteScalar Scalar, double Min, double Max, double Step)> Items)> ScalarGroups
+        {
+            get { return _scalarGroups; }
         }
 
         protected override async Task OnParametersSetAsync()
@@ -297,6 +374,59 @@ namespace Lantean.QBTMud.Pages
             }
 
             ThemePaletteHelper.SetColor(_editorTheme, colorType, value.ToString(), useDarkPalette);
+            _hasChanges = true;
+        }
+
+        protected ThemeDerivedColorState GetDerivedPaletteColor(ThemePaletteDerivedColor colorType, bool useDarkPalette)
+        {
+            if (_editorTheme is null)
+            {
+                return new ThemeDerivedColorState(new MudColor("#000000"), true);
+            }
+
+            return ThemePaletteDerivedColorHelper.GetColor(_editorTheme, colorType, useDarkPalette);
+        }
+
+        protected void UpdateDerivedPaletteColor(ThemePaletteDerivedColor colorType, MudColor value, bool useDarkPalette)
+        {
+            if (_editorTheme is null)
+            {
+                return;
+            }
+
+            ThemePaletteDerivedColorHelper.SetColor(_editorTheme, colorType, value.ToString(MudColorOutputFormats.RGB), useDarkPalette);
+            _hasChanges = true;
+        }
+
+        protected void ResetDerivedPaletteColor(ThemePaletteDerivedColor colorType, bool useDarkPalette)
+        {
+            if (_editorTheme is null)
+            {
+                return;
+            }
+
+            ThemePaletteDerivedColorHelper.ResetColor(_editorTheme, colorType, useDarkPalette);
+            _hasChanges = true;
+        }
+
+        protected double GetScalarValue(ThemePaletteScalar scalarType, bool useDarkPalette)
+        {
+            if (_editorTheme is null)
+            {
+                return 0;
+            }
+
+            return ThemePaletteScalarHelper.GetValue(_editorTheme, scalarType, useDarkPalette);
+        }
+
+        protected void UpdateScalarValue(ThemePaletteScalar scalarType, double value, bool useDarkPalette)
+        {
+            if (_editorTheme is null)
+            {
+                return;
+            }
+
+            ThemePaletteScalarHelper.SetValue(_editorTheme, scalarType, value, useDarkPalette);
             _hasChanges = true;
         }
 

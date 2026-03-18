@@ -104,7 +104,7 @@ namespace Lantean.QBTMud.Components
 
         private string GridBackgroundColor => ToCssColor(IsDarkMode ? Theme.PaletteDark.BackgroundGray : Theme.PaletteLight.BackgroundGray);
 
-        private string LinearOverlayColor => ToCssColor(IsDarkMode ? Theme.PaletteLight.TextPrimary : Theme.PaletteDark.TextPrimary);
+        private string LinearOverlayColor => GetLinearOverlayColor();
 
         private string DimmedDownloadedColor => DimColor(IsDarkMode ? Theme.PaletteDark.Success : Theme.PaletteLight.Success);
 
@@ -493,6 +493,48 @@ namespace Lantean.QBTMud.Components
         private string DownloadingColor => ToCssColor(IsDarkMode ? Theme.PaletteDark.Info : Theme.PaletteLight.Info);
 
         private string PendingColor => ToCssColor(IsDarkMode ? Theme.PaletteDark.Surface : Theme.PaletteLight.Surface);
+
+        private string GetLinearOverlayColor()
+        {
+            if (PiecesLoading || PiecesFailed || Pieces.Count == 0)
+            {
+                return ToCssColor(IsDarkMode ? Theme.PaletteDark.TextPrimary : Theme.PaletteLight.TextPrimary);
+            }
+
+            var downloadedCount = 0;
+            var downloadingCount = 0;
+            var pendingCount = 0;
+
+            foreach (var piece in Pieces)
+            {
+                switch (piece)
+                {
+                    case PieceState.Downloaded:
+                        downloadedCount++;
+                        break;
+
+                    case PieceState.Downloading:
+                        downloadingCount++;
+                        break;
+
+                    default:
+                        pendingCount++;
+                        break;
+                }
+            }
+
+            if (downloadedCount >= downloadingCount && downloadedCount >= pendingCount)
+            {
+                return ToCssColor(IsDarkMode ? Theme.PaletteDark.SuccessContrastText : Theme.PaletteLight.SuccessContrastText);
+            }
+
+            if (downloadingCount >= pendingCount)
+            {
+                return ToCssColor(IsDarkMode ? Theme.PaletteDark.InfoContrastText : Theme.PaletteLight.InfoContrastText);
+            }
+
+            return ToCssColor(IsDarkMode ? Theme.PaletteDark.TextPrimary : Theme.PaletteLight.TextPrimary);
+        }
 
         private static string ToCssColor(MudColor color)
         {

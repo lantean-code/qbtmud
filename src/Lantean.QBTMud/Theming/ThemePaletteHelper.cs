@@ -48,14 +48,24 @@ namespace Lantean.QBTMud.Theming
         {
             return colorType switch
             {
+                ThemePaletteColor.Black => palette.Black,
+                ThemePaletteColor.White => palette.White,
                 ThemePaletteColor.Primary => palette.Primary,
+                ThemePaletteColor.PrimaryContrastText => palette.PrimaryContrastText,
                 ThemePaletteColor.Secondary => palette.Secondary,
+                ThemePaletteColor.SecondaryContrastText => palette.SecondaryContrastText,
                 ThemePaletteColor.Tertiary => palette.Tertiary,
+                ThemePaletteColor.TertiaryContrastText => palette.TertiaryContrastText,
                 ThemePaletteColor.Info => palette.Info,
+                ThemePaletteColor.InfoContrastText => palette.InfoContrastText,
                 ThemePaletteColor.Success => palette.Success,
+                ThemePaletteColor.SuccessContrastText => palette.SuccessContrastText,
                 ThemePaletteColor.Warning => palette.Warning,
+                ThemePaletteColor.WarningContrastText => palette.WarningContrastText,
                 ThemePaletteColor.Error => palette.Error,
+                ThemePaletteColor.ErrorContrastText => palette.ErrorContrastText,
                 ThemePaletteColor.Dark => palette.Dark,
+                ThemePaletteColor.DarkContrastText => palette.DarkContrastText,
                 ThemePaletteColor.Surface => palette.Surface,
                 ThemePaletteColor.Background => palette.Background,
                 ThemePaletteColor.BackgroundGray => palette.BackgroundGray,
@@ -66,8 +76,19 @@ namespace Lantean.QBTMud.Theming
                 ThemePaletteColor.AppbarBackground => palette.AppbarBackground,
                 ThemePaletteColor.LinesDefault => palette.LinesDefault,
                 ThemePaletteColor.LinesInputs => palette.LinesInputs,
+                ThemePaletteColor.TableLines => palette.TableLines,
+                ThemePaletteColor.TableStriped => palette.TableStriped,
+                ThemePaletteColor.TableHover => palette.TableHover,
                 ThemePaletteColor.Divider => palette.Divider,
                 ThemePaletteColor.DividerLight => palette.DividerLight,
+                ThemePaletteColor.Skeleton => palette.Skeleton,
+                ThemePaletteColor.GrayDefault => palette.GrayDefault,
+                ThemePaletteColor.GrayLight => palette.GrayLight,
+                ThemePaletteColor.GrayLighter => palette.GrayLighter,
+                ThemePaletteColor.GrayDark => palette.GrayDark,
+                ThemePaletteColor.GrayDarker => palette.GrayDarker,
+                ThemePaletteColor.OverlayDark => palette.OverlayDark,
+                ThemePaletteColor.OverlayLight => palette.OverlayLight,
                 ThemePaletteColor.TextPrimary => palette.TextPrimary,
                 ThemePaletteColor.TextSecondary => palette.TextSecondary,
                 ThemePaletteColor.TextDisabled => palette.TextDisabled,
@@ -82,36 +103,76 @@ namespace Lantean.QBTMud.Theming
         {
             switch (colorType)
             {
+                case ThemePaletteColor.Black:
+                    palette.Black = colorValue;
+                    break;
+
+                case ThemePaletteColor.White:
+                    palette.White = colorValue;
+                    break;
+
                 case ThemePaletteColor.Primary:
                     palette.Primary = colorValue;
+                    break;
+
+                case ThemePaletteColor.PrimaryContrastText:
+                    palette.PrimaryContrastText = colorValue;
                     break;
 
                 case ThemePaletteColor.Secondary:
                     palette.Secondary = colorValue;
                     break;
 
+                case ThemePaletteColor.SecondaryContrastText:
+                    palette.SecondaryContrastText = colorValue;
+                    break;
+
                 case ThemePaletteColor.Tertiary:
                     palette.Tertiary = colorValue;
+                    break;
+
+                case ThemePaletteColor.TertiaryContrastText:
+                    palette.TertiaryContrastText = colorValue;
                     break;
 
                 case ThemePaletteColor.Info:
                     palette.Info = colorValue;
                     break;
 
+                case ThemePaletteColor.InfoContrastText:
+                    palette.InfoContrastText = colorValue;
+                    break;
+
                 case ThemePaletteColor.Success:
                     palette.Success = colorValue;
+                    break;
+
+                case ThemePaletteColor.SuccessContrastText:
+                    palette.SuccessContrastText = colorValue;
                     break;
 
                 case ThemePaletteColor.Warning:
                     palette.Warning = colorValue;
                     break;
 
+                case ThemePaletteColor.WarningContrastText:
+                    palette.WarningContrastText = colorValue;
+                    break;
+
                 case ThemePaletteColor.Error:
                     palette.Error = colorValue;
                     break;
 
+                case ThemePaletteColor.ErrorContrastText:
+                    palette.ErrorContrastText = colorValue;
+                    break;
+
                 case ThemePaletteColor.Dark:
                     palette.Dark = colorValue;
+                    break;
+
+                case ThemePaletteColor.DarkContrastText:
+                    palette.DarkContrastText = colorValue;
                     break;
 
                 case ThemePaletteColor.Surface:
@@ -154,12 +215,56 @@ namespace Lantean.QBTMud.Theming
                     palette.LinesInputs = colorValue;
                     break;
 
+                case ThemePaletteColor.TableLines:
+                    palette.TableLines = colorValue;
+                    break;
+
+                case ThemePaletteColor.TableStriped:
+                    palette.TableStriped = colorValue;
+                    break;
+
+                case ThemePaletteColor.TableHover:
+                    palette.TableHover = colorValue;
+                    break;
+
                 case ThemePaletteColor.Divider:
                     palette.Divider = colorValue;
                     break;
 
                 case ThemePaletteColor.DividerLight:
                     palette.DividerLight = colorValue;
+                    break;
+
+                case ThemePaletteColor.Skeleton:
+                    palette.Skeleton = colorValue;
+                    break;
+
+                case ThemePaletteColor.GrayDefault:
+                    palette.GrayDefault = colorValue;
+                    break;
+
+                case ThemePaletteColor.GrayLight:
+                    palette.GrayLight = colorValue;
+                    break;
+
+                case ThemePaletteColor.GrayLighter:
+                    palette.GrayLighter = colorValue;
+                    break;
+
+                case ThemePaletteColor.GrayDark:
+                    palette.GrayDark = colorValue;
+                    break;
+
+                case ThemePaletteColor.GrayDarker:
+                    palette.GrayDarker = colorValue;
+                    break;
+
+                case ThemePaletteColor.OverlayDark:
+                    palette.OverlayDark = colorValue;
+                    break;
+
+                case ThemePaletteColor.OverlayLight:
+                    palette.OverlayLight = colorValue;
                     break;
 
                 case ThemePaletteColor.TextPrimary:

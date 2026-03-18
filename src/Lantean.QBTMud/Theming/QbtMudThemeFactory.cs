@@ -15,6 +15,17 @@ namespace Lantean.QBTMud.Theming
         {
             var theme = new MudTheme
             {
+                PaletteLight = new PaletteLight
+                {
+                    PrimaryContrastText = Colors.Shades.White,
+                    SecondaryContrastText = Colors.Shades.White,
+                    TertiaryContrastText = Colors.Shades.White,
+                    InfoContrastText = Colors.Shades.White,
+                    SuccessContrastText = Colors.Shades.White,
+                    WarningContrastText = Colors.Shades.White,
+                    ErrorContrastText = Colors.Shades.White,
+                    DarkContrastText = Colors.Shades.White
+                },
                 PaletteDark = new PaletteDark
                 {
                     Background = "#0b1323",
@@ -30,10 +41,18 @@ namespace Lantean.QBTMud.Theming
                     ActionDisabled = "rgba(159, 182, 204, 0.5)",
                     ActionDisabledBackground = "rgba(6, 11, 20, 0.6)",
                     Primary = "#3b82f6",
+                    PrimaryContrastText = Colors.Shades.White,
                     Info = "#38bdf8",
+                    InfoContrastText = Colors.Shades.White,
                     Success = "#2dd4bf",
+                    SuccessContrastText = Colors.Shades.White,
                     Warning = "#fbbf24",
+                    WarningContrastText = Colors.Shades.White,
                     Error = "#f87171",
+                    ErrorContrastText = Colors.Shades.White,
+                    SecondaryContrastText = Colors.Shades.White,
+                    TertiaryContrastText = Colors.Shades.White,
+                    DarkContrastText = Colors.Shades.White,
                     LinesDefault = "rgba(226, 236, 247, 0.12)",
                     LinesInputs = "rgba(226, 236, 247, 0.2)",
                     Divider = "rgba(226, 236, 247, 0.12)",
