@@ -25,27 +25,34 @@ qbtmud is intended to cover the same day-to-day workflows as the default qBittor
 
 For a detailed explanation of qBittorrent's underlying options, refer to the [qBittorrent Options Guide](https://github.com/qbittorrent/qBittorrent/wiki/Explanation-of-Options-in-qBittorrent).
 
-![qbtmud dashboard](docs/readme-assets/dashboard.png)
+<figure>
+  <img src="docs/readme-assets/dashboard.png" alt="qbtmud dashboard">
+  <figcaption>Main torrent dashboard with real qBittorrent-backed sample data.</figcaption>
+</figure>
+<br>
 
-Main torrent dashboard with real qBittorrent-backed sample data.
+<figure>
+  <img src="docs/readme-assets/torrent-details.png" alt="qbtmud torrent details">
+  <figcaption>Torrent details view covering the same core inspection workflows as the default WebUI.</figcaption>
+</figure>
+<br>
 
-![qbtmud torrent details](docs/readme-assets/torrent-details.png)
+<figure>
+  <img src="docs/readme-assets/welcome-wizard.png" alt="qbtmud welcome wizard">
+  <figcaption>First-run setup flow for language, theme, notifications, and storage preferences.</figcaption>
+</figure>
+<br>
 
-Torrent details view covering the same core inspection workflows as the default WebUI.
+<figure>
+  <img src="docs/readme-assets/theme-manager.png" alt="qbtmud theme manager">
+  <figcaption>Built-in theme manager with bundled themes, previews, and editing workflows.</figcaption>
+</figure>
+<br>
 
-![qbtmud welcome wizard](docs/readme-assets/welcome-wizard.png)
-
-First-run setup flow for language, theme, notifications, and storage preferences.
-
-![qbtmud theme manager](docs/readme-assets/theme-manager.png)
-
-Built-in theme manager with bundled themes, previews, and editing workflows.
-
-![qbtmud app settings](docs/readme-assets/app-settings.png)
-
-App-specific visual settings for theme mode and theme repository configuration.
-
-Screenshot generation notes and tooling live in [tools/ReadmeScreenshots/README_SCREENSHOTS.md](tools/ReadmeScreenshots/README_SCREENSHOTS.md).
+<figure>
+  <img src="docs/readme-assets/app-settings.png" alt="qbtmud app settings">
+  <figcaption>App-specific visual settings for theme mode and theme repository configuration.</figcaption>
+</figure>
 
 ## Installation
 
