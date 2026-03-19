@@ -1,0 +1,25 @@
+Patch Rollup Bundle
+===================
+
+Synthetic fixture used to keep one torrent in a stopped state.
+
+Checklist
+- release notes drafted
+- package review pending
+- smoke test matrix queued
+- localization sync pending
+- docs refresh pending
+
+Revision Notes
+This fixture is intentionally small and local.
+It exists only to populate the torrent list with a believable stopped item.
+
+Repeated Lines
+queued review item
+queued review item
+queued review item
+queued review item
+queued review item
+queued review item
+queued review item
+queued review item

@@ -1,0 +1,53 @@
+{
+  "detailFixtureId": "alpine-release-notes",
+  "fixtures": [
+    {
+      "id": "alpine-release-notes",
+      "displayName": "Alpine Release Notes Mirror",
+      "payloadFile": "alpine-release-notes.txt",
+      "category": "Docs",
+      "tags": [
+        "complete",
+        "docs"
+      ],
+      "state": "complete",
+      "comment": "Synthetic documentation mirror used for README screenshots."
+    },
+    {
+      "id": "kernel-symbol-map",
+      "displayName": "Kernel Symbol Map Archive",
+      "payloadFile": "kernel-symbol-map.txt",
+      "category": "Linux",
+      "tags": [
+        "complete",
+        "archive"
+      ],
+      "state": "complete",
+      "comment": "Synthetic archive payload used for README screenshots."
+    },
+    {
+      "id": "patch-rollup",
+      "displayName": "Patch Rollup Bundle",
+      "payloadFile": "patch-rollup.txt",
+      "category": "Updates",
+      "tags": [
+        "stopped",
+        "review"
+      ],
+      "state": "stopped",
+      "comment": "Synthetic update bundle used for README screenshots."
+    },
+    {
+      "id": "media-library-catalog",
+      "displayName": "Media Library Catalog",
+      "payloadFile": "media-library-catalog.txt",
+      "category": "Media",
+      "tags": [
+        "missing",
+        "library"
+      ],
+      "state": "missing",
+      "comment": "Synthetic media catalog used for README screenshots."
+    }
+  ]
+}

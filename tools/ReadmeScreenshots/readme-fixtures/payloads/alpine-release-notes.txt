@@ -1,0 +1,32 @@
+Alpine Release Notes Mirror
+===========================
+
+Synthetic fixture used to seed the qBittorrent profile for README screenshots.
+
+- Channel: stable
+- Audience: documentation review
+- Distribution: local-only fixture
+- Provenance: generated in-repo
+
+Section 01
+The package index has been mirrored for UI demonstration only.
+The payload is synthetic and should not be treated as a real release artifact.
+
+Section 02
+The catalog includes curated notes for package updates, security advisories,
+and migration reminders intended to create believable torrent metadata.
+
+Section 03
+This fixture exists so qbtmud screenshots can show completed torrents with
+real qBittorrent state, tags, categories, and details views.
+
+Section 04
+No public tracker, public swarm, or external payload is involved.
+All data stays local to the screenshot environment.
+
+Section 05
+The repeated text below increases file size slightly while staying readable.
+The repeated text below increases file size slightly while staying readable.
+The repeated text below increases file size slightly while staying readable.
+The repeated text below increases file size slightly while staying readable.
+The repeated text below increases file size slightly while staying readable.

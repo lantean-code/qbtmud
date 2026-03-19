@@ -1,0 +1,27 @@
+Kernel Symbol Map Archive
+=========================
+
+Synthetic fixture used to produce a completed torrent in the README screenshots.
+
+This file intentionally contains structured but fake mapping data.
+
+0001 init_task                0xffffffff81000000
+0002 start_kernel             0xffffffff81000120
+0003 rest_init                0xffffffff81000f40
+0004 schedule                 0xffffffff81012310
+0005 finish_task_switch       0xffffffff81012f80
+0006 do_idle                  0xffffffff8101a120
+0007 wake_up_process          0xffffffff8102f940
+0008 try_to_wake_up           0xffffffff81030190
+0009 do_sys_openat2           0xffffffff8104bc10
+0010 do_filp_open             0xffffffff8104d4f0
+0011 vfs_read                 0xffffffff81058f00
+0012 vfs_write                0xffffffff810596e0
+0013 kernel_init              0xffffffff8107aa90
+0014 cpu_startup_entry        0xffffffff8108c5d0
+0015 local_timer_interrupt    0xffffffff81091bc0
+0016 net_rx_action            0xffffffff810b1490
+0017 tcp_v4_rcv               0xffffffff810e7e60
+0018 ip_output                0xffffffff810ef4d0
+0019 blk_mq_run_hw_queue      0xffffffff8110d1a0
+0020 shrink_node              0xffffffff81134b20

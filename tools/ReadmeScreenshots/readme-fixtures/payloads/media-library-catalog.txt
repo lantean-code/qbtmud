@@ -1,0 +1,17 @@
+Media Library Catalog
+=====================
+
+Synthetic fixture used to produce a missing-files state after the initial check completes.
+
+Catalog Entries
+- ambient-session-01.flac
+- ambient-session-02.flac
+- field-recording-harbor.flac
+- modular-night-drive.flac
+- rain-on-glass-mix.flac
+
+Notes
+The screenshot pipeline deletes this payload after qBittorrent has indexed it.
+That leaves a reproducible missing-files torrent for the dashboard view.
+
+This is local-only synthetic content for documentation generation.
