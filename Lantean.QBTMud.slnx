@@ -26,7 +26,7 @@
     <Project Path="test/Lantean.QBTMud.Test/Lantean.QBTMud.Test.csproj" />
   </Folder>
   <Folder Name="/Tools/">
-    <Project Path="Tools/ReadmeScreenshots/ReadmeScreenshots.csproj" />
-    <Project Path="Tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj" />
+    <Project Path="tools/ReadmeScreenshots/ReadmeScreenshots.csproj" />
+    <Project Path="tools/WebUiTranslationsConverter/WebUiTranslationsConverter.csproj" />
   </Folder>
 </Solution>
