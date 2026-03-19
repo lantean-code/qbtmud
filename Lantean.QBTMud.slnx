@@ -11,7 +11,7 @@
     <File Path=".editorconfig" />
     <File Path="AGENTS.md" />
     <File Path="global.json" />
-    <File Path="readme.md" />
+    <File Path="README.md" />
   </Folder>
   <Folder Name="/Source/">
     <File Path="src/AGENTS.md" />
