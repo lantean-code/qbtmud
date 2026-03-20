@@ -71,8 +71,8 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptSnackbar(target);
 
-            _snackbarAddCalls.Should().ContainSingle();
             var call = _snackbarAddCalls.Single();
             var componentParameters = GetComponentParameters(call);
             var options = BuildSnackbarOptions(call);
@@ -101,8 +101,8 @@ namespace Lantean.QBTMud.Test.Components
             {
                 IsIos = true
             }));
+            WaitForPromptSnackbar(target);
 
-            _snackbarAddCalls.Should().ContainSingle();
             var call = _snackbarAddCalls.Single();
             var componentParameters = GetComponentParameters(call);
             var options = BuildSnackbarOptions(call);
@@ -137,6 +137,7 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptSnackbar(target);
             await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
@@ -154,12 +155,31 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptSnackbar(target);
             await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 IsIos = true
             }));
 
-            _snackbarAddCalls.Count.Should().Be(2);
+            target.WaitForAssertion(() => _snackbarAddCalls.Count.Should().Be(2), timeout: TimeSpan.FromSeconds(2));
+        }
+
+        [Fact]
+        public async Task GIVEN_InitialPromptableStateClearsBeforeDelay_WHEN_OnInstallPromptStateChanged_THEN_DoesNotShowSnackbar()
+        {
+            var target = RenderTarget();
+
+            var firstStateChangeTask = target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            }));
+
+            await Task.Yield();
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState()));
+            await firstStateChangeTask;
+
+            _snackbarAddCalls.Should().BeEmpty();
+            _removedSnackbarKeys.Should().Contain(_promptSnackbarKey);
         }
 
         [Fact]
@@ -175,6 +195,7 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptSnackbar(target);
 
             var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
             await target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
@@ -207,6 +228,7 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptSnackbar(target);
             var removeCountBeforeClick = _removedSnackbarKeys.Count;
 
             var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
@@ -232,6 +254,7 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptSnackbar(target);
 
             var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
             var firstClickTask = target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
@@ -270,6 +293,7 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptSnackbar(target);
             var removeCountBeforeInstall = _removedSnackbarKeys.Count;
 
             var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
@@ -301,6 +325,7 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptSnackbar(target);
 
             var onDismissClicked = GetOnDismissClicked(_snackbarAddCalls.Single());
             await target.InvokeAsync(() => onDismissClicked.InvokeAsync(new MouseEventArgs()));
@@ -385,6 +410,11 @@ namespace Lantean.QBTMud.Test.Components
         private IRenderedComponent<PwaInstallPrompt> RenderTarget()
         {
             return TestContext.Render<PwaInstallPrompt>();
+        }
+
+        private void WaitForPromptSnackbar(IRenderedComponent<PwaInstallPrompt> target)
+        {
+            target.WaitForAssertion(() => _snackbarAddCalls.Should().ContainSingle(), timeout: TimeSpan.FromSeconds(2));
         }
 
         private static SnackbarOptions BuildSnackbarOptions(SnackbarAddCall call)

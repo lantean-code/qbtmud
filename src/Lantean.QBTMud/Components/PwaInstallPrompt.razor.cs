@@ -12,6 +12,7 @@ namespace Lantean.QBTMud.Components
         private const string _dismissedStorageKey = "PwaInstallPrompt.Dismissed.v1";
         private const string _installSnackbarKey = "pwa-install-prompt";
         private const string _installSnackbarCssClass = "pwa-install-snackbar";
+        private static readonly TimeSpan _initialSnackbarDisplayDelay = TimeSpan.FromMilliseconds(300);
 
         private DotNetObjectReference<PwaInstallPrompt>? _dotNetObjectReference;
         private long _subscriptionId;
@@ -21,6 +22,8 @@ namespace Lantean.QBTMud.Components
         private bool _snackbarShown;
         private bool _snackbarCanPromptInstall;
         private bool _snackbarShowsIosInstructions;
+        private bool _disposeRequested;
+        private int _promptStateVersion;
 
         [Inject]
         protected ISettingsStorageService SettingsStorage { get; set; } = default!;
@@ -70,21 +73,27 @@ namespace Lantean.QBTMud.Components
         /// <param name="state">The latest install prompt state.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         [JSInvokable]
-        public Task OnInstallPromptStateChanged(PwaInstallPromptState state)
+        public async Task OnInstallPromptStateChanged(PwaInstallPromptState state)
         {
             InstallPromptState = state ?? new PwaInstallPromptState();
+            _promptStateVersion++;
+            var promptStateVersion = _promptStateVersion;
 
             if (!_promptInProgress)
             {
-                RefreshPromptSnackbar();
+                await RefreshPromptSnackbarAsync(promptStateVersion);
             }
 
-            return InvokeAsync(StateHasChanged);
+            if (!_disposeRequested)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
         }
 
         protected Task HideForSession()
         {
             _hiddenForSession = true;
+            _promptStateVersion++;
             RemovePromptSnackbar();
             return InvokeAsync(StateHasChanged);
         }
@@ -93,6 +102,7 @@ namespace Lantean.QBTMud.Components
         {
             _dismissedPermanently = true;
             _hiddenForSession = true;
+            _promptStateVersion++;
             _snackbarShown = false;
             await SettingsStorage.SetItemAsync(_dismissedStorageKey, true);
             RemovePromptSnackbar();
@@ -117,17 +127,18 @@ namespace Lantean.QBTMud.Components
                 }
 
                 InstallPromptState = await PwaInstallPromptService.GetInstallPromptStateAsync();
+                _promptStateVersion++;
             }
             finally
             {
                 _promptInProgress = false;
             }
 
-            RefreshPromptSnackbar();
+            await RefreshPromptSnackbarAsync(_promptStateVersion);
             await InvokeAsync(StateHasChanged);
         }
 
-        private void RefreshPromptSnackbar()
+        private async Task RefreshPromptSnackbarAsync(int promptStateVersion)
         {
             if (!ShouldShowPrompt)
             {
@@ -140,6 +151,19 @@ namespace Lantean.QBTMud.Components
                 && (_snackbarShowsIosInstructions == ShowIosInstructions))
             {
                 return;
+            }
+
+            if (!_snackbarShown)
+            {
+                await Task.Delay(_initialSnackbarDisplayDelay);
+
+                if (_disposeRequested
+                    || _promptInProgress
+                    || promptStateVersion != _promptStateVersion
+                    || !ShouldShowPrompt)
+                {
+                    return;
+                }
             }
 
             ShowPromptSnackbar();
@@ -185,6 +209,7 @@ namespace Lantean.QBTMud.Components
         /// <returns>A task representing the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
+            _disposeRequested = true;
             RemovePromptSnackbar();
 
             if (_subscriptionId > 0)
