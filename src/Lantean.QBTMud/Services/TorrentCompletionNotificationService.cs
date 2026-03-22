@@ -1,7 +1,6 @@
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
-using Microsoft.JSInterop;
 
 namespace Lantean.QBTMud.Services
 {
@@ -12,7 +11,7 @@ namespace Lantean.QBTMud.Services
     {
         private const string _appNotificationsContext = "AppNotifications";
 
-        private readonly IJSRuntime _jsRuntime;
+        private readonly IBrowserNotificationService _browserNotificationService;
         private readonly IAppSettingsService _appSettingsService;
         private readonly ILanguageLocalizer _languageLocalizer;
         private Dictionary<string, TorrentSnapshotState> _knownStates = new Dictionary<string, TorrentSnapshotState>(StringComparer.Ordinal);
@@ -21,15 +20,15 @@ namespace Lantean.QBTMud.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="TorrentCompletionNotificationService"/> class.
         /// </summary>
-        /// <param name="jsRuntime">The JavaScript runtime.</param>
+        /// <param name="browserNotificationService">The browser notification service.</param>
         /// <param name="appSettingsService">The app settings service.</param>
         /// <param name="languageLocalizer">The language localizer.</param>
         public TorrentCompletionNotificationService(
-            IJSRuntime jsRuntime,
+            IBrowserNotificationService browserNotificationService,
             IAppSettingsService appSettingsService,
             ILanguageLocalizer languageLocalizer)
         {
-            _jsRuntime = jsRuntime;
+            _browserNotificationService = browserNotificationService;
             _appSettingsService = appSettingsService;
             _languageLocalizer = languageLocalizer;
         }
@@ -87,24 +86,6 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <inheritdoc />
-        public Task<bool> IsSupportedAsync(CancellationToken cancellationToken = default)
-        {
-            return _jsRuntime.IsNotificationsSupported(cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public Task<BrowserNotificationPermission> GetPermissionAsync(CancellationToken cancellationToken = default)
-        {
-            return _jsRuntime.GetNotificationPermission(cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public Task<BrowserNotificationPermission> RequestPermissionAsync(CancellationToken cancellationToken = default)
-        {
-            return _jsRuntime.RequestNotificationPermission(cancellationToken);
-        }
-
-        /// <inheritdoc />
         public async Task ProcessTransitionsAsync(IReadOnlyList<TorrentTransition> transitions, CancellationToken cancellationToken = default)
         {
             if (transitions.Count == 0)
@@ -141,12 +122,12 @@ namespace Lantean.QBTMud.Services
 
         private async Task<bool> CanShowNotifications(CancellationToken cancellationToken)
         {
-            if (!await IsSupportedAsync(cancellationToken))
+            if (!await _browserNotificationService.IsSupportedAsync(cancellationToken))
             {
                 return false;
             }
 
-            var permission = await GetPermissionAsync(cancellationToken);
+            var permission = await _browserNotificationService.GetPermissionAsync(cancellationToken);
             return permission == BrowserNotificationPermission.Granted;
         }
 
@@ -154,28 +135,14 @@ namespace Lantean.QBTMud.Services
         {
             var title = Translate("Download completed");
             var body = Translate("'%1' has finished downloading.", displayName);
-
-            try
-            {
-                await _jsRuntime.ShowNotification(title, body, cancellationToken);
-            }
-            catch (JSException)
-            {
-            }
+            await TryShowNotificationAsync(title, body, cancellationToken);
         }
 
         private async Task ShowAddedNotificationAsync(string displayName, CancellationToken cancellationToken)
         {
             var title = Translate("Torrent added");
             var body = Translate("'%1' was added.", displayName);
-
-            try
-            {
-                await _jsRuntime.ShowNotification(title, body, cancellationToken);
-            }
-            catch (JSException)
-            {
-            }
+            await TryShowNotificationAsync(title, body, cancellationToken);
         }
 
         private static Dictionary<string, TorrentSnapshotState> BuildSnapshot(IReadOnlyDictionary<string, Torrent> torrents)
@@ -207,6 +174,11 @@ namespace Lantean.QBTMud.Services
         private string Translate(string source, params object[] arguments)
         {
             return _languageLocalizer.Translate(_appNotificationsContext, source, arguments);
+        }
+
+        private async Task TryShowNotificationAsync(string title, string body, CancellationToken cancellationToken)
+        {
+            await _browserNotificationService.ShowNotificationAsync(title, body, cancellationToken);
         }
 
         private readonly struct TorrentSnapshotState

@@ -1,4 +1,3 @@
-using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Services
@@ -23,27 +22,6 @@ namespace Lantean.QBTMud.Services
         /// <param name="cancellationToken">The cancellation token for the request.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         Task ProcessAsync(IReadOnlyDictionary<string, Torrent> torrents, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Determines whether browser notifications are supported.
-        /// </summary>
-        /// <param name="cancellationToken">The cancellation token for the request.</param>
-        /// <returns><see langword="true"/> when supported; otherwise <see langword="false"/>.</returns>
-        Task<bool> IsSupportedAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Gets current browser notification permission.
-        /// </summary>
-        /// <param name="cancellationToken">The cancellation token for the request.</param>
-        /// <returns>The current notification permission.</returns>
-        Task<BrowserNotificationPermission> GetPermissionAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Requests browser notification permission.
-        /// </summary>
-        /// <param name="cancellationToken">The cancellation token for the request.</param>
-        /// <returns>The resulting notification permission.</returns>
-        Task<BrowserNotificationPermission> RequestPermissionAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Processes transition batches and emits notifications when configured transitions are detected.

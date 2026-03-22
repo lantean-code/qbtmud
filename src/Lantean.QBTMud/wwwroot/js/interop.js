@@ -10,6 +10,11 @@ window.qbt._pwaInstallPrompt = window.qbt._pwaInstallPrompt ?? {
     displayModeMediaQuery: null,
     displayModeChangeHandler: null,
 };
+window.qbt._notificationPermission = window.qbt._notificationPermission ?? {
+    initialized: false,
+    subscribers: new Map(),
+    nextSubscriberId: 1,
+};
 
 window.qbt.getInstallPromptState = () => {
     initializePwaInstallPromptInterop();
@@ -120,6 +125,7 @@ function initializePwaInstallPromptInterop() {
 }
 
 initializePwaInstallPromptInterop();
+initializeNotificationPermissionInterop();
 
 function buildPwaInstallPromptState() {
     const state = window.qbt._pwaInstallPrompt;
@@ -188,6 +194,79 @@ function isIosDevice() {
     const isMacTouchDevice = platform === "MacIntel" && navigatorInstance.maxTouchPoints > 1;
 
     return hasIosUserAgent || isMacTouchDevice;
+}
+
+window.qbt.subscribeNotificationPermission = (dotNetObjectReference) => {
+    if (!dotNetObjectReference) {
+        return 0;
+    }
+
+    initializeNotificationPermissionInterop();
+
+    const state = window.qbt._notificationPermission;
+    const subscriptionId = state.nextSubscriberId++;
+
+    state.subscribers.set(subscriptionId, dotNetObjectReference);
+    return subscriptionId;
+}
+
+window.qbt.unsubscribeNotificationPermission = (subscriptionId) => {
+    const state = window.qbt._notificationPermission;
+    if (!state || !state.subscribers.has(subscriptionId)) {
+        return;
+    }
+
+    state.subscribers.delete(subscriptionId);
+}
+
+function initializeNotificationPermissionInterop() {
+    const state = window.qbt._notificationPermission;
+    if (state.initialized) {
+        return;
+    }
+
+    state.initialized = true;
+
+    window.addEventListener("focus", () => {
+        notifyNotificationPermissionSubscribers();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            notifyNotificationPermissionSubscribers();
+        }
+    });
+}
+
+function notifyNotificationPermissionSubscribers() {
+    const state = window.qbt._notificationPermission;
+    if (!state || state.subscribers.size === 0) {
+        return;
+    }
+
+    for (const [subscriptionId, dotNetObjectReference] of state.subscribers.entries()) {
+        tryNotifyNotificationPermissionSubscriber(subscriptionId, dotNetObjectReference);
+    }
+}
+
+function tryNotifyNotificationPermissionSubscriber(subscriptionId, dotNetObjectReference) {
+    if (!dotNetObjectReference || typeof dotNetObjectReference.invokeMethodAsync !== "function") {
+        const state = window.qbt._notificationPermission;
+        if (state) {
+            state.subscribers.delete(subscriptionId);
+        }
+
+        return;
+    }
+
+    dotNetObjectReference
+        .invokeMethodAsync("OnNotificationPermissionChanged")
+        .catch(() => {
+            const state = window.qbt._notificationPermission;
+            if (state) {
+                state.subscribers.delete(subscriptionId);
+            }
+        });
 }
 
 window.qbt.triggerFileDownload = (url, fileName) => {
@@ -374,6 +453,10 @@ window.qbt.registerMagnetHandler = (templateUrl, handlerName) => {
     }
 };
 
+function isSecureNotificationContext() {
+    return window.isSecureContext === true;
+}
+
 window.qbt.isNotificationSupported = () => {
     return typeof window.Notification !== "undefined";
 }
@@ -383,12 +466,20 @@ window.qbt.getNotificationPermission = () => {
         return "unsupported";
     }
 
+    if (!isSecureNotificationContext()) {
+        return "insecure";
+    }
+
     return window.Notification.permission ?? "default";
 }
 
 window.qbt.requestNotificationPermission = async () => {
     if (typeof window.Notification === "undefined" || typeof window.Notification.requestPermission !== "function") {
         return "unsupported";
+    }
+
+    if (!isSecureNotificationContext()) {
+        return "insecure";
     }
 
     try {

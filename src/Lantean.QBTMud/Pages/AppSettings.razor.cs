@@ -104,6 +104,13 @@ namespace Lantean.QBTMud.Pages
             return InvokeAsync(StateHasChanged);
         }
 
+        protected async Task OnSettingsCorrected(AppSettingsModel settings)
+        {
+            Settings = await AppSettingsService.SaveSettingsAsync(settings);
+            _savedSettings = Settings.Clone();
+            await InvokeAsync(StateHasChanged);
+        }
+
         protected Task OnStorageRoutingChanged()
         {
             return InvokeAsync(StateHasChanged);

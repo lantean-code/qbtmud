@@ -8,7 +8,7 @@
 - Non-goals: diverging from qBittorrent semantics without explicit design approval.
 
 ## Repository layout
-- Solution: `Lantean.QBTMud.sln`
+- Solution: `Lantean.QBTMud.slnx`
 - Projects:
   - `Lantean.QBTMud` — Web UI host and published assets.
   - `Lantean.QBitTorrentClient` — client library for qBittorrent Web API.

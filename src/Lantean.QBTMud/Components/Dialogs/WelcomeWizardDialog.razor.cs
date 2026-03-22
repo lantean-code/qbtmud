@@ -44,7 +44,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IWelcomeWizardStateService WelcomeWizardStateService { get; set; } = default!;
 
         [Inject]
-        protected ITorrentCompletionNotificationService TorrentCompletionNotificationService { get; set; } = default!;
+        protected IBrowserNotificationService BrowserNotificationService { get; set; } = default!;
 
         [Inject]
         protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
@@ -175,6 +175,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                     BrowserNotificationPermission.Granted => false,
                     BrowserNotificationPermission.Denied => false,
                     BrowserNotificationPermission.Default => false,
+                    BrowserNotificationPermission.Insecure => true,
                     BrowserNotificationPermission.Unsupported => true,
                     _ => true
                 };
@@ -207,14 +208,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             _storageRoutingSettings = await StorageRoutingService.GetSettingsAsync();
             _storageSelection = NormalizeStorageType(_storageRoutingSettings.MasterStorageType);
 
-            try
-            {
-                _notificationPermission = await TorrentCompletionNotificationService.GetPermissionAsync();
-            }
-            catch (JSException)
-            {
-                _notificationPermission = BrowserNotificationPermission.Unsupported;
-            }
+            _notificationPermission = await BrowserNotificationService.GetPermissionAsync();
 
             BuildFlowSteps();
             _activeIndex = 0;
@@ -271,6 +265,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 BrowserNotificationPermission.Granted => TranslateNotifications("Granted"),
                 BrowserNotificationPermission.Denied => TranslateNotifications("Denied"),
                 BrowserNotificationPermission.Default => TranslateNotifications("Not requested"),
+                BrowserNotificationPermission.Insecure => TranslateNotifications("Requires HTTPS or localhost"),
                 BrowserNotificationPermission.Unsupported => TranslateNotifications("Unsupported"),
                 _ => TranslateNotifications("Unsupported")
             };
@@ -283,6 +278,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 BrowserNotificationPermission.Granted => Color.Success,
                 BrowserNotificationPermission.Denied => Color.Error,
                 BrowserNotificationPermission.Default => Color.Warning,
+                BrowserNotificationPermission.Insecure => Color.Warning,
                 BrowserNotificationPermission.Unsupported => Color.Default,
                 _ => Color.Default
             };
@@ -392,10 +388,14 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 if (value)
                 {
-                    _notificationPermission = await TorrentCompletionNotificationService.RequestPermissionAsync();
+                    _notificationPermission = await BrowserNotificationService.RequestPermissionAsync();
                     _settings.NotificationsEnabled = _notificationPermission == BrowserNotificationPermission.Granted;
 
-                    if (!_settings.NotificationsEnabled)
+                    if (_notificationPermission == BrowserNotificationPermission.Insecure)
+                    {
+                        SnackbarWorkflow.ShowTransientMessage(TranslateNotifications("Browser notifications require HTTPS or localhost."), Severity.Warning);
+                    }
+                    else if (!_settings.NotificationsEnabled)
                     {
                         SnackbarWorkflow.ShowTransientMessage(TranslateNotifications("Browser notification permission was not granted."), Severity.Warning);
                     }
@@ -403,7 +403,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 else
                 {
                     _settings.NotificationsEnabled = false;
-                    _notificationPermission = await TorrentCompletionNotificationService.GetPermissionAsync();
+                    _notificationPermission = await BrowserNotificationService.GetPermissionAsync();
                 }
 
                 await PersistAppSettingsAsync();
@@ -418,6 +418,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 _isApplyingNotificationToggle = false;
             }
+        }
+
+        protected string GetNotificationUnavailableMessage()
+        {
+            return TranslateNotifications("Browser notifications require HTTPS or localhost.");
         }
 
         protected async Task OnTorrentAddedNotificationsChanged(bool value)

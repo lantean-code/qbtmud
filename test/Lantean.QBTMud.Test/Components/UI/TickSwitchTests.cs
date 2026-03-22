@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Test.Components.UI
@@ -87,6 +88,26 @@ namespace Lantean.QBTMud.Test.Components.UI
             });
 
             target.Instance.Style.Should().Be("opacity:0.5;");
+        }
+
+        [Fact]
+        public void GIVEN_ParentValueNotUpdated_WHEN_Toggled_THEN_ShouldKeepUncheckedVisualState()
+        {
+            var callbackValue = false;
+
+            var target = TestContext.Render<TickSwitch<bool>>(parameters =>
+            {
+                parameters.Add(p => p.Value, false);
+                parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<bool>(this, value => callbackValue = value));
+            });
+            var input = target.Find("input");
+
+            input.Change(true);
+
+            callbackValue.Should().BeTrue();
+            input.HasAttribute("checked").Should().BeFalse();
+            input.ParentElement?.ParentElement?.ClassList.Contains("mud-checked").Should().BeFalse();
+            target.Instance.ThumbIcon.Should().Be(Icons.Material.Filled.Close);
         }
     }
 }

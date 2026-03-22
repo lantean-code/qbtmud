@@ -1,3 +1,4 @@
+@using Lantean.QBTMud.Interop
 @namespace Lantean.QBTMud.Components.AppSettingsTabs
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
@@ -24,6 +25,18 @@
                     </MudChip>
                 </MudStack>
             </MudItem>
+
+            @if (NotificationPermission == BrowserNotificationPermission.Insecure)
+            {
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Warning"
+                              Variant="Variant.Outlined"
+                              Dense="true"
+                              data-test-id="@TestIdHelper.For("AppSettingsNotificationInsecureAlert")">
+                        @GetNotificationUnavailableMessage()
+                    </MudAlert>
+                </MudItem>
+            }
 
             @if (Settings.NotificationsEnabled && !IsNotificationsUnavailable)
             {
