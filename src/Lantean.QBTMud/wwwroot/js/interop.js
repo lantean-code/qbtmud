@@ -269,6 +269,12 @@ function tryNotifyNotificationPermissionSubscriber(subscriptionId, dotNetObjectR
         });
 }
 
+function scheduleNotificationPermissionSubscribers() {
+    window.setTimeout(() => {
+        notifyNotificationPermissionSubscribers();
+    }, 0);
+}
+
 window.qbt.triggerFileDownload = (url, fileName) => {
     const anchorElement = document.createElement('a');
     anchorElement.href = url;
@@ -475,18 +481,28 @@ window.qbt.getNotificationPermission = () => {
 
 window.qbt.requestNotificationPermission = async () => {
     if (typeof window.Notification === "undefined" || typeof window.Notification.requestPermission !== "function") {
+        scheduleNotificationPermissionSubscribers();
         return "unsupported";
     }
 
     if (!isSecureNotificationContext()) {
+        scheduleNotificationPermissionSubscribers();
         return "insecure";
+    }
+
+    const currentPermission = window.Notification.permission ?? "default";
+    if (currentPermission !== "default") {
+        scheduleNotificationPermissionSubscribers();
+        return currentPermission;
     }
 
     try {
         const permission = await window.Notification.requestPermission();
-        return permission ?? "default";
+        return permission ?? window.Notification.permission ?? "default";
     } catch {
         return window.Notification.permission ?? "default";
+    } finally {
+        scheduleNotificationPermissionSubscribers();
     }
 }
 

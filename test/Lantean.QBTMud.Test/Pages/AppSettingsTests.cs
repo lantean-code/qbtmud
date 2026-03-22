@@ -858,7 +858,7 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_DeniedPermissionAndNotificationsEnabled_WHEN_PageRendered_THEN_NotificationsAreTurnedOffAndSilentlySaved()
+        public void GIVEN_DeniedPermissionAndNotificationsEnabled_WHEN_PageRendered_THEN_NotificationsAreTurnedOffWithoutSilentSave()
         {
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
@@ -875,23 +875,21 @@ namespace Lantean.QBTMud.Test.Pages
                 });
 
             var target = RenderPage();
-            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
             var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
 
             target.WaitForAssertion(() =>
             {
+                var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
                 notificationsSwitch.Instance.Value.Should().BeFalse();
                 saveButton.Instance.Disabled.Should().BeTrue();
                 Mock.Get(_appSettingsService).Verify(
-                    service => service.SaveSettingsAsync(
-                        It.Is<AppSettingsModel>(settings => !settings.NotificationsEnabled),
-                        It.IsAny<CancellationToken>()),
-                    Times.Once);
+                    service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
+                    Times.Never);
             });
         }
 
         [Fact]
-        public void GIVEN_DefaultPermissionAndNotificationsEnabled_WHEN_PageRendered_THEN_NotificationsAreTurnedOffAndSilentlySaved()
+        public void GIVEN_DefaultPermissionAndNotificationsEnabled_WHEN_PageRendered_THEN_NotificationsAreTurnedOffWithoutSilentSave()
         {
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
@@ -908,28 +906,25 @@ namespace Lantean.QBTMud.Test.Pages
                 });
 
             var target = RenderPage();
-            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
             var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
 
             target.WaitForAssertion(() =>
             {
+                var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
                 notificationsSwitch.Instance.Value.Should().BeFalse();
                 saveButton.Instance.Disabled.Should().BeTrue();
                 Mock.Get(_appSettingsService).Verify(
-                    service => service.SaveSettingsAsync(
-                        It.Is<AppSettingsModel>(settings => !settings.NotificationsEnabled),
-                        It.IsAny<CancellationToken>()),
-                    Times.Once);
+                    service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
+                    Times.Never);
             });
         }
 
         [Fact]
-        public async Task GIVEN_GrantedPermissionAndNotificationsEnabled_WHEN_PermissionChangesToDeniedWithoutReload_THEN_NotificationsAreTurnedOffAndSilentlySaved()
+        public async Task GIVEN_GrantedPermissionAndNotificationsEnabled_WHEN_PermissionChangesToDeniedWithoutReload_THEN_NotificationsAreTurnedOffWithoutSilentSave()
         {
             Mock.Get(_browserNotificationService)
-                .SetupSequence(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(BrowserNotificationPermission.Granted)
-                .ReturnsAsync(BrowserNotificationPermission.Denied);
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Granted);
             Mock.Get(_appSettingsService)
                 .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AppSettingsModel
@@ -948,17 +943,62 @@ namespace Lantean.QBTMud.Test.Pages
 
             notificationsSwitch.Instance.Value.Should().BeTrue();
 
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Denied);
+
             await target.InvokeAsync(() => notificationsTab.Instance.OnNotificationPermissionChanged());
 
             target.WaitForAssertion(() =>
             {
-                notificationsSwitch.Instance.Value.Should().BeFalse();
+                var updatedNotificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+                updatedNotificationsSwitch.Instance.Value.Should().BeFalse();
                 saveButton.Instance.Disabled.Should().BeTrue();
                 Mock.Get(_appSettingsService).Verify(
-                    service => service.SaveSettingsAsync(
-                        It.Is<AppSettingsModel>(settings => !settings.NotificationsEnabled),
-                        It.IsAny<CancellationToken>()),
-                    Times.Once);
+                    service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
+                    Times.Never);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_PendingThemeDraft_WHEN_NotificationPermissionChangesToDenied_THEN_PendingThemeDraftRemainsDirtyWithoutSilentSave()
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Granted);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettingsModel
+                {
+                    UpdateChecksEnabled = true,
+                    NotificationsEnabled = true,
+                    ThemeModePreference = ThemeModePreference.System,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false
+                });
+
+            var target = RenderPage();
+            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(target, "AppSettingsThemeModePreference");
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+            var notificationsTab = target.FindComponent<NotificationsAppSettingsTab>();
+
+            await target.InvokeAsync(() => themeModeSelect.Instance.ValueChanged.InvokeAsync(ThemeModePreference.Dark));
+            saveButton.Instance.Disabled.Should().BeFalse();
+
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Denied);
+
+            await target.InvokeAsync(() => notificationsTab.Instance.OnNotificationPermissionChanged());
+
+            target.WaitForAssertion(() =>
+            {
+                themeModeSelect.Instance.GetState(x => x.Value).Should().Be(ThemeModePreference.Dark);
+                saveButton.Instance.Disabled.Should().BeFalse();
+                Mock.Get(_appSettingsService).Verify(
+                    service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
+                    Times.Never);
             });
         }
 
@@ -977,6 +1017,20 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_InsecurePermission_WHEN_PageRendered_THEN_PermissionIndicatorUsesWarningColorAndInsecureText()
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Insecure);
+
+            var target = RenderPage();
+            var permissionIndicator = FindComponentByTestId<MudChip<string>>(target, "AppSettingsNotificationPermission");
+
+            permissionIndicator.Instance.Color.Should().Be(Color.Warning);
+            GetChildContentText(permissionIndicator.Instance.ChildContent).Should().Be("Permission: Insecure");
+        }
+
+        [Fact]
         public void GIVEN_UnsupportedPermission_WHEN_PageRendered_THEN_NotificationsSwitchIsDisabled()
         {
             Mock.Get(_browserNotificationService)
@@ -987,6 +1041,32 @@ namespace Lantean.QBTMud.Test.Pages
             var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
 
             notificationsSwitch.Instance.Disabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GIVEN_UnknownPermissionAndNotificationsEnabled_WHEN_PageRendered_THEN_NotificationsRemainEnabledWithoutSilentSave()
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Unknown);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettingsModel
+                {
+                    UpdateChecksEnabled = true,
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false
+                });
+
+            var target = RenderPage();
+            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+
+            notificationsSwitch.Instance.Value.Should().BeTrue();
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]
@@ -1027,7 +1107,7 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_GetPermissionThrowsJsException_WHEN_PageRendered_THEN_PermissionIndicatorFallsBackToUnsupported()
+        public void GIVEN_GetPermissionThrowsJsException_WHEN_PageRendered_THEN_PermissionIndicatorFallsBackToUnknown()
         {
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
@@ -1037,7 +1117,7 @@ namespace Lantean.QBTMud.Test.Pages
             var permissionIndicator = FindComponentByTestId<MudChip<string>>(target, "AppSettingsNotificationPermission");
 
             permissionIndicator.Instance.Color.Should().Be(Color.Default);
-            GetChildContentText(permissionIndicator.Instance.ChildContent).Should().Be("Permission: Unsupported");
+            GetChildContentText(permissionIndicator.Instance.ChildContent).Should().Be("Permission: Unknown");
         }
 
         [Fact]
@@ -1156,7 +1236,9 @@ namespace Lantean.QBTMud.Test.Pages
                     Times.Once);
             });
 
-            await target.InvokeAsync(() => notificationsSwitch.Instance.ValueChanged.InvokeAsync(true));
+            var pendingSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+
+            await target.InvokeAsync(() => pendingSwitch.Instance.ValueChanged.InvokeAsync(true));
 
             Mock.Get(_browserNotificationService).Verify(
                 service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()),

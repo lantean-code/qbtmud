@@ -104,10 +104,10 @@ namespace Lantean.QBTMud.Pages
             return InvokeAsync(StateHasChanged);
         }
 
-        protected async Task OnSettingsCorrected(AppSettingsModel settings)
+        protected async Task OnNotificationsEnabledCorrected()
         {
-            Settings = await AppSettingsService.SaveSettingsAsync(settings);
-            _savedSettings = Settings.Clone();
+            _savedSettings.NotificationsEnabled = false;
+            Settings.NotificationsEnabled = false;
             await InvokeAsync(StateHasChanged);
         }
 

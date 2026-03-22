@@ -10,6 +10,8 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
 {
     public partial class NotificationsAppSettingsTab : IAsyncDisposable
     {
+        private const string _notificationSynchronizationErrorText = "Unable to synchronize notification settings.";
+
         [Parameter]
         [EditorRequired]
         public AppSettingsModel Settings { get; set; } = default!;
@@ -18,7 +20,7 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
         public EventCallback SettingsChanged { get; set; }
 
         [Parameter]
-        public EventCallback<AppSettingsModel> SettingsCorrected { get; set; }
+        public EventCallback NotificationsEnabledCorrected { get; set; }
 
         [Parameter]
         public int ReloadToken { get; set; }
@@ -32,7 +34,7 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
-        protected BrowserNotificationPermission NotificationPermission { get; private set; } = BrowserNotificationPermission.Unsupported;
+        protected BrowserNotificationPermission NotificationPermission { get; private set; } = BrowserNotificationPermission.Unknown;
 
         protected bool IsApplyingNotificationToggle { get; private set; }
 
@@ -45,6 +47,7 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
                     BrowserNotificationPermission.Granted => false,
                     BrowserNotificationPermission.Denied => false,
                     BrowserNotificationPermission.Default => false,
+                    BrowserNotificationPermission.Unknown => false,
                     BrowserNotificationPermission.Insecure => true,
                     BrowserNotificationPermission.Unsupported => true,
                     _ => true
@@ -53,7 +56,9 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
         }
 
         private int _loadedReloadToken = -1;
-        private AppSettingsModel? _pendingCorrectedSettings;
+        private bool _pendingNotificationsEnabledCorrection;
+        private bool _pendingNotificationEnableRequest;
+        private BrowserNotificationPermission? _pendingPermissionChange;
         private DotNetObjectReference<NotificationsAppSettingsTab>? _dotNetObjectReference;
         private long _notificationPermissionSubscriptionId;
         private bool _notificationPermissionSubscriptionRequested;
@@ -71,58 +76,25 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             if (ShouldDisableNotificationsSetting(NotificationPermission) && Settings.NotificationsEnabled)
             {
                 Settings.NotificationsEnabled = false;
-                _pendingCorrectedSettings = Settings.Clone();
+                _pendingNotificationsEnabledCorrection = true;
             }
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender && !_notificationPermissionSubscriptionRequested)
+            if (_notificationPermissionSubscriptionId <= 0 && !_notificationPermissionSubscriptionRequested)
             {
                 await SubscribeToNotificationPermissionChangesAsync();
             }
 
-            if (_pendingCorrectedSettings is null)
+            if (!_pendingNotificationsEnabledCorrection)
             {
                 return;
             }
 
-            var correctedSettings = _pendingCorrectedSettings;
-            _pendingCorrectedSettings = null;
+            _pendingNotificationsEnabledCorrection = false;
 
-            await NotifySettingsCorrectedAsync(correctedSettings);
-        }
-
-        /// <summary>
-        /// Updates the notification permission state after the browser reports a permissions change.
-        /// </summary>
-        /// <returns>A task representing the asynchronous operation.</returns>
-        [JSInvokable]
-        public async Task OnNotificationPermissionChanged()
-        {
-            if (IsApplyingNotificationToggle)
-            {
-                return;
-            }
-
-            var parsedPermission = await GetNotificationPermissionSafeAsync();
-            var shouldDisableNotifications = ShouldDisableNotificationsSetting(parsedPermission) && Settings.NotificationsEnabled;
-            if (NotificationPermission == parsedPermission && !shouldDisableNotifications)
-            {
-                return;
-            }
-
-            NotificationPermission = parsedPermission;
-
-            if (shouldDisableNotifications)
-            {
-                Settings.NotificationsEnabled = false;
-                await NotifySettingsCorrectedAsync(Settings.Clone());
-                await InvokeAsync(StateHasChanged);
-                return;
-            }
-
-            await InvokeAsync(StateHasChanged);
+            await NotifyNotificationsEnabledCorrectedAsync();
         }
 
         protected async Task OnNotificationsEnabledChanged(bool value)
@@ -143,20 +115,33 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             {
                 if (value)
                 {
+                    _pendingNotificationEnableRequest = true;
                     NotificationPermission = await BrowserNotificationService.RequestPermissionAsync();
                     Settings.NotificationsEnabled = NotificationPermission == BrowserNotificationPermission.Granted;
 
-                    if (NotificationPermission == BrowserNotificationPermission.Insecure)
+                    if (NotificationPermission == BrowserNotificationPermission.Granted)
                     {
+                        _pendingNotificationEnableRequest = false;
+                    }
+                    else if (NotificationPermission == BrowserNotificationPermission.Unknown)
+                    {
+                        _pendingNotificationEnableRequest = false;
+                        SnackbarWorkflow.ShowTransientMessage(TranslateNotifications(_notificationSynchronizationErrorText), Severity.Error);
+                    }
+                    else if (NotificationPermission == BrowserNotificationPermission.Insecure)
+                    {
+                        _pendingNotificationEnableRequest = false;
                         SnackbarWorkflow.ShowTransientMessage(TranslateNotifications("Browser notifications require HTTPS or localhost."), Severity.Warning);
                     }
-                    else if (!Settings.NotificationsEnabled)
+                    else if (NotificationPermission != BrowserNotificationPermission.Default)
                     {
+                        _pendingNotificationEnableRequest = false;
                         SnackbarWorkflow.ShowTransientMessage(TranslateNotifications("Browser notification permission was not granted."), Severity.Warning);
                     }
                 }
                 else
                 {
+                    _pendingNotificationEnableRequest = false;
                     Settings.NotificationsEnabled = false;
                     NotificationPermission = await BrowserNotificationService.GetPermissionAsync();
                 }
@@ -165,6 +150,7 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             }
             catch (JSException exception)
             {
+                _pendingNotificationEnableRequest = false;
                 Settings.NotificationsEnabled = false;
                 SnackbarWorkflow.ShowTransientMessage(TranslateNotifications("Unable to update notification permission: %1", exception.Message), Severity.Error);
                 await NotifySettingsChangedAsync();
@@ -172,6 +158,7 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             finally
             {
                 IsApplyingNotificationToggle = false;
+                await ApplyPendingPermissionChangeAsync();
             }
         }
 
@@ -213,11 +200,11 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             await SettingsChanged.InvokeAsync();
         }
 
-        private async Task NotifySettingsCorrectedAsync(AppSettingsModel settings)
+        private async Task NotifyNotificationsEnabledCorrectedAsync()
         {
-            if (SettingsCorrected.HasDelegate)
+            if (NotificationsEnabledCorrected.HasDelegate)
             {
-                await SettingsCorrected.InvokeAsync(settings);
+                await NotificationsEnabledCorrected.InvokeAsync();
                 return;
             }
 
@@ -231,7 +218,8 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
                 BrowserNotificationPermission.Granted => TranslateNotifications("Granted"),
                 BrowserNotificationPermission.Denied => TranslateNotifications("Denied"),
                 BrowserNotificationPermission.Default => TranslateNotifications("Not requested"),
-                BrowserNotificationPermission.Insecure => TranslateNotifications("Requires HTTPS or localhost"),
+                BrowserNotificationPermission.Unknown => TranslateNotifications("Unknown"),
+                BrowserNotificationPermission.Insecure => TranslateNotifications("Insecure"),
                 BrowserNotificationPermission.Unsupported => TranslateNotifications("Unsupported"),
                 _ => TranslateNotifications("Unsupported")
             };
@@ -244,6 +232,7 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
                 BrowserNotificationPermission.Granted => Color.Success,
                 BrowserNotificationPermission.Denied => Color.Error,
                 BrowserNotificationPermission.Default => Color.Warning,
+                BrowserNotificationPermission.Unknown => Color.Default,
                 BrowserNotificationPermission.Insecure => Color.Warning,
                 BrowserNotificationPermission.Unsupported => Color.Default,
                 _ => Color.Default
@@ -255,6 +244,11 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             return TranslateNotifications("Browser notifications require HTTPS or localhost.");
         }
 
+        private string GetNotificationSwitchKey()
+        {
+            return $"{NotificationPermission}:{IsApplyingNotificationToggle}:{Settings.NotificationsEnabled}";
+        }
+
         private async Task<BrowserNotificationPermission> GetNotificationPermissionSafeAsync()
         {
             try
@@ -263,15 +257,46 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             }
             catch (JSException)
             {
-                return BrowserNotificationPermission.Unsupported;
+                return BrowserNotificationPermission.Unknown;
             }
             catch (InvalidOperationException)
             {
-                return BrowserNotificationPermission.Unsupported;
+                return BrowserNotificationPermission.Unknown;
             }
             catch (HttpRequestException)
             {
-                return BrowserNotificationPermission.Unsupported;
+                return BrowserNotificationPermission.Unknown;
+            }
+        }
+
+        private static bool ShouldDisableNotificationsSetting(BrowserNotificationPermission permission)
+        {
+            return permission switch
+            {
+                BrowserNotificationPermission.Granted => false,
+                BrowserNotificationPermission.Default => true,
+                BrowserNotificationPermission.Unknown => false,
+                BrowserNotificationPermission.Denied => true,
+                BrowserNotificationPermission.Insecure => true,
+                BrowserNotificationPermission.Unsupported => true,
+                _ => true
+            };
+        }
+
+        /// <summary>
+        /// Updates the notification permission state after the browser reports a permissions change.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        [JSInvokable]
+        public async Task OnNotificationPermissionChanged()
+        {
+            try
+            {
+                await HandlePermissionChangedAsync(await GetNotificationPermissionSafeAsync());
+            }
+            catch (Exception)
+            {
+                SnackbarWorkflow.ShowTransientMessage(TranslateNotifications(_notificationSynchronizationErrorText), Severity.Error);
             }
         }
 
@@ -289,29 +314,87 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             _notificationPermissionSubscriptionRequested = false;
         }
 
-        private static bool ShouldDisableNotificationsSetting(BrowserNotificationPermission permission)
+        private string TranslateNotifications(string source, params object[] arguments)
         {
-            return permission switch
+            return LanguageLocalizer.Translate("AppNotifications", source, arguments);
+        }
+
+        private async Task HandlePermissionChangedAsync(BrowserNotificationPermission parsedPermission)
+        {
+            if (IsApplyingNotificationToggle)
             {
-                BrowserNotificationPermission.Granted => false,
-                BrowserNotificationPermission.Default => true,
-                BrowserNotificationPermission.Denied => true,
-                BrowserNotificationPermission.Insecure => true,
-                BrowserNotificationPermission.Unsupported => true,
-                _ => true
-            };
+                _pendingPermissionChange = parsedPermission;
+                return;
+            }
+
+            var shouldEnableNotifications = _pendingNotificationEnableRequest
+                && parsedPermission == BrowserNotificationPermission.Granted
+                && !Settings.NotificationsEnabled;
+            var shouldDisableNotifications = ShouldDisableNotificationsSetting(parsedPermission) && Settings.NotificationsEnabled;
+            if (NotificationPermission == parsedPermission && !shouldEnableNotifications && !shouldDisableNotifications)
+            {
+                return;
+            }
+
+            NotificationPermission = parsedPermission;
+
+            if (shouldEnableNotifications)
+            {
+                _pendingNotificationEnableRequest = false;
+                Settings.NotificationsEnabled = true;
+                await NotifySettingsChangedAsync();
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            if (shouldDisableNotifications)
+            {
+                _pendingNotificationEnableRequest = false;
+                Settings.NotificationsEnabled = false;
+                await NotifyNotificationsEnabledCorrectedAsync();
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            if (parsedPermission != BrowserNotificationPermission.Default)
+            {
+                _pendingNotificationEnableRequest = false;
+            }
+
+            await InvokeAsync(StateHasChanged);
         }
 
         private async Task SubscribeToNotificationPermissionChangesAsync()
         {
             _notificationPermissionSubscriptionRequested = true;
             _dotNetObjectReference ??= DotNetObjectReference.Create(this);
-            _notificationPermissionSubscriptionId = await BrowserNotificationService.SubscribePermissionChangesAsync(_dotNetObjectReference);
+
+            for (var attempt = 0; attempt < 3 && _notificationPermissionSubscriptionId <= 0; attempt++)
+            {
+                _notificationPermissionSubscriptionId = await BrowserNotificationService.SubscribePermissionChangesAsync(_dotNetObjectReference);
+                if (_notificationPermissionSubscriptionId > 0)
+                {
+                    break;
+                }
+
+                await Task.Yield();
+            }
+
+            if (_notificationPermissionSubscriptionId <= 0)
+            {
+                _notificationPermissionSubscriptionRequested = false;
+            }
         }
 
-        private string TranslateNotifications(string source, params object[] arguments)
+        private async Task ApplyPendingPermissionChangeAsync()
         {
-            return LanguageLocalizer.Translate("AppNotifications", source, arguments);
+            if (_pendingPermissionChange is not BrowserNotificationPermission permission)
+            {
+                return;
+            }
+
+            _pendingPermissionChange = null;
+            await HandlePermissionChangedAsync(permission);
         }
     }
 }

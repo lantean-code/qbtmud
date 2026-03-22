@@ -91,6 +91,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(BrowserNotificationPermission.Granted);
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.SubscribePermissionChangesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1);
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.UnsubscribePermissionChangesAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
             Mock.Get(_welcomeWizardStateService)
                 .Setup(service => service.AcknowledgeStepsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WelcomeWizardState());
@@ -346,7 +352,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             notificationSwitch.Instance.Disabled.Should().BeTrue();
             permissionChip.Instance.Color.Should().Be(Color.Warning);
-            GetChildContentText(permissionChip.Instance.ChildContent).Should().Be("Permission: Requires HTTPS or localhost");
+            GetChildContentText(permissionChip.Instance.ChildContent).Should().Be("Permission: Insecure");
             GetChildContentText(insecureAlert.Instance.ChildContent).Should().Be("Browser notifications require HTTPS or localhost.");
         }
 
@@ -1080,6 +1086,36 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_NotificationPermissionUnknownAndNotificationsEnabled_WHEN_NotificationsStepRendered_THEN_KeepsNotificationsEnabled()
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Unknown);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false,
+                    UpdateChecksEnabled = true
+                });
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            notificationSwitch.Instance.Value.Should().BeTrue();
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_GetPermissionReturnsUnknownEnum_WHEN_NotificationsStepRendered_THEN_UsesUnsupportedFallback()
         {
             Mock.Get(_browserNotificationService)
@@ -1159,6 +1195,83 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             Mock.Get(_appSettingsService).Verify(
                 service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RequestPendingAndPermissionChangesToGrantedBeforeRequestCompletes_WHEN_RequestCompletesWithDefault_THEN_PersistsEnabledSetting()
+        {
+            var requestPermissionCompletion = new TaskCompletionSource<BrowserNotificationPermission>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .Returns(requestPermissionCompletion.Task);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            var toggleTask = dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Granted);
+            requestPermissionCompletion.SetResult(BrowserNotificationPermission.Default);
+            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.OnNotificationPermissionChanged());
+
+            await toggleTask;
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_PermissionChangePersistenceThrows_WHEN_PermissionChanges_THEN_ShowsSynchronizationError()
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Granted);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false,
+                    UpdateChecksEnabled = true
+                });
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => !settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Failure"));
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Denied);
+
+            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.OnNotificationPermissionChanged());
+
+            dialog.Component.WaitForAssertion(() =>
+            {
+                Mock.Get(_snackbar).Verify(
+                    snackbar => snackbar.Add(
+                        It.Is<string>(message => string.Equals(message, "Unable to synchronize notification settings.", StringComparison.Ordinal)),
+                        Severity.Error,
+                        It.IsAny<Action<SnackbarOptions>>(),
+                        It.IsAny<string>()),
+                    Times.Once);
+            });
         }
 
         [Fact]

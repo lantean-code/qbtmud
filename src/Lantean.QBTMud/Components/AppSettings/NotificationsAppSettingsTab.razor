@@ -10,7 +10,8 @@
         <MudGrid>
             <MudItem xs="12">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap" Spacing="2">
-                    <FieldSwitch Value="@Settings.NotificationsEnabled"
+                    <FieldSwitch @key="GetNotificationSwitchKey()"
+                                 Value="@Settings.NotificationsEnabled"
                                  ValueChanged="OnNotificationsEnabledChanged"
                                  Disabled="@IsNotificationsUnavailable"
                                  Label="@TranslateNotifications("Enable browser notifications")"

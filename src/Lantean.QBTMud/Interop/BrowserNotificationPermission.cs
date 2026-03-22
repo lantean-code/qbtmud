@@ -6,6 +6,11 @@ namespace Lantean.QBTMud.Interop
     public enum BrowserNotificationPermission
     {
         /// <summary>
+        /// Browser notification permission could not be determined.
+        /// </summary>
+        Unknown,
+
+        /// <summary>
         /// Browser notification API is unavailable.
         /// </summary>
         Unsupported,

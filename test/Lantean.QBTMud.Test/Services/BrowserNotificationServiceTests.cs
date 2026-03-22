@@ -16,6 +16,13 @@ namespace Lantean.QBTMud.Test.Services
         {
             _jsRuntime = Mock.Of<IJSRuntime>();
             _target = new BrowserNotificationService(_jsRuntime);
+
+            Mock.Get(_jsRuntime)
+                .Setup(runtime => runtime.InvokeAsync<long>("qbt.subscribeNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync(1);
+            Mock.Get(_jsRuntime)
+                .Setup(runtime => runtime.InvokeAsync<object?>("qbt.unsubscribeNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync((object?)null);
         }
 
         [Fact]
@@ -91,7 +98,7 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_JsRuntimeThrowsInvalidOperationException_WHEN_GetPermissionAsync_THEN_ShouldReturnUnsupported()
+        public async Task GIVEN_JsRuntimeThrowsInvalidOperationException_WHEN_GetPermissionAsync_THEN_ShouldReturnUnknown()
         {
             Mock.Get(_jsRuntime)
                 .Setup(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
@@ -99,7 +106,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var result = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
 
-            result.Should().Be(BrowserNotificationPermission.Unsupported);
+            result.Should().Be(BrowserNotificationPermission.Unknown);
         }
 
         [Fact]
@@ -118,10 +125,44 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_CurrentPermissionDenied_WHEN_RequestPermissionAsync_THEN_ShouldReturnDeniedWithoutInvokingRequest()
+        public async Task GIVEN_CachedPermissionDenied_WHEN_RequestPermissionAsync_THEN_ShouldReturnDeniedWithoutInvokingRequest()
         {
             Mock.Get(_jsRuntime)
                 .Setup(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("denied");
+
+            _ = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+            var result = await _target.RequestPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Denied);
+            Mock.Get(_jsRuntime).Verify(
+                runtime => runtime.InvokeAsync<string?>("qbt.requestNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_CachedPermissionDeniedButFreshPermissionGranted_WHEN_RequestPermissionAsync_THEN_ShouldReturnGrantedWithoutInvokingRequest()
+        {
+            Mock.Get(_jsRuntime)
+                .SetupSequence(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("denied")
+                .ReturnsAsync("granted");
+
+            _ = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+            var result = await _target.RequestPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Granted);
+            Mock.Get(_jsRuntime).Verify(
+                runtime => runtime.InvokeAsync<string?>("qbt.requestNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_CachedPermissionDefaultButFreshPermissionDenied_WHEN_RequestPermissionAsync_THEN_ShouldReturnDeniedWithoutInvokingRequest()
+        {
+            Mock.Get(_jsRuntime)
+                .SetupSequence(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("default")
                 .ReturnsAsync("denied");
 
             var result = await _target.RequestPermissionAsync(Xunit.TestContext.Current.CancellationToken);
@@ -133,10 +174,27 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_JsRuntimeReturnsUnknownPermission_WHEN_RequestPermissionAsync_THEN_ShouldReturnDefault()
+        public async Task GIVEN_CachedPermissionDefaultButFreshPermissionUnknown_WHEN_RequestPermissionAsync_THEN_ShouldReturnUnknownWithoutInvokingRequest()
         {
             Mock.Get(_jsRuntime)
-                .Setup(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .SetupSequence(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("default")
+                .ThrowsAsync(new InvalidOperationException("Failure"));
+
+            var result = await _target.RequestPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Unknown);
+            Mock.Get(_jsRuntime).Verify(
+                runtime => runtime.InvokeAsync<string?>("qbt.requestNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_JsRuntimeReturnsUnknownPermission_WHEN_RequestPermissionAsync_THEN_ShouldReturnUnknown()
+        {
+            Mock.Get(_jsRuntime)
+                .SetupSequence(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("default")
                 .ReturnsAsync("default");
             Mock.Get(_jsRuntime)
                 .Setup(runtime => runtime.InvokeAsync<string?>("qbt.requestNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
@@ -144,14 +202,15 @@ namespace Lantean.QBTMud.Test.Services
 
             var result = await _target.RequestPermissionAsync(Xunit.TestContext.Current.CancellationToken);
 
-            result.Should().Be(BrowserNotificationPermission.Default);
+            result.Should().Be(BrowserNotificationPermission.Unknown);
         }
 
         [Fact]
         public async Task GIVEN_JsRuntimeReturnsNullPermission_WHEN_RequestPermissionAsync_THEN_ShouldReturnDefault()
         {
             Mock.Get(_jsRuntime)
-                .Setup(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .SetupSequence(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("default")
                 .ReturnsAsync("default");
             Mock.Get(_jsRuntime)
                 .Setup(runtime => runtime.InvokeAsync<string?>("qbt.requestNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
@@ -163,28 +222,27 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_RequestPermissionCompletesAfterTimeoutWindow_WHEN_RequestPermissionAsync_THEN_ShouldAwaitBrowserResponse()
+        public async Task GIVEN_RequestPermissionNeverCompletes_WHEN_RequestPermissionAsync_THEN_ShouldReturnDefault()
         {
-            var taskCompletionSource = new TaskCompletionSource<string?>();
-            using var timer = new Timer(_ => taskCompletionSource.TrySetResult("granted"), null, 400, Timeout.Infinite);
-
             Mock.Get(_jsRuntime)
-                .Setup(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .SetupSequence(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("default")
                 .ReturnsAsync("default");
             Mock.Get(_jsRuntime)
                 .Setup(runtime => runtime.InvokeAsync<string?>("qbt.requestNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
-                .Returns(new ValueTask<string?>(taskCompletionSource.Task));
+                .Returns(new ValueTask<string?>(new TaskCompletionSource<string?>().Task));
 
             var result = await _target.RequestPermissionAsync(Xunit.TestContext.Current.CancellationToken);
 
-            result.Should().Be(BrowserNotificationPermission.Granted);
+            result.Should().Be(BrowserNotificationPermission.Default);
         }
 
         [Fact]
-        public async Task GIVEN_JsRuntimeThrowsHttpRequestException_WHEN_RequestPermissionAsync_THEN_ShouldReturnUnsupported()
+        public async Task GIVEN_JsRuntimeThrowsHttpRequestException_WHEN_RequestPermissionAsync_THEN_ShouldReturnUnknown()
         {
             Mock.Get(_jsRuntime)
-                .Setup(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .SetupSequence(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("default")
                 .ReturnsAsync("default");
             Mock.Get(_jsRuntime)
                 .Setup(runtime => runtime.InvokeAsync<string?>("qbt.requestNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
@@ -192,7 +250,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var result = await _target.RequestPermissionAsync(Xunit.TestContext.Current.CancellationToken);
 
-            result.Should().Be(BrowserNotificationPermission.Unsupported);
+            result.Should().Be(BrowserNotificationPermission.Unknown);
         }
 
         [Fact]
@@ -231,71 +289,96 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_NullReference_WHEN_SubscribePermissionChangesAsync_THEN_ShouldThrowArgumentNullException()
+        public async Task GIVEN_GetPermissionCalledTwice_WHEN_FirstCallInitializesService_THEN_SecondCallUsesCachedPermission()
         {
-            var action = async () => await _target.SubscribePermissionChangesAsync(null!, Xunit.TestContext.Current.CancellationToken);
+            Mock.Get(_jsRuntime)
+                .Setup(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("granted");
 
-            await action.Should().ThrowAsync<ArgumentNullException>();
+            var firstPermission = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+            var secondPermission = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+
+            firstPermission.Should().Be(BrowserNotificationPermission.Granted);
+            secondPermission.Should().Be(BrowserNotificationPermission.Granted);
+            Mock.Get(_jsRuntime).Verify(
+                runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()),
+                Times.Once);
+            Mock.Get(_jsRuntime).Verify(
+                runtime => runtime.InvokeAsync<long>("qbt.subscribeNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()),
+                Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_DotNetReference_WHEN_SubscribePermissionChangesAsync_THEN_ShouldReturnSubscriptionId()
+        public async Task GIVEN_SubscribeFailsDuringInitialization_WHEN_GetPermissionAsyncCalledAgain_THEN_SubscribeIsRetried()
         {
-            var dotNetObjectReference = new object();
             Mock.Get(_jsRuntime)
-                .Setup(runtime => runtime.InvokeAsync<long>(
-                    "qbt.subscribeNotificationPermission",
-                    It.IsAny<CancellationToken>(),
-                    It.Is<object?[]>(args => MatchesArguments(args, dotNetObjectReference))))
+                .Setup(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("granted");
+            Mock.Get(_jsRuntime)
+                .SetupSequence(runtime => runtime.InvokeAsync<long>("qbt.subscribeNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync(0)
+                .ReturnsAsync(0)
+                .ReturnsAsync(0)
                 .ReturnsAsync(7);
 
-            var result = await _target.SubscribePermissionChangesAsync(dotNetObjectReference, Xunit.TestContext.Current.CancellationToken);
+            _ = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+            _ = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
 
-            result.Should().Be(7);
+            Mock.Get(_jsRuntime).Verify(
+                runtime => runtime.InvokeAsync<long>("qbt.subscribeNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()),
+                Times.Exactly(4));
         }
 
         [Fact]
-        public async Task GIVEN_SubscribeNeverCompletes_WHEN_SubscribePermissionChangesAsync_THEN_ShouldReturnZero()
+        public async Task GIVEN_ServiceInitialized_WHEN_JsPermissionCallbackReceived_THEN_UpdatesCacheAndRaisesEvent()
+        {
+            var changedPermissions = new List<BrowserNotificationPermission>();
+            _target.PermissionChanged += (_, args) => changedPermissions.Add(args.Permission);
+
+            Mock.Get(_jsRuntime)
+                .SetupSequence(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("default")
+                .ReturnsAsync("granted");
+
+            _ = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+            await _target.OnNotificationPermissionChanged();
+            var result = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Granted);
+            changedPermissions.Should().ContainSingle(permission => permission == BrowserNotificationPermission.Granted);
+        }
+
+        [Fact]
+        public async Task GIVEN_ServiceInitialized_WHEN_JsPermissionRefreshFails_THEN_KeepsCachedPermissionWithoutRaisingEvent()
+        {
+            var changedPermissions = new List<BrowserNotificationPermission>();
+            _target.PermissionChanged += (_, args) => changedPermissions.Add(args.Permission);
+
+            Mock.Get(_jsRuntime)
+                .SetupSequence(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("granted")
+                .ThrowsAsync(new InvalidOperationException("Failure"));
+
+            _ = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+            await _target.OnNotificationPermissionChanged();
+            var result = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Should().Be(BrowserNotificationPermission.Granted);
+            changedPermissions.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_ServiceInitialized_WHEN_Disposed_THEN_UnsubscribesJsPermissionTracking()
         {
             Mock.Get(_jsRuntime)
-                .Setup(runtime => runtime.InvokeAsync<long>(
-                    "qbt.subscribeNotificationPermission",
-                    It.IsAny<CancellationToken>(),
-                    It.IsAny<object?[]>()))
-                .Returns(new ValueTask<long>(new TaskCompletionSource<long>().Task));
+                .Setup(runtime => runtime.InvokeAsync<string?>("qbt.getNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync("granted");
 
-            var result = await _target.SubscribePermissionChangesAsync(new object(), Xunit.TestContext.Current.CancellationToken);
-
-            result.Should().Be(0);
-        }
-
-        [Fact]
-        public async Task GIVEN_SubscriptionIdNotPositive_WHEN_UnsubscribePermissionChangesAsync_THEN_ShouldSkipJsInterop()
-        {
-            await _target.UnsubscribePermissionChangesAsync(0, Xunit.TestContext.Current.CancellationToken);
+            _ = await _target.GetPermissionAsync(Xunit.TestContext.Current.CancellationToken);
+            await _target.DisposeAsync();
 
             Mock.Get(_jsRuntime).Verify(
                 runtime => runtime.InvokeAsync<object?>("qbt.unsubscribeNotificationPermission", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()),
-                Times.Never);
-        }
-
-        [Fact]
-        public async Task GIVEN_SubscriptionIdPositive_WHEN_UnsubscribePermissionChangesAsync_THEN_ShouldInvokeJsInterop()
-        {
-            Mock.Get(_jsRuntime)
-                .Setup(runtime => runtime.InvokeAsync<object?>(
-                    "qbt.unsubscribeNotificationPermission",
-                    It.IsAny<CancellationToken>(),
-                    It.Is<object?[]>(args => MatchesArguments(args, 7L))))
-                .ReturnsAsync((object?)null);
-
-            await _target.UnsubscribePermissionChangesAsync(7, Xunit.TestContext.Current.CancellationToken);
-
-            Mock.Get(_jsRuntime).Verify(
-                runtime => runtime.InvokeAsync<object?>(
-                    "qbt.unsubscribeNotificationPermission",
-                    It.IsAny<CancellationToken>(),
-                    It.Is<object?[]>(args => MatchesArguments(args, 7L))),
                 Times.Once);
         }
 

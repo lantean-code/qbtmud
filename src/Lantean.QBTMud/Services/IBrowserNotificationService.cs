@@ -1,12 +1,18 @@
 using Lantean.QBTMud.Interop;
+using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Services
 {
     /// <summary>
-    /// Provides browser notification API operations and permission change subscriptions.
+    /// Provides browser notification API operations and permission change tracking.
     /// </summary>
     public interface IBrowserNotificationService
     {
+        /// <summary>
+        /// Occurs when the cached browser notification permission changes.
+        /// </summary>
+        event EventHandler<BrowserNotificationPermissionChangedEventArgs>? PermissionChanged;
+
         /// <summary>
         /// Determines whether the browser notification API is supported.
         /// </summary>
@@ -29,18 +35,9 @@ namespace Lantean.QBTMud.Services
         Task<BrowserNotificationPermission> RequestPermissionAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Shows a browser notification.
-        /// </summary>
-        /// <param name="title">The notification title.</param>
-        /// <param name="body">The notification body.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
-        Task ShowNotificationAsync(string title, string body, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Subscribes to browser notification permission change callbacks.
         /// </summary>
-        /// <param name="dotNetObjectReference">The .NET reference invoked by JavaScript callbacks.</param>
+        /// <param name="dotNetObjectReference">The .NET callback target.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The subscription identifier, or <c>0</c> when subscription failed.</returns>
         Task<long> SubscribePermissionChangesAsync(object dotNetObjectReference, CancellationToken cancellationToken = default);
@@ -48,9 +45,18 @@ namespace Lantean.QBTMud.Services
         /// <summary>
         /// Unsubscribes from browser notification permission change callbacks.
         /// </summary>
-        /// <param name="subscriptionId">The subscription identifier.</param>
+        /// <param name="subscriptionId">The subscription identifier to remove.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         Task UnsubscribePermissionChangesAsync(long subscriptionId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Shows a browser notification.
+        /// </summary>
+        /// <param name="title">The notification title.</param>
+        /// <param name="body">The notification body.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        Task ShowNotificationAsync(string title, string body, CancellationToken cancellationToken = default);
     }
 }
