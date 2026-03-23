@@ -210,10 +210,15 @@ namespace Lantean.QBTMud.Services
                 if (!_hasCachedPermission)
                 {
                     var permissionResult = await TryGetPermissionCoreAsync(cancellationToken);
-                    _cachedPermission = permissionResult.IsAuthoritative
-                        ? permissionResult.Permission
-                        : BrowserNotificationPermission.Unknown;
-                    _hasCachedPermission = true;
+                    if (permissionResult.IsAuthoritative)
+                    {
+                        _cachedPermission = permissionResult.Permission;
+                        _hasCachedPermission = true;
+                    }
+                    else
+                    {
+                        _cachedPermission = BrowserNotificationPermission.Unknown;
+                    }
                 }
 
                 if (_notificationPermissionSubscriptionId > 0)
