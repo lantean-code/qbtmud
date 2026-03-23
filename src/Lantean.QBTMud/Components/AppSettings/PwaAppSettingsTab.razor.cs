@@ -130,25 +130,12 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             }
         }
 
-        protected async Task ShowInstallPromptTestAsync()
+        protected Task ShowInstallPromptTestAsync()
         {
 #if DEBUG
-            try
-            {
-                await SettingsStorage.RemoveItemAsync(PwaInstallPromptStorageKeys.Dismissed);
-                PwaState = await PwaInstallPromptService.ShowInstallPromptTestAsync();
-                HasLoadedPwaStatus = true;
-            }
-            catch (JSException exception)
-            {
-                Debug.WriteLine(exception);
-                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Unable to request app install."), Severity.Warning);
-            }
-            catch (InvalidOperationException exception)
-            {
-                Debug.WriteLine(exception);
-                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Unable to request app install."), Severity.Warning);
-            }
+            return ShowInstallPromptTestCoreAsync();
+#else
+            return Task.CompletedTask;
 #endif
         }
 
@@ -192,5 +179,29 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
         {
             return LanguageLocalizer.Translate("AppPwaInstallPrompt", source, arguments);
         }
+
+#if DEBUG
+
+        private async Task ShowInstallPromptTestCoreAsync()
+        {
+            try
+            {
+                await SettingsStorage.RemoveItemAsync(PwaInstallPromptStorageKeys.Dismissed);
+                PwaState = await PwaInstallPromptService.ShowInstallPromptTestAsync();
+                HasLoadedPwaStatus = true;
+            }
+            catch (JSException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Unable to request app install."), Severity.Warning);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Unable to request app install."), Severity.Warning);
+            }
+        }
+
+#endif
     }
 }

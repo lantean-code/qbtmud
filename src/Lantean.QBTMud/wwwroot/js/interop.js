@@ -62,7 +62,7 @@ window.qbt.requestInstallPrompt = async () => {
     state.deferredPrompt = null;
     notifyPwaInstallPromptSubscribers();
 
-    let outcome = "unknown";
+    let outcome;
 
     try {
         await deferredPrompt.prompt();
