@@ -62,6 +62,7 @@
    - Build succeeds, tests are green.
    - Public XML docs added/updated.
    - Changelog notes in the PR description (what changed, why, risks, testing).
+   - Prefer the repository PR template in `.github/PULL_REQUEST_TEMPLATE.md`.
 
 ## PR and review checklist
 - [ ] Change is scoped and well-justified; no unrelated edits.
@@ -75,3 +76,6 @@
 - Do not guess. If any requirement, API contract, or behavior is unclear, ask for clarification.
 - When reviewing pull request feedback, only unresolved review threads/comments are actionable by default; resolved or dismissed threads are informational unless the user explicitly asks to revisit them.
 - Prefer concise diffs and explicit rationale in commit messages and PR descriptions.
+
+## GitHub interactions
+- When interacting with GitHub repository state (for example PRs, PR comments, reviews, issues, or release metadata), prefer the `gh` CLI where possible instead of manual browsing or ad-hoc API calls.
