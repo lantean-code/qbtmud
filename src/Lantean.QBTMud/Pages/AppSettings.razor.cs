@@ -104,6 +104,13 @@ namespace Lantean.QBTMud.Pages
             return InvokeAsync(StateHasChanged);
         }
 
+        protected async Task OnNotificationsEnabledCorrected()
+        {
+            _savedSettings.NotificationsEnabled = false;
+            Settings.NotificationsEnabled = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
         protected Task OnStorageRoutingChanged()
         {
             return InvokeAsync(StateHasChanged);

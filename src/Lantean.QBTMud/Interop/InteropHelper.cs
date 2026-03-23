@@ -76,54 +76,6 @@ namespace Lantean.QBTMud.Interop
         }
 
         /// <summary>
-        /// Determines whether the browser notification API is supported.
-        /// </summary>
-        /// <param name="runtime">The JavaScript runtime.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns><see langword="true"/> when notifications are supported; otherwise <see langword="false"/>.</returns>
-        public static async Task<bool> IsNotificationsSupported(this IJSRuntime runtime, CancellationToken cancellationToken = default)
-        {
-            return await runtime.InvokeAsync<bool>("qbt.isNotificationSupported", cancellationToken);
-        }
-
-        /// <summary>
-        /// Gets current browser notification permission.
-        /// </summary>
-        /// <param name="runtime">The JavaScript runtime.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>The current notification permission.</returns>
-        public static async Task<BrowserNotificationPermission> GetNotificationPermission(this IJSRuntime runtime, CancellationToken cancellationToken = default)
-        {
-            var rawPermission = await runtime.InvokeAsync<string?>("qbt.getNotificationPermission", cancellationToken);
-            return ParseNotificationPermission(rawPermission);
-        }
-
-        /// <summary>
-        /// Requests browser notification permission.
-        /// </summary>
-        /// <param name="runtime">The JavaScript runtime.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>The resulting notification permission.</returns>
-        public static async Task<BrowserNotificationPermission> RequestNotificationPermission(this IJSRuntime runtime, CancellationToken cancellationToken = default)
-        {
-            var rawPermission = await runtime.InvokeAsync<string?>("qbt.requestNotificationPermission", cancellationToken);
-            return ParseNotificationPermission(rawPermission);
-        }
-
-        /// <summary>
-        /// Shows a browser notification.
-        /// </summary>
-        /// <param name="runtime">The JavaScript runtime.</param>
-        /// <param name="title">The notification title.</param>
-        /// <param name="body">The notification body text.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
-        public static async Task ShowNotification(this IJSRuntime runtime, string title, string body, CancellationToken cancellationToken = default)
-        {
-            await runtime.InvokeVoidAsync("qbt.showNotification", cancellationToken, title, body);
-        }
-
-        /// <summary>
         /// Gets local storage entries that match a key prefix.
         /// </summary>
         /// <param name="runtime">The JavaScript runtime.</param>
@@ -230,23 +182,6 @@ namespace Lantean.QBTMud.Interop
         public static async Task RemoveBootstrapTheme(this IJSRuntime runtime)
         {
             await runtime.InvokeVoidAsync("qbt.removeBootstrapTheme");
-        }
-
-        private static BrowserNotificationPermission ParseNotificationPermission(string? value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return BrowserNotificationPermission.Default;
-            }
-
-            return value.Trim().ToLowerInvariant() switch
-            {
-                "granted" => BrowserNotificationPermission.Granted,
-                "denied" => BrowserNotificationPermission.Denied,
-                "default" => BrowserNotificationPermission.Default,
-                "unsupported" => BrowserNotificationPermission.Unsupported,
-                _ => BrowserNotificationPermission.Default
-            };
         }
     }
 }
