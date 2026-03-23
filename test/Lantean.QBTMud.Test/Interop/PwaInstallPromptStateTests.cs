@@ -12,12 +12,14 @@ namespace Lantean.QBTMud.Test.Interop
             {
                 IsInstalled = true,
                 CanPrompt = true,
-                IsIos = true
+                IsIos = true,
+                IsPromptInProgress = true
             };
 
             result.IsInstalled.Should().BeTrue();
             result.CanPrompt.Should().BeTrue();
             result.IsIos.Should().BeTrue();
+            result.IsPromptInProgress.Should().BeTrue();
         }
     }
 }

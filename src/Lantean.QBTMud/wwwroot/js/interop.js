@@ -5,6 +5,7 @@ if (window.qbt === undefined) {
 window.qbt._pwaInstallPrompt = window.qbt._pwaInstallPrompt ?? {
     initialized: false,
     deferredPrompt: null,
+    promptInProgress: false,
     subscribers: new Map(),
     nextSubscriberId: 1,
     displayModeMediaQuery: null,
@@ -55,30 +56,46 @@ window.qbt.requestInstallPrompt = async () => {
         return "unavailable";
     }
 
+    state.promptInProgress = true;
+
     // A beforeinstallprompt event can only be consumed once.
     state.deferredPrompt = null;
     notifyPwaInstallPromptSubscribers();
 
+    let outcome = "unknown";
+
     try {
         await deferredPrompt.prompt();
         const userChoice = await deferredPrompt.userChoice;
-        const outcome = userChoice?.outcome;
-
-        notifyPwaInstallPromptSubscribers();
-
-        if (outcome === "accepted") {
-            return "accepted";
-        }
-
-        if (outcome === "dismissed") {
-            return "dismissed";
-        }
-
-        return "unknown";
+        outcome = userChoice?.outcome ?? "unknown";
     } catch {
+        outcome = "error";
+    } finally {
+        state.promptInProgress = false;
         notifyPwaInstallPromptSubscribers();
-        return "error";
     }
+
+    if (outcome === "accepted") {
+        return "accepted";
+    }
+
+    if (outcome === "dismissed") {
+        return "dismissed";
+    }
+
+    return outcome;
+}
+
+window.qbt.showInstallPromptTest = () => {
+    initializePwaInstallPromptInterop();
+
+    const state = window.qbt._pwaInstallPrompt;
+    if (!state.deferredPrompt) {
+        state.deferredPrompt = createTestInstallPromptEvent();
+    }
+
+    notifyPwaInstallPromptSubscribers();
+    return buildPwaInstallPromptState();
 }
 
 function initializePwaInstallPromptInterop() {
@@ -127,6 +144,13 @@ function initializePwaInstallPromptInterop() {
 initializePwaInstallPromptInterop();
 initializeNotificationPermissionInterop();
 
+function createTestInstallPromptEvent() {
+    return {
+        prompt: () => Promise.resolve(),
+        userChoice: Promise.resolve({ outcome: "dismissed" }),
+    };
+}
+
 function buildPwaInstallPromptState() {
     const state = window.qbt._pwaInstallPrompt;
 
@@ -134,6 +158,7 @@ function buildPwaInstallPromptState() {
         isInstalled: isPwaInstalled(),
         canPrompt: !!state.deferredPrompt,
         isIos: isIosDevice(),
+        isPromptInProgress: !!state.promptInProgress,
     };
 }
 
@@ -414,6 +439,34 @@ window.qbt.constrainContextMenuPopover = (popoverNode, classSelector) => {
     }
 };
 
+window.qbt.elevatePwaInstallPromptPopover = (popoverNode, classSelector) => {
+    if (!popoverNode || !popoverNode.id || !popoverNode.id.startsWith('popover-')) {
+        return;
+    }
+
+    const id = popoverNode.id.substring(8);
+    const promptPopover = document.getElementById(`popovercontent-${id}`);
+    if (!promptPopover
+        || !promptPopover.classList.contains('pwa-install-prompt-popover')
+        || !promptPopover.classList.contains('mud-popover-open')) {
+        return;
+    }
+
+    if (classSelector && !promptPopover.classList.contains(classSelector)) {
+        return;
+    }
+
+    const appBar = document.querySelector('.mud-appbar.mud-appbar-fixed-top');
+    const appBarZIndex = appBar instanceof HTMLElement
+        ? Number.parseInt(window.getComputedStyle(appBar).getPropertyValue('z-index'), 10)
+        : Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue('--mud-zindex-appbar'), 10);
+    const promptZIndex = Number.isNaN(appBarZIndex)
+        ? 1101
+        : appBarZIndex + 1;
+
+    promptPopover.style.setProperty('z-index', `${promptZIndex}`, 'important');
+};
+
 window.qbt.installContextMenuPopoverPatch = () => {
     if (window.qbt._contextMenuPopoverPatchInstalled) {
         return true;
@@ -428,6 +481,7 @@ window.qbt.installContextMenuPopoverPatch = () => {
     window.mudpopoverHelper.placePopover = function (popoverNode, classSelector) {
         originalPlacePopover(popoverNode, classSelector);
         window.qbt.constrainContextMenuPopover(popoverNode, classSelector);
+        window.qbt.elevatePwaInstallPromptPopover(popoverNode, classSelector);
     };
 
     window.qbt._contextMenuPopoverPatchInstalled = true;

@@ -19,5 +19,10 @@ namespace Lantean.QBTMud.Interop
         /// Gets or sets a value indicating whether the current device is iOS or iPadOS.
         /// </summary>
         public bool IsIos { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether an install prompt request is currently in progress.
+        /// </summary>
+        public bool IsPromptInProgress { get; set; }
     }
 }

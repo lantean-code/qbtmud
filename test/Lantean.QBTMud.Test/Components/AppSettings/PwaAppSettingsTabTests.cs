@@ -12,6 +12,8 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
 {
     public sealed class PwaAppSettingsTabTests : RazorComponentTestBase<PwaAppSettingsTab>
     {
+        private const string _dismissedStorageKey = "PwaInstallPrompt.Dismissed.v1";
+
         private readonly Mock<IPwaInstallPromptService> _pwaInstallPromptServiceMock;
 
         public PwaAppSettingsTabTests()
@@ -28,6 +30,14 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             _pwaInstallPromptServiceMock
                 .Setup(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync("accepted");
+            _pwaInstallPromptServiceMock
+                .Setup(service => service.ShowInstallPromptTestAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    IsInstalled = false,
+                    CanPrompt = true,
+                    IsIos = false
+                });
         }
 
         [Fact]
@@ -225,6 +235,28 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
 
             statusField.Instance.GetState(x => x.Value).Should().Be("Unknown");
         }
+
+#if DEBUG
+
+        [Fact]
+        public async Task GIVEN_TestPromptButtonClicked_WHEN_ShowInstallPromptTestInvoked_THEN_UsesSharedPromptFlowAndUpdatesStatus()
+        {
+            await TestContext.LocalStorage.SetItemAsync(_dismissedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
+            var target = RenderTarget(1);
+            var testPromptButton = FindButton(target, "AppSettingsPwaShowSnackbarTest");
+
+            await target.InvokeAsync(() => testPromptButton.Instance.OnClick.InvokeAsync());
+
+            _pwaInstallPromptServiceMock.Verify(service => service.ShowInstallPromptTestAsync(It.IsAny<CancellationToken>()), Times.Once);
+            TestContext.LocalStorage.Snapshot().Should().NotContainKey(_dismissedStorageKey);
+            target.WaitForAssertion(() =>
+            {
+                var promptStatusField = FindComponentByTestId<MudTextField<string>>(target, "AppSettingsPwaInstallPromptStatus");
+                promptStatusField.Instance.GetState(x => x.Value).Should().Be("Install prompt available");
+            });
+        }
+
+#endif
 
         private IRenderedComponent<PwaAppSettingsTab> RenderTarget(int reloadToken = 0, bool isActive = true)
         {

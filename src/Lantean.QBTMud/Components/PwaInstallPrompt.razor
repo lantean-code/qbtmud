@@ -1,0 +1,15 @@
+<div class="pwa-install-prompt-anchor" data-test-id="@TestIdHelper.For("PwaInstallPrompt")">
+    <MudPopover Open="@IsPopoverOpen"
+                Fixed="true"
+                Duration="0"
+                Elevation="12"
+                OverflowBehavior="OverflowBehavior.FlipNever"
+                TransformOrigin="Origin.TopCenter"
+                AnchorOrigin="Origin.BottomCenter"
+                Class="pwa-install-prompt-popover">
+        <PwaInstallPromptSnackbarContent CanPromptInstall="@DisplayedCanPromptInstall"
+                                         ShowIosInstructions="@DisplayedShowIosInstructions"
+                                         OnInstallClicked="EventCallback.Factory.Create<MouseEventArgs>(this, PromptInstall)"
+                                         OnDismissClicked="EventCallback.Factory.Create<MouseEventArgs>(this, DismissForever)" />
+    </MudPopover>
+</div>

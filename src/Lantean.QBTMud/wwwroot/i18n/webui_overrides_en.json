@@ -299,7 +299,7 @@
   "AppPwaInstallPrompt|Non-iOS browser": "Non-iOS browser",
   "AppPwaInstallPrompt|Refresh status": "Refresh status",
   "AppPwaInstallPrompt|Install now": "Install now",
-  "AppPwaInstallPrompt|Show install snackbar (test)": "Show install snackbar (test)",
+  "AppPwaInstallPrompt|Show install prompt (test)": "Show install prompt (test)",
   "AppPwaInstallPrompt|Install prompt result: %1": "Install prompt result: %1",
   "AppPwaInstallPrompt|Unable to read app install status.": "Unable to read app install status.",
   "AppPwaInstallPrompt|Unable to request app install.": "Unable to request app install.",
