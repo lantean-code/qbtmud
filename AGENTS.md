@@ -8,7 +8,7 @@
 - Non-goals: diverging from qBittorrent semantics without explicit design approval.
 
 ## Repository layout
-- Solution: `Lantean.QBTMud.sln`
+- Solution: `Lantean.QBTMud.slnx`
 - Projects:
   - `Lantean.QBTMud` — Web UI host and published assets.
   - `Lantean.QBitTorrentClient` — client library for qBittorrent Web API.
@@ -73,4 +73,5 @@
 
 ## Communication & assumptions
 - Do not guess. If any requirement, API contract, or behavior is unclear, ask for clarification.
+- When reviewing pull request feedback, only unresolved review threads/comments are actionable by default; resolved or dismissed threads are informational unless the user explicitly asks to revisit them.
 - Prefer concise diffs and explicit rationale in commit messages and PR descriptions.

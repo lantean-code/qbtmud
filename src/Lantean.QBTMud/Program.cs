@@ -84,6 +84,7 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IAppBuildInfoService, AppBuildInfoService>();
             builder.Services.AddScoped<IAppUpdateService, AppUpdateService>();
             builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
+            builder.Services.AddScoped<IBrowserNotificationService, BrowserNotificationService>();
             builder.Services.AddScoped<IInternalUrlProvider, InternalUrlProvider>();
             builder.Services.AddScoped<IMagnetLinkService, MagnetLinkService>();
             builder.Services.AddScoped<IPreferencesUpdateService, PreferencesUpdateService>();

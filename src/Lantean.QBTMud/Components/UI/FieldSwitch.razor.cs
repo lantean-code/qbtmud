@@ -33,8 +33,6 @@ namespace Lantean.QBTMud.Components.UI
 
         protected async Task ValueChangedCallback(bool? value)
         {
-            Value = value;
-
             if (value.HasValue)
             {
                 await ValueChanged.InvokeAsync(value.Value);

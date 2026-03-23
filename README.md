@@ -25,7 +25,7 @@ qbtmud is intended to cover the same day-to-day workflows as the default qBittor
 
 For a detailed explanation of qBittorrent's underlying options, refer to the [qBittorrent Options Guide](https://github.com/qbittorrent/qBittorrent/wiki/Explanation-of-Options-in-qBittorrent).
 
-**Main torrent dashboard with real qBittorrent-backed sample data.**
+**Main torrent dashboard.**
 
 ![qbtmud dashboard](docs/readme-assets/dashboard.png)
 

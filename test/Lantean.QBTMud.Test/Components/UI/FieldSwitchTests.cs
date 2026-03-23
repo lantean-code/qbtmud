@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         }
 
         [Fact]
-        public void GIVEN_ValueChanged_WHEN_Toggled_THEN_ShouldUpdateValueAndInvokeCallback()
+        public void GIVEN_ValueChanged_WHEN_Toggled_THEN_ShouldKeepParentValueAndInvokeCallback()
         {
             var callbackValue = false;
 
@@ -51,7 +51,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             target.Find("input").Change(true);
 
             callbackValue.Should().BeTrue();
-            target.Instance.Value.Should().BeTrue();
+            target.Instance.Value.Should().BeFalse();
         }
     }
 }
