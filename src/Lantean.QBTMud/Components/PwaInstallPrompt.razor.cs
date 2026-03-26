@@ -81,7 +81,14 @@ namespace Lantean.QBTMud.Components
             if (_dismissedPermanently)
             {
                 var persistedDismissal = await SettingsStorage.GetItemAsync<bool?>(PwaInstallPromptStorageKeys.Dismissed);
-                _dismissedPermanently = persistedDismissal.GetValueOrDefault();
+                var isDismissedPermanently = persistedDismissal.GetValueOrDefault();
+
+                if (!isDismissedPermanently)
+                {
+                    _hiddenForSession = false;
+                }
+
+                _dismissedPermanently = isDismissedPermanently;
             }
 
             InstallPromptState = state ?? new PwaInstallPromptState();

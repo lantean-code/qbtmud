@@ -360,6 +360,30 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_PromptDismissedForeverInCurrentSession_WHEN_DismissalClearedAndStateChanges_THEN_PopoverCanShowAgain()
+        {
+            var target = RenderTarget();
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            }));
+            WaitForPromptPopover(target);
+
+            var content = PopoverProvider.FindComponent<PwaInstallPromptSnackbarContent>();
+            await target.InvokeAsync(() => content.Instance.OnDismissClicked.InvokeAsync(new MouseEventArgs()));
+
+            await TestContext.LocalStorage.RemoveItemAsync(_dismissedStorageKey, Xunit.TestContext.Current.CancellationToken);
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            }));
+
+            WaitForPromptPopover(target);
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeTrue();
+        }
+
+        [Fact]
         public void GIVEN_ComponentRerendered_WHEN_NotFirstRender_THEN_SubscribeIsNotRepeated()
         {
             var target = RenderTarget();
