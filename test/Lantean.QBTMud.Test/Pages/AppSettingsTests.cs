@@ -860,7 +860,7 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_DeniedPermissionAndNotificationsEnabled_WHEN_PageRendered_THEN_NotificationsAreTurnedOffWithoutSilentSave()
+        public void GIVEN_DeniedPermissionAndNotificationsEnabled_WHEN_PageRendered_THEN_NotificationsAreTurnedOffAndPersisted()
         {
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
@@ -885,13 +885,20 @@ namespace Lantean.QBTMud.Test.Pages
                 notificationsSwitch.Instance.Value.Should().BeFalse();
                 saveButton.Instance.Disabled.Should().BeTrue();
                 Mock.Get(_appSettingsService).Verify(
-                    service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
-                    Times.Never);
+                    service => service.SaveSettingsAsync(
+                        It.Is<AppSettingsModel>(settings =>
+                            !settings.NotificationsEnabled
+                            && settings.UpdateChecksEnabled
+                            && settings.DownloadFinishedNotificationsEnabled
+                            && !settings.TorrentAddedNotificationsEnabled
+                            && !settings.TorrentAddedSnackbarsEnabledWithNotifications),
+                        It.IsAny<CancellationToken>()),
+                    Times.Once);
             });
         }
 
         [Fact]
-        public void GIVEN_DefaultPermissionAndNotificationsEnabled_WHEN_PageRendered_THEN_NotificationsAreTurnedOffWithoutSilentSave()
+        public void GIVEN_DefaultPermissionAndNotificationsEnabled_WHEN_PageRendered_THEN_NotificationsAreTurnedOffAndPersisted()
         {
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
@@ -916,13 +923,56 @@ namespace Lantean.QBTMud.Test.Pages
                 notificationsSwitch.Instance.Value.Should().BeFalse();
                 saveButton.Instance.Disabled.Should().BeTrue();
                 Mock.Get(_appSettingsService).Verify(
-                    service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
-                    Times.Never);
+                    service => service.SaveSettingsAsync(
+                        It.Is<AppSettingsModel>(settings =>
+                            !settings.NotificationsEnabled
+                            && settings.UpdateChecksEnabled
+                            && settings.DownloadFinishedNotificationsEnabled
+                            && !settings.TorrentAddedNotificationsEnabled
+                            && !settings.TorrentAddedSnackbarsEnabledWithNotifications),
+                        It.IsAny<CancellationToken>()),
+                    Times.Once);
             });
         }
 
         [Fact]
-        public async Task GIVEN_GrantedPermissionAndNotificationsEnabled_WHEN_PermissionChangesToDeniedWithoutReload_THEN_NotificationsAreTurnedOffWithoutSilentSave()
+        public void GIVEN_DeniedPermissionAndCorrectionSaveFails_WHEN_PageRendered_THEN_NotificationsRemainDirtyForManualSave()
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Denied);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettingsModel
+                {
+                    UpdateChecksEnabled = true,
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false
+                });
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new JSException("StorageError"));
+
+            var target = RenderPage();
+            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
+
+            target.WaitForAssertion(() =>
+            {
+                var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+                notificationsSwitch.Instance.Value.Should().BeFalse();
+                saveButton.Instance.Disabled.Should().BeFalse();
+                Mock.Get(_appSettingsService).Verify(
+                    service => service.SaveSettingsAsync(
+                        It.Is<AppSettingsModel>(settings => !settings.NotificationsEnabled),
+                        It.IsAny<CancellationToken>()),
+                    Times.Once);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_GrantedPermissionAndNotificationsEnabled_WHEN_PermissionChangesToDeniedWithoutReload_THEN_NotificationsAreTurnedOffAndPersisted()
         {
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
@@ -957,13 +1007,20 @@ namespace Lantean.QBTMud.Test.Pages
                 updatedNotificationsSwitch.Instance.Value.Should().BeFalse();
                 saveButton.Instance.Disabled.Should().BeTrue();
                 Mock.Get(_appSettingsService).Verify(
-                    service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
-                    Times.Never);
+                    service => service.SaveSettingsAsync(
+                        It.Is<AppSettingsModel>(settings =>
+                            !settings.NotificationsEnabled
+                            && settings.UpdateChecksEnabled
+                            && settings.DownloadFinishedNotificationsEnabled
+                            && !settings.TorrentAddedNotificationsEnabled
+                            && !settings.TorrentAddedSnackbarsEnabledWithNotifications),
+                        It.IsAny<CancellationToken>()),
+                    Times.Once);
             });
         }
 
         [Fact]
-        public async Task GIVEN_PendingThemeDraft_WHEN_NotificationPermissionChangesToDenied_THEN_PendingThemeDraftRemainsDirtyWithoutSilentSave()
+        public async Task GIVEN_PendingThemeDraft_WHEN_NotificationPermissionChangesToDenied_THEN_PendingThemeDraftRemainsDirtyWhilePersistingNotificationCorrection()
         {
             Mock.Get(_browserNotificationService)
                 .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
@@ -999,8 +1056,16 @@ namespace Lantean.QBTMud.Test.Pages
                 themeModeSelect.Instance.GetState(x => x.Value).Should().Be(ThemeModePreference.Dark);
                 saveButton.Instance.Disabled.Should().BeFalse();
                 Mock.Get(_appSettingsService).Verify(
-                    service => service.SaveSettingsAsync(It.IsAny<AppSettingsModel>(), It.IsAny<CancellationToken>()),
-                    Times.Never);
+                    service => service.SaveSettingsAsync(
+                        It.Is<AppSettingsModel>(settings =>
+                            !settings.NotificationsEnabled
+                            && settings.ThemeModePreference == ThemeModePreference.System
+                            && settings.UpdateChecksEnabled
+                            && settings.DownloadFinishedNotificationsEnabled
+                            && !settings.TorrentAddedNotificationsEnabled
+                            && !settings.TorrentAddedSnackbarsEnabledWithNotifications),
+                        It.IsAny<CancellationToken>()),
+                    Times.Once);
             });
         }
 

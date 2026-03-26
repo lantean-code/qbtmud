@@ -204,7 +204,19 @@ namespace Lantean.QBTMud.Layout
             await RestoreProcessedDownloadAsync();
             await RestorePendingDownloadAsync();
 
-            if (!await ApiClient.CheckAuthState())
+            bool isAuthenticated;
+            try
+            {
+                isAuthenticated = await ApiClient.CheckAuthState();
+            }
+            catch (HttpRequestException)
+            {
+                MainData ??= CreateDisconnectedMainData();
+                MainData.LostConnection = true;
+                return;
+            }
+
+            if (!isAuthenticated)
             {
                 await ClearPendingDownloadAsync();
                 NavigationManager.NavigateTo("login");
@@ -593,6 +605,23 @@ namespace Lantean.QBTMud.Layout
             await ClearPendingDownloadAsync();
             _timerCancellationToken.CancelIfNotDisposed();
             await InvokeAsync(() => NavigationManager.NavigateTo("login"));
+        }
+
+        private static MainData CreateDisconnectedMainData()
+        {
+            return new MainData(
+                new Dictionary<string, Torrent>(),
+                Array.Empty<string>(),
+                new Dictionary<string, Category>(),
+                new Dictionary<string, IReadOnlyList<string>>(),
+                new ServerState(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>(),
+                new Dictionary<string, HashSet<string>>())
+            {
+                LostConnection = true
+            };
         }
 
         private Task UpdateRefreshIntervalAsync(int newInterval, CancellationToken cancellationToken)

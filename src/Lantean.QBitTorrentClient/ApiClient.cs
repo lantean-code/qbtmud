@@ -21,15 +21,19 @@ namespace Lantean.QBitTorrentClient
 
         public async Task<bool> CheckAuthState()
         {
-            try
+            var response = await _httpClient.GetAsync("app/version");
+            if (response.StatusCode == HttpStatusCode.OK)
             {
-                var response = await _httpClient.GetAsync("app/version");
-                return response.StatusCode == HttpStatusCode.OK;
+                return true;
             }
-            catch (Exception)
+
+            if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
             {
                 return false;
             }
+
+            await ThrowIfNotSuccessfulStatusCode(response);
+            return false;
         }
 
         public async Task Login(string username, string password)

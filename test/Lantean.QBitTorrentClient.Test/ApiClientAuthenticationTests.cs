@@ -34,11 +34,11 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
-        public async Task GIVEN_ServerReturnsNonOK_WHEN_CheckAuthState_THEN_ShouldBeFalse()
+        public async Task GIVEN_ServerReturnsUnauthorized_WHEN_CheckAuthState_THEN_ShouldBeFalse()
         {
             _handler.Responder = async (req, ct) =>
             {
-                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+                return new HttpResponseMessage(HttpStatusCode.Unauthorized);
             };
 
             var result = await _target.CheckAuthState();
@@ -47,13 +47,33 @@ namespace Lantean.QBitTorrentClient.Test
         }
 
         [Fact]
-        public async Task GIVEN_HandlerThrows_WHEN_CheckAuthState_THEN_ShouldBeFalse()
+        public async Task GIVEN_ServerReturnsServerError_WHEN_CheckAuthState_THEN_ShouldThrow()
+        {
+            _handler.Responder = async (req, ct) =>
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError)
+                {
+                    Content = new StringContent("ServerError")
+                };
+            };
+
+            var act = async () => await _target.CheckAuthState();
+
+            var ex = await act.Should().ThrowAsync<HttpRequestException>();
+            ex.Which.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+            ex.Which.Message.Should().Be("ServerError");
+        }
+
+        [Fact]
+        public async Task GIVEN_HandlerThrows_WHEN_CheckAuthState_THEN_ShouldPropagateFailure()
         {
             _handler.Responder = (_, _) => throw new HttpRequestException("boom", null, HttpStatusCode.BadGateway);
 
-            var result = await _target.CheckAuthState();
+            var act = async () => await _target.CheckAuthState();
 
-            result.Should().BeFalse();
+            var ex = await act.Should().ThrowAsync<HttpRequestException>();
+            ex.Which.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+            ex.Which.Message.Should().Be("boom");
         }
 
         [Fact]

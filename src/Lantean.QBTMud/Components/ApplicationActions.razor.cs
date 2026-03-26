@@ -1,10 +1,12 @@
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
+using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System.Net;
 
 namespace Lantean.QBTMud.Components
 {
@@ -20,6 +22,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IDialogService DialogService { get; set; } = default!;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -107,10 +112,27 @@ namespace Lantean.QBTMud.Components
                 LanguageLocalizer.Translate("AppApplicationActions", "Are you sure you want to logout?"),
                 async () =>
             {
-                await ApiClient.Logout();
-                await SpeedHistoryService.ClearAsync();
+                try
+                {
+                    await ApiClient.Logout();
+                    await SpeedHistoryService.ClearAsync();
 
-                NavigationManager.NavigateTo("login");
+                    NavigationManager.NavigateTo("login");
+                }
+                catch (HttpRequestException exception) when (exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                {
+                    await SpeedHistoryService.ClearAsync();
+                    NavigationManager.NavigateTo("login");
+                }
+                catch (HttpRequestException)
+                {
+                    if (MainData is not null)
+                    {
+                        MainData.LostConnection = true;
+                    }
+
+                    await ShowLostConnectionDialogAsync();
+                }
             });
         }
 
@@ -162,6 +184,21 @@ namespace Lantean.QBTMud.Components
             {
                 _registerMagnetHandlerInProgress = false;
             }
+        }
+
+        private async Task ShowLostConnectionDialogAsync()
+        {
+            var options = new DialogOptions
+            {
+                CloseOnEscapeKey = false,
+                BackdropClick = false,
+                NoHeader = true,
+                FullWidth = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                BackgroundClass = "background-blur background-blur-strong"
+            };
+
+            await DialogService.ShowAsync<LostConnectionDialog>(title: null, options);
         }
 
         protected async Task StartAllTorrents()

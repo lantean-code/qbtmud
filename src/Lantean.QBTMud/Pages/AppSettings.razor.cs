@@ -106,8 +106,25 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task OnNotificationsEnabledCorrected()
         {
-            _savedSettings.NotificationsEnabled = false;
             Settings.NotificationsEnabled = false;
+
+            if (!_savedSettings.NotificationsEnabled)
+            {
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            try
+            {
+                var correctedSettings = _savedSettings.Clone();
+                correctedSettings.NotificationsEnabled = false;
+                _savedSettings = await AppSettingsService.SaveSettingsAsync(correctedSettings);
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or HttpRequestException or JsonException or JSException)
+            {
+                Debug.WriteLine(exception);
+            }
+
             await InvokeAsync(StateHasChanged);
         }
 

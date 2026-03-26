@@ -3,6 +3,7 @@ using Bunit;
 using Lantean.QBitTorrentClient;
 using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
+using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Configuration;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor;
+using System.Net;
 using System.Text.Json;
 using CategoryModel = Lantean.QBTMud.Models.Category;
 using MainDataModel = Lantean.QBTMud.Models.MainData;
@@ -503,6 +505,84 @@ namespace Lantean.QBTMud.Test.Components
 
             apiClientMock.Verify(c => c.Logout(), Times.Once);
             speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Once);
+            TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/login");
+        }
+
+        [Fact]
+        public async Task GIVEN_Logout_WHEN_ConnectionLost_THEN_ShowsLostConnectionDialogWithoutNavigatingToLogin()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var speedHistoryMock = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
+            var mainData = CreateMainData();
+
+            apiClientMock
+                .Setup(c => c.Logout())
+                .ThrowsAsync(new HttpRequestException("Unavailable", null, HttpStatusCode.BadGateway));
+            dialogWorkflowMock
+                .Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
+                .Returns<string, string, Func<Task>>((_, _, callback) => callback());
+            dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(Mock.Of<IDialogReference>(MockBehavior.Loose));
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+                parameters.AddCascadingValue(mainData);
+            });
+
+            var logoutItem = FindMenuItem(target, "Logout");
+            await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
+
+            mainData.LostConnection.Should().BeTrue();
+            apiClientMock.Verify(c => c.Logout(), Times.Once);
+            speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Never);
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
+            TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().NotEndWith("/login");
+        }
+
+        [Fact]
+        public async Task GIVEN_Logout_WHEN_AlreadyUnauthorized_THEN_NavigatesToLoginWithoutLostConnectionDialog()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var speedHistoryMock = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
+            var mainData = CreateMainData();
+
+            apiClientMock
+                .Setup(c => c.Logout())
+                .ThrowsAsync(new HttpRequestException("Unauthorized", null, HttpStatusCode.Unauthorized));
+            speedHistoryMock
+                .Setup(s => s.ClearAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            dialogWorkflowMock
+                .Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
+                .Returns<string, string, Func<Task>>((_, _, callback) => callback());
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+                parameters.AddCascadingValue(mainData);
+            });
+
+            var logoutItem = FindMenuItem(target, "Logout");
+            await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
+
+            mainData.LostConnection.Should().BeFalse();
+            apiClientMock.Verify(c => c.Logout(), Times.Once);
+            speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Once);
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Never);
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/login");
         }
 

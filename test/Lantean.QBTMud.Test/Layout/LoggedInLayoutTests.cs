@@ -972,6 +972,32 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_StartupAuthCheckFailsWithConnectionError_WHEN_Initialized_THEN_ShowsLostConnectionWithoutNavigatingToLogin()
+        {
+            DisposeDefaultTarget();
+            await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, "magnet:?xt=urn:btih:ABC", Xunit.TestContext.Current.CancellationToken);
+            _dialogService.ClearInvocations();
+
+            Mock.Get(_apiClient)
+                .Setup(c => c.CheckAuthState())
+                .ThrowsAsync(new HttpRequestException("Unavailable", null, HttpStatusCode.BadGateway));
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.FindComponent<MudProgressLinear>().Should().NotBeNull();
+            target.WaitForAssertion(() =>
+            {
+                _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()), Times.Once);
+            });
+            _navigationManager.LastNavigationUri.Should().BeNull();
+
+            var pending = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
+            pending.Should().Be("magnet:?xt=urn:btih:ABC");
+        }
+
+        [Fact]
         public void GIVEN_DataManagerReturnsNullMainData_WHEN_RenderedWithProbe_THEN_ProvidesEmptyTorrentList()
         {
             DisposeDefaultTarget();
