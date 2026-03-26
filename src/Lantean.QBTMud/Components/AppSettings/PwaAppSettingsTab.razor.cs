@@ -2,7 +2,6 @@ using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using System.Diagnostics;
@@ -11,9 +10,6 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
 {
     public partial class PwaAppSettingsTab
     {
-        private const string _pwaInstallTestSnackbarClass = "pwa-install-snackbar";
-        private const string _pwaInstallTestSnackbarKey = "pwa-install-snackbar-test";
-
         [Parameter]
         public bool IsActive { get; set; }
 
@@ -22,6 +18,9 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
 
         [Inject]
         protected IPwaInstallPromptService PwaInstallPromptService { get; set; } = default!;
+
+        [Inject]
+        protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
         [Inject]
         protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
@@ -131,29 +130,12 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
             }
         }
 
-        protected void ShowInstallSnackbarTest()
+        protected Task ShowInstallPromptTestAsync()
         {
 #if DEBUG
-            var componentParameters = new Dictionary<string, object>
-            {
-                [nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)] = true,
-                [nameof(PwaInstallPromptSnackbarContent.ShowIosInstructions)] = false,
-                [nameof(PwaInstallPromptSnackbarContent.OnInstallClicked)] = EventCallback.Factory.Create<MouseEventArgs>(this, RequestPwaInstallAsync),
-                [nameof(PwaInstallPromptSnackbarContent.OnDismissClicked)] = EventCallback.Factory.Create<MouseEventArgs>(this, DismissInstallSnackbarTestAsync)
-            };
-
-            SnackbarWorkflow.ShowComponent<PwaInstallPromptSnackbarContent>(
-                componentParameters,
-                Severity.Normal,
-                options =>
-                {
-                    options.RequireInteraction = true;
-                    options.ShowCloseIcon = false;
-                    options.HideIcon = true;
-                    options.SnackbarVariant = Variant.Outlined;
-                    options.SnackbarTypeClass = _pwaInstallTestSnackbarClass;
-                },
-                _pwaInstallTestSnackbarKey);
+            return ShowInstallPromptTestCoreAsync();
+#else
+            return Task.CompletedTask;
 #endif
         }
 
@@ -193,15 +175,33 @@ namespace Lantean.QBTMud.Components.AppSettingsTabs
                 : TranslatePwa("Non-iOS browser");
         }
 
-        private Task DismissInstallSnackbarTestAsync()
-        {
-            SnackbarWorkflow.Hide(_pwaInstallTestSnackbarKey);
-            return Task.CompletedTask;
-        }
-
         private string TranslatePwa(string source, params object[] arguments)
         {
             return LanguageLocalizer.Translate("AppPwaInstallPrompt", source, arguments);
         }
+
+#if DEBUG
+
+        private async Task ShowInstallPromptTestCoreAsync()
+        {
+            try
+            {
+                await SettingsStorage.RemoveItemAsync(PwaInstallPromptStorageKeys.Dismissed);
+                PwaState = await PwaInstallPromptService.ShowInstallPromptTestAsync();
+                HasLoadedPwaStatus = true;
+            }
+            catch (JSException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Unable to request app install."), Severity.Warning);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.WriteLine(exception);
+                SnackbarWorkflow.ShowTransientMessage(TranslatePwa("Unable to request app install."), Severity.Warning);
+            }
+        }
+
+#endif
     }
 }

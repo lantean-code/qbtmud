@@ -36,5 +36,12 @@ namespace Lantean.QBTMud.Services
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The browser prompt outcome.</returns>
         Task<string> RequestInstallPromptAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Enables a debug install prompt state so the real prompt workflow can be exercised without a browser-provided prompt.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The resulting install prompt state.</returns>
+        Task<PwaInstallPromptState> ShowInstallPromptTestAsync(CancellationToken cancellationToken = default);
     }
 }

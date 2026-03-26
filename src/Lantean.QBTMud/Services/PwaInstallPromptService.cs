@@ -50,5 +50,12 @@ namespace Lantean.QBTMud.Services
             var outcome = await _jSRuntime.InvokeAsync<string>("qbt.requestInstallPrompt", cancellationToken, Array.Empty<object?>());
             return outcome ?? "unknown";
         }
+
+        /// <inheritdoc />
+        public async Task<PwaInstallPromptState> ShowInstallPromptTestAsync(CancellationToken cancellationToken = default)
+        {
+            var state = await _jSRuntime.InvokeAsync<PwaInstallPromptState>("qbt.showInstallPromptTest", cancellationToken, Array.Empty<object?>());
+            return state ?? new PwaInstallPromptState();
+        }
     }
 }

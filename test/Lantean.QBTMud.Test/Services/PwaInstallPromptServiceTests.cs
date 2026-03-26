@@ -26,7 +26,8 @@ namespace Lantean.QBTMud.Test.Services
                 {
                     IsInstalled = true,
                     CanPrompt = true,
-                    IsIos = true
+                    IsIos = true,
+                    IsPromptInProgress = true
                 });
 
             var result = await _target.GetInstallPromptStateAsync(Xunit.TestContext.Current.CancellationToken);
@@ -34,6 +35,7 @@ namespace Lantean.QBTMud.Test.Services
             result.IsInstalled.Should().BeTrue();
             result.CanPrompt.Should().BeTrue();
             result.IsIos.Should().BeTrue();
+            result.IsPromptInProgress.Should().BeTrue();
         }
 
         [Fact]
@@ -49,6 +51,7 @@ namespace Lantean.QBTMud.Test.Services
             result.IsInstalled.Should().BeFalse();
             result.CanPrompt.Should().BeFalse();
             result.IsIos.Should().BeFalse();
+            result.IsPromptInProgress.Should().BeFalse();
         }
 
         [Fact]
@@ -117,6 +120,43 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.RequestInstallPromptAsync(Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be("unknown");
+        }
+
+        [Fact]
+        public async Task GIVEN_TestInstallPromptStateReturned_WHEN_ShowInstallPromptTestAsync_THEN_ShouldReturnState()
+        {
+            Mock.Get(_jSRuntime)
+                .Setup(runtime => runtime.InvokeAsync<PwaInstallPromptState>("qbt.showInstallPromptTest", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync(new PwaInstallPromptState
+                {
+                    IsInstalled = false,
+                    CanPrompt = true,
+                    IsIos = false,
+                    IsPromptInProgress = false
+                });
+
+            var result = await _target.ShowInstallPromptTestAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.IsInstalled.Should().BeFalse();
+            result.CanPrompt.Should().BeTrue();
+            result.IsIos.Should().BeFalse();
+            result.IsPromptInProgress.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_TestInstallPromptStateIsNull_WHEN_ShowInstallPromptTestAsync_THEN_ShouldReturnDefaultState()
+        {
+            Mock.Get(_jSRuntime)
+                .Setup(runtime => runtime.InvokeAsync<PwaInstallPromptState>("qbt.showInstallPromptTest", It.IsAny<CancellationToken>(), It.IsAny<object?[]>()))
+                .ReturnsAsync((PwaInstallPromptState)null!);
+
+            var result = await _target.ShowInstallPromptTestAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Should().NotBeNull();
+            result.IsInstalled.Should().BeFalse();
+            result.CanPrompt.Should().BeFalse();
+            result.IsIos.Should().BeFalse();
+            result.IsPromptInProgress.Should().BeFalse();
         }
     }
 }

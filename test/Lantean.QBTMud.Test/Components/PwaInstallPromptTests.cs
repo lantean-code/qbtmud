@@ -4,7 +4,6 @@ using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Moq;
@@ -15,38 +14,15 @@ namespace Lantean.QBTMud.Test.Components
     public sealed class PwaInstallPromptTests : RazorComponentTestBase<PwaInstallPrompt>
     {
         private const string _dismissedStorageKey = "PwaInstallPrompt.Dismissed.v1";
-        private const string _promptSnackbarKey = "pwa-install-prompt";
-        private const string _promptSnackbarClass = "pwa-install-snackbar";
 
-        private readonly Mock<ISnackbar> _snackbarMock;
         private readonly Mock<IPwaInstallPromptService> _pwaInstallPromptServiceMock;
-        private readonly List<SnackbarAddCall> _snackbarAddCalls;
-        private readonly List<string> _removedSnackbarKeys;
+        private IRenderedComponent<MudPopoverProvider>? _popoverProvider;
+
+        private IRenderedComponent<MudPopoverProvider> PopoverProvider =>
+            _popoverProvider ?? throw new InvalidOperationException("MudPopoverProvider has not been rendered.");
 
         public PwaInstallPromptTests()
         {
-            _snackbarAddCalls = new List<SnackbarAddCall>();
-            _removedSnackbarKeys = new List<string>();
-
-            _snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Strict);
-            _snackbarMock
-                .Setup(snackbar => snackbar.Add<PwaInstallPromptSnackbarContent>(It.IsAny<Dictionary<string, object>?>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>?>(), It.IsAny<string?>()))
-                .Callback((Dictionary<string, object>? componentParameters, Severity severity, Action<SnackbarOptions>? configure, string? key) =>
-                {
-                    _snackbarAddCalls.Add(new SnackbarAddCall(componentParameters, severity, configure, key));
-                })
-                .Returns((Snackbar?)null);
-            _snackbarMock
-                .Setup(snackbar => snackbar.RemoveByKey(It.IsAny<string>()))
-                .Callback((string key) =>
-                {
-                    _removedSnackbarKeys.Add(key);
-                });
-            _snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(Array.Empty<Snackbar>());
-            _snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
-            _snackbarMock.SetupAdd(snackbar => snackbar.OnSnackbarsUpdated += It.IsAny<Action>());
-            _snackbarMock.SetupRemove(snackbar => snackbar.OnSnackbarsUpdated -= It.IsAny<Action>());
-
             _pwaInstallPromptServiceMock = TestContext.AddSingletonMock<IPwaInstallPromptService>();
             _pwaInstallPromptServiceMock
                 .Setup(service => service.SubscribeInstallPromptStateAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
@@ -63,7 +39,7 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public async Task GIVEN_StateCanPrompt_WHEN_OnInstallPromptStateChanged_THEN_ShowsCenteredInstallSnackbar()
+        public async Task GIVEN_StateCanPrompt_WHEN_OnInstallPromptStateChanged_THEN_ShowsConfiguredInstallPopover()
         {
             var target = RenderTarget();
 
@@ -71,29 +47,24 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptPopover(target);
 
-            _snackbarAddCalls.Should().ContainSingle();
-            var call = _snackbarAddCalls.Single();
-            var componentParameters = GetComponentParameters(call);
-            var options = BuildSnackbarOptions(call);
+            var popover = target.FindComponent<MudPopover>();
+            var content = PopoverProvider.FindComponent<PwaInstallPromptSnackbarContent>();
 
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)].Should().Be(true);
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.ShowIosInstructions)].Should().Be(false);
-            call.Severity.Should().Be(Severity.Normal);
-            call.Key.Should().Be(_promptSnackbarKey);
-
-            options.RequireInteraction.Should().BeTrue();
-            options.ShowCloseIcon.Should().BeFalse();
-            options.HideIcon.Should().BeTrue();
-            options.SnackbarVariant.Should().Be(Variant.Outlined);
-            options.Action.Should().BeNull();
-            options.OnClick.Should().BeNull();
-            options.CloseButtonClickFunc.Should().BeNull();
-            options.SnackbarTypeClass.Should().Be(_promptSnackbarClass);
+            popover.Instance.Open.Should().BeTrue();
+            popover.Instance.Fixed.Should().BeTrue();
+            popover.Instance.Elevation.Should().Be(12);
+            popover.Instance.OverflowBehavior.Should().Be(OverflowBehavior.FlipNever);
+            popover.Instance.TransformOrigin.Should().Be(Origin.TopCenter);
+            popover.Instance.AnchorOrigin.Should().Be(Origin.BottomCenter);
+            popover.Instance.Class.Should().Be("pwa-install-prompt-popover");
+            content.Instance.CanPromptInstall.Should().BeTrue();
+            content.Instance.ShowIosInstructions.Should().BeFalse();
         }
 
         [Fact]
-        public async Task GIVEN_StateIsIosWithoutPrompt_WHEN_OnInstallPromptStateChanged_THEN_ShowsInstructionSnackbarWithoutInstallAction()
+        public async Task GIVEN_StateIsIosWithoutPrompt_WHEN_OnInstallPromptStateChanged_THEN_ShowsPopoverWithoutInstallAction()
         {
             var target = RenderTarget();
 
@@ -101,35 +72,27 @@ namespace Lantean.QBTMud.Test.Components
             {
                 IsIos = true
             }));
+            WaitForPromptPopover(target);
 
-            _snackbarAddCalls.Should().ContainSingle();
-            var call = _snackbarAddCalls.Single();
-            var componentParameters = GetComponentParameters(call);
-            var options = BuildSnackbarOptions(call);
+            var content = PopoverProvider.FindComponent<PwaInstallPromptSnackbarContent>();
 
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.CanPromptInstall)].Should().Be(false);
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.ShowIosInstructions)].Should().Be(true);
-            call.Severity.Should().Be(Severity.Normal);
-            options.SnackbarVariant.Should().Be(Variant.Outlined);
-            options.Action.Should().BeNull();
-            options.OnClick.Should().BeNull();
-            options.CloseButtonClickFunc.Should().BeNull();
-            options.SnackbarTypeClass.Should().Be(_promptSnackbarClass);
+            content.Instance.CanPromptInstall.Should().BeFalse();
+            content.Instance.ShowIosInstructions.Should().BeTrue();
         }
 
         [Fact]
-        public async Task GIVEN_StateChangeReceivesNull_WHEN_OnInstallPromptStateChanged_THEN_RemovesPromptSnackbar()
+        public async Task GIVEN_StateChangeReceivesNull_WHEN_OnInstallPromptStateChanged_THEN_ClosesPopover()
         {
             var target = RenderTarget();
 
             await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(null!));
 
-            _snackbarAddCalls.Should().BeEmpty();
-            _removedSnackbarKeys.Should().Contain(_promptSnackbarKey);
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeFalse();
+            PopoverProvider.FindComponents<PwaInstallPromptSnackbarContent>().Should().BeEmpty();
         }
 
         [Fact]
-        public async Task GIVEN_SnackbarAlreadyVisibleInSameMode_WHEN_StateUpdates_THEN_DoesNotDuplicateSnackbar()
+        public async Task GIVEN_PopoverAlreadyVisibleInSameMode_WHEN_StateUpdates_THEN_StaysOpenWithSingleContentInstance()
         {
             var target = RenderTarget();
 
@@ -137,16 +100,18 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptPopover(target);
             await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
 
-            _snackbarAddCalls.Should().ContainSingle();
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeTrue();
+            PopoverProvider.FindComponents<PwaInstallPromptSnackbarContent>().Should().ContainSingle();
         }
 
         [Fact]
-        public async Task GIVEN_SnackbarVisible_WHEN_StateChangesMode_THEN_RecreatesSnackbar()
+        public async Task GIVEN_PopoverVisible_WHEN_StateChangesMode_THEN_UpdatesPopoverContent()
         {
             var target = RenderTarget();
 
@@ -154,12 +119,63 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptPopover(target);
             await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 IsIos = true
             }));
 
-            _snackbarAddCalls.Count.Should().Be(2);
+            target.WaitForAssertion(() =>
+            {
+                var content = PopoverProvider.FindComponent<PwaInstallPromptSnackbarContent>();
+                content.Instance.CanPromptInstall.Should().BeFalse();
+                content.Instance.ShowIosInstructions.Should().BeTrue();
+            }, timeout: TimeSpan.FromSeconds(2));
+        }
+
+        [Fact]
+        public async Task GIVEN_InitialPromptableStateClearsBeforeDelay_WHEN_OnInstallPromptStateChanged_THEN_DoesNotOpenPopover()
+        {
+            var target = RenderTarget();
+
+            var firstStateChangeTask = target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            }));
+
+            await Task.Yield();
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState()));
+            await firstStateChangeTask;
+
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeFalse();
+            PopoverProvider.FindComponents<PwaInstallPromptSnackbarContent>().Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_ExternalInstallPromptRequestInProgress_WHEN_StateChanges_THEN_DoesNotHidePopoverUntilBusyStateClears()
+        {
+            var target = RenderTarget();
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            }));
+            WaitForPromptPopover(target);
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                IsPromptInProgress = true
+            }));
+
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeTrue();
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            }));
+
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeTrue();
+            PopoverProvider.FindComponents<PwaInstallPromptSnackbarContent>().Should().ContainSingle();
         }
 
         [Fact]
@@ -175,21 +191,21 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptPopover(target);
 
-            var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
-            await target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+            var content = PopoverProvider.FindComponent<PwaInstallPromptSnackbarContent>();
+            await target.InvokeAsync(() => content.Instance.OnInstallClicked.InvokeAsync(new MouseEventArgs()));
             await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
 
             _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
-            _snackbarAddCalls.Should().ContainSingle();
-            _removedSnackbarKeys.Should().Contain(_promptSnackbarKey);
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeFalse();
         }
 
         [Fact]
-        public async Task GIVEN_InstallActionClicked_WHEN_PromptDismissedAndStateStillPromptable_THEN_KeepsPromptVisibleWithoutRecreatingSnackbar()
+        public async Task GIVEN_InstallActionClicked_WHEN_PromptDismissedAndStateStillPromptable_THEN_KeepsPopoverVisibleWithoutClosing()
         {
             var target = RenderTarget();
             _pwaInstallPromptServiceMock.ClearInvocations();
@@ -207,15 +223,15 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
-            var removeCountBeforeClick = _removedSnackbarKeys.Count;
+            WaitForPromptPopover(target);
 
-            var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
-            await target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+            var content = PopoverProvider.FindComponent<PwaInstallPromptSnackbarContent>();
+            await target.InvokeAsync(() => content.Instance.OnInstallClicked.InvokeAsync(new MouseEventArgs()));
 
             _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
             _pwaInstallPromptServiceMock.Verify(service => service.GetInstallPromptStateAsync(It.IsAny<CancellationToken>()), Times.Once);
-            _snackbarAddCalls.Should().ContainSingle();
-            _removedSnackbarKeys.Count.Should().Be(removeCountBeforeClick);
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeTrue();
+            PopoverProvider.FindComponents<PwaInstallPromptSnackbarContent>().Should().ContainSingle();
         }
 
         [Fact]
@@ -232,15 +248,16 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptPopover(target);
 
-            var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
-            var firstClickTask = target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+            var content = PopoverProvider.FindComponent<PwaInstallPromptSnackbarContent>();
+            var firstClickTask = target.InvokeAsync(() => content.Instance.OnInstallClicked.InvokeAsync(new MouseEventArgs()));
             target.WaitForAssertion(() =>
             {
                 _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
             });
 
-            var secondClickTask = target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+            var secondClickTask = target.InvokeAsync(() => content.Instance.OnInstallClicked.InvokeAsync(new MouseEventArgs()));
             target.WaitForAssertion(() =>
             {
                 _pwaInstallPromptServiceMock.Verify(service => service.RequestInstallPromptAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -251,7 +268,7 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public async Task GIVEN_InstallRequestInProgress_WHEN_StateChanges_THEN_DoesNotHideOrRecreateSnackbarUntilRequestCompletes()
+        public async Task GIVEN_InstallRequestInProgress_WHEN_StateChanges_THEN_DoesNotHidePopoverUntilRequestCompletes()
         {
             var requestInstallPromptTaskSource = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
             var target = RenderTarget();
@@ -270,10 +287,10 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
-            var removeCountBeforeInstall = _removedSnackbarKeys.Count;
+            WaitForPromptPopover(target);
 
-            var onInstallClicked = GetOnInstallClicked(_snackbarAddCalls.Single());
-            var clickTask = target.InvokeAsync(() => onInstallClicked.InvokeAsync(new MouseEventArgs()));
+            var content = PopoverProvider.FindComponent<PwaInstallPromptSnackbarContent>();
+            var clickTask = target.InvokeAsync(() => content.Instance.OnInstallClicked.InvokeAsync(new MouseEventArgs()));
 
             target.WaitForAssertion(() =>
             {
@@ -282,14 +299,12 @@ namespace Lantean.QBTMud.Test.Components
 
             await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState()));
 
-            _snackbarAddCalls.Should().ContainSingle();
-            _removedSnackbarKeys.Count.Should().Be(removeCountBeforeInstall);
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeTrue();
 
             requestInstallPromptTaskSource.SetResult("dismissed");
             await clickTask;
 
-            _snackbarAddCalls.Should().ContainSingle();
-            _removedSnackbarKeys.Count.Should().Be(removeCountBeforeInstall);
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeTrue();
         }
 
         [Fact]
@@ -301,21 +316,22 @@ namespace Lantean.QBTMud.Test.Components
             {
                 CanPrompt = true
             }));
+            WaitForPromptPopover(target);
 
-            var onDismissClicked = GetOnDismissClicked(_snackbarAddCalls.Single());
-            await target.InvokeAsync(() => onDismissClicked.InvokeAsync(new MouseEventArgs()));
+            var content = PopoverProvider.FindComponent<PwaInstallPromptSnackbarContent>();
+            await target.InvokeAsync(() => content.Instance.OnDismissClicked.InvokeAsync(new MouseEventArgs()));
             await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
             {
                 CanPrompt = true
             }));
 
-            _snackbarAddCalls.Should().ContainSingle();
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeFalse();
             TestContext.LocalStorage.Snapshot().Should().ContainKey(_dismissedStorageKey);
             TestContext.LocalStorage.Snapshot()[_dismissedStorageKey].Should().Be(true);
         }
 
         [Fact]
-        public async Task GIVEN_DismissalPersistedBeforeRender_WHEN_ComponentRenders_THEN_SubscriptionIsSkipped()
+        public async Task GIVEN_DismissalPersistedBeforeRender_WHEN_ComponentRenders_THEN_SubscriptionStillStarts()
         {
             await TestContext.LocalStorage.SetItemAsync(_dismissedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
             _pwaInstallPromptServiceMock.ClearInvocations();
@@ -324,7 +340,47 @@ namespace Lantean.QBTMud.Test.Components
 
             _pwaInstallPromptServiceMock.Verify(
                 service => service.SubscribeInstallPromptStateAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()),
-                Times.Never);
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_DismissalPersistedBeforeRender_WHEN_DismissalClearedAndStateChanges_THEN_PopoverCanShowAgain()
+        {
+            await TestContext.LocalStorage.SetItemAsync(_dismissedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
+            var target = RenderTarget();
+
+            await TestContext.LocalStorage.RemoveItemAsync(_dismissedStorageKey, Xunit.TestContext.Current.CancellationToken);
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            }));
+
+            WaitForPromptPopover(target);
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_PromptDismissedForeverInCurrentSession_WHEN_DismissalClearedAndStateChanges_THEN_PopoverCanShowAgain()
+        {
+            var target = RenderTarget();
+
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            }));
+            WaitForPromptPopover(target);
+
+            var content = PopoverProvider.FindComponent<PwaInstallPromptSnackbarContent>();
+            await target.InvokeAsync(() => content.Instance.OnDismissClicked.InvokeAsync(new MouseEventArgs()));
+
+            await TestContext.LocalStorage.RemoveItemAsync(_dismissedStorageKey, Xunit.TestContext.Current.CancellationToken);
+            await target.InvokeAsync(() => target.Instance.OnInstallPromptStateChanged(new PwaInstallPromptState
+            {
+                CanPrompt = true
+            }));
+
+            WaitForPromptPopover(target);
+            target.FindComponent<MudPopover>().Instance.Open.Should().BeTrue();
         }
 
         [Fact]
@@ -369,7 +425,7 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public async Task GIVEN_NoSubscription_WHEN_Disposed_THEN_UnsubscribeNotInvoked()
+        public async Task GIVEN_DismissalPersistedBeforeRender_WHEN_Disposed_THEN_UnsubscribeStillInvoked()
         {
             await TestContext.LocalStorage.SetItemAsync(_dismissedStorageKey, true, Xunit.TestContext.Current.CancellationToken);
             _pwaInstallPromptServiceMock.ClearInvocations();
@@ -378,42 +434,23 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => target.Instance.DisposeAsync().AsTask());
 
             _pwaInstallPromptServiceMock.Verify(
-                service => service.UnsubscribeInstallPromptStateAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()),
-                Times.Never);
+                service => service.UnsubscribeInstallPromptStateAsync(17, It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         private IRenderedComponent<PwaInstallPrompt> RenderTarget()
         {
+            _popoverProvider ??= TestContext.Render<MudPopoverProvider>();
             return TestContext.Render<PwaInstallPrompt>();
         }
 
-        private static SnackbarOptions BuildSnackbarOptions(SnackbarAddCall call)
+        private void WaitForPromptPopover(IRenderedComponent<PwaInstallPrompt> target)
         {
-            var options = new SnackbarOptions(call.Severity, new SnackbarConfiguration());
-            call.Configure?.Invoke(options);
-            return options;
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<MudPopover>().Instance.Open.Should().BeTrue();
+                PopoverProvider.FindComponents<PwaInstallPromptSnackbarContent>().Should().ContainSingle();
+            }, timeout: TimeSpan.FromSeconds(2));
         }
-
-        private static Dictionary<string, object> GetComponentParameters(SnackbarAddCall call)
-        {
-            call.ComponentParameters.Should().NotBeNull();
-            return call.ComponentParameters!;
-        }
-
-        private static EventCallback<MouseEventArgs> GetOnInstallClicked(SnackbarAddCall call)
-        {
-            var componentParameters = GetComponentParameters(call);
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.OnInstallClicked)].Should().BeOfType<EventCallback<MouseEventArgs>>();
-            return (EventCallback<MouseEventArgs>)componentParameters[nameof(PwaInstallPromptSnackbarContent.OnInstallClicked)];
-        }
-
-        private static EventCallback<MouseEventArgs> GetOnDismissClicked(SnackbarAddCall call)
-        {
-            var componentParameters = GetComponentParameters(call);
-            componentParameters[nameof(PwaInstallPromptSnackbarContent.OnDismissClicked)].Should().BeOfType<EventCallback<MouseEventArgs>>();
-            return (EventCallback<MouseEventArgs>)componentParameters[nameof(PwaInstallPromptSnackbarContent.OnDismissClicked)];
-        }
-
-        private sealed record SnackbarAddCall(Dictionary<string, object>? ComponentParameters, Severity Severity, Action<SnackbarOptions>? Configure, string? Key);
     }
 }
