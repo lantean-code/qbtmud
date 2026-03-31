@@ -1,18 +1,20 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
+using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components.Forms;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using System.Net;
 using MudCategory = Lantean.QBTMud.Models.Category;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
-using QbtCategory = Lantean.QBitTorrentClient.Models.Category;
-using QbtTorrent = Lantean.QBitTorrentClient.Models.Torrent;
+using QbtCategory = QBittorrent.ApiClient.Models.Category;
+using QbtTorrent = QBittorrent.ApiClient.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -54,7 +56,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("New Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddCategory("Name", "SavePath"))
+                .Setup(a => a.AddCategoryAsync("Name", "SavePath"))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -126,12 +128,12 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(1, 1));
 
             await _target.InvokeAddTorrentFileDialog();
 
-            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.Is<AddTorrentParams>(parameters => MatchesAddTorrentFileParameters(parameters, streamOne, streamTwo))),
+            Mock.Get(_apiClient).Verify(a => a.AddTorrentAsync(It.Is<AddTorrentParams>(parameters => MatchesAddTorrentFileParameters(parameters, streamOne, streamTwo))),
                 Times.Once);
 
             streamOne.DisposeAsyncCalled.Should().BeTrue();
@@ -163,7 +165,7 @@ namespace Lantean.QBTMud.Test.Services
             await _target.InvokeAddTorrentFileDialog();
 
             stream.DisposeAsyncCalled.Should().BeTrue();
-            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()), Times.Never);
             VerifySnackbar("Unable to read \"Second.torrent\": fail", Severity.Error);
             fileOne.VerifyAll();
             fileTwo.VerifyAll();
@@ -189,8 +191,8 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
-                .ThrowsAsync(new HttpRequestException());
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             await _target.InvokeAddTorrentFileDialog();
 
@@ -225,12 +227,12 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(0, 0));
 
             await _target.InvokeAddTorrentFileDialog();
 
-            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.Is<AddTorrentParams>(parameters => MatchesDuplicateNameAddTorrentFileParameters(parameters))),
+            Mock.Get(_apiClient).Verify(a => a.AddTorrentAsync(It.Is<AddTorrentParams>(parameters => MatchesDuplicateNameAddTorrentFileParameters(parameters))),
                 Times.Once);
             streamOne.DisposeAsyncCalled.Should().BeTrue();
             streamTwo.DisposeAsyncCalled.Should().BeTrue();
@@ -252,12 +254,12 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(1, 0, 0, null));
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.Is<AddTorrentParams>(parameters => parameters.Cookie == "Cookie")), Times.Once);
+            Mock.Get(_apiClient).Verify(a => a.AddTorrentAsync(It.Is<AddTorrentParams>(parameters => parameters.Cookie == "Cookie")), Times.Once);
         }
 
         [Fact]
@@ -270,7 +272,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeAddTorrentFileDialog();
 
-            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()), Times.Never);
             VerifyNoSnackbar();
         }
 
@@ -284,7 +286,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(0, 0));
 
             await _target.InvokeAddTorrentFileDialog();
@@ -314,7 +316,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(1, 0, 0, new[] { "Hash" }));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -324,7 +326,7 @@ namespace Lantean.QBTMud.Test.Services
                     It.Is<DialogParameters>(parameters => HasAddTorrentLinkDialogUrlUnsetParameter(parameters)),
                     DialogWorkflow.FormDialogOptions),
                 Times.Once);
-            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.Is<AddTorrentParams>(parameters => MatchesAddTorrentLinkParameters(parameters))),
+            Mock.Get(_apiClient).Verify(a => a.AddTorrentAsync(It.Is<AddTorrentParams>(parameters => MatchesAddTorrentLinkParameters(parameters))),
                 Times.Once);
 
             VerifySnackbar("Added 1 torrent.", Severity.Success);
@@ -340,7 +342,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeAddTorrentLinkDialog();
 
-            Mock.Get(_apiClient).Verify(a => a.AddTorrent(It.IsAny<AddTorrentParams>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()), Times.Never);
             VerifyNoSnackbar();
         }
 
@@ -354,7 +356,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(0, 1, 0, new[] { "Hash" }));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -372,8 +374,8 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
-                .ThrowsAsync(new HttpRequestException());
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
 
             await _target.InvokeAddTorrentLinkDialog();
 
@@ -390,7 +392,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(2, 2, 1, null));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -408,7 +410,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(0, 0, 2, null));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -435,7 +437,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(1, 0, 0, null));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -462,7 +464,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(2, 2, 1, null));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -489,7 +491,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(0, 1, 0, null));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -516,7 +518,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(0, 2));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -538,7 +540,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(1, 0, 0, null));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -565,7 +567,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(1, 0, 0, null));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -592,7 +594,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<AddTorrentLinkDialog>("Download from URLs", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.AddTorrent(It.IsAny<AddTorrentParams>()))
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
                 .ReturnsAsync(new AddTorrentResult(2, 2, 1, null));
 
             await _target.InvokeAddTorrentLinkDialog();
@@ -604,7 +606,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DeleteWithoutConfirmation_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldDelete()
         {
             Mock.Get(_apiClient)
-                .Setup(a => a.DeleteTorrents(null, false, It.Is<string[]>(hashes => hashes.Length == 1 && hashes[0] == "Hash")))
+                .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), false, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -618,7 +620,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DeleteWithoutConfirmationAndDeleteFilesPreferenceTrue_WHEN_InvokeDeleteTorrentDialog_THEN_ShouldDeleteFiles()
         {
             Mock.Get(_apiClient)
-                .Setup(a => a.DeleteTorrents(null, true, It.Is<string[]>(hashes => hashes.Length == 1 && hashes[0] == "Hash")))
+                .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), true, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -644,8 +646,8 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
-                .ReturnsAsync(new List<QbtTorrent> { new() { Name = "Name" } });
+                .Setup(a => a.GetTorrentListAsync(null, null, null, null, null, null, null, null, null, null, TorrentSelector.FromHash("Hash"), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult<IReadOnlyList<QbtTorrent>>.Success(new List<QbtTorrent> { new() { Name = "Name" } }));
 
             var result = await _target.InvokeDeleteTorrentDialog(true, "Hash");
 
@@ -660,10 +662,10 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
-                .ReturnsAsync(new List<QbtTorrent> { new() { Name = "Name" } });
+                .Setup(a => a.GetTorrentListAsync(null, null, null, null, null, null, null, null, null, null, TorrentSelector.FromHash("Hash"), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult<IReadOnlyList<QbtTorrent>>.Success(new List<QbtTorrent> { new() { Name = "Name" } }));
             Mock.Get(_apiClient)
-                .Setup(a => a.DeleteTorrents(null, true, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
+                .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), true, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -691,10 +693,10 @@ namespace Lantean.QBTMud.Test.Services
                 })
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
+                .Setup(a => a.GetTorrentListAsync(null, null, null, null, null, null, null, null, null, null, TorrentSelector.FromHash("Hash"), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<QbtTorrent> { new() { Name = "Name" } });
             Mock.Get(_apiClient)
-                .Setup(a => a.SetApplicationPreferences(It.Is<UpdatePreferences>(preferences => preferences.DeleteTorrentContentFiles ?? false)))
+                .Setup(a => a.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences => preferences.DeleteTorrentContentFiles ?? false)))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -716,10 +718,10 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
-                .ThrowsAsync(new HttpRequestException("Message"));
+                .Setup(a => a.GetTorrentListAsync(null, null, null, null, null, null, null, null, null, null, TorrentSelector.FromHash("Hash"), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Message", HttpStatusCode.InternalServerError);
             Mock.Get(_apiClient)
-                .Setup(a => a.DeleteTorrents(null, false, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
+                .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), false, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -742,10 +744,10 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.GetTorrentList(null, null, null, null, null, null, null, null, null, null, "Hash"))
+                .Setup(a => a.GetTorrentListAsync(null, null, null, null, null, null, null, null, null, null, TorrentSelector.FromHash("Hash"), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<QbtTorrent>());
             Mock.Get(_apiClient)
-                .Setup(a => a.DeleteTorrents(null, false, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
+                .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), false, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -768,7 +770,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.DeleteTorrents(null, false, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "Other" }))))
+                .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHashes("Hash", "Other"), false, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -788,7 +790,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             await _target.ForceRecheckAsync(Array.Empty<string>(), false);
 
-            Mock.Get(_apiClient).Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.RecheckTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -796,14 +798,14 @@ namespace Lantean.QBTMud.Test.Services
         {
             await _target.ForceRecheckAsync(null!, false);
 
-            Mock.Get(_apiClient).Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.RecheckTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_RecheckWithoutConfirmation_WHEN_ForceRecheckAsync_THEN_ShouldCallApi()
         {
             Mock.Get(_apiClient)
-                .Setup(a => a.RecheckTorrents(null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
+                .Setup(a => a.RecheckTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -822,7 +824,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.ForceRecheckAsync(new[] { "Hash" }, true);
 
-            Mock.Get(_apiClient).Verify(a => a.RecheckTorrents(It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.RecheckTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -833,7 +835,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Recheck confirmation", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.RecheckTorrents(null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
+                .Setup(a => a.RecheckTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -850,7 +852,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<ConfirmDialog>("Recheck confirmation", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.RecheckTorrents(null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "Other" }))))
+                .Setup(a => a.RecheckTorrentsAsync(TorrentSelectorTestHelper.FromHashes("Hash", "Other"), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -867,7 +869,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Download Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.SetTorrentDownloadLimit(3072, null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
+                .Setup(a => a.SetTorrentDownloadLimitAsync(TorrentSelectorTestHelper.FromHash("Hash"), 3072, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -886,7 +888,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeDownloadRateDialog(2048, new[] { "Hash" });
 
-            Mock.Get(_apiClient).Verify(a => a.SetTorrentDownloadLimit(It.IsAny<long>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentDownloadLimitAsync(It.IsAny<TorrentSelector>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -899,7 +901,8 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeDownloadRateDialog(1024, new[] { "Hash" });
 
-            Mock.Get(_dialogService).Verify(s => s.ShowAsync<SliderFieldDialog<long>>(
+            Mock.Get(_dialogService)
+                .Verify(s => s.ShowAsync<SliderFieldDialog<long>>(
                     "Torrent Download Speed Limiting",
                     It.Is<DialogParameters>(parameters => HasDownloadRateDialogValueFunctions(parameters)),
                     DialogWorkflow.FormDialogOptions),
@@ -914,7 +917,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Torrent Upload Speed Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.SetTorrentUploadLimit(4096, null, It.Is<string[]>(hashes => hashes.Single() == "Hash")))
+                .Setup(a => a.SetTorrentUploadLimitAsync(TorrentSelectorTestHelper.FromHash("Hash"), 4096, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -933,7 +936,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeUploadRateDialog(1024, new[] { "Hash" });
 
-            Mock.Get(_apiClient).Verify(a => a.SetTorrentUploadLimit(It.IsAny<long>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentUploadLimitAsync(It.IsAny<TorrentSelector>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -961,7 +964,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Global Download Speed Limit", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.SetGlobalDownloadLimit(5120))
+                .Setup(a => a.SetGlobalDownloadLimitAsync(5120))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -982,7 +985,7 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.InvokeGlobalDownloadRateDialog(2048);
 
             result.Should().BeNull();
-            Mock.Get(_apiClient).Verify(a => a.SetGlobalDownloadLimit(It.IsAny<long>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetGlobalDownloadLimitAsync(It.IsAny<long>()), Times.Never);
         }
 
         [Fact]
@@ -1010,7 +1013,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Global Upload Speed Limit", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.SetGlobalUploadLimit(6144))
+                .Setup(a => a.SetGlobalUploadLimitAsync(6144))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -1031,7 +1034,7 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.InvokeGlobalUploadRateDialog(1024);
 
             result.Should().BeNull();
-            Mock.Get(_apiClient).Verify(a => a.SetGlobalUploadLimit(It.IsAny<long>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetGlobalUploadLimitAsync(It.IsAny<long>()), Times.Never);
         }
 
         [Fact]
@@ -1059,14 +1062,14 @@ namespace Lantean.QBTMud.Test.Services
                 { "Category", new QbtCategory("Category", "SavePath", new DownloadPathOption(true, "DownloadPath")) }
             };
             Mock.Get(_apiClient)
-                .Setup(a => a.GetAllCategories())
+                .Setup(a => a.GetAllCategoriesAsync())
                 .ReturnsAsync(categories);
             var reference = CreateReference(DialogResult.Ok(new MudCategory("Name", "SavePath")));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("Edit Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.EditCategory("Name", "SavePath"))
+                .Setup(a => a.EditCategoryAsync("Name", "SavePath"))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -1086,7 +1089,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var categories = new Dictionary<string, QbtCategory>();
             Mock.Get(_apiClient)
-                .Setup(a => a.GetAllCategories())
+                .Setup(a => a.GetAllCategoriesAsync())
                 .ReturnsAsync(categories);
             var reference = CreateReference(DialogResult.Cancel());
             Mock.Get(_dialogService)
@@ -1135,7 +1138,7 @@ namespace Lantean.QBTMud.Test.Services
             await _target.InvokeSetLocationDialog("SavePath", Array.Empty<string>());
 
             Mock.Get(_dialogService).Verify(s => s.ShowAsync<SetLocationDialog>(It.IsAny<string>(), It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()), Times.Never);
-            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocation(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocationAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -1144,7 +1147,7 @@ namespace Lantean.QBTMud.Test.Services
             await _target.InvokeSetLocationDialog("SavePath", null!);
 
             Mock.Get(_dialogService).Verify(s => s.ShowAsync<SetLocationDialog>(It.IsAny<string>(), It.IsAny<DialogParameters>(), It.IsAny<DialogOptions>()), Times.Never);
-            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocation(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocationAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -1155,7 +1158,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<SetLocationDialog>("Set location", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.SetTorrentLocation("UpdatedPath", null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "Other" }))))
+                .Setup(a => a.SetTorrentLocationAsync(TorrentSelectorTestHelper.FromHashes("Hash", "Other"), "UpdatedPath", It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -1179,7 +1182,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeSetLocationDialog("SavePath", new[] { "Hash" });
 
-            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocation(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocationAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -1193,7 +1196,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeSetLocationDialog("SavePath", new[] { "Hash" });
 
-            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocation(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocationAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -1206,7 +1209,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeSetLocationDialog("SavePath", new[] { "Hash" });
 
-            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocation(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentLocationAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -1238,7 +1241,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.SetTorrentShareLimit(5F, 6F, 7F, ShareLimitAction.Remove, null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "SecondHash" }))))
+                .Setup(a => a.SetTorrentShareLimitAsync(TorrentSelectorTestHelper.FromHashes("Hash", "SecondHash"), 5F, 6F, 7F, ShareLimitAction.Remove, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -1272,7 +1275,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.SetTorrentShareLimit(5F, 6F, 7F, ShareLimitAction.Remove, null, It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash", "SecondHash" }))))
+                .Setup(a => a.SetTorrentShareLimitAsync(TorrentSelectorTestHelper.FromHashes("Hash", "SecondHash"), 5F, 6F, 7F, ShareLimitAction.Remove, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -1296,7 +1299,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeShareRatioDialog(torrents);
 
-            Mock.Get(_apiClient).Verify(a => a.SetTorrentShareLimit(It.IsAny<float>(), It.IsAny<float>(), It.IsAny<float>(), It.IsAny<ShareLimitAction?>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentShareLimitAsync(It.IsAny<TorrentSelector>(), It.IsAny<float>(), It.IsAny<float>(), It.IsAny<float>(), It.IsAny<ShareLimitAction?>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -1962,13 +1965,13 @@ namespace Lantean.QBTMud.Test.Services
                 return false;
             }
 
-            if (parameters[nameof(SliderFieldDialog<>.Min)] is not -1L)
+            if (parameters[nameof(SliderFieldDialog<>.Min)] is not 0L)
             {
                 return false;
             }
 
             var display = parameters[nameof(SliderFieldDialog<>.ValueDisplayFunc)] as Func<long, string>;
-            if (display == null || display(Limits.NoLimit) != "∞" || display(2048) != "2048")
+            if (display == null || display(Limits.NoTransferRateLimit) != "∞" || display(2048) != "2048")
             {
                 return false;
             }
@@ -1980,7 +1983,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var getter = parameters[nameof(SliderFieldDialog<>.ValueGetFunc)] as Func<string, long>;
             return getter != null
-                   && getter("∞") == Limits.NoLimit
+                   && getter("∞") == Limits.NoTransferRateLimit
                    && getter("5") == 5;
         }
 
@@ -1992,13 +1995,13 @@ namespace Lantean.QBTMud.Test.Services
                 return false;
             }
 
-            if (parameters[nameof(SliderFieldDialog<>.Min)] is not -1L)
+            if (parameters[nameof(SliderFieldDialog<>.Min)] is not 0L)
             {
                 return false;
             }
 
             var display = parameters[nameof(SliderFieldDialog<>.ValueDisplayFunc)] as Func<long, string>;
-            if (display == null || display(Limits.NoLimit) != "∞" || display(1024) != "1024")
+            if (display == null || display(Limits.NoTransferRateLimit) != "∞" || display(1024) != "1024")
             {
                 return false;
             }
@@ -2010,7 +2013,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var getter = parameters[nameof(SliderFieldDialog<>.ValueGetFunc)] as Func<string, long>;
             return getter != null
-                   && getter("∞") == Limits.NoLimit
+                   && getter("∞") == Limits.NoTransferRateLimit
                    && getter("7") == 7;
         }
 

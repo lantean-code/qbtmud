@@ -10,8 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components
 {
@@ -670,7 +669,7 @@ namespace Lantean.QBTMud.Test.Components
             return target.FindComponents<TComponent>().Any(component => HasTestId(component, testId));
         }
 
-        private static MainData CreateMainData(ServerState serverState, bool lostConnection = false)
+        private static MainData CreateMainData(ServerState serverState)
         {
             return new MainData(
                 torrents: new Dictionary<string, Torrent>(),
@@ -681,10 +680,7 @@ namespace Lantean.QBTMud.Test.Components
                 tagState: new Dictionary<string, HashSet<string>>(),
                 categoriesState: new Dictionary<string, HashSet<string>>(),
                 statusState: new Dictionary<string, HashSet<string>>(),
-                trackersState: new Dictionary<string, HashSet<string>>())
-            {
-                LostConnection = lostConnection
-            };
+                trackersState: new Dictionary<string, HashSet<string>>());
         }
 
         private static ServerState CreateServerState(
@@ -720,8 +716,11 @@ namespace Lantean.QBTMud.Test.Components
 
         private static ClientModels.Preferences CreatePreferences(bool statusBarExternalIp)
         {
-            var json = $"{{\"rss_processing_enabled\":false,\"status_bar_external_ip\":{statusBarExternalIp.ToString().ToLowerInvariant()}}}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.RssProcessingEnabled = false;
+                spec.StatusBarExternalIp = statusBarExternalIp;
+            });
         }
 
         private static IManagedTimer CreateTimer(ManagedTimerState state)

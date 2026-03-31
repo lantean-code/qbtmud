@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
@@ -10,8 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient;
+using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -29,16 +28,16 @@ namespace Lantean.QBTMud.Test.Pages
 
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             apiClientMock
-                .Setup(c => c.GetTorrentProperties(_hashValue))
+                .Setup(c => c.GetTorrentPropertiesAsync(_hashValue))
                 .ReturnsAsync(CreateTorrentProperties());
             apiClientMock
-                .Setup(c => c.GetTorrentPieceStates(_hashValue))
+                .Setup(c => c.GetTorrentPieceStatesAsync(_hashValue))
                 .ReturnsAsync(Array.Empty<ClientModels.PieceState>());
             apiClientMock
-                .Setup(c => c.GetTorrentTrackers(_hashValue))
+                .Setup(c => c.GetTorrentTrackersAsync(_hashValue))
                 .ReturnsAsync(Array.Empty<ClientModels.TorrentTracker>());
             apiClientMock
-                .Setup(c => c.GetTorrentContents(_hashValue, It.IsAny<int[]>()))
+                .Setup(c => c.GetTorrentContentsAsync(_hashValue, It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<ClientModels.FileData>());
 
             var keyboardServiceMock = Mock.Get(_keyboardService);
@@ -219,8 +218,10 @@ namespace Lantean.QBTMud.Test.Pages
 
         private static ClientModels.Preferences CreatePreferences()
         {
-            var json = "{\"rss_processing_enabled\":false}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.RssProcessingEnabled = false;
+            });
         }
 
         private static ClientModels.TorrentProperties CreateTorrentProperties()

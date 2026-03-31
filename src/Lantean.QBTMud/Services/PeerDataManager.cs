@@ -4,7 +4,7 @@ namespace Lantean.QBTMud.Services
 {
     public class PeerDataManager : IPeerDataManager
     {
-        public PeerList CreatePeerList(QBitTorrentClient.Models.TorrentPeers torrentPeers)
+        public PeerList CreatePeerList(QBittorrent.ApiClient.Models.TorrentPeers torrentPeers)
         {
             var peers = new Dictionary<string, Peer>();
             if (torrentPeers.Peers is not null)
@@ -22,7 +22,7 @@ namespace Lantean.QBTMud.Services
             return peerList;
         }
 
-        public void MergeTorrentPeers(QBitTorrentClient.Models.TorrentPeers torrentPeers, PeerList peerList)
+        public void MergeTorrentPeers(QBittorrent.ApiClient.Models.TorrentPeers torrentPeers, PeerList peerList)
         {
             if (torrentPeers.PeersRemoved is not null)
             {
@@ -49,7 +49,7 @@ namespace Lantean.QBTMud.Services
             }
         }
 
-        private static Peer CreatePeer(string key, QBitTorrentClient.Models.Peer peer)
+        private static Peer CreatePeer(string key, QBittorrent.ApiClient.Models.Peer peer)
         {
             return new Peer(
                 key,
@@ -71,7 +71,7 @@ namespace Lantean.QBTMud.Services
                 peer.UploadSpeed.GetValueOrDefault());
         }
 
-        private static void UpdatePeer(Peer existingPeer, QBitTorrentClient.Models.Peer peer)
+        private static void UpdatePeer(Peer existingPeer, QBittorrent.ApiClient.Models.Peer peer)
         {
             existingPeer.Client = peer.Client ?? existingPeer.Client;
             existingPeer.ClientId = peer.ClientId ?? existingPeer.ClientId;

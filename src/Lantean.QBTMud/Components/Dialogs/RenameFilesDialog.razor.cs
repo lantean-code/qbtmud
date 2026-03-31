@@ -1,10 +1,10 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
 using System.Collections.ObjectModel;
 
 namespace Lantean.QBTMud.Components.Dialogs
@@ -173,11 +173,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             {
                 if (match.IsFolder)
                 {
-                    await ApiClient.RenameFile(hash, oldPath, newPath);
+                    await ApiClient.RenameFileAsync(hash, oldPath, newPath);
                 }
                 else
                 {
-                    await ApiClient.RenameFile(hash, oldPath, newPath);
+                    await ApiClient.RenameFileAsync(hash, oldPath, newPath);
                 }
                 return (true, null);
             }
@@ -372,8 +372,10 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            var contents = await ApiClient.GetTorrentContents(Hash);
-            FileList = GetRenamedItems(DataManager.CreateContentsList(contents).Values);
+            var contents = await ApiClient.GetTorrentContentsAsync(Hash);
+            FileList = contents.TryGetValue(out var fileContents)
+                ? GetRenamedItems(DataManager.CreateContentsList(fileContents).Values)
+                : [];
         }
 
         protected void Cancel()
@@ -410,7 +412,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                     var oldPath = renamedFile.Path + renamedFile.OriginalName;
                     var newPath = renamedFile.Path + renamedFile.NewName;
 
-                    await ApiClient.RenameFile(Hash, oldPath, newPath);
+                    await ApiClient.RenameFileAsync(Hash, oldPath, newPath);
                 }
 
                 foreach (var renamedFile in renamedFiles.Where(f => f.IsFolder).OrderBy(f => f.Path.Split(Extensions.DirectorySeparator)))
@@ -418,7 +420,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                     var oldPath = renamedFile.Path + renamedFile.OriginalName;
                     var newPath = renamedFile.Path + renamedFile.NewName;
 
-                    await ApiClient.RenameFolder(Hash, oldPath, newPath);
+                    await ApiClient.RenameFolderAsync(Hash, oldPath, newPath);
                 }
             }
             else
@@ -430,13 +432,13 @@ namespace Lantean.QBTMud.Components.Dialogs
                     {
                         var oldPath = first.Path + first.OriginalName;
                         var newPath = first.Path + first.NewName;
-                        await ApiClient.RenameFolder(Hash, oldPath, newPath);
+                        await ApiClient.RenameFolderAsync(Hash, oldPath, newPath);
                     }
                     else
                     {
                         var oldPath = first.Path + first.OriginalName;
                         var newPath = first.Path + first.NewName;
-                        await ApiClient.RenameFile(Hash, oldPath, newPath);
+                        await ApiClient.RenameFileAsync(Hash, oldPath, newPath);
                     }
                 }
             }

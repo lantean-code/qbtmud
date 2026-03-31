@@ -1,8 +1,8 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Test.Helpers
 {
@@ -82,8 +82,8 @@ namespace Lantean.QBTMud.Test.Helpers
             DisplayHelpers.Bool(true).Should().Be("Yes");
             DisplayHelpers.Bool(false, "On", "Off").Should().Be("Off");
 
-            DisplayHelpers.RatioLimit(Limits.GlobalLimit).Should().Be("Global");
-            DisplayHelpers.RatioLimit(Limits.NoLimit).Should().Be("∞");
+            DisplayHelpers.RatioLimit(Limits.UseGlobalShareLimit).Should().Be("Global");
+            DisplayHelpers.RatioLimit(Limits.NoShareLimit).Should().Be("∞");
             DisplayHelpers.RatioLimit(1.234f).Should().Be("1.23");
         }
 

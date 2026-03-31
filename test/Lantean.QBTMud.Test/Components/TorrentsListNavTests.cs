@@ -136,7 +136,7 @@ namespace Lantean.QBTMud.Test.Components
                 downloadPath: string.Empty,
                 rootPath: string.Empty,
                 isPrivate: false,
-                Lantean.QBitTorrentClient.Models.ShareLimitAction.Default,
+                QBittorrent.ApiClient.Models.ShareLimitAction.Default,
                 comment: string.Empty);
         }
     }

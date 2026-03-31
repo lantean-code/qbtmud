@@ -1,6 +1,6 @@
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Options
 {

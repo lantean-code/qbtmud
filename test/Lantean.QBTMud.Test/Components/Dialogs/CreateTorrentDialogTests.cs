@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
@@ -11,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_NoSourcePath_WHEN_SubmitClicked_THEN_ShowsWarningAndKeepsDialogOpen()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -56,7 +56,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_FormatSupported_WHEN_SubmitClicked_THEN_ReturnsRequestWithFormat()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("2.1.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -96,7 +96,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_FormatUnsupported_WHEN_SubmitClickedWithPaddingDisabled_THEN_RequestHasNullPadding()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("1.2.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -119,7 +119,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_FormatUnsupported_WHEN_SubmitClickedWithPaddingEnabled_THEN_RequestHasConvertedPadding()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("1.9.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -142,7 +142,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_PaddedLimitOverflow_WHEN_SubmitClicked_THEN_RequestUsesMaxValue()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("1.9.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -164,7 +164,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_CloseClicked_WHEN_Invoked_THEN_CancelsDialog()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -205,7 +205,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.AddSingleton(keyboardMock.Object);
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -241,7 +241,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             await TestContext.LocalStorage.SetItemAsync(_storageKey, state, Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -288,7 +288,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             await TestContext.LocalStorage.SetItemAsync(_storageKey, state, Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("1.2.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -305,7 +305,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_WhitespaceOnlyTrackersAndWebSeeds_WHEN_SubmitClicked_THEN_RequestListsAreNull()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("2.1.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -326,7 +326,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_InvalidVersion_WHEN_Rendered_THEN_FormatSelectHidden()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo(" "));
 
             var dialog = await _target.RenderDialogAsync();
@@ -340,7 +340,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_VersionStartsWithText_WHEN_Rendered_THEN_FormatSelectHidden()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("x2.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -354,7 +354,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_VersionTooLong_WHEN_Rendered_THEN_FormatSelectShown()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("2.0.0.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -378,7 +378,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.AddSingleton(settingsStorage.Object);
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("2.0.0"));
 
             await _target.RenderDialogAsync();
@@ -392,7 +392,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_SubmitValid_WHEN_Clicked_THEN_PersistsFormState()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -423,7 +423,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_BuildInfoThrows_WHEN_Rendered_THEN_UsesAlignmentFields()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ThrowsAsync(new InvalidOperationException());
 
             var dialog = await _target.RenderDialogAsync();

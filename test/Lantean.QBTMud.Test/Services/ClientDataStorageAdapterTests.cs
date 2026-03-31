@@ -1,7 +1,7 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Services;
 using Moq;
+using QBittorrent.ApiClient;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Services
@@ -42,16 +42,14 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.LoadPrefixedEntriesAsync(["", " ", "NotPrefixed", "Other"], TestContext.Current.CancellationToken);
 
             result.Should().BeEmpty();
-            Mock.Get(_apiClient).Verify(client => client.LoadClientData(It.IsAny<IEnumerable<string>?>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_MixedKeysAndResults_WHEN_LoadPrefixedEntriesAsyncWithKeys_THEN_ShouldNormalizeRequestAndFilterResponse()
         {
-            IEnumerable<string>? requestedKeys = null;
             Mock.Get(_apiClient)
-                .Setup(client => client.LoadClientData(It.IsAny<IEnumerable<string>?>()))
-                .Callback<IEnumerable<string>?>(keys => requestedKeys = keys)
+                .Setup(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Dictionary<string, JsonElement>(StringComparer.Ordinal)
                 {
                     ["QbtMud.KeyA"] = JsonDocument.Parse("{\"enabled\":true}").RootElement.Clone(),
@@ -63,16 +61,22 @@ namespace Lantean.QBTMud.Test.Services
                 [" QbtMud.KeyA ", "QbtMud.KeyB", "QbtMud.KeyA", "NotPrefixed", ""],
                 TestContext.Current.CancellationToken);
 
-            requestedKeys.Should().NotBeNull();
-            requestedKeys!.Should().Equal("QbtMud.KeyA", "QbtMud.KeyB");
             result.Keys.Should().Equal("QbtMud.KeyA", "QbtMud.KeyB");
+
+            Mock.Get(_apiClient)
+                .Verify(client => client.LoadClientDataAsync(It.Is<IEnumerable<string>?>(keys =>
+                    keys != null
+                    && keys.Count() == 2
+                    && keys.Contains("QbtMud.KeyA")
+                    && keys.Contains("QbtMud.KeyB")
+                ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_MixedResults_WHEN_LoadPrefixedEntriesAsyncWithoutKeys_THEN_ShouldFilterResponseToPrefixedEntries()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.LoadClientData(It.IsAny<IEnumerable<string>?>()))
+                .Setup(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Dictionary<string, JsonElement>(StringComparer.Ordinal)
                 {
                     ["QbtMud.One"] = JsonDocument.Parse("1").RootElement.Clone(),
@@ -104,16 +108,14 @@ namespace Lantean.QBTMud.Test.Services
                 },
                 TestContext.Current.CancellationToken);
 
-            Mock.Get(_apiClient).Verify(client => client.StoreClientData(It.IsAny<IReadOnlyDictionary<string, object?>>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.StoreClientDataAsync(It.IsAny<IReadOnlyDictionary<string, object?>>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_MixedValues_WHEN_StorePrefixedEntriesAsync_THEN_ShouldNormalizeAndStoreOnlyPrefixedValues()
         {
-            IReadOnlyDictionary<string, object?>? payload = null;
             Mock.Get(_apiClient)
-                .Setup(client => client.StoreClientData(It.IsAny<IReadOnlyDictionary<string, object?>>()))
-                .Callback<IReadOnlyDictionary<string, object?>>(entries => payload = entries)
+                .Setup(client => client.StoreClientDataAsync(It.IsAny<IReadOnlyDictionary<string, object?>>()))
                 .Returns(Task.CompletedTask);
 
             await _target.StorePrefixedEntriesAsync(
@@ -125,10 +127,14 @@ namespace Lantean.QBTMud.Test.Services
                 },
                 TestContext.Current.CancellationToken);
 
-            payload.Should().NotBeNull();
-            payload!.Keys.Should().Equal("QbtMud.K1", "QbtMud.K2");
-            payload["QbtMud.K1"].Should().Be("V1");
-            payload["QbtMud.K2"].Should().Be(2);
+            Mock.Get(_apiClient)
+                .Verify(client => client.StoreClientDataAsync(It.Is<IReadOnlyDictionary<string, object?>>(
+                    p => p.Count == 2
+                        && p.ContainsKey("QbtMud.K1")
+                        && p.ContainsKey("QbtMud.K2")
+                        && p["QbtMud.K1"]!.Equals("V1")
+                        && p["QbtMud.K2"]!.Equals(2)
+                    ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -144,24 +150,24 @@ namespace Lantean.QBTMud.Test.Services
         {
             await _target.RemovePrefixedEntriesAsync(["", "NotPrefixed"], TestContext.Current.CancellationToken);
 
-            Mock.Get(_apiClient).Verify(client => client.StoreClientData(It.IsAny<IReadOnlyDictionary<string, object?>>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.StoreClientDataAsync(It.IsAny<IReadOnlyDictionary<string, object?>>()), Times.Never);
         }
 
         [Fact]
         public async Task GIVEN_MixedKeys_WHEN_RemovePrefixedEntriesAsync_THEN_ShouldStoreDistinctNullValuesForPrefixedKeys()
         {
-            IReadOnlyDictionary<string, object?>? payload = null;
             Mock.Get(_apiClient)
-                .Setup(client => client.StoreClientData(It.IsAny<IReadOnlyDictionary<string, object?>>()))
-                .Callback<IReadOnlyDictionary<string, object?>>(entries => payload = entries)
+                .Setup(client => client.StoreClientDataAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             await _target.RemovePrefixedEntriesAsync(["QbtMud.Key", " QbtMud.Key ", "Other"], TestContext.Current.CancellationToken);
 
-            payload.Should().NotBeNull();
-            payload!.Should().ContainSingle();
-            payload.Should().ContainKey("QbtMud.Key");
-            payload["QbtMud.Key"].Should().BeNull();
+            Mock.Get(_apiClient)
+                .Verify(client => client.StoreClientDataAsync(It.Is<IReadOnlyDictionary<string, object?>>(
+                    p => p.Count == 1
+                        && p.ContainsKey("QbtMud.Key")
+                        && p["QbtMud.Key"] == null
+                    ), It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

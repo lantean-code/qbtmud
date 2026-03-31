@@ -1,4 +1,3 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -6,6 +5,7 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using QBittorrent.ApiClient;
 using System.Globalization;
 
 namespace Lantean.QBTMud.Pages
@@ -85,8 +85,8 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
-        [CascadingParameter]
-        public MainData? MainData { get; set; }
+        [Inject]
+        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -111,7 +111,7 @@ namespace Lantean.QBTMud.Pages
 
         protected bool CanMarkSelectionAsRead => _selectedNode is not null && !IsClientDisconnected;
 
-        private bool IsClientDisconnected => MainData is not null && MainData.LostConnection;
+        private bool IsClientDisconnected => ConnectivityStateService.IsLostConnection;
 
         protected override async Task OnInitializedAsync()
         {
@@ -379,7 +379,7 @@ namespace Lantean.QBTMud.Pages
                 localArticle.IsRead = true;
             }
 
-            await ApiClient.MarkRssItemAsRead(article.Feed, article.Id);
+            await ApiClient.MarkRssItemAsReadAsync(article.Feed, article.Id);
             UpdateUnreadCountsAfterRead(article);
             await InvokeAsync(StateHasChanged);
         }
@@ -447,16 +447,13 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            try
+            var moveResult = await ApiClient.MoveRssItemAsync(_contextNode.Path, newPath);
+            if (TryHandleRssCommandFailure(moveResult, message => TranslateRss("Unable to rename RSS item: %1", message)))
             {
-                await ApiClient.MoveRssItem(_contextNode.Path, newPath);
-                var parentPath = GetParentPath(newPath);
-                await RefreshRssList(preferredPath: newPath, preferUnread: false);
+                return;
             }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateRss("Unable to rename RSS item: %1", exception.Message), Severity.Error);
-            }
+
+            await RefreshRssList(preferredPath: newPath, preferUnread: false);
         }
 
         protected async Task UpdateContextEditUrl()
@@ -475,15 +472,15 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            try
+            var setUrlResult = await ApiClient.SetRssFeedUrlAsync(_contextNode.Path, newUrl);
+            if (TryHandleRssCommandFailure(
+                setUrlResult,
+                message => $"{LanguageLocalizer.Translate("RSSWidget", "Unable to update URL")}: {message}"))
             {
-                await ApiClient.SetRssFeedUrl(_contextNode.Path, newUrl);
-                await RefreshRssList(preferredPath: _contextNode.Path, preferUnread: false);
+                return;
             }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage($"{LanguageLocalizer.Translate("RSSWidget", "Unable to update URL")}: {exception.Message}", Severity.Error);
-            }
+
+            await RefreshRssList(preferredPath: _contextNode.Path, preferUnread: false);
         }
 
         protected async Task UpdateContextDelete()
@@ -501,16 +498,14 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            try
+            var removeResult = await ApiClient.RemoveRssItemAsync(_contextNode.Path);
+            if (TryHandleRssCommandFailure(removeResult, message => TranslateRss("Unable to remove RSS item: %1", message)))
             {
-                await ApiClient.RemoveRssItem(_contextNode.Path);
-                var parentPath = GetParentPath(_contextNode.Path);
-                await RefreshRssList(preferredPath: parentPath, preferUnread: false);
+                return;
             }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateRss("Unable to remove RSS item: %1", exception.Message), Severity.Error);
-            }
+
+            var parentPath = GetParentPath(_contextNode.Path);
+            await RefreshRssList(preferredPath: parentPath, preferUnread: false);
         }
 
         protected async Task UpdateContextAddSubscription()
@@ -542,15 +537,13 @@ namespace Lantean.QBTMud.Pages
 
             var newPath = string.IsNullOrEmpty(parentPath) ? folderName : $"{parentPath}{_pathSeparator}{folderName}";
 
-            try
+            var addFolderResult = await ApiClient.AddRssFolderAsync(newPath);
+            if (TryHandleRssCommandFailure(addFolderResult, message => TranslateRss("Unable to add folder: %1", message)))
             {
-                await ApiClient.AddRssFolder(newPath);
-                await RefreshRssList(preferredPath: newPath, preferUnread: false);
+                return;
             }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateRss("Unable to add folder: %1", exception.Message), Severity.Error);
-            }
+
+            await RefreshRssList(preferredPath: newPath, preferUnread: false);
         }
 
         protected async Task UpdateContextCopyUrl()
@@ -609,15 +602,13 @@ namespace Lantean.QBTMud.Pages
             }
 
             var parentPath = DetermineParentPathForNewFeed(node);
-            try
+            var addFeedResult = await ApiClient.AddRssFeedAsync(url, string.IsNullOrEmpty(parentPath) ? null : parentPath);
+            if (TryHandleRssCommandFailure(addFeedResult, message => TranslateRss("Unable to add feed: %1", message)))
             {
-                await ApiClient.AddRssFeed(url, string.IsNullOrEmpty(parentPath) ? null : parentPath);
-                await RefreshRssList(preferredPath: parentPath, preferUnread: false);
+                return;
             }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateRss("Unable to add feed: %1", exception.Message), Severity.Error);
-            }
+
+            await RefreshRssList(preferredPath: parentPath, preferUnread: false);
         }
 
         private async Task MarkNodeAsRead(RssTreeNode node)
@@ -630,7 +621,7 @@ namespace Lantean.QBTMud.Pages
 
             foreach (var feedPath in feeds)
             {
-                await ApiClient.MarkRssItemAsRead(feedPath);
+                await ApiClient.MarkRssItemAsReadAsync(feedPath);
             }
 
             await RefreshRssList(preferredPath: node.IsUnread ? null : node.Path, preferUnread: node.IsUnread);
@@ -650,7 +641,7 @@ namespace Lantean.QBTMud.Pages
 
             foreach (var feedPath in feedPaths.Distinct(StringComparer.Ordinal))
             {
-                await ApiClient.RefreshRssItem(feedPath);
+                await ApiClient.RefreshRssItemAsync(feedPath);
             }
 
             await RefreshRssList(preferredPath: node?.Path, preferUnread: node?.IsUnread == true);
@@ -797,8 +788,29 @@ namespace Lantean.QBTMud.Pages
 
         private async Task GetRssList()
         {
-            var items = await ApiClient.GetAllRssItems(true);
+            var itemsResult = await ApiClient.GetAllRssItemsAsync(true);
+            if (!itemsResult.TryGetValue(out var items))
+            {
+                RssList = null;
+                return;
+            }
+
             RssList = RssDataManager.CreateRssList(items);
+        }
+
+        private bool TryHandleRssCommandFailure(ApiResult result, Func<string, string> buildMessage)
+        {
+            if (result.IsSuccess)
+            {
+                return false;
+            }
+
+            var message = string.IsNullOrWhiteSpace(result.Failure?.UserMessage)
+                ? LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")
+                : result.Failure!.UserMessage;
+
+            SnackbarWorkflow.ShowTransientMessage(buildMessage(message), Severity.Error);
+            return true;
         }
 
         private IEnumerable<RssTreeNode> EnumerateFeedNodes(RssTreeNode node)

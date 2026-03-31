@@ -1,10 +1,10 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -186,8 +186,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             try
             {
-                var buildInfo = await ApiClient.GetBuildInfo();
-                _supportsTorrentFormat = SupportsTorrentFormatForVersion(buildInfo.LibTorrentVersion);
+                var buildInfoResult = await ApiClient.GetBuildInfoAsync();
+                _supportsTorrentFormat = buildInfoResult.TryGetValue(out var buildInfo)
+                    && SupportsTorrentFormatForVersion(buildInfo.LibTorrentVersion);
             }
             catch (Exception)
             {

@@ -1,13 +1,12 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
@@ -18,7 +17,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -65,7 +64,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -106,7 +105,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -142,7 +141,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -194,7 +193,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -225,7 +224,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -290,7 +289,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -332,7 +331,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -370,7 +369,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -400,7 +399,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -428,7 +427,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -472,7 +471,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<DownloadsOptions>(parameters =>
@@ -547,46 +546,46 @@ namespace Lantean.QBTMud.Test.Components.Options
             return FindComponentByTestId<MudIconButton>(target, $"AddedScanDirs[{index}].Remove");
         }
 
-        private static Preferences DeserializePreferences()
+        private static Preferences CreatePreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "torrent_content_layout": "Original",
-                "add_to_top_of_queue": true,
-                "add_stopped_enabled": false,
-                "torrent_stop_condition": "None",
-                "auto_delete_mode": 1,
-                "preallocate_all": true,
-                "incomplete_files_ext": false,
-                "auto_tmm_enabled": true,
-                "torrent_changed_tmm_enabled": true,
-                "save_path_changed_tmm_enabled": false,
-                "category_changed_tmm_enabled": true,
-                "use_subcategories": true,
-                "save_path": "/downloads",
-                "temp_path_enabled": true,
-                "temp_path": "/temp",
-                "export_dir": "/export",
-                "export_dir_fin": "/export_fin",
-                "scan_dirs": { "/watch": 1 },
-                "excluded_file_names_enabled": true,
-                "excluded_file_names": "*.tmp",
-                "mail_notification_enabled": true,
-                "mail_notification_sender": "noreply@example.com",
-                "mail_notification_email": "user@example.com",
-                "mail_notification_smtp": "smtp.example.com",
-                "mail_notification_ssl_enabled": true,
-                "mail_notification_auth_enabled": true,
-                "mail_notification_username": "user",
-                "mail_notification_password": "pass",
-                "autorun_on_torrent_added_enabled": true,
-                "autorun_on_torrent_added_program": "/bin/add.sh",
-                "autorun_enabled": true,
-                "autorun_program": "/bin/finish.sh"
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.AddStoppedEnabled = false;
+                spec.AddToTopOfQueue = true;
+                spec.AutorunEnabled = true;
+                spec.AutorunOnTorrentAddedEnabled = true;
+                spec.AutorunOnTorrentAddedProgram = "/bin/add.sh";
+                spec.AutorunProgram = "/bin/finish.sh";
+                spec.AutoDeleteMode = 1;
+                spec.AutoTmmEnabled = true;
+                spec.CategoryChangedTmmEnabled = true;
+                spec.ExcludedFileNames = "*.tmp";
+                spec.ExcludedFileNamesEnabled = true;
+                spec.ExportDir = "/export";
+                spec.ExportDirFin = "/export_fin";
+                spec.IncompleteFilesExt = false;
+                spec.MailNotificationAuthEnabled = true;
+                spec.MailNotificationEmail = "user@example.com";
+                spec.MailNotificationEnabled = true;
+                spec.MailNotificationPassword = "pass";
+                spec.MailNotificationSender = "noreply@example.com";
+                spec.MailNotificationSmtp = "smtp.example.com";
+                spec.MailNotificationSslEnabled = true;
+                spec.MailNotificationUsername = "user";
+                spec.PreallocateAll = true;
+                spec.SavePath = "/downloads";
+                spec.SavePathChangedTmmEnabled = false;
+                spec.ScanDirs = new Dictionary<string, SaveLocation>
+                {
+                    ["/watch"] = SaveLocation.Create(1)
+                };
+                spec.TempPath = "/temp";
+                spec.TempPathEnabled = true;
+                spec.TorrentChangedTmmEnabled = true;
+                spec.TorrentContentLayout = "Original";
+                spec.TorrentStopCondition = "None";
+                spec.UseSubcategories = true;
+            });
         }
     }
 }

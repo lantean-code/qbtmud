@@ -1,6 +1,6 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -688,8 +688,7 @@ namespace Lantean.QBTMud.Test.Services
                     actual.ScanDirs.Should().ContainKey(kv.Key);
                     var act = actual.ScanDirs[kv.Key];
                     var exp = kv.Value;
-                    act.IsWatchedFolder.Should().Be(exp.IsWatchedFolder);
-                    act.IsDefaultFolder.Should().Be(exp.IsDefaultFolder);
+                    act.Kind.Should().Be(exp.Kind);
                     act.SavePath.Should().Be(exp.SavePath);
                 }
             }

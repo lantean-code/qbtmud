@@ -1,10 +1,10 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.UI
 {
@@ -174,12 +174,8 @@ namespace Lantean.QBTMud.Components.UI
                 return [];
             }
 
-            IReadOnlyList<string> candidates;
-            try
-            {
-                candidates = await ApiClient.GetDirectoryContent(parentPath, mode);
-            }
-            catch
+            var directoryContent = await ApiClient.GetDirectoryContentAsync(parentPath, mode);
+            if (!directoryContent.TryGetValue(out var candidates))
             {
                 return [];
             }

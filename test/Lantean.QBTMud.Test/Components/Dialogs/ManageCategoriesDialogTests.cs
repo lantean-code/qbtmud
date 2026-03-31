@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -10,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -37,13 +37,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
             apiClientMock
-                .Setup(client => client.GetTorrentList(
+                .Setup(client => client.GetTorrentListAsync(
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
@@ -54,7 +54,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<string[]>()))
+                    It.IsAny<TorrentSelector?>(),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Torrent>());
 
             var dialog = await _target.RenderDialogAsync(Array.Empty<string>());
@@ -62,7 +63,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var listItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "Category-Movies");
             listItem.Instance.Icon.Should().Be(Icons.Material.Filled.RadioButtonUnchecked);
 
-            apiClientMock.Verify(client => client.GetTorrentList(
+            apiClientMock.Verify(client => client.GetTorrentListAsync(
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
@@ -73,7 +74,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 It.IsAny<bool?>(),
                 It.IsAny<bool?>(),
                 It.IsAny<bool?>(),
-                It.IsAny<string[]>()), Times.Never);
+                It.IsAny<TorrentSelector?>(),
+                It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -82,13 +84,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var hashes = new[] { "Hash" };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
             apiClientMock
-                .SetupSequence(client => client.GetTorrentList(
+                .SetupSequence(client => client.GetTorrentListAsync(
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
@@ -99,11 +101,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<string[]>()))
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies"), CreateTorrent("Movies") })
                 .ReturnsAsync(new List<Torrent> { CreateTorrent(string.Empty) });
             apiClientMock
-                .Setup(client => client.SetTorrentCategory(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()))
+                .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync(hashes);
@@ -111,10 +114,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var listItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "Category-Movies");
             await listItem.Find("div").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.SetTorrentCategory(
+            apiClientMock.Verify(client => client.SetTorrentCategoryAsync(
+                It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                 string.Empty,
-                It.IsAny<bool?>(),
-                It.Is<string[]>(value => value.SequenceEqual(hashes))), Times.Once);
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -123,13 +126,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var hashes = new[] { "Hash" };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
             apiClientMock
-                .SetupSequence(client => client.GetTorrentList(
+                .SetupSequence(client => client.GetTorrentListAsync(
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
@@ -140,11 +143,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<string[]>()))
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies"), CreateTorrent("Other") })
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies"), CreateTorrent("Movies") });
             apiClientMock
-                .Setup(client => client.SetTorrentCategory(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()))
+                .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync(hashes);
@@ -153,10 +157,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             listItem.Instance.Icon.Should().Be(CustomIcons.RadioIndeterminate);
             await listItem.Find("div").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.SetTorrentCategory(
+            apiClientMock.Verify(client => client.SetTorrentCategoryAsync(
+                It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                 "Movies",
-                It.IsAny<bool?>(),
-                It.Is<string[]>(value => value.SequenceEqual(hashes))), Times.Once);
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -165,13 +169,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var hashes = new[] { "Hash" };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
             apiClientMock
-                .SetupSequence(client => client.GetTorrentList(
+                .SetupSequence(client => client.GetTorrentListAsync(
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
@@ -182,11 +186,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<string[]>()))
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Other") })
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
             apiClientMock
-                .Setup(client => client.SetTorrentCategory(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()))
+                .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync(hashes);
@@ -194,10 +199,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var listItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "Category-Movies");
             await listItem.Find("div").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.SetTorrentCategory(
+            apiClientMock.Verify(client => client.SetTorrentCategoryAsync(
+                It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                 "Movies",
-                It.IsAny<bool?>(),
-                It.Is<string[]>(value => value.SequenceEqual(hashes))), Times.Once);
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -206,13 +211,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var hashes = new[] { "Hash" };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, Category>
                 {
                     { string.Empty, new Category(string.Empty, null, null) },
                 });
             apiClientMock
-                .Setup(client => client.GetTorrentList(
+                .Setup(client => client.GetTorrentListAsync(
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
@@ -223,7 +228,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<string[]>()))
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
 
             var dialog = await _target.RenderDialogAsync(hashes);
@@ -238,13 +244,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var hashes = new[] { "Hash" };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
             apiClientMock
-                .Setup(client => client.GetTorrentList(
+                .Setup(client => client.GetTorrentListAsync(
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
@@ -255,7 +261,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<string[]>()))
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
 
             var dialogWorkflowMock = Mock.Get(_dialogWorkflow);
@@ -268,7 +275,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var addItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "CategoryAdd");
             await addItem.Find("div").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.SetTorrentCategory(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            apiClientMock.Verify(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -277,13 +284,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var hashes = new[] { "Hash" };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
             apiClientMock
-                .SetupSequence(client => client.GetTorrentList(
+                .SetupSequence(client => client.GetTorrentListAsync(
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
@@ -294,11 +301,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<string[]>()))
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") })
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
             apiClientMock
-                .Setup(client => client.SetTorrentCategory(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()))
+                .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var dialogWorkflowMock = Mock.Get(_dialogWorkflow);
@@ -314,10 +322,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             dialog.Component.WaitForAssertion(() =>
                 FindComponentByTestId<MudListItem<string>>(dialog.Component, "Category-NewCategory").Should().NotBeNull());
 
-            apiClientMock.Verify(client => client.SetTorrentCategory(
+            apiClientMock.Verify(client => client.SetTorrentCategoryAsync(
+                It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                 "NewCategory",
-                It.IsAny<bool?>(),
-                It.Is<string[]>(value => value.SequenceEqual(hashes))), Times.Once);
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -326,13 +334,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var hashes = new[] { "Hash" };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
             apiClientMock
-                .Setup(client => client.GetTorrentList(
+                .Setup(client => client.GetTorrentListAsync(
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
@@ -343,10 +351,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<string[]>()))
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
             apiClientMock
-                .Setup(client => client.SetTorrentCategory(It.IsAny<string>(), It.IsAny<bool?>(), It.IsAny<string[]>()))
+                .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync(hashes);
@@ -354,10 +363,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var removeItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "CategoryRemove");
             await removeItem.Find("div").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.SetTorrentCategory(
+            apiClientMock.Verify(client => client.SetTorrentCategoryAsync(
+                It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                 string.Empty,
-                It.IsAny<bool?>(),
-                It.Is<string[]>(value => value.SequenceEqual(hashes))), Times.Once);
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         private static Torrent CreateTorrent(string? category)

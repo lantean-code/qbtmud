@@ -1,7 +1,7 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {

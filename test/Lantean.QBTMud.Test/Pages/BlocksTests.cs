@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
@@ -13,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -49,7 +49,7 @@ namespace Lantean.QBTMud.Test.Pages
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
 
             Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
                 .ReturnsAsync(new List<PeerLog>());
         }
 
@@ -58,7 +58,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _ = RenderTarget();
 
-            Mock.Get(_apiClient).Verify(c => c.GetPeerLog(It.IsAny<int?>()), Times.Once);
+            Mock.Get(_apiClient).Verify(c => c.GetPeerLogAsync(It.IsAny<int?>()), Times.Once);
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
             var results = new List<PeerLog> { CreatePeerLog(1, "IPAddress", true) };
             Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
             await TriggerTimerTickAsync(target);
@@ -165,7 +165,7 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
             var results = new List<PeerLog> { CreatePeerLog(1, "IPAddress", false) };
             Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
             await InvokeSubmitAsync(target);
@@ -205,7 +205,7 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
             var results = CreatePeerLogs(501, true);
             Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
             await TriggerTimerTickAsync(target);
@@ -223,14 +223,13 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_TimerTick_WHEN_Forbidden_THEN_NoCrash()
         {
             var target = RenderTarget();
-            var exception = new HttpRequestException("Message", null, System.Net.HttpStatusCode.Forbidden);
             Mock.Get(_apiClient)
-                .Setup(c => c.GetPeerLog(It.IsAny<int?>()))
-                .ThrowsAsync(exception);
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Message", System.Net.HttpStatusCode.Forbidden);
 
             await TriggerTimerTickAsync(target);
 
-            Mock.Get(_apiClient).Verify(c => c.GetPeerLog(It.IsAny<int?>()), Times.AtLeastOnce);
+            Mock.Get(_apiClient).Verify(c => c.GetPeerLogAsync(It.IsAny<int?>()), Times.AtLeastOnce);
         }
 
         [Fact]

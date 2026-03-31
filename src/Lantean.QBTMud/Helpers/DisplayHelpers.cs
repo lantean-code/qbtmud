@@ -1,7 +1,7 @@
 using ByteSizeLib;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
 using MudBlazor;
+using QBittorrent.ApiClient;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
@@ -425,12 +425,12 @@ namespace Lantean.QBTMud.Helpers
 
         public static string RatioLimit(float value)
         {
-            if (value == Limits.GlobalLimit)
+            if (value == Limits.UseGlobalShareLimit)
             {
                 return "Global";
             }
 
-            if (value <= Limits.NoLimit)
+            if (value <= Limits.NoShareLimit)
             {
                 return "∞";
             }

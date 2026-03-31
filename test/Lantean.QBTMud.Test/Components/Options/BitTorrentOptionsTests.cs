@@ -1,12 +1,11 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
@@ -17,7 +16,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             var target = TestContext.Render<BitTorrentOptions>(parameters =>
@@ -70,7 +69,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -112,7 +111,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -177,7 +176,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -249,7 +248,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var events = new List<UpdatePreferences>();
 
@@ -277,7 +276,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             TestContext.Render<MudPopoverProvider>();
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var target = TestContext.Render<BitTorrentOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
@@ -302,7 +301,7 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void GIVEN_ValidationDelegates_WHEN_InvalidValuesProvided_THEN_ShouldReturnValidationMessages()
         {
             TestContext.Render<MudPopoverProvider>();
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var target = TestContext.Render<BitTorrentOptions>(parameters =>
             {
                 parameters.Add(p => p.Preferences, preferences);
@@ -365,37 +364,34 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindNumericInt(target, "MaxActiveCheckingTorrents").Instance.GetState(x => x.Value).Should().Be(0);
         }
 
-        private static Preferences DeserializePreferences()
+        private static Preferences CreatePreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "dht": true,
-                "pex": true,
-                "lsd": false,
-                "encryption": 1,
-                "anonymous_mode": true,
-                "max_active_checking_torrents": 3,
-                "queueing_enabled": true,
-                "max_active_downloads": 5,
-                "max_active_uploads": 6,
-                "max_active_torrents": 7,
-                "dont_count_slow_torrents": true,
-                "slow_torrent_dl_rate_threshold": 12,
-                "slow_torrent_ul_rate_threshold": 13,
-                "slow_torrent_inactive_timer": 14,
-                "max_ratio_enabled": true,
-                "max_ratio": 3.5,
-                "max_seeding_time_enabled": false,
-                "max_seeding_time": 120,
-                "max_ratio_act": 2,
-                "max_inactive_seeding_time_enabled": true,
-                "max_inactive_seeding_time": 60,
-                "add_trackers_enabled": true,
-                "add_trackers": "udp://tracker.example:80"
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.AddTrackers = "udp://tracker.example:80";
+                spec.AddTrackersEnabled = true;
+                spec.AnonymousMode = true;
+                spec.Dht = true;
+                spec.DontCountSlowTorrents = true;
+                spec.Encryption = 1;
+                spec.Lsd = false;
+                spec.MaxActiveCheckingTorrents = 3;
+                spec.MaxActiveDownloads = 5;
+                spec.MaxActiveTorrents = 7;
+                spec.MaxActiveUploads = 6;
+                spec.MaxInactiveSeedingTime = 60;
+                spec.MaxInactiveSeedingTimeEnabled = true;
+                spec.MaxRatio = 3.5f;
+                spec.MaxRatioAct = 2;
+                spec.MaxRatioEnabled = true;
+                spec.MaxSeedingTime = 120;
+                spec.MaxSeedingTimeEnabled = false;
+                spec.Pex = true;
+                spec.QueueingEnabled = true;
+                spec.SlowTorrentDlRateThreshold = 12;
+                spec.SlowTorrentInactiveTimer = 14;
+                spec.SlowTorrentUlRateThreshold = 13;
+            });
         }
 
         private static IRenderedComponent<MudNumericField<int>> FindNumericInt(IRenderedComponent<BitTorrentOptions> target, string testId)

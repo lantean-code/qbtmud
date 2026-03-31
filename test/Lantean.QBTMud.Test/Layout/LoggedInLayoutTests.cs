@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Helpers;
@@ -14,10 +13,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
 using System.Diagnostics;
 using System.Net;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Layout
 {
@@ -51,10 +50,10 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.AddSingleton<NavigationManager>(_navigationManager);
 
             var apiClientMock = Mock.Get(_apiClient);
-            apiClientMock.Setup(c => c.CheckAuthState()).ReturnsAsync(true);
-            apiClientMock.Setup(c => c.GetApplicationPreferences()).ReturnsAsync(CreatePreferences());
-            apiClientMock.Setup(c => c.GetApplicationVersion()).ReturnsAsync("Version");
-            apiClientMock.Setup(c => c.GetMainData(It.IsAny<int>())).ReturnsAsync(CreateClientMainData());
+            apiClientMock.Setup(c => c.CheckAuthStateAsync()).ReturnsAsync(true);
+            apiClientMock.Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync(CreatePreferences());
+            apiClientMock.Setup(c => c.GetApplicationVersionAsync()).ReturnsAsync("Version");
+            apiClientMock.Setup(c => c.GetMainDataAsync(It.IsAny<int>())).ReturnsAsync(CreateClientMainData());
 
             var dataManagerMock = Mock.Get(_dataManager);
             dataManagerMock.Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(CreateMainData());
@@ -796,7 +795,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             _snackbar.ClearInvocations();
             await TestContext.LocalStorage.SetItemAsStringAsync(_preferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
-            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferences()).ReturnsAsync((ClientModels.Preferences)null!);
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync((ClientModels.Preferences)null!);
 
             TestContext.Render<LoggedInLayout>(parameters =>
             {
@@ -961,7 +960,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, "magnet:?xt=urn:btih:ABC", Xunit.TestContext.Current.CancellationToken);
 
-            Mock.Get(_apiClient).Setup(c => c.CheckAuthState()).ReturnsAsync(false);
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync()).ReturnsAsync(false);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -972,15 +971,15 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public async Task GIVEN_StartupAuthCheckFailsWithConnectionError_WHEN_Initialized_THEN_ShowsLostConnectionWithoutNavigatingToLogin()
+        public async Task GIVEN_StartupAuthCheckFailsWithNoResponse_WHEN_Initialized_THEN_ShowsLostConnectionWithoutNavigatingToLogin()
         {
             DisposeDefaultTarget();
             await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, "magnet:?xt=urn:btih:ABC", Xunit.TestContext.Current.CancellationToken);
             _dialogService.ClearInvocations();
 
             Mock.Get(_apiClient)
-                .Setup(c => c.CheckAuthState())
-                .ThrowsAsync(new HttpRequestException("Unavailable", null, HttpStatusCode.BadGateway));
+                .Setup(c => c.CheckAuthStateAsync())
+                .ReturnsFailure(ApiFailureKind.NoResponse, "Unavailable");
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -995,6 +994,66 @@ namespace Lantean.QBTMud.Test.Layout
 
             var pending = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
             pending.Should().Be("magnet:?xt=urn:btih:ABC");
+        }
+
+        [Fact]
+        public void GIVEN_StartupAuthCheckFailsWithApiError_WHEN_Initialized_THEN_ShowsSnackbarWithoutNavigatingToLoginOrLostConnectionDialog()
+        {
+            DisposeDefaultTarget();
+            _dialogService.ClearInvocations();
+            _snackbar.ClearInvocations();
+
+            Mock.Get(_apiClient)
+                .Setup(c => c.CheckAuthStateAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError);
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.FindComponent<MudProgressLinear>().Should().NotBeNull();
+            _navigationManager.LastNavigationUri.Should().BeNull();
+            Mock.Get(_refreshTimer).Verify(
+                timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+            _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Never);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    "qBittorrent returned an error. Please try again.",
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StartupAuthCheckFailsWithApiError_WHEN_RecoveryTickSucceeds_THEN_LoadsShellWithoutFullReload()
+        {
+            DisposeDefaultTarget();
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+
+            Mock.Get(_apiClient).SetupSequence(c => c.CheckAuthStateAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError)
+                .ReturnsAsync(true);
+
+            Mock.Get(_refreshTimer)
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            var target = RenderLayout(new List<IManagedTimer>(), body: CreateProbeBody());
+
+            target.FindComponent<MudProgressLinear>().Should().NotBeNull();
+            target.WaitForAssertion(() => handler.Should().NotBeNull());
+
+            var result = await handler!(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Continue);
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<LayoutProbe>().Should().NotBeNull();
+            });
+            _navigationManager.LastNavigationUri.Should().BeNull();
         }
 
         [Fact]
@@ -1020,12 +1079,13 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public void GIVEN_LostConnection_WHEN_Rendered_THEN_ShowsLostConnectionDialog()
+        public async Task GIVEN_ConnectivityStateChangesToLost_WHEN_Rendered_THEN_ShowsLostConnectionDialog()
         {
             _dialogService.ClearInvocations();
-            var mainData = CreateMainData(lostConnection: true);
+            var target = RenderLayout(new List<IManagedTimer>());
 
-            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+            var connectivityStateService = TestContext.Services.GetRequiredService<IConnectivityStateService>();
+            await target.InvokeAsync(() => connectivityStateService.MarkLostConnection());
 
             target.WaitForAssertion(() =>
             {
@@ -1268,8 +1328,8 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(Task.CompletedTask);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync()).Returns(Task.CompletedTask);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync()).ReturnsAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1288,8 +1348,8 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: true));
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(Task.CompletedTask);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(false);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync()).Returns(Task.CompletedTask);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync()).ReturnsAsync(false);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1308,7 +1368,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).ThrowsAsync(new HttpRequestException("Fail"));
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync()).ReturnsFailure(ApiFailureKind.ServerError, "Fail", HttpStatusCode.InternalServerError);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1327,8 +1387,8 @@ namespace Lantean.QBTMud.Test.Layout
             var toggleTaskSource = new TaskCompletionSource<bool>();
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(toggleTaskSource.Task);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync()).Returns(toggleTaskSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync()).ReturnsAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1336,7 +1396,7 @@ namespace Lantean.QBTMud.Test.Layout
             var firstClick = target.InvokeAsync(() => button.Find("button").Click());
             await target.InvokeAsync(() => button.Find("button").Click());
 
-            Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimits(), Times.Once);
+            Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimitsAsync(), Times.Once);
 
             toggleTaskSource.SetResult(true);
             await firstClick;
@@ -1479,40 +1539,75 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public async Task GIVEN_RefreshTickBeforeAuth_WHEN_Ticked_THEN_ReturnsStop()
+        public void GIVEN_AuthenticationStillPending_WHEN_Rendered_THEN_DoesNotStartRefreshLoop()
+        {
+            var tickSource = new TaskCompletionSource<bool>();
+
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync()).Returns(tickSource.Task);
+
+            var target = RenderLayout(new List<IManagedTimer>());
+
+            target.FindComponent<MudProgressLinear>().Should().NotBeNull();
+            Mock.Get(_refreshTimer).Verify(
+                timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_AuthenticationCompletesAfterFirstRender_WHEN_MainLoopStarts_THEN_NoResponseTickMarksLostConnection()
         {
             var tickSource = new TaskCompletionSource<bool>();
             Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            var probeBody = CreateProbeBody();
+            var mainData = CreateMainData(serverState: CreateServerState());
 
-            Mock.Get(_apiClient).Setup(c => c.CheckAuthState()).Returns(tickSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync()).Returns(tickSource.Task);
+            Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+                .ReturnsAsync(CreateClientMainData())
+                .ReturnsFailure(ApiFailureKind.NoResponse, "qBittorrent client is not reachable.");
 
             Mock.Get(_refreshTimer)
                 .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
                 .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
                 .ReturnsAsync(true);
 
-            var target = RenderLayout(new List<IManagedTimer>());
+            var target = RenderLayout(new List<IManagedTimer>(), body: probeBody);
 
-            target.WaitForAssertion(() => handler.Should().NotBeNull());
+            Mock.Get(_refreshTimer).Verify(
+                timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+
+            tickSource.SetResult(true);
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<LayoutProbe>().Should().NotBeNull();
+                handler.Should().NotBeNull();
+            });
+
+            var probe = target.FindComponent<LayoutProbe>();
 
             var result = await handler!(CancellationToken.None);
 
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
-
-            tickSource.SetResult(false);
+            target.WaitForAssertion(() => probe.Instance.ConnectivityStateService.IsLostConnection.Should().BeTrue());
+            _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_RefreshTickThrows_WHEN_Ticked_THEN_LostConnectionSetAndStops()
+        public async Task GIVEN_RefreshTickNoResponse_WHEN_Ticked_THEN_LostConnectionSetAndStops()
         {
             Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
             var probeBody = CreateProbeBody();
             var mainData = CreateMainData(serverState: CreateServerState());
             _dialogService.ClearInvocations();
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData())
-                .ThrowsAsync(new HttpRequestException());
+                .ReturnsFailure(ApiFailureKind.NoResponse, "qBittorrent client is not reachable.");
 
             Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
 
@@ -1529,10 +1624,51 @@ namespace Lantean.QBTMud.Test.Layout
             var result = await handler!(CancellationToken.None);
 
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
-            target.WaitForAssertion(() => probe.Instance.MainData!.LostConnection.Should().BeTrue());
+            target.WaitForAssertion(() => probe.Instance.ConnectivityStateService.IsLostConnection.Should().BeTrue());
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshTickApiError_WHEN_Ticked_THEN_ShowsSnackbarAndContinuesWithoutLostConnectionDialog()
+        {
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            var probeBody = CreateProbeBody();
+            var mainData = CreateMainData(serverState: CreateServerState());
+            _dialogService.ClearInvocations();
+            _snackbar.ClearInvocations();
+
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+                .ReturnsAsync(CreateClientMainData())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError);
+
+            Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
+
+            Mock.Get(_refreshTimer)
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData, body: probeBody);
+            var probe = target.FindComponent<LayoutProbe>();
+
+            target.WaitForAssertion(() => handler.Should().NotBeNull());
+
+            var result = await handler!(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Continue);
+            probe.Instance.ConnectivityStateService.IsLostConnection.Should().BeFalse();
+            _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Never);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    "qBittorrent returned an error. Please try again.",
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string>()),
+                Times.Once);
         }
 
         [Fact]
@@ -1543,9 +1679,9 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             _dialogService.ClearInvocations();
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData())
-                .ThrowsAsync(new HttpRequestException("Unauthorized", null, HttpStatusCode.Unauthorized));
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Unauthorized);
 
             Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
 
@@ -1564,7 +1700,7 @@ namespace Lantean.QBTMud.Test.Layout
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
             target.WaitForAssertion(() => _navigationManager.LastNavigationUri.Should().Be("login"));
             _navigationManager.ForceLoad.Should().BeFalse();
-            probe.Instance.MainData!.LostConnection.Should().BeFalse();
+            probe.Instance.ConnectivityStateService.IsLostConnection.Should().BeFalse();
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Never);
@@ -1578,9 +1714,9 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             _dialogService.ClearInvocations();
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData())
-                .ThrowsAsync(new HttpRequestException("Forbidden", null, HttpStatusCode.Forbidden));
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Forbidden", HttpStatusCode.Forbidden);
 
             Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
 
@@ -1599,7 +1735,7 @@ namespace Lantean.QBTMud.Test.Layout
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
             target.WaitForAssertion(() => _navigationManager.LastNavigationUri.Should().Be("login"));
             _navigationManager.ForceLoad.Should().BeFalse();
-            probe.Instance.MainData!.LostConnection.Should().BeFalse();
+            probe.Instance.ConnectivityStateService.IsLostConnection.Should().BeFalse();
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Never);
@@ -1613,7 +1749,7 @@ namespace Lantean.QBTMud.Test.Layout
             var initialData = CreateMainData(serverState: CreateServerState());
             var updatedData = CreateMainData(serverState: CreateServerState(connectionStatus: "connected"));
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: true));
 
@@ -1648,7 +1784,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = true;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
@@ -1683,7 +1819,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = false;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
@@ -1730,7 +1866,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = false;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
@@ -1764,7 +1900,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = false;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
@@ -2128,8 +2264,8 @@ namespace Lantean.QBTMud.Test.Layout
         {
             DisposeDefaultTarget();
             var completionSource = new TaskCompletionSource<bool>();
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimits()).Returns(completionSource.Task);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsState()).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync()).Returns(completionSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync()).ReturnsAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>());
             var button = target.FindComponents<MudIconButton>()
@@ -2137,11 +2273,11 @@ namespace Lantean.QBTMud.Test.Layout
 
             var firstClick = button.Find("button").TriggerEventAsync("onclick", new MouseEventArgs());
 
-            target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimits(), Times.Once));
+            target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimitsAsync(), Times.Once));
 
             await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(null));
 
-            Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimits(), Times.Once);
+            Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimitsAsync(), Times.Once);
 
             completionSource.SetResult(true);
             await firstClick;
@@ -2186,7 +2322,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = false;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainData(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
@@ -2219,7 +2355,7 @@ namespace Lantean.QBTMud.Test.Layout
         public void GIVEN_BlankVersion_WHEN_PageTitleResolved_THEN_OmitsVersionText()
         {
             DisposeDefaultTarget();
-            Mock.Get(_apiClient).Setup(c => c.GetApplicationVersion()).ReturnsAsync(" ");
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationVersionAsync()).ReturnsAsync(" ");
 
             var target = RenderLayout(new List<IManagedTimer>());
             var pageTitle = target.FindComponent<PageTitle>();
@@ -2300,7 +2436,7 @@ namespace Lantean.QBTMud.Test.Layout
             {
                 Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData ?? CreateMainData());
             }
-            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferences()).ReturnsAsync(preferences ?? CreatePreferences());
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync(preferences ?? CreatePreferences());
 
             return context.Render<LoggedInLayout>(parameters =>
             {
@@ -2411,11 +2547,10 @@ namespace Lantean.QBTMud.Test.Layout
 
         private static MainData CreateMainData(
             IEnumerable<Torrent>? torrents = null,
-            ServerState? serverState = null,
-            bool lostConnection = false)
+            ServerState? serverState = null)
         {
             var torrentList = torrents?.ToDictionary(t => t.Hash, t => t) ?? new Dictionary<string, Torrent>();
-            var data = new MainData(
+            return new MainData(
                 torrentList,
                 Array.Empty<string>(),
                 new Dictionary<string, Category>(),
@@ -2425,8 +2560,6 @@ namespace Lantean.QBTMud.Test.Layout
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>());
-            data.LostConnection = lostConnection;
-            return data;
         }
 
         private static ServerState CreateServerState(
@@ -2525,9 +2658,12 @@ namespace Lantean.QBTMud.Test.Layout
 
         private static ClientModels.Preferences CreatePreferences(bool statusBarExternalIp = false, string? locale = null)
         {
-            var localeJson = locale is null ? "null" : $"\"{locale}\"";
-            var json = $"{{\"rss_processing_enabled\":false,\"status_bar_external_ip\":{statusBarExternalIp.ToString().ToLowerInvariant()},\"locale\":{localeJson}}}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.Locale = locale!;
+                spec.RssProcessingEnabled = false;
+                spec.StatusBarExternalIp = statusBarExternalIp;
+            });
         }
 
         private sealed class LayoutProbe : ComponentBase
@@ -2573,6 +2709,9 @@ namespace Lantean.QBTMud.Test.Layout
 
             [CascadingParameter(Name = "SortDirectionChanged")]
             public EventCallback<SortDirection> SortDirectionChanged { get; set; }
+
+            [Inject]
+            public IConnectivityStateService ConnectivityStateService { get; set; } = default!;
         }
 
         private sealed class TestNavigationManager : NavigationManager

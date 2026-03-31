@@ -2,7 +2,7 @@ using AwesomeAssertions;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Services
 {

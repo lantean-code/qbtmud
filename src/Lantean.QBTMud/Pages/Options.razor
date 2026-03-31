@@ -14,8 +14,8 @@
             }
             <MudText Class="px-5 no-wrap">@LanguageLocalizer.Translate("OptionsDialog", "Options")</MudText>
             <MudDivider Vertical="true" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="@(LostConnection || UpdatePreferences is null)" />
-            <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(LostConnection || UpdatePreferences is null)" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Save" OnClick="Save" Disabled="@(ConnectivityStateService.IsLostConnection || UpdatePreferences is null)" />
+            <MudIconButton Icon="@Icons.Material.Outlined.Undo" OnClick="Undo" Disabled="@(ConnectivityStateService.IsLostConnection || UpdatePreferences is null)" />
         </MudToolBar>
     </div>
 

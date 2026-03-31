@@ -4,8 +4,8 @@ namespace Lantean.QBTMud.Services
 {
     public interface IPeerDataManager
     {
-        PeerList CreatePeerList(QBitTorrentClient.Models.TorrentPeers torrentPeers);
+        PeerList CreatePeerList(QBittorrent.ApiClient.Models.TorrentPeers torrentPeers);
 
-        void MergeTorrentPeers(QBitTorrentClient.Models.TorrentPeers torrentPeers, PeerList peerList);
+        void MergeTorrentPeers(QBittorrent.ApiClient.Models.TorrentPeers torrentPeers, PeerList peerList);
     }
 }

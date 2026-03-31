@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         public Dictionary<string, Torrent> Torrents { get; set; } = default!;
 
         [Parameter]
-        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+        public QBittorrent.ApiClient.Models.Preferences? Preferences { get; set; }
 
         [Parameter]
         public IEnumerable<string> Hashes { get; set; } = [];

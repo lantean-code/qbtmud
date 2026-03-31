@@ -1,4 +1,3 @@
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -7,6 +6,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
+using QBittorrent.ApiClient.Models;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Components.Dialogs
@@ -18,7 +18,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         private const string _notificationSynchronizationErrorText = "Unable to synchronize notification settings.";
 
         [Inject]
-        protected QBitTorrentClient.IApiClient ApiClient { get; set; } = default!;
+        protected QBittorrent.ApiClient.IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
         protected ILanguageCatalog LanguageCatalog { get; set; } = default!;
@@ -650,7 +650,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             try
             {
-                await ApiClient.SetApplicationPreferences(new UpdatePreferences
+                await ApiClient.SetApplicationPreferencesAsync(new UpdatePreferences
                 {
                     Locale = locale
                 });

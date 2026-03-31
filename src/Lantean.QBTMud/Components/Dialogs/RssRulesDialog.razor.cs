@@ -1,8 +1,8 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -27,7 +27,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected string? SelectedRuleName { get; set; }
 
-        protected Dictionary<string, QBitTorrentClient.Models.AutoDownloadingRule?> Rules { get; set; } = [];
+        protected Dictionary<string, QBittorrent.ApiClient.Models.AutoDownloadingRule?> Rules { get; set; } = [];
 
         protected IEnumerable<string> Categories { get; set; } = [];
 
@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected IReadOnlyDictionary<string, IReadOnlyList<string>>? MatchingArticles { get; set; }
 
-        private QBitTorrentClient.Models.AutoDownloadingRule SelectedRule { get; set; } = default!;
+        private QBittorrent.ApiClient.Models.AutoDownloadingRule SelectedRule { get; set; } = default!;
 
         protected bool UseRegex { get; set; }
 
@@ -188,15 +188,24 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            var rules = await ApiClient.GetAllRssAutoDownloadingRules();
-            foreach (var kvp in rules)
+            var rulesResult = await ApiClient.GetAllRssAutoDownloadingRulesAsync();
+            if (rulesResult.TryGetValue(out var rules))
             {
-                Rules.Add(kvp.Key, kvp.Value);
+                foreach (var kvp in rules)
+                {
+                    Rules.Add(kvp.Key, kvp.Value);
+                }
             }
 
-            Categories = (await ApiClient.GetAllCategories()).Keys;
+            var categoriesResult = await ApiClient.GetAllCategoriesAsync();
+            Categories = categoriesResult.TryGetValue(out var categories)
+                ? categories.Keys
+                : [];
 
-            Feeds = (await ApiClient.GetAllRssItems(false)).ToDictionary(f => f.Key, f => f.Value.Url);
+            var feedsResult = await ApiClient.GetAllRssItemsAsync(false);
+            Feeds = feedsResult.TryGetValue(out var feeds)
+                ? feeds.ToDictionary(f => f.Key, f => f.Value.Url)
+                : new Dictionary<string, string>();
         }
 
         protected async Task AddRule()
@@ -235,7 +244,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             else
             {
-                await ApiClient.RemoveRssAutoDownloadingRule(SelectedRuleName);
+                await ApiClient.RemoveRssAutoDownloadingRuleAsync(SelectedRuleName);
             }
 
             Rules.Remove(SelectedRuleName);
@@ -255,7 +264,10 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (!_unsavedRuleNames.Contains(SelectedRuleName))
             {
-                MatchingArticles = await ApiClient.GetRssMatchingArticles(SelectedRuleName);
+                var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(SelectedRuleName);
+                MatchingArticles = matchingArticlesResult.TryGetValue(out var matchingArticles)
+                    ? matchingArticles
+                    : null;
             }
             else
             {
@@ -264,7 +276,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (rule is null)
             {
-                rule = new QBitTorrentClient.Models.AutoDownloadingRule();
+                rule = new QBittorrent.ApiClient.Models.AutoDownloadingRule();
 
                 Rules[SelectedRuleName] = rule;
             }
@@ -340,9 +352,12 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            await ApiClient.SetRssAutoDownloadingRule(SelectedRuleName, SelectedRule);
+            await ApiClient.SetRssAutoDownloadingRuleAsync(SelectedRuleName, SelectedRule);
 
-            MatchingArticles = await ApiClient.GetRssMatchingArticles(SelectedRuleName);
+            var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(SelectedRuleName);
+            MatchingArticles = matchingArticlesResult.TryGetValue(out var matchingArticles)
+                ? matchingArticles
+                : null;
 
             _unsavedRuleNames.Remove(SelectedRuleName);
         }

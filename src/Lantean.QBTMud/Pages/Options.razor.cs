@@ -1,11 +1,11 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -37,11 +37,11 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected IPreferencesUpdateService PreferencesUpdateService { get; set; } = default!;
 
+        [Inject]
+        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
-
-        [CascadingParameter(Name = "LostConnection")]
-        public bool LostConnection { get; set; }
 
         protected int ActiveTab { get; set; }
 
@@ -67,7 +67,11 @@ namespace Lantean.QBTMud.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            Preferences = await ApiClient.GetApplicationPreferences();
+            var preferencesResult = await ApiClient.GetApplicationPreferencesAsync();
+            if (preferencesResult.TryGetValue(out var preferences))
+            {
+                Preferences = preferences;
+            }
         }
 
         protected void PreferencesChanged(UpdatePreferences preferences)
@@ -150,7 +154,12 @@ namespace Lantean.QBTMud.Pages
             }
 
             var selectedLocale = UpdatePreferences.Locale;
-            await ApiClient.SetApplicationPreferences(UpdatePreferences);
+            var updateResult = await ApiClient.SetApplicationPreferencesAsync(UpdatePreferences);
+            if (!updateResult.IsSuccess)
+            {
+                SnackbarWorkflow.ShowTransientMessage(TranslateOptions("Unable to save options."), Severity.Error);
+                return;
+            }
 
             if (!string.IsNullOrWhiteSpace(selectedLocale))
             {
@@ -160,11 +169,20 @@ namespace Lantean.QBTMud.Pages
 
             SnackbarWorkflow.ShowTransientMessage(TranslateOptions("Options saved."), Severity.Success);
 
-            var refreshedPreferences = await ApiClient.GetApplicationPreferences();
-            Preferences = refreshedPreferences;
+            var refreshedPreferences = await ApiClient.GetApplicationPreferencesAsync();
+            if (!refreshedPreferences.TryGetValue(out var preferences))
+            {
+                SnackbarWorkflow.ShowTransientMessage(TranslateOptions("Unable to reload options."), Severity.Warning);
+                UpdatePreferences = null;
+                _suppressNavigationPrompt = true;
+                NavigationManager.NavigateToHome();
+                return;
+            }
+
+            Preferences = preferences;
             UpdatePreferences = null;
             _suppressNavigationPrompt = true;
-            await PreferencesUpdateService.PublishAsync(refreshedPreferences);
+            await PreferencesUpdateService.PublishAsync(preferences);
             NavigationManager.NavigateToHome();
         }
 

@@ -23,26 +23,24 @@
                                             <CascadingValue Value="TagChanged" Name="TagChanged">
                                                 <CascadingValue Value="TrackerChanged" Name="TrackerChanged">
                                                     <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
-                                                        <CascadingValue Value="@(MainData?.LostConnection ?? false)" Name="LostConnection">
-                                                            <CascadingValue Value="Version" Name="Version">
-                                                                <div class="app-shell">
-                                                                    @Body
-                                                                    <StatusBar MainData="MainData"
-                                                                               Preferences="Preferences"
-                                                                               IsDarkMode="IsDarkMode"
-                                                                               CurrentBreakpoint="CurrentBreakpoint"
-                                                                               CurrentOrientation="CurrentOrientation"
-                                                                               ToggleAlternativeSpeedLimitsInProgress="_toggleAltSpeedLimitsInProgress"
-                                                                               OnToggleTimerDrawer="ToggleTimerDrawerAsync"
-                                                                               OnToggleAlternativeSpeedLimits="ToggleAlternativeSpeedLimits"
-                                                                               OnShowGlobalDownloadRateLimit="ShowGlobalDownloadRateLimit"
-                                                                               OnShowGlobalUploadRateLimit="ShowGlobalUploadRateLimit" />
-                                                                    @if (_showPwaInstallPrompt)
-                                                                    {
-                                                                        <PwaInstallPrompt />
-                                                                    }
-                                                                </div>
-                                                            </CascadingValue>
+                                                        <CascadingValue Value="Version" Name="Version">
+                                                            <div class="app-shell">
+                                                                @Body
+                                                                <StatusBar MainData="MainData"
+                                                                           Preferences="Preferences"
+                                                                           IsDarkMode="IsDarkMode"
+                                                                           CurrentBreakpoint="CurrentBreakpoint"
+                                                                           CurrentOrientation="CurrentOrientation"
+                                                                           ToggleAlternativeSpeedLimitsInProgress="_toggleAltSpeedLimitsInProgress"
+                                                                           OnToggleTimerDrawer="ToggleTimerDrawerAsync"
+                                                                           OnToggleAlternativeSpeedLimits="ToggleAlternativeSpeedLimits"
+                                                                           OnShowGlobalDownloadRateLimit="ShowGlobalDownloadRateLimit"
+                                                                           OnShowGlobalUploadRateLimit="ShowGlobalUploadRateLimit" />
+                                                                @if (_showPwaInstallPrompt)
+                                                                {
+                                                                    <PwaInstallPrompt />
+                                                                }
+                                                            </div>
                                                         </CascadingValue>
                                                     </CascadingValue>
                                                 </CascadingValue>

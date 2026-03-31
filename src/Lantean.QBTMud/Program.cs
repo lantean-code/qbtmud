@@ -1,4 +1,3 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Configuration;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
@@ -6,6 +5,7 @@ using Lantean.QBTMud.Theming;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud
 {
@@ -54,13 +54,11 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<HttpLogger>();
             builder.Services.AddSingleton<IApiUrlResolver>(new ApiUrlResolver(apiBaseAddress));
             builder.Services
-                .AddScoped(sp => sp
-                    .GetRequiredService<IHttpClientFactory>()
-                    .CreateClient("API"))
                 .AddHttpClient("API", (sp, client) => client.BaseAddress = sp.GetRequiredService<IApiUrlResolver>().ApiBaseAddress)
                 .AddHttpMessageHandler<CookieHandler>()
                 .RemoveAllLoggers()
                 .AddLogger<HttpLogger>(wrapHandlersPipeline: true);
+            builder.Services.AddQBittorrentApiClient("API");
             builder.Services.AddHttpClient("Assets", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
             builder.Services.AddHttpClient("GitHubReleases", client =>
             {
@@ -70,7 +68,6 @@ namespace Lantean.QBTMud
                 client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
             });
 
-            builder.Services.AddScoped<IApiClient, ApiClient>();
             builder.Services.AddScoped<IWebApiCapabilityService, WebApiCapabilityService>();
             builder.Services.AddScoped<IClientDataStorageAdapter, ClientDataStorageAdapter>();
             builder.Services.AddSingleton<IStorageCatalogService, StorageCatalogService>();
@@ -84,6 +81,7 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IAppBuildInfoService, AppBuildInfoService>();
             builder.Services.AddScoped<IAppUpdateService, AppUpdateService>();
             builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
+            builder.Services.AddScoped<IConnectivityStateService, ConnectivityStateService>();
             builder.Services.AddScoped<IBrowserNotificationService, BrowserNotificationService>();
             builder.Services.AddScoped<IInternalUrlProvider, InternalUrlProvider>();
             builder.Services.AddScoped<IMagnetLinkService, MagnetLinkService>();

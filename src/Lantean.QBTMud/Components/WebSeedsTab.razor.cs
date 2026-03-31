@@ -1,10 +1,9 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
-using System.Net;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components
 {
@@ -80,16 +79,19 @@ namespace Lantean.QBTMud.Components
         {
             if (Active && Hash is not null)
             {
-                try
+                var webSeeds = await ApiClient.GetTorrentWebSeedsAsync(Hash);
+                if (!webSeeds.TryGetValue(out var torrentWebSeeds))
                 {
-                    WebSeeds = await ApiClient.GetTorrentWebSeeds(Hash);
-                }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
-                {
-                    _timerCancellationToken.CancelIfNotDisposed();
-                    return ManagedTimerTickResult.Stop;
+                    if (webSeeds.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    {
+                        _timerCancellationToken.CancelIfNotDisposed();
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    return ManagedTimerTickResult.Continue;
                 }
 
+                WebSeeds = torrentWebSeeds;
                 await InvokeAsync(StateHasChanged);
             }
 
@@ -113,7 +115,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            WebSeeds = await ApiClient.GetTorrentWebSeeds(Hash);
+            var webSeeds = await ApiClient.GetTorrentWebSeedsAsync(Hash);
+            WebSeeds = webSeeds.TryGetValue(out var torrentWebSeeds) ? torrentWebSeeds : [];
 
             await InvokeAsync(StateHasChanged);
         }

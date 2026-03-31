@@ -1,13 +1,13 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
 using System.Data;
-using System.Net;
 using UIComponents.Flags;
+using TorrentSelector = QBittorrent.ApiClient.Models.TorrentSelector;
 
 namespace Lantean.QBTMud.Components
 {
@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Components
         public int RefreshInterval { get; set; }
 
         [CascadingParameter]
-        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+        public QBittorrent.ApiClient.Models.Preferences? Preferences { get; set; }
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
@@ -93,7 +93,12 @@ namespace Lantean.QBTMud.Components
                 PeerList = null;
             }
 
-            var peers = await ApiClient.GetTorrentPeersData(Hash, _requestId);
+            var peersResult = await ApiClient.GetTorrentPeersDataAsync(Hash, _requestId);
+            if (!peersResult.TryGetValue(out var peers))
+            {
+                return;
+            }
+
             if (PeerList is null || peers.FullUpdate)
             {
                 PeerList = PeerDataManager.CreatePeerList(peers);
@@ -130,7 +135,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.AddPeers([Hash], peers);
+            await ApiClient.AddPeersAsync(TorrentSelector.FromHash(Hash), peers);
         }
 
         protected Task BanPeerToolbar()
@@ -154,7 +159,7 @@ namespace Lantean.QBTMud.Components
             {
                 return;
             }
-            await ApiClient.BanPeers([new QBitTorrentClient.Models.PeerId(peer.IPAddress, peer.Port)]);
+            await ApiClient.BanPeersAsync([new QBittorrent.ApiClient.Models.PeerId(peer.IPAddress, peer.Port)]);
         }
 
         protected Task TableDataContextMenu(TableDataContextMenuEventArgs<Peer> eventArgs)
@@ -225,16 +230,18 @@ namespace Lantean.QBTMud.Components
 
             if (Active)
             {
-                QBitTorrentClient.Models.TorrentPeers peers;
-                try
+                var peersResult = await ApiClient.GetTorrentPeersDataAsync(Hash, _requestId);
+                if (!peersResult.TryGetValue(out QBittorrent.ApiClient.Models.TorrentPeers? peers))
                 {
-                    peers = await ApiClient.GetTorrentPeersData(Hash, _requestId);
+                    if (peersResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    {
+                        _timerCancellationToken.CancelIfNotDisposed();
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    return ManagedTimerTickResult.Continue;
                 }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
-                {
-                    _timerCancellationToken.CancelIfNotDisposed();
-                    return ManagedTimerTickResult.Stop;
-                }
+
                 if (PeerList is null || peers.FullUpdate)
                 {
                     PeerList = PeerDataManager.CreatePeerList(peers);

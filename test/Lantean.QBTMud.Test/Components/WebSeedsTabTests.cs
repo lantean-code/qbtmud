@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Services;
@@ -11,6 +9,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using System.Net;
 
 namespace Lantean.QBTMud.Test.Components
@@ -59,7 +59,7 @@ namespace Lantean.QBTMud.Test.Components
 
             result.Should().Be(ManagedTimerTickResult.Continue);
             target.RenderCount.Should().Be(initialRenderCount);
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -68,13 +68,13 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderTarget();
             var webSeeds = new[] { new WebSeed("http://seed-1") };
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentWebSeeds("Hash"))
+                .Setup(client => client.GetTorrentWebSeedsAsync("Hash"))
                 .ReturnsAsync(webSeeds);
 
             await SetParametersAsync(target, active: true, hash: "Hash");
 
             GetSeedUrls(target).Should().BeEquivalentTo(new[] { "http://seed-1" });
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds("Hash"), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync("Hash"), Times.Once);
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await SetParametersAsync(target, active: true, hash: null);
 
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -94,7 +94,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await SetParametersAsync(target, active: false, hash: "Hash");
 
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -107,7 +107,7 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Continue);
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -115,7 +115,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var target = RenderTarget();
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetTorrentWebSeeds("Hash"))
+                .SetupSequence(client => client.GetTorrentWebSeedsAsync("Hash"))
                 .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
                 .ReturnsAsync(new[] { new WebSeed("http://seed-2") });
 
@@ -125,7 +125,7 @@ namespace Lantean.QBTMud.Test.Components
 
             result.Should().Be(ManagedTimerTickResult.Continue);
             GetSeedUrls(target).Should().BeEquivalentTo(new[] { "http://seed-2" });
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeeds("Hash"), Times.Exactly(2));
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentWebSeedsAsync("Hash"), Times.Exactly(2));
         }
 
         [Fact]
@@ -133,9 +133,9 @@ namespace Lantean.QBTMud.Test.Components
         {
             var target = RenderTarget();
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetTorrentWebSeeds("Hash"))
+                .SetupSequence(client => client.GetTorrentWebSeedsAsync("Hash"))
                 .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
-                .ThrowsAsync(new HttpRequestException("Forbidden", null, HttpStatusCode.Forbidden));
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Forbidden", HttpStatusCode.Forbidden);
 
             await SetParametersAsync(target, active: true, hash: "Hash");
 
@@ -149,9 +149,9 @@ namespace Lantean.QBTMud.Test.Components
         {
             var target = RenderTarget();
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetTorrentWebSeeds("Hash"))
+                .SetupSequence(client => client.GetTorrentWebSeedsAsync("Hash"))
                 .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
-                .ThrowsAsync(new HttpRequestException("Not Found", null, HttpStatusCode.NotFound));
+                .ReturnsFailure(ApiFailureKind.NotFound, "Not Found", HttpStatusCode.NotFound);
 
             await SetParametersAsync(target, active: true, hash: "Hash");
 
@@ -202,7 +202,7 @@ namespace Lantean.QBTMud.Test.Components
             var target = RenderTarget();
             var webSeeds = new[] { new WebSeed("http://seed-1") };
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentWebSeeds("Hash"))
+                .Setup(client => client.GetTorrentWebSeedsAsync("Hash"))
                 .ReturnsAsync(webSeeds);
 
             await SetParametersAsync(target, active: true, hash: "Hash");

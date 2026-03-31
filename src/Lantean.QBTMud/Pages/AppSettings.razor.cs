@@ -34,11 +34,11 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
-
-        [CascadingParameter(Name = "LostConnection")]
-        public bool LostConnection { get; set; }
 
         [CascadingParameter(Name = "AppSettings")]
         public AppSettingsModel? CascadedAppSettings { get; set; }

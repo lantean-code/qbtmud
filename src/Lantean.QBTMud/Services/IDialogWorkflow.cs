@@ -1,6 +1,6 @@
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
-using QbtCookie = Lantean.QBitTorrentClient.Models.ApplicationCookie;
+using QbtCookie = QBittorrent.ApiClient.Models.ApplicationCookie;
 
 namespace Lantean.QBTMud.Services
 {
@@ -121,7 +121,7 @@ namespace Lantean.QBTMud.Services
         /// Shows the add peers dialog.
         /// </summary>
         /// <returns>The selected peers, or <c>null</c> if canceled.</returns>
-        Task<HashSet<QBitTorrentClient.Models.PeerId>?> ShowAddPeersDialog();
+        Task<HashSet<QBittorrent.ApiClient.Models.PeerId>?> ShowAddPeersDialog();
 
         /// <summary>
         /// Shows the add tags dialog.
@@ -188,7 +188,7 @@ namespace Lantean.QBTMud.Services
         /// <param name="mode">The browse mode for directory content.</param>
         /// <param name="allowFolderSelection">Whether selecting the current folder is allowed.</param>
         /// <returns>The selected path, or <c>null</c> if the dialog was canceled.</returns>
-        Task<string?> ShowPathBrowserDialog(string title, string? initialPath, QBitTorrentClient.Models.DirectoryContentMode mode, bool allowFolderSelection);
+        Task<string?> ShowPathBrowserDialog(string title, string? initialPath, QBittorrent.ApiClient.Models.DirectoryContentMode mode, bool allowFolderSelection);
 
         /// <summary>
         /// Shows a string input dialog.
@@ -220,7 +220,7 @@ namespace Lantean.QBTMud.Services
             IEnumerable<string> hashes,
             UIAction parent,
             Dictionary<string, Torrent> torrents,
-            QBitTorrentClient.Models.Preferences? preferences,
+            QBittorrent.ApiClient.Models.Preferences? preferences,
             HashSet<string> tags,
             Dictionary<string, Category> categories);
 

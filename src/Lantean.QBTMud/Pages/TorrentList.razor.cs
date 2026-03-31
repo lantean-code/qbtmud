@@ -1,4 +1,3 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -7,6 +6,7 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
+using QBittorrent.ApiClient;
 using System.Text.RegularExpressions;
 
 namespace Lantean.QBTMud.Pages
@@ -32,22 +32,22 @@ namespace Lantean.QBTMud.Pages
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
         [Inject]
+        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
+
+        [Inject]
         public ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
         public ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
-        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+        public QBittorrent.ApiClient.Models.Preferences? Preferences { get; set; }
 
         [CascadingParameter]
         public IReadOnlyList<Torrent>? Torrents { get; set; }
 
         [CascadingParameter]
         public MainData MainData { get; set; } = default!;
-
-        [CascadingParameter(Name = "LostConnection")]
-        public bool LostConnection { get; set; }
 
         [CascadingParameter(Name = "TorrentsVersion")]
         public int TorrentsVersion { get; set; }
@@ -85,7 +85,7 @@ namespace Lantean.QBTMud.Pages
         protected MudMenu? ContextMenu { get; set; }
 
         private object? _lastRenderedTorrents;
-        private QBitTorrentClient.Models.Preferences? _lastPreferences;
+        private QBittorrent.ApiClient.Models.Preferences? _lastPreferences;
         private bool _lastLostConnection;
         private bool _hasRendered;
         private int _lastSelectionCount;
@@ -123,7 +123,7 @@ namespace Lantean.QBTMud.Pages
                 _hasRendered = true;
                 _lastRenderedTorrents = Torrents;
                 _lastPreferences = Preferences;
-                _lastLostConnection = LostConnection;
+                _lastLostConnection = ConnectivityStateService.IsLostConnection;
                 _lastTorrentsVersion = TorrentsVersion;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
@@ -143,7 +143,7 @@ namespace Lantean.QBTMud.Pages
                 _lastTorrentsVersion = TorrentsVersion;
                 _lastRenderedTorrents = Torrents;
                 _lastPreferences = Preferences;
-                _lastLostConnection = LostConnection;
+                _lastLostConnection = ConnectivityStateService.IsLostConnection;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
@@ -153,7 +153,7 @@ namespace Lantean.QBTMud.Pages
             {
                 _lastRenderedTorrents = Torrents;
                 _lastPreferences = Preferences;
-                _lastLostConnection = LostConnection;
+                _lastLostConnection = ConnectivityStateService.IsLostConnection;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
@@ -167,9 +167,9 @@ namespace Lantean.QBTMud.Pages
                 return true;
             }
 
-            if (_lastLostConnection != LostConnection)
+            if (_lastLostConnection != ConnectivityStateService.IsLostConnection)
             {
-                _lastLostConnection = LostConnection;
+                _lastLostConnection = ConnectivityStateService.IsLostConnection;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;

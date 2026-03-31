@@ -2,13 +2,13 @@ namespace Lantean.QBTMud.Services
 {
     public class PreferencesDataManager : IPreferencesDataManager
     {
-        public QBitTorrentClient.Models.UpdatePreferences MergePreferences(
-            QBitTorrentClient.Models.UpdatePreferences? original,
-            QBitTorrentClient.Models.UpdatePreferences changed)
+        public QBittorrent.ApiClient.Models.UpdatePreferences MergePreferences(
+            QBittorrent.ApiClient.Models.UpdatePreferences? original,
+            QBittorrent.ApiClient.Models.UpdatePreferences changed)
         {
             if (original is null)
             {
-                original = new QBitTorrentClient.Models.UpdatePreferences
+                original = new QBittorrent.ApiClient.Models.UpdatePreferences
                 {
                     AddToTopOfQueue = changed.AddToTopOfQueue,
                     AddStoppedEnabled = changed.AddStoppedEnabled,
@@ -464,8 +464,8 @@ namespace Lantean.QBTMud.Services
         }
 
         private static void ApplyMutuallyExclusiveLimits(
-            QBitTorrentClient.Models.UpdatePreferences target,
-            QBitTorrentClient.Models.UpdatePreferences changed)
+            QBittorrent.ApiClient.Models.UpdatePreferences target,
+            QBittorrent.ApiClient.Models.UpdatePreferences changed)
         {
             if (changed.MaxRatio.HasValue)
             {

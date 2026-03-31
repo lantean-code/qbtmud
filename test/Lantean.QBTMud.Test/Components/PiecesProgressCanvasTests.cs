@@ -1,7 +1,7 @@
-using AngleSharp.Dom;
+﻿using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Test.Infrastructure;

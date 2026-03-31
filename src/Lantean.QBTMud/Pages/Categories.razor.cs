@@ -1,9 +1,9 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -71,8 +71,14 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                var categories = await ApiClient.GetAllCategories();
-                _categories = categories.Values
+                var categories = await ApiClient.GetAllCategoriesAsync();
+                if (!categories.TryGetValue(out var categoryDictionary))
+                {
+                    _categories = [];
+                    return;
+                }
+
+                _categories = categoryDictionary.Values
                     .Select(category => new Category(category.Name, category.SavePath ?? string.Empty))
                     .ToList();
             }
@@ -89,7 +95,7 @@ namespace Lantean.QBTMud.Pages
             {
                 return;
             }
-            await ApiClient.RemoveCategories(name);
+            await ApiClient.RemoveCategoriesAsync(categories: [name]);
         }
 
         protected async Task AddCategory()

@@ -333,7 +333,7 @@ namespace Lantean.QBTMud.Test.Layout
                 downloadPath: "DownloadPath",
                 rootPath: "RootPath",
                 isPrivate: false,
-                shareLimitAction: QBitTorrentClient.Models.ShareLimitAction.Default,
+                shareLimitAction: QBittorrent.ApiClient.Models.ShareLimitAction.Default,
                 comment: "Comment");
         }
 

@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
@@ -11,8 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient;
+using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -147,14 +146,30 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private Mock<IApiClient> UseApiClientMock(string savePath)
         {
             var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
-            apiClientMock.Setup(client => client.GetApplicationPreferences()).ReturnsAsync(CreatePreferences(savePath));
+            apiClientMock.Setup(client => client.GetApplicationPreferencesAsync()).ReturnsAsync(CreatePreferences(savePath));
             return apiClientMock;
         }
 
         private static ClientModels.Preferences CreatePreferences(string savePath)
         {
-            var json = $"{{\"auto_tmm_enabled\":false,\"save_path\":\"{savePath}\",\"temp_path\":\"\",\"temp_path_enabled\":false,\"add_stopped_enabled\":false,\"add_to_top_of_queue\":true,\"torrent_stop_condition\":\"None\",\"torrent_content_layout\":\"Original\",\"max_ratio_enabled\":false,\"max_ratio\":1.0,\"max_seeding_time_enabled\":false,\"max_seeding_time\":0,\"max_inactive_seeding_time_enabled\":false,\"max_inactive_seeding_time\":0,\"max_ratio_act\":0}}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.AddStoppedEnabled = false;
+                spec.AddToTopOfQueue = true;
+                spec.AutoTmmEnabled = false;
+                spec.MaxInactiveSeedingTime = 0;
+                spec.MaxInactiveSeedingTimeEnabled = false;
+                spec.MaxRatio = 1.0f;
+                spec.MaxRatioAct = 0;
+                spec.MaxRatioEnabled = false;
+                spec.MaxSeedingTime = 0;
+                spec.MaxSeedingTimeEnabled = false;
+                spec.SavePath = savePath;
+                spec.TempPath = string.Empty;
+                spec.TempPathEnabled = false;
+                spec.TorrentContentLayout = "Original";
+                spec.TorrentStopCondition = "None";
+            });
         }
     }
 

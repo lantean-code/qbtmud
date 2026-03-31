@@ -1,5 +1,5 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 
@@ -82,48 +82,57 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            var categories = await ApiClient.GetAllCategories();
-            foreach (var (name, value) in categories.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase))
+            var categories = await ApiClient.GetAllCategoriesAsync();
+            if (categories.TryGetValue(out var categoryDictionary))
             {
-                var option = new CategoryOption(name, value.SavePath, value.DownloadPath);
-                _categoryOptions.Add(option);
-                _categoryLookup[name] = option;
+                foreach (var (name, value) in categoryDictionary.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase))
+                {
+                    var option = new CategoryOption(name, value.SavePath, value.DownloadPath);
+                    _categoryOptions.Add(option);
+                    _categoryLookup[name] = option;
+                }
             }
 
-            var tags = await ApiClient.GetAllTags();
-            AvailableTags = tags.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
+            var tags = await ApiClient.GetAllTagsAsync();
+            AvailableTags = tags.TryGetValue(out var availableTags)
+                ? availableTags.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList()
+                : [];
 
-            var preferences = await ApiClient.GetApplicationPreferences();
+            var preferences = await ApiClient.GetApplicationPreferencesAsync();
+            if (!preferences.TryGetValue(out var applicationPreferences))
+            {
+                return;
+            }
 
-            TorrentManagementMode = preferences.AutoTmmEnabled;
+            TorrentManagementMode = applicationPreferences.AutoTmmEnabled;
 
-            _defaultSavePath = preferences.SavePath ?? string.Empty;
+            _defaultSavePath = applicationPreferences.SavePath ?? string.Empty;
             _manualSavePath = _defaultSavePath;
             SavePath = _defaultSavePath;
 
-            _defaultDownloadPath = preferences.TempPath ?? string.Empty;
-            _defaultDownloadPathEnabled = preferences.TempPathEnabled;
+            _defaultDownloadPath = applicationPreferences.TempPath ?? string.Empty;
+            _defaultDownloadPathEnabled = applicationPreferences.TempPathEnabled;
             _manualDownloadPath = _defaultDownloadPath;
-            _manualUseDownloadPath = preferences.TempPathEnabled;
+            _manualUseDownloadPath = applicationPreferences.TempPathEnabled;
             UseDownloadPath = _manualUseDownloadPath;
             DownloadPath = UseDownloadPath ? _manualDownloadPath : string.Empty;
 
-            StartTorrent = !preferences.AddStoppedEnabled;
-            AddToTopOfQueue = preferences.AddToTopOfQueue;
-            StopCondition = preferences.TorrentStopCondition;
-            ContentLayout = preferences.TorrentContentLayout;
+            StartTorrent = !applicationPreferences.AddStoppedEnabled;
+            AddToTopOfQueue = applicationPreferences.AddToTopOfQueue;
+            StopCondition = applicationPreferences.TorrentStopCondition;
+            ContentLayout = applicationPreferences.TorrentContentLayout;
 
-            RatioLimitEnabled = preferences.MaxRatioEnabled;
-            RatioLimit = preferences.MaxRatio;
-            SeedingTimeLimitEnabled = preferences.MaxSeedingTimeEnabled;
-            if (preferences.MaxSeedingTimeEnabled)
+            RatioLimitEnabled = applicationPreferences.MaxRatioEnabled;
+            RatioLimit = applicationPreferences.MaxRatio;
+            SeedingTimeLimitEnabled = applicationPreferences.MaxSeedingTimeEnabled;
+            if (applicationPreferences.MaxSeedingTimeEnabled)
             {
-                SeedingTimeLimit = preferences.MaxSeedingTime;
+                SeedingTimeLimit = applicationPreferences.MaxSeedingTime;
             }
-            InactiveSeedingTimeLimitEnabled = preferences.MaxInactiveSeedingTimeEnabled;
-            if (preferences.MaxInactiveSeedingTimeEnabled)
+            InactiveSeedingTimeLimitEnabled = applicationPreferences.MaxInactiveSeedingTimeEnabled;
+            if (applicationPreferences.MaxInactiveSeedingTimeEnabled)
             {
-                InactiveSeedingTimeLimit = preferences.MaxInactiveSeedingTime;
+                InactiveSeedingTimeLimit = applicationPreferences.MaxInactiveSeedingTime;
             }
             if (TorrentManagementMode)
             {
@@ -285,21 +294,21 @@ namespace Lantean.QBTMud.Components.Dialogs
             switch (SelectedShareLimitMode)
             {
                 case ShareLimitMode.Global:
-                    options.RatioLimit = Limits.GlobalLimit;
-                    options.SeedingTimeLimit = Limits.GlobalLimit;
-                    options.InactiveSeedingTimeLimit = Limits.GlobalLimit;
+                    options.RatioLimit = Limits.UseGlobalShareLimit;
+                    options.SeedingTimeLimit = (int)Limits.UseGlobalShareLimit;
+                    options.InactiveSeedingTimeLimit = (int)Limits.UseGlobalShareLimit;
                     break;
 
                 case ShareLimitMode.NoLimit:
-                    options.RatioLimit = Limits.NoLimit;
-                    options.SeedingTimeLimit = Limits.NoLimit;
-                    options.InactiveSeedingTimeLimit = Limits.NoLimit;
+                    options.RatioLimit = Limits.NoShareLimit;
+                    options.SeedingTimeLimit = (int)Limits.NoShareLimit;
+                    options.InactiveSeedingTimeLimit = (int)Limits.NoShareLimit;
                     break;
 
                 case ShareLimitMode.Custom:
-                    options.RatioLimit = RatioLimitEnabled ? RatioLimit : Limits.NoLimit;
-                    options.SeedingTimeLimit = SeedingTimeLimitEnabled ? SeedingTimeLimit : Limits.NoLimit;
-                    options.InactiveSeedingTimeLimit = InactiveSeedingTimeLimitEnabled ? InactiveSeedingTimeLimit : Limits.NoLimit;
+                    options.RatioLimit = RatioLimitEnabled ? RatioLimit : Limits.NoShareLimit;
+                    options.SeedingTimeLimit = SeedingTimeLimitEnabled ? SeedingTimeLimit : (int)Limits.NoShareLimit;
+                    options.InactiveSeedingTimeLimit = InactiveSeedingTimeLimitEnabled ? InactiveSeedingTimeLimit : (int)Limits.NoShareLimit;
                     break;
             }
 

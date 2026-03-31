@@ -1,7 +1,7 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -23,8 +23,11 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            var preferences = await ApiClient.GetApplicationPreferences();
-            _savePath = preferences.SavePath;
+            var preferences = await ApiClient.GetApplicationPreferencesAsync();
+            if (preferences.TryGetValue(out var applicationPreferences))
+            {
+                _savePath = applicationPreferences.SavePath;
+            }
 
             SavePath ??= _savePath;
         }

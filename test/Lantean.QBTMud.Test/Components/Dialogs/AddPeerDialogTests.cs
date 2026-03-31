@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -10,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {

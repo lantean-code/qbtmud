@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -11,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient.Models;
 using System.Globalization;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
@@ -108,7 +108,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             returnedCookie.Value.Should().Be("Value");
 
             var expectedDate = DateTime.ParseExact("2020-01-02T03:04", "yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal);
-            var expectedExpiration = new DateTimeOffset(expectedDate, DateTimeOffset.Now.Offset).ToUnixTimeSeconds();
+            var expectedExpiration = new DateTimeOffset(expectedDate).ToUnixTimeSeconds();
             returnedCookie.ExpirationDate.Should().Be(expectedExpiration);
         }
 

@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
@@ -11,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -42,8 +42,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.GetAllTags(), Times.Never);
-            Mock.Get(_apiClient).Verify(client => client.CreateTags(It.IsAny<IEnumerable<string>>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetAllTagsAsync(), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.CreateTagsAsync(It.IsAny<IEnumerable<string>>()), Times.Never);
         }
 
         [Fact]
@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowStringFieldDialog("New Tag", "Tag:", null))
                 .ReturnsAsync("Tag");
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAllTags())
+                .Setup(client => client.GetAllTagsAsync())
                 .ReturnsAsync(new[] { "Tag" });
 
             var target = RenderPage();
@@ -61,8 +61,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.GetAllTags(), Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.CreateTags(It.IsAny<IEnumerable<string>>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetAllTagsAsync(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.CreateTagsAsync(It.IsAny<IEnumerable<string>>()), Times.Never);
         }
 
         [Fact]
@@ -72,7 +72,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(workflow => workflow.ShowStringFieldDialog("New Tag", "Tag:", null))
                 .ReturnsAsync("Tag");
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAllTags())
+                .Setup(client => client.GetAllTagsAsync())
                 .ReturnsAsync(new[] { "Other" });
 
             var target = RenderPage();
@@ -80,9 +80,9 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.GetAllTags(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetAllTagsAsync(), Times.Once);
             Mock.Get(_apiClient).Verify(
-                client => client.CreateTags(It.Is<IEnumerable<string>>(tags => tags.SequenceEqual(new[] { "Tag" }))),
+                client => client.CreateTagsAsync(It.Is<IEnumerable<string>>(tags => tags.SequenceEqual(new[] { "Tag" }))),
                 Times.Once);
         }
 
@@ -95,7 +95,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.DeleteTags("Tag"), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.DeleteTagsAsync(tags: new[] { "Tag" }), Times.Once);
         }
 
         [Fact]
@@ -107,7 +107,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.DeleteTags(It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.DeleteTagsAsync(It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
@@ -128,7 +128,7 @@ namespace Lantean.QBTMud.Test.Pages
 
                 await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-                Mock.Get(_apiClient).Verify(client => client.DeleteTags("Tag"), Times.Once);
+                Mock.Get(_apiClient).Verify(client => client.DeleteTagsAsync(tags: new[] { "Tag" }), Times.Once);
             }
             finally
             {
@@ -182,7 +182,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_RefreshClicked_WHEN_Invoked_THEN_ReloadsTagsFromApi()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAllTags())
+                .Setup(client => client.GetAllTagsAsync())
                 .ReturnsAsync(["Tag"]);
 
             var target = RenderPage();
@@ -190,7 +190,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.GetAllTags(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetAllTagsAsync(), Times.Once);
 
             var table = target.FindComponent<DynamicTable<string>>();
             table.Instance.Items.Should().ContainSingle(tag => tag == "Tag");

@@ -1,5 +1,3 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
@@ -9,7 +7,8 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-using System.Net;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components
 {
@@ -81,7 +80,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            TrackerList = await ApiClient.GetTorrentTrackers(Hash);
+            var trackers = await ApiClient.GetTorrentTrackersAsync(Hash);
+            TrackerList = trackers.TryGetValue(out var torrentTrackers) ? torrentTrackers : [];
 
             await InvokeAsync(StateHasChanged);
         }
@@ -184,7 +184,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.AddTrackersToTorrent(trackers, hashes: Hash);
+            await ApiClient.AddTrackersToTorrentAsync(TorrentSelector.FromHash(Hash), trackers);
         }
 
         protected Task EditTrackerToolbar()
@@ -208,7 +208,7 @@ namespace Lantean.QBTMud.Components
                 TranslateTrackerList("Tracker editing"),
                 TranslateTrackerList("Tracker URL:"),
                 tracker.Url,
-                async value => await ApiClient.EditTracker(Hash, tracker.Url, value));
+                async value => await ApiClient.EditTrackerAsync(Hash, tracker.Url, value));
         }
 
         protected Task RemoveTrackerToolbar()
@@ -228,7 +228,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveTrackers([tracker.Url], hashes: Hash);
+            await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHash(Hash), [tracker.Url]);
         }
 
         protected Task CopyTrackerUrlToolbar()
@@ -269,16 +269,19 @@ namespace Lantean.QBTMud.Components
         {
             if (Active && Hash is not null)
             {
-                try
+                var trackers = await ApiClient.GetTorrentTrackersAsync(Hash);
+                if (!trackers.TryGetValue(out var torrentTrackers))
                 {
-                    TrackerList = await ApiClient.GetTorrentTrackers(Hash);
-                }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
-                {
-                    _timerCancellationToken.CancelIfNotDisposed();
-                    return ManagedTimerTickResult.Stop;
+                    if (trackers.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    {
+                        _timerCancellationToken.CancelIfNotDisposed();
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    return ManagedTimerTickResult.Continue;
                 }
 
+                TrackerList = torrentTrackers;
                 await InvokeAsync(StateHasChanged);
             }
 

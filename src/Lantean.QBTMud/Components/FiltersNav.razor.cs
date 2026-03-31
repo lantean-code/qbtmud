@@ -1,10 +1,11 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using TorrentSelector = QBittorrent.ApiClient.Models.TorrentSelector;
 
 namespace Lantean.QBTMud.Components
 {
@@ -47,7 +48,7 @@ namespace Lantean.QBTMud.Components
         public MainData? MainData { get; set; }
 
         [CascadingParameter]
-        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+        public QBittorrent.ApiClient.Models.Preferences? Preferences { get; set; }
 
         [Parameter]
         public EventCallback<string> CategoryChanged { get; set; }
@@ -325,16 +326,20 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveCategories(ContextMenuCategory);
+            await ApiClient.RemoveCategoriesAsync(categories: [ContextMenuCategory]);
 
             Categories.Remove(ContextMenuCategory);
         }
 
         protected async Task RemoveUnusedCategories()
         {
-            var removedCategories = await ApiClient.RemoveUnusedCategories();
+            var removedCategories = await ApiClient.RemoveUnusedCategoriesAsync();
+            if (!removedCategories.TryGetValue(out var removedCategoryList))
+            {
+                return;
+            }
 
-            foreach (var removedCategory in removedCategories)
+            foreach (var removedCategory in removedCategoryList)
             {
                 Categories.Remove(removedCategory);
             }
@@ -363,7 +368,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveTrackers(trackerItem.Urls, hashes: hashes.ToArray());
+            await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHashes(hashes), trackerItem.Urls);
         }
 
         protected async Task AddTag()
@@ -379,7 +384,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.CreateTags(tags);
+            await ApiClient.CreateTagsAsync(tags);
         }
 
         protected async Task RemoveTag()
@@ -389,16 +394,20 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.DeleteTags(ContextMenuTag);
+            await ApiClient.DeleteTagsAsync(tags: [ContextMenuTag]);
 
             Tags.Remove(ContextMenuTag);
         }
 
         protected async Task RemoveUnusedTags()
         {
-            var removedTags = await ApiClient.RemoveUnusedTags();
+            var removedTags = await ApiClient.RemoveUnusedTagsAsync();
+            if (!removedTags.TryGetValue(out var removedTagList))
+            {
+                return;
+            }
 
-            foreach (var removedTag in removedTags)
+            foreach (var removedTag in removedTagList)
             {
                 Tags.Remove(removedTag);
             }
@@ -406,26 +415,38 @@ namespace Lantean.QBTMud.Components
 
         protected async Task StartTorrents(string type)
         {
-            var torrents = GetAffectedTorrentHashes(type);
+            var hashes = GetAffectedTorrentHashes(type);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
 
-            await ApiClient.StartTorrents(hashes: torrents.ToArray());
+            await ApiClient.StartTorrentsAsync(TorrentSelector.FromHashes(hashes));
         }
 
         protected async Task StopTorrents(string type)
         {
-            var torrents = GetAffectedTorrentHashes(type);
+            var hashes = GetAffectedTorrentHashes(type);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
 
-            await ApiClient.StopTorrents(hashes: torrents.ToArray());
+            await ApiClient.StopTorrentsAsync(TorrentSelector.FromHashes(hashes));
         }
 
         protected async Task RemoveTorrents(string type)
         {
-            var torrents = GetAffectedTorrentHashes(type);
+            var hashes = GetAffectedTorrentHashes(type);
+            if (hashes.Count == 0)
+            {
+                return;
+            }
 
             await DialogWorkflow.InvokeDeleteTorrentDialog(
                 Preferences?.ConfirmTorrentDeletion ?? false,
                 Preferences?.DeleteTorrentContentFiles ?? false,
-                [.. torrents]);
+                [.. hashes]);
         }
 
         private Dictionary<string, int> GetTags()

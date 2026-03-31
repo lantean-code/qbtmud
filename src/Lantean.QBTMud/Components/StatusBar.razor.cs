@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Components
         public MainData? MainData { get; set; }
 
         [Parameter]
-        public QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+        public QBittorrent.ApiClient.Models.Preferences? Preferences { get; set; }
 
         [Parameter]
         public bool IsDarkMode { get; set; }

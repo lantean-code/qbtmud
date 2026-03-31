@@ -4,6 +4,6 @@ namespace Lantean.QBTMud.Services
 {
     public interface IRssDataManager
     {
-        RssList CreateRssList(IReadOnlyDictionary<string, QBitTorrentClient.Models.RssItem> rssItems);
+        RssList CreateRssList(IReadOnlyDictionary<string, QBittorrent.ApiClient.Models.RssItem> rssItems);
     }
 }

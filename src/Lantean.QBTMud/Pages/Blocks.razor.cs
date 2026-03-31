@@ -1,5 +1,3 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -8,7 +6,8 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
-using System.Net;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -72,12 +71,17 @@ namespace Lantean.QBTMud.Pages
 
         private async Task DoSearch()
         {
-            var results = await ApiClient.GetPeerLog(Model.LastKnownId);
-            if (results.Count > 0)
+            var results = await ApiClient.GetPeerLogAsync(Model.LastKnownId);
+            if (!results.TryGetValue(out var peerLogs))
+            {
+                return;
+            }
+
+            if (peerLogs.Count > 0)
             {
                 Results ??= [];
-                Results.AddRange(results);
-                Model.LastKnownId = results[^1].Id;
+                Results.AddRange(peerLogs);
+                Model.LastKnownId = peerLogs[^1].Id;
                 TrimResults();
             }
         }
@@ -171,14 +175,24 @@ namespace Lantean.QBTMud.Pages
 
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
-            try
+            var results = await ApiClient.GetPeerLogAsync(Model.LastKnownId);
+            if (!results.TryGetValue(out var peerLogs))
             {
-                await DoSearch();
+                if (results.Failure?.Kind == ApiFailureKind.AuthenticationRequired)
+                {
+                    _timerCancellationToken.CancelIfNotDisposed();
+                    return ManagedTimerTickResult.Stop;
+                }
+
+                return ManagedTimerTickResult.Continue;
             }
-            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
+
+            if (peerLogs.Count > 0)
             {
-                _timerCancellationToken.CancelIfNotDisposed();
-                return ManagedTimerTickResult.Stop;
+                Results ??= [];
+                Results.AddRange(peerLogs);
+                Model.LastKnownId = peerLogs[^1].Id;
+                TrimResults();
             }
 
             await InvokeAsync(StateHasChanged);

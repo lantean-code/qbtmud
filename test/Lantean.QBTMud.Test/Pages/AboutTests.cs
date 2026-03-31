@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
@@ -11,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -27,7 +27,7 @@ namespace Lantean.QBTMud.Test.Pages
             _appUpdateService = Mock.Of<IAppUpdateService>();
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetBuildInfo())
+                .Setup(client => client.GetBuildInfoAsync())
                 .ReturnsAsync(new BuildInfo(
                     "QTVersion",
                     "LibTorrentVersion",
@@ -37,7 +37,7 @@ namespace Lantean.QBTMud.Test.Pages
                     64));
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetApplicationVersion())
+                .Setup(client => client.GetApplicationVersionAsync())
                 .ReturnsAsync("Version");
 
             Mock.Get(_appBuildInfoService)
@@ -90,8 +90,8 @@ namespace Lantean.QBTMud.Test.Pages
                 GetChildContentText(FindComponentByTestId<MudText>(target, "ZLibVersion").Instance.ChildContent).Should().Be("ZLibVersion");
             });
 
-            Mock.Get(_apiClient).Verify(client => client.GetBuildInfo(), Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationVersion(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetBuildInfoAsync(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationVersionAsync(), Times.Once);
         }
 
         [Fact]
@@ -108,8 +108,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .Should()
                 .Be("1.0.0");
 
-            Mock.Get(_apiClient).Verify(client => client.GetBuildInfo(), Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationVersion(), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetBuildInfoAsync(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationVersionAsync(), Times.Never);
         }
 
         [Fact]

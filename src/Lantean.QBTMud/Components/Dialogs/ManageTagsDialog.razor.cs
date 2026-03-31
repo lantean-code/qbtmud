@@ -1,7 +1,8 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using TorrentSelector = QBittorrent.ApiClient.Models.TorrentSelector;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -25,7 +26,10 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            Tags = [.. await ApiClient.GetAllTags()];
+            var tagsResult = await ApiClient.GetAllTagsAsync();
+            Tags = tagsResult.TryGetValue(out var tags)
+                ? [.. tags]
+                : [];
             if (!Hashes.Any())
             {
                 return;
@@ -36,8 +40,10 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private async Task GetTorrentTags()
         {
-            var torrents = await ApiClient.GetTorrentList(hashes: Hashes.ToArray());
-            TorrentTags = torrents.Select(t => t.Tags ?? []).ToList();
+            var torrents = await ApiClient.GetTorrentListAsync(selector: TorrentSelector.FromHashes(Hashes));
+            TorrentTags = torrents.TryGetValue(out var torrentList)
+                ? torrentList.Select(t => t.Tags ?? []).ToList()
+                : [];
         }
 
         protected string GetIcon(string tag)
@@ -88,11 +94,11 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (nextState == TagState.All)
             {
-                await ApiClient.AddTorrentTag(tag, Hashes);
+                await ApiClient.AddTorrentTagsAsync(TorrentSelector.FromHashes(Hashes), [tag]);
             }
             else
             {
-                await ApiClient.RemoveTorrentTag(tag, Hashes);
+                await ApiClient.RemoveTorrentTagsAsync(TorrentSelector.FromHashes(Hashes), [tag]);
             }
 
             await GetTorrentTags();
@@ -109,7 +115,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            await ApiClient.AddTorrentTags(addedTags, Hashes);
+            await ApiClient.AddTorrentTagsAsync(TorrentSelector.FromHashes(Hashes), addedTags);
 
             foreach (var tag in addedTags)
             {
@@ -120,7 +126,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected async Task RemoveAllTags()
         {
-            await ApiClient.RemoveTorrentTags(Tags, Hashes);
+            await ApiClient.RemoveTorrentTagsAsync(TorrentSelector.FromHashes(Hashes), Tags);
             await GetTorrentTags();
         }
 

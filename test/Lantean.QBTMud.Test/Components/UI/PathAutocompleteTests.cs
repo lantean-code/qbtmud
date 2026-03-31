@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -9,6 +7,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.UI
 {
@@ -171,8 +171,8 @@ namespace Lantean.QBTMud.Test.Components.UI
         public async Task GIVEN_ApiThrows_WHEN_SearchInvoked_THEN_ReturnsEmpty()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetDirectoryContent("C:/", DirectoryContentMode.All))
-                .ThrowsAsync(new HttpRequestException("Failed"));
+                .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.All))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failed", System.Net.HttpStatusCode.InternalServerError);
 
             var component = _target.RenderComponent();
             var autocomplete = component.FindComponent<MudAutocomplete<string>>();
@@ -191,7 +191,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var candidates = new[] { "C:/Alpha", "C:/Beta" };
             Mock.Get(_apiClient)
-                .Setup(client => client.GetDirectoryContent("C:/", DirectoryContentMode.All))
+                .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.All))
                 .ReturnsAsync(candidates);
 
             var component = _target.RenderComponent();
@@ -211,7 +211,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             var candidates = new[] { "C:/Alpha", "C:/beta", "C:/other", "C:/Alpha/" };
             Mock.Get(_apiClient)
-                .Setup(client => client.GetDirectoryContent("C:/", DirectoryContentMode.All))
+                .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.All))
                 .ReturnsAsync(candidates);
 
             var component = _target.RenderComponent();
@@ -230,7 +230,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         public async Task GIVEN_CandidateWhitespace_WHEN_SearchInvoked_THEN_HandlesEmptyTailSegment()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetDirectoryContent("C:/", DirectoryContentMode.All))
+                .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.All))
                 .ReturnsAsync(new[] { " ", "C:/Alpha" });
 
             var component = _target.RenderComponent();

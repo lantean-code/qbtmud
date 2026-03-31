@@ -1,7 +1,7 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -52,19 +52,28 @@ namespace Lantean.QBTMud.Pages
         {
             QbtMudBuildInfo = AppBuildInfoService.GetCurrentBuildInfo();
 
-            var info = await ApiClient.GetBuildInfo();
-            if (Version is null)
+            var info = await ApiClient.GetBuildInfoAsync();
+            if (!info.TryGetValue(out var buildInfo))
             {
-                Version = await ApiClient.GetApplicationVersion();
+                return;
             }
 
-            QtVersion = info.QTVersion;
-            LibtorrentVersion = info.LibTorrentVersion;
-            BoostVersion = info.BoostVersion;
-            OpensslVersion = info.OpenSSLVersion;
-            ZlibVersion = info.ZLibVersion;
+            if (Version is null)
+            {
+                var versionResult = await ApiClient.GetApplicationVersionAsync();
+                if (versionResult.TryGetValue(out var applicationVersion))
+                {
+                    Version = applicationVersion;
+                }
+            }
+
+            QtVersion = buildInfo.QTVersion;
+            LibtorrentVersion = buildInfo.LibTorrentVersion;
+            BoostVersion = buildInfo.BoostVersion;
+            OpensslVersion = buildInfo.OpenSSLVersion;
+            ZlibVersion = buildInfo.ZLibVersion;
             QBittorrentVersion = Version;
-            Bitness = info.Bitness;
+            Bitness = buildInfo.Bitness;
 
             try
             {

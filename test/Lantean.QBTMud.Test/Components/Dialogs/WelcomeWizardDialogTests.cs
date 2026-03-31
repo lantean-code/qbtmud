@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
@@ -14,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.JSInterop;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using System.Globalization;
 using System.Text.Json;
 
@@ -42,7 +42,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .Returns(Task.CompletedTask);
 
             var themeManagerServiceMock = Mock.Get(_themeManagerService);
@@ -548,7 +548,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 CultureInfo.DefaultThreadCurrentUICulture = previousUiCulture;
             }
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.Is<UpdatePreferences>(preferences =>
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences =>
                 string.Equals(preferences.Locale, "fr", StringComparison.Ordinal))), Times.Once);
             Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -576,7 +576,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
             await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync(locale));
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()), Times.Never);
             Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -611,7 +611,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 CultureInfo.DefaultThreadCurrentUICulture = previousUiCulture;
             }
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.Is<UpdatePreferences>(preferences =>
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences =>
                 string.Equals(preferences.Locale, locale, StringComparison.Ordinal))), Times.Once);
             Mock.Get(_languageInitializationService).Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -896,7 +896,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_LanguageUpdateFails_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .ThrowsAsync(new HttpRequestException("Message"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -911,7 +911,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_LanguageUpdateThrowsInvalidOperation_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .ThrowsAsync(new InvalidOperationException("Message"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -926,7 +926,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_LanguageUpdateThrowsJsException_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .ThrowsAsync(new JSException("Message"));
 
             var dialog = await _target.RenderDialogAsync();
@@ -941,7 +941,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_LanguageUpdateThrowsJsonException_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .ThrowsAsync(new JsonException("Message"));
 
             var dialog = await _target.RenderDialogAsync();

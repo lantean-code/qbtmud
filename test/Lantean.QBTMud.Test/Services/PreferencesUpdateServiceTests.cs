@@ -1,8 +1,6 @@
 using AwesomeAssertions;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services;
-using System.Text.Json;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -56,8 +54,10 @@ namespace Lantean.QBTMud.Test.Services
 
         private static Preferences CreatePreferences(string locale)
         {
-            var json = $"{{\"locale\":\"{locale}\"}}";
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+            return PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.Locale = locale;
+            });
         }
     }
 }

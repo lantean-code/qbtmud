@@ -1,11 +1,12 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
 using MudBlazor;
-using QbtCookie = Lantean.QBitTorrentClient.Models.ApplicationCookie;
-using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
+using QBittorrent.ApiClient;
+using QbtCookie = QBittorrent.ApiClient.Models.ApplicationCookie;
+using ShareLimitAction = QBittorrent.ApiClient.Models.ShareLimitAction;
+using TorrentSelector = QBittorrent.ApiClient.Models.TorrentSelector;
 
 namespace Lantean.QBTMud.Services
 {
@@ -100,7 +101,7 @@ namespace Lantean.QBTMud.Services
             }
 
             var category = (Category)dialogResult.Data;
-            await _apiClient.AddCategory(category.Name, category.SavePath);
+            await _apiClient.AddCategoryAsync(category.Name, category.SavePath);
 
             return category.Name;
         }
@@ -142,15 +143,15 @@ namespace Lantean.QBTMud.Services
             var addTorrentParams = CreateAddTorrentParams(options);
             addTorrentParams.Torrents = files;
 
-            QBitTorrentClient.Models.AddTorrentResult addTorrentResult;
+            QBittorrent.ApiClient.Models.AddTorrentResult? addTorrentResult = null;
             try
             {
-                addTorrentResult = await _apiClient.AddTorrent(addTorrentParams);
-            }
-            catch (HttpRequestException)
-            {
-                _snackbarWorkflow.ShowTransientMessage(TranslateApp("Unable to add torrent. Please try again."), Severity.Error);
-                return;
+                var addTorrentResultResult = await _apiClient.AddTorrentAsync(addTorrentParams);
+                if (!addTorrentResultResult.TryGetValue(out addTorrentResult))
+                {
+                    _snackbarWorkflow.ShowTransientMessage(TranslateApp("Unable to add torrent. Please try again."), Severity.Error);
+                    return;
+                }
             }
             finally
             {
@@ -208,18 +209,14 @@ namespace Lantean.QBTMud.Services
             var addTorrentParams = CreateAddTorrentParams(options);
             addTorrentParams.Urls = options.Urls;
 
-            QBitTorrentClient.Models.AddTorrentResult addTorrentResult;
-            try
-            {
-                addTorrentResult = await _apiClient.AddTorrent(addTorrentParams);
-            }
-            catch (HttpRequestException)
+            var addTorrentResultResult = await _apiClient.AddTorrentAsync(addTorrentParams);
+            if (!addTorrentResultResult.TryGetValue(out var addTorrentResult))
             {
                 _snackbarWorkflow.ShowTransientMessage(TranslateApp("Unable to add torrent. Please try again."), Severity.Error);
                 return;
             }
 
-            await ShowAddTorrentSnackbarMessage(addTorrentResult);
+            await ShowAddTorrentSnackbarMessage(addTorrentResult!);
         }
 
         /// <inheritdoc />
@@ -238,7 +235,7 @@ namespace Lantean.QBTMud.Services
 
             if (!confirmTorrentDeletion)
             {
-                await _apiClient.DeleteTorrents(null, deleteTorrentContentFiles, hashes);
+                await _apiClient.DeleteTorrentsAsync(TorrentSelector.FromHashes(hashes), deleteTorrentContentFiles);
                 return true;
             }
 
@@ -251,14 +248,11 @@ namespace Lantean.QBTMud.Services
             if (hashes.Length == 1)
             {
                 string? torrentName = null;
-                try
+                var hash = hashes[0];
+                var torrentResult = await _apiClient.GetTorrentAsync(hash, CancellationToken.None);
+                if (torrentResult.TryGetValue(out var torrent))
                 {
-                    var torrents = await _apiClient.GetTorrent(hashes[0]);
-                    torrentName = torrents?.Name;
-                }
-                catch (HttpRequestException)
-                {
-                    torrentName = null;
+                    torrentName = torrent?.Name;
                 }
 
                 if (string.IsNullOrWhiteSpace(torrentName))
@@ -281,12 +275,12 @@ namespace Lantean.QBTMud.Services
                 return false;
             }
 
-            await _apiClient.DeleteTorrents(null, deleteFiles, hashes);
+            await _apiClient.DeleteTorrentsAsync(TorrentSelector.FromHashes(hashes), deleteFiles);
             return true;
 
             async Task SaveDeleteFilesPreference(bool deleteFiles)
             {
-                await _apiClient.SetApplicationPreferences(new QBitTorrentClient.Models.UpdatePreferences
+                await _apiClient.SetApplicationPreferencesAsync(new QBittorrent.ApiClient.Models.UpdatePreferences
                 {
                     DeleteTorrentContentFiles = deleteFiles,
                 });
@@ -314,7 +308,7 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            await _apiClient.RecheckTorrents(null, hashArray);
+            await _apiClient.RecheckTorrentsAsync(TorrentSelector.FromHashes(hashArray));
         }
 
         /// <inheritdoc />
@@ -325,13 +319,13 @@ namespace Lantean.QBTMud.Services
                 _languageLocalizer.Translate(_transferListContext, "Torrent Download Speed Limiting"),
                 _languageLocalizer.Translate(_speedLimitContext, "Download limit:"),
                 4096L,
-                Limits.NoLimit);
+                Limits.NoTransferRateLimit);
             if (!appliedRate.HasValue)
             {
                 return;
             }
 
-            await _apiClient.SetTorrentDownloadLimit(appliedRate.Value, null, hashes.ToArray());
+            await _apiClient.SetTorrentDownloadLimitAsync(TorrentSelector.FromHashes(hashes), appliedRate.Value);
         }
 
         /// <inheritdoc />
@@ -348,7 +342,7 @@ namespace Lantean.QBTMud.Services
                 return null;
             }
 
-            await _apiClient.SetGlobalDownloadLimit(appliedRate.Value);
+            await _apiClient.SetGlobalDownloadLimitAsync(appliedRate.Value);
 
             return appliedRate.Value;
         }
@@ -356,7 +350,10 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task<string?> InvokeEditCategoryDialog(string categoryName)
         {
-            var category = (await _apiClient.GetAllCategories()).FirstOrDefault(c => c.Key == categoryName).Value;
+            var categoriesResult = await _apiClient.GetAllCategoriesAsync();
+            var category = categoriesResult.TryGetValue(out var categories)
+                ? categories.FirstOrDefault(c => c.Key == categoryName).Value
+                : null;
             var parameters = new DialogParameters
             {
                 { nameof(CategoryPropertiesDialog.Category), category?.Name },
@@ -371,7 +368,7 @@ namespace Lantean.QBTMud.Services
             }
 
             var updatedCategory = (Category)dialogResult.Data;
-            await _apiClient.EditCategory(updatedCategory.Name, updatedCategory.SavePath);
+            await _apiClient.EditCategoryAsync(updatedCategory.Name, updatedCategory.SavePath);
 
             return updatedCategory.Name;
         }
@@ -421,7 +418,7 @@ namespace Lantean.QBTMud.Services
             }
 
             var location = (string)dialogResult.Data;
-            await _apiClient.SetTorrentLocation(location: location, all: null, hashes: hashArray);
+            await _apiClient.SetTorrentLocationAsync(TorrentSelector.FromHashes(hashArray), location);
         }
 
         /// <inheritdoc />
@@ -463,12 +460,12 @@ namespace Lantean.QBTMud.Services
             }
 
             var shareRatio = (ShareRatio)dialogResult.Data;
-            await _apiClient.SetTorrentShareLimit(
+            await _apiClient.SetTorrentShareLimitAsync(
+                TorrentSelector.FromHashes(torrentList.Select(t => t.Hash)),
                 shareRatio.RatioLimit,
                 shareRatio.SeedingTimeLimit,
                 shareRatio.InactiveSeedingTimeLimit,
-                shareRatio.ShareLimitAction ?? ShareLimitAction.Default,
-                hashes: torrentList.Select(t => t.Hash).ToArray());
+                shareRatio.ShareLimitAction ?? ShareLimitAction.Default);
         }
 
         /// <inheritdoc />
@@ -499,13 +496,13 @@ namespace Lantean.QBTMud.Services
                 _languageLocalizer.Translate(_transferListContext, "Torrent Upload Speed Limiting"),
                 _languageLocalizer.Translate(_speedLimitContext, "Upload limit:"),
                 4096L,
-                Limits.NoLimit);
+                Limits.NoTransferRateLimit);
             if (!appliedRate.HasValue)
             {
                 return;
             }
 
-            await _apiClient.SetTorrentUploadLimit(appliedRate.Value, null, hashes.ToArray());
+            await _apiClient.SetTorrentUploadLimitAsync(TorrentSelector.FromHashes(hashes), appliedRate.Value);
         }
 
         /// <inheritdoc />
@@ -522,13 +519,13 @@ namespace Lantean.QBTMud.Services
                 return null;
             }
 
-            await _apiClient.SetGlobalUploadLimit(appliedRate.Value);
+            await _apiClient.SetGlobalUploadLimitAsync(appliedRate.Value);
 
             return appliedRate.Value;
         }
 
         /// <inheritdoc />
-        public async Task<HashSet<QBitTorrentClient.Models.PeerId>?> ShowAddPeersDialog()
+        public async Task<HashSet<QBittorrent.ApiClient.Models.PeerId>?> ShowAddPeersDialog()
         {
             var reference = await _dialogService.ShowAsync<AddPeerDialog>(
                 _languageLocalizer.Translate(_peersAdditionContext, "Add Peers"),
@@ -539,7 +536,7 @@ namespace Lantean.QBTMud.Services
                 return null;
             }
 
-            return (HashSet<QBitTorrentClient.Models.PeerId>)dialogResult.Data;
+            return (HashSet<QBittorrent.ApiClient.Models.PeerId>)dialogResult.Data;
         }
 
         /// <inheritdoc />
@@ -667,7 +664,7 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <inheritdoc />
-        public async Task<string?> ShowPathBrowserDialog(string title, string? initialPath, QBitTorrentClient.Models.DirectoryContentMode mode, bool allowFolderSelection)
+        public async Task<string?> ShowPathBrowserDialog(string title, string? initialPath, QBittorrent.ApiClient.Models.DirectoryContentMode mode, bool allowFolderSelection)
         {
             var parameters = new DialogParameters
             {
@@ -730,7 +727,7 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <inheritdoc />
-        public async Task ShowSubMenu(IEnumerable<string> hashes, UIAction parent, Dictionary<string, Torrent> torrents, QBitTorrentClient.Models.Preferences? preferences, HashSet<string> tags, Dictionary<string, Category> categories)
+        public async Task ShowSubMenu(IEnumerable<string> hashes, UIAction parent, Dictionary<string, Torrent> torrents, QBittorrent.ApiClient.Models.Preferences? preferences, HashSet<string> tags, Dictionary<string, Category> categories)
         {
             var parameters = new DialogParameters
             {
@@ -785,7 +782,7 @@ namespace Lantean.QBTMud.Services
             await _dialogService.ShowAsync<ThemePreviewDialog>(_languageLocalizer.Translate("AppThemePreviewDialog", "Theme Preview"), parameters, options);
         }
 
-        private async Task ShowAddTorrentSnackbarMessage(QBitTorrentClient.Models.AddTorrentResult result)
+        private async Task ShowAddTorrentSnackbarMessage(QBittorrent.ApiClient.Models.AddTorrentResult result)
         {
             var settings = await GetAppSettingsSafeAsync();
             if (settings.NotificationsEnabled && settings.TorrentAddedNotificationsEnabled && !settings.TorrentAddedSnackbarsEnabledWithNotifications)
@@ -797,7 +794,7 @@ namespace Lantean.QBTMud.Services
             ShowDefaultAddTorrentSnackbarMessage(result);
         }
 
-        private void ShowFailureOnlyAddTorrentSnackbarMessage(QBitTorrentClient.Models.AddTorrentResult result)
+        private void ShowFailureOnlyAddTorrentSnackbarMessage(QBittorrent.ApiClient.Models.AddTorrentResult result)
         {
             if (result.FailureCount <= 0)
             {
@@ -820,7 +817,7 @@ namespace Lantean.QBTMud.Services
             _snackbarWorkflow.ShowTransientMessage(message, Severity.Error);
         }
 
-        private void ShowDefaultAddTorrentSnackbarMessage(QBitTorrentClient.Models.AddTorrentResult result)
+        private void ShowDefaultAddTorrentSnackbarMessage(QBittorrent.ApiClient.Models.AddTorrentResult result)
         {
             var fragments = new List<string>(3);
             if (result.SuccessCount > 0)
@@ -938,9 +935,9 @@ namespace Lantean.QBTMud.Services
             return _languageLocalizer.Translate(_appContext, source, arguments);
         }
 
-        private static QBitTorrentClient.Models.AddTorrentParams CreateAddTorrentParams(TorrentOptions options)
+        private static QBittorrent.ApiClient.Models.AddTorrentParams CreateAddTorrentParams(TorrentOptions options)
         {
-            var addTorrentParams = new QBitTorrentClient.Models.AddTorrentParams
+            var addTorrentParams = new QBittorrent.ApiClient.Models.AddTorrentParams
             {
                 AddToTopOfQueue = options.AddToTopOfQueue,
                 AutoTorrentManagement = options.TorrentManagementMode,
@@ -960,7 +957,7 @@ namespace Lantean.QBTMud.Services
 
             if (!string.IsNullOrWhiteSpace(options.ContentLayout))
             {
-                addTorrentParams.ContentLayout = Enum.Parse<QBitTorrentClient.Models.TorrentContentLayout>(options.ContentLayout);
+                addTorrentParams.ContentLayout = Enum.Parse<QBittorrent.ApiClient.Models.TorrentContentLayout>(options.ContentLayout);
             }
 
             if (!string.IsNullOrWhiteSpace(options.DownloadPath))
@@ -980,12 +977,12 @@ namespace Lantean.QBTMud.Services
 
             if (!string.IsNullOrWhiteSpace(options.ShareLimitAction))
             {
-                addTorrentParams.ShareLimitAction = Enum.Parse<QBitTorrentClient.Models.ShareLimitAction>(options.ShareLimitAction);
+                addTorrentParams.ShareLimitAction = Enum.Parse<QBittorrent.ApiClient.Models.ShareLimitAction>(options.ShareLimitAction);
             }
 
             if (!string.IsNullOrWhiteSpace(options.StopCondition))
             {
-                addTorrentParams.StopCondition = Enum.Parse<QBitTorrentClient.Models.StopCondition>(options.StopCondition);
+                addTorrentParams.StopCondition = Enum.Parse<QBittorrent.ApiClient.Models.StopCondition>(options.StopCondition);
             }
 
             if (options.UseDownloadPath.HasValue)

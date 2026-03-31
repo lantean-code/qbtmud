@@ -1,11 +1,11 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using System.Globalization;
 
 namespace Lantean.QBTMud.Pages
@@ -141,11 +141,10 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                await LoadCookiesCoreAsync();
-            }
-            catch (HttpRequestException)
-            {
-                SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load cookies. Please try again."), Severity.Error);
+                if (!await LoadCookiesCoreAsync())
+                {
+                    SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load cookies. Please try again."), Severity.Error);
+                }
             }
             finally
             {
@@ -164,12 +163,17 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                await ApiClient.SetApplicationCookies(nextCookies);
-                await LoadCookiesCoreAsync();
-            }
-            catch (HttpRequestException)
-            {
-                SnackbarWorkflow.ShowTransientMessage(Translate("Unable to update cookies. Please try again."), Severity.Error);
+                var persistResult = await ApiClient.SetApplicationCookiesAsync(nextCookies);
+                if (!persistResult.IsSuccess)
+                {
+                    SnackbarWorkflow.ShowTransientMessage(Translate("Unable to update cookies. Please try again."), Severity.Error);
+                    return;
+                }
+
+                if (!await LoadCookiesCoreAsync())
+                {
+                    SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load cookies. Please try again."), Severity.Error);
+                }
             }
             finally
             {
@@ -178,17 +182,24 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        private async Task LoadCookiesCoreAsync()
+        private async Task<bool> LoadCookiesCoreAsync()
         {
             _cookies.Clear();
 
-            var cookies = await ApiClient.GetApplicationCookies();
-            foreach (var cookie in cookies.OrderBy(c => c.Domain, StringComparer.OrdinalIgnoreCase)
+            var cookies = await ApiClient.GetApplicationCookiesAsync();
+            if (!cookies.TryGetValue(out var cookieList))
+            {
+                return false;
+            }
+
+            foreach (var cookie in cookieList.OrderBy(c => c.Domain, StringComparer.OrdinalIgnoreCase)
                                           .ThenBy(c => c.Path, StringComparer.OrdinalIgnoreCase)
                                           .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase))
             {
                 _cookies.Add(new CookieRow(Guid.NewGuid(), cookie));
             }
+
+            return true;
         }
 
         private IEnumerable<ColumnDefinition<CookieRow>> GetColumnDefinitions()

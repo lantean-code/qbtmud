@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Options
 {

@@ -1,6 +1,6 @@
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
-using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
+using ShareLimitAction = QBittorrent.ApiClient.Models.ShareLimitAction;
 
 namespace Lantean.QBTMud.Services
 {
@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Services
     {
         private static Status[]? _statusArray = null;
 
-        public MainData CreateMainData(QBitTorrentClient.Models.MainData mainData)
+        public MainData CreateMainData(QBittorrent.ApiClient.Models.MainData mainData)
         {
             var torrents = new Dictionary<string, Torrent>(mainData.Torrents?.Count ?? 0);
             if (mainData.Torrents is not null)
@@ -103,7 +103,7 @@ namespace Lantean.QBTMud.Services
             return torrentList;
         }
 
-        private static ServerState CreateServerState(QBitTorrentClient.Models.ServerState? serverState)
+        private static ServerState CreateServerState(QBittorrent.ApiClient.Models.ServerState? serverState)
         {
             if (serverState is null)
             {
@@ -139,13 +139,13 @@ namespace Lantean.QBTMud.Services
                 serverState.LastExternalAddressV6 ?? string.Empty);
         }
 
-        public bool MergeMainData(QBitTorrentClient.Models.MainData mainData, MainData torrentList, out bool filterChanged)
+        public bool MergeMainData(QBittorrent.ApiClient.Models.MainData mainData, MainData torrentList, out bool filterChanged)
         {
             return MergeMainData(mainData, torrentList, out filterChanged, out _);
         }
 
         public bool MergeMainData(
-            QBitTorrentClient.Models.MainData mainData,
+            QBittorrent.ApiClient.Models.MainData mainData,
             MainData torrentList,
             out bool filterChanged,
             out IReadOnlyList<TorrentTransition> torrentTransitions)
@@ -469,7 +469,7 @@ namespace Lantean.QBTMud.Services
             UpdateTrackerStateForRemoval(torrentList, hash, snapshot);
         }
 
-        private static bool UpdateServerState(ServerState existingServerState, QBitTorrentClient.Models.ServerState serverState)
+        private static bool UpdateServerState(ServerState existingServerState, QBittorrent.ApiClient.Models.ServerState serverState)
         {
             var changed = false;
 
@@ -638,12 +638,12 @@ namespace Lantean.QBTMud.Services
             return changed;
         }
 
-        private static Category CreateCategory(QBitTorrentClient.Models.Category category)
+        private static Category CreateCategory(QBittorrent.ApiClient.Models.Category category)
         {
             return new Category(category.Name, category.SavePath!);
         }
 
-        public Torrent CreateTorrent(string hash, QBitTorrentClient.Models.Torrent torrent)
+        public Torrent CreateTorrent(string hash, QBittorrent.ApiClient.Models.Torrent torrent)
         {
             var normalizedTags = torrent.Tags?
                 .Select(NormalizeTag)
@@ -1048,7 +1048,7 @@ namespace Lantean.QBTMud.Services
             return set;
         }
 
-        internal static bool UpdateCategory(Category existingCategory, QBitTorrentClient.Models.Category category)
+        internal static bool UpdateCategory(Category existingCategory, QBittorrent.ApiClient.Models.Category category)
         {
             if (category.SavePath is not null && existingCategory.SavePath != category.SavePath)
             {
@@ -1072,7 +1072,7 @@ namespace Lantean.QBTMud.Services
             public bool FilterChanged { get; }
         }
 
-        internal static TorrentUpdateResult UpdateTorrent(Torrent existingTorrent, QBitTorrentClient.Models.Torrent torrent)
+        internal static TorrentUpdateResult UpdateTorrent(Torrent existingTorrent, QBittorrent.ApiClient.Models.Torrent torrent)
         {
             var dataChanged = false;
             var filterChanged = false;
@@ -1455,12 +1455,12 @@ namespace Lantean.QBTMud.Services
             return new TorrentUpdateResult(dataChanged, filterChanged);
         }
 
-        public Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files)
+        public Dictionary<string, ContentItem> CreateContentsList(IReadOnlyList<QBittorrent.ApiClient.Models.FileData> files)
         {
             return BuildContentsTree(files);
         }
 
-        private static Dictionary<string, ContentItem> BuildContentsTree(IReadOnlyList<QBitTorrentClient.Models.FileData> files)
+        private static Dictionary<string, ContentItem> BuildContentsTree(IReadOnlyList<QBittorrent.ApiClient.Models.FileData> files)
         {
             var result = new Dictionary<string, ContentItem>();
             if (files.Count == 0)
@@ -1480,7 +1480,7 @@ namespace Lantean.QBTMud.Services
                 var segments = file.Name.Split(Extensions.DirectorySeparator);
                 var directoriesLength = segments.Length - 1;
 
-                var isDoNotDownload = file.Priority == QBitTorrentClient.Models.Priority.DoNotDownload;
+                var isDoNotDownload = file.Priority == QBittorrent.ApiClient.Models.Priority.DoNotDownload;
                 var downloadSize = isDoNotDownload ? 0 : file.Size;
 
                 for (var i = 0; i < directoriesLength; i++)
@@ -1697,7 +1697,7 @@ namespace Lantean.QBTMud.Services
             public Dictionary<string, ContentTreeNode> Children { get; }
         }
 
-        public bool MergeContentsList(IReadOnlyList<QBitTorrentClient.Models.FileData> files, Dictionary<string, ContentItem> contents)
+        public bool MergeContentsList(IReadOnlyList<QBittorrent.ApiClient.Models.FileData> files, Dictionary<string, ContentItem> contents)
         {
             if (files.Count == 0)
             {
@@ -1723,7 +1723,7 @@ namespace Lantean.QBTMud.Services
             foreach (var file in files)
             {
                 var priority = (Priority)(int)file.Priority;
-                var isDoNotDownload = file.Priority == QBitTorrentClient.Models.Priority.DoNotDownload;
+                var isDoNotDownload = file.Priority == QBittorrent.ApiClient.Models.Priority.DoNotDownload;
                 var downloadSize = isDoNotDownload ? 0 : file.Size;
                 var pathSegments = file.Name.Split(Extensions.DirectorySeparator);
                 var level = pathSegments.Length - 1;

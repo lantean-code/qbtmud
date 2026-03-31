@@ -35,6 +35,5 @@ namespace Lantean.QBTMud.Models
         public Dictionary<string, HashSet<string>> StatusState { get; }
         public Dictionary<string, HashSet<string>> TrackersState { get; }
         public string? SelectedTorrentHash { get; set; }
-        public bool LostConnection { get; set; }
     }
 }

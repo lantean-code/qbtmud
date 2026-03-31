@@ -4,7 +4,7 @@ namespace Lantean.QBTMud.Services
 {
     public class RssDataManager : IRssDataManager
     {
-        public RssList CreateRssList(IReadOnlyDictionary<string, QBitTorrentClient.Models.RssItem> rssItems)
+        public RssList CreateRssList(IReadOnlyDictionary<string, QBittorrent.ApiClient.Models.RssItem> rssItems)
         {
             var articles = new List<RssArticle>();
             var feeds = new Dictionary<string, RssFeed>(StringComparer.Ordinal);

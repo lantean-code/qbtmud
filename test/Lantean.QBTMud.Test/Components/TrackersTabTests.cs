@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
@@ -12,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using System.Net;
 
 namespace Lantean.QBTMud.Test.Components
@@ -32,7 +32,7 @@ namespace Lantean.QBTMud.Test.Components
             _dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers(It.IsAny<string>()))
+                .Setup(client => client.GetTorrentTrackersAsync(It.IsAny<string>()))
                 .ReturnsAsync(Array.Empty<TorrentTracker>());
 
             _timer = Mock.Of<IManagedTimer>();
@@ -59,7 +59,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             RenderTrackersTab(active: true, hash: null);
 
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentTrackers(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentTrackersAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -67,7 +67,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             RenderTrackersTab(active: false);
 
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentTrackers(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentTrackersAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -80,14 +80,14 @@ namespace Lantean.QBTMud.Test.Components
                 CreateTracker("udp://a.example", tier: 1),
             };
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(trackers);
 
             var target = RenderTrackersTab(active: true);
 
             target.WaitForAssertion(() =>
             {
-                Mock.Get(_apiClient).Verify(client => client.GetTorrentTrackers("Hash"), Times.Once);
+                Mock.Get(_apiClient).Verify(client => client.GetTorrentTrackersAsync("Hash"), Times.Once);
                 GetTrackerUrls(target).Should().Equal("** [DHT]", "udp://a.example", "udp://b.example");
             });
         }
@@ -102,7 +102,7 @@ namespace Lantean.QBTMud.Test.Components
                 CreateTracker("** [DHT]", tier: -1),
             };
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(trackers);
 
             var target = RenderTrackersTab(active: true);
@@ -144,7 +144,7 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
             _dialogWorkflowMock.Verify(workflow => workflow.ShowAddTrackersDialog(), Times.Never);
-            Mock.Get(_apiClient).Verify(client => client.AddTrackersToTorrent(It.IsAny<IEnumerable<string>>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.AddTrackersToTorrentAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -173,7 +173,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.AddTrackersToTorrent(It.IsAny<IEnumerable<string>>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.AddTrackersToTorrentAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -188,7 +188,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.AddTrackersToTorrent(It.IsAny<IEnumerable<string>>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.AddTrackersToTorrentAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -199,7 +199,7 @@ namespace Lantean.QBTMud.Test.Components
                 .Setup(workflow => workflow.ShowAddTrackersDialog())
                 .ReturnsAsync(addedTrackers);
             Mock.Get(_apiClient)
-                .Setup(client => client.AddTrackersToTorrent(It.IsAny<IEnumerable<string>>(), null, It.IsAny<string[]>()))
+                .Setup(client => client.AddTrackersToTorrentAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var target = RenderTrackersTab(active: false);
@@ -208,10 +208,10 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_apiClient).Verify(
-                client => client.AddTrackersToTorrent(
+                client => client.AddTrackersToTorrentAsync(
+                    It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.HasHashes(selector, new[] { "Hash" })),
                     It.Is<IEnumerable<string>>(urls => urls.OrderBy(url => url).SequenceEqual(addedTrackers.OrderBy(url => url))),
-                    null,
-                    It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash" }))),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -219,7 +219,7 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_NoSelectedTracker_WHEN_EditToolbarClicked_THEN_DialogIsNotOpened()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { CreateTracker("udp://a.example") });
 
             var target = RenderTrackersTab(active: true);
@@ -238,10 +238,10 @@ namespace Lantean.QBTMud.Test.Components
             var tracker = CreateTracker("udp://a.example");
             var updatedTrackerUrl = "udp://edited.example";
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { tracker });
             Mock.Get(_apiClient)
-                .Setup(client => client.EditTracker("Hash", tracker.Url, updatedTrackerUrl, null))
+                .Setup(client => client.EditTrackerAsync("Hash", tracker.Url, updatedTrackerUrl, null))
                 .Returns(Task.CompletedTask);
             _dialogWorkflowMock
                 .Setup(workflow => workflow.InvokeStringFieldDialog("Tracker editing", "Tracker URL:", tracker.Url, It.IsAny<Func<string, Task>>()))
@@ -254,14 +254,14 @@ namespace Lantean.QBTMud.Test.Components
             var editButton = FindIconButton(target, Icons.Material.Filled.Edit);
             await target.InvokeAsync(() => editButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.EditTracker("Hash", tracker.Url, updatedTrackerUrl, null), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.EditTrackerAsync("Hash", tracker.Url, updatedTrackerUrl, null), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_NoSelectedTracker_WHEN_RemoveToolbarClicked_THEN_ApiIsNotCalled()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { CreateTracker("udp://a.example") });
 
             var target = RenderTrackersTab(active: true);
@@ -269,7 +269,7 @@ namespace Lantean.QBTMud.Test.Components
 
             await target.InvokeAsync(() => removeButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.RemoveTrackers(It.IsAny<IEnumerable<string>>(), It.IsAny<bool?>(), It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.RemoveTrackersAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -277,10 +277,10 @@ namespace Lantean.QBTMud.Test.Components
         {
             var tracker = CreateTracker("udp://a.example");
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { tracker });
             Mock.Get(_apiClient)
-                .Setup(client => client.RemoveTrackers(It.IsAny<IEnumerable<string>>(), null, It.IsAny<string[]>()))
+                .Setup(client => client.RemoveTrackersAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var target = RenderTrackersTab(active: true);
@@ -291,10 +291,10 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => removeButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_apiClient).Verify(
-                client => client.RemoveTrackers(
+                client => client.RemoveTrackersAsync(
+                    It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.HasHashes(selector, new[] { "Hash" })),
                     It.Is<IEnumerable<string>>(urls => urls.SequenceEqual(new[] { tracker.Url })),
-                    null,
-                    It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash" }))),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -305,7 +305,7 @@ namespace Lantean.QBTMud.Test.Components
             copyInvocation.SetVoidResult();
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { CreateTracker("udp://a.example") });
 
             var target = RenderTrackersTab(active: true);
@@ -321,7 +321,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var syntheticTracker = CreateTracker("** [DHT]", tier: -1);
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { syntheticTracker, CreateTracker("udp://a.example") });
 
             var target = RenderTrackersTab(active: true);
@@ -340,7 +340,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var tracker = CreateTracker("udp://a.example");
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { tracker });
 
             var target = RenderTrackersTab(active: true);
@@ -362,10 +362,10 @@ namespace Lantean.QBTMud.Test.Components
         {
             var tracker = CreateTracker("udp://a.example");
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { tracker });
             Mock.Get(_apiClient)
-                .Setup(client => client.RemoveTrackers(It.IsAny<IEnumerable<string>>(), null, It.IsAny<string[]>()))
+                .Setup(client => client.RemoveTrackersAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var target = RenderTrackersTab(active: true);
@@ -376,10 +376,10 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => removeItem.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_apiClient).Verify(
-                client => client.RemoveTrackers(
+                client => client.RemoveTrackersAsync(
+                    It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.HasHashes(selector, new[] { "Hash" })),
                     It.Is<IEnumerable<string>>(urls => urls.SequenceEqual(new[] { tracker.Url })),
-                    null,
-                    It.Is<string[]>(hashes => hashes.SequenceEqual(new[] { "Hash" }))),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -391,7 +391,7 @@ namespace Lantean.QBTMud.Test.Components
 
             var tracker = CreateTracker("udp://a.example");
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { tracker });
 
             var target = RenderTrackersTab(active: true);
@@ -408,7 +408,7 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_ColumnOptionsClicked_WHEN_TableExists_THEN_ColumnDialogIsShown()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetTorrentTrackers("Hash"))
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { CreateTracker("udp://a.example") });
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowColumnsOptionsDialog<TorrentTracker>(
@@ -438,7 +438,7 @@ namespace Lantean.QBTMud.Test.Components
             var initialTrackers = new[] { CreateTracker("udp://a.example") };
             var updatedTrackers = new[] { CreateTracker("udp://b.example") };
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetTorrentTrackers("Hash"))
+                .SetupSequence(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(initialTrackers)
                 .ReturnsAsync(updatedTrackers);
 
@@ -447,16 +447,16 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Continue);
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentTrackers("Hash"), Times.Exactly(2));
+            Mock.Get(_apiClient).Verify(client => client.GetTorrentTrackersAsync("Hash"), Times.Exactly(2));
         }
 
         [Fact]
         public async Task GIVEN_ActiveTab_WHEN_TimerTickGetsForbidden_THEN_StopIsReturned()
         {
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetTorrentTrackers("Hash"))
+                .SetupSequence(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { CreateTracker("udp://a.example") })
-                .ThrowsAsync(new HttpRequestException("Forbidden", null, HttpStatusCode.Forbidden));
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Forbidden", HttpStatusCode.Forbidden);
 
             var target = RenderTrackersTab(active: true);
 
@@ -469,9 +469,9 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_ActiveTab_WHEN_TimerTickGetsNotFound_THEN_StopIsReturned()
         {
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetTorrentTrackers("Hash"))
+                .SetupSequence(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { CreateTracker("udp://a.example") })
-                .ThrowsAsync(new HttpRequestException("Not Found", null, HttpStatusCode.NotFound));
+                .ReturnsFailure(ApiFailureKind.NotFound, "Not Found", HttpStatusCode.NotFound);
 
             var target = RenderTrackersTab(active: true);
 

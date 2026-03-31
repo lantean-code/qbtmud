@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -9,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using System.Net;
 
 namespace Lantean.QBTMud.Test.Components
@@ -54,16 +54,16 @@ namespace Lantean.QBTMud.Test.Components
         {
             RenderGeneralTab(true, null);
 
-            Mock.Get(_apiClient).Verify(c => c.GetTorrentProperties(It.IsAny<string>()), Times.Never);
-            Mock.Get(_apiClient).Verify(c => c.GetTorrentPieceStates(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(c => c.GetTorrentPropertiesAsync(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(c => c.GetTorrentPieceStatesAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public void GIVEN_ActiveTab_WHEN_PropertiesNotFound_THEN_ShowsPiecesUnavailable()
         {
             Mock.Get(_apiClient)
-                .Setup(c => c.GetTorrentProperties("Hash"))
-                .ThrowsAsync(new HttpRequestException("Message", null, HttpStatusCode.NotFound));
+                .Setup(c => c.GetTorrentPropertiesAsync("Hash"))
+                .ReturnsFailure(ApiFailureKind.NotFound, "Message", HttpStatusCode.NotFound);
 
             var target = RenderGeneralTab(true, "Hash");
 
@@ -77,8 +77,8 @@ namespace Lantean.QBTMud.Test.Components
         public void GIVEN_ActiveTab_WHEN_PropertiesRequestFails_THEN_ShowsPiecesUnavailable()
         {
             Mock.Get(_apiClient)
-                .Setup(c => c.GetTorrentProperties("Hash"))
-                .ThrowsAsync(new HttpRequestException("Message"));
+                .Setup(c => c.GetTorrentPropertiesAsync("Hash"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Message", HttpStatusCode.InternalServerError);
 
             var target = RenderGeneralTab(true, "Hash");
 
@@ -92,11 +92,11 @@ namespace Lantean.QBTMud.Test.Components
         public void GIVEN_ActiveTab_WHEN_PiecesNotFound_THEN_ShowsPiecesUnavailable()
         {
             Mock.Get(_apiClient)
-                .Setup(c => c.GetTorrentProperties("Hash"))
+                .Setup(c => c.GetTorrentPropertiesAsync("Hash"))
                 .ReturnsAsync(CreateProperties());
             Mock.Get(_apiClient)
-                .Setup(c => c.GetTorrentPieceStates("Hash"))
-                .ThrowsAsync(new HttpRequestException("Message", null, HttpStatusCode.NotFound));
+                .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
+                .ReturnsFailure(ApiFailureKind.NotFound, "Message", HttpStatusCode.NotFound);
 
             var target = RenderGeneralTab(true, "Hash");
 
@@ -110,10 +110,10 @@ namespace Lantean.QBTMud.Test.Components
         public void GIVEN_ActiveTab_WHEN_PiecesLoaded_THEN_ShowsPiecesProgressSummary()
         {
             Mock.Get(_apiClient)
-                .Setup(c => c.GetTorrentProperties("Hash"))
+                .Setup(c => c.GetTorrentPropertiesAsync("Hash"))
                 .ReturnsAsync(CreateProperties());
             Mock.Get(_apiClient)
-                .Setup(c => c.GetTorrentPieceStates("Hash"))
+                .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
                 .ReturnsAsync(new[] { PieceState.Downloaded, PieceState.Downloading });
 
             var target = RenderGeneralTab(true, "Hash");
@@ -128,11 +128,11 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_ActiveTab_WHEN_TimerTicksAndPropertiesNotFound_THEN_ShowsPiecesUnavailable()
         {
             Mock.Get(_apiClient)
-                .SetupSequence(c => c.GetTorrentProperties("Hash"))
+                .SetupSequence(c => c.GetTorrentPropertiesAsync("Hash"))
                 .ReturnsAsync(CreateProperties())
-                .ThrowsAsync(new HttpRequestException("Message", null, HttpStatusCode.NotFound));
+                .ReturnsFailure(ApiFailureKind.NotFound, "Message", HttpStatusCode.NotFound);
             Mock.Get(_apiClient)
-                .Setup(c => c.GetTorrentPieceStates("Hash"))
+                .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
                 .ReturnsAsync(new[] { PieceState.Downloaded });
 
             var target = RenderGeneralTab(true, "Hash");
@@ -148,11 +148,11 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_ActiveTab_WHEN_TimerTicksAndPropertiesForbidden_THEN_ShowsPiecesUnavailable()
         {
             Mock.Get(_apiClient)
-                .SetupSequence(c => c.GetTorrentProperties("Hash"))
+                .SetupSequence(c => c.GetTorrentPropertiesAsync("Hash"))
                 .ReturnsAsync(CreateProperties())
-                .ThrowsAsync(new HttpRequestException("Message", null, HttpStatusCode.Forbidden));
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Message", HttpStatusCode.Forbidden);
             Mock.Get(_apiClient)
-                .Setup(c => c.GetTorrentPieceStates("Hash"))
+                .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
                 .ReturnsAsync(new[] { PieceState.Downloaded });
 
             var target = RenderGeneralTab(true, "Hash");
@@ -168,13 +168,13 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_ActiveTab_WHEN_TimerTicksAndPiecesNotFound_THEN_ShowsPiecesUnavailable()
         {
             Mock.Get(_apiClient)
-                .SetupSequence(c => c.GetTorrentProperties("Hash"))
+                .SetupSequence(c => c.GetTorrentPropertiesAsync("Hash"))
                 .ReturnsAsync(CreateProperties())
                 .ReturnsAsync(CreateProperties());
             Mock.Get(_apiClient)
-                .SetupSequence(c => c.GetTorrentPieceStates("Hash"))
+                .SetupSequence(c => c.GetTorrentPieceStatesAsync("Hash"))
                 .ReturnsAsync(new[] { PieceState.Downloaded })
-                .ThrowsAsync(new HttpRequestException("Message", null, HttpStatusCode.NotFound));
+                .ReturnsFailure(ApiFailureKind.NotFound, "Message", HttpStatusCode.NotFound);
 
             var target = RenderGeneralTab(true, "Hash");
             await TriggerTimerTickAsync(target);
@@ -189,11 +189,11 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_ActiveTab_WHEN_TimerTicksAndPiecesLoaded_THEN_ShowsUpdatedProgressSummary()
         {
             Mock.Get(_apiClient)
-                .SetupSequence(c => c.GetTorrentProperties("Hash"))
+                .SetupSequence(c => c.GetTorrentPropertiesAsync("Hash"))
                 .ReturnsAsync(CreateProperties())
                 .ReturnsAsync(CreateProperties());
             Mock.Get(_apiClient)
-                .SetupSequence(c => c.GetTorrentPieceStates("Hash"))
+                .SetupSequence(c => c.GetTorrentPieceStatesAsync("Hash"))
                 .ReturnsAsync(new[] { PieceState.Downloading })
                 .ReturnsAsync(new[] { PieceState.Downloaded, PieceState.Downloaded });
 
@@ -218,10 +218,10 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_CancelledTickToken_WHEN_TimerHandlerRuns_THEN_ReturnsStop()
         {
             Mock.Get(_apiClient)
-                .Setup(c => c.GetTorrentProperties("Hash"))
+                .Setup(c => c.GetTorrentPropertiesAsync("Hash"))
                 .ReturnsAsync(CreateProperties());
             Mock.Get(_apiClient)
-                .Setup(c => c.GetTorrentPieceStates("Hash"))
+                .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
                 .ReturnsAsync(new[] { PieceState.Downloaded });
 
             var target = RenderGeneralTab(true, "Hash");

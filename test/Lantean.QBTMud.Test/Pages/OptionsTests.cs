@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Pages;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
@@ -11,7 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -43,10 +42,10 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.AddSingleton(_preferencesUpdateService);
 
             Mock.Get(_apiClient)
-                .Setup(client => client.GetApplicationPreferences())
+                .Setup(client => client.GetApplicationPreferencesAsync())
                 .ReturnsAsync(CreatePreferences());
             Mock.Get(_apiClient)
-                .Setup(client => client.GetNetworkInterfaces())
+                .Setup(client => client.GetNetworkInterfacesAsync())
                 .ReturnsAsync(Array.Empty<NetworkInterface>());
             Mock.Get(_languageInitializationService)
                 .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
@@ -68,7 +67,7 @@ namespace Lantean.QBTMud.Test.Pages
             FindIconButton(target, Icons.Material.Outlined.Save).Instance.Disabled.Should().BeTrue();
             FindIconButton(target, Icons.Material.Outlined.Undo).Instance.Disabled.Should().BeTrue();
 
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferences(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferencesAsync(), Times.Once);
         }
 
         [Fact]
@@ -102,7 +101,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()), Times.Never);
         }
 
         [Fact]
@@ -111,11 +110,11 @@ namespace Lantean.QBTMud.Test.Pages
             var preferences = CreatePreferences();
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationPreferences())
+                .SetupSequence(client => client.GetApplicationPreferencesAsync())
                 .ReturnsAsync(preferences)
                 .ReturnsAsync(preferences);
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .Returns(Task.CompletedTask);
 
             _apiClient.ClearInvocations();
@@ -130,8 +129,8 @@ namespace Lantean.QBTMud.Test.Pages
             var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
             await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferences(), Times.Exactly(2));
-            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferences(
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferencesAsync(), Times.Exactly(2));
+            Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(
                     It.Is<UpdatePreferences>(value => value.ConfirmTorrentDeletion == true)),
                 Times.Once);
             Mock.Get(_snackbar).Verify(
@@ -152,11 +151,11 @@ namespace Lantean.QBTMud.Test.Pages
             var preferences = CreatePreferences();
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationPreferences())
+                .SetupSequence(client => client.GetApplicationPreferencesAsync())
                 .ReturnsAsync(preferences)
                 .ReturnsAsync(preferences);
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .Returns(Task.CompletedTask);
 
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
@@ -194,11 +193,11 @@ namespace Lantean.QBTMud.Test.Pages
             var preferences = CreatePreferences();
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationPreferences())
+                .SetupSequence(client => client.GetApplicationPreferencesAsync())
                 .ReturnsAsync(preferences)
                 .ReturnsAsync(preferences);
             Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferences(It.IsAny<UpdatePreferences>()))
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .Returns(Task.CompletedTask);
 
             await TestContext.LocalStorage.RemoveItemAsync(LanguageStorageKeys.PreferredLocale, Xunit.TestContext.Current.CancellationToken);
@@ -410,14 +409,23 @@ namespace Lantean.QBTMud.Test.Pages
             if (configureApi)
             {
                 Mock.Get(_apiClient)
-                    .Setup(client => client.GetApplicationPreferences())
+                    .Setup(client => client.GetApplicationPreferencesAsync())
                     .ReturnsAsync(preferences ?? CreatePreferences());
+            }
+
+            var connectivityStateService = TestContext.Services.GetRequiredService<IConnectivityStateService>();
+            if (lostConnection)
+            {
+                connectivityStateService.MarkLostConnection();
+            }
+            else
+            {
+                connectivityStateService.MarkConnected();
             }
 
             return TestContext.Render<Options>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", drawerOpen);
-                parameters.AddCascadingValue("LostConnection", lostConnection);
             });
         }
 
@@ -441,25 +449,22 @@ namespace Lantean.QBTMud.Test.Pages
 
         private static Preferences CreatePreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "confirm_torrent_deletion": false,
-                "temp_path_enabled": false,
-                "temp_path": "/temp",
-                "save_path": "/downloads",
-                "scan_dirs": {},
-                "upnp": false,
-                "limit_utp_rate": false,
-                "dht": false,
-                "rss_processing_enabled": false,
-                "web_ui_upnp": false,
-                "web_ui_port": 8080,
-                "web_ui_address": "0.0.0.0",
-                "recheck_completed_torrents": false
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.ConfirmTorrentDeletion = false;
+                spec.Dht = false;
+                spec.LimitUtpRate = false;
+                spec.RecheckCompletedTorrents = false;
+                spec.RssProcessingEnabled = false;
+                spec.SavePath = "/downloads";
+                spec.ScanDirs = [];
+                spec.TempPath = "/temp";
+                spec.TempPathEnabled = false;
+                spec.Upnp = false;
+                spec.WebUiAddress = "0.0.0.0";
+                spec.WebUiPort = 8080;
+                spec.WebUiUpnp = false;
+            });
         }
     }
 }

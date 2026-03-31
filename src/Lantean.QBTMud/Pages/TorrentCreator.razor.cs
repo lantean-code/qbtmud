@@ -1,5 +1,3 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Interop;
@@ -9,6 +7,8 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -49,11 +49,11 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
+        [Inject]
+        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
-
-        [CascadingParameter]
-        public Lantean.QBTMud.Models.MainData? MainData { get; set; }
 
         protected bool HasTasks
         {
@@ -112,13 +112,12 @@ namespace Lantean.QBTMud.Pages
             }
 
             var request = (TorrentCreationTaskRequest)dialogResult.Data;
-            try
+            var createResult = await ApiClient.AddTorrentCreationTaskAsync(request);
+            if (!createResult.IsSuccess)
             {
-                await ApiClient.AddTorrentCreationTask(request);
-            }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage($"{LanguageLocalizer.Translate("TorrentCreator", "Unable to create torrent.")} {exception.Message}", Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(
+                    $"{LanguageLocalizer.Translate("TorrentCreator", "Unable to create torrent.")} {createResult.Failure?.UserMessage}",
+                    Severity.Error);
                 return;
             }
 
@@ -144,13 +143,12 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task DeleteTask(TorrentCreationTaskStatus task)
         {
-            try
+            var deleteResult = await ApiClient.DeleteTorrentCreationTaskAsync(task.TaskId);
+            if (!deleteResult.IsSuccess)
             {
-                await ApiClient.DeleteTorrentCreationTask(task.TaskId);
-            }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateTorrentCreator("Unable to delete task: %1", exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(
+                    TranslateTorrentCreator("Unable to delete task: %1", deleteResult.Failure?.UserMessage ?? string.Empty),
+                    Severity.Error);
                 return;
             }
 
@@ -183,7 +181,7 @@ namespace Lantean.QBTMud.Pages
 
         private async Task RefreshTasksAsync()
         {
-            if (MainData?.LostConnection == true)
+            if (ConnectivityStateService.IsLostConnection)
             {
                 SnackbarWorkflow.ShowTransientMessage($"{LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")}.", Severity.Warning);
                 _timerCancellationToken.CancelIfNotDisposed();
@@ -193,11 +191,18 @@ namespace Lantean.QBTMud.Pages
             _isLoading = true;
             try
             {
-                _tasks = await ApiClient.GetTorrentCreationTasks() ?? [];
-            }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage($"{LanguageLocalizer.Translate("TorrentCreator", "Unable to load torrent creation tasks")}: {exception.Message}", Severity.Error);
+                var tasksResult = await ApiClient.GetTorrentCreationTasksAsync();
+                if (tasksResult.TryGetValue(out var tasks))
+                {
+                    _tasks = tasks ?? [];
+                }
+                else
+                {
+                    _tasks = [];
+                    SnackbarWorkflow.ShowTransientMessage(
+                        $"{LanguageLocalizer.Translate("TorrentCreator", "Unable to load torrent creation tasks")}: {tasksResult.Failure?.UserMessage}",
+                        Severity.Error);
+                }
             }
             finally
             {

@@ -1,4 +1,3 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Helpers;
@@ -8,7 +7,7 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
-using System.Net;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Layout
 {
@@ -17,6 +16,8 @@ namespace Lantean.QBTMud.Layout
         private const string _pendingDownloadStorageKey = "LoggedInLayout.PendingDownload";
         private const string _lastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
         private const int _defaultRefreshInterval = 1500;
+        private const string _startupApiErrorSnackbarKey = "logged-in-layout-startup-api-error";
+        private const string _refreshApiErrorSnackbarKey = "logged-in-layout-refresh-api-error";
         private static readonly TimeSpan _pwaInstallPromptDisplayDelay = TimeSpan.FromSeconds(2);
 
         private readonly bool _refreshEnabled = true;
@@ -27,11 +28,16 @@ namespace Lantean.QBTMud.Layout
         private bool _toggleAltSpeedLimitsInProgress;
         private Task? _refreshLoopTask;
         private bool _authConfirmed;
+        private bool _startupRecoveryPending;
         private bool _startupUpdateCheckRequested;
         private bool _updateSnackbarShown;
+        private Task? _connectivityChangeTask;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
 
         [Inject]
         protected ITorrentDataManager DataManager { get; set; } = default!;
@@ -115,7 +121,7 @@ namespace Lantean.QBTMud.Layout
 
         protected Status Status { get; set; } = Status.All;
 
-        protected QBitTorrentClient.Models.Preferences? Preferences { get; set; }
+        protected QBittorrent.ApiClient.Models.Preferences? Preferences { get; set; }
 
         protected AppSettings? AppSettingsState { get; set; }
 
@@ -137,8 +143,6 @@ namespace Lantean.QBTMud.Layout
 
         protected bool IsAuthenticated { get; set; }
 
-        protected bool LostConnection { get; set; }
-
         private IReadOnlyList<Torrent> _visibleTorrents = Array.Empty<Torrent>();
 
         private bool _torrentsDirty = true;
@@ -159,6 +163,7 @@ namespace Lantean.QBTMud.Layout
 
             _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(_defaultRefreshInterval), retryCount: 3);
             AppSettingsService.SettingsChanged += OnAppSettingsChanged;
+            ConnectivityStateService.ConnectivityChanged += OnConnectivityChanged;
 
             if (!_navigationHandlerAttached)
             {
@@ -204,22 +209,21 @@ namespace Lantean.QBTMud.Layout
             await RestoreProcessedDownloadAsync();
             await RestorePendingDownloadAsync();
 
-            bool isAuthenticated;
-            try
+            var authState = await ApiClient.CheckAuthStateAsync();
+            if (!authState.TryGetValue(out var isAuthenticated))
             {
-                isAuthenticated = await ApiClient.CheckAuthState();
+                await TryHandleStartupFailureAsync(authState.Failure!, _timerCancellationToken.Token);
+                return;
             }
-            catch (HttpRequestException)
+
+            if (ConnectivityStateService.IsLostConnection)
             {
-                MainData ??= CreateDisconnectedMainData();
-                MainData.LostConnection = true;
                 return;
             }
 
             if (!isAuthenticated)
             {
-                await ClearPendingDownloadAsync();
-                NavigationManager.NavigateTo("login");
+                await HandleAuthenticationFailureAsync();
                 return;
             }
 
@@ -230,21 +234,49 @@ namespace Lantean.QBTMud.Layout
             await InvokeAsync(StateHasChanged);
 
             var appSettingsTask = AppSettingsService.RefreshSettingsAsync(_timerCancellationToken.Token);
-            var preferencesTask = ApiClient.GetApplicationPreferences();
-            var versionTask = ApiClient.GetApplicationVersion();
-            var mainDataTask = ApiClient.GetMainData(_requestId);
+            var preferencesTask = ApiClient.GetApplicationPreferencesAsync();
+            var versionTask = ApiClient.GetApplicationVersionAsync();
+            var mainDataTask = ApiClient.GetMainDataAsync(_requestId);
 
-            await Task.WhenAll(appSettingsTask, preferencesTask, versionTask, mainDataTask);
+            try
+            {
+                await Task.WhenAll(appSettingsTask, preferencesTask, versionTask, mainDataTask);
+            }
+            catch (Exception exception)
+            {
+                if (await TryHandleStartupExceptionAsync(exception, _timerCancellationToken.Token))
+                {
+                    return;
+                }
+
+                throw;
+            }
 
             AppSettingsState = await appSettingsTask;
-            Preferences = await preferencesTask;
+            QBittorrent.ApiClient.Models.Preferences? preferences = null;
+            string? version = null;
+            QBittorrent.ApiClient.Models.MainData? data = null;
+            if (!preferencesTask.Result.TryGetValue(out preferences)
+                || !versionTask.Result.TryGetValue(out version)
+                || !mainDataTask.Result.TryGetValue(out data))
+            {
+                var failure = preferencesTask.Result.Failure ?? versionTask.Result.Failure ?? mainDataTask.Result.Failure;
+                if (failure is not null)
+                {
+                    await TryHandleStartupFailureAsync(failure, _timerCancellationToken.Token);
+                    return;
+                }
+            }
+
+            Preferences = preferences;
             await SynchronizeLocalePreferenceAsync();
-            Version = await versionTask;
-            var data = await mainDataTask;
-            MainData = DataManager.CreateMainData(data);
+            Version = version ?? string.Empty;
+            MainData = DataManager.CreateMainData(data!);
+            _startupRecoveryPending = false;
+            ConnectivityStateService.MarkConnected();
             MarkTorrentsDirty();
 
-            _requestId = data.ResponseId;
+            _requestId = data!.ResponseId;
             await UpdateRefreshIntervalAsync(MainData.ServerState.RefreshInterval, _timerCancellationToken.Token);
             await SpeedHistoryService.InitializeAsync();
             await RecordSpeedSampleAsync(MainData.ServerState, _timerCancellationToken.Token);
@@ -263,7 +295,7 @@ namespace Lantean.QBTMud.Layout
                 return;
             }
 
-            if (firstRender && _refreshLoopTask is null)
+            if (_refreshLoopTask is null && (IsAuthenticated || _startupRecoveryPending))
             {
                 StartRefreshLoop();
             }
@@ -279,13 +311,13 @@ namespace Lantean.QBTMud.Layout
                 await LaunchWelcomeWizardFlowAsync();
             }
 
-            if (!_startupUpdateCheckRequested && _authConfirmed)
+            if (!_startupUpdateCheckRequested && IsAuthenticated)
             {
                 _startupUpdateCheckRequested = true;
                 await TryRunStartupUpdateCheckAsync();
             }
 
-            if (MainData?.LostConnection == true)
+            if (ConnectivityStateService.IsLostConnection)
             {
                 await ShowLostConnectionDialogAsync();
             }
@@ -525,31 +557,38 @@ namespace Lantean.QBTMud.Layout
         {
             if (!IsAuthenticated)
             {
+                if (_startupRecoveryPending)
+                {
+                    return await RetryStartupTickAsync(cancellationToken);
+                }
+
                 return ManagedTimerTickResult.Stop;
             }
 
-            QBitTorrentClient.Models.MainData data;
-            try
+            var dataResult = await ApiClient.GetMainDataAsync(_requestId);
+            if (!dataResult.TryGetValue(out var data))
             {
-                data = await ApiClient.GetMainData(_requestId);
-            }
-            catch (HttpRequestException exception)
-            {
-                if (exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                if (dataResult.Failure.IsAuthenticationFailure())
                 {
                     await HandleAuthenticationFailureAsync();
                     return ManagedTimerTickResult.Stop;
                 }
 
-                if (MainData is not null)
+                if (dataResult.Failure.IsConnectivityFailure())
                 {
-                    MainData.LostConnection = true;
+                    ConnectivityStateService.MarkLostConnection();
+                    _timerCancellationToken.CancelIfNotDisposed();
+                    await InvokeAsync(StateHasChanged);
+                    return ManagedTimerTickResult.Stop;
                 }
 
-                await InvokeAsync(ShowLostConnectionDialogAsync);
-                _timerCancellationToken.CancelIfNotDisposed();
-                await InvokeAsync(StateHasChanged);
-                return ManagedTimerTickResult.Stop;
+                SnackbarWorkflow.ShowLocalizedMessage(
+                    "AppConnectivity",
+                    "qBittorrent returned an error. Please try again.",
+                    Severity.Error,
+                    configure: null,
+                    key: _refreshApiErrorSnackbarKey);
+                return ManagedTimerTickResult.Continue;
             }
 
             var shouldRender = false;
@@ -582,6 +621,7 @@ namespace Lantean.QBTMud.Layout
                 await TryProcessTorrentNotificationsAsync(transitionBatch, cancellationToken);
             }
 
+            ConnectivityStateService.MarkConnected();
             _requestId = data.ResponseId;
 
             if (shouldRender)
@@ -596,32 +636,12 @@ namespace Lantean.QBTMud.Layout
         {
             IsAuthenticated = false;
             _authConfirmed = false;
-
-            if (MainData is not null)
-            {
-                MainData.LostConnection = false;
-            }
+            _startupRecoveryPending = false;
+            ConnectivityStateService.MarkConnected();
 
             await ClearPendingDownloadAsync();
             _timerCancellationToken.CancelIfNotDisposed();
             await InvokeAsync(() => NavigationManager.NavigateTo("login"));
-        }
-
-        private static MainData CreateDisconnectedMainData()
-        {
-            return new MainData(
-                new Dictionary<string, Torrent>(),
-                Array.Empty<string>(),
-                new Dictionary<string, Category>(),
-                new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>(),
-                new Dictionary<string, HashSet<string>>())
-            {
-                LostConnection = true
-            };
         }
 
         private Task UpdateRefreshIntervalAsync(int newInterval, CancellationToken cancellationToken)
@@ -918,28 +938,40 @@ namespace Lantean.QBTMud.Layout
             }
 
             _toggleAltSpeedLimitsInProgress = true;
-            try
-            {
-                await ApiClient.ToggleAlternativeSpeedLimits();
-                var isEnabled = await ApiClient.GetAlternativeSpeedLimitsState();
-
-                if (MainData is not null)
-                {
-                    MainData.ServerState.UseAltSpeedLimits = isEnabled;
-                }
-
-                SnackbarWorkflow.ShowTransientMessage(BuildAlternativeSpeedLimitsStatusMessage(isEnabled), Severity.Info);
-            }
-            catch (HttpRequestException exception)
+            var toggleResult = await ApiClient.ToggleAlternativeSpeedLimitsAsync();
+            if (!toggleResult.IsSuccess)
             {
                 SnackbarWorkflow.ShowTransientMessage(
-                    LanguageLocalizer.Translate("AppLoggedInLayout", "Unable to toggle alternative speed limits: %1", exception.Message),
+                    LanguageLocalizer.Translate(
+                        "AppLoggedInLayout",
+                        "Unable to toggle alternative speed limits: %1",
+                        toggleResult.Failure?.UserMessage ?? string.Empty),
                     Severity.Error);
             }
-            finally
+            else
             {
-                _toggleAltSpeedLimitsInProgress = false;
+                var isEnabledResult = await ApiClient.GetAlternativeSpeedLimitsStateAsync();
+                if (isEnabledResult.TryGetValue(out var isEnabled))
+                {
+                    if (MainData is not null)
+                    {
+                        MainData.ServerState.UseAltSpeedLimits = isEnabled;
+                    }
+
+                    SnackbarWorkflow.ShowTransientMessage(BuildAlternativeSpeedLimitsStatusMessage(isEnabled), Severity.Info);
+                }
+                else
+                {
+                    SnackbarWorkflow.ShowTransientMessage(
+                        LanguageLocalizer.Translate(
+                            "AppLoggedInLayout",
+                            "Unable to toggle alternative speed limits: %1",
+                            isEnabledResult.Failure?.UserMessage ?? string.Empty),
+                        Severity.Error);
+                }
             }
+
+            _toggleAltSpeedLimitsInProgress = false;
 
             await InvokeAsync(StateHasChanged);
         }
@@ -1018,7 +1050,12 @@ namespace Lantean.QBTMud.Layout
             StateHasChanged();
         }
 
-        private async ValueTask OnPreferencesUpdated(QBitTorrentClient.Models.Preferences preferences)
+        private void OnConnectivityChanged(bool isLostConnection)
+        {
+            _connectivityChangeTask = HandleConnectivityChangedAsync(isLostConnection);
+        }
+
+        private async ValueTask OnPreferencesUpdated(QBittorrent.ApiClient.Models.Preferences preferences)
         {
             ArgumentNullException.ThrowIfNull(preferences);
 
@@ -1064,7 +1101,22 @@ namespace Lantean.QBTMud.Layout
                 }
 
                 AppSettingsService.SettingsChanged -= OnAppSettingsChanged;
+                ConnectivityStateService.ConnectivityChanged -= OnConnectivityChanged;
                 PreferencesUpdateService.PreferencesUpdated -= OnPreferencesUpdated;
+
+                if (_connectivityChangeTask is not null)
+                {
+                    try
+                    {
+                        await _connectivityChangeTask;
+                    }
+                    catch (InvalidOperationException) when (_disposedValue)
+                    {
+                    }
+                    catch (ObjectDisposedException) when (_disposedValue)
+                    {
+                    }
+                }
             }
 
             _disposedValue = true;
@@ -1074,6 +1126,174 @@ namespace Lantean.QBTMud.Layout
         {
             await DisposeAsync(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        private async Task<bool> TryHandleStartupExceptionAsync(Exception exception, CancellationToken cancellationToken)
+        {
+            return await TryHandleStartupFailureAsync(
+                new ApiFailure
+                {
+                    Kind = ApiFailureKind.UnexpectedResponse,
+                    Operation = "startup",
+                    UserMessage = exception.Message,
+                    Detail = exception.Message,
+                },
+                cancellationToken);
+        }
+
+        private async Task<bool> TryHandleStartupFailureAsync(ApiFailure failure, CancellationToken cancellationToken)
+        {
+            if (failure.IsAuthenticationFailure())
+            {
+                await HandleAuthenticationFailureAsync();
+                return true;
+            }
+
+            if (failure.IsConnectivityFailure())
+            {
+                _startupRecoveryPending = false;
+                ConnectivityStateService.MarkLostConnection();
+                return true;
+            }
+
+            _startupRecoveryPending = true;
+            ConnectivityStateService.MarkConnected();
+            SnackbarWorkflow.ShowLocalizedMessage(
+                "AppConnectivity",
+                "qBittorrent returned an error. Please try again.",
+                Severity.Error,
+                configure: null,
+                key: _startupApiErrorSnackbarKey);
+            return true;
+        }
+
+        private async Task HandleConnectivityChangedAsync(bool isLostConnection)
+        {
+            try
+            {
+                if (!isLostConnection)
+                {
+                    _lostConnectionDialogShown = false;
+                }
+
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (InvalidOperationException) when (_disposedValue)
+            {
+            }
+            catch (ObjectDisposedException) when (_disposedValue)
+            {
+            }
+        }
+
+        private async Task<ManagedTimerTickResult> RetryStartupTickAsync(CancellationToken cancellationToken)
+        {
+            var authState = await ApiClient.CheckAuthStateAsync();
+            if (!authState.TryGetValue(out var isAuthenticated))
+            {
+                return await HandleStartupRecoveryFailureAsync(authState.Failure!, cancellationToken);
+            }
+
+            if (!isAuthenticated)
+            {
+                await HandleAuthenticationFailureAsync();
+                return ManagedTimerTickResult.Stop;
+            }
+
+            _authConfirmed = true;
+            CaptureDownloadFromUri(NavigationManager.Uri);
+            await PersistPendingDownloadAsync();
+
+            var appSettingsTask = AppSettingsService.RefreshSettingsAsync(cancellationToken);
+            var preferencesTask = ApiClient.GetApplicationPreferencesAsync();
+            var versionTask = ApiClient.GetApplicationVersionAsync();
+            var mainDataTask = ApiClient.GetMainDataAsync(_requestId);
+
+            try
+            {
+                await Task.WhenAll(appSettingsTask, preferencesTask, versionTask, mainDataTask);
+            }
+            catch (Exception exception)
+            {
+                return await HandleStartupRecoveryExceptionAsync(exception, cancellationToken);
+            }
+
+            AppSettingsState = await appSettingsTask;
+            QBittorrent.ApiClient.Models.Preferences? preferences = null;
+            string? version = null;
+            QBittorrent.ApiClient.Models.MainData? data = null;
+            if (!preferencesTask.Result.TryGetValue(out preferences)
+                || !versionTask.Result.TryGetValue(out version)
+                || !mainDataTask.Result.TryGetValue(out data))
+            {
+                var failure = preferencesTask.Result.Failure ?? versionTask.Result.Failure ?? mainDataTask.Result.Failure;
+                if (failure is not null)
+                {
+                    return await HandleStartupRecoveryFailureAsync(failure, cancellationToken);
+                }
+            }
+
+            Preferences = preferences;
+            await SynchronizeLocalePreferenceAsync();
+            Version = version ?? string.Empty;
+            MainData = DataManager.CreateMainData(data!);
+            _startupRecoveryPending = false;
+            ConnectivityStateService.MarkConnected();
+            MarkTorrentsDirty();
+
+            _requestId = data!.ResponseId;
+            await UpdateRefreshIntervalAsync(MainData.ServerState.RefreshInterval, cancellationToken);
+            await SpeedHistoryService.InitializeAsync();
+            await RecordSpeedSampleAsync(MainData.ServerState, cancellationToken);
+
+            IsAuthenticated = true;
+
+            Menu?.ShowMenu(Preferences);
+
+            await TryProcessPendingDownloadAsync();
+            await InvokeAsync(StateHasChanged);
+
+            return ManagedTimerTickResult.Continue;
+        }
+
+        private Task<ManagedTimerTickResult> HandleStartupRecoveryExceptionAsync(Exception exception, CancellationToken cancellationToken)
+        {
+            return HandleStartupRecoveryFailureAsync(
+                new ApiFailure
+                {
+                    Kind = ApiFailureKind.UnexpectedResponse,
+                    Operation = "startup-recovery",
+                    UserMessage = exception.Message,
+                    Detail = exception.Message,
+                },
+                cancellationToken);
+        }
+
+        private async Task<ManagedTimerTickResult> HandleStartupRecoveryFailureAsync(ApiFailure failure, CancellationToken cancellationToken)
+        {
+            if (failure.IsAuthenticationFailure())
+            {
+                await HandleAuthenticationFailureAsync();
+                return ManagedTimerTickResult.Stop;
+            }
+
+            if (failure.IsConnectivityFailure())
+            {
+                _startupRecoveryPending = false;
+                ConnectivityStateService.MarkLostConnection();
+                _timerCancellationToken.CancelIfNotDisposed();
+                await InvokeAsync(StateHasChanged);
+                return ManagedTimerTickResult.Stop;
+            }
+
+            ConnectivityStateService.MarkConnected();
+            SnackbarWorkflow.ShowLocalizedMessage(
+                "AppConnectivity",
+                "qBittorrent returned an error. Please try again.",
+                Severity.Error,
+                configure: null,
+                key: _startupApiErrorSnackbarKey);
+            return ManagedTimerTickResult.Continue;
         }
     }
 }

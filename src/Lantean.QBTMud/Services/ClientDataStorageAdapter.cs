@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient;
+using QBittorrent.ApiClient;
 using System.Text.Json;
 
 namespace Lantean.QBTMud.Services
@@ -43,8 +43,13 @@ namespace Lantean.QBTMud.Services
                 return new Dictionary<string, JsonElement>(StringComparer.Ordinal);
             }
 
-            var loaded = await _apiClient.LoadClientData(normalizedKeys);
-            return loaded
+            var loaded = await _apiClient.LoadClientDataAsync(normalizedKeys, cancellationToken);
+            if (!loaded.TryGetValue(out var loadedData))
+            {
+                return new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+            }
+
+            return loadedData
                 .Where(entry => entry.Key.StartsWith(StorageKeyPrefix, StringComparison.Ordinal))
                 .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
         }
@@ -54,8 +59,13 @@ namespace Lantean.QBTMud.Services
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var loaded = await _apiClient.LoadClientData();
-            return loaded
+            var loaded = await _apiClient.LoadClientDataAsync(keys: null, cancellationToken);
+            if (!loaded.TryGetValue(out var loadedData))
+            {
+                return new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+            }
+
+            return loadedData
                 .Where(entry => entry.Key.StartsWith(StorageKeyPrefix, StringComparison.Ordinal))
                 .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
         }
@@ -77,7 +87,7 @@ namespace Lantean.QBTMud.Services
                 return;
             }
 
-            await _apiClient.StoreClientData(normalizedValues);
+            await _apiClient.StoreClientDataAsync(normalizedValues, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -99,7 +109,7 @@ namespace Lantean.QBTMud.Services
                 return Task.CompletedTask;
             }
 
-            return _apiClient.StoreClientData(removalValues);
+            return _apiClient.StoreClientDataAsync(removalValues, cancellationToken);
         }
     }
 }

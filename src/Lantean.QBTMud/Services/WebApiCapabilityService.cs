@@ -1,5 +1,5 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Models;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Services
 {
@@ -34,20 +34,8 @@ namespace Lantean.QBTMud.Services
                     return _cachedState;
                 }
 
-                string? rawVersion = null;
-                try
-                {
-                    rawVersion = await _apiClient.GetAPIVersion();
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (HttpRequestException)
-                {
-                    return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
-                }
-                catch (InvalidOperationException)
+                var versionResult = await _apiClient.GetAPIVersionAsync();
+                if (!versionResult.TryGetValue(out var rawVersion))
                 {
                     return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
                 }

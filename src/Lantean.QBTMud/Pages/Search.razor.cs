@@ -1,5 +1,3 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -10,8 +8,8 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
-using System.Net;
-using MainUiData = Lantean.QBTMud.Models.MainData;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -21,6 +19,7 @@ namespace Lantean.QBTMud.Pages
         private const int _pollIntervalMilliseconds = 1500;
         private const string _searchPreferencesStorageKey = "Search.Preferences";
         private const string _searchJobsStorageKey = "Search.Jobs";
+        private const string _searchPollingApiErrorSnackbarKey = "search-polling-api-error";
 
         private IReadOnlyList<SearchPlugin>? _plugins;
         private readonly List<SearchJobViewModel> _jobs = [];
@@ -38,6 +37,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
@@ -62,9 +64,6 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
-
-        [CascadingParameter]
-        public MainUiData? MainData { get; set; }
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -167,14 +166,15 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            IReadOnlyList<SearchStatus> statuses;
-            try
+            var statusesResult = await ApiClient.GetSearchesStatusAsync();
+            if (!statusesResult.TryGetValue(out IReadOnlyList<SearchStatus>? statuses))
             {
-                statuses = await ApiClient.GetSearchesStatus();
-            }
-            catch (HttpRequestException exception)
-            {
-                HandleConnectionFailure(exception);
+                if (await TryHandleSearchRequestFailureAsync(statusesResult.Failure!))
+                {
+                    return;
+                }
+
+                await HandlePollingFailureAsync(statusesResult.Failure);
                 return;
             }
 
@@ -237,9 +237,8 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            try
+            if (await StartOrReplaceJob(normalizedPattern, pluginSelection, Model.SelectedCategory, existingJob: null))
             {
-                await StartOrReplaceJob(normalizedPattern, pluginSelection, Model.SelectedCategory, existingJob: null);
                 if (ShowAdvancedFilters)
                 {
                     ShowAdvancedFilters = false;
@@ -248,10 +247,6 @@ namespace Lantean.QBTMud.Pages
                 {
                     ShowSearchForm = false;
                 }
-            }
-            catch (HttpRequestException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to start search: %1", exception.Message), Severity.Error);
             }
         }
 
@@ -270,16 +265,16 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task StopJob(SearchJobViewModel job)
         {
-            try
+            var stopResult = await ApiClient.StopSearchAsync(job.Id);
+            if (stopResult.IsSuccess)
             {
-                await ApiClient.StopSearch(job.Id);
                 job.UpdateStatus("Stopped", job.Total);
                 StateHasChanged();
                 await StopPollingIfAllJobsCompletedAsync();
             }
-            catch (HttpRequestException exception)
+            else if (!await TryHandleSearchRequestFailureAsync(stopResult.Failure!))
             {
-                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to stop \"%1\": %2", job.Pattern, exception.Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to stop \"%1\": %2", job.Pattern, stopResult.Failure!.UserMessage), Severity.Error);
             }
         }
 
@@ -462,25 +457,32 @@ namespace Lantean.QBTMud.Pages
 
         private async Task LoadPluginsAsync(bool showError = false)
         {
-            try
+            var pluginsResult = await ApiClient.GetSearchPluginsAsync();
+            if (pluginsResult.TryGetValue(out var plugins))
             {
-                _plugins = await ApiClient.GetSearchPlugins();
+                _plugins = plugins;
                 _searchUnavailable = false;
                 _searchUnavailableReason = null;
                 EnsureSelectedPluginsValid();
                 EnsureValidCategory();
+                return;
             }
-            catch (HttpRequestException exception)
+
+            _plugins = [];
+            EnsureSelectedPluginsValid();
+            EnsureValidCategory();
+
+            if (await TryHandleSearchRequestFailureAsync(pluginsResult.Failure!))
             {
-                _plugins = [];
-                _searchUnavailable = true;
-                _searchUnavailableReason = TranslateSearch("Search is disabled in the connected qBittorrent instance.");
-                EnsureSelectedPluginsValid();
-                EnsureValidCategory();
-                if (showError)
-                {
-                    SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Unable to load search plugins: %1", exception.Message), Severity.Warning);
-                }
+                return;
+            }
+
+            _searchUnavailable = true;
+            _searchUnavailableReason = TranslateSearch("Unable to load search plugins: %1", pluginsResult.Failure!.UserMessage);
+
+            if (showError)
+            {
+                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Unable to load search plugins: %1", pluginsResult.Failure!.UserMessage), Severity.Warning);
             }
         }
 
@@ -597,7 +599,13 @@ namespace Lantean.QBTMud.Pages
             }
             catch (Exception exception)
             {
-                await HandlePollingFailureAsync(exception);
+                await HandlePollingFailureAsync(new ApiFailure
+                {
+                    Kind = ApiFailureKind.UnexpectedResponse,
+                    Operation = "search/polling",
+                    UserMessage = exception.Message,
+                    Detail = exception.Message,
+                });
                 return ManagedTimerTickResult.Stop;
             }
 
@@ -616,19 +624,15 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            IReadOnlyList<SearchStatus> statuses;
-            try
+            var statusesResult = await ApiClient.GetSearchesStatusAsync();
+            if (!statusesResult.TryGetValue(out IReadOnlyList<SearchStatus>? statuses))
             {
-                statuses = await ApiClient.GetSearchesStatus();
-            }
-            catch (HttpRequestException exception)
-            {
-                HandleConnectionFailure(exception);
-                return;
-            }
-            catch (Exception exception)
-            {
-                await HandlePollingFailureAsync(exception);
+                if (await TryHandlePollingRequestFailureAsync(statusesResult.Failure!))
+                {
+                    return;
+                }
+
+                await HandlePollingFailureAsync(statusesResult.Failure);
                 return;
             }
 
@@ -680,9 +684,9 @@ namespace Lantean.QBTMud.Pages
 
         private async Task FetchJobResultsAsync(SearchJobViewModel job)
         {
-            try
+            var resultsResult = await ApiClient.GetSearchResultsAsync(job.Id, _resultsBatchSize, job.CurrentOffset);
+            if (resultsResult.TryGetValue(out var results))
             {
-                var results = await ApiClient.GetSearchResults(job.Id, _resultsBatchSize, job.CurrentOffset);
                 if (results.Results.Count > 0)
                 {
                     job.AppendResults(results.Results);
@@ -693,22 +697,24 @@ namespace Lantean.QBTMud.Pages
                 {
                     await StopPollingIfAllJobsCompletedAsync();
                 }
+                return;
             }
-            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+
+            if (resultsResult.Failure?.Kind == ApiFailureKind.NotFound)
             {
                 job.UpdateStatus("Stopped", job.Total);
                 await StopPollingIfAllJobsCompletedAsync();
+                return;
             }
-            catch (HttpRequestException exception)
+
+            if (await TryHandleSearchRequestFailureAsync(resultsResult.Failure!))
             {
-                job.SetError(LanguageLocalizer.Translate("SearchJobWidget", "An error occurred during search..."));
-                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to load results for \"%1\": %2", job.Pattern, exception.Message), Severity.Error);
-                await StopPollingIfAllJobsCompletedAsync();
+                return;
             }
-            catch (Exception exception)
-            {
-                await HandlePollingFailureAsync(exception);
-            }
+
+            job.SetError(LanguageLocalizer.Translate("SearchJobWidget", "An error occurred during search..."));
+            SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to load results for \"%1\": %2", job.Pattern, resultsResult.Failure!.UserMessage), Severity.Error);
+            await StopPollingIfAllJobsCompletedAsync();
         }
 
         private SearchFilterOptions BuildFilterOptions()
@@ -740,7 +746,7 @@ namespace Lantean.QBTMud.Pages
             return _jobs.FirstOrDefault(job => job.Matches(pattern, category, plugins));
         }
 
-        private async Task StartOrReplaceJob(string pattern, IReadOnlyCollection<string> plugins, string category, SearchJobViewModel? existingJob)
+        private async Task<bool> StartOrReplaceJob(string pattern, IReadOnlyCollection<string> plugins, string category, SearchJobViewModel? existingJob)
         {
             int? replaceIndex = null;
             if (existingJob is not null)
@@ -749,37 +755,34 @@ namespace Lantean.QBTMud.Pages
                 await StopAndDeleteJob(existingJob);
             }
 
-            var searchId = await ApiClient.StartSearch(pattern, plugins, category);
+            var searchIdResult = await ApiClient.StartSearchAsync(pattern, plugins, category);
+            if (!searchIdResult.TryGetValue(out var searchId))
+            {
+                if (!await TryHandleSearchRequestFailureAsync(searchIdResult.Failure!))
+                {
+                    SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to start search: %1", searchIdResult.Failure!.UserMessage), Severity.Error);
+                }
+
+                return false;
+            }
+
             var job = new SearchJobViewModel(searchId, pattern, plugins, category);
 
             TrackJob(job, replaceIndex);
             await PersistJobMetadataAsync(job);
             await EnsurePollingStartedAsync();
             await FetchJobSnapshot(job);
+            return true;
         }
 
         private async Task StopAndDeleteJob(SearchJobViewModel job)
         {
-            try
+            if (job.IsRunning)
             {
-                if (job.IsRunning)
-                {
-                    await ApiClient.StopSearch(job.Id);
-                }
-            }
-            catch (HttpRequestException)
-            {
-                // Ignore failures while stopping.
+                await ApiClient.StopSearchAsync(job.Id);
             }
 
-            try
-            {
-                await ApiClient.DeleteSearch(job.Id);
-            }
-            catch (HttpRequestException)
-            {
-                // Ignore failures when the job is already deleted.
-            }
+            await ApiClient.DeleteSearchAsync(job.Id);
 
             await RemoveJobMetadataAsync(job.Id);
         }
@@ -1160,12 +1163,10 @@ namespace Lantean.QBTMud.Pages
             return JSRuntime.InvokeVoidAsync("open", url, url).AsTask();
         }
 
-        private void HandleConnectionFailure(HttpRequestException exception)
+        private void MarkLostConnection()
         {
-            if (MainData is not null)
-            {
-                MainData.LostConnection = true;
-            }
+            ConnectivityStateService.MarkLostConnection();
+            _timerCancellationToken.CancelIfNotDisposed();
 
             foreach (var job in _jobs)
             {
@@ -1173,16 +1174,16 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        private Task HandlePollingFailureAsync(Exception? exception)
+        private Task HandlePollingFailureAsync(ApiFailure? failure)
         {
             foreach (var job in _jobs)
             {
                 job.SetError(TranslateSearch("Search polling failed."));
             }
 
-            if (exception is not null)
+            if (failure is not null)
             {
-                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Search polling stopped: %1", exception.GetBaseException().Message), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Search polling stopped: %1", failure.UserMessage), Severity.Error);
             }
 
             return Task.CompletedTask;
@@ -1196,6 +1197,56 @@ namespace Lantean.QBTMud.Pages
         private string TranslateCopyAction(string source)
         {
             return $"{LanguageLocalizer.Translate("SearchJobWidget", "Copy")} {LanguageLocalizer.Translate("SearchJobWidget", source)}";
+        }
+
+        private async Task<bool> TryHandleSearchRequestFailureAsync(ApiFailure failure)
+        {
+            if (failure.IsAuthenticationFailure())
+            {
+                ConnectivityStateService.MarkConnected();
+                NavigationManager.NavigateTo("login");
+                return true;
+            }
+
+            if (failure.IsConnectivityFailure())
+            {
+                MarkLostConnection();
+                await InvokeAsync(StateHasChanged);
+                return true;
+            }
+
+            return false;
+        }
+
+        private async Task<bool> TryHandlePollingRequestFailureAsync(ApiFailure failure)
+        {
+            if (failure.IsAuthenticationFailure())
+            {
+                ConnectivityStateService.MarkConnected();
+                NavigationManager.NavigateTo("login");
+                return true;
+            }
+
+            if (failure.IsConnectivityFailure())
+            {
+                MarkLostConnection();
+                await InvokeAsync(StateHasChanged);
+                return true;
+            }
+
+            foreach (var job in _jobs)
+            {
+                job.SetError(TranslateSearch("Search polling failed."));
+            }
+
+            SnackbarWorkflow.ShowLocalizedMessage(
+                "AppSearch",
+                "Search polling failed: %1",
+                Severity.Error,
+                configure: null,
+                key: _searchPollingApiErrorSnackbarKey,
+                failure.UserMessage);
+            return true;
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

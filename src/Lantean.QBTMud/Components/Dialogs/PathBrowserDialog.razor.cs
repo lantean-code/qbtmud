@@ -1,8 +1,8 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -135,8 +135,15 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             try
             {
-                var directories = await ApiClient.GetDirectoryContent(_currentPath, DirectoryContentMode.Directories);
-                var directoryEntries = directories
+                var directories = await ApiClient.GetDirectoryContentAsync(_currentPath, DirectoryContentMode.Directories);
+                if (!directories.TryGetValue(out var directoryPaths))
+                {
+                    _entries.Clear();
+                    _loadError = Translate("Unable to load directory content.");
+                    return;
+                }
+
+                var directoryEntries = directoryPaths
                     .Select(path => new PathBrowseEntry(path, GetTailSegment(path), true))
                     .OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
                     .ToList();
@@ -144,8 +151,15 @@ namespace Lantean.QBTMud.Components.Dialogs
                 var fileEntries = new List<PathBrowseEntry>();
                 if (Mode != DirectoryContentMode.Directories)
                 {
-                    var files = await ApiClient.GetDirectoryContent(_currentPath, DirectoryContentMode.Files);
-                    fileEntries = files
+                    var files = await ApiClient.GetDirectoryContentAsync(_currentPath, DirectoryContentMode.Files);
+                    if (!files.TryGetValue(out var filePaths))
+                    {
+                        _entries.Clear();
+                        _loadError = Translate("Unable to load directory content.");
+                        return;
+                    }
+
+                    fileEntries = filePaths
                         .Select(path => new PathBrowseEntry(path, GetTailSegment(path), false))
                         .OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
                         .ToList();
@@ -180,15 +194,13 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private async Task<string> GetDefaultPathAsync()
         {
-            try
+            var defaultPath = await ApiClient.GetDefaultSavePathAsync();
+            if (defaultPath.TryGetValue(out var path))
             {
-                var path = await ApiClient.GetDefaultSavePath();
                 return string.IsNullOrWhiteSpace(path) ? string.Empty : path;
             }
-            catch
-            {
-                return string.Empty;
-            }
+
+            return string.Empty;
         }
 
         private bool AllowsFileSelection()

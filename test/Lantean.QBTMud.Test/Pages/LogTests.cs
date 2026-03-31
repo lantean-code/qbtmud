@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
@@ -13,7 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using LogEntry = Lantean.QBitTorrentClient.Models.Log;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using LogEntry = QBittorrent.ApiClient.Models.Log;
 using LogPage = Lantean.QBTMud.Pages.Log;
 
 namespace Lantean.QBTMud.Test.Pages
@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Test.Pages
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
 
             Mock.Get(_apiClient)
-                .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
+                .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(new List<LogEntry>());
         }
 
@@ -61,7 +61,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _ = RenderTarget();
 
-            Mock.Get(_apiClient).Verify(c => c.GetLog(true, false, false, false, It.Is<int?>(id => id == null)), Times.Once);
+            Mock.Get(_apiClient).Verify(c => c.GetLogAsync(true, false, false, false, It.Is<int?>(id => id == null)), Times.Once);
         }
 
         [Fact]
@@ -120,7 +120,7 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
             var results = new List<LogEntry> { CreateLog(1, "Message", LogType.Warning) };
             Mock.Get(_apiClient)
-                .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
+                .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
             await TriggerTimerTickAsync(target);
@@ -211,7 +211,7 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
             var results = new List<LogEntry> { CreateLog(1, "Message", LogType.Info) };
             Mock.Get(_apiClient)
-                .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
+                .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
             await InvokeSubmitAsync(target);
@@ -251,7 +251,7 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
             var results = CreateLogs(501, LogType.Warning);
             Mock.Get(_apiClient)
-                .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
+                .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
             await TriggerTimerTickAsync(target);
@@ -272,7 +272,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await InvokeSubmitAsync(target);
 
-            Mock.Get(_apiClient).Verify(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()), Times.AtLeast(2));
+            Mock.Get(_apiClient).Verify(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()), Times.AtLeast(2));
         }
 
         [Fact]
@@ -285,7 +285,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             var apiClientMock = new Mock<IApiClient>();
             apiClientMock
-                .Setup(c => c.GetLog(false, true, false, true, It.IsAny<int?>()))
+                .Setup(c => c.GetLogAsync(false, true, false, true, It.IsAny<int?>()))
                 .ReturnsAsync(new List<LogEntry>());
             localContext.Services.RemoveAll<IApiClient>();
             localContext.Services.AddSingleton(apiClientMock.Object);
@@ -307,7 +307,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             localTarget.WaitForAssertion(() =>
             {
-                apiClientMock.Verify(c => c.GetLog(false, true, false, true, It.IsAny<int?>()), Times.Once);
+                apiClientMock.Verify(c => c.GetLogAsync(false, true, false, true, It.IsAny<int?>()), Times.Once);
             });
         }
 
@@ -315,14 +315,13 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_TimerTick_WHEN_Forbidden_THEN_NoCrash()
         {
             var target = RenderTarget();
-            var exception = new HttpRequestException("Message", null, System.Net.HttpStatusCode.Forbidden);
             Mock.Get(_apiClient)
-                .Setup(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
-                .ThrowsAsync(exception);
+                .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Message", System.Net.HttpStatusCode.Forbidden);
 
             await TriggerTimerTickAsync(target);
 
-            Mock.Get(_apiClient).Verify(c => c.GetLog(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()), Times.AtLeastOnce);
+            Mock.Get(_apiClient).Verify(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()), Times.AtLeastOnce);
         }
 
         [Fact]

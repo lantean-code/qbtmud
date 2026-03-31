@@ -1,6 +1,6 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Options
 {
@@ -82,7 +82,8 @@ namespace Lantean.QBTMud.Components.Options
 
         protected override async Task OnInitializedAsync()
         {
-            NetworkInterfaces = await ApiClient.GetNetworkInterfaces();
+            var networkInterfaces = await ApiClient.GetNetworkInterfacesAsync();
+            NetworkInterfaces = networkInterfaces.TryGetValue(out var interfaces) ? interfaces : [];
         }
 
         protected override bool SetOptions()
@@ -181,7 +182,8 @@ namespace Lantean.QBTMud.Components.Options
             UpdatePreferences.CurrentNetworkInterface = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
 
-            NetworkInterfaceAddresses = await ApiClient.GetNetworkInterfaceAddressList(value);
+            var addresses = await ApiClient.GetNetworkInterfaceAddressListAsync(value);
+            NetworkInterfaceAddresses = addresses.TryGetValue(out var networkInterfaceAddresses) ? networkInterfaceAddresses : [];
         }
 
         protected async Task CurrentInterfaceAddressChanged(string value)

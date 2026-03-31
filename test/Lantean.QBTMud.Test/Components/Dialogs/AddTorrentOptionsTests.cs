@@ -1,14 +1,12 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
 using Moq;
 using MudBlazor;
-using System.Globalization;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient;
+using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -421,16 +419,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             FindFieldSwitch(component, "InactiveSeedingTimeLimitEnabled").Instance.Value.Should().BeFalse();
 
             var globalOptions = component.Instance.GetTorrentOptions();
-            globalOptions.RatioLimit.Should().Be(Limits.GlobalLimit);
-            globalOptions.SeedingTimeLimit.Should().Be(Limits.GlobalLimit);
-            globalOptions.InactiveSeedingTimeLimit.Should().Be(Limits.GlobalLimit);
+            globalOptions.RatioLimit.Should().Be(Limits.UseGlobalShareLimit);
+            globalOptions.SeedingTimeLimit.Should().Be((int?)Limits.UseGlobalShareLimit);
+            globalOptions.InactiveSeedingTimeLimit.Should().Be((int?)Limits.UseGlobalShareLimit);
 
             await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.NoLimit);
 
             var noLimitOptions = component.Instance.GetTorrentOptions();
-            noLimitOptions.RatioLimit.Should().Be(Limits.NoLimit);
-            noLimitOptions.SeedingTimeLimit.Should().Be(Limits.NoLimit);
-            noLimitOptions.InactiveSeedingTimeLimit.Should().Be(Limits.NoLimit);
+            noLimitOptions.RatioLimit.Should().Be(Limits.NoShareLimit);
+            noLimitOptions.SeedingTimeLimit.Should().Be((int?)Limits.NoShareLimit);
+            noLimitOptions.InactiveSeedingTimeLimit.Should().Be((int?)Limits.NoShareLimit);
         }
 
         [Fact]
@@ -446,9 +444,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.Custom);
 
             var options = component.Instance.GetTorrentOptions();
-            options.RatioLimit.Should().Be(Limits.NoLimit);
-            options.SeedingTimeLimit.Should().Be(Limits.NoLimit);
-            options.InactiveSeedingTimeLimit.Should().Be(Limits.NoLimit);
+            options.RatioLimit.Should().Be(Limits.NoShareLimit);
+            options.SeedingTimeLimit.Should().Be((int?)Limits.NoShareLimit);
+            options.InactiveSeedingTimeLimit.Should().Be((int?)Limits.NoShareLimit);
         }
 
         [Fact]
@@ -624,9 +622,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             ClientModels.Preferences? preferences = null)
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetAllCategories()).ReturnsAsync(categories ?? new Dictionary<string, ClientModels.Category>());
-            apiClientMock.Setup(c => c.GetAllTags()).ReturnsAsync(tags?.ToArray() ?? Array.Empty<string>());
-            apiClientMock.Setup(c => c.GetApplicationPreferences()).ReturnsAsync(preferences ?? CreatePreferences());
+            apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsAsync(categories ?? new Dictionary<string, ClientModels.Category>());
+            apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsAsync(tags?.ToArray() ?? Array.Empty<string>());
+            apiClientMock.Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync(preferences ?? CreatePreferences());
             return apiClientMock;
         }
 
@@ -652,10 +650,24 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             int maxInactiveSeedingTime = 0,
             int maxRatioAct = 0)
         {
-            var savePathValue = savePath is null ? "null" : $"\"{savePath}\"";
-            var tempPathValue = tempPath is null ? "null" : $"\"{tempPath}\"";
-            var json = $"{{\"auto_tmm_enabled\":{autoTmmEnabled.ToString().ToLowerInvariant()},\"save_path\":{savePathValue},\"temp_path\":{tempPathValue},\"temp_path_enabled\":{tempPathEnabled.ToString().ToLowerInvariant()},\"add_stopped_enabled\":{addStoppedEnabled.ToString().ToLowerInvariant()},\"add_to_top_of_queue\":{addToTopOfQueue.ToString().ToLowerInvariant()},\"torrent_stop_condition\":\"{stopCondition}\",\"torrent_content_layout\":\"{contentLayout}\",\"max_ratio_enabled\":{maxRatioEnabled.ToString().ToLowerInvariant()},\"max_ratio\":{maxRatio.ToString(CultureInfo.InvariantCulture)},\"max_seeding_time_enabled\":{maxSeedingTimeEnabled.ToString().ToLowerInvariant()},\"max_seeding_time\":{maxSeedingTime},\"max_inactive_seeding_time_enabled\":{maxInactiveSeedingTimeEnabled.ToString().ToLowerInvariant()},\"max_inactive_seeding_time\":{maxInactiveSeedingTime},\"max_ratio_act\":{maxRatioAct}}}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            return PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.AddStoppedEnabled = addStoppedEnabled;
+                spec.AddToTopOfQueue = addToTopOfQueue;
+                spec.AutoTmmEnabled = autoTmmEnabled;
+                spec.MaxInactiveSeedingTime = maxInactiveSeedingTime;
+                spec.MaxInactiveSeedingTimeEnabled = maxInactiveSeedingTimeEnabled;
+                spec.MaxRatio = maxRatio;
+                spec.MaxRatioAct = maxRatioAct;
+                spec.MaxRatioEnabled = maxRatioEnabled;
+                spec.MaxSeedingTime = maxSeedingTime;
+                spec.MaxSeedingTimeEnabled = maxSeedingTimeEnabled;
+                spec.SavePath = savePath!;
+                spec.TempPath = tempPath!;
+                spec.TempPathEnabled = tempPathEnabled;
+                spec.TorrentContentLayout = contentLayout;
+                spec.TorrentStopCondition = stopCondition;
+            });
         }
     }
 

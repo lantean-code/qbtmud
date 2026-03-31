@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Services;
@@ -11,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -43,7 +43,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRule(It.IsAny<string>(), It.IsAny<AutoDownloadingRule>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRuleAsync(It.IsAny<string>(), It.IsAny<AutoDownloadingRule>()), Times.Never);
         }
 
         [Fact]
@@ -56,7 +56,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
             await dialog.Component.InvokeAsync(() => removeButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRule(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRuleAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -129,7 +129,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
             await removeButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRule(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRuleAsync(It.IsAny<string>()), Times.Never);
 
             Action action = () => FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-NewRule");
             action.Should().Throw<InvalidOperationException>();
@@ -143,7 +143,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 { "RuleA", CreateRule(enabled: false) },
             });
             Mock.Get(_apiClient)
-                .Setup(client => client.RemoveRssAutoDownloadingRule("RuleA"))
+                .Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -154,7 +154,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
             await removeButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRule("RuleA"), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"), Times.Once);
         }
 
         [Fact]
@@ -167,7 +167,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var list = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesList");
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("MissingRule"));
 
-            Mock.Get(_apiClient).Verify(client => client.GetRssMatchingArticles(It.IsAny<string>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetRssMatchingArticlesAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -216,7 +216,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync("RuleA");
             Mock.Get(_apiClient)
-                .Setup(client => client.SetRssAutoDownloadingRule("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -236,7 +236,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRule(
+            Mock.Get(_apiClient).Verify(client => client.SetRssAutoDownloadingRuleAsync(
                     "RuleA",
                     It.Is<AutoDownloadingRule>(rule => rule.TorrentParams.SavePath == "C:/Downloads/RuleA")),
                 Times.Once);
@@ -252,14 +252,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetRssMatchingArticles("RuleA"))
+                .Setup(client => client.GetRssMatchingArticlesAsync("RuleA"))
                 .ReturnsAsync(new Dictionary<string, IReadOnlyList<string>>
                 {
                     { "FeedA", new List<string> { "ArticleA" } },
                 });
 
             apiClientMock
-                .Setup(client => client.SetRssAutoDownloadingRule("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -315,7 +315,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
             await saveButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.SetRssAutoDownloadingRule(
+            apiClientMock.Verify(client => client.SetRssAutoDownloadingRuleAsync(
                     "RuleA",
                     It.Is<AutoDownloadingRule>(rule =>
                         rule.UseRegex == true
@@ -341,19 +341,19 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetAllRssAutoDownloadingRules())
+                .Setup(client => client.GetAllRssAutoDownloadingRulesAsync())
                 .ReturnsAsync(rules);
             apiClientMock
-                .Setup(client => client.GetRssMatchingArticles(It.IsAny<string>()))
+                .Setup(client => client.GetRssMatchingArticlesAsync(It.IsAny<string>()))
                 .ReturnsAsync(new Dictionary<string, IReadOnlyList<string>>());
             apiClientMock
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, Category>
                 {
                     { "CatA", new Category("CatA", null, null) },
                 });
             apiClientMock
-                .Setup(client => client.GetAllRssItems(false))
+                .Setup(client => client.GetAllRssItemsAsync(false))
                 .ReturnsAsync(new Dictionary<string, RssItem>
                 {
                     { "FeedA", CreateFeed("FeedA", "http://feed-a") },

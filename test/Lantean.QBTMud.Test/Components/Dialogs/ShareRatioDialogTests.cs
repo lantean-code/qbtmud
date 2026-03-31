@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
@@ -12,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -37,12 +37,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_GlobalPreset_WHEN_Rendered_THEN_ShouldShowGlobalOptions()
         {
-            var baseline = CreateShareRatioMax(Limits.GlobalLimit, Limits.GlobalLimit, Limits.GlobalLimit, ShareLimitAction.Remove);
+            var baseline = CreateShareRatioMax(Limits.UseGlobalShareLimit, (int)Limits.UseGlobalShareLimit, Limits.UseGlobalShareLimit, ShareLimitAction.Remove);
 
             var dialog = await _target.RenderDialogAsync(value: baseline);
 
             var radioGroup = FindComponentByTestId<MudRadioGroup<int>>(dialog.Component, "ShareRatioType");
-            radioGroup.Instance.Value.Should().Be(Limits.GlobalLimit);
+            radioGroup.Instance.Value.Should().Be((int?)Limits.UseGlobalShareLimit);
 
             var switches = dialog.Component.FindComponents<FieldSwitch>();
             switches.Should().AllSatisfy(s => s.Instance.Value.Should().BeFalse());
@@ -54,11 +54,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_NoLimitPreset_WHEN_Rendered_THEN_ShouldShowNoLimitOptions()
         {
-            var baseline = CreateShareRatioMax(-1, -1, -1, ShareLimitAction.Stop, maxValuesNoLimit: true);
+            var baseline = CreateShareRatioMax(Limits.NoShareLimit, (int)Limits.NoShareLimit, Limits.NoShareLimit, ShareLimitAction.Stop, maxValuesNoLimit: true);
 
             var dialog = await _target.RenderDialogAsync(value: baseline);
 
-            FindComponentByTestId<MudRadioGroup<int>>(dialog.Component, "ShareRatioType").Instance.Value.Should().Be(Limits.NoLimit);
+            FindComponentByTestId<MudRadioGroup<int>>(dialog.Component, "ShareRatioType").Instance.Value.Should().Be((int?)Limits.NoShareLimit);
 
             var switches = dialog.Component.FindComponents<FieldSwitch>();
             switches.Should().AllSatisfy(s => s.Instance.Value.Should().BeFalse());
@@ -120,9 +120,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             result!.Canceled.Should().BeFalse();
             var shareRatio = (ShareRatio)result.Data!;
 
-            shareRatio.RatioLimit.Should().Be(Limits.NoLimit);
-            shareRatio.SeedingTimeLimit.Should().Be(Limits.NoLimit);
-            shareRatio.InactiveSeedingTimeLimit.Should().Be(Limits.NoLimit);
+            shareRatio.RatioLimit.Should().Be(Limits.NoShareLimit);
+            shareRatio.SeedingTimeLimit.Should().Be(Limits.NoShareLimit);
+            shareRatio.InactiveSeedingTimeLimit.Should().Be(Limits.NoShareLimit);
             shareRatio.ShareLimitAction.Should().Be(ShareLimitAction.Stop);
         }
 
@@ -154,7 +154,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync(current: baseline);
 
             var radioGroup = FindComponentByTestId<MudRadioGroup<int>>(dialog.Component, "ShareRatioType");
-            await dialog.Component.InvokeAsync(() => radioGroup.Instance.ValueChanged.InvokeAsync(Limits.GlobalLimit));
+            await dialog.Component.InvokeAsync(() => radioGroup.Instance.ValueChanged.InvokeAsync((int)Limits.UseGlobalShareLimit));
 
             dialog.Component.FindComponents<FieldSwitch>().Should().AllSatisfy(s => s.Instance.Value.Should().BeFalse());
             FindComponentByTestId<MudSelect<ShareLimitAction>>(dialog.Component, "SelectedShareLimitAction").Instance.GetState(x => x.Value).Should().Be(ShareLimitAction.Default);
@@ -175,7 +175,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_GlobalPreset_WHEN_Saved_THEN_ShouldEmitGlobalShareRatio()
         {
-            var baseline = CreateShareRatioMax(Limits.GlobalLimit, Limits.GlobalLimit, Limits.GlobalLimit, ShareLimitAction.Remove);
+            var baseline = CreateShareRatioMax(Limits.UseGlobalShareLimit, (int)Limits.UseGlobalShareLimit, Limits.UseGlobalShareLimit, ShareLimitAction.Remove);
 
             var dialog = await _target.RenderDialogAsync(value: baseline);
 
@@ -186,16 +186,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             result!.Canceled.Should().BeFalse();
             var shareRatio = (ShareRatio)result.Data!;
 
-            shareRatio.RatioLimit.Should().Be(Limits.GlobalLimit);
-            shareRatio.SeedingTimeLimit.Should().Be(Limits.GlobalLimit);
-            shareRatio.InactiveSeedingTimeLimit.Should().Be(Limits.GlobalLimit);
+            shareRatio.RatioLimit.Should().Be(Limits.UseGlobalShareLimit);
+            shareRatio.SeedingTimeLimit.Should().Be(Limits.UseGlobalShareLimit);
+            shareRatio.InactiveSeedingTimeLimit.Should().Be(Limits.UseGlobalShareLimit);
             shareRatio.ShareLimitAction.Should().Be(ShareLimitAction.Default);
         }
 
         [Fact]
         public async Task GIVEN_NoLimitPreset_WHEN_Saved_THEN_ShouldEmitNoLimitShareRatio()
         {
-            var baseline = CreateShareRatioMax(Limits.NoLimit, Limits.NoLimit, Limits.NoLimit, ShareLimitAction.Stop, maxValuesNoLimit: true);
+            var baseline = CreateShareRatioMax(Limits.NoShareLimit, 0, 0, ShareLimitAction.Stop, maxValuesNoLimit: true);
 
             var dialog = await _target.RenderDialogAsync(value: baseline);
 
@@ -206,9 +206,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             result!.Canceled.Should().BeFalse();
             var shareRatio = (ShareRatio)result.Data!;
 
-            shareRatio.RatioLimit.Should().Be(Limits.NoLimit);
-            shareRatio.SeedingTimeLimit.Should().Be(Limits.NoLimit);
-            shareRatio.InactiveSeedingTimeLimit.Should().Be(Limits.NoLimit);
+            shareRatio.RatioLimit.Should().Be(Limits.NoShareLimit);
+            shareRatio.SeedingTimeLimit.Should().Be(Limits.NoShareLimit);
+            shareRatio.InactiveSeedingTimeLimit.Should().Be(Limits.NoShareLimit);
             shareRatio.ShareLimitAction.Should().Be(ShareLimitAction.Default);
         }
 
@@ -284,17 +284,17 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             shareRatio.ShareLimitAction.Should().Be(ShareLimitAction.Default);
         }
 
-        private static ShareRatioMax CreateShareRatioMax(float ratio, int seedingTime, float inactive, ShareLimitAction action, bool maxValuesNoLimit = false)
+        private static ShareRatioMax CreateShareRatioMax(float ratio, int seedingTimeLimit, float inactiveSeedingTimeLimit, ShareLimitAction action, bool maxValuesNoLimit = false)
         {
             return new ShareRatioMax
             {
                 RatioLimit = ratio,
-                SeedingTimeLimit = seedingTime,
-                InactiveSeedingTimeLimit = inactive,
+                SeedingTimeLimit = seedingTimeLimit,
+                InactiveSeedingTimeLimit = inactiveSeedingTimeLimit,
                 ShareLimitAction = action,
-                MaxRatio = maxValuesNoLimit ? Limits.NoLimit : ratio + 1,
-                MaxSeedingTime = maxValuesNoLimit ? Limits.NoLimit : seedingTime + 1,
-                MaxInactiveSeedingTime = maxValuesNoLimit ? Limits.NoLimit : inactive + 1,
+                MaxRatio = maxValuesNoLimit ? Limits.NoShareLimit : ratio + 1,
+                MaxSeedingTime = maxValuesNoLimit ? Limits.NoShareLimit : seedingTimeLimit + 1,
+                MaxInactiveSeedingTime = maxValuesNoLimit ? Limits.NoShareLimit : inactiveSeedingTimeLimit + 1,
             };
         }
     }

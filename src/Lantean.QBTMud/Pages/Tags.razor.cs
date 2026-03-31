@@ -1,10 +1,10 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -72,7 +72,8 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                _tags = await ApiClient.GetAllTags();
+                var tags = await ApiClient.GetAllTagsAsync();
+                _tags = tags.TryGetValue(out var tagList) ? tagList : [];
             }
             finally
             {
@@ -87,7 +88,7 @@ namespace Lantean.QBTMud.Pages
             {
                 return;
             }
-            await ApiClient.DeleteTags(tag);
+            await ApiClient.DeleteTagsAsync(tags: [tag]);
         }
 
         protected async Task AddTag()
@@ -102,13 +103,18 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            var existingTags = await ApiClient.GetAllTags();
-            if (existingTags.Contains(tag))
+            var existingTags = await ApiClient.GetAllTagsAsync();
+            if (!existingTags.TryGetValue(out var existingTagList))
             {
                 return;
             }
 
-            await ApiClient.CreateTags([tag]);
+            if (existingTagList.Contains(tag))
+            {
+                return;
+            }
+
+            await ApiClient.CreateTagsAsync([tag]);
         }
 
         protected IEnumerable<ColumnDefinition<string>> Columns => GetColumnDefinitions();

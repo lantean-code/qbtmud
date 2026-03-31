@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
@@ -11,7 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using ClientCategory = Lantean.QBitTorrentClient.Models.Category;
+using QBittorrent.ApiClient;
+using ClientCategory = QBittorrent.ApiClient.Models.Category;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -60,7 +60,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_RefreshClicked_WHEN_Invoked_THEN_ReloadsCategoriesFromApi()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, ClientCategory>
                 {
                     { "Category", new ClientCategory("Category", "SavePath", null) }
@@ -71,7 +71,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.GetAllCategories(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetAllCategoriesAsync(), Times.Once);
 
             var table = target.FindComponent<DynamicTable<Category>>();
             table.Instance.Items.Should().ContainSingle(category => category.Name == "Category");
@@ -81,7 +81,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_RefreshResultWithNullSavePath_WHEN_Reloaded_THEN_UsesEmptySavePath()
         {
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, ClientCategory>
                 {
                     { "Category", new ClientCategory("Category", null, null) }
@@ -101,17 +101,17 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var pendingLoad = new TaskCompletionSource<IReadOnlyDictionary<string, ClientCategory>>(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_apiClient)
-                .Setup(client => client.GetAllCategories())
+                .Setup(client => client.GetAllCategoriesAsync())
                 .Returns(pendingLoad.Task);
 
             var target = RenderPage();
             var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
 
             var firstRefresh = target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
-            target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(client => client.GetAllCategories(), Times.Once));
+            target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(client => client.GetAllCategoriesAsync(), Times.Once));
 
             await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
-            Mock.Get(_apiClient).Verify(client => client.GetAllCategories(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.GetAllCategoriesAsync(), Times.Once);
 
             pendingLoad.SetResult(new Dictionary<string, ClientCategory>
             {
@@ -158,7 +158,7 @@ namespace Lantean.QBTMud.Test.Pages
             try
             {
                 Mock.Get(_apiClient)
-                    .Setup(client => client.RemoveCategories("Category"))
+                    .Setup(client => client.RemoveCategoriesAsync(categories: new[] { "Category" }))
                     .Returns(Task.CompletedTask);
 
                 target = RenderPage(new Dictionary<string, Category>
@@ -178,7 +178,7 @@ namespace Lantean.QBTMud.Test.Pages
                 await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
                 Mock.Get(_dialogWorkflow).Verify(workflow => workflow.InvokeEditCategoryDialog("Category"), Times.Once);
-                Mock.Get(_apiClient).Verify(client => client.RemoveCategories("Category"), Times.Once);
+                Mock.Get(_apiClient).Verify(client => client.RemoveCategoriesAsync(categories: new[] { "Category" }), Times.Once);
             }
             finally
             {
@@ -198,14 +198,14 @@ namespace Lantean.QBTMud.Test.Pages
             });
 
             Mock.Get(_apiClient)
-                .Setup(client => client.RemoveCategories("Category"))
+                .Setup(client => client.RemoveCategoriesAsync(categories: new[] { "Category" }))
                 .Returns(Task.CompletedTask);
 
             var deleteButton = FindIconButton(target, Icons.Material.Filled.Delete);
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.RemoveCategories("Category"), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.RemoveCategoriesAsync(categories: new[] { "Category" }), Times.Once);
         }
 
         [Fact]
@@ -220,7 +220,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.RemoveCategories(It.IsAny<string[]>()), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.RemoveCategoriesAsync(It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]

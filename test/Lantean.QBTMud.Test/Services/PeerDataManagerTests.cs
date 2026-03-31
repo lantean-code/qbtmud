@@ -1,8 +1,8 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
-using QbtPeer = Lantean.QBitTorrentClient.Models.Peer;
-using QbtTorrentPeers = Lantean.QBitTorrentClient.Models.TorrentPeers;
+using QbtPeer = QBittorrent.ApiClient.Models.Peer;
+using QbtTorrentPeers = QBittorrent.ApiClient.Models.TorrentPeers;
 
 namespace Lantean.QBTMud.Test.Services
 {

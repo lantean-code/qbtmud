@@ -1,13 +1,12 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Options;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Options
 {
@@ -17,16 +16,16 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void GIVEN_Preferences_WHEN_Rendered_THEN_ShouldReflectState()
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
-            api.Setup(a => a.GetNetworkInterfaces())
+            api.Setup(a => a.GetNetworkInterfacesAsync())
                 .ReturnsAsync(new List<NetworkInterface>
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0")
                 });
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>()))
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>()))
                 .ReturnsAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
@@ -58,18 +57,18 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_NetworkInterface_WHEN_Changed_THEN_ShouldRefreshAddresses()
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
-            api.Setup(a => a.GetNetworkInterfaces())
+            api.Setup(a => a.GetNetworkInterfacesAsync())
                 .ReturnsAsync(new List<NetworkInterface>
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0")
                 });
-            api.Setup(a => a.GetNetworkInterfaceAddressList("eth0"))
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync("eth0"))
                 .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
-            api.Setup(a => a.GetNetworkInterfaceAddressList(""))
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(""))
                 .ReturnsAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -92,25 +91,25 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => addressSelect.Instance.ValueChanged.InvokeAsync("::"));
             update.CurrentInterfaceAddress.Should().Be("::");
             raised[^1].Should().BeSameAs(update);
-            api.Verify(a => a.GetNetworkInterfaceAddressList("eth0"), Times.Once);
+            api.Verify(a => a.GetNetworkInterfaceAddressListAsync("eth0"), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_InterfaceWithAddresses_WHEN_Selected_THEN_ShouldRenderAddressItems()
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
-            api.Setup(a => a.GetNetworkInterfaces())
+            api.Setup(a => a.GetNetworkInterfacesAsync())
                 .ReturnsAsync(new List<NetworkInterface>
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0")
                 });
-            api.Setup(a => a.GetNetworkInterfaceAddressList("eth0"))
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync("eth0"))
                 .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.Is<string>(value => value != "eth0")))
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.Is<string>(value => value != "eth0")))
                 .ReturnsAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
@@ -140,10 +139,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_CoreAdvancedSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -182,10 +181,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_DiskSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
@@ -236,10 +235,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_BufferAndConnectionSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -300,10 +299,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_TrackerSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
             var raised = new List<UpdatePreferences>();
 
@@ -354,10 +353,10 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void GIVEN_EmbeddedTrackerPortValidation_WHEN_InvalidAndValidValues_THEN_ShouldReturnValidationMessages()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfaces()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
@@ -380,16 +379,16 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_SelectMenus_WHEN_Opened_THEN_ShouldRenderMenuItems()
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
-            api.Setup(a => a.GetNetworkInterfaces())
+            api.Setup(a => a.GetNetworkInterfacesAsync())
                 .ReturnsAsync(new[]
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0"),
                 });
-            api.Setup(a => a.GetNetworkInterfaceAddressList(It.IsAny<string>()))
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>()))
                 .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
 
-            var preferences = DeserializePreferences();
+            var preferences = CreatePreferences();
             var update = new UpdatePreferences();
 
             TestContext.Render<MudPopoverProvider>();
@@ -470,79 +469,76 @@ namespace Lantean.QBTMud.Test.Components.Options
             return FindComponentByTestId<MudSelect<T>>(target, testId);
         }
 
-        private static Preferences DeserializePreferences()
+        private static Preferences CreatePreferences()
         {
-            const string json = """
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "resume_data_storage_type": "SQLite",
-                "memory_working_set_limit": 512,
-                "current_network_interface": "eth0",
-                "current_interface_address": "10.0.0.2",
-                "save_resume_data_interval": 15,
-                "torrent_file_size_limit": 157286400,
-                "recheck_completed_torrents": true,
-                "confirm_torrent_recheck": true,
-                "app_instance_name": "Instance",
-                "refresh_interval": 1500,
-                "resolve_peer_countries": true,
-                "reannounce_when_address_changed": true,
-                "bdecode_depth_limit": 100,
-                "bdecode_token_limit": 200,
-                "async_io_threads": 4,
-                "hashing_threads": 4,
-                "file_pool_size": 512,
-                "checking_memory_use": 128,
-                "disk_cache": 256,
-                "disk_cache_ttl": 60,
-                "disk_queue_size": 8192,
-                "disk_io_type": 0,
-                "disk_io_read_mode": 0,
-                "disk_io_write_mode": 0,
-                "enable_coalesce_read_write": true,
-                "enable_piece_extent_affinity": true,
-                "enable_upload_suggestions": false,
-                "send_buffer_watermark": 192,
-                "send_buffer_low_watermark": 16,
-                "send_buffer_watermark_factor": 150,
-                "connection_speed": 300,
-                "socket_send_buffer_size": 128,
-                "socket_receive_buffer_size": 128,
-                "socket_backlog_size": 50,
-                "outgoing_ports_min": 0,
-                "outgoing_ports_max": 0,
-                "upnp_lease_duration": 600,
-                "peer_tos": 8,
-                "utp_tcp_mixed_mode": 0,
-                "idn_support_enabled": true,
-                "enable_multi_connections_from_same_ip": false,
-                "validate_https_tracker_certificate": true,
-                "ssrf_mitigation": true,
-                "block_peers_on_privileged_ports": true,
-                "enable_embedded_tracker": true,
-                "embedded_tracker_port": 19000,
-                "embedded_tracker_port_forwarding": true,
-                "mark_of_the_web": false,
-                "python_executable_path": "/usr/bin/python",
-                "upload_slots_behavior": 0,
-                "upload_choking_algorithm": 1,
-                "announce_to_all_trackers": true,
-                "announce_to_all_tiers": false,
-                "announce_ip": "198.51.100.5",
-                "max_concurrent_http_announces": 60,
-                "stop_tracker_timeout": 30,
-                "peer_turnover": 10,
-                "peer_turnover_cutoff": 20,
-                "peer_turnover_interval": 90,
-                "request_queue_size": 150,
-                "dht_bootstrap_nodes": "node.example.com",
-                "i2p_inbound_quantity": 3,
-                "i2p_outbound_quantity": 2,
-                "i2p_inbound_length": 1,
-                "i2p_outbound_length": 1
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Preferences>(json, SerializerOptions.Options)!;
+                spec.AnnounceIp = "198.51.100.5";
+                spec.AnnounceToAllTiers = false;
+                spec.AnnounceToAllTrackers = true;
+                spec.AppInstanceName = "Instance";
+                spec.AsyncIoThreads = 4;
+                spec.BdecodeDepthLimit = 100;
+                spec.BdecodeTokenLimit = 200;
+                spec.BlockPeersOnPrivilegedPorts = true;
+                spec.CheckingMemoryUse = 128;
+                spec.ConnectionSpeed = 300;
+                spec.CurrentInterfaceAddress = "10.0.0.2";
+                spec.CurrentNetworkInterface = "eth0";
+                spec.DhtBootstrapNodes = "node.example.com";
+                spec.DiskCache = 256;
+                spec.DiskCacheTtl = 60;
+                spec.DiskIoReadMode = 0;
+                spec.DiskIoType = 0;
+                spec.DiskIoWriteMode = 0;
+                spec.DiskQueueSize = 8192;
+                spec.EmbeddedTrackerPort = 19000;
+                spec.EmbeddedTrackerPortForwarding = true;
+                spec.EnableCoalesceReadWrite = true;
+                spec.EnableEmbeddedTracker = true;
+                spec.EnableMultiConnectionsFromSameIp = false;
+                spec.EnablePieceExtentAffinity = true;
+                spec.EnableUploadSuggestions = false;
+                spec.FilePoolSize = 512;
+                spec.HashingThreads = 4;
+                spec.I2pInboundLength = 1;
+                spec.I2pInboundQuantity = 3;
+                spec.I2pOutboundLength = 1;
+                spec.I2pOutboundQuantity = 2;
+                spec.IdnSupportEnabled = true;
+                spec.MarkOfTheWeb = false;
+                spec.MaxConcurrentHttpAnnounces = 60;
+                spec.MemoryWorkingSetLimit = 512;
+                spec.OutgoingPortsMax = 0;
+                spec.OutgoingPortsMin = 0;
+                spec.PeerTos = 8;
+                spec.PeerTurnover = 10;
+                spec.PeerTurnoverCutoff = 20;
+                spec.PeerTurnoverInterval = 90;
+                spec.PythonExecutablePath = "/usr/bin/python";
+                spec.ReannounceWhenAddressChanged = true;
+                spec.RecheckCompletedTorrents = true;
+                spec.RefreshInterval = 1500;
+                spec.RequestQueueSize = 150;
+                spec.ResolvePeerCountries = true;
+                spec.ResumeDataStorageType = "SQLite";
+                spec.SaveResumeDataInterval = 15;
+                spec.SendBufferLowWatermark = 16;
+                spec.SendBufferWatermark = 192;
+                spec.SendBufferWatermarkFactor = 150;
+                spec.SocketBacklogSize = 50;
+                spec.SocketReceiveBufferSize = 128;
+                spec.SocketSendBufferSize = 128;
+                spec.SsrfMitigation = true;
+                spec.StopTrackerTimeout = 30;
+                spec.TorrentFileSizeLimit = 157286400;
+                spec.UploadChokingAlgorithm = 1;
+                spec.UploadSlotsBehavior = 0;
+                spec.UpnpLeaseDuration = 600;
+                spec.UtpTcpMixedMode = 0;
+                spec.ValidateHttpsTrackerCertificate = true;
+                spec.ConfirmTorrentRecheck = true;
+            });
         }
     }
 }

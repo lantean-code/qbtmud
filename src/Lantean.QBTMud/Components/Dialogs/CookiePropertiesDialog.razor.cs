@@ -1,8 +1,8 @@
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient.Models;
 using System.Globalization;
 
 namespace Lantean.QBTMud.Components.Dialogs
@@ -139,7 +139,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return false;
             }
 
-            var localOffset = new DateTimeOffset(localDateTime, DateTimeOffset.Now.Offset);
+            var localOffset = new DateTimeOffset(localDateTime);
             expirationDate = localOffset.ToUnixTimeSeconds();
             return true;
         }

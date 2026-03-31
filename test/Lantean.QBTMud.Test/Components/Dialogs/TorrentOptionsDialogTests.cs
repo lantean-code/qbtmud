@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -10,8 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
-using ClientModels = Lantean.QBitTorrentClient.Models;
+using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -107,8 +105,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static ClientModels.Preferences CreatePreferences(string tempPath)
         {
-            var json = $"{{\"temp_path\":\"{tempPath}\"}}";
-            return JsonSerializer.Deserialize<ClientModels.Preferences>(json, SerializerOptions.Options)!;
+            return PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.TempPath = tempPath;
+            });
         }
 
         private static Torrent CreateTorrent(string hash, bool automaticTorrentManagement, string savePath)

@@ -2377,10 +2377,19 @@ namespace Lantean.QBTMud.Test.Pages
 
         private IRenderedComponent<AppSettingsPage> RenderPage(bool drawerOpen = false, bool lostConnection = false, AppSettingsModel? cascadedAppSettings = null)
         {
+            var connectivityStateService = TestContext.Services.GetRequiredService<IConnectivityStateService>();
+            if (lostConnection)
+            {
+                connectivityStateService.MarkLostConnection();
+            }
+            else
+            {
+                connectivityStateService.MarkConnected();
+            }
+
             return TestContext.Render<AppSettingsPage>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", drawerOpen);
-                parameters.AddCascadingValue("LostConnection", lostConnection);
                 if (cascadedAppSettings is not null)
                 {
                     parameters.AddCascadingValue("AppSettings", cascadedAppSettings);

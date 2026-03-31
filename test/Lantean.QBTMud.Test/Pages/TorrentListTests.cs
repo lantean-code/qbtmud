@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
@@ -14,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -61,7 +60,6 @@ namespace Lantean.QBTMud.Test.Pages
             var target = TestContext.Render<TorrentList>(parameters =>
             {
                 parameters.AddCascadingValue(mainData);
-                parameters.AddCascadingValue("LostConnection", false);
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("SearchTermChanged", EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
@@ -159,7 +157,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_LostConnectionChanged_WHEN_ComponentRerendersViaUiEvent_THEN_ShouldRenderLostConnectionBranchExecutes()
         {
             var target = RenderWithDefaults(torrents: new List<Torrent> { CreateTorrent("HashLostConn", "Lost Connection Torrent") });
-            target.Instance.LostConnection = true;
+            TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkLostConnection();
 
             var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
             await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("lost-connection-filter"));
@@ -424,7 +422,6 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 parameters.AddCascadingValue(CreateMainData(torrents));
                 parameters.AddCascadingValue<IReadOnlyList<Torrent>>(torrents);
-                parameters.AddCascadingValue("LostConnection", false);
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("SearchTermChanged", EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
@@ -447,7 +444,6 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 parameters.AddCascadingValue(CreateMainData(torrents));
                 parameters.AddCascadingValue<IReadOnlyList<Torrent>>(torrents);
-                parameters.AddCascadingValue("LostConnection", false);
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("SearchTermChanged", EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
@@ -566,7 +562,7 @@ namespace Lantean.QBTMud.Test.Pages
         public void GIVEN_LostConnectionChangedOnInstance_WHEN_ReRendered_THEN_ShouldRenderProcessesLostConnectionBranch()
         {
             var target = RenderWithDefaults(torrents: new List<Torrent> { CreateTorrent("HashLost", "Lost Torrent") });
-            target.Instance.LostConnection = true;
+            TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkLostConnection();
 
             target.Render();
 
@@ -602,6 +598,7 @@ namespace Lantean.QBTMud.Test.Pages
         private IRenderedComponent<TorrentList> RenderWithDefaults(EventCallback<FilterSearchState>? searchCallback = null, IReadOnlyList<Torrent>? torrents = null)
         {
             var mainData = CreateMainData(torrents);
+            TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkConnected();
 
             var callback = searchCallback ?? EventCallback.Factory.Create<FilterSearchState>(this, _ => { });
 
@@ -609,7 +606,6 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 parameters.AddCascadingValue(mainData);
                 parameters.AddCascadingValue<IReadOnlyList<Torrent>>(torrents ?? Array.Empty<Torrent>());
-                parameters.AddCascadingValue("LostConnection", false);
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("SearchTermChanged", callback);
@@ -633,15 +629,12 @@ namespace Lantean.QBTMud.Test.Pages
                 new Dictionary<string, HashSet<string>>());
         }
 
-        private static Lantean.QBitTorrentClient.Models.Preferences CreatePreferences(bool queueingEnabled)
+        private static QBittorrent.ApiClient.Models.Preferences CreatePreferences(bool queueingEnabled)
         {
-            var json = $$"""
+            return PreferencesFactory.CreatePreferences(spec =>
             {
-                "queueing_enabled": {{queueingEnabled.ToString().ToLowerInvariant()}}
-            }
-            """;
-
-            return JsonSerializer.Deserialize<Lantean.QBitTorrentClient.Models.Preferences>(json, SerializerOptions.Options)!;
+                spec.QueueingEnabled = queueingEnabled;
+            });
         }
 
         private static Torrent CreateTorrent(string hash, string name, float progress = 0)
@@ -705,7 +698,7 @@ namespace Lantean.QBTMud.Test.Pages
                 downloadPath: string.Empty,
                 rootPath: string.Empty,
                 isPrivate: false,
-                Lantean.QBitTorrentClient.Models.ShareLimitAction.Default,
+                QBittorrent.ApiClient.Models.ShareLimitAction.Default,
                 comment: string.Empty);
         }
 

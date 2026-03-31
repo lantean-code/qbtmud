@@ -1,4 +1,4 @@
-using Lantean.QBitTorrentClient.Models;
+using QBittorrent.ApiClient.Models;
 using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Helpers

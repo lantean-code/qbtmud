@@ -2,8 +2,8 @@ using AwesomeAssertions;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
-using ClientModels = Lantean.QBitTorrentClient.Models;
-using ShareLimitAction = Lantean.QBitTorrentClient.Models.ShareLimitAction;
+using ClientModels = QBittorrent.ApiClient.Models;
+using ShareLimitAction = QBittorrent.ApiClient.Models.ShareLimitAction;
 
 namespace Lantean.QBTMud.Test.Services
 {

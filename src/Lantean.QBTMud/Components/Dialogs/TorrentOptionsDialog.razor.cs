@@ -17,7 +17,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         public MainData MainData { get; set; } = default!;
 
         [CascadingParameter]
-        public QBitTorrentClient.Models.Preferences Preferences { get; set; } = default!;
+        public QBittorrent.ApiClient.Models.Preferences Preferences { get; set; } = default!;
 
         protected bool AutomaticTorrentManagement { get; set; }
 

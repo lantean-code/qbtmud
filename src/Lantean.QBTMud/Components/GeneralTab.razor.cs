@@ -1,8 +1,7 @@
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
-using System.Net;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components
 {
@@ -66,30 +65,28 @@ namespace Lantean.QBTMud.Components
                 _piecesFailed = false;
             }
 
-            try
-            {
-                Properties = await ApiClient.GetTorrentProperties(Hash);
-            }
-            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+            var properties = await ApiClient.GetTorrentPropertiesAsync(Hash);
+            if (!properties.TryGetValue(out var torrentProperties))
             {
                 MarkPiecesFailed();
-                _timerCancellationToken.CancelIfNotDisposed();
-                await InvokeAsync(StateHasChanged);
-                return;
-            }
-            catch (HttpRequestException)
-            {
-                MarkPiecesFailed();
+                if (properties.Failure?.Kind == ApiFailureKind.NotFound)
+                {
+                    _timerCancellationToken.CancelIfNotDisposed();
+                }
+
                 await InvokeAsync(StateHasChanged);
                 return;
             }
 
-            try
+            Properties = torrentProperties;
+
+            var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(Hash);
+            if (piecesResult.TryGetValue(out var pieceStates))
             {
-                Pieces = await ApiClient.GetTorrentPieceStates(Hash);
+                Pieces = pieceStates;
                 MarkPiecesLoaded();
             }
-            catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+            else if (piecesResult.Failure?.Kind == ApiFailureKind.NotFound)
             {
                 MarkPiecesFailed();
             }
@@ -115,31 +112,29 @@ namespace Lantean.QBTMud.Components
         {
             if (Active && Hash is not null)
             {
-                try
-                {
-                    Properties = await ApiClient.GetTorrentProperties(Hash);
-                }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+                var properties = await ApiClient.GetTorrentPropertiesAsync(Hash);
+                if (!properties.TryGetValue(out var torrentProperties))
                 {
                     MarkPiecesFailed();
-                    _timerCancellationToken.CancelIfNotDisposed();
                     await InvokeAsync(StateHasChanged);
-                    return ManagedTimerTickResult.Stop;
-                }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
-                {
-                    MarkPiecesFailed();
-                    _timerCancellationToken.CancelIfNotDisposed();
-                    await InvokeAsync(StateHasChanged);
-                    return ManagedTimerTickResult.Stop;
+                    if (properties.Failure?.Kind is ApiFailureKind.NotFound or ApiFailureKind.AuthenticationRequired)
+                    {
+                        _timerCancellationToken.CancelIfNotDisposed();
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    return ManagedTimerTickResult.Continue;
                 }
 
-                try
+                Properties = torrentProperties;
+
+                var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(Hash);
+                if (piecesResult.TryGetValue(out var pieceStates))
                 {
-                    Pieces = await ApiClient.GetTorrentPieceStates(Hash);
+                    Pieces = pieceStates;
                     MarkPiecesLoaded();
                 }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+                else if (piecesResult.Failure?.Kind == ApiFailureKind.NotFound)
                 {
                     MarkPiecesFailed();
                     await InvokeAsync(StateHasChanged);

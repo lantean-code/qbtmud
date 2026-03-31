@@ -16,13 +16,11 @@
   <Folder Name="/Source/">
     <File Path="src/AGENTS.md" />
     <Project Path="src/Blazor.BrowserCapabilities/Blazor.BrowserCapabilities.csproj" />
-    <Project Path="src/Lantean.QBitTorrentClient/Lantean.QBitTorrentClient.csproj" />
     <Project Path="src/Lantean.QBTMud/Lantean.QBTMud.csproj" />
   </Folder>
   <Folder Name="/Test/">
     <File Path="test/AGENTS.md" />
     <Project Path="test/Blazor.BrowserCapabilities.Test/Blazor.BrowserCapabilities.Test.csproj" />
-    <Project Path="test/Lantean.QBitTorrentClient.Test/Lantean.QBitTorrentClient.Test.csproj" />
     <Project Path="test/Lantean.QBTMud.Test/Lantean.QBTMud.Test.csproj" />
   </Folder>
   <Folder Name="/Tools/">

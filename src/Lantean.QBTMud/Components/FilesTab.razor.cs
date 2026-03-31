@@ -1,4 +1,3 @@
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Helpers;
@@ -7,8 +6,8 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using MudBlazor.Extensions;
+using QBittorrent.ApiClient;
 using System.Collections.ObjectModel;
-using System.Net;
 
 namespace Lantean.QBTMud.Components
 {
@@ -189,15 +188,16 @@ namespace Lantean.QBTMud.Components
             var hasUpdates = false;
             if (Active && Hash is not null)
             {
-                IReadOnlyList<QBitTorrentClient.Models.FileData> files;
-                try
+                var filesResult = await ApiClient.GetTorrentContentsAsync(Hash);
+                if (!filesResult.TryGetValue(out IReadOnlyList<QBittorrent.ApiClient.Models.FileData>? files))
                 {
-                    files = await ApiClient.GetTorrentContents(Hash);
-                }
-                catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Forbidden || exception.StatusCode == HttpStatusCode.NotFound)
-                {
-                    _timerCancellationToken.CancelIfNotDisposed();
-                    return ManagedTimerTickResult.Stop;
+                    if (filesResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    {
+                        _timerCancellationToken.CancelIfNotDisposed();
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    return ManagedTimerTickResult.Continue;
                 }
 
                 if (FileList is null)
@@ -249,8 +249,15 @@ namespace Lantean.QBTMud.Components
 
             _previousHash = Hash;
 
-            var contents = await ApiClient.GetTorrentContents(Hash);
-            FileList = DataManager.CreateContentsList(contents);
+            var contents = await ApiClient.GetTorrentContentsAsync(Hash);
+            if (!contents.TryGetValue(out var fileContents))
+            {
+                FileList = null;
+                MarkFilesDirty();
+                return;
+            }
+
+            FileList = DataManager.CreateContentsList(fileContents);
             MarkFilesDirty();
             PruneSelectionIfMissing();
 
@@ -279,7 +286,7 @@ namespace Lantean.QBTMud.Components
                 fileIndexes = [contentItem.Index];
             }
 
-            await ApiClient.SetFilePriority(Hash, fileIndexes, MapPriority(priority));
+            await ApiClient.SetFilePriorityAsync(Hash, fileIndexes, MapPriority(priority));
         }
 
         protected Task RenameFileToolbar()
@@ -312,7 +319,7 @@ namespace Lantean.QBTMud.Components
                     LanguageLocalizer.Translate("TorrentContentTreeView", "Renaming"),
                     LanguageLocalizer.Translate("TorrentContentTreeView", "New name:"),
                     name,
-                    async value => await ApiClient.RenameFile(Hash, contentItem.Name, contentItem.Path + value));
+                    async value => await ApiClient.RenameFileAsync(Hash, contentItem.Name, contentItem.Path + value));
             }
             else
             {
@@ -352,9 +359,9 @@ namespace Lantean.QBTMud.Components
             await SessionStorage.SetItemAsync($"{_expandedNodesStorageKey}.{Hash}", ExpandedNodes);
         }
 
-        private static QBitTorrentClient.Models.Priority MapPriority(Priority priority)
+        private static QBittorrent.ApiClient.Models.Priority MapPriority(Priority priority)
         {
-            return (QBitTorrentClient.Models.Priority)(int)priority;
+            return (QBittorrent.ApiClient.Models.Priority)(int)priority;
         }
 
         private Func<ContentItem, object?> GetSortSelector()
@@ -542,35 +549,35 @@ namespace Lantean.QBTMud.Components
 
         protected async Task DoNotDownloadLessThan100PercentAvailability()
         {
-            await LessThanXAvailability(1f, QBitTorrentClient.Models.Priority.DoNotDownload);
+            await LessThanXAvailability(1f, QBittorrent.ApiClient.Models.Priority.DoNotDownload);
         }
 
         protected async Task DoNotDownloadLessThan80PercentAvailability()
         {
-            await LessThanXAvailability(0.8f, QBitTorrentClient.Models.Priority.DoNotDownload);
+            await LessThanXAvailability(0.8f, QBittorrent.ApiClient.Models.Priority.DoNotDownload);
         }
 
         protected async Task DoNotDownloadCurrentlyFilteredFiles()
         {
-            await CurrentlyFilteredFiles(QBitTorrentClient.Models.Priority.DoNotDownload);
+            await CurrentlyFilteredFiles(QBittorrent.ApiClient.Models.Priority.DoNotDownload);
         }
 
         protected async Task NormalPriorityLessThan100PercentAvailability()
         {
-            await LessThanXAvailability(1f, QBitTorrentClient.Models.Priority.Normal);
+            await LessThanXAvailability(1f, QBittorrent.ApiClient.Models.Priority.Normal);
         }
 
         protected async Task NormalPriorityLessThan80PercentAvailability()
         {
-            await LessThanXAvailability(0.8f, QBitTorrentClient.Models.Priority.Normal);
+            await LessThanXAvailability(0.8f, QBittorrent.ApiClient.Models.Priority.Normal);
         }
 
         protected async Task NormalPriorityCurrentlyFilteredFiles()
         {
-            await CurrentlyFilteredFiles(QBitTorrentClient.Models.Priority.Normal);
+            await CurrentlyFilteredFiles(QBittorrent.ApiClient.Models.Priority.Normal);
         }
 
-        private async Task LessThanXAvailability(float value, QBitTorrentClient.Models.Priority priority)
+        private async Task LessThanXAvailability(float value, QBittorrent.ApiClient.Models.Priority priority)
         {
             if (Hash is null || FileList is null)
             {
@@ -584,10 +591,10 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.SetFilePriority(Hash, files, priority);
+            await ApiClient.SetFilePriorityAsync(Hash, files, priority);
         }
 
-        protected async Task CurrentlyFilteredFiles(QBitTorrentClient.Models.Priority priority)
+        protected async Task CurrentlyFilteredFiles(QBittorrent.ApiClient.Models.Priority priority)
         {
             if (Hash is null || FileList is null)
             {
@@ -601,7 +608,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.SetFilePriority(Hash, files, priority);
+            await ApiClient.SetFilePriorityAsync(Hash, files, priority);
         }
 
         protected IEnumerable<ColumnDefinition<ContentItem>> Columns => GetColumnDefinitions();

@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using Lantean.QBitTorrentClient;
-using Lantean.QBitTorrentClient.Models;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -10,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -37,8 +37,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
-                .ThrowsAsync(new HttpRequestException("Failed"));
+                .Setup(client => client.GetSearchPluginsAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failed", System.Net.HttpStatusCode.InternalServerError);
 
             var snackbarMock = Mock.Get(_snackbar);
 
@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var tcs = new TaskCompletionSource<IReadOnlyList<SearchPlugin>>();
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
+                .Setup(client => client.GetSearchPluginsAsync())
                 .Returns(tcs.Task);
 
             var dialog = await _target.RenderDialogAsync();
@@ -68,7 +68,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
+                .Setup(client => client.GetSearchPluginsAsync())
                 .Returns(Task.FromResult<IReadOnlyList<SearchPlugin>>(null!));
 
             var dialog = await _target.RenderDialogAsync();
@@ -83,7 +83,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
+                .Setup(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins);
 
             var dialog = await _target.RenderDialogAsync();
@@ -94,7 +94,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var pathButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginInstallPathButton");
             await dialog.Component.InvokeAsync(() => pathButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            apiClientMock.Verify(client => client.InstallSearchPlugins(It.IsAny<string>()), Times.Never);
+            apiClientMock.Verify(client => client.InstallSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -103,7 +103,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
+                .Setup(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins);
 
             var dialog = await _target.RenderDialogAsync();
@@ -117,9 +117,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var uninstallButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginUninstall");
             await dialog.Component.InvokeAsync(() => uninstallButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            apiClientMock.Verify(client => client.EnableSearchPlugins(It.IsAny<string[]>()), Times.Never);
-            apiClientMock.Verify(client => client.DisableSearchPlugins(It.IsAny<string[]>()), Times.Never);
-            apiClientMock.Verify(client => client.UninstallSearchPlugins(It.IsAny<string[]>()), Times.Never);
+            apiClientMock.Verify(client => client.EnableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+            apiClientMock.Verify(client => client.DisableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
+            apiClientMock.Verify(client => client.UninstallSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -127,7 +127,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
+                .Setup(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(new List<SearchPlugin>());
 
             var dialog = await _target.RenderDialogAsync();
@@ -135,7 +135,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var updateButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginUpdateAll");
             await dialog.Component.InvokeAsync(() => updateButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            apiClientMock.Verify(client => client.UpdateSearchPlugins(), Times.Never);
+            apiClientMock.Verify(client => client.UpdateSearchPluginsAsync(), Times.Never);
         }
 
         [Fact]
@@ -144,7 +144,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .SetupSequence(client => client.GetSearchPlugins())
+                .SetupSequence(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins)
                 .ReturnsAsync(plugins);
 
@@ -153,7 +153,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var refreshButton = FindComponentByTestId<MudIconButton>(dialog.Component, "SearchPluginRefresh");
             await refreshButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.GetSearchPlugins(), Times.Exactly(2));
+            apiClientMock.Verify(client => client.GetSearchPluginsAsync(), Times.Exactly(2));
         }
 
         [Fact]
@@ -162,10 +162,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
+                .Setup(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins);
             apiClientMock
-                .Setup(client => client.DisableSearchPlugins(It.IsAny<string[]>()))
+                .Setup(client => client.DisableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -173,7 +173,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var toggleButton = FindComponentByTestId<MudIconButton>(dialog.Component, "SearchPluginToggle-Plugin");
             await toggleButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.DisableSearchPlugins(It.Is<string[]>(names => names.SequenceEqual(new[] { "Plugin" }))), Times.Once);
+            apiClientMock.Verify(client => client.DisableSearchPluginsAsync(It.Is<IEnumerable<string>>(names => names.SequenceEqual(new[] { "Plugin" })), It.IsAny<CancellationToken>()), Times.Once);
             toggleButton.Instance.Icon.Should().Be(Icons.Material.Outlined.ToggleOff);
         }
 
@@ -183,7 +183,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
+                .Setup(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins);
 
             var dialog = await _target.RenderDialogAsync();
@@ -201,19 +201,19 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, "http://example.com") };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .SetupSequence(client => client.GetSearchPlugins())
+                .SetupSequence(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins)
                 .ReturnsAsync(plugins)
                 .ReturnsAsync(plugins)
                 .ReturnsAsync(plugins);
             apiClientMock
-                .Setup(client => client.EnableSearchPlugins(It.IsAny<string[]>()))
+                .Setup(client => client.EnableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             apiClientMock
-                .Setup(client => client.DisableSearchPlugins(It.IsAny<string[]>()))
+                .Setup(client => client.DisableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             apiClientMock
-                .Setup(client => client.UninstallSearchPlugins(It.IsAny<string[]>()))
+                .Setup(client => client.UninstallSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -242,9 +242,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var closeButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginClose");
             await closeButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.EnableSearchPlugins(It.Is<string[]>(names => names.SequenceEqual(new[] { "Plugin" }))), Times.Once);
-            apiClientMock.Verify(client => client.DisableSearchPlugins(It.Is<string[]>(names => names.SequenceEqual(new[] { "Plugin" }))), Times.Once);
-            apiClientMock.Verify(client => client.UninstallSearchPlugins(It.Is<string[]>(names => names.SequenceEqual(new[] { "Plugin" }))), Times.Once);
+            apiClientMock.Verify(client => client.EnableSearchPluginsAsync(It.Is<IEnumerable<string>>(names => names.SequenceEqual(new[] { "Plugin" })), It.IsAny<CancellationToken>()), Times.Once);
+            apiClientMock.Verify(client => client.DisableSearchPluginsAsync(It.Is<IEnumerable<string>>(names => names.SequenceEqual(new[] { "Plugin" })), It.IsAny<CancellationToken>()), Times.Once);
+            apiClientMock.Verify(client => client.UninstallSearchPluginsAsync(It.Is<IEnumerable<string>>(names => names.SequenceEqual(new[] { "Plugin" })), It.IsAny<CancellationToken>()), Times.Once);
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
@@ -257,11 +257,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .SetupSequence(client => client.GetSearchPlugins())
+                .SetupSequence(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins)
                 .ReturnsAsync(plugins);
             apiClientMock
-                .Setup(client => client.InstallSearchPlugins(It.IsAny<string>()))
+                .Setup(client => client.InstallSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -272,7 +272,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var installButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginInstallUrlButton");
             await installButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.InstallSearchPlugins("https://example.com/plugin.zip"), Times.Once);
+            apiClientMock.Verify(client => client.InstallSearchPluginsAsync(It.Is<IEnumerable<string>>(sources => sources.SequenceEqual(new[] { "https://example.com/plugin.zip" })), It.IsAny<CancellationToken>()), Times.Once);
             urlField.Instance.GetState(x => x.Value).Should().BeEmpty();
         }
 
@@ -282,11 +282,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .SetupSequence(client => client.GetSearchPlugins())
+                .SetupSequence(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins)
                 .ReturnsAsync(plugins);
             apiClientMock
-                .Setup(client => client.InstallSearchPlugins(It.IsAny<string>()))
+                .Setup(client => client.InstallSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -297,7 +297,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var installButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginInstallPathButton");
             await installButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.InstallSearchPlugins("/path/plugin.py"), Times.Once);
+            apiClientMock.Verify(client => client.InstallSearchPluginsAsync(It.Is<IEnumerable<string>>(sources => sources.SequenceEqual(new[] { "/path/plugin.py" })), It.IsAny<CancellationToken>()), Times.Once);
             pathField.Instance.Value.Should().BeEmpty();
         }
 
@@ -307,10 +307,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
+                .Setup(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins);
             apiClientMock
-                .Setup(client => client.InstallSearchPlugins(It.IsAny<string>()))
+                .Setup(client => client.InstallSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Failed"));
 
             var snackbarMock = Mock.Get(_snackbar);
@@ -333,11 +333,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, "http://example.com") };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .SetupSequence(client => client.GetSearchPlugins())
+                .SetupSequence(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins)
                 .ReturnsAsync(plugins);
             apiClientMock
-                .Setup(client => client.UpdateSearchPlugins())
+                .Setup(client => client.UpdateSearchPluginsAsync())
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -345,7 +345,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var updateButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginUpdateAll");
             await updateButton.Find("button").ClickAsync(new MouseEventArgs());
 
-            apiClientMock.Verify(client => client.UpdateSearchPlugins(), Times.Once);
+            apiClientMock.Verify(client => client.UpdateSearchPluginsAsync(), Times.Once);
         }
 
         [Fact]
@@ -355,13 +355,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
+                .Setup(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins);
             apiClientMock
-                .Setup(client => client.EnableSearchPlugins(It.IsAny<string[]>()))
+                .Setup(client => client.EnableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(tcs.Task);
             apiClientMock
-                .Setup(client => client.DisableSearchPlugins(It.IsAny<string[]>()))
+                .Setup(client => client.DisableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
@@ -377,7 +377,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var toggleButton = FindComponentByTestId<MudIconButton>(dialog.Component, "SearchPluginToggle-Plugin");
             await dialog.Component.InvokeAsync(() => toggleButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            apiClientMock.Verify(client => client.DisableSearchPlugins(It.IsAny<string[]>()), Times.Never);
+            apiClientMock.Verify(client => client.DisableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
 
             tcs.SetResult();
             await enableTask;
@@ -389,11 +389,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", false, string.Empty) };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
-                .ReturnsAsync(plugins);
+                .Setup(client => client.GetSearchPluginsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult.Success<IReadOnlyList<SearchPlugin>>(plugins));
             apiClientMock
-                .Setup(client => client.EnableSearchPlugins(It.IsAny<string[]>()))
-                .ThrowsAsync(new HttpRequestException("Failed"));
+                .Setup(client => client.EnableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failed", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock
+                .Setup(client => client.DisableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult.Success());
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -409,7 +412,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, "http://example.com") };
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
-                .Setup(client => client.GetSearchPlugins())
+                .Setup(client => client.GetSearchPluginsAsync())
                 .ReturnsAsync(plugins);
 
             var dialog = await _target.RenderDialogAsync();

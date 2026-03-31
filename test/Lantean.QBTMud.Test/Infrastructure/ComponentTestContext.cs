@@ -1,6 +1,5 @@
 using Blazor.BrowserCapabilities;
 using Bunit;
-using Lantean.QBitTorrentClient;
 using Lantean.QBTMud.Configuration;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -11,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using MudBlazor;
 using MudBlazor.Services;
+using QBittorrent.ApiClient;
 using System.Net;
 
 namespace Lantean.QBTMud.Test.Infrastructure
@@ -77,9 +77,6 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
             // Named HttpClient "API" like in Program.cs, but with an in-memory handler
             Services
-                .AddScoped(sp => sp
-                    .GetRequiredService<IHttpClientFactory>()
-                    .CreateClient(_apiClientName))
                 .AddHttpClient(_apiClientName, client =>
                 {
                     client.BaseAddress = new Uri(_baseAddress, "/api/v2/");
@@ -90,8 +87,8 @@ namespace Lantean.QBTMud.Test.Infrastructure
                 .AddLogger<HttpLogger>(wrapHandlersPipeline: true);
 
             // App services
-            Services.AddScoped<ApiClient>();
-            Services.AddScoped<IApiClient, ApiClient>();
+            Services.AddQBittorrentApiClient(_apiClientName);
+            Services.AddScoped<IConnectivityStateService, ConnectivityStateService>();
             Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
             Services.AddScoped<IAppSettingsService, AppSettingsService>();
             Services.AddScoped<IWebApiCapabilityService, WebApiCapabilityService>();
