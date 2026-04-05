@@ -1,6 +1,8 @@
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
-using QbtCookie = QBittorrent.ApiClient.Models.ApplicationCookie;
+using QBittorrent.ApiClient.Models;
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Services
 {
@@ -92,7 +94,7 @@ namespace Lantean.QBTMud.Services
         /// Shows the share ratio dialog and applies changes to the selected torrents.
         /// </summary>
         /// <param name="torrents">The torrents to update.</param>
-        Task InvokeShareRatioDialog(IEnumerable<Torrent> torrents);
+        Task InvokeShareRatioDialog(IEnumerable<MudTorrent> torrents);
 
         /// <summary>
         /// Shows a string input dialog and invokes the callback when confirmed.
@@ -121,7 +123,7 @@ namespace Lantean.QBTMud.Services
         /// Shows the add peers dialog.
         /// </summary>
         /// <returns>The selected peers, or <c>null</c> if canceled.</returns>
-        Task<HashSet<QBittorrent.ApiClient.Models.PeerId>?> ShowAddPeersDialog();
+        Task<HashSet<PeerId>?> ShowAddPeersDialog();
 
         /// <summary>
         /// Shows the add tags dialog.
@@ -188,7 +190,7 @@ namespace Lantean.QBTMud.Services
         /// <param name="mode">The browse mode for directory content.</param>
         /// <param name="allowFolderSelection">Whether selecting the current folder is allowed.</param>
         /// <returns>The selected path, or <c>null</c> if the dialog was canceled.</returns>
-        Task<string?> ShowPathBrowserDialog(string title, string? initialPath, QBittorrent.ApiClient.Models.DirectoryContentMode mode, bool allowFolderSelection);
+        Task<string?> ShowPathBrowserDialog(string title, string? initialPath, DirectoryContentMode mode, bool allowFolderSelection);
 
         /// <summary>
         /// Shows a string input dialog.
@@ -205,7 +207,7 @@ namespace Lantean.QBTMud.Services
         /// <param name="title">The dialog title.</param>
         /// <param name="cookie">The cookie to edit, or <c>null</c> to create a new cookie.</param>
         /// <returns>The updated cookie, or <c>null</c> if canceled.</returns>
-        Task<QbtCookie?> ShowCookiePropertiesDialog(string title, QbtCookie? cookie);
+        Task<ApplicationCookie?> ShowCookiePropertiesDialog(string title, ApplicationCookie? cookie);
 
         /// <summary>
         /// Shows the submenu dialog for torrent actions.
@@ -219,10 +221,10 @@ namespace Lantean.QBTMud.Services
         Task ShowSubMenu(
             IEnumerable<string> hashes,
             UIAction parent,
-            Dictionary<string, Torrent> torrents,
-            QBittorrent.ApiClient.Models.Preferences? preferences,
+            Dictionary<string, MudTorrent> torrents,
+            Preferences? preferences,
             HashSet<string> tags,
-            Dictionary<string, Category> categories);
+            Dictionary<string, MudCategory> categories);
 
         /// <summary>
         /// Shows the search plugins dialog.

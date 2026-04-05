@@ -15,10 +15,10 @@ namespace Lantean.QBTMud.Components.Dialogs
         public string? Label { get; set; }
 
         [Parameter]
-        public ShareRatioMax? Value { get; set; }
+        public ShareLimitMax? Value { get; set; }
 
         [Parameter]
-        public ShareRatioMax? CurrentValue { get; set; }
+        public ShareLimitMax? CurrentValue { get; set; }
 
         [Parameter]
         public bool Disabled { get; set; }
@@ -85,15 +85,20 @@ namespace Lantean.QBTMud.Components.Dialogs
             var baseline = Value ?? CurrentValue;
             SelectedShareLimitAction = baseline?.ShareLimitAction ?? ShareLimitAction.Default;
 
-            if (baseline is null || baseline.RatioLimit == Limits.UseGlobalShareLimit && baseline.SeedingTimeLimit == Limits.UseGlobalShareLimit && baseline.InactiveSeedingTimeLimit == Limits.UseGlobalShareLimit)
+            if (baseline is null
+                || baseline.RatioLimit == Limits.UseGlobalShareRatioLimit
+                && baseline.SeedingTimeLimit == Limits.UseGlobalSeedingTimeLimit
+                && baseline.InactiveSeedingTimeLimit == Limits.UseGlobalInactiveSeedingTimeLimit)
             {
-                ShareRatioType = (int)Limits.UseGlobalShareLimit;
+                ShareRatioType = Limits.UseGlobalSeedingTimeLimit;
                 return;
             }
 
-            if (baseline.MaxRatio == Limits.NoShareLimit && baseline.MaxSeedingTime == Limits.NoShareLimit && baseline.MaxInactiveSeedingTime == Limits.NoShareLimit)
+            if (baseline.MaxRatio == Limits.NoShareRatioLimit
+                && baseline.MaxSeedingTime == Limits.NoSeedingTimeLimit
+                && baseline.MaxInactiveSeedingTime == Limits.NoInactiveSeedingTimeLimit)
             {
-                ShareRatioType = (int)Limits.NoShareLimit;
+                ShareRatioType = Limits.NoSeedingTimeLimit;
                 return;
             }
 
@@ -122,7 +127,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (baseline.InactiveSeedingTimeLimit >= 0)
             {
                 InactiveMinutesEnabled = true;
-                InactiveMinutes = (int)baseline.InactiveSeedingTimeLimit;
+                InactiveMinutes = baseline.InactiveSeedingTimeLimit;
             }
             else
             {
@@ -149,22 +154,26 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected void Submit()
         {
-            var result = new ShareRatio();
-            if (ShareRatioType == (int)Limits.UseGlobalShareLimit)
+            var result = new ShareLimit();
+            if (ShareRatioType == Limits.UseGlobalSeedingTimeLimit)
             {
-                result.RatioLimit = result.SeedingTimeLimit = result.InactiveSeedingTimeLimit = Limits.UseGlobalShareLimit;
+                result.RatioLimit = Limits.UseGlobalShareRatioLimit;
+                result.SeedingTimeLimit = Limits.UseGlobalSeedingTimeLimit;
+                result.InactiveSeedingTimeLimit = Limits.UseGlobalInactiveSeedingTimeLimit;
                 result.ShareLimitAction = ShareLimitAction.Default;
             }
-            else if (ShareRatioType == (int)Limits.NoShareLimit)
+            else if (ShareRatioType == Limits.NoSeedingTimeLimit)
             {
-                result.RatioLimit = result.SeedingTimeLimit = result.InactiveSeedingTimeLimit = Limits.NoShareLimit;
+                result.RatioLimit = Limits.NoShareRatioLimit;
+                result.SeedingTimeLimit = Limits.NoSeedingTimeLimit;
+                result.InactiveSeedingTimeLimit = Limits.NoInactiveSeedingTimeLimit;
                 result.ShareLimitAction = ShareLimitAction.Default;
             }
             else
             {
-                result.RatioLimit = RatioEnabled ? Ratio : Limits.NoShareLimit;
-                result.SeedingTimeLimit = TotalMinutesEnabled ? TotalMinutes : Limits.NoShareLimit;
-                result.InactiveSeedingTimeLimit = InactiveMinutesEnabled ? InactiveMinutes : Limits.NoShareLimit;
+                result.RatioLimit = RatioEnabled ? Ratio : Limits.NoShareRatioLimit;
+                result.SeedingTimeLimit = TotalMinutesEnabled ? TotalMinutes : Limits.NoSeedingTimeLimit;
+                result.InactiveSeedingTimeLimit = InactiveMinutesEnabled ? InactiveMinutes : Limits.NoInactiveSeedingTimeLimit;
                 result.ShareLimitAction = SelectedShareLimitAction;
             }
             MudDialog.Close(DialogResult.Ok(result));

@@ -11,6 +11,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -218,12 +223,12 @@ namespace Lantean.QBTMud.Test.Pages
 
         private IRenderedComponent<Tags> RenderPage(IEnumerable<string>? tags = null, bool drawerOpen = false, bool includeMainData = true)
         {
-            var mainData = new MainData(
-                new Dictionary<string, Torrent>(),
+            var mainData = new MudMainData(
+                new Dictionary<string, MudTorrent>(),
                 tags ?? new List<string>(),
-                new Dictionary<string, Category>(),
+                new Dictionary<string, MudCategory>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState { ConnectionStatus = "Connected" },
+                new MudServerState { ConnectionStatus = ConnectionStatus.Connected },
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),

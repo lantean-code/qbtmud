@@ -64,7 +64,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSourcePathAsync(dialog.Component, "C:/Source");
             await SetTorrentFilePathAsync(dialog.Component, "C:/Out");
             await SetPieceSizeAsync(dialog.Component, 65536);
-            await SetFormatAsync(dialog.Component, "v1");
+            await SetFormatAsync(dialog.Component, TorrentFormat.V1);
             await SetFieldSwitchAsync(dialog.Component, "PrivateTorrent", true);
             await SetFieldSwitchAsync(dialog.Component, "StartSeeding", false);
             await SetTextFieldAsync(dialog.Component, "TrackerUrls", "http://a\n\n http://b ");
@@ -85,7 +85,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             request.StartSeeding.Should().BeFalse();
             request.Comment.Should().Be("Comment");
             request.Source.Should().Be("Source");
-            request.Format.Should().Be("v1");
+            request.Format.Should().Be(TorrentFormat.V1);
             request.OptimizeAlignment.Should().BeNull();
             request.PaddedFileSizeLimit.Should().BeNull();
             request.Trackers.Should().BeEquivalentTo(new[] { "http://a", "http://b" });
@@ -234,7 +234,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 UrlSeeds = "UrlSeeds",
                 Comment = "Comment",
                 Source = "Source",
-                Format = "v2",
+                Format = TorrentFormat.V2,
                 OptimizeAlignment = false,
                 PaddedFileSizeLimit = 2048
             };
@@ -259,8 +259,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var seedSwitch = FindFieldSwitch(dialog.Component, "StartSeeding");
             seedSwitch.Instance.Value.Should().BeFalse();
 
-            var formatSelect = FindComponentByTestId<MudSelect<string>>(dialog.Component, "TorrentFormat");
-            formatSelect.Instance.GetState(x => x.Value).Should().Be("v2");
+            var formatSelect = FindComponentByTestId<MudSelect<TorrentFormat>>(dialog.Component, "TorrentFormat");
+            formatSelect.Instance.GetState(x => x.Value).Should().Be(TorrentFormat.V2);
 
             var trackers = FindTextField(dialog.Component, "TrackerUrls");
             trackers.Instance.GetState(x => x.Value).Should().Be("Trackers");
@@ -281,7 +281,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var state = new TorrentCreationFormState
             {
                 SourcePath = "SourcePath",
-                Format = " ",
+                Format = TorrentFormat.Hybrid,
                 OptimizeAlignment = true,
                 PaddedFileSizeLimit = -1
             };
@@ -293,7 +293,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync();
 
-            var formatSelect = dialog.Component.FindComponents<MudSelect<string>>()
+            var formatSelect = dialog.Component.FindComponents<MudSelect<TorrentFormat>>()
                 .Any(select => HasTestId(select, "TorrentFormat"));
             formatSelect.Should().BeFalse();
 
@@ -331,7 +331,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.FindComponents<MudSelect<string>>()
+            dialog.Component.FindComponents<MudSelect<TorrentFormat>>()
                 .Any(select => HasTestId(select, "TorrentFormat"))
                 .Should().BeFalse();
         }
@@ -345,7 +345,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.FindComponents<MudSelect<string>>()
+            dialog.Component.FindComponents<MudSelect<TorrentFormat>>()
                 .Any(select => HasTestId(select, "TorrentFormat"))
                 .Should().BeFalse();
         }
@@ -359,7 +359,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync();
 
-            dialog.Component.FindComponents<MudSelect<string>>()
+            dialog.Component.FindComponents<MudSelect<TorrentFormat>>()
                 .Any(select => HasTestId(select, "TorrentFormat"))
                 .Should().BeTrue();
         }
@@ -403,7 +403,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetTextFieldAsync(dialog.Component, "WebSeedUrls", "Seed");
             await SetTextFieldAsync(dialog.Component, "Comments", "Comment");
             await SetTextFieldAsync(dialog.Component, "Source", "Source");
-            await SetFormatAsync(dialog.Component, "hybrid");
+            await SetFormatAsync(dialog.Component, TorrentFormat.Hybrid);
 
             var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
             await dialog.Component.InvokeAsync(() => createButton.Instance.OnClick.InvokeAsync());
@@ -416,7 +416,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             stored.UrlSeeds.Should().Be("Seed");
             stored.Comment.Should().Be("Comment");
             stored.Source.Should().Be("Source");
-            stored.Format.Should().Be("hybrid");
+            stored.Format.Should().Be(TorrentFormat.Hybrid);
         }
 
         [Fact]
@@ -473,9 +473,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await component.InvokeAsync(() => select.Instance.ValueChanged.InvokeAsync(value));
         }
 
-        private static async Task SetFormatAsync(IRenderedComponent<CreateTorrentDialog> component, string value)
+        private static async Task SetFormatAsync(IRenderedComponent<CreateTorrentDialog> component, TorrentFormat value)
         {
-            var select = FindComponentByTestId<MudSelect<string>>(component, "TorrentFormat");
+            var select = FindComponentByTestId<MudSelect<TorrentFormat>>(component, "TorrentFormat");
             await component.InvokeAsync(() => select.Instance.ValueChanged.InvokeAsync(value));
         }
 

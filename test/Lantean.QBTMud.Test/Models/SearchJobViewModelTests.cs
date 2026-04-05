@@ -20,17 +20,17 @@ namespace Lantean.QBTMud.Test.Models
                 new SearchResult("http://desc", "Ubuntu", 1_000_000, "http://files", 1, 10, "http://site", "movies", 1_700_000_000)
             });
 
-            job.UpdateStatus("Stopped", 1);
+            job.UpdateStatus(SearchJobStatus.Stopped, 1);
             job.IsStopped.Should().BeTrue();
 
-            job.UpdateStatus("Completed", 1);
+            job.UpdateStatus(SearchJobStatus.Stopped, 1);
 
-            job.Status.Should().Be("Completed");
+            job.Status.Should().Be(SearchJobStatus.Stopped);
             job.CompletedOn.Should().NotBeNull();
             job.CurrentOffset.Should().Be(1);
 
             job.SetError("failed");
-            job.Status.Should().Be("Error");
+            job.Status.Should().Be(SearchJobStatus.Stopped);
             job.ErrorMessage.Should().Be("failed");
             job.IsErrored.Should().BeTrue();
 

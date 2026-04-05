@@ -375,7 +375,7 @@ namespace Lantean.QBTMud.Test.Components
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<TorrentSelector>()))
-                .ReturnsAsync(new List<ClientTorrent> { new ClientTorrent { Category = "Movies" } });
+                .ReturnsAsync(new List<ClientTorrent> { ClientTorrentFactory.Create(category: "Movies") });
             apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsAsync(new Dictionary<string, ClientCategory>
             {
                 ["Movies"] = new ClientCategory("Movies", "C:\\Movies", null),
@@ -437,7 +437,7 @@ namespace Lantean.QBTMud.Test.Components
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<ClientTorrent>
                 {
-                    new ClientTorrent { Tags = new List<string> { "Tag1" } }
+                    ClientTorrentFactory.Create(tags: new List<string> { "Tag1" })
                 });
             apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsAsync(new List<string> { "Tag1", "Tag2" });
             apiClientMock.Setup(c => c.DeleteTagsAsync(tags: new[] { "Tag2" })).Returns(Task.CompletedTask);
@@ -767,14 +767,14 @@ namespace Lantean.QBTMud.Test.Components
                     tags: new[] { "Tag1" },
                     tracker: "http://tracker.example.com/announce",
                     trackersCount: 1,
-                    state: "downloading"),
+                    state: TorrentState.Downloading),
                 ["Hash2"] = CreateTorrent(
                     hash: "Hash2",
                     category: "Movies/Sub",
                     tags: new[] { "Tag2" },
                     tracker: "::::",
                     trackersCount: 1,
-                    state: "uploading",
+                    state: TorrentState.Uploading,
                     hasTrackerWarning: true),
                 ["Hash3"] = CreateTorrent(
                     hash: "Hash3",
@@ -782,7 +782,7 @@ namespace Lantean.QBTMud.Test.Components
                     tags: Array.Empty<string>(),
                     tracker: string.Empty,
                     trackersCount: 0,
-                    state: "stalledDL",
+                    state: TorrentState.StalledDownloading,
                     hasTrackerError: true,
                     hasOtherAnnounceError: true),
             };
@@ -872,7 +872,7 @@ namespace Lantean.QBTMud.Test.Components
             IEnumerable<string> tags,
             string tracker,
             int trackersCount,
-            string state,
+            TorrentState? state,
             bool hasTrackerError = false,
             bool hasTrackerWarning = false,
             bool hasOtherAnnounceError = false)
@@ -882,7 +882,7 @@ namespace Lantean.QBTMud.Test.Components
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 1,
+                availability: 1,
                 category,
                 completed: 0,
                 completionOn: 0,

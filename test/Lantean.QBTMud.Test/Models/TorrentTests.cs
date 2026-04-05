@@ -1,12 +1,12 @@
 using AwesomeAssertions;
-using Lantean.QBTMud.Models;
-using ShareLimitAction = QBittorrent.ApiClient.Models.ShareLimitAction;
+using QBittorrent.ApiClient.Models;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Models
 {
     public sealed class TorrentTests
     {
-        private readonly Torrent _target;
+        private readonly MudTorrent _target;
 
         public TorrentTests()
         {
@@ -46,7 +46,7 @@ namespace Lantean.QBTMud.Test.Models
             torrent.SavePath.Should().Be(string.Empty);
             torrent.DownloadPath.Should().Be(string.Empty);
             torrent.RootPath.Should().Be(string.Empty);
-            torrent.State.Should().Be(string.Empty);
+            torrent.State.Should().BeNull();
             torrent.Tracker.Should().Be(string.Empty);
             torrent.Tags.Should().BeEmpty();
             torrent.TrackersCount.Should().Be(0);
@@ -85,9 +85,9 @@ namespace Lantean.QBTMud.Test.Models
             _target.ToString().Should().Be("Hash");
         }
 
-        private static Torrent CreateTorrent(string hash = "Hash", IEnumerable<string>? tags = null)
+        private static MudTorrent CreateTorrent(string hash = "Hash", IEnumerable<string>? tags = null)
         {
-            return new Torrent(
+            return new MudTorrent(
                 hash,
                 1,
                 2,
@@ -125,7 +125,7 @@ namespace Lantean.QBTMud.Test.Models
                 19,
                 true,
                 20,
-                "State",
+                TorrentState.Unknown,
                 true,
                 tags ?? new[] { "TagA", "TagB" },
                 21,
@@ -150,7 +150,7 @@ namespace Lantean.QBTMud.Test.Models
                 "Comment");
         }
 
-        private sealed class TestTorrent : Torrent
+        private sealed class TestTorrent : MudTorrent
         {
             public TestTorrent()
             {

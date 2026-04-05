@@ -1,3 +1,5 @@
+using QBittorrent.ApiClient.Models;
+
 namespace Lantean.QBTMud.Components.Options
 {
     public partial class SpeedOptions : Options
@@ -6,14 +8,14 @@ namespace Lantean.QBTMud.Components.Options
         protected int DlLimit { get; private set; }
         protected int AltUpLimit { get; private set; }
         protected int AltDlLimit { get; private set; }
-        protected int BittorrentProtocol { get; private set; }
+        protected BittorrentProtocol BittorrentProtocol { get; private set; }
         protected bool? LimitUtpRate { get; private set; }
         protected bool? LimitTcpOverhead { get; private set; }
         protected bool? LimitLanPeers { get; private set; }
         protected bool? SchedulerEnabled { get; private set; }
         protected TimeSpan ScheduleFrom { get; private set; }
         protected TimeSpan ScheduleTo { get; private set; }
-        protected int SchedulerDays { get; private set; }
+        protected SchedulerDays SchedulerDays { get; private set; }
 
         protected Func<int, string?> UpLimitValidation => UpLimitValidationFunc;
 
@@ -114,7 +116,7 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task BittorrentProtocolChanged(int value)
+        protected async Task BittorrentProtocolChanged(BittorrentProtocol value)
         {
             BittorrentProtocol = value;
             UpdatePreferences.BittorrentProtocol = value;
@@ -199,7 +201,7 @@ namespace Lantean.QBTMud.Components.Options
             }
         }
 
-        protected async Task SchedulerDaysChanged(int value)
+        protected async Task SchedulerDaysChanged(SchedulerDays value)
         {
             SchedulerDays = value;
             UpdatePreferences.SchedulerDays = value;

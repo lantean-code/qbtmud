@@ -5,9 +5,10 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using System.Data;
 using UIComponents.Flags;
-using TorrentSelector = QBittorrent.ApiClient.Models.TorrentSelector;
+using MudPeer = Lantean.QBTMud.Models.Peer;
 
 namespace Lantean.QBTMud.Components
 {
@@ -19,7 +20,7 @@ namespace Lantean.QBTMud.Components
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool? _showFlags;
-        private IReadOnlyList<ColumnDefinition<Peer>>? _columnDefinitions;
+        private IReadOnlyList<ColumnDefinition<MudPeer>>? _columnDefinitions;
         private string? _countryColumnId;
 
         private const string _toolbar = nameof(_toolbar);
@@ -37,7 +38,7 @@ namespace Lantean.QBTMud.Components
         public int RefreshInterval { get; set; }
 
         [CascadingParameter]
-        public QBittorrent.ApiClient.Models.Preferences? Preferences { get; set; }
+        public Preferences? Preferences { get; set; }
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
@@ -62,17 +63,17 @@ namespace Lantean.QBTMud.Components
 
         protected PeerList? PeerList { get; set; }
 
-        protected IEnumerable<Peer> Peers => PeerList?.Peers.Select(p => p.Value) ?? [];
+        protected IEnumerable<MudPeer> Peers => PeerList?.Peers.Select(p => p.Value) ?? [];
 
         protected bool ShowFlags => _showFlags.GetValueOrDefault();
 
-        protected Peer? ContextMenuItem { get; set; }
+        protected MudPeer? ContextMenuItem { get; set; }
 
-        protected Peer? SelectedItem { get; set; }
+        protected MudPeer? SelectedItem { get; set; }
 
         protected MudMenu? ContextMenu { get; set; }
 
-        protected DynamicTable<Peer>? Table { get; set; }
+        protected DynamicTable<MudPeer>? Table { get; set; }
 
         protected override async Task OnParametersSetAsync()
         {
@@ -153,26 +154,26 @@ namespace Lantean.QBTMud.Components
             await CopyPeer(ContextMenuItem);
         }
 
-        private async Task BanPeer(Peer? peer)
+        private async Task BanPeer(MudPeer? peer)
         {
             if (Hash is null || peer is null)
             {
                 return;
             }
-            await ApiClient.BanPeersAsync([new QBittorrent.ApiClient.Models.PeerId(peer.IPAddress, peer.Port)]);
+            await ApiClient.BanPeersAsync([new PeerId(peer.IPAddress, peer.Port)]);
         }
 
-        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<Peer> eventArgs)
+        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<MudPeer> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
         }
 
-        protected Task TableDataLongPress(TableDataLongPressEventArgs<Peer> eventArgs)
+        protected Task TableDataLongPress(TableDataLongPressEventArgs<MudPeer> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
         }
 
-        private async Task CopyPeer(Peer? peer)
+        private async Task CopyPeer(MudPeer? peer)
         {
             if (peer is null)
             {
@@ -183,7 +184,7 @@ namespace Lantean.QBTMud.Components
             SnackbarWorkflow.ShowTransientMessage(TranslateApp("Peer copied to clipboard."), Severity.Info);
         }
 
-        protected async Task ShowContextMenu(Peer? peer, EventArgs eventArgs)
+        protected async Task ShowContextMenu(MudPeer? peer, EventArgs eventArgs)
         {
             ContextMenuItem = peer;
 
@@ -197,7 +198,7 @@ namespace Lantean.QBTMud.Components
             await ContextMenu.OpenMenuAsync(normalizedEventArgs);
         }
 
-        protected void SelectedItemChanged(Peer peer)
+        protected void SelectedItemChanged(MudPeer peer)
         {
             SelectedItem = peer;
         }
@@ -231,7 +232,7 @@ namespace Lantean.QBTMud.Components
             if (Active)
             {
                 var peersResult = await ApiClient.GetTorrentPeersDataAsync(Hash, _requestId);
-                if (!peersResult.TryGetValue(out QBittorrent.ApiClient.Models.TorrentPeers? peers))
+                if (!peersResult.TryGetValue(out TorrentPeers? peers))
                 {
                     if (peersResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
                     {
@@ -263,9 +264,9 @@ namespace Lantean.QBTMud.Components
             return ManagedTimerTickResult.Continue;
         }
 
-        protected IEnumerable<ColumnDefinition<Peer>> Columns => GetColumnDefinitions();
+        protected IEnumerable<ColumnDefinition<MudPeer>> Columns => GetColumnDefinitions();
 
-        protected bool FilterColumns(ColumnDefinition<Peer> column)
+        protected bool FilterColumns(ColumnDefinition<MudPeer> column)
         {
             var countryColumnId = _countryColumnId ?? "country/region";
             if (string.Equals(column.Id, countryColumnId, StringComparison.Ordinal))
@@ -276,14 +277,14 @@ namespace Lantean.QBTMud.Components
             return true;
         }
 
-        private IReadOnlyList<ColumnDefinition<Peer>> GetColumnDefinitions()
+        private IReadOnlyList<ColumnDefinition<MudPeer>> GetColumnDefinitions()
         {
             _columnDefinitions ??= BuildColumnDefinitions();
 
             return _columnDefinitions;
         }
 
-        private IReadOnlyList<ColumnDefinition<Peer>> BuildColumnDefinitions()
+        private IReadOnlyList<ColumnDefinition<MudPeer>> BuildColumnDefinitions()
         {
             var countryLabel = TranslatePeerList("Country/Region");
             var ipLabel = TranslatePeerList("IP/Address");
@@ -303,23 +304,23 @@ namespace Lantean.QBTMud.Components
 
             return
             [
-                new ColumnDefinition<Peer>(countryLabel, p => p.Country, CountryColumnTemplate, id: "country/region"),
-                new ColumnDefinition<Peer>(ipLabel, p => p.IPAddress, id: "ip"),
-                new ColumnDefinition<Peer>(portLabel, p => p.Port, id: "port"),
-                new ColumnDefinition<Peer>(connectionLabel, p => p.Connection, id: "connection"),
-                new ColumnDefinition<Peer>(flagsLabel, p => p.Flags, FlagsColumnTemplate, id: "flags"),
-                new ColumnDefinition<Peer>(clientLabel, p => p.Client, id: "client"),
-                new ColumnDefinition<Peer>(progressLabel, p => p.Progress, p => DisplayHelpers.Percentage(p.Progress), id: "progress"),
-                new ColumnDefinition<Peer>(downSpeedLabel, p => p.DownloadSpeed, p => DisplayHelpers.Speed(p.DownloadSpeed), id: "download_speed"),
-                new ColumnDefinition<Peer>(upSpeedLabel, p => p.UploadSpeed, p => DisplayHelpers.Speed(p.UploadSpeed), id: "upload_speed"),
-                new ColumnDefinition<Peer>(downloadedLabel, p => p.Downloaded, p => DisplayHelpers.Size(p.Downloaded), id: "downloaded"),
-                new ColumnDefinition<Peer>(uploadedLabel, p => p.Uploaded, p => DisplayHelpers.Size(p.Uploaded), id: "uploaded"),
-                new ColumnDefinition<Peer>(relevanceLabel, p => p.Relevance, p => DisplayHelpers.Percentage(p.Relevance), id: "relevance"),
-                new ColumnDefinition<Peer>(filesLabel, p => p.Files, id: "files"),
+                new ColumnDefinition<MudPeer>(countryLabel, p => p.Country, CountryColumnTemplate, id: "country/region"),
+                new ColumnDefinition<MudPeer>(ipLabel, p => p.IPAddress, id: "ip"),
+                new ColumnDefinition<MudPeer>(portLabel, p => p.Port, id: "port"),
+                new ColumnDefinition<MudPeer>(connectionLabel, p => p.Connection, id: "connection"),
+                new ColumnDefinition<MudPeer>(flagsLabel, p => p.Flags, FlagsColumnTemplate, id: "flags"),
+                new ColumnDefinition<MudPeer>(clientLabel, p => p.Client, id: "client"),
+                new ColumnDefinition<MudPeer>(progressLabel, p => p.Progress, p => DisplayHelpers.Percentage(p.Progress), id: "progress"),
+                new ColumnDefinition<MudPeer>(downSpeedLabel, p => p.DownloadSpeed, p => DisplayHelpers.Speed(p.DownloadSpeed), id: "download_speed"),
+                new ColumnDefinition<MudPeer>(upSpeedLabel, p => p.UploadSpeed, p => DisplayHelpers.Speed(p.UploadSpeed), id: "upload_speed"),
+                new ColumnDefinition<MudPeer>(downloadedLabel, p => p.Downloaded, p => DisplayHelpers.Size(p.Downloaded), id: "downloaded"),
+                new ColumnDefinition<MudPeer>(uploadedLabel, p => p.Uploaded, p => DisplayHelpers.Size(p.Uploaded), id: "uploaded"),
+                new ColumnDefinition<MudPeer>(relevanceLabel, p => p.Relevance, p => DisplayHelpers.Percentage(p.Relevance), id: "relevance"),
+                new ColumnDefinition<MudPeer>(filesLabel, p => p.Files, id: "files"),
             ];
         }
 
-        private static RenderFragment<RowContext<Peer>> FlagsColumnTemplate => context => builder =>
+        private static RenderFragment<RowContext<MudPeer>> FlagsColumnTemplate => context => builder =>
         {
             var flags = context.Data.Flags;
             if (string.IsNullOrWhiteSpace(flags))
@@ -338,7 +339,7 @@ namespace Lantean.QBTMud.Components
             builder.CloseElement();
         };
 
-        private static RenderFragment<RowContext<Peer>> CountryColumnTemplate => context => builder =>
+        private static RenderFragment<RowContext<MudPeer>> CountryColumnTemplate => context => builder =>
         {
             var country = context.Data.Country;
             var countryCode = context.Data.CountryCode;

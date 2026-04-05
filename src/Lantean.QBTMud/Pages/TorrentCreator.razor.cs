@@ -16,8 +16,6 @@ namespace Lantean.QBTMud.Pages
     {
         private const int _pollIntervalMilliseconds = 1500;
 
-        private static readonly StringComparison StatusComparison = StringComparison.OrdinalIgnoreCase;
-
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private IReadOnlyList<TorrentCreationTaskStatus> _tasks = [];
@@ -246,32 +244,31 @@ namespace Lantean.QBTMud.Pages
             return ManagedTimerTickResult.Continue;
         }
 
-        private static bool IsTerminalStatus(string? status)
+        private static bool IsTerminalStatus(TorrentCreationTaskStatusKind? status)
         {
-            return string.Equals(status, "Finished", StatusComparison) ||
-                string.Equals(status, "Failed", StatusComparison);
+            return status is TorrentCreationTaskStatusKind.Finished or TorrentCreationTaskStatusKind.Failed;
         }
 
-        private string GetStatusDisplayText(string? status)
+        private string GetStatusDisplayText(TorrentCreationTaskStatusKind? status)
         {
-            if (string.IsNullOrWhiteSpace(status))
+            if (!status.HasValue)
             {
                 return string.Empty;
             }
 
             return status switch
             {
-                "Running" => LanguageLocalizer.Translate("TorrentCreator", "Running"),
-                "Finished" => LanguageLocalizer.Translate("TorrentCreator", "Finished"),
-                "Failed" => LanguageLocalizer.Translate("TorrentCreator", "Failed"),
-                "Queued" => LanguageLocalizer.Translate("TorrentCreator", "Queued"),
-                _ => status
+                TorrentCreationTaskStatusKind.Running => LanguageLocalizer.Translate("TorrentCreator", "Running"),
+                TorrentCreationTaskStatusKind.Finished => LanguageLocalizer.Translate("TorrentCreator", "Finished"),
+                TorrentCreationTaskStatusKind.Failed => LanguageLocalizer.Translate("TorrentCreator", "Failed"),
+                TorrentCreationTaskStatusKind.Queued => LanguageLocalizer.Translate("TorrentCreator", "Queued"),
+                _ => status.Value.ToString()
             };
         }
 
         private static bool CanDownload(TorrentCreationTaskStatus task)
         {
-            if (!string.Equals(task.Status, "Finished", StatusComparison))
+            if (task.Status != TorrentCreationTaskStatusKind.Finished)
             {
                 return false;
             }
@@ -286,7 +283,7 @@ namespace Lantean.QBTMud.Pages
                 return Math.Clamp(task.Progress.Value, 0, 100);
             }
 
-            if (string.Equals(task.Status, "Finished", StatusComparison))
+            if (task.Status == TorrentCreationTaskStatusKind.Finished)
             {
                 return 100;
             }
@@ -294,19 +291,19 @@ namespace Lantean.QBTMud.Pages
             return 0;
         }
 
-        private static Color GetStatusColor(string? status)
+        private static Color GetStatusColor(TorrentCreationTaskStatusKind? status)
         {
-            if (string.Equals(status, "Running", StatusComparison))
+            if (status == TorrentCreationTaskStatusKind.Running)
             {
                 return Color.Info;
             }
 
-            if (string.Equals(status, "Finished", StatusComparison))
+            if (status == TorrentCreationTaskStatusKind.Finished)
             {
                 return Color.Success;
             }
 
-            if (string.Equals(status, "Failed", StatusComparison))
+            if (status == TorrentCreationTaskStatusKind.Failed)
             {
                 return Color.Error;
             }
@@ -372,7 +369,7 @@ namespace Lantean.QBTMud.Pages
 
             return
             [
-                new ColumnDefinition<TorrentCreationTaskStatus>(statusLabel, t => t.Status ?? string.Empty, StatusColumn, id: "status"),
+                new ColumnDefinition<TorrentCreationTaskStatus>(statusLabel, t => t.Status, StatusColumn, id: "status"),
                 new ColumnDefinition<TorrentCreationTaskStatus>(progressLabel, t => t.Progress ?? 0.0, ProgressColumn, tdClass: "table-progress", id: "progress"),
                 new ColumnDefinition<TorrentCreationTaskStatus>(nameLabel, t => ResolveFileName(t), id: "name"),
                 new ColumnDefinition<TorrentCreationTaskStatus>(sourcePathLabel, t => t.SourcePath, id: "source_path"),

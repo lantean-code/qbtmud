@@ -46,7 +46,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindTextField(target, "WebUiReverseProxiesList").Instance.Disabled.Should().BeFalse();
 
             FindSwitch(target, "DyndnsEnabled").Instance.Value.Should().BeTrue();
-            FindSelect<int>(target, "DyndnsService").Instance.GetState(x => x.Value).Should().Be(0);
+            FindSelect<DyndnsService>(target, "DyndnsService").Instance.GetState(x => x.Value).Should().Be(DyndnsService.DynDns);
         }
 
         [Fact]
@@ -227,9 +227,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             var enableSwitch = FindSwitch(target, "DyndnsEnabled");
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var serviceSelect = FindSelect<int>(target, "DyndnsService");
+            var serviceSelect = FindSelect<DyndnsService>(target, "DyndnsService");
             serviceSelect.Instance.Disabled.Should().BeTrue();
-            await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(DyndnsService.NoIp));
 
             var domainField = FindTextField(target, "DyndnsDomain");
             domainField.Instance.Disabled.Should().BeTrue();
@@ -244,7 +244,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => passField.Instance.ValueChanged.InvokeAsync("newpass"));
 
             update.DyndnsEnabled.Should().BeFalse();
-            update.DyndnsService.Should().Be(1);
+            update.DyndnsService.Should().Be(DyndnsService.NoIp);
             update.DyndnsDomain.Should().Be("newdomain");
             update.DyndnsUsername.Should().Be("newuser");
             update.DyndnsPassword.Should().Be("newpass");
@@ -284,8 +284,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             calls.Should().HaveCount(1);
 
             await target.InvokeAsync(() => enableSwitch.Instance.ValueChanged.InvokeAsync(true));
-            var serviceSelect = FindSelect<int>(target, "DyndnsService");
-            await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(1));
+            var serviceSelect = FindSelect<DyndnsService>(target, "DyndnsService");
+            await target.InvokeAsync(() => serviceSelect.Instance.ValueChanged.InvokeAsync(DyndnsService.NoIp));
             await target.InvokeAsync(() => registerButton.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
             calls = openInvocation.Invocations.ToList();
@@ -378,7 +378,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             return PreferencesFactory.CreatePreferences(spec =>
             {
                 spec.DyndnsEnabled = true;
-                spec.DyndnsService = 2;
+                spec.DyndnsService = (DyndnsService)2;
             });
         }
 
@@ -394,7 +394,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 spec.DyndnsDomain = "example.com";
                 spec.DyndnsEnabled = true;
                 spec.DyndnsPassword = "pass";
-                spec.DyndnsService = 0;
+                spec.DyndnsService = DyndnsService.DynDns;
                 spec.DyndnsUsername = "user";
                 spec.Locale = "en";
                 spec.PerformanceWarning = false;

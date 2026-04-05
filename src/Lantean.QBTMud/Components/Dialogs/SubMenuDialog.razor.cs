@@ -1,6 +1,9 @@
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient.Models;
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -13,10 +16,10 @@ namespace Lantean.QBTMud.Components.Dialogs
         public UIAction? ParentAction { get; set; }
 
         [Parameter]
-        public Dictionary<string, Torrent> Torrents { get; set; } = default!;
+        public Dictionary<string, MudTorrent> Torrents { get; set; } = default!;
 
         [Parameter]
-        public QBittorrent.ApiClient.Models.Preferences? Preferences { get; set; }
+        public Preferences? Preferences { get; set; }
 
         [Parameter]
         public IEnumerable<string> Hashes { get; set; } = [];
@@ -25,7 +28,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         public HashSet<string> Tags { get; set; } = default!;
 
         [Parameter]
-        public Dictionary<string, Category> Categories { get; set; } = default!;
+        public Dictionary<string, MudCategory> Categories { get; set; } = default!;
 
         protected Task CloseDialog()
         {

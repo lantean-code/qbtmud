@@ -1,3 +1,5 @@
+using QBittorrent.ApiClient.Models;
+
 namespace Lantean.QBTMud.Components.Options
 {
     public partial class BitTorrentOptions : Options
@@ -5,7 +7,7 @@ namespace Lantean.QBTMud.Components.Options
         protected bool? Dht { get; private set; }
         protected bool? Pex { get; private set; }
         protected bool? Lsd { get; private set; }
-        protected int Encryption { get; private set; }
+        protected EncryptionMode Encryption { get; private set; }
         protected bool? AnonymousMode { get; private set; }
         protected int MaxActiveCheckingTorrents { get; private set; }
         protected bool? QueueingEnabled { get; private set; }
@@ -17,10 +19,10 @@ namespace Lantean.QBTMud.Components.Options
         protected int SlowTorrentUlRateThreshold { get; private set; }
         protected int SlowTorrentInactiveTimer { get; private set; }
         protected bool? MaxRatioEnabled { get; private set; }
-        protected float MaxRatio { get; private set; }
+        protected double MaxRatio { get; private set; }
         protected bool? MaxSeedingTimeEnabled { get; private set; }
         protected int MaxSeedingTime { get; private set; }
-        protected int MaxRatioAct { get; private set; }
+        protected MaxRatioAction MaxRatioAct { get; private set; }
         protected bool? MaxInactiveSeedingTimeEnabled { get; private set; }
         protected int MaxInactiveSeedingTime { get; private set; }
         protected bool? AddTrackersEnabled { get; private set; }
@@ -38,7 +40,7 @@ namespace Lantean.QBTMud.Components.Options
 
         protected Func<int, string?> SlowTorrentInactiveTimerValidation => SlowTorrentInactiveTimerValidationFunc;
 
-        protected Func<int, string?> MaxRatioValidation => MaxRatioValidationFunc;
+        protected Func<double, string?> MaxRatioValidation => MaxRatioValidationFunc;
 
         protected Func<int, string?> MaxSeedingTimeValidation => MaxSeedingTimeValidationFunc;
 
@@ -104,7 +106,7 @@ namespace Lantean.QBTMud.Components.Options
             return null;
         }
 
-        private string? MaxRatioValidationFunc(int value)
+        private string? MaxRatioValidationFunc(double value)
         {
             if (value < 0 || value > 9998)
             {
@@ -209,7 +211,7 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task EncryptionChanged(int value)
+        protected async Task EncryptionChanged(EncryptionMode value)
         {
             Encryption = value;
             UpdatePreferences.Encryption = value;
@@ -293,7 +295,7 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task MaxRatioChanged(float value)
+        protected async Task MaxRatioChanged(double value)
         {
             MaxRatio = value;
             UpdatePreferences.MaxRatio = value;
@@ -314,7 +316,7 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task MaxRatioActChanged(int value)
+        protected async Task MaxRatioActChanged(MaxRatioAction value)
         {
             MaxRatioAct = value;
             UpdatePreferences.MaxRatioAct = value;

@@ -27,9 +27,9 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindSelect<string>(target, "TorrentContentLayout").Instance.GetState(x => x.Value).Should().Be("Original");
+            FindSelect<TorrentContentLayout>(target, "TorrentContentLayout").Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Original);
             FindSwitch(target, "AddToTopOfQueue").Instance.Value.Should().BeTrue();
-            FindSwitch(target, "AutoDeleteMode").Instance.Value.Should().BeTrue();
+            FindSelect<AutoDeleteMode>(target, "AutoDeleteMode").Instance.GetState(x => x.Value).Should().Be(AutoDeleteMode.IfAdded);
             FindSwitch(target, "PreallocateAll").Instance.Value.Should().BeTrue();
             FindSelect<bool>(target, "AutoTmmEnabled").Instance.GetState(x => x.Value).Should().BeTrue();
             FindPathField(target, "TempPath").Instance.Disabled.Should().BeFalse();
@@ -54,7 +54,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindSelect<string>(target, "TorrentContentLayout").Instance.GetState(x => x.Value).Should().BeNull();
+            FindSelect<TorrentContentLayout>(target, "TorrentContentLayout").Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Original);
             FindSwitch(target, "AddToTopOfQueue").Instance.Value.Should().BeNull();
             update.ScanDirs.Should().BeNull();
         }
@@ -78,8 +78,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             var addToTopSwitch = FindSwitch(target, "AddToTopOfQueue");
             await target.InvokeAsync(() => addToTopSwitch.Instance.ValueChanged.InvokeAsync(false));
 
-            var layoutSelect = FindSelect<string>(target, "TorrentContentLayout");
-            await target.InvokeAsync(() => layoutSelect.Instance.ValueChanged.InvokeAsync("NoSubfolder"));
+            var layoutSelect = FindSelect<TorrentContentLayout>(target, "TorrentContentLayout");
+            await target.InvokeAsync(() => layoutSelect.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.NoSubfolder));
 
             var tempSwitch = FindSwitch(target, "TempPathEnabled");
             await target.InvokeAsync(() => tempSwitch.Instance.ValueChanged.InvokeAsync(false));
@@ -91,7 +91,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => subcategoriesSwitch.Instance.ValueChanged.InvokeAsync(false));
 
             update.AddToTopOfQueue.Should().BeFalse();
-            update.TorrentContentLayout.Should().Be("NoSubfolder");
+            update.TorrentContentLayout.Should().Be(TorrentContentLayout.NoSubfolder);
             update.TempPathEnabled.Should().BeFalse();
             update.TempPath.Should().Be("/tmp-new");
             update.UseSubcategories.Should().BeFalse();
@@ -119,13 +119,13 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => addStoppedSwitch.Instance.ValueChanged.InvokeAsync(true));
             update.AddStoppedEnabled.Should().BeTrue();
 
-            var stopConditionSelect = FindSelect<string>(target, "TorrentStopCondition");
-            await target.InvokeAsync(() => stopConditionSelect.Instance.ValueChanged.InvokeAsync("FilesChecked"));
-            update.TorrentStopCondition.Should().Be("FilesChecked");
+            var stopConditionSelect = FindSelect<StopCondition>(target, "TorrentStopCondition");
+            await target.InvokeAsync(() => stopConditionSelect.Instance.ValueChanged.InvokeAsync(StopCondition.FilesChecked));
+            update.TorrentStopCondition.Should().Be(StopCondition.FilesChecked);
 
-            var autoDeleteSwitch = FindSwitch(target, "AutoDeleteMode");
-            await target.InvokeAsync(() => autoDeleteSwitch.Instance.ValueChanged.InvokeAsync(false));
-            update.AutoDeleteMode.Should().Be(0);
+            var autoDeleteSelect = FindSelect<AutoDeleteMode>(target, "AutoDeleteMode");
+            await target.InvokeAsync(() => autoDeleteSelect.Instance.ValueChanged.InvokeAsync(AutoDeleteMode.Never));
+            update.AutoDeleteMode.Should().Be(AutoDeleteMode.Never);
 
             var preallocateSwitch = FindSwitch(target, "PreallocateAll");
             await target.InvokeAsync(() => preallocateSwitch.Instance.ValueChanged.InvokeAsync(false));
@@ -437,18 +437,18 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            await target.InvokeAsync(() => FindSelect<string>(target, "TorrentContentLayout").Instance.OpenMenu());
+            await target.InvokeAsync(() => FindSelect<TorrentContentLayout>(target, "TorrentContentLayout").Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
-                values.Should().Contain("Subfolder");
+                var values = target.FindComponents<MudSelectItem<TorrentContentLayout>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(TorrentContentLayout.Subfolder);
             });
 
-            await target.InvokeAsync(() => FindSelect<string>(target, "TorrentStopCondition").Instance.OpenMenu());
+            await target.InvokeAsync(() => FindSelect<StopCondition>(target, "TorrentStopCondition").Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
-                values.Should().Contain("MetadataReceived");
+                var values = target.FindComponents<MudSelectItem<StopCondition>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(StopCondition.MetadataReceived);
             });
 
             await target.InvokeAsync(() => FindExistingScanDirType(target, 0).Instance.OpenMenu());
@@ -556,7 +556,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 spec.AutorunOnTorrentAddedEnabled = true;
                 spec.AutorunOnTorrentAddedProgram = "/bin/add.sh";
                 spec.AutorunProgram = "/bin/finish.sh";
-                spec.AutoDeleteMode = 1;
+                spec.AutoDeleteMode = AutoDeleteMode.IfAdded;
                 spec.AutoTmmEnabled = true;
                 spec.CategoryChangedTmmEnabled = true;
                 spec.ExcludedFileNames = "*.tmp";
@@ -582,8 +582,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 spec.TempPath = "/temp";
                 spec.TempPathEnabled = true;
                 spec.TorrentChangedTmmEnabled = true;
-                spec.TorrentContentLayout = "Original";
-                spec.TorrentStopCondition = "None";
+                spec.TorrentContentLayout = TorrentContentLayout.Original;
+                spec.TorrentStopCondition = StopCondition.None;
                 spec.UseSubcategories = true;
             });
         }

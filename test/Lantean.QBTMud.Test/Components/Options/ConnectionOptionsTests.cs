@@ -27,7 +27,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindSelect<int>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(2);
+            FindSelect<BittorrentProtocol>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(BittorrentProtocol.UtpOnly);
             FindNumericInt(target, "ListenPort").Instance.GetState(x => x.Value).Should().Be(8999);
 
             FindSwitch(target, "Upnp").Instance.Value.Should().BeTrue();
@@ -57,7 +57,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            FindSelect<int>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(0);
+            FindSelect<BittorrentProtocol>(target, "BittorrentProtocol").Instance.GetState(x => x.Value).Should().Be(BittorrentProtocol.TcpAndUtp);
             FindNumericInt(target, "ListenPort").Instance.GetState(x => x.Value).Should().Be(0);
         }
 
@@ -95,8 +95,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             var maxUploadsPerTorrentField = FindNumericInt(target, "MaxUploadsPerTorrent");
             await target.InvokeAsync(() => maxUploadsPerTorrentField.Instance.ValueChanged.InvokeAsync(8));
 
-            var proxyTypeSelect = FindSelect<string>(target, "ProxyType");
-            await target.InvokeAsync(() => proxyTypeSelect.Instance.ValueChanged.InvokeAsync("None"));
+            var proxyTypeSelect = FindSelect<ProxyType>(target, "ProxyType");
+            await target.InvokeAsync(() => proxyTypeSelect.Instance.ValueChanged.InvokeAsync(ProxyType.None));
 
             update.ListenPort.Should().Be(7000);
             update.Upnp.Should().BeFalse();
@@ -104,7 +104,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.MaxConnecPerTorrent.Should().Be(120);
             update.MaxUploads.Should().Be(35);
             update.MaxUploadsPerTorrent.Should().Be(8);
-            update.ProxyType.Should().Be("None");
+            update.ProxyType.Should().Be(ProxyType.None);
 
             events.Should().NotBeEmpty();
             events.Should().AllSatisfy(evt => evt.Should().BeSameAs(update));
@@ -117,7 +117,7 @@ namespace Lantean.QBTMud.Test.Components.Options
 
             var preferences = PreferencesFactory.CreatePreferences(spec =>
             {
-                spec.BittorrentProtocol = 0;
+                spec.BittorrentProtocol = BittorrentProtocol.TcpAndUtp;
                 spec.I2pAddress = string.Empty;
                 spec.I2pEnabled = false;
                 spec.I2pMixedMode = false;
@@ -180,10 +180,10 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var typeSelect = FindSelect<string>(target, "ProxyType");
-            await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync("None"));
+            var typeSelect = FindSelect<ProxyType>(target, "ProxyType");
+            await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync(ProxyType.None));
 
-            update.ProxyType.Should().Be("None");
+            update.ProxyType.Should().Be(ProxyType.None);
 
             var proxyHostField = FindTextField(target, "ProxyIp");
             proxyHostField.Instance.Disabled.Should().BeTrue();
@@ -191,7 +191,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             var proxyPeerSwitch = FindSwitch(target, "ProxyPeerConnections");
             proxyPeerSwitch.Instance.Disabled.Should().BeTrue();
 
-            await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync("SOCKS5"));
+            await target.InvokeAsync(() => typeSelect.Instance.ValueChanged.InvokeAsync(ProxyType.Socks5));
             proxyHostField.Instance.Disabled.Should().BeFalse();
 
             var authSwitch = FindSwitch(target, "ProxyAuthEnabled");
@@ -293,9 +293,9 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => events.Add(value)));
             });
 
-            var protocolSelect = FindSelect<int>(target, "BittorrentProtocol");
-            await target.InvokeAsync(() => protocolSelect.Instance.ValueChanged.InvokeAsync(1));
-            update.BittorrentProtocol.Should().Be(1);
+            var protocolSelect = FindSelect<BittorrentProtocol>(target, "BittorrentProtocol");
+            await target.InvokeAsync(() => protocolSelect.Instance.ValueChanged.InvokeAsync(BittorrentProtocol.TcpOnly));
+            update.BittorrentProtocol.Should().Be(BittorrentProtocol.TcpOnly);
 
             var ipFilterSwitch = FindSwitch(target, "IpFilterEnabled");
             await target.InvokeAsync(() => ipFilterSwitch.Instance.ValueChanged.InvokeAsync(false));
@@ -401,18 +401,18 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var proxyTypeSelect = FindSelect<string>(target, "ProxyType");
+            var proxyTypeSelect = FindSelect<ProxyType>(target, "ProxyType");
             await target.InvokeAsync(() => proxyTypeSelect.Instance.OpenMenu());
 
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<string>>()
+                var values = target.FindComponents<MudSelectItem<ProxyType>>()
                     .Select(item => item.Instance.Value)
                     .ToList();
-                values.Should().Contain("None");
-                values.Should().Contain("SOCKS4");
-                values.Should().Contain("SOCKS5");
-                values.Should().Contain("HTTP");
+                values.Should().Contain(ProxyType.None);
+                values.Should().Contain(ProxyType.Socks4);
+                values.Should().Contain(ProxyType.Socks5);
+                values.Should().Contain(ProxyType.Http);
             });
         }
 
@@ -459,7 +459,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             return PreferencesFactory.CreatePreferences(spec =>
             {
                 spec.BannedIPs = "10.0.0.1";
-                spec.BittorrentProtocol = 2;
+                spec.BittorrentProtocol = BittorrentProtocol.UtpOnly;
                 spec.I2pAddress = "i2p.local";
                 spec.I2pEnabled = true;
                 spec.I2pMixedMode = true;
@@ -481,7 +481,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 spec.ProxyPeerConnections = false;
                 spec.ProxyPort = 1080;
                 spec.ProxyRss = true;
-                spec.ProxyType = "SOCKS5";
+                spec.ProxyType = ProxyType.Socks5;
                 spec.ProxyUsername = "user";
                 spec.Upnp = true;
             });

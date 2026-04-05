@@ -1,3 +1,5 @@
+using QBittorrent.ApiClient.Models;
+
 namespace Lantean.QBTMud.Models
 {
     public record ServerState : GlobalTransferInfo
@@ -5,29 +7,29 @@ namespace Lantean.QBTMud.Models
         public ServerState(
             long allTimeDownloaded,
             long allTimeUploaded,
-            int averageTimeQueue,
-            string connectionStatus,
-            int dHTNodes,
+            long averageTimeQueue,
+            ConnectionStatus? connectionStatus,
+            long dHTNodes,
             long downloadInfoData,
             long downloadInfoSpeed,
-            long downloadRateLimit,
+            int downloadRateLimit,
             long freeSpaceOnDisk,
-            float globalRatio,
-            int queuedIOJobs,
+            double globalRatio,
+            long queuedIOJobs,
             bool queuing,
-            float readCacheHits,
-            float readCacheOverload,
+            double readCacheHits,
+            double readCacheOverload,
             int refreshInterval,
-            int totalBuffersSize,
-            int totalPeerConnections,
-            int totalQueuedSize,
+            long totalBuffersSize,
+            long totalPeerConnections,
+            long totalQueuedSize,
             long totalWastedSession,
             long uploadInfoData,
             long uploadInfoSpeed,
-            long uploadRateLimit,
+            int uploadRateLimit,
             bool useAltSpeedLimits,
             bool useSubcategories,
-            float writeCacheOverload,
+            double writeCacheOverload,
             string lastExternalAddressV4,
             string lastExternalAddressV6) : base(
                 connectionStatus,
@@ -68,27 +70,27 @@ namespace Lantean.QBTMud.Models
 
         public long AllTimeUploaded { get; set; }
 
-        public int AverageTimeQueue { get; set; }
+        public long AverageTimeQueue { get; set; }
 
         public long FreeSpaceOnDisk { get; set; }
 
-        public float GlobalRatio { get; set; }
+        public double GlobalRatio { get; set; }
 
-        public int QueuedIOJobs { get; set; }
+        public long QueuedIOJobs { get; set; }
 
         public bool Queuing { get; set; }
 
-        public float ReadCacheHits { get; set; }
+        public double ReadCacheHits { get; set; }
 
-        public float ReadCacheOverload { get; set; }
+        public double ReadCacheOverload { get; set; }
 
         public int RefreshInterval { get; set; }
 
-        public int TotalBuffersSize { get; set; }
+        public long TotalBuffersSize { get; set; }
 
-        public int TotalPeerConnections { get; set; }
+        public long TotalPeerConnections { get; set; }
 
-        public int TotalQueuedSize { get; set; }
+        public long TotalQueuedSize { get; set; }
 
         public long TotalWastedSession { get; set; }
 
@@ -96,7 +98,7 @@ namespace Lantean.QBTMud.Models
 
         public bool UseSubcategories { get; set; }
 
-        public float WriteCacheOverload { get; set; }
+        public double WriteCacheOverload { get; set; }
 
         public string LastExternalAddressV4 { get; set; } = string.Empty;
 

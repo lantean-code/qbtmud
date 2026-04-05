@@ -354,10 +354,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static Torrent CreateTorrent(IReadOnlyList<string>? tags)
         {
-            return new Torrent
-            {
-                Tags = tags,
-            };
+            return ClientTorrentFactory.Create(tags: tags);
         }
     }
 

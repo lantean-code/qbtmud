@@ -9,13 +9,13 @@ namespace Lantean.QBTMud.Models
             long addedOn,
             long amountLeft,
             bool automaticTorrentManagement,
-            float aavailability,
+            double availability,
             string category,
             long completed,
             long completionOn,
             string contentPath,
-            long downloadLimit,
-            long downloadSpeed,
+            int downloadLimit,
+            int downloadSpeed,
             long downloaded,
             long downloadedSession,
             long estimatedTimeOfArrival,
@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Models
             string infoHashV2,
             long lastActivity,
             string magnetUri,
-            float maxRatio,
+            double maxRatio,
             int maxSeedingTime,
             string name,
             int numberComplete,
@@ -33,33 +33,33 @@ namespace Lantean.QBTMud.Models
             int numberLeeches,
             int numberSeeds,
             int priority,
-            float progress,
-            float ratio,
-            float ratioLimit,
+            double progress,
+            double ratio,
+            double ratioLimit,
             string savePath,
             long seedingTime,
             int seedingTimeLimit,
             long seenComplete,
             bool sequentialDownload,
             long size,
-            string state,
+            TorrentState? state,
             bool superSeeding,
             IEnumerable<string> tags,
-            int timeActive,
+            long timeActive,
             long totalSize,
             string tracker,
             int trackersCount,
             bool hasTrackerError,
             bool hasTrackerWarning,
             bool hasOtherAnnounceError,
-            long uploadLimit,
+            int uploadLimit,
             long uploaded,
             long uploadedSession,
-            long uploadSpeed,
+            int uploadSpeed,
             long reannounce,
-            float inactiveSeedingTimeLimit,
-            float maxInactiveSeedingTime,
-            float popularity,
+            int inactiveSeedingTimeLimit,
+            int maxInactiveSeedingTime,
+            double popularity,
             string downloadPath,
             string rootPath,
             bool isPrivate,
@@ -70,7 +70,7 @@ namespace Lantean.QBTMud.Models
             AddedOn = addedOn;
             AmountLeft = amountLeft;
             AutomaticTorrentManagement = automaticTorrentManagement;
-            Availability = aavailability;
+            Availability = availability;
             Category = category;
             Completed = completed;
             CompletionOn = completionOn;
@@ -140,7 +140,6 @@ namespace Lantean.QBTMud.Models
             SavePath = string.Empty;
             DownloadPath = string.Empty;
             RootPath = string.Empty;
-            State = string.Empty;
             Tags = new List<string>();
             Tracker = string.Empty;
             TrackersCount = 0;
@@ -159,7 +158,7 @@ namespace Lantean.QBTMud.Models
 
         public bool AutomaticTorrentManagement { get; set; }
 
-        public float Availability { get; set; }
+        public double Availability { get; set; }
 
         public string Category { get; set; }
 
@@ -169,9 +168,9 @@ namespace Lantean.QBTMud.Models
 
         public string ContentPath { get; set; }
 
-        public long DownloadLimit { get; set; }
+        public int DownloadLimit { get; set; }
 
-        public long DownloadSpeed { get; set; }
+        public int DownloadSpeed { get; set; }
 
         public long Downloaded { get; set; }
 
@@ -191,7 +190,7 @@ namespace Lantean.QBTMud.Models
 
         public string MagnetUri { get; set; }
 
-        public float MaxRatio { get; set; }
+        public double MaxRatio { get; set; }
 
         public int MaxSeedingTime { get; set; }
 
@@ -207,13 +206,13 @@ namespace Lantean.QBTMud.Models
 
         public int Priority { get; set; }
 
-        public float Progress { get; set; }
+        public double Progress { get; set; }
 
-        public float Ratio { get; set; }
+        public double Ratio { get; set; }
 
-        public float RatioLimit { get; set; }
+        public double RatioLimit { get; set; }
 
-        public float Popularity { get; set; }
+        public double Popularity { get; set; }
 
         public string SavePath { get; set; }
 
@@ -231,13 +230,13 @@ namespace Lantean.QBTMud.Models
 
         public long Size { get; set; }
 
-        public string State { get; set; }
+        public TorrentState? State { get; set; }
 
         public bool SuperSeeding { get; set; }
 
         public List<string> Tags { get; set; }
 
-        public int TimeActive { get; set; }
+        public long TimeActive { get; set; }
 
         public long TotalSize { get; set; }
 
@@ -251,19 +250,19 @@ namespace Lantean.QBTMud.Models
 
         public bool HasOtherAnnounceError { get; set; }
 
-        public long UploadLimit { get; set; }
+        public int UploadLimit { get; set; }
 
         public long Uploaded { get; set; }
 
         public long UploadedSession { get; set; }
 
-        public long UploadSpeed { get; set; }
+        public int UploadSpeed { get; set; }
 
         public long Reannounce { get; set; }
 
-        public float InactiveSeedingTimeLimit { get; set; }
+        public int InactiveSeedingTimeLimit { get; set; }
 
-        public float MaxInactiveSeedingTime { get; set; }
+        public int MaxInactiveSeedingTime { get; set; }
 
         public bool IsPrivate { get; set; }
 

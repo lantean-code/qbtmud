@@ -1,5 +1,7 @@
 using Lantean.QBTMud.Models;
+using QBittorrent.ApiClient.Models;
 using System.Text.RegularExpressions;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Helpers
 {
@@ -15,7 +17,7 @@ namespace Lantean.QBTMud.Helpers
         public const string TRACKER_WARNING = "Warning";
         public const string TRACKER_ANNOUNCE_ERROR = "Announce error";
 
-        public static IEnumerable<Torrent> Filter(this IEnumerable<Torrent> torrents, FilterState filterState)
+        public static IEnumerable<MudTorrent> Filter(this IEnumerable<MudTorrent> torrents, FilterState filterState)
         {
             return torrents.Where(t => FilterStatus(t, filterState.Status))
                 .Where(t => FilterTag(t, filterState.Tag))
@@ -24,7 +26,7 @@ namespace Lantean.QBTMud.Helpers
                 .Where(t => FilterTerms(t, filterState));
         }
 
-        public static HashSet<string> ToHashesHashSet(this IEnumerable<Torrent> torrents)
+        public static HashSet<string> ToHashesHashSet(this IEnumerable<MudTorrent> torrents)
         {
             return torrents.Select(t => t.Hash).ToHashSet();
         }
@@ -127,17 +129,17 @@ namespace Lantean.QBTMud.Helpers
             return ContainsAllTerms(value, tokens, useRegex);
         }
 
-        public static bool FilterTerms(Torrent torrent, FilterState filterState)
+        public static bool FilterTerms(MudTorrent torrent, FilterState filterState)
         {
             return FilterTerms(GetFilterFieldValue(torrent, filterState.FilterField), filterState.Terms, filterState.UseRegex, filterState.IsRegexValid);
         }
 
-        public static bool FilterTerms(Torrent torrent, string? terms)
+        public static bool FilterTerms(MudTorrent torrent, string? terms)
         {
             return FilterTerms(torrent.Name, terms, useRegex: false, isRegexValid: true);
         }
 
-        private static string GetFilterFieldValue(Torrent torrent, TorrentFilterField field)
+        private static string GetFilterFieldValue(MudTorrent torrent, TorrentFilterField field)
         {
             return field switch
             {
@@ -163,7 +165,7 @@ namespace Lantean.QBTMud.Helpers
             }
         }
 
-        public static bool FilterTracker(Torrent torrent, string tracker)
+        public static bool FilterTracker(MudTorrent torrent, string tracker)
         {
             if (tracker == TRACKER_ALL)
             {
@@ -210,7 +212,7 @@ namespace Lantean.QBTMud.Helpers
             return string.Equals(torrentHost, tracker, StringComparison.OrdinalIgnoreCase);
         }
 
-        public static bool FilterCategory(Torrent torrent, string category, bool useSubcategories)
+        public static bool FilterCategory(MudTorrent torrent, string category, bool useSubcategories)
         {
             switch (category)
             {
@@ -246,7 +248,7 @@ namespace Lantean.QBTMud.Helpers
             }
         }
 
-        public static bool FilterTag(Torrent torrent, string tag)
+        public static bool FilterTag(MudTorrent torrent, string tag)
         {
             if (tag == TAG_ALL)
             {
@@ -261,12 +263,12 @@ namespace Lantean.QBTMud.Helpers
             return torrent.Tags.Contains(tag);
         }
 
-        public static bool FilterStatus(Torrent torrent, Status status)
+        public static bool FilterStatus(MudTorrent torrent, Status status)
         {
             return FilterStatus(torrent.State, torrent.UploadSpeed, status);
         }
 
-        public static bool FilterStatus(string state, long uploadSpeed, Status status)
+        public static bool FilterStatus(TorrentState? state, long uploadSpeed, Status status)
         {
             bool inactive = false;
             switch (status)
@@ -275,21 +277,37 @@ namespace Lantean.QBTMud.Helpers
                     return true;
 
                 case Status.Downloading:
-                    if (state != "downloading" && !state.Contains("DL"))
+                    if (state is not TorrentState.Downloading
+                        and not TorrentState.ForcedDownloading
+                        and not TorrentState.DownloadingMetadata
+                        and not TorrentState.ForcedDownloadingMetadata
+                        and not TorrentState.StalledDownloading
+                        and not TorrentState.QueuedDownloading
+                        and not TorrentState.CheckingDownloading
+                        and not TorrentState.StoppedDownloading)
                     {
                         return false;
                     }
                     break;
 
                 case Status.Seeding:
-                    if (state != "uploading" && state != "forcedUP" && state != "stalledUP" && state != "queuedUP" && state != "checkingUP")
+                    if (state is not TorrentState.Uploading
+                        and not TorrentState.ForcedUploading
+                        and not TorrentState.StalledUploading
+                        and not TorrentState.QueuedUploading
+                        and not TorrentState.CheckingUploading)
                     {
                         return false;
                     }
                     break;
 
                 case Status.Completed:
-                    if (state != "uploading" && !state.Contains("UP"))
+                    if (state is not TorrentState.Uploading
+                        and not TorrentState.ForcedUploading
+                        and not TorrentState.StalledUploading
+                        and not TorrentState.QueuedUploading
+                        and not TorrentState.CheckingUploading
+                        and not TorrentState.StoppedUploading)
                     {
                         return false;
                     }
@@ -297,7 +315,7 @@ namespace Lantean.QBTMud.Helpers
                     break;
 
                 case Status.Stopped:
-                    if (state != "stoppedDL" && state != "stoppedUP")
+                    if (state is not TorrentState.StoppedDownloading and not TorrentState.StoppedUploading)
                     {
                         return false;
                     }
@@ -310,13 +328,18 @@ namespace Lantean.QBTMud.Helpers
                         inactive = true;
                     }
                     bool check;
-                    if (state == "stalledDL")
+                    if (state == TorrentState.StalledDownloading)
                     {
                         check = uploadSpeed > 0;
                     }
                     else
                     {
-                        check = state == "metaDL" || state == "forcedMetaDL" || state == "downloading" || state == "forcedDL" || state == "uploading" || state == "forcedUP";
+                        check = state is TorrentState.DownloadingMetadata
+                            or TorrentState.ForcedDownloadingMetadata
+                            or TorrentState.Downloading
+                            or TorrentState.ForcedDownloading
+                            or TorrentState.Uploading
+                            or TorrentState.ForcedUploading;
                     }
 
                     if (check == inactive)
@@ -326,35 +349,39 @@ namespace Lantean.QBTMud.Helpers
                     break;
 
                 case Status.Stalled:
-                    if (state != "stalledUP" && state != "stalledDL")
+                    if (state is not TorrentState.StalledUploading and not TorrentState.StalledDownloading)
                     {
                         return false;
                     }
                     break;
 
                 case Status.StalledUploading:
-                    if (state != "stalledUP")
+                    if (state != TorrentState.StalledUploading)
                     {
                         return false;
                     }
                     break;
 
                 case Status.StalledDownloading:
-                    if (state != "stalledDL")
+                    if (state != TorrentState.StalledDownloading)
                     {
                         return false;
                     }
                     break;
 
                 case Status.Checking:
-                    if (state != "checkingUP" && state != "checkingDL" && state != "checkingResumeData")
+                    if (state is not TorrentState.CheckingUploading
+                        and not TorrentState.CheckingDownloading
+                        and not TorrentState.CheckingResumeData)
                     {
                         return false;
                     }
                     break;
 
                 case Status.Errored:
-                    if (state != "error" && state != "unknown" && state != "missingFiles")
+                    if (state is not TorrentState.Error
+                        and not TorrentState.Unknown
+                        and not TorrentState.MissingFiles)
                     {
                         return false;
                     }

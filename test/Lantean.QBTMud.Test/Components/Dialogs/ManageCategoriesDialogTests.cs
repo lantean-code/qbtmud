@@ -371,10 +371,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static Torrent CreateTorrent(string? category)
         {
-            return new Torrent
-            {
-                Category = category,
-            };
+            return ClientTorrentFactory.Create(category: category);
         }
     }
 

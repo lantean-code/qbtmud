@@ -268,7 +268,7 @@ namespace Lantean.QBTMud.Pages
             var stopResult = await ApiClient.StopSearchAsync(job.Id);
             if (stopResult.IsSuccess)
             {
-                job.UpdateStatus("Stopped", job.Total);
+                job.UpdateStatus(SearchJobStatus.Stopped, job.Total);
                 StateHasChanged();
                 await StopPollingIfAllJobsCompletedAsync();
             }
@@ -392,12 +392,8 @@ namespace Lantean.QBTMud.Pages
         {
             return job.Status switch
             {
-                "Running" => Icons.Material.Filled.Sync,
-                "Completed" => Icons.Material.Filled.CheckCircle,
-                "Finished" => Icons.Material.Filled.CheckCircle,
-                "Stopped" => Icons.Material.Filled.Stop,
-                "Aborted" => Icons.Material.Filled.Error,
-                "Error" => Icons.Material.Filled.Error,
+                SearchJobStatus.Running => Icons.Material.Filled.Sync,
+                SearchJobStatus.Stopped => Icons.Material.Filled.Stop,
                 _ => Icons.Material.Filled.Task,
             };
         }
@@ -406,12 +402,8 @@ namespace Lantean.QBTMud.Pages
         {
             return job.Status switch
             {
-                "Running" => Color.Info,
-                "Completed" => Color.Success,
-                "Finished" => Color.Success,
-                "Stopped" => Color.Warning,
-                "Aborted" => Color.Error,
-                "Error" => Color.Error,
+                SearchJobStatus.Running => Color.Info,
+                SearchJobStatus.Stopped => Color.Warning,
                 _ => Color.Default,
             };
         }
@@ -702,7 +694,7 @@ namespace Lantean.QBTMud.Pages
 
             if (resultsResult.Failure?.Kind == ApiFailureKind.NotFound)
             {
-                job.UpdateStatus("Stopped", job.Total);
+                job.UpdateStatus(SearchJobStatus.Stopped, job.Total);
                 await StopPollingIfAllJobsCompletedAsync();
                 return;
             }

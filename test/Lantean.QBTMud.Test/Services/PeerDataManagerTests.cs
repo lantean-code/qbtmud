@@ -1,8 +1,9 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using QBittorrent.ApiClient.Models;
+using MudPeer = Lantean.QBTMud.Models.Peer;
 using QbtPeer = QBittorrent.ApiClient.Models.Peer;
-using QbtTorrentPeers = QBittorrent.ApiClient.Models.TorrentPeers;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -18,11 +19,11 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public void GIVEN_Peer_WHEN_EqualsNull_THEN_ReturnsFalse()
         {
-            var peer = new Peer(
+            var peer = new MudPeer(
                 key: "Key",
                 client: "Client",
                 clientId: "ClientId",
-                connection: "Connection",
+                connection: PeerConnectionType.Bittorrent,
                 country: "Country",
                 countryCode: "CountryCode",
                 downloaded: 1,
@@ -46,7 +47,7 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_NullPeers_WHEN_CreatePeerList_THEN_EmptyPeerList()
         {
             // arrange
-            var input = new QbtTorrentPeers(
+            var input = new TorrentPeers(
                 fullUpdate: false,
                 peers: null,
                 peersRemoved: null,
@@ -68,7 +69,7 @@ namespace Lantean.QBTMud.Test.Services
             // arrange
             var p1 = new QbtPeer(
                 client: "qBittorrent/4.6.0",
-                connection: "TCP",
+                connection: PeerConnectionType.Bittorrent,
                 country: "UK",
                 countryCode: "GB",
                 downloadSpeed: 1200,
@@ -87,7 +88,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var p2 = new QbtPeer(
                 client: "Transmission/4.0",
-                connection: "uTP",
+                connection: PeerConnectionType.Utp,
                 country: "Canada",
                 countryCode: "CA",
                 downloadSpeed: 2200,
@@ -110,7 +111,7 @@ namespace Lantean.QBTMud.Test.Services
                 ["2.2.2.2:51413"] = p2
             };
 
-            var input = new QbtTorrentPeers(
+            var input = new TorrentPeers(
                 fullUpdate: true,
                 peers: dict,
                 peersRemoved: null,
@@ -129,7 +130,7 @@ namespace Lantean.QBTMud.Test.Services
             a.Key.Should().Be("1.1.1.1:6881");
             a.Client.Should().Be("qBittorrent/4.6.0");
             a.ClientId.Should().Be("ClientA");
-            a.Connection.Should().Be("TCP");
+            a.Connection.Should().Be(PeerConnectionType.Bittorrent);
             a.Country.Should().Be("UK");
             a.CountryCode.Should().Be("GB");
             a.Downloaded.Should().Be(11);
@@ -149,7 +150,7 @@ namespace Lantean.QBTMud.Test.Services
             b.Key.Should().Be("2.2.2.2:51413");
             b.Client.Should().Be("Transmission/4.0");
             b.ClientId.Should().Be("ClientB");
-            b.Connection.Should().Be("uTP");
+            b.Connection.Should().Be(PeerConnectionType.Utp);
             b.Country.Should().Be("Canada");
             b.CountryCode.Should().Be("CA");
             b.Downloaded.Should().Be(33);
@@ -171,7 +172,7 @@ namespace Lantean.QBTMud.Test.Services
             // arrange
             var nullish = new QbtPeer(
                 client: "ClientX",
-                connection: "TCP",
+                connection: PeerConnectionType.Bittorrent,
                 country: null,
                 countryCode: null,
                 downloadSpeed: null,   // -> 0
@@ -188,7 +189,7 @@ namespace Lantean.QBTMud.Test.Services
                 uploadSpeed: null,     // -> 0
                 uploaded: null);       // -> 0
 
-            var input = new QbtTorrentPeers(
+            var input = new TorrentPeers(
                 fullUpdate: false,
                 peers: new Dictionary<string, QbtPeer> { ["9.9.9.1:0"] = nullish },
                 peersRemoved: null,
@@ -202,7 +203,7 @@ namespace Lantean.QBTMud.Test.Services
             result.Peers.Should().ContainKey("9.9.9.1:0");
             var p = result.Peers["9.9.9.1:0"];
             p.Client.Should().Be("ClientX");
-            p.Connection.Should().Be("TCP");
+            p.Connection.Should().Be(PeerConnectionType.Bittorrent);
             p.DownloadSpeed.Should().Be(0);
             p.Downloaded.Should().Be(0);
             p.Port.Should().Be(0);
@@ -215,7 +216,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public void GIVEN_PeerWithNullStrings_WHEN_CreatePeerList_THEN_DefaultsToEmptyStrings()
         {
-            var input = new QbtTorrentPeers(
+            var input = new TorrentPeers(
                 fullUpdate: false,
                 peers: new Dictionary<string, QbtPeer>
                 {
@@ -247,7 +248,7 @@ namespace Lantean.QBTMud.Test.Services
             var peer = result.Peers["k"];
             peer.Client.Should().Be(string.Empty);
             peer.ClientId.Should().Be(string.Empty);
-            peer.Connection.Should().Be(string.Empty);
+            peer.Connection.Should().BeNull();
             peer.Files.Should().Be(string.Empty);
             peer.Flags.Should().Be(string.Empty);
             peer.FlagsDescription.Should().Be(string.Empty);
@@ -257,11 +258,11 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public void GIVEN_ExistingPeer_AND_AllNullUpdate_WHEN_MergeTorrentPeers_THEN_ExistingRemainsUnchanged()
         {
-            var existing = new Peer(
+            var existing = new MudPeer(
                 key: "k",
                 client: "Client0",
                 clientId: "CID0",
-                connection: "TCP0",
+                connection: (PeerConnectionType)999,
                 country: "COU0",
                 countryCode: "CC0",
                 downloaded: 1,
@@ -275,7 +276,7 @@ namespace Lantean.QBTMud.Test.Services
                 relevance: 0.2f,
                 uploaded: 3,
                 uploadSpeed: 4);
-            var peerList = new PeerList(new Dictionary<string, Peer> { [existing.Key] = existing });
+            var peerList = new PeerList(new Dictionary<string, MudPeer> { [existing.Key] = existing });
 
             var update = new QbtPeer(
                 client: null,
@@ -295,14 +296,14 @@ namespace Lantean.QBTMud.Test.Services
                 relevance: null,
                 uploadSpeed: null,
                 uploaded: null);
-            var delta = new QbtTorrentPeers(false, new Dictionary<string, QbtPeer> { [existing.Key] = update }, null, 20, null);
+            var delta = new TorrentPeers(false, new Dictionary<string, QbtPeer> { [existing.Key] = update }, null, 20, null);
 
             _target.MergeTorrentPeers(delta, peerList);
 
             var p = peerList.Peers[existing.Key];
             p.Client.Should().Be("Client0");
             p.ClientId.Should().Be("CID0");
-            p.Connection.Should().Be("TCP0");
+            p.Connection.Should().Be((PeerConnectionType)999);
             p.Country.Should().Be("COU0");
             p.CountryCode.Should().Be("CC0");
             p.Downloaded.Should().Be(1);
@@ -321,12 +322,12 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public void GIVEN_ExistingPeer_AND_AllFieldsSet_WHEN_MergeTorrentPeers_THEN_AllFieldsUpdated()
         {
-            var existing = new Peer("k", "Old", "OldId", "TCP", "OldC", "OldCC", 1, 2, "oldf", "oldfl", "olddesc", "10.0.0.1", 1000, 0.1f, 0.2f, 3, 4);
-            var peerList = new PeerList(new Dictionary<string, Peer> { [existing.Key] = existing });
+            var existing = new MudPeer("k", "Old", "OldId", PeerConnectionType.Bittorrent, "OldC", "OldCC", 1, 2, "oldf", "oldfl", "olddesc", "10.0.0.1", 1000, 0.1f, 0.2f, 3, 4);
+            var peerList = new PeerList(new Dictionary<string, MudPeer> { [existing.Key] = existing });
 
             var update = new QbtPeer(
                 client: "NewClient",
-                connection: "uTP",
+                connection: PeerConnectionType.Utp,
                 country: "NewCountry",
                 countryCode: "NC",
                 downloadSpeed: 200,
@@ -342,14 +343,14 @@ namespace Lantean.QBTMud.Test.Services
                 relevance: 0.8f,
                 uploadSpeed: 400,
                 uploaded: 300);
-            var delta = new QbtTorrentPeers(false, new Dictionary<string, QbtPeer> { [existing.Key] = update }, null, 21, null);
+            var delta = new TorrentPeers(false, new Dictionary<string, QbtPeer> { [existing.Key] = update }, null, 21, null);
 
             _target.MergeTorrentPeers(delta, peerList);
 
             var p = peerList.Peers[existing.Key];
             p.Client.Should().Be("NewClient");
             p.ClientId.Should().Be("NewId");
-            p.Connection.Should().Be("uTP");
+            p.Connection.Should().Be(PeerConnectionType.Utp);
             p.Country.Should().Be("NewCountry");
             p.CountryCode.Should().Be("NC");
             p.Downloaded.Should().Be(100);
@@ -371,13 +372,13 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_NoChanges_WHEN_MergeTorrentPeers_THEN_DoesNothing()
         {
             // arrange
-            var peerList = new PeerList(new Dictionary<string, Peer>
+            var peerList = new PeerList(new Dictionary<string, MudPeer>
             {
-                ["1.1.1.1:6881"] = new Peer(
+                ["1.1.1.1:6881"] = new MudPeer(
                     key: "1.1.1.1:6881",
                     client: "qB",
                     clientId: "A",
-                    connection: "TCP",
+                    connection: PeerConnectionType.Bittorrent,
                     country: "UK",
                     countryCode: "GB",
                     downloaded: 1,
@@ -393,7 +394,7 @@ namespace Lantean.QBTMud.Test.Services
                     uploadSpeed: 4)
             });
 
-            var input = new QbtTorrentPeers(
+            var input = new TorrentPeers(
                 fullUpdate: false,
                 peers: null,
                 peersRemoved: null,
@@ -412,13 +413,13 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_PeersRemovedWithExistingAndMissing_WHEN_MergeTorrentPeers_THEN_RemovesExistingOnly()
         {
             // arrange
-            var peerList = new PeerList(new Dictionary<string, Peer>
+            var peerList = new PeerList(new Dictionary<string, MudPeer>
             {
-                ["a"] = new Peer("a", "c", "id", "TCP", null, null, 0, 0, "f", "F", "FD", "10.0.0.1", 1111, 0, 0, 0, 0),
-                ["b"] = new Peer("b", "c2", "id2", "uTP", null, null, 0, 0, "f2", "F2", "FD2", "10.0.0.2", 2222, 0, 0, 0, 0),
+                ["a"] = new MudPeer("a", "c", "id", PeerConnectionType.Bittorrent, null, null, 0, 0, "f", "F", "FD", "10.0.0.1", 1111, 0, 0, 0, 0),
+                ["b"] = new MudPeer("b", "c2", "id2", PeerConnectionType.Utp, null, null, 0, 0, "f2", "F2", "FD2", "10.0.0.2", 2222, 0, 0, 0, 0),
             });
 
-            var input = new QbtTorrentPeers(
+            var input = new TorrentPeers(
                 fullUpdate: false,
                 peers: null,
                 peersRemoved: new List<string> { "a", "missing" },
@@ -438,11 +439,11 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_NewPeers_WHEN_MergeTorrentPeers_THEN_AddsAllWithProperMapping()
         {
             // arrange
-            var peerList = new PeerList(new Dictionary<string, Peer>());
+            var peerList = new PeerList(new Dictionary<string, MudPeer>());
 
             var q1 = new QbtPeer(
                 client: "Client1",
-                connection: "TCP",
+                connection: PeerConnectionType.Bittorrent,
                 country: "US",
                 countryCode: "US",
                 downloadSpeed: 1000,
@@ -461,7 +462,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var q2 = new QbtPeer(
                 client: "Client2",
-                connection: "uTP",
+                connection: PeerConnectionType.Utp,
                 country: "DE",
                 countryCode: "DE",
                 downloadSpeed: 2000,
@@ -478,7 +479,7 @@ namespace Lantean.QBTMud.Test.Services
                 uploadSpeed: 150,
                 uploaded: 15);
 
-            var input = new QbtTorrentPeers(
+            var input = new TorrentPeers(
                 fullUpdate: true,
                 peers: new Dictionary<string, QbtPeer>
                 {
@@ -498,7 +499,7 @@ namespace Lantean.QBTMud.Test.Services
             var p1 = peerList.Peers["3.3.3.3:6000"];
             p1.Client.Should().Be("Client1");
             p1.ClientId.Should().Be("ID1");
-            p1.Connection.Should().Be("TCP");
+            p1.Connection.Should().Be(PeerConnectionType.Bittorrent);
             p1.Country.Should().Be("US");
             p1.CountryCode.Should().Be("US");
             p1.Downloaded.Should().Be(10);
@@ -516,7 +517,7 @@ namespace Lantean.QBTMud.Test.Services
             var p2 = peerList.Peers["4.4.4.4:7000"];
             p2.Client.Should().Be("Client2");
             p2.ClientId.Should().Be("ID2");
-            p2.Connection.Should().Be("uTP");
+            p2.Connection.Should().Be(PeerConnectionType.Utp);
             p2.Country.Should().Be("DE");
             p2.CountryCode.Should().Be("DE");
             p2.Downloaded.Should().Be(20);
@@ -536,11 +537,11 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_ExistingPeer_AND_UpdateWithPartialNulls_WHEN_MergeTorrentPeers_THEN_OnlyNonNullFieldsChange()
         {
             // arrange
-            var existing = new Peer(
+            var existing = new MudPeer(
                 key: "5.5.5.5:6881",
                 client: "OldClient",
                 clientId: "OldID",
-                connection: "TCP",
+                connection: PeerConnectionType.Bittorrent,
                 country: "ES",
                 countryCode: "ES",
                 downloaded: 111,
@@ -555,14 +556,14 @@ namespace Lantean.QBTMud.Test.Services
                 uploaded: 333,
                 uploadSpeed: 444);
 
-            var peerList = new PeerList(new Dictionary<string, Peer>
+            var peerList = new PeerList(new Dictionary<string, MudPeer>
             {
                 [existing.Key] = existing
             });
 
             var update = new QbtPeer(
                 client: null,                     // keep OldClient
-                connection: "uTP",                // overwrite
+                connection: PeerConnectionType.Utp,                // overwrite
                 country: null,                    // keep ES
                 countryCode: "FR",                // overwrite
                 downloadSpeed: null,              // keep 222
@@ -579,7 +580,7 @@ namespace Lantean.QBTMud.Test.Services
                 uploadSpeed: 888,                 // overwrite
                 uploaded: null);                  // keep 333
 
-            var input = new QbtTorrentPeers(
+            var input = new TorrentPeers(
                 fullUpdate: false,
                 peers: new Dictionary<string, QbtPeer> { [existing.Key] = update },
                 peersRemoved: null,
@@ -593,7 +594,7 @@ namespace Lantean.QBTMud.Test.Services
             var p = peerList.Peers[existing.Key];
             p.Client.Should().Be("OldClient");
             p.ClientId.Should().Be("NewID");
-            p.Connection.Should().Be("uTP");
+            p.Connection.Should().Be(PeerConnectionType.Utp);
             p.Country.Should().Be("ES");
             p.CountryCode.Should().Be("FR");
             p.DownloadSpeed.Should().Be(222);
@@ -615,11 +616,11 @@ namespace Lantean.QBTMud.Test.Services
             // arrange
             var key = "6.6.6.6:6001";
 
-            var oldPeer = new Peer(
+            var oldPeer = new MudPeer(
                 key: key,
                 client: "Old",
                 clientId: "OID",
-                connection: "TCP",
+                connection: PeerConnectionType.Bittorrent,
                 country: null,
                 countryCode: null,
                 downloaded: 1,
@@ -634,11 +635,11 @@ namespace Lantean.QBTMud.Test.Services
                 uploaded: 3,
                 uploadSpeed: 4);
 
-            var peerList = new PeerList(new Dictionary<string, Peer> { [key] = oldPeer });
+            var peerList = new PeerList(new Dictionary<string, MudPeer> { [key] = oldPeer });
 
             var newPeer = new QbtPeer(
                 client: "New",
-                connection: "uTP",
+                connection: PeerConnectionType.Utp,
                 country: "NL",
                 countryCode: "NL",
                 downloadSpeed: 999,
@@ -655,7 +656,7 @@ namespace Lantean.QBTMud.Test.Services
                 uploadSpeed: 777,
                 uploaded: 333);
 
-            var input = new QbtTorrentPeers(
+            var input = new TorrentPeers(
                 fullUpdate: false,
                 peers: new Dictionary<string, QbtPeer> { [key] = newPeer },
                 peersRemoved: new List<string> { key },
@@ -670,7 +671,7 @@ namespace Lantean.QBTMud.Test.Services
             var p = peerList.Peers[key];
             p.Client.Should().Be("New");
             p.ClientId.Should().Be("NID");
-            p.Connection.Should().Be("uTP");
+            p.Connection.Should().Be(PeerConnectionType.Utp);
             p.Country.Should().Be("NL");
             p.CountryCode.Should().Be("NL");
             p.Downloaded.Should().Be(111);

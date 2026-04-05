@@ -1,16 +1,18 @@
+using QBittorrent.ApiClient.Models;
+
 namespace Lantean.QBTMud.Models
 {
     public record GlobalTransferInfo
     {
         public GlobalTransferInfo(
-            string connectionStatus,
-            int dHTNodes,
+            ConnectionStatus? connectionStatus,
+            long dHTNodes,
             long downloadInfoData,
             long downloadInfoSpeed,
-            long downloadRateLimit,
+            int downloadRateLimit,
             long uploadInfoData,
             long uploadInfoSpeed,
-            long uploadRateLimit)
+            int uploadRateLimit)
         {
             ConnectionStatus = connectionStatus;
             DHTNodes = dHTNodes;
@@ -24,23 +26,22 @@ namespace Lantean.QBTMud.Models
 
         public GlobalTransferInfo()
         {
-            ConnectionStatus = "Unknown";
         }
 
-        public string ConnectionStatus { get; set; }
+        public ConnectionStatus? ConnectionStatus { get; set; }
 
-        public int DHTNodes { get; set; }
+        public long DHTNodes { get; set; }
 
         public long DownloadInfoData { get; set; }
 
         public long DownloadInfoSpeed { get; set; }
 
-        public long DownloadRateLimit { get; set; }
+        public int DownloadRateLimit { get; set; }
 
         public long UploadInfoData { get; set; }
 
         public long UploadInfoSpeed { get; set; }
 
-        public long UploadRateLimit { get; set; }
+        public int UploadRateLimit { get; set; }
     }
 }

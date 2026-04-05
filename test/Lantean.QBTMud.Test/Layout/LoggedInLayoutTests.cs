@@ -14,9 +14,16 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using System.Diagnostics;
 using System.Net;
+
 using ClientModels = QBittorrent.ApiClient.Models;
+
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Layout
 {
@@ -26,7 +33,7 @@ namespace Lantean.QBTMud.Test.Layout
         private const string _lastProcessedDownloadStorageKey = "LoggedInLayout.LastProcessedDownload";
         private const string _preferredLocaleStorageKey = "WebUiLocalization.PreferredLocale.v1";
 
-        private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
+        private readonly IApiClient _apiClient = Mock.Of<IApiClient>(MockBehavior.Strict);
         private readonly ITorrentDataManager _dataManager = Mock.Of<ITorrentDataManager>();
         private readonly ISpeedHistoryService _speedHistoryService = Mock.Of<ISpeedHistoryService>();
         private readonly IManagedTimerFactory _managedTimerFactory = Mock.Of<IManagedTimerFactory>();
@@ -103,10 +110,10 @@ namespace Lantean.QBTMud.Test.Layout
                     true,
                     DateTime.UtcNow));
             Mock.Get(_torrentCompletionNotificationService)
-                .Setup(service => service.InitializeAsync(It.IsAny<IReadOnlyDictionary<string, Torrent>>(), It.IsAny<CancellationToken>()))
+                .Setup(service => service.InitializeAsync(It.IsAny<IReadOnlyDictionary<string, MudTorrent>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             Mock.Get(_torrentCompletionNotificationService)
-                .Setup(service => service.ProcessAsync(It.IsAny<IReadOnlyDictionary<string, Torrent>>(), It.IsAny<CancellationToken>()))
+                .Setup(service => service.ProcessAsync(It.IsAny<IReadOnlyDictionary<string, MudTorrent>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             Mock.Get(_torrentCompletionNotificationService)
                 .Setup(service => service.ProcessTransitionsAsync(It.IsAny<IReadOnlyList<TorrentTransition>>(), It.IsAny<CancellationToken>()))
@@ -1243,7 +1250,7 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public void GIVEN_ConnectionStatusFirewalled_WHEN_Rendered_THEN_ShowsWarningIcon()
         {
-            var mainData = CreateMainData(serverState: CreateServerState(connectionStatus: "firewalled"));
+            var mainData = CreateMainData(serverState: CreateServerState(connectionStatus: ConnectionStatus.Firewalled));
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
@@ -1258,7 +1265,7 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public void GIVEN_ConnectionStatusConnected_WHEN_Rendered_THEN_ShowsSuccessIcon()
         {
-            var mainData = CreateMainData(serverState: CreateServerState(connectionStatus: "connected"));
+            var mainData = CreateMainData(serverState: CreateServerState(connectionStatus: ConnectionStatus.Connected));
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
@@ -1273,12 +1280,12 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public void GIVEN_ConnectionStatusUnknown_WHEN_Rendered_THEN_ShowsErrorIcon()
         {
-            var mainData = CreateMainData(serverState: CreateServerState(connectionStatus: "offline"));
+            var mainData = CreateMainData(serverState: CreateServerState(connectionStatus: (ConnectionStatus)999));
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
 
             var tooltip = FindComponentByTestId<MudTooltip>(target, "Status-ConnectionTooltip");
-            tooltip.Instance.Text.Should().Be("offline");
+            tooltip.Instance.Text.Should().Be("999");
 
             var icon = FindComponentByTestId<MudIcon>(target, "Status-ConnectionIcon");
             icon.Instance.Icon.Should().Be(Icons.Material.Outlined.SignalWifiOff);
@@ -1288,10 +1295,10 @@ namespace Lantean.QBTMud.Test.Layout
         [Fact]
         public async Task GIVEN_FilterCallbacks_WHEN_Invoked_THEN_StateUpdatesAndVersionChanges()
         {
-            var torrents = new List<Torrent>
+            var torrents = new List<MudTorrent>
             {
-                CreateTorrent("Hash1", "Alpha", "Cat1", new[] { "Tag1" }, "Tracker1", "downloading"),
-                CreateTorrent("Hash2", "Beta", "Cat2", Array.Empty<string>(), "Tracker2", "pausedUP")
+                CreateTorrent("Hash1", "Alpha", "Cat1", new[] { "Tag1" }, "Tracker1", TorrentState.Downloading),
+                CreateTorrent("Hash2", "Beta", "Cat2", Array.Empty<string>(), "Tracker2", TorrentState.StoppedUploading)
             };
             var mainData = CreateMainData(torrents: torrents, serverState: CreateServerState());
 
@@ -1747,7 +1754,7 @@ namespace Lantean.QBTMud.Test.Layout
             Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
             var probeBody = CreateProbeBody();
             var initialData = CreateMainData(serverState: CreateServerState());
-            var updatedData = CreateMainData(serverState: CreateServerState(connectionStatus: "connected"));
+            var updatedData = CreateMainData(serverState: CreateServerState(connectionStatus: ConnectionStatus.Connected));
 
             Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
@@ -2322,7 +2329,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = false;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
@@ -2391,7 +2398,7 @@ namespace Lantean.QBTMud.Test.Layout
 
         private IRenderedComponent<LoggedInLayout> RenderLayout(
             IReadOnlyList<IManagedTimer> timers,
-            MainData? mainData = null,
+            MudMainData? mainData = null,
             ClientModels.Preferences? preferences = null,
             Breakpoint breakpoint = Breakpoint.Lg,
             Orientation orientation = Orientation.Landscape,
@@ -2420,7 +2427,7 @@ namespace Lantean.QBTMud.Test.Layout
         private IRenderedComponent<LoggedInLayout> RenderLayout(
             ComponentTestContext context,
             IReadOnlyList<IManagedTimer> timers,
-            MainData? mainData = null,
+            MudMainData? mainData = null,
             ClientModels.Preferences? preferences = null,
             Breakpoint breakpoint = Breakpoint.Lg,
             Orientation orientation = Orientation.Landscape,
@@ -2457,7 +2464,7 @@ namespace Lantean.QBTMud.Test.Layout
             });
         }
 
-        private IRenderedComponent<LoggedInLayout> RenderLayoutWithProbe(MainData mainData)
+        private IRenderedComponent<LoggedInLayout> RenderLayoutWithProbe(MudMainData mainData)
         {
             var body = CreateProbeBody();
             return RenderLayout(new List<IManagedTimer>(), mainData: mainData, body: body);
@@ -2545,15 +2552,15 @@ namespace Lantean.QBTMud.Test.Layout
             return timer.Object;
         }
 
-        private static MainData CreateMainData(
-            IEnumerable<Torrent>? torrents = null,
-            ServerState? serverState = null)
+        private static MudMainData CreateMainData(
+            IEnumerable<MudTorrent>? torrents = null,
+            MudServerState? serverState = null)
         {
-            var torrentList = torrents?.ToDictionary(t => t.Hash, t => t) ?? new Dictionary<string, Torrent>();
-            return new MainData(
+            var torrentList = torrents?.ToDictionary(t => t.Hash, t => t) ?? new Dictionary<string, MudTorrent>();
+            return new MudMainData(
                 torrentList,
                 Array.Empty<string>(),
-                new Dictionary<string, Category>(),
+                new Dictionary<string, MudCategory>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
                 serverState ?? CreateServerState(),
                 new Dictionary<string, HashSet<string>>(),
@@ -2562,13 +2569,13 @@ namespace Lantean.QBTMud.Test.Layout
                 new Dictionary<string, HashSet<string>>());
         }
 
-        private static ServerState CreateServerState(
-            string connectionStatus = "connected",
+        private static MudServerState CreateServerState(
+            ConnectionStatus? connectionStatus = ConnectionStatus.Connected,
             string v4 = "1.1.1.1",
             string v6 = "2.2.2.2",
             bool useAltSpeedLimits = false)
         {
-            return new ServerState
+            return new MudServerState
             {
                 ConnectionStatus = connectionStatus,
                 DHTNodes = 1,
@@ -2586,14 +2593,14 @@ namespace Lantean.QBTMud.Test.Layout
             };
         }
 
-        private static Torrent CreateTorrent(string hash, string name, string category, IReadOnlyCollection<string> tags, string tracker, string state)
+        private static MudTorrent CreateTorrent(string hash, string name, string category, IReadOnlyCollection<string> tags, string tracker, TorrentState? state)
         {
-            return new Torrent(
+            return new MudTorrent(
                 hash,
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 0,
+                availability: 0,
                 category: category,
                 completed: 0,
                 completionOn: 0,
@@ -2669,13 +2676,13 @@ namespace Lantean.QBTMud.Test.Layout
         private sealed class LayoutProbe : ComponentBase
         {
             [CascadingParameter]
-            public IReadOnlyList<Torrent>? Torrents { get; set; }
+            public IReadOnlyList<MudTorrent>? Torrents { get; set; }
 
             [CascadingParameter(Name = "TorrentsVersion")]
             public int TorrentsVersion { get; set; }
 
             [CascadingParameter]
-            public MainData? MainData { get; set; }
+            public MudMainData? MudMainData { get; set; }
 
             [CascadingParameter(Name = "AppSettings")]
             public AppSettings? AppSettings { get; set; }

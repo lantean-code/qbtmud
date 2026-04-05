@@ -1,4 +1,5 @@
 @inherits Options
+@using QBittorrent.ApiClient.Models
 
 <MudCard Elevation="1" Class="ml-4 mr-4 mb-4 mt-4">
     <MudCardHeader>
@@ -171,9 +172,9 @@
                 <FieldSwitch Label="@LanguageLocalizer.Translate("OptionsDialog", "Update my dynamic domain name")" Value="DyndnsEnabled" ValueChanged="DyndnsEnabledChanged" data-test-id="@TestIdHelper.For("DyndnsEnabled")" />
             </MudItem>
             <MudItem xs="8">
-                <MudSelect T="int" Value="DyndnsService" ValueChanged="DyndnsServiceChanged" Disabled="@(DyndnsEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DyndnsService")">
-                    <MudSelectItem Value="0">DynDNS</MudSelectItem>
-                    <MudSelectItem Value="1">NO-IP</MudSelectItem>
+                <MudSelect T="DyndnsService" Value="DyndnsService" ValueChanged="DyndnsServiceChanged" Disabled="@(DyndnsEnabled != true)" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("DyndnsService")">
+                    <MudSelectItem T="DyndnsService" Value="DyndnsService.DynDns">DynDNS</MudSelectItem>
+                    <MudSelectItem T="DyndnsService" Value="DyndnsService.NoIp">NO-IP</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="4">

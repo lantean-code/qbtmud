@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+
 using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
@@ -73,7 +75,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
-            var category = (Category)result.Data!;
+            var category = (Lantean.QBTMud.Models.Category)result.Data!;
             category.Name.Should().Be("Category");
             category.SavePath.Should().Be("SavePath");
         }
@@ -96,7 +98,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
-            var category = (Category)result.Data!;
+            var category = (Lantean.QBTMud.Models.Category)result.Data!;
             category.Name.Should().Be("Category");
             category.SavePath.Should().Be("SavePath");
         }
@@ -138,7 +140,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
-            var category = (Category)result.Data!;
+            var category = (Lantean.QBTMud.Models.Category)result.Data!;
             category.Name.Should().Be("Category");
             category.SavePath.Should().Be("SavePath");
         }
@@ -160,15 +162,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 spec.MaxInactiveSeedingTime = 0;
                 spec.MaxInactiveSeedingTimeEnabled = false;
                 spec.MaxRatio = 1.0f;
-                spec.MaxRatioAct = 0;
+                spec.MaxRatioAct = MaxRatioAction.StopTorrent;
                 spec.MaxRatioEnabled = false;
                 spec.MaxSeedingTime = 0;
                 spec.MaxSeedingTimeEnabled = false;
                 spec.SavePath = savePath;
                 spec.TempPath = string.Empty;
                 spec.TempPathEnabled = false;
-                spec.TorrentContentLayout = "Original";
-                spec.TorrentStopCondition = "None";
+                spec.TorrentContentLayout = TorrentContentLayout.Original;
+                spec.TorrentStopCondition = StopCondition.None;
             });
         }
     }

@@ -256,7 +256,7 @@ namespace Lantean.QBTMud.Test
             public bool AnonymousMode { get; set; }
             public string AppInstanceName { get; set; } = string.Empty;
             public int AsyncIoThreads { get; set; }
-            public int AutoDeleteMode { get; set; }
+            public AutoDeleteMode AutoDeleteMode { get; set; }
             public bool AutoTmmEnabled { get; set; }
             public bool AutorunEnabled { get; set; }
             public bool AutorunOnTorrentAddedEnabled { get; set; }
@@ -266,7 +266,7 @@ namespace Lantean.QBTMud.Test
             public string BannedIPs { get; set; } = string.Empty;
             public int BdecodeDepthLimit { get; set; }
             public int BdecodeTokenLimit { get; set; }
-            public int BittorrentProtocol { get; set; }
+            public BittorrentProtocol BittorrentProtocol { get; set; }
             public bool BlockPeersOnPrivilegedPorts { get; set; }
             public string BypassAuthSubnetWhitelist { get; set; } = string.Empty;
             public bool BypassAuthSubnetWhitelistEnabled { get; set; }
@@ -281,16 +281,16 @@ namespace Lantean.QBTMud.Test
             public string DhtBootstrapNodes { get; set; } = string.Empty;
             public int DiskCache { get; set; }
             public int DiskCacheTtl { get; set; }
-            public int DiskIoReadMode { get; set; }
-            public int DiskIoType { get; set; }
-            public int DiskIoWriteMode { get; set; }
+            public DiskIoReadMode DiskIoReadMode { get; set; }
+            public DiskIoType DiskIoType { get; set; }
+            public DiskIoWriteMode DiskIoWriteMode { get; set; }
             public int DiskQueueSize { get; set; }
             public int DlLimit { get; set; }
             public bool DontCountSlowTorrents { get; set; }
             public string DyndnsDomain { get; set; } = string.Empty;
             public bool DyndnsEnabled { get; set; }
             public string DyndnsPassword { get; set; } = string.Empty;
-            public int DyndnsService { get; set; }
+            public DyndnsService DyndnsService { get; set; }
             public string DyndnsUsername { get; set; } = string.Empty;
             public int EmbeddedTrackerPort { get; set; }
             public bool EmbeddedTrackerPortForwarding { get; set; }
@@ -299,7 +299,7 @@ namespace Lantean.QBTMud.Test
             public bool EnableMultiConnectionsFromSameIp { get; set; }
             public bool EnablePieceExtentAffinity { get; set; }
             public bool EnableUploadSuggestions { get; set; }
-            public int Encryption { get; set; }
+            public EncryptionMode Encryption { get; set; }
             public string ExcludedFileNames { get; set; } = string.Empty;
             public bool ExcludedFileNamesEnabled { get; set; }
             public string ExportDir { get; set; } = string.Empty;
@@ -354,7 +354,7 @@ namespace Lantean.QBTMud.Test
             public int MaxInactiveSeedingTime { get; set; }
             public bool MaxInactiveSeedingTimeEnabled { get; set; }
             public float MaxRatio { get; set; }
-            public int MaxRatioAct { get; set; }
+            public MaxRatioAction MaxRatioAct { get; set; }
             public bool MaxRatioEnabled { get; set; }
             public int MaxSeedingTime { get; set; }
             public bool MaxSeedingTimeEnabled { get; set; }
@@ -380,7 +380,7 @@ namespace Lantean.QBTMud.Test
             public bool ProxyPeerConnections { get; set; }
             public int ProxyPort { get; set; }
             public bool ProxyRss { get; set; }
-            public string ProxyType { get; set; } = string.Empty;
+            public ProxyType ProxyType { get; set; }
             public string ProxyUsername { get; set; } = string.Empty;
             public string PythonExecutablePath { get; set; } = string.Empty;
             public bool QueueingEnabled { get; set; }
@@ -390,7 +390,7 @@ namespace Lantean.QBTMud.Test
             public int RefreshInterval { get; set; }
             public int RequestQueueSize { get; set; }
             public bool ResolvePeerCountries { get; set; }
-            public string ResumeDataStorageType { get; set; } = string.Empty;
+            public ResumeDataStorageType ResumeDataStorageType { get; set; }
             public bool RssAutoDownloadingEnabled { get; set; }
             public long RssFetchDelay { get; set; }
             public bool RssDownloadRepackProperEpisodes { get; set; }
@@ -407,7 +407,7 @@ namespace Lantean.QBTMud.Test
             public int ScheduleFromMin { get; set; }
             public int ScheduleToHour { get; set; }
             public int ScheduleToMin { get; set; }
-            public int SchedulerDays { get; set; }
+            public SchedulerDays SchedulerDays { get; set; }
             public bool SchedulerEnabled { get; set; }
             public int SendBufferLowWatermark { get; set; }
             public int SendBufferWatermark { get; set; }
@@ -423,20 +423,20 @@ namespace Lantean.QBTMud.Test
             public string TempPath { get; set; } = string.Empty;
             public bool TempPathEnabled { get; set; }
             public bool TorrentChangedTmmEnabled { get; set; }
-            public string TorrentContentLayout { get; set; } = string.Empty;
-            public string TorrentContentRemoveOption { get; set; } = string.Empty;
+            public TorrentContentLayout TorrentContentLayout { get; set; }
+            public TorrentContentRemoveOption TorrentContentRemoveOption { get; set; }
             public int TorrentFileSizeLimit { get; set; }
-            public string TorrentStopCondition { get; set; } = string.Empty;
+            public StopCondition TorrentStopCondition { get; set; }
             public int UpLimit { get; set; }
-            public int UploadChokingAlgorithm { get; set; }
-            public int UploadSlotsBehavior { get; set; }
+            public UploadChokingAlgorithm UploadChokingAlgorithm { get; set; }
+            public UploadSlotsBehavior UploadSlotsBehavior { get; set; }
             public bool Upnp { get; set; }
             public int UpnpLeaseDuration { get; set; }
             public bool UseCategoryPathsInManualMode { get; set; }
             public bool UseHttps { get; set; }
             public bool IgnoreSslErrors { get; set; }
             public bool UseSubcategories { get; set; }
-            public int UtpTcpMixedMode { get; set; }
+            public UtpTcpMixedMode UtpTcpMixedMode { get; set; }
             public bool ValidateHttpsTrackerCertificate { get; set; }
             public string WebUiAddress { get; set; } = string.Empty;
             public string WebUiApiKey { get; set; } = string.Empty;

@@ -1,7 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
-using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -10,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient.Models;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Components
 {
@@ -75,14 +76,14 @@ namespace Lantean.QBTMud.Test.Components
             navigationManager.Uri.Should().Be(navigationManager.BaseUri);
         }
 
-        private static Torrent CreateTorrent(string hash, string name)
+        private static MudTorrent CreateTorrent(string hash, string name)
         {
-            return new Torrent(
+            return new MudTorrent(
                 hash: hash,
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 1,
+                availability: 1,
                 category: string.Empty,
                 completed: 0,
                 completionOn: 0,
@@ -115,7 +116,7 @@ namespace Lantean.QBTMud.Test.Components
                 seenComplete: 0,
                 sequentialDownload: false,
                 size: 0,
-                state: "downloading",
+                state: TorrentState.Downloading,
                 superSeeding: false,
                 tags: Array.Empty<string>(),
                 timeActive: 0,
@@ -136,7 +137,7 @@ namespace Lantean.QBTMud.Test.Components
                 downloadPath: string.Empty,
                 rootPath: string.Empty,
                 isPrivate: false,
-                QBittorrent.ApiClient.Models.ShareLimitAction.Default,
+                ShareLimitAction.Default,
                 comment: string.Empty);
         }
     }

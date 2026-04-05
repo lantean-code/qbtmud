@@ -37,11 +37,11 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindSwitch(target, "MaxInactiveSeedingTimeEnabled").Instance.Value.Should().BeTrue();
             FindSwitch(target, "AddTrackersEnabled").Instance.Value.Should().BeTrue();
 
-            var encryptionSelect = FindSelect<int>(target, "Encryption");
-            encryptionSelect.Instance.GetState(x => x.Value).Should().Be(1);
+            var encryptionSelect = FindSelect<EncryptionMode>(target, "Encryption");
+            encryptionSelect.Instance.GetState(x => x.Value).Should().Be(EncryptionMode.RequireEncryption);
 
-            var seedingActionSelect = FindSelect<int>(target, "MaxRatioAct");
-            seedingActionSelect.Instance.GetState(x => x.Value).Should().Be(2);
+            var seedingActionSelect = FindSelect<MaxRatioAction>(target, "MaxRatioAct");
+            seedingActionSelect.Instance.GetState(x => x.Value).Should().Be(MaxRatioAction.EnableSuperSeeding);
             seedingActionSelect.Instance.Disabled.Should().BeFalse();
 
             FindNumericInt(target, "MaxActiveCheckingTorrents").Instance.GetState(x => x.Value).Should().Be(3);
@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             FindNumericInt(target, "SlowTorrentUlRateThreshold").Instance.GetState(x => x.Value).Should().Be(13);
             FindNumericInt(target, "SlowTorrentInactiveTimer").Instance.GetState(x => x.Value).Should().Be(14);
 
-            FindNumericFloat(target, "MaxRatio").Instance.GetState(x => x.Value).Should().Be(3.5f);
+            FindNumericFloat(target, "MaxRatio").Instance.GetState(x => x.Value).Should().Be(3.5d);
             FindNumericFloat(target, "MaxRatio").Instance.Disabled.Should().BeFalse();
 
             FindNumericInt(target, "MaxSeedingTime").Instance.Disabled.Should().BeTrue();
@@ -91,9 +91,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindSwitch(target, "Lsd").Instance.ValueChanged.InvokeAsync(true));
             update.Lsd.Should().BeTrue();
 
-            var encryptionSelect = FindSelect<int>(target, "Encryption");
-            await target.InvokeAsync(() => encryptionSelect.Instance.ValueChanged.InvokeAsync(2));
-            update.Encryption.Should().Be(2);
+            var encryptionSelect = FindSelect<EncryptionMode>(target, "Encryption");
+            await target.InvokeAsync(() => encryptionSelect.Instance.ValueChanged.InvokeAsync(EncryptionMode.DisableEncryption));
+            update.Encryption.Should().Be(EncryptionMode.DisableEncryption);
 
             await target.InvokeAsync(() => FindSwitch(target, "AnonymousMode").Instance.ValueChanged.InvokeAsync(false));
             update.AnonymousMode.Should().BeFalse();
@@ -200,8 +200,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.MaxRatioEnabled.Should().BeTrue();
             ratioField.Instance.Disabled.Should().BeFalse();
 
-            await target.InvokeAsync(() => ratioField.Instance.ValueChanged.InvokeAsync(4.2f));
-            update.MaxRatio.Should().Be(4.2f);
+            await target.InvokeAsync(() => ratioField.Instance.ValueChanged.InvokeAsync(4.2d));
+            update.MaxRatio.Should().Be(4.2d);
 
             var seedingField = FindNumericInt(target, "MaxSeedingTime");
             var inactiveField = FindNumericInt(target, "MaxInactiveSeedingTime");
@@ -223,9 +223,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => inactiveField.Instance.ValueChanged.InvokeAsync(90));
             update.MaxInactiveSeedingTime.Should().Be(90);
 
-            var actionSelect = FindSelect<int>(target, "MaxRatioAct");
-            await target.InvokeAsync(() => actionSelect.Instance.ValueChanged.InvokeAsync(3));
-            update.MaxRatioAct.Should().Be(3);
+            var actionSelect = FindSelect<MaxRatioAction>(target, "MaxRatioAct");
+            await target.InvokeAsync(() => actionSelect.Instance.ValueChanged.InvokeAsync(MaxRatioAction.RemoveTorrentAndFiles));
+            update.MaxRatioAct.Should().Be(MaxRatioAction.RemoveTorrentAndFiles);
             actionSelect.Instance.Disabled.Should().BeFalse();
 
             await target.InvokeAsync(() => ratioSwitch.Instance.ValueChanged.InvokeAsync(false));
@@ -236,7 +236,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.MaxRatioEnabled.Should().BeFalse();
             update.MaxSeedingTimeEnabled.Should().BeFalse();
             update.MaxInactiveSeedingTimeEnabled.Should().BeFalse();
-            update.MaxRatio.Should().Be(4.2f);
+            update.MaxRatio.Should().Be(4.2d);
             update.MaxInactiveSeedingTime.Should().Be(90);
 
             events.Should().NotBeEmpty();
@@ -284,16 +284,16 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var actionSelect = FindSelect<int>(target, "MaxRatioAct");
+            var actionSelect = FindSelect<MaxRatioAction>(target, "MaxRatioAct");
             await target.InvokeAsync(() => actionSelect.Instance.OpenMenu());
 
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<int>>()
+                var values = target.FindComponents<MudSelectItem<MaxRatioAction>>()
                     .Select(item => item.Instance.Value)
                     .ToList();
 
-                values.Should().Contain(1);
+                values.Should().Contain(MaxRatioAction.RemoveTorrent);
             });
         }
 
@@ -333,7 +333,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             inactiveTimerValidation(0).Should().Be("Torrent inactivity timer must be greater than 0.");
             inactiveTimerValidation(1).Should().BeNull();
 
-            var ratioValidation = FindNumericFloat(target, "MaxRatio").Instance.Validation.Should().BeOfType<Func<int, string?>>().Subject;
+            var ratioValidation = FindNumericFloat(target, "MaxRatio").Instance.Validation.Should().BeOfType<Func<double, string?>>().Subject;
             ratioValidation(-1).Should().Be("Share ratio limit must be between 0 and 9998.");
             ratioValidation(9999).Should().Be("Share ratio limit must be between 0 and 9998.");
             ratioValidation(100).Should().BeNull();
@@ -373,7 +373,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 spec.AnonymousMode = true;
                 spec.Dht = true;
                 spec.DontCountSlowTorrents = true;
-                spec.Encryption = 1;
+                spec.Encryption = EncryptionMode.RequireEncryption;
                 spec.Lsd = false;
                 spec.MaxActiveCheckingTorrents = 3;
                 spec.MaxActiveDownloads = 5;
@@ -382,7 +382,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 spec.MaxInactiveSeedingTime = 60;
                 spec.MaxInactiveSeedingTimeEnabled = true;
                 spec.MaxRatio = 3.5f;
-                spec.MaxRatioAct = 2;
+                spec.MaxRatioAct = MaxRatioAction.EnableSuperSeeding;
                 spec.MaxRatioEnabled = true;
                 spec.MaxSeedingTime = 120;
                 spec.MaxSeedingTimeEnabled = false;
@@ -399,9 +399,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             return FindComponentByTestId<MudNumericField<int>>(target, testId);
         }
 
-        private static IRenderedComponent<MudNumericField<float>> FindNumericFloat(IRenderedComponent<BitTorrentOptions> target, string testId)
+        private static IRenderedComponent<MudNumericField<double>> FindNumericFloat(IRenderedComponent<BitTorrentOptions> target, string testId)
         {
-            return FindComponentByTestId<MudNumericField<float>>(target, testId);
+            return FindComponentByTestId<MudNumericField<double>>(target, testId);
         }
 
         private static IRenderedComponent<MudSelect<T>> FindSelect<T>(IRenderedComponent<BitTorrentOptions> target, string testId)

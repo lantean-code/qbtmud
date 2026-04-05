@@ -171,7 +171,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Blazor.BrowserCapabilities\Blazor.BrowserCapabilities.csproj" />
-    <!--<ProjectReference Include="..\..\..\QBittorrent.ApiClient\src\QBittorrent.ApiClient\QBittorrent.ApiClient.csproj" />-->
   </ItemGroup>
 
   <ItemGroup>

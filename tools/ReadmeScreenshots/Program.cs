@@ -162,7 +162,7 @@ namespace ReadmeScreenshots
                     await WaitForTorrentAsync(
                         apiClient,
                         hash,
-                        torrent => (torrent.Progress ?? 0) >= 0.999f && IsCompletedState(torrent.State));
+                        torrent => (torrent.Progress ?? 0) >= 0.999d && IsCompletedState(torrent.State));
                 }
 
                 if (fixture.State == FixtureState.Missing)
@@ -549,8 +549,8 @@ namespace ReadmeScreenshots
         private static async Task WaitForTorrentAsync(IApiClient apiClient, string hash, Func<Torrent, bool> predicate)
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
-            string? lastState = null;
-            float? lastProgress = null;
+            TorrentState? lastState = null;
+            double? lastProgress = null;
             long? lastAmountLeft = null;
             string? lastName = null;
 
@@ -604,34 +604,34 @@ namespace ReadmeScreenshots
             throw new InvalidOperationException($"Failed to {operation}: {result.Failure?.UserMessage ?? "Unknown error"}");
         }
 
-        private static bool IsCheckingState(string? state)
+        private static bool IsCheckingState(TorrentState? state)
         {
-            return string.Equals(state, "checkingUP", StringComparison.Ordinal)
-                || string.Equals(state, "checkingDL", StringComparison.Ordinal)
-                || string.Equals(state, "checkingResumeData", StringComparison.Ordinal);
+            return state is TorrentState.CheckingUploading
+                or TorrentState.CheckingDownloading
+                or TorrentState.CheckingResumeData;
         }
 
-        private static bool IsCompletedState(string? state)
+        private static bool IsCompletedState(TorrentState? state)
         {
-            return string.Equals(state, "uploading", StringComparison.Ordinal)
-                || string.Equals(state, "stalledUP", StringComparison.Ordinal)
-                || string.Equals(state, "queuedUP", StringComparison.Ordinal)
-                || string.Equals(state, "forcedUP", StringComparison.Ordinal)
-                || string.Equals(state, "stoppedUP", StringComparison.Ordinal);
+            return state is TorrentState.Uploading
+                or TorrentState.StalledUploading
+                or TorrentState.QueuedUploading
+                or TorrentState.ForcedUploading
+                or TorrentState.StoppedUploading;
         }
 
-        private static bool IsIncompleteState(string? state)
+        private static bool IsIncompleteState(TorrentState? state)
         {
-            return string.Equals(state, "stoppedDL", StringComparison.Ordinal)
-                || string.Equals(state, "stalledDL", StringComparison.Ordinal)
-                || string.Equals(state, "queuedDL", StringComparison.Ordinal)
-                || string.Equals(state, "forcedDL", StringComparison.Ordinal)
-                || string.Equals(state, "downloading", StringComparison.Ordinal);
+            return state is TorrentState.StoppedDownloading
+                or TorrentState.StalledDownloading
+                or TorrentState.QueuedDownloading
+                or TorrentState.ForcedDownloading
+                or TorrentState.Downloading;
         }
 
-        private static bool IsMissingLikeState(string? state)
+        private static bool IsMissingLikeState(TorrentState? state)
         {
-            return string.Equals(state, "missingFiles", StringComparison.Ordinal)
+            return state is TorrentState.MissingFiles
                 || IsIncompleteState(state);
         }
 

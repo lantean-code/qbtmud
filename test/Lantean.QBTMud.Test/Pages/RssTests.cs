@@ -11,8 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using ClientRssArticle = QBittorrent.ApiClient.Models.RssArticle;
-using ClientRssItem = QBittorrent.ApiClient.Models.RssItem;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -197,7 +197,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Returns(Task.CompletedTask);
             var rssDataManagerMock = TestContext.AddSingletonMock<IRssDataManager>(MockBehavior.Strict);
             rssDataManagerMock
-                .Setup(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, ClientRssItem>>()))
+                .Setup(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, RssItem>>()))
                 .Returns((RssList)null!);
 
             var target = RenderTarget();
@@ -855,7 +855,7 @@ namespace Lantean.QBTMud.Test.Pages
             var rssDataManager = new RssDataManager();
             var rssDataManagerMock = TestContext.AddSingletonMock<IRssDataManager>(MockBehavior.Strict);
             rssDataManagerMock
-                .SetupSequence(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, ClientRssItem>>()))
+                .SetupSequence(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, RssItem>>()))
                 .Returns(rssDataManager.CreateRssList(CreateRssItems()))
                 .Returns((RssList)null!);
             _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
@@ -1055,7 +1055,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_RefreshInProgress_WHEN_AdditionalRefreshRequestsArrive_THEN_ShouldQueueAndProcessPendingRefresh()
         {
-            var refreshGate = new TaskCompletionSource<IReadOnlyDictionary<string, ClientRssItem>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var refreshGate = new TaskCompletionSource<IReadOnlyDictionary<string, RssItem>>(TaskCreationOptions.RunContinuationsAsynchronously);
             _apiClientMock
                 .SetupSequence(client => client.GetAllRssItemsAsync(true))
                 .ReturnsAsync(CreateRssItems())
@@ -1104,7 +1104,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var rssDataManagerMock = TestContext.AddSingletonMock<IRssDataManager>(MockBehavior.Strict);
             rssDataManagerMock
-                .Setup(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, ClientRssItem>>()))
+                .Setup(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, RssItem>>()))
                 .Returns((RssList)null!);
 
             var target = RenderTarget();
@@ -1117,7 +1117,7 @@ namespace Lantean.QBTMud.Test.Pages
             bool disconnected = false,
             Breakpoint breakpoint = Breakpoint.Lg,
             Orientation orientation = Orientation.Landscape,
-            IReadOnlyDictionary<string, ClientRssItem>? rssItems = null)
+            IReadOnlyDictionary<string, RssItem>? rssItems = null)
         {
             if (rssItems is not null)
             {
@@ -1144,7 +1144,7 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private static IReadOnlyDictionary<string, ClientRssItem> CreateRssItems(
+        private static IReadOnlyDictionary<string, RssItem> CreateRssItems(
             bool includeArticleLink = true,
             bool feed1Loading = false,
             bool feed2HasError = false,
@@ -1156,9 +1156,9 @@ namespace Lantean.QBTMud.Test.Pages
             var article1Link = includeArticleLink ? "http://news1" : null;
             var article3Link = includeArticleLink ? "http://news3" : null;
 
-            return new Dictionary<string, ClientRssItem>(StringComparer.Ordinal)
+            return new Dictionary<string, RssItem>(StringComparer.Ordinal)
             {
-                ["Feed1"] = new ClientRssItem(
+                ["Feed1"] = new RssItem(
                     new List<ClientRssArticle>
                     {
                         new ClientRssArticle("Category", "Comments", "2020-01-01", "Description", "Article1", article1Link, null, "Article 1", article1TorrentUrl, article1Read),
@@ -1170,7 +1170,7 @@ namespace Lantean.QBTMud.Test.Pages
                     "Feed 1",
                     "Feed1Uid",
                     "http://feed1"),
-                [@"Folder\Feed2"] = new ClientRssItem(
+                [@"Folder\Feed2"] = new RssItem(
                     new List<ClientRssArticle>
                     {
                         new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", article3Link, null, "Article 3", "http://torrent3", article3Read)
@@ -1184,11 +1184,11 @@ namespace Lantean.QBTMud.Test.Pages
             };
         }
 
-        private static IReadOnlyDictionary<string, ClientRssItem> CreateRssItemsOnlyFeed2()
+        private static IReadOnlyDictionary<string, RssItem> CreateRssItemsOnlyFeed2()
         {
-            return new Dictionary<string, ClientRssItem>(StringComparer.Ordinal)
+            return new Dictionary<string, RssItem>(StringComparer.Ordinal)
             {
-                [@"Folder\Feed2"] = new ClientRssItem(
+                [@"Folder\Feed2"] = new RssItem(
                     new List<ClientRssArticle>
                     {
                         new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", "http://news3", null, "Article 3", "http://torrent3", false)
@@ -1202,16 +1202,16 @@ namespace Lantean.QBTMud.Test.Pages
             };
         }
 
-        private static IReadOnlyDictionary<string, ClientRssItem> CreateEmptyRssItems()
+        private static IReadOnlyDictionary<string, RssItem> CreateEmptyRssItems()
         {
-            return new Dictionary<string, ClientRssItem>(StringComparer.Ordinal);
+            return new Dictionary<string, RssItem>(StringComparer.Ordinal);
         }
 
-        private static IReadOnlyDictionary<string, ClientRssItem> CreateRssItemsWithoutFeed1Articles()
+        private static IReadOnlyDictionary<string, RssItem> CreateRssItemsWithoutFeed1Articles()
         {
-            return new Dictionary<string, ClientRssItem>(StringComparer.Ordinal)
+            return new Dictionary<string, RssItem>(StringComparer.Ordinal)
             {
-                ["Feed1"] = new ClientRssItem(
+                ["Feed1"] = new RssItem(
                     new List<ClientRssArticle>(),
                     false,
                     false,
@@ -1219,7 +1219,7 @@ namespace Lantean.QBTMud.Test.Pages
                     "Feed 1",
                     "Feed1Uid",
                     "http://feed1"),
-                [@"Folder\Feed2"] = new ClientRssItem(
+                [@"Folder\Feed2"] = new RssItem(
                     new List<ClientRssArticle>
                     {
                         new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", "http://news3", null, "Article 3", "http://torrent3", true)

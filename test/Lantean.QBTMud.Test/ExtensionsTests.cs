@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient.Models;
 using System.ComponentModel;
 using ContentPriority = Lantean.QBTMud.Models.Priority;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
@@ -121,9 +122,9 @@ namespace Lantean.QBTMud.Test
         }
 
         [Theory]
-        [InlineData("metaDL")]
-        [InlineData("forcedMetaDL")]
-        public void GIVEN_TorrentInMetadataDownloadState_WHEN_MetaDownloaded_THEN_ShouldReturnFalse(string state)
+        [InlineData(TorrentState.DownloadingMetadata)]
+        [InlineData(TorrentState.ForcedDownloadingMetadata)]
+        public void GIVEN_TorrentInMetadataDownloadState_WHEN_MetaDownloaded_THEN_ShouldReturnFalse(TorrentState state)
         {
             var torrent = CreateTorrent(state: state, totalSize: 100);
 
@@ -135,7 +136,7 @@ namespace Lantean.QBTMud.Test
         [Fact]
         public void GIVEN_TorrentWithUnknownTotalSize_WHEN_MetaDownloaded_THEN_ShouldReturnFalse()
         {
-            var torrent = CreateTorrent(state: "downloading", totalSize: -1);
+            var torrent = CreateTorrent(state: TorrentState.Downloading, totalSize: -1);
 
             var result = torrent.MetaDownloaded();
 
@@ -145,7 +146,7 @@ namespace Lantean.QBTMud.Test
         [Fact]
         public void GIVEN_TorrentWithKnownTotalSizeAndNormalState_WHEN_MetaDownloaded_THEN_ShouldReturnTrue()
         {
-            var torrent = CreateTorrent(state: "downloading", totalSize: 100);
+            var torrent = CreateTorrent(state: TorrentState.Downloading, totalSize: 100);
 
             var result = torrent.MetaDownloaded();
 
@@ -210,14 +211,14 @@ namespace Lantean.QBTMud.Test
                 availability: 1.0f);
         }
 
-        private static MudTorrent CreateTorrent(string state = "downloading", long totalSize = 0, long downloaded = 0)
+        private static MudTorrent CreateTorrent(TorrentState? state = TorrentState.Downloading, long totalSize = 0, long downloaded = 0)
         {
             return new MudTorrent(
                 hash: "Hash",
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 1,
+                availability: 1,
                 category: string.Empty,
                 completed: 0,
                 completionOn: 0,
@@ -271,7 +272,7 @@ namespace Lantean.QBTMud.Test
                 downloadPath: string.Empty,
                 rootPath: string.Empty,
                 isPrivate: false,
-                QBittorrent.ApiClient.Models.ShareLimitAction.Default,
+                ShareLimitAction.Default,
                 comment: string.Empty);
         }
 

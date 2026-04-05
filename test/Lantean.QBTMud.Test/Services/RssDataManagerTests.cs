@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Services;
 using QBittorrent.ApiClient.Models;
+using ClientRssArticle = QBittorrent.ApiClient.Models.RssArticle;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -23,17 +24,17 @@ namespace Lantean.QBTMud.Test.Services
                 ["feed-a"] = new RssItem(
                     articles: new[]
                     {
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "cat-1", comments: "c1", date: "2025-01-01",
                             description: "d1", id: "a1", link: "http://a/1",
                             thumbnail: "http://a/t1", title: "t1",
                             torrentURL: "http://a.torrent/1", isRead: false),
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "cat-2", comments: "c2", date: "2025-01-02",
                             description: "d2", id: "a2", link: "http://a/2",
                             thumbnail: "http://a/t2", title: "t2",
                             torrentURL: "http://a.torrent/2", isRead: true),
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "cat-3", comments: "c3", date: "2025-01-03",
                             description: "d3", id: "a3", link: "http://a/3",
                             thumbnail: "http://a/t3", title: "t3",
@@ -50,7 +51,7 @@ namespace Lantean.QBTMud.Test.Services
                 ["feed-b"] = new RssItem(
                     articles: new[]
                     {
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "movies", comments: null, date: "2025-02-01",
                             description: null, id: "b1", link: "http://b/1",
                             thumbnail: null, title: "m1",
@@ -130,7 +131,7 @@ namespace Lantean.QBTMud.Test.Services
                 ["feed-null"] = new RssItem(
                     articles: new[]
                     {
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: null, comments: null, date: null,
                             description: null, id: null, link: null,
                             thumbnail: null, title: null,
@@ -181,7 +182,7 @@ namespace Lantean.QBTMud.Test.Services
                 ["dict-key"] = new RssItem(
                     articles: new[]
                     {
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "x", comments: "c", date: "d",
                             description: "desc", id: "id1", link: "l",
                             thumbnail: "t", title: "title",
@@ -214,12 +215,12 @@ namespace Lantean.QBTMud.Test.Services
                 ["fa"] = new RssItem(
                     articles: new[]
                     {
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d1",
                             description: "d", id: "a1", link: "l",
                             thumbnail: "t", title: "t",
                             torrentURL: "u", isRead: false),
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d2",
                             description: "d", id: "a2", link: "l",
                             thumbnail: "t", title: "t",
@@ -231,7 +232,7 @@ namespace Lantean.QBTMud.Test.Services
                 ["fb"] = new RssItem(
                     articles: new[]
                     {
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d3",
                             description: "d", id: "b1", link: "l",
                             thumbnail: "t", title: "t",
@@ -263,12 +264,12 @@ namespace Lantean.QBTMud.Test.Services
                 ["fa"] = new RssItem(
                     articles: new[]
                     {
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d1",
                             description: "d", id: "a1", link: "l",
                             thumbnail: "t", title: "t",
                             torrentURL: "u", isRead: false),
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d2",
                             description: "d", id: "a2", link: "l",
                             thumbnail: "t", title: "t",
@@ -280,7 +281,7 @@ namespace Lantean.QBTMud.Test.Services
                 ["fb"] = new RssItem(
                     articles: new[]
                     {
-                        new QBittorrent.ApiClient.Models.RssArticle(
+                        new ClientRssArticle(
                             category: "c", comments: "c", date: "d3",
                             description: "d", id: "b1", link: "l",
                             thumbnail: "t", title: "t",

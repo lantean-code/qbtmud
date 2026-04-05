@@ -3,6 +3,7 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -27,7 +28,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected string? SelectedRuleName { get; set; }
 
-        protected Dictionary<string, QBittorrent.ApiClient.Models.AutoDownloadingRule?> Rules { get; set; } = [];
+        protected Dictionary<string, AutoDownloadingRule?> Rules { get; set; } = [];
 
         protected IEnumerable<string> Categories { get; set; } = [];
 
@@ -35,7 +36,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected IReadOnlyDictionary<string, IReadOnlyList<string>>? MatchingArticles { get; set; }
 
-        private QBittorrent.ApiClient.Models.AutoDownloadingRule SelectedRule { get; set; } = default!;
+        private AutoDownloadingRule SelectedRule { get; set; } = default!;
 
         protected bool UseRegex { get; set; }
 
@@ -142,30 +143,12 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
         }
 
-        protected string? ContentLayout { get; set; }
+        protected TorrentContentLayout? ContentLayout { get; set; }
 
-        protected void ContentLayoutChanged(string value)
+        protected void ContentLayoutChanged(TorrentContentLayout? value)
         {
             ContentLayout = value;
-
-            switch (value)
-            {
-                case "Default":
-                    SelectedRule.TorrentParams.ContentLayout = null;
-                    break;
-
-                case "Original":
-                    SelectedRule.TorrentParams.ContentLayout = "Original";
-                    break;
-
-                case "Subfolder":
-                    SelectedRule.TorrentParams.ContentLayout = "Subfolder";
-                    break;
-
-                case "NoSubfolder":
-                    SelectedRule.TorrentParams.ContentLayout = "NoSubfolder";
-                    break;
-            }
+            SelectedRule.TorrentParams.ContentLayout = value;
         }
 
         protected IReadOnlyCollection<string>? SelectedFeeds { get; set; }
@@ -276,7 +259,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (rule is null)
             {
-                rule = new QBittorrent.ApiClient.Models.AutoDownloadingRule();
+                rule = new AutoDownloadingRule();
 
                 Rules[SelectedRuleName] = rule;
             }
@@ -307,24 +290,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                     break;
             }
 
-            switch (SelectedRule.TorrentParams.ContentLayout)
-            {
-                case "Default":
-                    ContentLayout = null;
-                    break;
-
-                case "Original":
-                    ContentLayout = "Original";
-                    break;
-
-                case "Subfolder":
-                    ContentLayout = "Subfolder";
-                    break;
-
-                case "NoSubfolder":
-                    ContentLayout = "NoSubfolder";
-                    break;
-            }
+            ContentLayout = SelectedRule.TorrentParams.ContentLayout;
 
             var feeds = new List<string>();
             foreach (var feed in SelectedRule.AffectedFeeds)

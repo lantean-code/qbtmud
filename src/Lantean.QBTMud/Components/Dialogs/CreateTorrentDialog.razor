@@ -42,10 +42,10 @@
             @if (SupportsTorrentFormat)
             {
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="string" Label="@Translate("Torrent format")" @bind-Value="_torrentFormat" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentFormat")">
-                        <MudSelectItem Value="@("v2")">V2</MudSelectItem>
-                        <MudSelectItem Value="@("hybrid")">Hybrid</MudSelectItem>
-                        <MudSelectItem Value="@("v1")">V1</MudSelectItem>
+                    <MudSelect T="TorrentFormat" Label="@Translate("Torrent format")" @bind-Value="_torrentFormat" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("TorrentFormat")">
+                        <MudSelectItem Value="@TorrentFormat.V2">V2</MudSelectItem>
+                        <MudSelectItem Value="@TorrentFormat.Hybrid">Hybrid</MudSelectItem>
+                        <MudSelectItem Value="@TorrentFormat.V1">V1</MudSelectItem>
                     </MudSelect>
                 </MudItem>
             }

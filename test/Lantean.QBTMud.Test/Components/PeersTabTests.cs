@@ -11,13 +11,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using System.Net;
 using UIComponents.Flags;
 using ClientPeer = QBittorrent.ApiClient.Models.Peer;
-using ClientPreferences = QBittorrent.ApiClient.Models.Preferences;
-using ClientTorrentPeers = QBittorrent.ApiClient.Models.TorrentPeers;
-using PeerId = QBittorrent.ApiClient.Models.PeerId;
-using TorrentSelector = QBittorrent.ApiClient.Models.TorrentSelector;
+using MudPeer = Lantean.QBTMud.Models.Peer;
 
 namespace Lantean.QBTMud.Test.Components
 {
@@ -265,7 +263,7 @@ namespace Lantean.QBTMud.Test.Components
                 .ReturnsAsync(CreatePeers(true, "US", "Country"));
 
             var target = RenderPeersTab(true);
-            var table = target.FindComponent<DynamicTable<Peer>>();
+            var table = target.FindComponent<DynamicTable<MudPeer>>();
             var peer = table.Instance.Items!.Single();
 
             await target.InvokeAsync(() => table.Instance.SelectedItemChanged.InvokeAsync(peer));
@@ -394,7 +392,7 @@ namespace Lantean.QBTMud.Test.Components
                 .ReturnsAsync(CreatePeers(true, "US", "Country"));
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowColumnsOptionsDialog(
-                    It.IsAny<List<ColumnDefinition<Peer>>>(),
+                    It.IsAny<List<ColumnDefinition<MudPeer>>>(),
                     It.IsAny<HashSet<string>>(),
                     It.IsAny<Dictionary<string, int?>>(),
                     It.IsAny<Dictionary<string, int>>()))
@@ -407,7 +405,7 @@ namespace Lantean.QBTMud.Test.Components
 
             _dialogWorkflowMock.Verify(
                 workflow => workflow.ShowColumnsOptionsDialog(
-                    It.IsAny<List<ColumnDefinition<Peer>>>(),
+                    It.IsAny<List<ColumnDefinition<MudPeer>>>(),
                     It.IsAny<HashSet<string>>(),
                     It.IsAny<Dictionary<string, int?>>(),
                     It.IsAny<Dictionary<string, int>>()),
@@ -422,7 +420,7 @@ namespace Lantean.QBTMud.Test.Components
                 .ReturnsAsync(CreatePeers(false, "US", "Country"));
 
             var target = RenderPeersTab(true);
-            var table = target.FindComponent<DynamicTable<Peer>>();
+            var table = target.FindComponent<DynamicTable<MudPeer>>();
             var countryColumn = table.Instance.ColumnDefinitions.Single(column => string.Equals(column.Id, "country/region", StringComparison.Ordinal));
             var ipColumn = table.Instance.ColumnDefinitions.Single(column => string.Equals(column.Id, "ip", StringComparison.Ordinal));
 
@@ -548,13 +546,13 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForAssertion(() =>
             {
-                var table = target.FindComponent<DynamicTable<Peer>>();
+                var table = target.FindComponent<DynamicTable<MudPeer>>();
                 var countryColumn = table.Instance.ColumnDefinitions.Single(column => string.Equals(column.Id, "country/region", StringComparison.Ordinal));
                 table.Instance.ColumnFilter(countryColumn).Should().BeTrue();
             });
         }
 
-        private IRenderedComponent<PeersTab> RenderPeersTab(bool active, string hash = "Hash", ClientPreferences? preferences = null)
+        private IRenderedComponent<PeersTab> RenderPeersTab(bool active, string hash = "Hash", Preferences? preferences = null)
         {
             return TestContext.Render<PeersTab>(parameters =>
             {
@@ -587,17 +585,17 @@ namespace Lantean.QBTMud.Test.Components
             return _tickHandler!;
         }
 
-        private async Task TriggerContextMenuAsync(IRenderedComponent<PeersTab> target, Peer? peer)
+        private async Task TriggerContextMenuAsync(IRenderedComponent<PeersTab> target, MudPeer? peer)
         {
-            var table = target.FindComponent<DynamicTable<Peer>>();
-            var args = new TableDataContextMenuEventArgs<Peer>(new MouseEventArgs(), new MudTd(), peer);
+            var table = target.FindComponent<DynamicTable<MudPeer>>();
+            var args = new TableDataContextMenuEventArgs<MudPeer>(new MouseEventArgs(), new MudTd(), peer);
             await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(args));
         }
 
-        private async Task TriggerLongPressAsync(IRenderedComponent<PeersTab> target, Peer? peer)
+        private async Task TriggerLongPressAsync(IRenderedComponent<PeersTab> target, MudPeer? peer)
         {
-            var table = target.FindComponent<DynamicTable<Peer>>();
-            var args = new TableDataLongPressEventArgs<Peer>(new LongPressEventArgs(), new MudTd(), peer);
+            var table = target.FindComponent<DynamicTable<MudPeer>>();
+            var args = new TableDataLongPressEventArgs<MudPeer>(new LongPressEventArgs(), new MudTd(), peer);
             await target.InvokeAsync(() => table.Instance.OnTableDataLongPress.InvokeAsync(args));
         }
 
@@ -613,17 +611,17 @@ namespace Lantean.QBTMud.Test.Components
                 .Single(item => item.Instance.Icon == icon);
         }
 
-        private static Peer GetSinglePeer(IRenderedComponent<PeersTab> target)
+        private static MudPeer GetSinglePeer(IRenderedComponent<PeersTab> target)
         {
-            var table = target.FindComponent<DynamicTable<Peer>>();
+            var table = target.FindComponent<DynamicTable<MudPeer>>();
             return table.Instance.Items!.Single();
         }
 
-        private static ClientTorrentPeers CreatePeers(bool? showFlags, string? countryCode, string? country, string? flags = "Flags", string? flagsDescription = "FlagsDescription", int requestId = 1, bool fullUpdate = true)
+        private static TorrentPeers CreatePeers(bool? showFlags, string? countryCode, string? country, string? flags = "Flags", string? flagsDescription = "FlagsDescription", int requestId = 1, bool fullUpdate = true)
         {
             var peer = new ClientPeer(
                 "Client",
-                "Connection",
+                PeerConnectionType.Bittorrent,
                 country,
                 countryCode,
                 1,
@@ -640,7 +638,7 @@ namespace Lantean.QBTMud.Test.Components
                 3,
                 4);
 
-            return new ClientTorrentPeers(
+            return new TorrentPeers(
                 fullUpdate,
                 new Dictionary<string, ClientPeer> { { "Key", peer } },
                 null,
@@ -648,7 +646,7 @@ namespace Lantean.QBTMud.Test.Components
                 showFlags);
         }
 
-        private static ClientPreferences CreatePreferences(bool resolvePeerCountries)
+        private static Preferences CreatePreferences(bool resolvePeerCountries)
         {
             return PreferencesFactory.CreatePreferences(spec =>
             {

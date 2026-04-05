@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Components.Options
         [Inject]
         public IApiClient ApiClient { get; set; } = default!;
 
-        protected string? ResumeDataStorageType { get; private set; }
+        protected ResumeDataStorageType ResumeDataStorageType { get; private set; }
         protected int MemoryWorkingSetLimit { get; private set; }
         protected string? CurrentNetworkInterface { get; private set; }
         protected string? CurrentInterfaceAddress { get; private set; }
@@ -31,9 +31,9 @@ namespace Lantean.QBTMud.Components.Options
         protected int DiskCache { get; private set; }
         protected int DiskCacheTtl { get; private set; }
         protected int DiskQueueSize { get; private set; }
-        protected int DiskIoType { get; private set; }
-        protected int DiskIoReadMode { get; private set; }
-        protected int DiskIoWriteMode { get; private set; }
+        protected DiskIoType DiskIoType { get; private set; }
+        protected DiskIoReadMode DiskIoReadMode { get; private set; }
+        protected DiskIoWriteMode DiskIoWriteMode { get; private set; }
         protected bool? EnableCoalesceReadWrite { get; private set; }
         protected bool? EnablePieceExtentAffinity { get; private set; }
         protected bool? EnableUploadSuggestions { get; private set; }
@@ -48,7 +48,7 @@ namespace Lantean.QBTMud.Components.Options
         protected int OutgoingPortsMax { get; private set; }
         protected int UpnpLeaseDuration { get; private set; }
         protected int PeerTos { get; private set; }
-        protected int UtpTcpMixedMode { get; private set; }
+        protected UtpTcpMixedMode UtpTcpMixedMode { get; private set; }
         protected bool? IdnSupportEnabled { get; private set; }
         protected bool? EnableMultiConnectionsFromSameIp { get; private set; }
         protected bool? ValidateHttpsTrackerCertificate { get; private set; }
@@ -59,8 +59,8 @@ namespace Lantean.QBTMud.Components.Options
         protected bool? EmbeddedTrackerPortForwarding { get; private set; }
         protected bool MarkOfTheWeb { get; private set; }
         protected string? PythonExecutablePath { get; private set; }
-        protected int UploadSlotsBehavior { get; private set; }
-        protected int UploadChokingAlgorithm { get; private set; }
+        protected UploadSlotsBehavior UploadSlotsBehavior { get; private set; }
+        protected UploadChokingAlgorithm UploadChokingAlgorithm { get; private set; }
         protected bool? AnnounceToAllTrackers { get; private set; }
         protected bool? AnnounceToAllTiers { get; private set; }
         protected string? AnnounceIp { get; private set; }
@@ -162,7 +162,7 @@ namespace Lantean.QBTMud.Components.Options
             return true;
         }
 
-        protected async Task ResumeDataStorageTypeChanged(string value)
+        protected async Task ResumeDataStorageTypeChanged(ResumeDataStorageType value)
         {
             ResumeDataStorageType = value;
             UpdatePreferences.ResumeDataStorageType = value;
@@ -312,21 +312,21 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task DiskIoTypeChanged(int value)
+        protected async Task DiskIoTypeChanged(DiskIoType value)
         {
             DiskIoType = value;
             UpdatePreferences.DiskIoType = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task DiskIoReadModeChanged(int value)
+        protected async Task DiskIoReadModeChanged(DiskIoReadMode value)
         {
             DiskIoReadMode = value;
             UpdatePreferences.DiskIoReadMode = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task DiskIoWriteModeChanged(int value)
+        protected async Task DiskIoWriteModeChanged(DiskIoWriteMode value)
         {
             DiskIoWriteMode = value;
             UpdatePreferences.DiskIoWriteMode = value;
@@ -431,7 +431,7 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task UtpTcpMixedModeChanged(int value)
+        protected async Task UtpTcpMixedModeChanged(UtpTcpMixedMode value)
         {
             UtpTcpMixedMode = value;
             UpdatePreferences.UtpTcpMixedMode = value;
@@ -508,14 +508,14 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task UploadSlotsBehaviorChanged(int value)
+        protected async Task UploadSlotsBehaviorChanged(UploadSlotsBehavior value)
         {
             UploadSlotsBehavior = value;
             UpdatePreferences.UploadSlotsBehavior = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task UploadChokingAlgorithmChanged(int value)
+        protected async Task UploadChokingAlgorithmChanged(UploadChokingAlgorithm value)
         {
             UploadChokingAlgorithm = value;
             UpdatePreferences.UploadChokingAlgorithm = value;

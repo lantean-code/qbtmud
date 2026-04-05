@@ -1,6 +1,8 @@
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QBittorrent.ApiClient.Models;
+using MudMainData = Lantean.QBTMud.Models.MainData;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -14,10 +16,10 @@ namespace Lantean.QBTMud.Components.Dialogs
         public string Hash { get; set; } = default!;
 
         [CascadingParameter]
-        public MainData MainData { get; set; } = default!;
+        public MudMainData MainData { get; set; } = default!;
 
         [CascadingParameter]
-        public QBittorrent.ApiClient.Models.Preferences Preferences { get; set; } = default!;
+        public Preferences Preferences { get; set; } = default!;
 
         protected bool AutomaticTorrentManagement { get; set; }
 

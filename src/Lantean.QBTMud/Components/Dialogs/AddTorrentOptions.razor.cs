@@ -1,7 +1,7 @@
-using QBittorrent.ApiClient;
-using QBittorrent.ApiClient.Models;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -50,25 +50,25 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected bool AddToTopOfQueue { get; set; } = true;
 
-        protected string StopCondition { get; set; } = "None";
+        protected StopCondition StopCondition { get; set; } = StopCondition.None;
 
         protected bool SkipHashCheck { get; set; }
 
-        protected string ContentLayout { get; set; } = "Original";
+        protected TorrentContentLayout ContentLayout { get; set; } = TorrentContentLayout.Original;
 
         protected bool DownloadInSequentialOrder { get; set; }
 
         protected bool DownloadFirstAndLastPiecesFirst { get; set; }
 
-        protected long DownloadLimit { get; set; }
+        protected int DownloadLimit { get; set; }
 
-        protected long UploadLimit { get; set; }
+        protected int UploadLimit { get; set; }
 
         protected ShareLimitMode SelectedShareLimitMode { get; set; } = ShareLimitMode.Global;
 
         protected bool RatioLimitEnabled { get; set; }
 
-        protected float RatioLimit { get; set; } = 1.0f;
+        protected double RatioLimit { get; set; } = 1.0;
 
         protected bool SeedingTimeLimitEnabled { get; set; }
 
@@ -218,12 +218,12 @@ namespace Lantean.QBTMud.Components.Dialogs
                 : new HashSet<string>(tags, StringComparer.Ordinal);
         }
 
-        protected void StopConditionChanged(string value)
+        protected void StopConditionChanged(StopCondition value)
         {
             StopCondition = value;
         }
 
-        protected void ContentLayoutChanged(string value)
+        protected void ContentLayoutChanged(TorrentContentLayout value)
         {
             ContentLayout = value;
         }
@@ -244,7 +244,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             RatioLimitEnabled = value;
         }
 
-        protected void RatioLimitChanged(float value)
+        protected void RatioLimitChanged(double value)
         {
             RatioLimit = value;
         }
@@ -294,21 +294,21 @@ namespace Lantean.QBTMud.Components.Dialogs
             switch (SelectedShareLimitMode)
             {
                 case ShareLimitMode.Global:
-                    options.RatioLimit = Limits.UseGlobalShareLimit;
-                    options.SeedingTimeLimit = (int)Limits.UseGlobalShareLimit;
-                    options.InactiveSeedingTimeLimit = (int)Limits.UseGlobalShareLimit;
+                    options.RatioLimit = Limits.UseGlobalShareRatioLimit;
+                    options.SeedingTimeLimit = Limits.UseGlobalSeedingTimeLimit;
+                    options.InactiveSeedingTimeLimit = Limits.UseGlobalInactiveSeedingTimeLimit;
                     break;
 
                 case ShareLimitMode.NoLimit:
-                    options.RatioLimit = Limits.NoShareLimit;
-                    options.SeedingTimeLimit = (int)Limits.NoShareLimit;
-                    options.InactiveSeedingTimeLimit = (int)Limits.NoShareLimit;
+                    options.RatioLimit = Limits.NoShareRatioLimit;
+                    options.SeedingTimeLimit = Limits.NoSeedingTimeLimit;
+                    options.InactiveSeedingTimeLimit = Limits.NoInactiveSeedingTimeLimit;
                     break;
 
                 case ShareLimitMode.Custom:
-                    options.RatioLimit = RatioLimitEnabled ? RatioLimit : Limits.NoShareLimit;
-                    options.SeedingTimeLimit = SeedingTimeLimitEnabled ? SeedingTimeLimit : (int)Limits.NoShareLimit;
-                    options.InactiveSeedingTimeLimit = InactiveSeedingTimeLimitEnabled ? InactiveSeedingTimeLimit : (int)Limits.NoShareLimit;
+                    options.RatioLimit = RatioLimitEnabled ? RatioLimit : Limits.NoShareRatioLimit;
+                    options.SeedingTimeLimit = SeedingTimeLimitEnabled ? SeedingTimeLimit : Limits.NoSeedingTimeLimit;
+                    options.InactiveSeedingTimeLimit = InactiveSeedingTimeLimitEnabled ? InactiveSeedingTimeLimit : Limits.NoInactiveSeedingTimeLimit;
                     break;
             }
 

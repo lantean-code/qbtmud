@@ -10,7 +10,14 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+
 using ClientModels = QBittorrent.ApiClient.Models;
+
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -180,7 +187,7 @@ namespace Lantean.QBTMud.Test.Pages
             await target.DisposeAsync();
         }
 
-        private IRenderedComponent<Details> RenderDetails(string? hash, MainData mainData)
+        private IRenderedComponent<Details> RenderDetails(string? hash, MudMainData mainData)
         {
             var preferences = CreatePreferences();
             var theme = new MudTheme();
@@ -197,19 +204,19 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private static MainData CreateMainData(string hash)
+        private static MudMainData CreateMainData(string hash)
         {
-            var torrents = new Dictionary<string, Torrent>
+            var torrents = new Dictionary<string, MudTorrent>
             {
                 { hash, CreateTorrent(hash) }
             };
 
-            return new MainData(
+            return new MudMainData(
                 torrents,
                 Array.Empty<string>(),
-                new Dictionary<string, Category>(),
+                new Dictionary<string, MudCategory>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState { RefreshInterval = 1500 },
+                new MudServerState { RefreshInterval = 1500 },
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
@@ -264,14 +271,14 @@ namespace Lantean.QBTMud.Test.Pages
                 infoHashV2: "InfoHashV2");
         }
 
-        private static Torrent CreateTorrent(string hash)
+        private static MudTorrent CreateTorrent(string hash)
         {
-            return new Torrent(
+            return new MudTorrent(
                 hash,
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 0,
+                availability: 0,
                 category: "Category",
                 completed: 0,
                 completionOn: 0,
@@ -304,7 +311,7 @@ namespace Lantean.QBTMud.Test.Pages
                 seenComplete: 0,
                 sequentialDownload: false,
                 size: 0,
-                state: "State",
+                state: TorrentState.Unknown,
                 superSeeding: false,
                 tags: Array.Empty<string>(),
                 timeActive: 0,

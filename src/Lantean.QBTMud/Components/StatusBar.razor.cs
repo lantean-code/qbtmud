@@ -1,12 +1,14 @@
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
-using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
+using QBittorrent.ApiClient.Models;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
 
 namespace Lantean.QBTMud.Components
 {
@@ -22,10 +24,10 @@ namespace Lantean.QBTMud.Components
         protected IJSRuntime JSRuntime { get; set; } = default!;
 
         [Parameter]
-        public MainData? MainData { get; set; }
+        public MudMainData? MainData { get; set; }
 
         [Parameter]
-        public QBittorrent.ApiClient.Models.Preferences? Preferences { get; set; }
+        public Preferences? Preferences { get; set; }
 
         [Parameter]
         public bool IsDarkMode { get; set; }
@@ -57,12 +59,12 @@ namespace Lantean.QBTMud.Components
 
         protected bool UseLightStatusBarDividers => IsDarkMode;
 
-        protected static (string, Color) GetConnectionIcon(string? status)
+        protected static (string, Color) GetConnectionIcon(ConnectionStatus? status)
         {
             return status switch
             {
-                "firewalled" => (Icons.Material.Outlined.SignalWifiStatusbarConnectedNoInternet4, Color.Warning),
-                "connected" => (Icons.Material.Outlined.SignalWifi4Bar, Color.Success),
+                ConnectionStatus.Firewalled => (Icons.Material.Outlined.SignalWifiStatusbarConnectedNoInternet4, Color.Warning),
+                ConnectionStatus.Connected => (Icons.Material.Outlined.SignalWifi4Bar, Color.Success),
                 _ => (Icons.Material.Outlined.SignalWifiOff, Color.Error),
             };
         }
@@ -141,7 +143,7 @@ namespace Lantean.QBTMud.Components
                 faulted);
         }
 
-        protected string? BuildExternalIpLabel(ServerState? serverState)
+        protected string? BuildExternalIpLabel(MudServerState? serverState)
         {
             if (serverState is null)
             {
@@ -166,7 +168,7 @@ namespace Lantean.QBTMud.Components
             return LanguageLocalizer.Translate("HttpServer", "External IP: %1%2", v4 ?? string.Empty, v6 ?? string.Empty);
         }
 
-        protected static string? BuildExternalIpValue(ServerState? serverState)
+        protected static string? BuildExternalIpValue(MudServerState? serverState)
         {
             if (serverState is null)
             {
@@ -213,19 +215,19 @@ namespace Lantean.QBTMud.Components
                 isEnabled ? "Alternative speed limits: On" : "Alternative speed limits: Off");
         }
 
-        protected string? BuildConnectionStatusTitle(string? status)
+        protected string? BuildConnectionStatusTitle(ConnectionStatus? status)
         {
-            if (string.IsNullOrWhiteSpace(status))
+            if (!status.HasValue)
             {
                 return null;
             }
 
             return status switch
             {
-                "connected" => LanguageLocalizer.Translate("MainWindow", "Connection status: Connected"),
-                "firewalled" => LanguageLocalizer.Translate("MainWindow", "Connection status: Firewalled"),
-                "disconnected" => LanguageLocalizer.Translate("MainWindow", "Connection status: Disconnected"),
-                _ => status
+                ConnectionStatus.Connected => LanguageLocalizer.Translate("MainWindow", "Connection status: Connected"),
+                ConnectionStatus.Firewalled => LanguageLocalizer.Translate("MainWindow", "Connection status: Firewalled"),
+                ConnectionStatus.Disconnected => LanguageLocalizer.Translate("MainWindow", "Connection status: Disconnected"),
+                _ => status.Value.ToString()
             };
         }
 

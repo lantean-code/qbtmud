@@ -175,17 +175,17 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             SetupApiClient(new Dictionary<string, AutoDownloadingRule>
             {
-                { "RuleDefault", CreateRule(enabled: true, stopped: null, contentLayout: "Default", savePath: "C:/Downloads", affectedFeeds: new[] { "http://feed-a" }) },
-                { "RuleAlways", CreateRule(enabled: true, stopped: true, contentLayout: "Original", savePath: "", affectedFeeds: Array.Empty<string>()) },
-                { "RuleNever", CreateRule(enabled: true, stopped: false, contentLayout: "Subfolder", savePath: "", affectedFeeds: Array.Empty<string>()) },
-                { "RuleNoSubfolder", CreateRule(enabled: true, stopped: null, contentLayout: "NoSubfolder", savePath: "", affectedFeeds: Array.Empty<string>()) },
+                { "RuleDefault", CreateRule(enabled: true, stopped: null, contentLayout: null, savePath: "C:/Downloads", affectedFeeds: new[] { "http://feed-a" }) },
+                { "RuleAlways", CreateRule(enabled: true, stopped: true, contentLayout: TorrentContentLayout.Original, savePath: "", affectedFeeds: Array.Empty<string>()) },
+                { "RuleNever", CreateRule(enabled: true, stopped: false, contentLayout: TorrentContentLayout.Subfolder, savePath: "", affectedFeeds: Array.Empty<string>()) },
+                { "RuleNoSubfolder", CreateRule(enabled: true, stopped: null, contentLayout: TorrentContentLayout.NoSubfolder, savePath: "", affectedFeeds: Array.Empty<string>()) },
             });
 
             var dialog = await _target.RenderDialogAsync();
 
             var list = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesList");
             var addStopped = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesAddStopped");
-            var contentLayout = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesContentLayout");
+            var contentLayout = FindComponentByTestId<MudSelect<TorrentContentLayout?>>(dialog.Component, "RssRulesContentLayout");
             var feeds = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesFeeds");
             var saveToField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "RssRulesSaveTo");
 
@@ -197,15 +197,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleAlways"));
             addStopped.Instance.GetState(x => x.Value).Should().Be("always");
-            contentLayout.Instance.GetState(x => x.Value).Should().Be("Original");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Original);
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleNever"));
             addStopped.Instance.GetState(x => x.Value).Should().Be("never");
-            contentLayout.Instance.GetState(x => x.Value).Should().Be("Subfolder");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Subfolder);
 
             await dialog.Component.InvokeAsync(() => list.Instance.SelectedValueChanged.InvokeAsync("RuleNoSubfolder"));
             addStopped.Instance.GetState(x => x.Value).Should().Be("default");
-            contentLayout.Instance.GetState(x => x.Value).Should().Be("NoSubfolder");
+            contentLayout.Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.NoSubfolder);
         }
 
         [Fact]
@@ -303,11 +303,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await dialog.Component.InvokeAsync(() => addStopped.Instance.ValueChanged.InvokeAsync("always"));
             await dialog.Component.InvokeAsync(() => addStopped.Instance.ValueChanged.InvokeAsync("never"));
 
-            var contentLayout = FindComponentByTestId<MudSelect<string>>(dialog.Component, "RssRulesContentLayout");
-            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync("Default"));
-            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync("Original"));
-            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync("Subfolder"));
-            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync("NoSubfolder"));
+            var contentLayout = FindComponentByTestId<MudSelect<TorrentContentLayout?>>(dialog.Component, "RssRulesContentLayout");
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(null));
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.Original));
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.Subfolder));
+            await dialog.Component.InvokeAsync(() => contentLayout.Instance.ValueChanged.InvokeAsync(TorrentContentLayout.NoSubfolder));
 
             var feedsList = FindComponentByTestId<MudList<string>>(dialog.Component, "RssRulesFeeds");
             await dialog.Component.InvokeAsync(() => feedsList.Instance.SelectedValuesChanged.InvokeAsync(new List<string> { "FeedA" }));
@@ -329,7 +329,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                         && rule.TorrentParams.Tags.SequenceEqual(new[] { "alpha", "beta", "gamma" })
                         && rule.TorrentParams.SavePath == string.Empty
                         && rule.TorrentParams.Stopped == false
-                        && rule.TorrentParams.ContentLayout == "NoSubfolder"
+                        && rule.TorrentParams.ContentLayout == TorrentContentLayout.NoSubfolder
                         && rule.AffectedFeeds.Count == 1
                         && rule.AffectedFeeds.Contains("http://feed-a"))),
                 Times.Once);
@@ -368,7 +368,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private static AutoDownloadingRule CreateRule(
             bool? enabled,
             bool? stopped,
-            string? contentLayout,
+            TorrentContentLayout? contentLayout,
             string? savePath,
             IReadOnlyList<string>? affectedFeeds)
         {

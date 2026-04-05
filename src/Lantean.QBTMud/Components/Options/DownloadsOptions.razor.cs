@@ -4,11 +4,11 @@ namespace Lantean.QBTMud.Components.Options
 {
     public partial class DownloadsOptions : Options
     {
-        protected string? TorrentContentLayout { get; set; }
+        protected TorrentContentLayout TorrentContentLayout { get; set; }
         protected bool? AddToTopOfQueue { get; set; }
         protected bool? AddStoppedEnabled { get; set; }
-        protected string? TorrentStopCondition { get; set; }
-        protected bool? AutoDeleteMode { get; set; }
+        protected StopCondition TorrentStopCondition { get; set; }
+        protected AutoDeleteMode AutoDeleteMode { get; set; }
         protected bool? PreallocateAll { get; set; }
         protected bool? IncompleteFilesExt { get; set; }
         protected bool AutoTmmEnabled { get; set; }
@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Components.Options
             AddToTopOfQueue = Preferences.AddToTopOfQueue;
             AddStoppedEnabled = Preferences.AddStoppedEnabled;
             TorrentStopCondition = Preferences.TorrentStopCondition;
-            AutoDeleteMode = Preferences.AutoDeleteMode == 1;
+            AutoDeleteMode = Preferences.AutoDeleteMode;
             PreallocateAll = Preferences.PreallocateAll;
             IncompleteFilesExt = Preferences.IncompleteFilesExt;
 
@@ -102,7 +102,7 @@ namespace Lantean.QBTMud.Components.Options
             return true;
         }
 
-        protected async Task TorrentContentLayoutChanged(string value)
+        protected async Task TorrentContentLayoutChanged(TorrentContentLayout value)
         {
             TorrentContentLayout = value;
             UpdatePreferences.TorrentContentLayout = value;
@@ -123,17 +123,17 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task TorrentStopConditionChanged(string value)
+        protected async Task TorrentStopConditionChanged(StopCondition value)
         {
             TorrentStopCondition = value;
             UpdatePreferences.TorrentStopCondition = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 
-        protected async Task AutoDeleteModeChanged(bool value)
+        protected async Task AutoDeleteModeChanged(AutoDeleteMode value)
         {
             AutoDeleteMode = value;
-            UpdatePreferences.AutoDeleteMode = value == true ? 1 : 0;
+            UpdatePreferences.AutoDeleteMode = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
         }
 

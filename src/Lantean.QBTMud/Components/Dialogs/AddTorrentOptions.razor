@@ -67,20 +67,20 @@
             <FieldSwitch Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Add to top of queue")" @bind-Value="AddToTopOfQueue" data-test-id="@TestIdHelper.For("AddToTopOfQueue")" />
         </MudItem>
         <MudItem xs="12">
-            <MudSelect T="string" Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Stop condition:")" Value="@StopCondition" ValueChanged="@StopConditionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("StopCondition")">
-                <MudSelectItem Value="@("None")">@LanguageLocalizer.Translate("AddNewTorrentDialog", "None")</MudSelectItem>
-                <MudSelectItem Value="@("MetadataReceived")">@LanguageLocalizer.Translate("AddNewTorrentDialog", "Metadata received")</MudSelectItem>
-                <MudSelectItem Value="@("FilesChecked")">@LanguageLocalizer.Translate("AddNewTorrentDialog", "Files checked")</MudSelectItem>
+            <MudSelect T="StopCondition" Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Stop condition:")" Value="@StopCondition" ValueChanged="@StopConditionChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("StopCondition")">
+                <MudSelectItem Value="@StopCondition.None">@LanguageLocalizer.Translate("AddNewTorrentDialog", "None")</MudSelectItem>
+                <MudSelectItem Value="@StopCondition.MetadataReceived">@LanguageLocalizer.Translate("AddNewTorrentDialog", "Metadata received")</MudSelectItem>
+                <MudSelectItem Value="@StopCondition.FilesChecked">@LanguageLocalizer.Translate("AddNewTorrentDialog", "Files checked")</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
             <FieldSwitch Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Skip hash check")" @bind-Value="SkipHashCheck" data-test-id="@TestIdHelper.For("SkipHashCheck")" />
         </MudItem>
         <MudItem xs="12">
-            <MudSelect T="string" Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Content layout:")" Value="@ContentLayout" ValueChanged="@ContentLayoutChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ContentLayout")">
-                <MudSelectItem Value="@("Original")">@LanguageLocalizer.Translate("AddNewTorrentDialog", "Original")</MudSelectItem>
-                <MudSelectItem Value="@("Subfolder")">@LanguageLocalizer.Translate("AddNewTorrentDialog", "Create subfolder")</MudSelectItem>
-                <MudSelectItem Value="@("NoSubfolder")">@LanguageLocalizer.Translate("AddNewTorrentDialog", "Don't create subfolder")</MudSelectItem>
+            <MudSelect T="TorrentContentLayout" Label="@LanguageLocalizer.Translate("AddNewTorrentDialog", "Content layout:")" Value="@ContentLayout" ValueChanged="@ContentLayoutChanged" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("ContentLayout")">
+                <MudSelectItem Value="@TorrentContentLayout.Original">@LanguageLocalizer.Translate("AddNewTorrentDialog", "Original")</MudSelectItem>
+                <MudSelectItem Value="@TorrentContentLayout.Subfolder">@LanguageLocalizer.Translate("AddNewTorrentDialog", "Create subfolder")</MudSelectItem>
+                <MudSelectItem Value="@TorrentContentLayout.NoSubfolder">@LanguageLocalizer.Translate("AddNewTorrentDialog", "Don't create subfolder")</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12">
@@ -106,7 +106,7 @@
             <FieldSwitch Label="@LanguageLocalizer.Translate("UpDownRatioDialog", "ratio")" Value="@RatioLimitEnabled" ValueChanged="@RatioLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" data-test-id="@TestIdHelper.For("RatioLimitEnabled")" />
         </MudItem>
         <MudItem xs="12" sm="8">
-            <MudNumericField T="float" Label="@LanguageLocalizer.Translate("UpDownRatioDialog", "ratio")" Value="@RatioLimit" ValueChanged="@RatioLimitChanged" Disabled="@(!RatioLimitEnabled || !IsCustomShareLimit)" Min="0" Step="0.1f" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RatioLimit")" />
+            <MudNumericField T="double" Label="@LanguageLocalizer.Translate("UpDownRatioDialog", "ratio")" Value="@RatioLimit" ValueChanged="@RatioLimitChanged" Disabled="@(!RatioLimitEnabled || !IsCustomShareLimit)" Min="0" Step="0.1" Format="F2" Variant="Variant.Outlined" ShrinkLabel="true" data-test-id="@TestIdHelper.For("RatioLimit")" />
         </MudItem>
         <MudItem xs="12" sm="4">
             <FieldSwitch Label="@LanguageLocalizer.Translate("UpDownRatioDialog", "total minutes")" Value="@SeedingTimeLimitEnabled" ValueChanged="@SeedingTimeLimitEnabledChanged" Disabled="@(!IsCustomShareLimit)" data-test-id="@TestIdHelper.For("SeedingTimeLimitEnabled")" />

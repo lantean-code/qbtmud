@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using ClientLog = QBittorrent.ApiClient.Models.Log;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -47,13 +48,13 @@ namespace Lantean.QBTMud.Pages
 
         protected LogForm Model { get; set; } = new LogForm();
 
-        protected List<QBittorrent.ApiClient.Models.Log>? Results { get; private set; }
+        protected List<ClientLog>? Results { get; private set; }
 
         protected MudSelect<string>? CategoryMudSelect { get; set; }
 
-        protected DynamicTable<QBittorrent.ApiClient.Models.Log>? Table { get; set; }
+        protected DynamicTable<ClientLog>? Table { get; set; }
 
-        protected QBittorrent.ApiClient.Models.Log? ContextMenuItem { get; set; }
+        protected ClientLog? ContextMenuItem { get; set; }
 
         protected MudMenu? ContextMenu { get; set; }
 
@@ -123,22 +124,22 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        protected static string RowClass(QBittorrent.ApiClient.Models.Log log, int index)
+        protected static string RowClass(ClientLog log, int index)
         {
             return $"log-{log.Type.ToString().ToLower()}";
         }
 
-        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<QBittorrent.ApiClient.Models.Log> eventArgs)
+        protected Task TableDataContextMenu(TableDataContextMenuEventArgs<ClientLog> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.MouseEventArgs);
         }
 
-        protected Task TableDataLongPress(TableDataLongPressEventArgs<QBittorrent.ApiClient.Models.Log> eventArgs)
+        protected Task TableDataLongPress(TableDataLongPressEventArgs<ClientLog> eventArgs)
         {
             return ShowContextMenu(eventArgs.Item, eventArgs.LongPressEventArgs);
         }
 
-        private async Task ShowContextMenu(QBittorrent.ApiClient.Models.Log? item, EventArgs eventArgs)
+        private async Task ShowContextMenu(ClientLog? item, EventArgs eventArgs)
         {
             ContextMenuItem = item;
 
@@ -236,16 +237,16 @@ namespace Lantean.QBTMud.Pages
             return ManagedTimerTickResult.Continue;
         }
 
-        protected IEnumerable<ColumnDefinition<QBittorrent.ApiClient.Models.Log>> Columns => BuildColumns();
+        protected IEnumerable<ColumnDefinition<ClientLog>> Columns => BuildColumns();
 
-        private List<ColumnDefinition<QBittorrent.ApiClient.Models.Log>> BuildColumns()
+        private List<ColumnDefinition<ClientLog>> BuildColumns()
         {
             return
             [
-                new ColumnDefinition<QBittorrent.ApiClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
-                new ColumnDefinition<QBittorrent.ApiClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "Message"), l => l.Message, id: "message"),
-                new ColumnDefinition<QBittorrent.ApiClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
-                new ColumnDefinition<QBittorrent.ApiClient.Models.Log>(LanguageLocalizer.Translate("ExecutionLogWidget", "Log Type"), l => l.Type, id: "log_type"),
+                new ColumnDefinition<ClientLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "ID"), l => l.Id, id: "id"),
+                new ColumnDefinition<ClientLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "Message"), l => l.Message, id: "message"),
+                new ColumnDefinition<ClientLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "Timestamp"), l => l.Timestamp, l => @DisplayHelpers.DateTime(l.Timestamp), id: "timestamp"),
+                new ColumnDefinition<ClientLog>(LanguageLocalizer.Translate("ExecutionLogWidget", "Log Type"), l => l.Type, id: "log_type"),
             ];
         }
 

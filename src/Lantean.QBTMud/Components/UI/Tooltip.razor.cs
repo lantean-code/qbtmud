@@ -1,6 +1,5 @@
 using Blazor.BrowserCapabilities;
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
 using MudBlazor;
 
 namespace Lantean.QBTMud.Components.UI

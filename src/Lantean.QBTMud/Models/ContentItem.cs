@@ -10,9 +10,9 @@ namespace Lantean.QBTMud.Models
             string displayName,
             int index,
             Priority priority,
-            float progress,
+            double progress,
             long size,
-            float availability,
+            double availability,
             bool isFolder = false,
             int level = 0,
             long? downloadSize = null)
@@ -39,13 +39,13 @@ namespace Lantean.QBTMud.Models
 
         public Priority Priority { get; set; }
 
-        public float Progress { get; set; }
+        public double Progress { get; set; }
 
         public long Size { get; set; }
 
         public long DownloadSize { get; set; }
 
-        public float Availability { get; set; }
+        public double Availability { get; set; }
 
         public long Downloaded => (long)Math.Round(DownloadSize * (double)Progress, 0);
 

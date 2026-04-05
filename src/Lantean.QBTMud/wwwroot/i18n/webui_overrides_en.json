@@ -36,6 +36,7 @@
   "AppCookies|Expiration date must be a valid date and time.": "Expiration date must be a valid date and time.",
   "AppCookies|Unable to load cookies. Please try again.": "Unable to load cookies. Please try again.",
   "AppCookies|Unable to update cookies. Please try again.": "Unable to update cookies. Please try again.",
+  "AppDownloadsOptions|If added": "If added",
   "OptionsDialog|Connections": "Connections",
   "OptionsDialog|External program": "External program",
   "OptionsDialog|Slots": "Slots",

@@ -1,3 +1,4 @@
+@using QBittorrent.ApiClient.Models
 @page "/blocks"
 @layout OtherLayout
 <MudMenu @ref="ContextMenu" Dense="true" PositionAtCursor="true" ListClass="unselectable" PopoverClass="unselectable">
@@ -36,7 +37,7 @@
 
         <DynamicTable @ref="Table"
                       TableId="Blocks"
-                      T="QBittorrent.ApiClient.Models.PeerLog"
+                      T="PeerLog"
                       ColumnDefinitions="Columns"
                       Items="Results"
                       MultiSelection="false"

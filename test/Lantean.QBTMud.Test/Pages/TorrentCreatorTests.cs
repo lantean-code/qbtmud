@@ -87,7 +87,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId", "C:/Source", "Finished", 100)
+                    CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Finished, 100)
                 });
 
             var target = RenderPage();
@@ -114,7 +114,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId", "C:/Source", "Running", 10)
+                    CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Running, 10)
                 });
 
             RenderPage();
@@ -131,7 +131,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId", "C:/Source", "Finished", 100)
+                    CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Finished, 100)
                 });
 
             var handler = CapturePollHandler();
@@ -146,7 +146,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
-                .ReturnsAsync(new[] { CreateTask("TaskId", "SourcePath", "Running", 50) });
+                .ReturnsAsync(new[] { CreateTask("TaskId", "SourcePath", ClientModels.TorrentCreationTaskStatusKind.Running, 50) });
             var target = RenderPage();
             var table = target.FindComponent<DynamicTable<ClientModels.TorrentCreationTaskStatus>>();
             var columns = table.Instance.ColumnDefinitions;
@@ -162,7 +162,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
-                .ReturnsAsync(new[] { CreateTask("TaskId", "SourcePath", "Running", 50) });
+                .ReturnsAsync(new[] { CreateTask("TaskId", "SourcePath", ClientModels.TorrentCreationTaskStatusKind.Running, 50) });
             var target = RenderPage();
             var table = target.FindComponent<DynamicTable<ClientModels.TorrentCreationTaskStatus>>();
             var columns = table.Instance.ColumnDefinitions;
@@ -172,10 +172,10 @@ namespace Lantean.QBTMud.Test.Pages
                 null,
                 null,
                 "TimeAdded",
-                "Format",
+                ClientModels.TorrentFormat.Hybrid,
                 null,
                 null,
-                "Status",
+                ClientModels.TorrentCreationTaskStatusKind.Running,
                 null,
                 "TorrentFilePath",
                 "Source",
@@ -184,7 +184,7 @@ namespace Lantean.QBTMud.Test.Pages
                 "TimeStarted",
                 "TimeFinished",
                 "ErrorMessage",
-                42.0);
+                42);
             var taskWithNulls = new ClientModels.TorrentCreationTaskStatus(
                 "TaskId",
                 null,
@@ -213,8 +213,8 @@ namespace Lantean.QBTMud.Test.Pages
                 switch (column.Header)
                 {
                     case "Status":
-                        valueWithValues.Should().Be("Status");
-                        valueWithNulls.Should().Be(string.Empty);
+                        valueWithValues.Should().Be(ClientModels.TorrentCreationTaskStatusKind.Running);
+                        valueWithNulls.Should().BeNull();
                         break;
 
                     case "Progress":
@@ -268,7 +268,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DownloadRequested_WHEN_TaskFinished_THEN_TriggersFileDownload()
         {
-            var task = CreateTask("TaskId", "C:/Folder/File.txt", "Finished", 100);
+            var task = CreateTask("TaskId", "C:/Folder/File.txt", ClientModels.TorrentCreationTaskStatusKind.Finished, 100);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[] { task });
@@ -289,7 +289,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DownloadRequested_WHEN_NotFinished_THEN_DoesNotDownload()
         {
-            var task = CreateTask("TaskId", "C:/Folder/File.txt", "Running", 50);
+            var task = CreateTask("TaskId", "C:/Folder/File.txt", ClientModels.TorrentCreationTaskStatusKind.Running, 50);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[] { task });
@@ -309,7 +309,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DownloadRequestedWithDriveRoot_WHEN_Clicked_THEN_FallsBackToTaskId()
         {
-            var task = CreateTask("TaskId", "C:", "Finished", 100);
+            var task = CreateTask("TaskId", "C:", ClientModels.TorrentCreationTaskStatusKind.Finished, 100);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[] { task });
@@ -330,7 +330,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DownloadRequestedWithTorrentFile_WHEN_Clicked_THEN_KeepsTorrentExtension()
         {
-            var task = CreateTask("TaskId", "C:/Folder/File.torrent", "Finished", 100);
+            var task = CreateTask("TaskId", "C:/Folder/File.torrent", ClientModels.TorrentCreationTaskStatusKind.Finished, 100);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[] { task });
@@ -351,7 +351,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DeleteRequested_WHEN_ApiFails_THEN_ShowsError()
         {
-            var task = CreateTask("TaskId", "C:/Source", "Finished", 100);
+            var task = CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Finished, 100);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[] { task });
@@ -372,7 +372,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DeleteRequested_WHEN_ApiSucceeds_THEN_Refreshes()
         {
-            var task = CreateTask("TaskId", "C:/Source", "Finished", 100);
+            var task = CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Finished, 100);
             Mock.Get(_apiClient)
                 .SetupSequence(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[] { task })
@@ -536,7 +536,7 @@ namespace Lantean.QBTMud.Test.Pages
             var handler = CapturePollHandler();
             Mock.Get(_apiClient)
                 .SetupSequence(client => client.GetTorrentCreationTasksAsync())
-                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", "Running", 10) })
+                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Running, 10) })
                 .ThrowsAsync(new InvalidOperationException("Failure"));
 
             RenderPage();
@@ -555,7 +555,7 @@ namespace Lantean.QBTMud.Test.Pages
             var handler = CapturePollHandler();
             Mock.Get(_apiClient)
                 .SetupSequence(client => client.GetTorrentCreationTasksAsync())
-                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", "Running", 10) })
+                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Running, 10) })
                 .ThrowsAsync(new OperationCanceledException());
 
             RenderPage();
@@ -570,8 +570,8 @@ namespace Lantean.QBTMud.Test.Pages
             var handler = CapturePollHandler();
             Mock.Get(_apiClient)
                 .SetupSequence(client => client.GetTorrentCreationTasksAsync())
-                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", "Running", 10) })
-                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", "Running", 20) });
+                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Running, 10) })
+                .ReturnsAsync(new[] { CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Running, 20) });
 
             RenderPage();
 
@@ -608,7 +608,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId", "C:/Source", "Running", 10)
+                    CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Running, 10)
                 });
 
             RenderPage();
@@ -625,7 +625,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId", "C:/Source", "Running", 42)
+                    CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Running, 42)
                 });
 
             var target = RenderPage();
@@ -644,7 +644,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId", "C:/Source", "Running", null)
+                    CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Running, null)
                 });
 
             var target = RenderPage();
@@ -660,7 +660,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId", "C:/Source", "Finished", null)
+                    CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Finished, null)
                 });
 
             var target = RenderPage();
@@ -676,8 +676,8 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId1", "C:/Source", "Failed", 100),
-                    CreateTask("TaskId2", "C:/Source", "Unknown", 10)
+                    CreateTask("TaskId1", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Failed, 100),
+                    CreateTask("TaskId2", "C:/Source", (ClientModels.TorrentCreationTaskStatusKind)99, 10)
                 });
 
             var target = RenderPage();
@@ -686,7 +686,7 @@ namespace Lantean.QBTMud.Test.Pages
             failedStatus.Instance.Text.Should().Be("Failed");
 
             var unknownStatus = FindComponentByTestId<MudChip<string>>(target, "TorrentCreatorStatus-TaskId2");
-            unknownStatus.Instance.Text.Should().Be("Unknown");
+            unknownStatus.Instance.Text.Should().Be("99");
         }
 
         [Fact]
@@ -696,7 +696,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId", "C:/Source", "Queued", 0)
+                    CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Queued, 0)
                 });
 
             var target = RenderPage();
@@ -706,13 +706,13 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_WhitespaceStatus_WHEN_Rendered_THEN_ShowsEmptyStatusText()
+        public void GIVEN_NullStatus_WHEN_Rendered_THEN_ShowsEmptyStatusText()
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId", "C:/Source", " ", 0)
+                    CreateTask("TaskId", "C:/Source", null, 0)
                 });
 
             var target = RenderPage();
@@ -724,7 +724,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_SourcePathWhitespace_WHEN_Downloaded_THEN_FallsBackToTaskId()
         {
-            var task = CreateTask("TaskId", "  ", "Finished", 100);
+            var task = CreateTask("TaskId", "  ", ClientModels.TorrentCreationTaskStatusKind.Finished, 100);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[] { task });
@@ -745,7 +745,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_SourcePathRootSeparator_WHEN_Downloaded_THEN_FallsBackToTaskId()
         {
-            var task = CreateTask("TaskId", "/", "Finished", 100);
+            var task = CreateTask("TaskId", "/", ClientModels.TorrentCreationTaskStatusKind.Finished, 100);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[] { task });
@@ -766,7 +766,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_SourcePathTrailingSpaceSegment_WHEN_Downloaded_THEN_FallsBackToTaskId()
         {
-            var task = CreateTask("TaskId", "C:/ ", "Finished", 100);
+            var task = CreateTask("TaskId", "C:/ ", ClientModels.TorrentCreationTaskStatusKind.Finished, 100);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[] { task });
@@ -791,7 +791,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetTorrentCreationTasksAsync())
                 .ReturnsAsync(new[]
                 {
-                    CreateTask("TaskId", "C:/Source", "Running", 10)
+                    CreateTask("TaskId", "C:/Source", ClientModels.TorrentCreationTaskStatusKind.Running, 10)
                 });
 
             Mock.Get(_timer)
@@ -834,7 +834,7 @@ namespace Lantean.QBTMud.Test.Pages
             return cancellationToken => handler!.Invoke(cancellationToken);
         }
 
-        private static ClientModels.TorrentCreationTaskStatus CreateTask(string taskId, string sourcePath, string status, double? progress)
+        private static ClientModels.TorrentCreationTaskStatus CreateTask(string taskId, string sourcePath, ClientModels.TorrentCreationTaskStatusKind? status, int? progress)
         {
             return new ClientModels.TorrentCreationTaskStatus(
                 taskId,
@@ -842,7 +842,7 @@ namespace Lantean.QBTMud.Test.Pages
                 null,
                 false,
                 "TimeAdded",
-                "hybrid",
+                ClientModels.TorrentFormat.Hybrid,
                 true,
                 null,
                 status,

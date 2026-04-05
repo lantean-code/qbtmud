@@ -3,6 +3,8 @@ using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using MudMainData = Lantean.QBTMud.Models.MainData;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -36,10 +38,10 @@ namespace Lantean.QBTMud.Pages
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
         [CascadingParameter]
-        public MainData MainData { get; set; } = default!;
+        public MudMainData MainData { get; set; } = default!;
 
         [CascadingParameter]
-        public QBittorrent.ApiClient.Models.Preferences Preferences { get; set; } = default!;
+        public Preferences Preferences { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }

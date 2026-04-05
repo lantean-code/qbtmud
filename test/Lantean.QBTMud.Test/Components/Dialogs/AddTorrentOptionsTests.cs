@@ -6,6 +6,8 @@ using Lantean.QBTMud.Test.Infrastructure;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+
 using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
@@ -62,15 +64,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 tempPathEnabled: true,
                 addStoppedEnabled: true,
                 addToTopOfQueue: false,
-                stopCondition: "StopCondition",
-                contentLayout: "ContentLayout",
+                stopCondition: StopCondition.FilesChecked,
+                contentLayout: TorrentContentLayout.Subfolder,
                 maxRatioEnabled: true,
                 maxRatio: 1.5f,
                 maxSeedingTimeEnabled: true,
                 maxSeedingTime: 60,
                 maxInactiveSeedingTimeEnabled: true,
                 maxInactiveSeedingTime: 120,
-                maxRatioAct: 2);
+                maxRatioAct: MaxRatioAction.EnableSuperSeeding);
 
             UseApiClientMock(categories: categories, tags: tags, preferences: preferences);
 
@@ -83,10 +85,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             GetDownloadPath(component).Should().Be("TempPath");
             FindFieldSwitch(component, "StartTorrent").Instance.Value.Should().BeFalse();
             FindFieldSwitch(component, "AddToTopOfQueue").Instance.Value.Should().BeFalse();
-            FindSelect<string>(component, "StopCondition").Instance.GetState(x => x.Value).Should().Be("StopCondition");
-            FindSelect<string>(component, "ContentLayout").Instance.GetState(x => x.Value).Should().Be("ContentLayout");
+            FindSelect<StopCondition>(component, "StopCondition").Instance.GetState(x => x.Value).Should().Be(StopCondition.FilesChecked);
+            FindSelect<TorrentContentLayout>(component, "ContentLayout").Instance.GetState(x => x.Value).Should().Be(TorrentContentLayout.Subfolder);
             FindFieldSwitch(component, "RatioLimitEnabled").Instance.Value.Should().BeTrue();
-            FindNumericField<float>(component, "RatioLimit").Instance.GetState(x => x.Value).Should().Be(1.5f);
+            FindNumericField<double>(component, "RatioLimit").Instance.GetState(x => x.Value).Should().Be(1.5d);
             FindFieldSwitch(component, "SeedingTimeLimitEnabled").Instance.Value.Should().BeTrue();
             FindNumericField<int>(component, "SeedingTimeLimit").Instance.GetState(x => x.Value).Should().Be(60);
             FindFieldSwitch(component, "InactiveSeedingTimeLimitEnabled").Instance.Value.Should().BeTrue();
@@ -398,20 +400,20 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             FindFieldSwitch(component, "RatioLimitEnabled").Instance.Disabled.Should().BeFalse();
 
             await SetFieldSwitchValue(component, "RatioLimitEnabled", true);
-            await SetNumericValue(component, "RatioLimit", 2.5f);
+            await SetNumericValue(component, "RatioLimit", 2.5d);
             await SetFieldSwitchValue(component, "SeedingTimeLimitEnabled", true);
             await SetNumericValue(component, "SeedingTimeLimit", 60);
             await SetFieldSwitchValue(component, "InactiveSeedingTimeLimitEnabled", true);
             await SetNumericValue(component, "InactiveSeedingTimeLimit", 30);
-            await SetSelectValue(component, "StopCondition", "FilesChecked");
-            await SetSelectValue(component, "ContentLayout", "Subfolder");
+            await SetSelectValue(component, "StopCondition", StopCondition.FilesChecked);
+            await SetSelectValue(component, "ContentLayout", TorrentContentLayout.Subfolder);
 
             var customOptions = component.Instance.GetTorrentOptions();
-            customOptions.RatioLimit.Should().Be(2.5f);
+            customOptions.RatioLimit.Should().Be(2.5d);
             customOptions.SeedingTimeLimit.Should().Be(60);
             customOptions.InactiveSeedingTimeLimit.Should().Be(30);
-            customOptions.StopCondition.Should().Be("FilesChecked");
-            customOptions.ContentLayout.Should().Be("Subfolder");
+            customOptions.StopCondition.Should().Be(StopCondition.FilesChecked);
+            customOptions.ContentLayout.Should().Be(TorrentContentLayout.Subfolder);
 
             await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.Global);
             FindFieldSwitch(component, "RatioLimitEnabled").Instance.Value.Should().BeFalse();
@@ -419,22 +421,22 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             FindFieldSwitch(component, "InactiveSeedingTimeLimitEnabled").Instance.Value.Should().BeFalse();
 
             var globalOptions = component.Instance.GetTorrentOptions();
-            globalOptions.RatioLimit.Should().Be(Limits.UseGlobalShareLimit);
-            globalOptions.SeedingTimeLimit.Should().Be((int?)Limits.UseGlobalShareLimit);
-            globalOptions.InactiveSeedingTimeLimit.Should().Be((int?)Limits.UseGlobalShareLimit);
+            globalOptions.RatioLimit.Should().Be(Limits.UseGlobalShareRatioLimit);
+            globalOptions.SeedingTimeLimit.Should().Be(Limits.UseGlobalSeedingTimeLimit);
+            globalOptions.InactiveSeedingTimeLimit.Should().Be(Limits.UseGlobalInactiveSeedingTimeLimit);
 
             await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.NoLimit);
 
             var noLimitOptions = component.Instance.GetTorrentOptions();
-            noLimitOptions.RatioLimit.Should().Be(Limits.NoShareLimit);
-            noLimitOptions.SeedingTimeLimit.Should().Be((int?)Limits.NoShareLimit);
-            noLimitOptions.InactiveSeedingTimeLimit.Should().Be((int?)Limits.NoShareLimit);
+            noLimitOptions.RatioLimit.Should().Be(Limits.NoShareRatioLimit);
+            noLimitOptions.SeedingTimeLimit.Should().Be(Limits.NoSeedingTimeLimit);
+            noLimitOptions.InactiveSeedingTimeLimit.Should().Be(Limits.NoInactiveSeedingTimeLimit);
         }
 
         [Fact]
         public async Task GIVEN_CustomShareLimitWithDefaults_WHEN_GetTorrentOptionsInvoked_THEN_NoLimitApplied()
         {
-            var preferences = CreatePreferences(maxRatioAct: 9);
+            var preferences = CreatePreferences(maxRatioAct: (MaxRatioAction)9);
 
             UseApiClientMock(preferences: preferences);
 
@@ -444,9 +446,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSelectValue(component, "ShareLimitMode", AddTorrentOptions.ShareLimitMode.Custom);
 
             var options = component.Instance.GetTorrentOptions();
-            options.RatioLimit.Should().Be(Limits.NoShareLimit);
-            options.SeedingTimeLimit.Should().Be((int?)Limits.NoShareLimit);
-            options.InactiveSeedingTimeLimit.Should().Be((int?)Limits.NoShareLimit);
+            options.RatioLimit.Should().Be(Limits.NoShareRatioLimit);
+            options.SeedingTimeLimit.Should().Be(Limits.NoSeedingTimeLimit);
+            options.InactiveSeedingTimeLimit.Should().Be(Limits.NoInactiveSeedingTimeLimit);
         }
 
         [Fact]
@@ -484,18 +486,18 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var component = _target.RenderComponent();
             ExpandOptions(component);
 
-            await component.InvokeAsync(() => FindSelect<string>(component, "StopCondition").Instance.OpenMenu());
+            await component.InvokeAsync(() => FindSelect<StopCondition>(component, "StopCondition").Instance.OpenMenu());
             component.WaitForAssertion(() =>
             {
-                var values = component.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
-                values.Should().Contain("MetadataReceived");
+                var values = component.FindComponents<MudSelectItem<StopCondition>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(StopCondition.MetadataReceived);
             });
 
-            await component.InvokeAsync(() => FindSelect<string>(component, "ContentLayout").Instance.OpenMenu());
+            await component.InvokeAsync(() => FindSelect<TorrentContentLayout>(component, "ContentLayout").Instance.OpenMenu());
             component.WaitForAssertion(() =>
             {
-                var values = component.FindComponents<MudSelectItem<string>>().Select(item => item.Instance.Value).ToList();
-                values.Should().Contain("NoSubfolder");
+                var values = component.FindComponents<MudSelectItem<TorrentContentLayout>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(TorrentContentLayout.NoSubfolder);
             });
         }
 
@@ -640,15 +642,15 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             bool tempPathEnabled = false,
             bool addStoppedEnabled = false,
             bool addToTopOfQueue = true,
-            string stopCondition = "StopCondition",
-            string contentLayout = "ContentLayout",
+            StopCondition stopCondition = StopCondition.None,
+            TorrentContentLayout contentLayout = TorrentContentLayout.Original,
             bool maxRatioEnabled = false,
             float maxRatio = 1.0f,
             bool maxSeedingTimeEnabled = false,
             int maxSeedingTime = 0,
             bool maxInactiveSeedingTimeEnabled = false,
             int maxInactiveSeedingTime = 0,
-            int maxRatioAct = 0)
+            MaxRatioAction maxRatioAct = MaxRatioAction.StopTorrent)
         {
             return PreferencesFactory.CreatePreferences(spec =>
             {

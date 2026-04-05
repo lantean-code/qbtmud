@@ -29,8 +29,8 @@ namespace Lantean.QBTMud.Test.Components
             apiClientMock.Setup(c => c.SetForceStartAsync(It.IsAny<TorrentSelector>(), true, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             var torrents = Torrents(
-                CreateTorrent("One", state: "stoppedDL"),
-                CreateTorrent("Two", state: "downloading"));
+                CreateTorrent("One", state: TorrentState.StoppedDownloading),
+                CreateTorrent("Two", state: TorrentState.Downloading));
             var hashes = Hashes("One", "Two");
 
             var target = RenderMenuItems(hashes, torrents, Tags("Tag"), Categories("Category"));
@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public void GIVEN_StoppedTorrent_WHEN_Rendered_THEN_StopHiddenAndStartVisible()
         {
-            var target = RenderMenuItems(Hashes("Hash"), Torrents(CreateTorrent("Hash", state: "stoppedDL")), Tags("Tag"), Categories("Category"));
+            var target = RenderMenuItems(Hashes("Hash"), Torrents(CreateTorrent("Hash", state: TorrentState.StoppedDownloading)), Tags("Tag"), Categories("Category"));
 
             var menuItems = target.FindComponents<MudMenuItem>().Select(item => item.Markup).ToList();
 
@@ -969,8 +969,8 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseSnackbarMock();
 
             var torrents = Torrents(
-                CreateTorrent("One", forceStart: true, automaticTorrentManagement: true, state: "downloading"),
-                CreateTorrent("Two", forceStart: true, automaticTorrentManagement: false, state: "downloading"));
+                CreateTorrent("One", forceStart: true, automaticTorrentManagement: true, state: TorrentState.Downloading),
+                CreateTorrent("Two", forceStart: true, automaticTorrentManagement: false, state: TorrentState.Downloading));
 
             var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
 
@@ -990,8 +990,8 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseSnackbarMock();
 
             var torrents = Torrents(
-                CreateTorrent("One", sequentialDownload: true, firstLastPiecePriority: false, state: "downloading"),
-                CreateTorrent("Two", sequentialDownload: false, firstLastPiecePriority: false, state: "downloading"));
+                CreateTorrent("One", sequentialDownload: true, firstLastPiecePriority: false, state: TorrentState.Downloading),
+                CreateTorrent("Two", sequentialDownload: false, firstLastPiecePriority: false, state: TorrentState.Downloading));
 
             var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
 
@@ -1011,8 +1011,8 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseSnackbarMock();
 
             var torrents = Torrents(
-                CreateTorrent("One", sequentialDownload: false, firstLastPiecePriority: true, state: "downloading"),
-                CreateTorrent("Two", sequentialDownload: false, firstLastPiecePriority: false, state: "downloading"));
+                CreateTorrent("One", sequentialDownload: false, firstLastPiecePriority: true, state: TorrentState.Downloading),
+                CreateTorrent("Two", sequentialDownload: false, firstLastPiecePriority: false, state: TorrentState.Downloading));
 
             var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
 
@@ -1098,11 +1098,11 @@ namespace Lantean.QBTMud.Test.Components
             bool forceStart = false,
             bool superSeeding = false,
             bool automaticTorrentManagement = true,
-            string state = "stoppedDL",
+            TorrentState? state = TorrentState.StoppedDownloading,
             string category = "Category",
             IEnumerable<string>? tags = null,
-            long downloadLimit = -1,
-            long uploadLimit = -1,
+            int downloadLimit = -1,
+            int uploadLimit = -1,
             string savePath = "SavePath",
             string name = "Name",
             string magnetUri = "Magnet")

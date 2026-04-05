@@ -13,7 +13,6 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using LogEntry = QBittorrent.ApiClient.Models.Log;
 using LogPage = Lantean.QBTMud.Pages.Log;
 
 namespace Lantean.QBTMud.Test.Pages
@@ -53,7 +52,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
-                .ReturnsAsync(new List<LogEntry>());
+                .ReturnsAsync(new List<Log>());
         }
 
         [Fact]
@@ -118,14 +117,14 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_TimerTick_WHEN_ResultsReturned_THEN_TableUpdated()
         {
             var target = RenderTarget();
-            var results = new List<LogEntry> { CreateLog(1, "Message", LogType.Warning) };
+            var results = new List<Log> { CreateLog(1, "Message", LogType.Warning) };
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
             await TriggerTimerTickAsync(target);
 
-            var table = target.FindComponent<DynamicTable<LogEntry>>();
+            var table = target.FindComponent<DynamicTable<Log>>();
             table.WaitForAssertion(() =>
             {
                 var items = table.Instance.Items.Should().NotBeNull().And.Subject;
@@ -209,14 +208,14 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_Results_WHEN_ClearInvoked_THEN_TableCleared()
         {
             var target = RenderTarget();
-            var results = new List<LogEntry> { CreateLog(1, "Message", LogType.Info) };
+            var results = new List<Log> { CreateLog(1, "Message", LogType.Info) };
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
                 .ReturnsAsync(results);
 
             await InvokeSubmitAsync(target);
 
-            var table = target.FindComponent<DynamicTable<LogEntry>>();
+            var table = target.FindComponent<DynamicTable<Log>>();
             table.WaitForAssertion(() =>
             {
                 var items = table.Instance.Items.Should().NotBeNull().And.Subject;
@@ -237,12 +236,12 @@ namespace Lantean.QBTMud.Test.Pages
         public void GIVEN_RowClassFunc_WHEN_LogTypesProvided_THEN_ReturnsExpected()
         {
             var target = RenderTarget();
-            var table = target.FindComponent<DynamicTable<LogEntry>>();
+            var table = target.FindComponent<DynamicTable<Log>>();
             var func = table.Instance.RowClassFunc;
             func.Should().NotBeNull();
 
-            func!.Invoke(new LogEntry(1, "Message", 1, LogType.Critical), 0).Should().Be("log-critical");
-            func!.Invoke(new LogEntry(2, "Message", 1, LogType.Info), 0).Should().Be("log-info");
+            func!.Invoke(new Log(1, "Message", 1, LogType.Critical), 0).Should().Be("log-critical");
+            func!.Invoke(new Log(2, "Message", 1, LogType.Info), 0).Should().Be("log-info");
         }
 
         [Fact]
@@ -256,7 +255,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             await TriggerTimerTickAsync(target);
 
-            var table = target.FindComponent<DynamicTable<LogEntry>>();
+            var table = target.FindComponent<DynamicTable<Log>>();
             table.WaitForAssertion(() =>
             {
                 var items = table.Instance.Items.Should().NotBeNull().And.Subject.ToList();
@@ -286,7 +285,7 @@ namespace Lantean.QBTMud.Test.Pages
             var apiClientMock = new Mock<IApiClient>();
             apiClientMock
                 .Setup(c => c.GetLogAsync(false, true, false, true, It.IsAny<int?>()))
-                .ReturnsAsync(new List<LogEntry>());
+                .ReturnsAsync(new List<Log>());
             localContext.Services.RemoveAll<IApiClient>();
             localContext.Services.AddSingleton(apiClientMock.Object);
             var managedTimer = new Mock<IManagedTimer>();
@@ -351,17 +350,17 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => form.Instance.OnSubmit.InvokeAsync(form.Instance.EditContext));
         }
 
-        private async Task TriggerContextMenuAsync(IRenderedComponent<LogPage> target, LogEntry item)
+        private async Task TriggerContextMenuAsync(IRenderedComponent<LogPage> target, Log item)
         {
-            var table = target.FindComponent<DynamicTable<LogEntry>>();
-            var args = new TableDataContextMenuEventArgs<LogEntry>(new MouseEventArgs(), new MudTd(), item);
+            var table = target.FindComponent<DynamicTable<Log>>();
+            var args = new TableDataContextMenuEventArgs<Log>(new MouseEventArgs(), new MudTd(), item);
             await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(args));
         }
 
-        private async Task TriggerLongPressAsync(IRenderedComponent<LogPage> target, LogEntry item)
+        private async Task TriggerLongPressAsync(IRenderedComponent<LogPage> target, Log item)
         {
-            var table = target.FindComponent<DynamicTable<LogEntry>>();
-            var args = new TableDataLongPressEventArgs<LogEntry>(new LongPressEventArgs(), new MudTd(), item);
+            var table = target.FindComponent<DynamicTable<Log>>();
+            var args = new TableDataLongPressEventArgs<Log>(new LongPressEventArgs(), new MudTd(), item);
             await target.InvokeAsync(() => table.Instance.OnTableDataLongPress.InvokeAsync(args));
         }
 
@@ -406,14 +405,14 @@ namespace Lantean.QBTMud.Test.Pages
                 .Single(item => item.Instance.Icon == icon);
         }
 
-        private static LogEntry CreateLog(int id, string message, LogType type)
+        private static Log CreateLog(int id, string message, LogType type)
         {
-            return new LogEntry(id, message, id, type);
+            return new Log(id, message, id, type);
         }
 
-        private static List<LogEntry> CreateLogs(int count, LogType type)
+        private static List<Log> CreateLogs(int count, LogType type)
         {
-            var results = new List<LogEntry>(count);
+            var results = new List<Log>(count);
             for (var i = 1; i <= count; i++)
             {
                 results.Add(CreateLog(i, $"Message{i}", type));

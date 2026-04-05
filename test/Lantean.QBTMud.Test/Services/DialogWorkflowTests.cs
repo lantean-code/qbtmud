@@ -110,14 +110,14 @@ namespace Lantean.QBTMud.Test.Services
             fileTwo.Setup(f => f.OpenReadStream(4194304, It.IsAny<CancellationToken>())).Returns(streamTwo);
 
             var options = CreateTorrentOptions(false, false);
-            options.ShareLimitAction = ShareLimitAction.Remove.ToString();
+            options.ShareLimitAction = ShareLimitAction.Remove;
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options)
             {
                 DownloadPath = "DownloadPath",
                 InactiveSeedingTimeLimit = 4,
                 RatioLimit = 5F,
                 SeedingTimeLimit = 6,
-                ShareLimitAction = ShareLimitAction.Remove.ToString(),
+                ShareLimitAction = ShareLimitAction.Remove,
                 UseDownloadPath = true,
                 Tags = new[] { "Tags" }
             };
@@ -298,14 +298,14 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_LinkOptions_WHEN_InvokeAddTorrentLinkDialog_THEN_ShouldAddTorrent()
         {
             var options = CreateTorrentOptions(true, true);
-            options.ShareLimitAction = ShareLimitAction.Remove.ToString();
+            options.ShareLimitAction = ShareLimitAction.Remove;
             var linkOptions = new AddTorrentLinkOptions("http://one\nhttp://two", options)
             {
                 DownloadPath = "DownloadPath",
                 InactiveSeedingTimeLimit = 4,
                 RatioLimit = 5F,
                 SeedingTimeLimit = 6,
-                ShareLimitAction = ShareLimitAction.Remove.ToString(),
+                ShareLimitAction = ShareLimitAction.Remove,
                 UseDownloadPath = true,
                 Tags = new[] { "Tags" }
             };
@@ -647,7 +647,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.GetTorrentListAsync(null, null, null, null, null, null, null, null, null, null, TorrentSelector.FromHash("Hash"), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ApiResult<IReadOnlyList<QbtTorrent>>.Success(new List<QbtTorrent> { new() { Name = "Name" } }));
+                .ReturnsAsync(ApiResult.Success<IReadOnlyList<QbtTorrent>>(new List<QbtTorrent> { new(name: "Name") }));
 
             var result = await _target.InvokeDeleteTorrentDialog(true, "Hash");
 
@@ -663,7 +663,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.GetTorrentListAsync(null, null, null, null, null, null, null, null, null, null, TorrentSelector.FromHash("Hash"), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ApiResult<IReadOnlyList<QbtTorrent>>.Success(new List<QbtTorrent> { new() { Name = "Name" } }));
+                .ReturnsAsync(ApiResult.Success<IReadOnlyList<QbtTorrent>>(new List<QbtTorrent> { new(name: "Name") }));
             Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), true, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
@@ -694,7 +694,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.GetTorrentListAsync(null, null, null, null, null, null, null, null, null, null, TorrentSelector.FromHash("Hash"), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<QbtTorrent> { new() { Name = "Name" } });
+                .ReturnsAsync(ApiResult.Success<IReadOnlyList<QbtTorrent>>(new List<QbtTorrent> { new(name: "Name") }));
             Mock.Get(_apiClient)
                 .Setup(a => a.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences => preferences.DeleteTorrentContentFiles ?? false)))
                 .Returns(Task.CompletedTask)
@@ -1226,22 +1226,22 @@ namespace Lantean.QBTMud.Test.Services
         {
             var torrents = new[]
             {
-                CreateTorrent("Hash", 2F, 3, 4F, ShareLimitAction.Stop),
-                CreateTorrent("SecondHash", 3F, 3, 4F, ShareLimitAction.Remove)
+                CreateTorrent("Hash", 2F, 3, 4, ShareLimitAction.Stop),
+                CreateTorrent("SecondHash", 3F, 3, 4, ShareLimitAction.Remove)
             };
 
-            var reference = CreateReference(DialogResult.Ok(new ShareRatio
+            var reference = CreateReference(DialogResult.Ok(new ShareLimit
             {
                 RatioLimit = 5F,
-                SeedingTimeLimit = 6F,
-                InactiveSeedingTimeLimit = 7F,
+                SeedingTimeLimit = 6,
+                InactiveSeedingTimeLimit = 7,
                 ShareLimitAction = ShareLimitAction.Remove
             }));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.SetTorrentShareLimitAsync(TorrentSelectorTestHelper.FromHashes("Hash", "SecondHash"), 5F, 6F, 7F, ShareLimitAction.Remove, It.IsAny<CancellationToken>()))
+                .Setup(a => a.SetTorrentShareLimitAsync(TorrentSelectorTestHelper.FromHashes("Hash", "SecondHash"), 5F, 6, 7, ShareLimitAction.Remove, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -1260,22 +1260,22 @@ namespace Lantean.QBTMud.Test.Services
         {
             var torrents = new[]
             {
-                CreateTorrent("Hash", 2F, 3, 4F, ShareLimitAction.Stop),
-                CreateTorrent("SecondHash", 2F, 3, 4F, ShareLimitAction.Stop)
+                CreateTorrent("Hash", 2F, 3, 4, ShareLimitAction.Stop),
+                CreateTorrent("SecondHash", 2F, 3, 4, ShareLimitAction.Stop)
             };
 
-            var reference = CreateReference(DialogResult.Ok(new ShareRatio
+            var reference = CreateReference(DialogResult.Ok(new ShareLimit
             {
                 RatioLimit = 5F,
-                SeedingTimeLimit = 6F,
-                InactiveSeedingTimeLimit = 7F,
+                SeedingTimeLimit = 6,
+                InactiveSeedingTimeLimit = 7,
                 ShareLimitAction = ShareLimitAction.Remove
             }));
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
-                .Setup(a => a.SetTorrentShareLimitAsync(TorrentSelectorTestHelper.FromHashes("Hash", "SecondHash"), 5F, 6F, 7F, ShareLimitAction.Remove, It.IsAny<CancellationToken>()))
+                .Setup(a => a.SetTorrentShareLimitAsync(TorrentSelectorTestHelper.FromHashes("Hash", "SecondHash"), 5F, 6, 7, ShareLimitAction.Remove, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -1291,7 +1291,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_DialogCanceled_WHEN_InvokeShareRatioDialog_THEN_ShouldNotUpdateLimits()
         {
-            var torrents = new[] { CreateTorrent("Hash", 2F, 3, 4F, ShareLimitAction.Stop) };
+            var torrents = new[] { CreateTorrent("Hash", 2F, 3, 4, ShareLimitAction.Stop) };
             var reference = CreateReference(DialogResult.Cancel());
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<ShareRatioDialog>("Torrent Upload/Download Ratio Limiting", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
@@ -1299,7 +1299,7 @@ namespace Lantean.QBTMud.Test.Services
 
             await _target.InvokeShareRatioDialog(torrents);
 
-            Mock.Get(_apiClient).Verify(a => a.SetTorrentShareLimitAsync(It.IsAny<TorrentSelector>(), It.IsAny<float>(), It.IsAny<float>(), It.IsAny<float>(), It.IsAny<ShareLimitAction?>(), It.IsAny<CancellationToken>()), Times.Never);
+            Mock.Get(_apiClient).Verify(a => a.SetTorrentShareLimitAsync(It.IsAny<TorrentSelector>(), It.IsAny<float>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<ShareLimitAction?>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -1656,7 +1656,7 @@ namespace Lantean.QBTMud.Test.Services
             var reference = new Mock<IDialogReference>();
             var parent = new UIAction("Name", "Parent", null, Color.Primary, "Href");
             var hashes = new[] { "Hash" };
-            var torrents = new Dictionary<string, MudTorrent> { { "Hash", CreateTorrent("Hash", 0F, 0, 0F, ShareLimitAction.Default) } };
+            var torrents = new Dictionary<string, MudTorrent> { { "Hash", CreateTorrent("Hash", 0F, 0, 0, ShareLimitAction.Default) } };
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<SubMenuDialog>("Parent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference.Object);
@@ -2074,18 +2074,18 @@ namespace Lantean.QBTMud.Test.Services
                 return false;
             }
 
-            var currentValue = parameters[nameof(ShareRatioDialog.CurrentValue)] as ShareRatioMax;
+            var currentValue = parameters[nameof(ShareRatioDialog.CurrentValue)] as ShareLimitMax;
             return currentValue != null
                    && currentValue.RatioLimit == 2F
                    && currentValue.SeedingTimeLimit == 3
-                   && currentValue.InactiveSeedingTimeLimit == 4F
+                   && currentValue.InactiveSeedingTimeLimit == 4
                    && currentValue.ShareLimitAction == ShareLimitAction.Stop;
         }
 
         private static bool HasMatchingShareRatioDialogParameters(DialogParameters parameters)
         {
             return HasParameter(parameters, nameof(ShareRatioDialog.Value))
-                   && parameters[nameof(ShareRatioDialog.Value)] is ShareRatioMax;
+                   && parameters[nameof(ShareRatioDialog.Value)] is ShareLimitMax;
         }
 
         private static bool HasStringFieldDialogParameters(DialogParameters parameters, string label, string value)
@@ -2206,9 +2206,9 @@ namespace Lantean.QBTMud.Test.Services
                 "Category",
                 startTorrent,
                 true,
-                StopCondition.MetadataReceived.ToString(),
+                StopCondition.MetadataReceived,
                 false,
-                "Original",
+                TorrentContentLayout.Original,
                 true,
                 true,
                 2,
@@ -2217,20 +2217,20 @@ namespace Lantean.QBTMud.Test.Services
             options.InactiveSeedingTimeLimit = 4;
             options.RatioLimit = 5F;
             options.SeedingTimeLimit = 6;
-            options.ShareLimitAction = ShareLimitAction.Remove.ToString();
+            options.ShareLimitAction = ShareLimitAction.Remove;
             options.UseDownloadPath = true;
             options.Tags = new[] { "Tags" };
             return options;
         }
 
-        private static MudTorrent CreateTorrent(string hash, float ratioLimit, int seedingTimeLimit, float inactiveSeedingTimeLimit, ShareLimitAction shareLimitAction)
+        private static MudTorrent CreateTorrent(string hash, float ratioLimit, int seedingTimeLimit, int inactiveSeedingTimeLimit, ShareLimitAction shareLimitAction)
         {
             return new MudTorrent(
                 hash,
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 1,
+                availability: 1,
                 category: string.Empty,
                 completed: 0,
                 completionOn: 0,
@@ -2263,7 +2263,7 @@ namespace Lantean.QBTMud.Test.Services
                 seenComplete: 0,
                 sequentialDownload: false,
                 size: 0,
-                state: string.Empty,
+                state: null,
                 superSeeding: false,
                 tags: Array.Empty<string>(),
                 timeActive: 0,

@@ -7,7 +7,10 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using MudBlazor.Extensions;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using System.Collections.ObjectModel;
+using ClientPriority = QBittorrent.ApiClient.Models.Priority;
+using MudPriority = Lantean.QBTMud.Models.Priority;
 
 namespace Lantean.QBTMud.Components
 {
@@ -189,7 +192,7 @@ namespace Lantean.QBTMud.Components
             if (Active && Hash is not null)
             {
                 var filesResult = await ApiClient.GetTorrentContentsAsync(Hash);
-                if (!filesResult.TryGetValue(out IReadOnlyList<QBittorrent.ApiClient.Models.FileData>? files))
+                if (!filesResult.TryGetValue(out IReadOnlyList<FileData>? files))
                 {
                     if (filesResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
                     {
@@ -274,7 +277,7 @@ namespace Lantean.QBTMud.Components
             MarkFilesDirty();
         }
 
-        protected async Task PriorityValueChanged(ContentItem contentItem, Priority priority)
+        protected async Task PriorityValueChanged(ContentItem contentItem, MudPriority priority)
         {
             IEnumerable<int> fileIndexes;
             if (contentItem.IsFolder)
@@ -359,9 +362,9 @@ namespace Lantean.QBTMud.Components
             await SessionStorage.SetItemAsync($"{_expandedNodesStorageKey}.{Hash}", ExpandedNodes);
         }
 
-        private static QBittorrent.ApiClient.Models.Priority MapPriority(Priority priority)
+        private static ClientPriority MapPriority(MudPriority priority)
         {
-            return (QBittorrent.ApiClient.Models.Priority)(int)priority;
+            return (ClientPriority)(int)priority;
         }
 
         private Func<ContentItem, object?> GetSortSelector()
@@ -549,35 +552,35 @@ namespace Lantean.QBTMud.Components
 
         protected async Task DoNotDownloadLessThan100PercentAvailability()
         {
-            await LessThanXAvailability(1f, QBittorrent.ApiClient.Models.Priority.DoNotDownload);
+            await LessThanXAvailability(1f, ClientPriority.DoNotDownload);
         }
 
         protected async Task DoNotDownloadLessThan80PercentAvailability()
         {
-            await LessThanXAvailability(0.8f, QBittorrent.ApiClient.Models.Priority.DoNotDownload);
+            await LessThanXAvailability(0.8f, ClientPriority.DoNotDownload);
         }
 
         protected async Task DoNotDownloadCurrentlyFilteredFiles()
         {
-            await CurrentlyFilteredFiles(QBittorrent.ApiClient.Models.Priority.DoNotDownload);
+            await CurrentlyFilteredFiles(ClientPriority.DoNotDownload);
         }
 
         protected async Task NormalPriorityLessThan100PercentAvailability()
         {
-            await LessThanXAvailability(1f, QBittorrent.ApiClient.Models.Priority.Normal);
+            await LessThanXAvailability(1f, ClientPriority.Normal);
         }
 
         protected async Task NormalPriorityLessThan80PercentAvailability()
         {
-            await LessThanXAvailability(0.8f, QBittorrent.ApiClient.Models.Priority.Normal);
+            await LessThanXAvailability(0.8f, ClientPriority.Normal);
         }
 
         protected async Task NormalPriorityCurrentlyFilteredFiles()
         {
-            await CurrentlyFilteredFiles(QBittorrent.ApiClient.Models.Priority.Normal);
+            await CurrentlyFilteredFiles(ClientPriority.Normal);
         }
 
-        private async Task LessThanXAvailability(float value, QBittorrent.ApiClient.Models.Priority priority)
+        private async Task LessThanXAvailability(float value, ClientPriority priority)
         {
             if (Hash is null || FileList is null)
             {
@@ -594,7 +597,7 @@ namespace Lantean.QBTMud.Components
             await ApiClient.SetFilePriorityAsync(Hash, files, priority);
         }
 
-        protected async Task CurrentlyFilteredFiles(QBittorrent.ApiClient.Models.Priority priority)
+        protected async Task CurrentlyFilteredFiles(ClientPriority priority)
         {
             if (Hash is null || FileList is null)
             {

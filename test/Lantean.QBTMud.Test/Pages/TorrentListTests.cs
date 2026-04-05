@@ -14,6 +14,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -46,12 +51,12 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_RenderedTorrentList_WHEN_NavigateAway_THEN_UnregistersShortcuts()
         {
-            var mainData = new MainData(
-                new Dictionary<string, Torrent>(),
+            var mainData = new MudMainData(
+                new Dictionary<string, MudTorrent>(),
                 new List<string>(),
-                new Dictionary<string, Category>(),
+                new Dictionary<string, MudCategory>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState(),
+                new MudServerState(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
@@ -132,43 +137,43 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_TorrentsVersionChanged_WHEN_ComponentRerendersViaUiEvent_THEN_ShouldRenderVersionBranchExecutes()
         {
-            var target = RenderWithDefaults(torrents: new List<Torrent> { CreateTorrent("HashVersion", "Version Torrent") });
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashVersion", "Version MudTorrent") });
             target.Instance.TorrentsVersion = 2;
 
             var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
             await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("version-filter"));
 
-            target.FindComponent<DynamicTable<Torrent>>().Instance.Items.Should().ContainSingle(item => item.Hash == "HashVersion");
+            target.FindComponent<DynamicTable<MudTorrent>>().Instance.Items.Should().ContainSingle(item => item.Hash == "HashVersion");
         }
 
         [Fact]
         public async Task GIVEN_TorrentsReferenceChanged_WHEN_ComponentRerendersViaUiEvent_THEN_ShouldRenderReferenceBranchExecutes()
         {
-            var target = RenderWithDefaults(torrents: new List<Torrent> { CreateTorrent("HashReferenceOld", "Reference Old") });
-            target.Instance.Torrents = new List<Torrent> { CreateTorrent("HashReferenceNew", "Reference New") };
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashReferenceOld", "Reference Old") });
+            target.Instance.Torrents = new List<MudTorrent> { CreateTorrent("HashReferenceNew", "Reference New") };
 
             var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
             await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("reference-filter"));
 
-            target.FindComponent<DynamicTable<Torrent>>().Instance.Items.Should().ContainSingle(item => item.Hash == "HashReferenceNew");
+            target.FindComponent<DynamicTable<MudTorrent>>().Instance.Items.Should().ContainSingle(item => item.Hash == "HashReferenceNew");
         }
 
         [Fact]
         public async Task GIVEN_LostConnectionChanged_WHEN_ComponentRerendersViaUiEvent_THEN_ShouldRenderLostConnectionBranchExecutes()
         {
-            var target = RenderWithDefaults(torrents: new List<Torrent> { CreateTorrent("HashLostConn", "Lost Connection Torrent") });
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashLostConn", "Lost Connection MudTorrent") });
             TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkLostConnection();
 
             var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
             await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("lost-connection-filter"));
 
-            target.FindComponent<DynamicTable<Torrent>>().Should().NotBeNull();
+            target.FindComponent<DynamicTable<MudTorrent>>().Should().NotBeNull();
         }
 
         [Fact]
         public async Task GIVEN_LocationChangedTaskCompleted_WHEN_ComponentRerenders_THEN_AfterRenderClearsTask()
         {
-            var target = RenderWithDefaults(torrents: new List<Torrent> { CreateTorrent("HashLocation", "Location Torrent") });
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashLocation", "Location MudTorrent") });
 
             _navigationManager.TriggerLocationChanged("http://localhost/details/location");
             target.WaitForAssertion(() =>
@@ -215,11 +220,11 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_RowDoubleClick_WHEN_TorrentExists_THEN_NavigatesToDetails()
         {
-            var torrent = CreateTorrent("HashRow", "Row Torrent");
-            var target = RenderWithDefaults(torrents: new List<Torrent> { torrent });
-            var table = target.FindComponent<DynamicTable<Torrent>>();
+            var torrent = CreateTorrent("HashRow", "Row MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
             var row = target.FindComponents<MudTr>().First();
-            var args = new TableRowClickEventArgs<Torrent>(new MouseEventArgs { Detail = 2 }, row.Instance, torrent);
+            var args = new TableRowClickEventArgs<MudTorrent>(new MouseEventArgs { Detail = 2 }, row.Instance, torrent);
 
             await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(args));
 
@@ -229,10 +234,10 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_RowDoubleClickWithoutTorrent_WHEN_RowClickInvoked_THEN_DoesNotNavigate()
         {
-            var target = RenderWithDefaults(torrents: new List<Torrent> { CreateTorrent("HashNull", "Null Torrent") });
-            var table = target.FindComponent<DynamicTable<Torrent>>();
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashNull", "Null MudTorrent") });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
             var row = target.FindComponents<MudTr>().First();
-            var args = new TableRowClickEventArgs<Torrent>(new MouseEventArgs { Detail = 2 }, row.Instance, null);
+            var args = new TableRowClickEventArgs<MudTorrent>(new MouseEventArgs { Detail = 2 }, row.Instance, null);
 
             await target.InvokeAsync(() => table.Instance.OnRowClick.InvokeAsync(args));
 
@@ -243,8 +248,8 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_ContextMenuSelectionMissing_WHEN_ViewDetailsClicked_THEN_DoesNotNavigate()
         {
             var target = RenderWithDefaults();
-            var table = target.FindComponent<DynamicTable<Torrent>>();
-            var args = new TableDataContextMenuEventArgs<Torrent>(new MouseEventArgs(), new MudTd(), null);
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            var args = new TableDataContextMenuEventArgs<MudTorrent>(new MouseEventArgs(), new MudTd(), null);
 
             await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(args));
 
@@ -257,10 +262,10 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_ContextMenuSelectionWithTorrent_WHEN_ViewDetailsClicked_THEN_NavigatesToDetails()
         {
-            var torrent = CreateTorrent("HashCtx", "Context Torrent");
-            var target = RenderWithDefaults(torrents: new List<Torrent> { torrent });
-            var table = target.FindComponent<DynamicTable<Torrent>>();
-            var args = new TableDataContextMenuEventArgs<Torrent>(new MouseEventArgs(), new MudTd(), torrent);
+            var torrent = CreateTorrent("HashCtx", "Context MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            var args = new TableDataContextMenuEventArgs<MudTorrent>(new MouseEventArgs(), new MudTd(), torrent);
 
             await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(args));
 
@@ -273,9 +278,9 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_LongPressSelectionWithTorrent_WHEN_ViewDetailsClicked_THEN_NavigatesToDetails()
         {
-            var torrent = CreateTorrent("HashLong", "Long Press Torrent");
-            var target = RenderWithDefaults(torrents: new List<Torrent> { torrent });
-            var table = target.FindComponent<DynamicTable<Torrent>>();
+            var torrent = CreateTorrent("HashLong", "Long Press MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
             var longPressArgs = new LongPressEventArgs
             {
                 ClientX = 10,
@@ -288,7 +293,7 @@ namespace Lantean.QBTMud.Test.Pages
                 ScreenY = 26,
                 Type = "contextmenu"
             };
-            var args = new TableDataLongPressEventArgs<Torrent>(longPressArgs, new MudTd(), torrent);
+            var args = new TableDataLongPressEventArgs<MudTorrent>(longPressArgs, new MudTd(), torrent);
 
             await target.InvokeAsync(() => table.Instance.OnTableDataLongPress.InvokeAsync(args));
 
@@ -303,12 +308,12 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var torrentA = CreateTorrent("HashSelectedA", "Selected A");
             var torrentB = CreateTorrent("HashSelectedB", "Selected B");
-            var target = RenderWithDefaults(torrents: new List<Torrent> { torrentA, torrentB });
-            var table = target.FindComponent<DynamicTable<Torrent>>();
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrentA, torrentB });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
 
-            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<Torrent> { torrentA, torrentB }));
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<MudTorrent> { torrentA, torrentB }));
 
-            var contextArgs = new TableDataContextMenuEventArgs<Torrent>(new MouseEventArgs(), new MudTd(), torrentA);
+            var contextArgs = new TableDataContextMenuEventArgs<MudTorrent>(new MouseEventArgs(), new MudTd(), torrentA);
             await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(contextArgs));
 
             var menuActions = _popoverProvider.FindComponents<Lantean.QBTMud.Components.TorrentActions>()
@@ -322,12 +327,12 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var torrentA = CreateTorrent("HashDuplicate", "Duplicate A");
             var duplicateHashTorrent = CreateTorrent("HashDuplicate", "Duplicate B");
-            var target = RenderWithDefaults(torrents: new List<Torrent> { torrentA });
-            var table = target.FindComponent<DynamicTable<Torrent>>();
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrentA });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
 
-            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<Torrent> { torrentA, duplicateHashTorrent }));
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<MudTorrent> { torrentA, duplicateHashTorrent }));
 
-            var contextArgs = new TableDataContextMenuEventArgs<Torrent>(new MouseEventArgs(), new MudTd(), torrentA);
+            var contextArgs = new TableDataContextMenuEventArgs<MudTorrent>(new MouseEventArgs(), new MudTd(), torrentA);
             await target.InvokeAsync(() => table.Instance.OnTableDataContextMenu.InvokeAsync(contextArgs));
 
             var menuActions = _popoverProvider.FindComponents<Lantean.QBTMud.Components.TorrentActions>()
@@ -339,13 +344,13 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_SelectedItemsChanged_WHEN_SelectionUpdated_THEN_ToolbarDetailsBecomesEnabled()
         {
-            var torrent = CreateTorrent("HashSelect", "Selected Torrent");
-            var target = RenderWithDefaults(torrents: new List<Torrent> { torrent });
-            var table = target.FindComponent<DynamicTable<Torrent>>();
+            var torrent = CreateTorrent("HashSelect", "Selected MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
             var toolbarButton = FindComponentByTestId<MudIconButton>(target, "TorrentListToolbarViewDetails");
             toolbarButton.Instance.Disabled.Should().BeTrue();
 
-            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<Torrent> { torrent }));
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<MudTorrent> { torrent }));
 
             target.WaitForAssertion(() =>
             {
@@ -356,10 +361,10 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_SelectedItemsReferenceMutated_WHEN_Rendered_THEN_ToolbarStateTracksSelectionCount()
         {
-            var torrent = CreateTorrent("HashMutate", "Mutate Torrent");
-            var target = RenderWithDefaults(torrents: new List<Torrent> { torrent });
-            var table = target.FindComponent<DynamicTable<Torrent>>();
-            var selected = new HashSet<Torrent> { torrent };
+            var torrent = CreateTorrent("HashMutate", "Mutate MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
+            var selected = new HashSet<MudTorrent> { torrent };
 
             await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(selected));
 
@@ -380,11 +385,11 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_ToolbarViewDetails_WHEN_SelectedItemExists_THEN_NavigatesToDetails()
         {
-            var torrent = CreateTorrent("HashToolbar", "Toolbar Torrent");
-            var target = RenderWithDefaults(torrents: new List<Torrent> { torrent });
-            var table = target.FindComponent<DynamicTable<Torrent>>();
+            var torrent = CreateTorrent("HashToolbar", "Toolbar MudTorrent");
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { torrent });
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
 
-            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<Torrent> { torrent }));
+            await target.InvokeAsync(() => table.Instance.SelectedItemsChanged.InvokeAsync(new HashSet<MudTorrent> { torrent }));
 
             var toolbarButton = FindComponentByTestId<MudIconButton>(target, "TorrentListToolbarViewDetails");
             await target.InvokeAsync(() => toolbarButton.Instance.OnClick.InvokeAsync());
@@ -397,7 +402,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var dialogWorkflowMock = Mock.Get(_dialogWorkflow);
             dialogWorkflowMock.Setup(workflow => workflow.ShowColumnsOptionsDialog(
-                    It.IsAny<List<ColumnDefinition<Torrent>>>(),
+                    It.IsAny<List<ColumnDefinition<MudTorrent>>>(),
                     It.IsAny<HashSet<string>>(),
                     It.IsAny<Dictionary<string, int?>>(),
                     It.IsAny<Dictionary<string, int>>()))
@@ -415,13 +420,13 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_QueueingPreferenceDisabled_WHEN_Rendered_THEN_QueueColumnHidden()
         {
-            var torrents = new List<Torrent> { CreateTorrent("HashQueue", "Queue Torrent") };
+            var torrents = new List<MudTorrent> { CreateTorrent("HashQueue", "Queue MudTorrent") };
             var queueDisabledPreferences = CreatePreferences(queueingEnabled: false);
 
             var target = TestContext.Render<TorrentList>(parameters =>
             {
                 parameters.AddCascadingValue(CreateMainData(torrents));
-                parameters.AddCascadingValue<IReadOnlyList<Torrent>>(torrents);
+                parameters.AddCascadingValue<IReadOnlyList<MudTorrent>>(torrents);
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("SearchTermChanged", EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
@@ -430,20 +435,20 @@ namespace Lantean.QBTMud.Test.Pages
                 parameters.Add(p => p.Preferences, queueDisabledPreferences);
             });
 
-            var table = target.FindComponent<DynamicTable<Torrent>>();
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
             table.Instance.ColumnDefinitions.Select(column => column.Id).Should().NotContain("#");
         }
 
         [Fact]
         public void GIVEN_QueueingPreferenceEnabled_WHEN_Rendered_THEN_QueueColumnShown()
         {
-            var torrents = new List<Torrent> { CreateTorrent("HashQueue", "Queue Torrent") };
+            var torrents = new List<MudTorrent> { CreateTorrent("HashQueue", "Queue MudTorrent") };
             var queueEnabledPreferences = CreatePreferences(queueingEnabled: true);
 
             var target = TestContext.Render<TorrentList>(parameters =>
             {
                 parameters.AddCascadingValue(CreateMainData(torrents));
-                parameters.AddCascadingValue<IReadOnlyList<Torrent>>(torrents);
+                parameters.AddCascadingValue<IReadOnlyList<MudTorrent>>(torrents);
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("SearchTermChanged", EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
@@ -452,7 +457,7 @@ namespace Lantean.QBTMud.Test.Pages
                 parameters.Add(p => p.Preferences, queueEnabledPreferences);
             });
 
-            var table = target.FindComponent<DynamicTable<Torrent>>();
+            var table = target.FindComponent<DynamicTable<MudTorrent>>();
             table.Instance.ColumnDefinitions.Select(column => column.Id).Should().Contain("#");
         }
 
@@ -494,7 +499,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Returns((string _, string source, object[] __) => source);
 
             var columns = TorrentList.BuildColumnsDefinitions(localizer);
-            var torrent = CreateTorrent("HashFormatters", "Formatter Torrent", progress: 1);
+            var torrent = CreateTorrent("HashFormatters", "Formatter MudTorrent", progress: 1);
 
             var idsToEvaluate = new[]
             {
@@ -539,34 +544,34 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_TorrentsVersionChangedOnInstance_WHEN_ReRendered_THEN_ShouldRenderProcessesVersionBranch()
         {
-            var target = RenderWithDefaults(torrents: new List<Torrent> { CreateTorrent("HashVersion1", "Version One") });
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashVersion1", "Version One") });
             target.Instance.TorrentsVersion = 2;
 
             target.Render();
 
-            target.FindComponent<DynamicTable<Torrent>>().Instance.Items.Should().ContainSingle(item => item.Hash == "HashVersion1");
+            target.FindComponent<DynamicTable<MudTorrent>>().Instance.Items.Should().ContainSingle(item => item.Hash == "HashVersion1");
         }
 
         [Fact]
         public void GIVEN_PreferencesChangedOnInstance_WHEN_ReRendered_THEN_ShouldRenderProcessesPreferencesBranch()
         {
-            var target = RenderWithDefaults(torrents: new List<Torrent> { CreateTorrent("HashPreferences", "Preferences Torrent") });
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashPreferences", "Preferences MudTorrent") });
             target.Instance.Preferences = CreatePreferences(queueingEnabled: true);
 
             target.Render();
 
-            target.FindComponent<DynamicTable<Torrent>>().Instance.ColumnDefinitions.Select(column => column.Id).Should().Contain("#");
+            target.FindComponent<DynamicTable<MudTorrent>>().Instance.ColumnDefinitions.Select(column => column.Id).Should().Contain("#");
         }
 
         [Fact]
         public void GIVEN_LostConnectionChangedOnInstance_WHEN_ReRendered_THEN_ShouldRenderProcessesLostConnectionBranch()
         {
-            var target = RenderWithDefaults(torrents: new List<Torrent> { CreateTorrent("HashLost", "Lost Torrent") });
+            var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashLost", "Lost MudTorrent") });
             TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkLostConnection();
 
             target.Render();
 
-            target.FindComponent<DynamicTable<Torrent>>().Should().NotBeNull();
+            target.FindComponent<DynamicTable<MudTorrent>>().Should().NotBeNull();
         }
 
         [Fact]
@@ -595,7 +600,7 @@ namespace Lantean.QBTMud.Test.Pages
             torrentText.Should().Be("Hash");
         }
 
-        private IRenderedComponent<TorrentList> RenderWithDefaults(EventCallback<FilterSearchState>? searchCallback = null, IReadOnlyList<Torrent>? torrents = null)
+        private IRenderedComponent<TorrentList> RenderWithDefaults(EventCallback<FilterSearchState>? searchCallback = null, IReadOnlyList<MudTorrent>? torrents = null)
         {
             var mainData = CreateMainData(torrents);
             TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkConnected();
@@ -605,7 +610,7 @@ namespace Lantean.QBTMud.Test.Pages
             return TestContext.Render<TorrentList>(parameters =>
             {
                 parameters.AddCascadingValue(mainData);
-                parameters.AddCascadingValue<IReadOnlyList<Torrent>>(torrents ?? Array.Empty<Torrent>());
+                parameters.AddCascadingValue<IReadOnlyList<MudTorrent>>(torrents ?? Array.Empty<MudTorrent>());
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("SearchTermChanged", callback);
@@ -614,22 +619,22 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private static MainData CreateMainData(IReadOnlyList<Torrent>? torrents = null)
+        private static MudMainData CreateMainData(IReadOnlyList<MudTorrent>? torrents = null)
         {
-            var torrentMap = (torrents ?? Array.Empty<Torrent>()).ToDictionary(t => t.Hash, t => t);
-            return new MainData(
+            var torrentMap = (torrents ?? Array.Empty<MudTorrent>()).ToDictionary(t => t.Hash, t => t);
+            return new MudMainData(
                 torrentMap,
                 new List<string>(),
-                new Dictionary<string, Category>(),
+                new Dictionary<string, MudCategory>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState(),
+                new MudServerState(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>());
         }
 
-        private static QBittorrent.ApiClient.Models.Preferences CreatePreferences(bool queueingEnabled)
+        private static Preferences CreatePreferences(bool queueingEnabled)
         {
             return PreferencesFactory.CreatePreferences(spec =>
             {
@@ -637,14 +642,14 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private static Torrent CreateTorrent(string hash, string name, float progress = 0)
+        private static MudTorrent CreateTorrent(string hash, string name, float progress = 0)
         {
-            return new Torrent(
+            return new MudTorrent(
                 hash,
                 addedOn: 0,
                 amountLeft: 0,
                 automaticTorrentManagement: false,
-                aavailability: 1,
+                availability: 1,
                 category: string.Empty,
                 completed: 0,
                 completionOn: 0,
@@ -677,7 +682,7 @@ namespace Lantean.QBTMud.Test.Pages
                 seenComplete: 0,
                 sequentialDownload: false,
                 size: 0,
-                state: "downloading",
+                state: TorrentState.Downloading,
                 superSeeding: false,
                 tags: Array.Empty<string>(),
                 timeActive: 0,
@@ -698,7 +703,7 @@ namespace Lantean.QBTMud.Test.Pages
                 downloadPath: string.Empty,
                 rootPath: string.Empty,
                 isPrivate: false,
-                QBittorrent.ApiClient.Models.ShareLimitAction.Default,
+                ShareLimitAction.Default,
                 comment: string.Empty);
         }
 

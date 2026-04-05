@@ -11,7 +11,12 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using ClientCategory = QBittorrent.ApiClient.Models.Category;
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Pages
 {
@@ -63,7 +68,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, ClientCategory>
                 {
-                    { "Category", new ClientCategory("Category", "SavePath", null) }
+                    { "MudCategory", new ClientCategory("MudCategory", "SavePath", null) }
                 });
 
             var target = RenderPage();
@@ -73,8 +78,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient).Verify(client => client.GetAllCategoriesAsync(), Times.Once);
 
-            var table = target.FindComponent<DynamicTable<Category>>();
-            table.Instance.Items.Should().ContainSingle(category => category.Name == "Category");
+            var table = target.FindComponent<DynamicTable<MudCategory>>();
+            table.Instance.Items.Should().ContainSingle(category => category.Name == "MudCategory");
         }
 
         [Fact]
@@ -84,7 +89,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetAllCategoriesAsync())
                 .ReturnsAsync(new Dictionary<string, ClientCategory>
                 {
-                    { "Category", new ClientCategory("Category", null, null) }
+                    { "MudCategory", new ClientCategory("MudCategory", null, null) }
                 });
 
             var target = RenderPage();
@@ -92,8 +97,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
 
-            var table = target.FindComponent<DynamicTable<Category>>();
-            table.Instance.Items.Should().ContainSingle(category => category.Name == "Category" && category.SavePath == string.Empty);
+            var table = target.FindComponent<DynamicTable<MudCategory>>();
+            table.Instance.Items.Should().ContainSingle(category => category.Name == "MudCategory" && category.SavePath == string.Empty);
         }
 
         [Fact]
@@ -115,7 +120,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             pendingLoad.SetResult(new Dictionary<string, ClientCategory>
             {
-                { "Category", new ClientCategory("Category", "SavePath", null) }
+                { "MudCategory", new ClientCategory("MudCategory", "SavePath", null) }
             });
 
             await firstRefresh;
@@ -124,49 +129,49 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_CategoryProvided_WHEN_Rendered_THEN_ShowsTableItem()
         {
-            var target = RenderPage(new Dictionary<string, Category>
+            var target = RenderPage(new Dictionary<string, MudCategory>
             {
-                { "Category", new Category("Category", "SavePath") }
+                { "MudCategory", new MudCategory("MudCategory", "SavePath") }
             });
 
-            var table = target.FindComponent<DynamicTable<Category>>();
-            table.Instance.Items.Should().ContainSingle(category => category.Name == "Category");
+            var table = target.FindComponent<DynamicTable<MudCategory>>();
+            table.Instance.Items.Should().ContainSingle(category => category.Name == "MudCategory");
         }
 
         [Fact]
         public async Task GIVEN_CategoryProvided_WHEN_EditClicked_THEN_InvokesEditDialog()
         {
-            var target = RenderPage(new Dictionary<string, Category>
+            var target = RenderPage(new Dictionary<string, MudCategory>
             {
-                { "Category", new Category("Category", "SavePath") }
+                { "MudCategory", new MudCategory("MudCategory", "SavePath") }
             });
 
             var editButton = FindIconButton(target, Icons.Material.Filled.Edit);
 
             await target.InvokeAsync(() => editButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.InvokeEditCategoryDialog("Category"), Times.Once);
+            Mock.Get(_dialogWorkflow).Verify(workflow => workflow.InvokeEditCategoryDialog("MudCategory"), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_ActionColumnSortSelectorNull_WHEN_ActionClicked_THEN_UsesRowData()
         {
             IRenderedComponent<Categories>? target = null;
-            Func<Category, object?>? originalSelector = null;
-            ColumnDefinition<Category>? column = null;
+            Func<MudCategory, object?>? originalSelector = null;
+            ColumnDefinition<MudCategory>? column = null;
 
             try
             {
                 Mock.Get(_apiClient)
-                    .Setup(client => client.RemoveCategoriesAsync(categories: new[] { "Category" }))
+                    .Setup(client => client.RemoveCategoriesAsync(categories: new[] { "MudCategory" }))
                     .Returns(Task.CompletedTask);
 
-                target = RenderPage(new Dictionary<string, Category>
+                target = RenderPage(new Dictionary<string, MudCategory>
                 {
-                    { "Category", new Category("Category", "SavePath") }
+                    { "MudCategory", new MudCategory("MudCategory", "SavePath") }
                 });
 
-                var table = target.FindComponent<DynamicTable<Category>>();
+                var table = target.FindComponent<DynamicTable<MudCategory>>();
                 column = table.Instance.ColumnDefinitions.Single(definition => definition.Header == "Actions");
                 originalSelector = column.SortSelector;
                 column.SortSelector = _ => null;
@@ -177,8 +182,8 @@ namespace Lantean.QBTMud.Test.Pages
                 var deleteButton = FindIconButton(target, Icons.Material.Filled.Delete);
                 await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-                Mock.Get(_dialogWorkflow).Verify(workflow => workflow.InvokeEditCategoryDialog("Category"), Times.Once);
-                Mock.Get(_apiClient).Verify(client => client.RemoveCategoriesAsync(categories: new[] { "Category" }), Times.Once);
+                Mock.Get(_dialogWorkflow).Verify(workflow => workflow.InvokeEditCategoryDialog("MudCategory"), Times.Once);
+                Mock.Get(_apiClient).Verify(client => client.RemoveCategoriesAsync(categories: new[] { "MudCategory" }), Times.Once);
             }
             finally
             {
@@ -192,28 +197,28 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_CategoryProvided_WHEN_DeleteClicked_THEN_RemovesCategory()
         {
-            var target = RenderPage(new Dictionary<string, Category>
+            var target = RenderPage(new Dictionary<string, MudCategory>
             {
-                { "Category", new Category("Category", "SavePath") }
+                { "MudCategory", new MudCategory("MudCategory", "SavePath") }
             });
 
             Mock.Get(_apiClient)
-                .Setup(client => client.RemoveCategoriesAsync(categories: new[] { "Category" }))
+                .Setup(client => client.RemoveCategoriesAsync(categories: new[] { "MudCategory" }))
                 .Returns(Task.CompletedTask);
 
             var deleteButton = FindIconButton(target, Icons.Material.Filled.Delete);
 
             await target.InvokeAsync(() => deleteButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.RemoveCategoriesAsync(categories: new[] { "Category" }), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.RemoveCategoriesAsync(categories: new[] { "MudCategory" }), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_CategoryNameMissing_WHEN_DeleteClicked_THEN_SkipsRemoval()
         {
-            var target = RenderPage(new Dictionary<string, Category>
+            var target = RenderPage(new Dictionary<string, MudCategory>
             {
-                { "Category", new Category(null!, "SavePath") }
+                { "MudCategory", new MudCategory(null!, "SavePath") }
             });
 
             var deleteButton = FindIconButton(target, Icons.Material.Filled.Delete);
@@ -226,9 +231,9 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_CategoryNameMissing_WHEN_EditClicked_THEN_SkipsEditDialog()
         {
-            var target = RenderPage(new Dictionary<string, Category>
+            var target = RenderPage(new Dictionary<string, MudCategory>
             {
-                { "Category", new Category(null!, "SavePath") }
+                { "MudCategory", new MudCategory(null!, "SavePath") }
             });
 
             var editButton = FindIconButton(target, Icons.Material.Filled.Edit);
@@ -242,7 +247,7 @@ namespace Lantean.QBTMud.Test.Pages
         public void GIVEN_ColumnDefinitions_WHEN_Requested_THEN_ContainsExpectedColumns()
         {
             var target = RenderPage();
-            var table = target.FindComponent<DynamicTable<Category>>();
+            var table = target.FindComponent<DynamicTable<MudCategory>>();
             var columns = table.Instance.ColumnDefinitions;
 
             columns.Should().ContainSingle(column => column.Header == "Name");
@@ -265,19 +270,19 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var target = RenderPage(includeMainData: false);
 
-            var table = target.FindComponent<DynamicTable<Category>>();
+            var table = target.FindComponent<DynamicTable<MudCategory>>();
 
             table.Instance.Items.Should().BeNull();
         }
 
-        private IRenderedComponent<Categories> RenderPage(Dictionary<string, Category>? categories = null, bool drawerOpen = false, bool includeMainData = true)
+        private IRenderedComponent<Categories> RenderPage(Dictionary<string, MudCategory>? categories = null, bool drawerOpen = false, bool includeMainData = true)
         {
-            var mainData = new MainData(
-                new Dictionary<string, Torrent>(),
+            var mainData = new MudMainData(
+                new Dictionary<string, MudTorrent>(),
                 new List<string>(),
-                categories ?? new Dictionary<string, Category>(),
+                categories ?? new Dictionary<string, MudCategory>(),
                 new Dictionary<string, IReadOnlyList<string>>(),
-                new ServerState { ConnectionStatus = "Connected" },
+                new MudServerState { ConnectionStatus = ConnectionStatus.Connected },
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),
                 new Dictionary<string, HashSet<string>>(),

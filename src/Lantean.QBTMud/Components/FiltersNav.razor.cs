@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using QBittorrent.ApiClient;
-using TorrentSelector = QBittorrent.ApiClient.Models.TorrentSelector;
+using QBittorrent.ApiClient.Models;
+using MudMainData = Lantean.QBTMud.Models.MainData;
 
 namespace Lantean.QBTMud.Components
 {
@@ -45,10 +46,10 @@ namespace Lantean.QBTMud.Components
         protected IApiClient ApiClient { get; set; } = default!;
 
         [CascadingParameter]
-        public MainData? MainData { get; set; }
+        public MudMainData? MainData { get; set; }
 
         [CascadingParameter]
-        public QBittorrent.ApiClient.Models.Preferences? Preferences { get; set; }
+        public Preferences? Preferences { get; set; }
 
         [Parameter]
         public EventCallback<string> CategoryChanged { get; set; }

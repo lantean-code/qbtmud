@@ -1,7 +1,9 @@
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
+using QBittorrent.ApiClient.Models;
 using System.ComponentModel;
 using System.Reflection;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud
 {
@@ -53,19 +55,20 @@ namespace Lantean.QBTMud
             }
         }
 
-        public static bool IsFinished(this Torrent torrent)
+        public static bool IsFinished(this MudTorrent torrent)
         {
             return torrent.TotalSize == torrent.Downloaded;
         }
 
-        public static bool MetaDownloaded(this Torrent torrent)
+        public static bool MetaDownloaded(this MudTorrent torrent)
         {
             if (torrent is null)
             {
                 return false;
             }
 
-            return !(torrent.State == "metaDL" || torrent.State == "forcedMetaDL" || torrent.TotalSize == -1);
+            return torrent.State is not TorrentState.DownloadingMetadata and not TorrentState.ForcedDownloadingMetadata
+                && torrent.TotalSize != -1;
         }
 
         public static string GetDescriptionAttributeOrDefault<T>(this T value) where T : Enum

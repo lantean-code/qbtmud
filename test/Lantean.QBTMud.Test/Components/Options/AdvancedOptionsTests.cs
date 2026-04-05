@@ -37,8 +37,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, _ => { }));
             });
 
-            var resumeSelect = FindSelect<string>(target, "ResumeDataStorageType");
-            resumeSelect.Instance.GetState(x => x.Value).Should().Be("SQLite");
+            var resumeSelect = FindSelect<ResumeDataStorageType>(target, "ResumeDataStorageType");
+            resumeSelect.Instance.GetState(x => x.Value).Should().Be(ResumeDataStorageType.Sqlite);
 
             FindNumeric(target, "MemoryWorkingSetLimit").Instance.GetState(x => x.Value).Should().Be(512);
             FindSelect<string>(target, "CurrentNetworkInterface").Instance.GetState(x => x.Value).Should().Be("eth0");
@@ -155,7 +155,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await target.InvokeAsync(() => FindSelect<string>(target, "ResumeDataStorageType").Instance.ValueChanged.InvokeAsync("Legacy"));
+            await target.InvokeAsync(() => FindSelect<ResumeDataStorageType>(target, "ResumeDataStorageType").Instance.ValueChanged.InvokeAsync(ResumeDataStorageType.Legacy));
             await target.InvokeAsync(() => FindNumeric(target, "MemoryWorkingSetLimit").Instance.ValueChanged.InvokeAsync(768));
             await target.InvokeAsync(() => FindNumeric(target, "SaveResumeDataInterval").Instance.ValueChanged.InvokeAsync(20));
             await target.InvokeAsync(() => FindNumeric(target, "TorrentFileSizeLimit").Instance.ValueChanged.InvokeAsync(175));
@@ -165,7 +165,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindSwitch(target, "ResolvePeerCountries").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "ReannounceWhenAddressChanged").Instance.ValueChanged.InvokeAsync(false));
 
-            update.ResumeDataStorageType.Should().Be("Legacy");
+            update.ResumeDataStorageType.Should().Be(ResumeDataStorageType.Legacy);
             update.MemoryWorkingSetLimit.Should().Be(768);
             update.SaveResumeDataInterval.Should().Be(20);
             update.TorrentFileSizeLimit.Should().Be(175 * 1024 * 1024);
@@ -206,9 +206,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindNumeric(target, "DiskCache").Instance.ValueChanged.InvokeAsync(384));
             await target.InvokeAsync(() => FindNumeric(target, "DiskCacheTtl").Instance.ValueChanged.InvokeAsync(120));
             await target.InvokeAsync(() => FindNumeric(target, "DiskQueueSize").Instance.ValueChanged.InvokeAsync(10240));
-            await target.InvokeAsync(() => FindSelect<int>(target, "DiskIoType").Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => FindSelect<int>(target, "DiskIoReadMode").Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => FindSelect<int>(target, "DiskIoWriteMode").Instance.ValueChanged.InvokeAsync(2));
+            await target.InvokeAsync(() => FindSelect<DiskIoType>(target, "DiskIoType").Instance.ValueChanged.InvokeAsync(DiskIoType.MemoryMappedFiles));
+            await target.InvokeAsync(() => FindSelect<DiskIoReadMode>(target, "DiskIoReadMode").Instance.ValueChanged.InvokeAsync(DiskIoReadMode.EnableOsCache));
+            await target.InvokeAsync(() => FindSelect<DiskIoWriteMode>(target, "DiskIoWriteMode").Instance.ValueChanged.InvokeAsync(DiskIoWriteMode.WriteThrough));
             await target.InvokeAsync(() => FindSwitch(target, "EnableCoalesceReadWrite").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "EnablePieceExtentAffinity").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "EnableUploadSuggestions").Instance.ValueChanged.InvokeAsync(true));
@@ -222,9 +222,9 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.DiskCache.Should().Be(384);
             update.DiskCacheTtl.Should().Be(120);
             update.DiskQueueSize.Should().Be(10240 * 1024);
-            update.DiskIoType.Should().Be(1);
-            update.DiskIoReadMode.Should().Be(1);
-            update.DiskIoWriteMode.Should().Be(2);
+            update.DiskIoType.Should().Be(DiskIoType.MemoryMappedFiles);
+            update.DiskIoReadMode.Should().Be(DiskIoReadMode.EnableOsCache);
+            update.DiskIoWriteMode.Should().Be(DiskIoWriteMode.WriteThrough);
             update.EnableCoalesceReadWrite.Should().BeFalse();
             update.EnablePieceExtentAffinity.Should().BeFalse();
             update.EnableUploadSuggestions.Should().BeTrue();
@@ -262,7 +262,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindNumeric(target, "OutgoingPortsMax").Instance.ValueChanged.InvokeAsync(20000));
             await target.InvokeAsync(() => FindNumeric(target, "UpnpLeaseDuration").Instance.ValueChanged.InvokeAsync(1200));
             await target.InvokeAsync(() => FindNumeric(target, "PeerTos").Instance.ValueChanged.InvokeAsync(16));
-            await target.InvokeAsync(() => FindSelect<int>(target, "UtpTcpMixedMode").Instance.ValueChanged.InvokeAsync(1));
+            await target.InvokeAsync(() => FindSelect<UtpTcpMixedMode>(target, "UtpTcpMixedMode").Instance.ValueChanged.InvokeAsync(UtpTcpMixedMode.PeerProportional));
             await target.InvokeAsync(() => FindSwitch(target, "IdnSupportEnabled").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "EnableMultiConnectionsFromSameIp").Instance.ValueChanged.InvokeAsync(true));
             await target.InvokeAsync(() => FindSwitch(target, "ValidateHttpsTrackerCertificate").Instance.ValueChanged.InvokeAsync(false));
@@ -283,7 +283,7 @@ namespace Lantean.QBTMud.Test.Components.Options
             update.OutgoingPortsMax.Should().Be(20000);
             update.UpnpLeaseDuration.Should().Be(1200);
             update.PeerTos.Should().Be(16);
-            update.UtpTcpMixedMode.Should().Be(1);
+            update.UtpTcpMixedMode.Should().Be(UtpTcpMixedMode.PeerProportional);
             update.IdnSupportEnabled.Should().BeFalse();
             update.EnableMultiConnectionsFromSameIp.Should().BeTrue();
             update.ValidateHttpsTrackerCertificate.Should().BeFalse();
@@ -315,8 +315,8 @@ namespace Lantean.QBTMud.Test.Components.Options
                 parameters.Add(p => p.PreferencesChanged, EventCallback.Factory.Create<UpdatePreferences>(this, value => raised.Add(value)));
             });
 
-            await target.InvokeAsync(() => FindSelect<int>(target, "UploadSlotsBehavior").Instance.ValueChanged.InvokeAsync(1));
-            await target.InvokeAsync(() => FindSelect<int>(target, "UploadChokingAlgorithm").Instance.ValueChanged.InvokeAsync(2));
+            await target.InvokeAsync(() => FindSelect<UploadSlotsBehavior>(target, "UploadSlotsBehavior").Instance.ValueChanged.InvokeAsync(UploadSlotsBehavior.UploadRateBased));
+            await target.InvokeAsync(() => FindSelect<UploadChokingAlgorithm>(target, "UploadChokingAlgorithm").Instance.ValueChanged.InvokeAsync(UploadChokingAlgorithm.AntiLeech));
             await target.InvokeAsync(() => FindSwitch(target, "AnnounceToAllTrackers").Instance.ValueChanged.InvokeAsync(false));
             await target.InvokeAsync(() => FindSwitch(target, "AnnounceToAllTiers").Instance.ValueChanged.InvokeAsync(true));
             await target.InvokeAsync(() => FindTextField(target, "AnnounceIp").Instance.ValueChanged.InvokeAsync("203.0.113.5"));
@@ -331,8 +331,8 @@ namespace Lantean.QBTMud.Test.Components.Options
             await target.InvokeAsync(() => FindNumeric(target, "I2pInboundLength").Instance.ValueChanged.InvokeAsync(3));
             await target.InvokeAsync(() => FindNumeric(target, "I2pOutboundLength").Instance.ValueChanged.InvokeAsync(2));
 
-            update.UploadSlotsBehavior.Should().Be(1);
-            update.UploadChokingAlgorithm.Should().Be(2);
+            update.UploadSlotsBehavior.Should().Be(UploadSlotsBehavior.UploadRateBased);
+            update.UploadChokingAlgorithm.Should().Be(UploadChokingAlgorithm.AntiLeech);
             update.AnnounceToAllTrackers.Should().BeFalse();
             update.AnnounceToAllTiers.Should().BeTrue();
             update.AnnounceIp.Should().Be("203.0.113.5");
@@ -423,34 +423,34 @@ namespace Lantean.QBTMud.Test.Components.Options
                 values.Should().Contain("::");
             });
 
-            var diskIoTypeSelect = FindSelect<int>(target, "DiskIoType");
+            var diskIoTypeSelect = FindSelect<DiskIoType>(target, "DiskIoType");
             await target.InvokeAsync(() => diskIoTypeSelect.Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<int>>()
+                var values = target.FindComponents<MudSelectItem<DiskIoType>>()
                     .Select(item => item.Instance.Value)
                     .ToList();
-                values.Should().Contain(2);
+                values.Should().Contain(DiskIoType.PosixCompliant);
             });
 
-            var diskIoWriteModeSelect = FindSelect<int>(target, "DiskIoWriteMode");
+            var diskIoWriteModeSelect = FindSelect<DiskIoWriteMode>(target, "DiskIoWriteMode");
             await target.InvokeAsync(() => diskIoWriteModeSelect.Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<int>>()
+                var values = target.FindComponents<MudSelectItem<DiskIoWriteMode>>()
                     .Select(item => item.Instance.Value)
                     .ToList();
-                values.Should().Contain(1);
+                values.Should().Contain(DiskIoWriteMode.EnableOsCache);
             });
 
-            var uploadChokingAlgorithmSelect = FindSelect<int>(target, "UploadChokingAlgorithm");
+            var uploadChokingAlgorithmSelect = FindSelect<UploadChokingAlgorithm>(target, "UploadChokingAlgorithm");
             await target.InvokeAsync(() => uploadChokingAlgorithmSelect.Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {
-                var values = target.FindComponents<MudSelectItem<int>>()
+                var values = target.FindComponents<MudSelectItem<UploadChokingAlgorithm>>()
                     .Select(item => item.Instance.Value)
                     .ToList();
-                values.Should().Contain(0);
+                values.Should().Contain(UploadChokingAlgorithm.RoundRobin);
             });
         }
 
@@ -488,9 +488,9 @@ namespace Lantean.QBTMud.Test.Components.Options
                 spec.DhtBootstrapNodes = "node.example.com";
                 spec.DiskCache = 256;
                 spec.DiskCacheTtl = 60;
-                spec.DiskIoReadMode = 0;
-                spec.DiskIoType = 0;
-                spec.DiskIoWriteMode = 0;
+                spec.DiskIoReadMode = DiskIoReadMode.DisableOsCache;
+                spec.DiskIoType = DiskIoType.Default;
+                spec.DiskIoWriteMode = DiskIoWriteMode.DisableOsCache;
                 spec.DiskQueueSize = 8192;
                 spec.EmbeddedTrackerPort = 19000;
                 spec.EmbeddedTrackerPortForwarding = true;
@@ -521,7 +521,7 @@ namespace Lantean.QBTMud.Test.Components.Options
                 spec.RefreshInterval = 1500;
                 spec.RequestQueueSize = 150;
                 spec.ResolvePeerCountries = true;
-                spec.ResumeDataStorageType = "SQLite";
+                spec.ResumeDataStorageType = ResumeDataStorageType.Sqlite;
                 spec.SaveResumeDataInterval = 15;
                 spec.SendBufferLowWatermark = 16;
                 spec.SendBufferWatermark = 192;
@@ -532,10 +532,10 @@ namespace Lantean.QBTMud.Test.Components.Options
                 spec.SsrfMitigation = true;
                 spec.StopTrackerTimeout = 30;
                 spec.TorrentFileSizeLimit = 157286400;
-                spec.UploadChokingAlgorithm = 1;
-                spec.UploadSlotsBehavior = 0;
+                spec.UploadChokingAlgorithm = UploadChokingAlgorithm.FastestUpload;
+                spec.UploadSlotsBehavior = UploadSlotsBehavior.FixedSlots;
                 spec.UpnpLeaseDuration = 600;
-                spec.UtpTcpMixedMode = 0;
+                spec.UtpTcpMixedMode = UtpTcpMixedMode.PreferTcp;
                 spec.ValidateHttpsTrackerCertificate = true;
                 spec.ConfirmTorrentRecheck = true;
             });

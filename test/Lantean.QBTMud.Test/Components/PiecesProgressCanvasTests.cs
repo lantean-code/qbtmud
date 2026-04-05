@@ -1,7 +1,6 @@
-﻿using AngleSharp.Dom;
+using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
-using QBittorrent.ApiClient.Models;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Test.Infrastructure;
@@ -9,6 +8,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Utilities;
+using QBittorrent.ApiClient.Models;
 using System.Collections;
 
 namespace Lantean.QBTMud.Test.Components

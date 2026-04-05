@@ -1,3 +1,5 @@
+using QBittorrent.ApiClient.Models;
+
 namespace Lantean.QBTMud.Models
 {
     public record TorrentOptions
@@ -10,13 +12,13 @@ namespace Lantean.QBTMud.Models
             string? category,
             bool startTorrent,
             bool addToTopOfQueue,
-            string stopCondition,
+            StopCondition stopCondition,
             bool skipHashCheck,
-            string contentLayout,
+            TorrentContentLayout contentLayout,
             bool downloadInSequentialOrder,
             bool downloadFirstAndLastPiecesFirst,
-            long downloadLimit,
-            long uploadLimit)
+            int downloadLimit,
+            int uploadLimit)
         {
             TorrentManagementMode = torrentManagementMode;
             SavePath = savePath;
@@ -48,24 +50,24 @@ namespace Lantean.QBTMud.Models
 
         public bool AddToTopOfQueue { get; }
 
-        public string StopCondition { get; }
+        public StopCondition StopCondition { get; }
 
         public bool SkipHashCheck { get; }
 
-        public string ContentLayout { get; }
+        public TorrentContentLayout ContentLayout { get; }
 
         public bool DownloadInSequentialOrder { get; }
 
         public bool DownloadFirstAndLastPiecesFirst { get; }
 
-        public long DownloadLimit { get; }
+        public int DownloadLimit { get; }
 
-        public long UploadLimit { get; }
+        public int UploadLimit { get; }
         public string? DownloadPath { get; internal set; }
         public int? InactiveSeedingTimeLimit { get; internal set; }
-        public float? RatioLimit { get; internal set; }
+        public double? RatioLimit { get; internal set; }
         public int? SeedingTimeLimit { get; internal set; }
-        public string? ShareLimitAction { get; internal set; }
+        public ShareLimitAction? ShareLimitAction { get; internal set; }
         public bool? UseDownloadPath { get; internal set; }
         public IEnumerable<string>? Tags { get; internal set; }
     }

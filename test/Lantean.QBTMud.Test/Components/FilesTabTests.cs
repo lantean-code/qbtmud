@@ -14,10 +14,10 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
+using QBittorrent.ApiClient.Models;
 using System.Net;
 using ClientPriority = QBittorrent.ApiClient.Models.Priority;
 using ContentItem = Lantean.QBTMud.Models.ContentItem;
-using FileData = QBittorrent.ApiClient.Models.FileData;
 using FilterOperator = Lantean.QBTMud.Filter.FilterOperator;
 using UiPriority = Lantean.QBTMud.Models.Priority;
 

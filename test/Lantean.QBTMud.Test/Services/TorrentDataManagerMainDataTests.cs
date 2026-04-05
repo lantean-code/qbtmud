@@ -2,7 +2,15 @@ using AwesomeAssertions;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
+using Lantean.QBTMud.Test.Infrastructure;
+using QBittorrent.ApiClient.Models;
+
 using ClientModels = QBittorrent.ApiClient.Models;
+
+using MudCategory = Lantean.QBTMud.Models.Category;
+using MudMainData = Lantean.QBTMud.Models.MainData;
+using MudServerState = Lantean.QBTMud.Models.ServerState;
+using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -62,7 +70,7 @@ namespace Lantean.QBTMud.Test.Services
             result.Trackers.Should().BeEmpty();
 
             // Default from app GlobalTransferInfo() is "Unknown"
-            result.ServerState.ConnectionStatus.Should().Be("Unknown");
+            result.ServerState.ConnectionStatus.Should().BeNull();
             result.ServerState.UseSubcategories.Should().BeFalse();
 
             result.TagState.Should().ContainKeys(FilterHelper.TAG_ALL, FilterHelper.TAG_UNTAGGED);
@@ -93,16 +101,7 @@ namespace Lantean.QBTMud.Test.Services
                 fullUpdate: true,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = new ClientModels.Torrent
-                    {
-                        Name = "Name",
-                        State = "downloading",
-                        UploadSpeed = 0,
-                        Category = string.Empty,
-                        Tags = Array.Empty<string>(),
-                        Tracker = string.Empty,
-                        TrackersCount = 0
-                    }
+                    [hash] = ClientTorrentFactory.Create(name: "Name", state: TorrentState.Downloading, uploadSpeed: 0, category: string.Empty, tags: Array.Empty<string>(), tracker: string.Empty, trackersCount: 0)
                 },
                 torrentsRemoved: null,
                 categories: null,
@@ -165,7 +164,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var result = _target.CreateMainData(client);
 
-            result.ServerState.ConnectionStatus.Should().Be(string.Empty);
+            result.ServerState.ConnectionStatus.Should().BeNull();
             result.ServerState.LastExternalAddressV4.Should().Be(string.Empty);
             result.ServerState.LastExternalAddressV6.Should().Be(string.Empty);
         }
@@ -174,65 +173,7 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_PopulatedInput_WHEN_CreateMainData_THEN_Maps_All_And_Builds_FilterStates()
         {
             var hash = "abc123";
-            var clientTorrent = new ClientModels.Torrent
-            {
-                Name = "Movie A",
-                State = "downloading",
-                UploadSpeed = 0,
-                Category = "Movies/HD",
-                Tags = new[] { " tagA\tignored", "", "tagB" },
-                Tracker = "udp://tracker1",
-                TrackersCount = 1,
-                AddedOn = 111,
-                AmountLeft = 1,
-                AutomaticTorrentManagement = true,
-                Availability = 1.0f,
-                Completed = 0,
-                CompletionOn = 0,
-                ContentPath = "/content",
-                DownloadLimit = 0,
-                DownloadSpeed = 1000,
-                Downloaded = 200,
-                DownloadedSession = 50,
-                EstimatedTimeOfArrival = 100,
-                FirstLastPiecePriority = false,
-                ForceStart = false,
-                InfoHashV1 = "v1",
-                InfoHashV2 = "v2",
-                LastActivity = 1,
-                MagnetUri = "magnet:?xt",
-                MaxRatio = 9.9f,
-                MaxSeedingTime = 0,
-                NumberComplete = 1,
-                NumberIncomplete = 1,
-                NumberLeeches = 0,
-                NumberSeeds = 5,
-                Priority = 1,
-                Progress = 0.2f,
-                Ratio = 0.1f,
-                RatioLimit = 0,
-                SavePath = "/save",
-                SeedingTime = 0,
-                SeedingTimeLimit = 0,
-                SeenComplete = 0,
-                SequentialDownload = false,
-                Size = 1000,
-                SuperSeeding = false,
-                TimeActive = 10,
-                TotalSize = 1000,
-                UploadLimit = 0,
-                Uploaded = 0,
-                UploadedSession = 0,
-                Reannounce = 0,
-                InactiveSeedingTimeLimit = 0,
-                MaxInactiveSeedingTime = 0,
-                Popularity = 0,
-                DownloadPath = "/dl",
-                RootPath = "/root",
-                IsPrivate = false,
-                ShareLimitAction = ClientModels.ShareLimitAction.Default,
-                Comment = "c"
-            };
+            var clientTorrent = ClientTorrentFactory.Create(name: "Movie A", state: TorrentState.Downloading, uploadSpeed: 0, category: "Movies/HD", tags: new[] { " tagA\tignored", "", "tagB" }, tracker: "udp://tracker1", trackersCount: 1, addedOn: 111, amountLeft: 1, automaticTorrentManagement: true, availability: 1.0f, completed: 0, completionOn: 0, contentPath: "/content", downloadLimit: 0, downloadSpeed: 1000, downloaded: 200, downloadedSession: 50, estimatedTimeOfArrival: 100, firstLastPiecePriority: false, forceStart: false, infoHashV1: "v1", infoHashV2: "v2", lastActivity: 1, magnetUri: "magnet:?xt", maxRatio: 9.9f, maxSeedingTime: 0, numberComplete: 1, numberIncomplete: 1, numberLeeches: 0, numberSeeds: 5, priority: 1, progress: 0.2f, ratio: 0.1f, ratioLimit: 0, savePath: "/save", seedingTime: 0, seedingTimeLimit: 0, seenComplete: 0, sequentialDownload: false, size: 1000, superSeeding: false, timeActive: 10, totalSize: 1000, uploadLimit: 0, uploaded: 0, uploadedSession: 0, reannounce: 0, inactiveSeedingTimeLimit: 0, maxInactiveSeedingTime: 0, popularity: 0, downloadPath: "/dl", rootPath: "/root", isPrivate: false, shareLimitAction: ClientModels.ShareLimitAction.Default, comment: "c");
 
             var torrents = new Dictionary<string, ClientModels.Torrent> { [hash] = clientTorrent };
 
@@ -251,7 +192,7 @@ namespace Lantean.QBTMud.Test.Services
                 allTimeDownloaded: 10,
                 allTimeUploaded: 20,
                 averageTimeQueue: 30,
-                connectionStatus: "connected",
+                connectionStatus: ConnectionStatus.Connected,
                 dHTNodes: 2,
                 downloadInfoData: 3,
                 downloadInfoSpeed: 4,
@@ -317,7 +258,7 @@ namespace Lantean.QBTMud.Test.Services
             result.StatusState[nameof(Status.Inactive)].Should().NotContain(hash);
             result.StatusState[nameof(Status.Stalled)].Should().NotContain(hash);
 
-            result.ServerState.ConnectionStatus.Should().Be("connected");
+            result.ServerState.ConnectionStatus.Should().Be(ConnectionStatus.Connected);
             result.ServerState.UseSubcategories.Should().BeTrue();
             result.ServerState.LastExternalAddressV4.Should().Be("1.2.3.4");
             result.ServerState.LastExternalAddressV6.Should().Be("2001::1");
@@ -328,23 +269,7 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_TorrentWithNullStrings_WHEN_CreateMainData_THEN_UsesEmptyStrings()
         {
             var hash = "nulls";
-            var clientTorrent = new ClientModels.Torrent
-            {
-                Hash = hash,
-                Name = null,
-                Category = null,
-                ContentPath = null,
-                SavePath = null,
-                DownloadPath = null,
-                RootPath = null,
-                MagnetUri = null,
-                InfoHashV1 = null,
-                InfoHashV2 = null,
-                State = null,
-                Tracker = null,
-                Tags = null,
-                TrackersCount = 0
-            };
+            var clientTorrent = ClientTorrentFactory.Create(hash: hash, name: null, category: null, contentPath: null, savePath: null, downloadPath: null, rootPath: null, magnetUri: null, infoHashV1: null, infoHashV2: null, state: null, tracker: null, tags: null, trackersCount: 0);
 
             var client = new ClientModels.MainData(
                 responseId: 1,
@@ -371,7 +296,7 @@ namespace Lantean.QBTMud.Test.Services
             torrent.MagnetUri.Should().Be(string.Empty);
             torrent.InfoHashV1.Should().Be(string.Empty);
             torrent.InfoHashV2.Should().Be(string.Empty);
-            torrent.State.Should().Be(string.Empty);
+            torrent.State.Should().BeNull();
             torrent.Tracker.Should().Be(string.Empty);
             torrent.Tags.Should().BeEmpty();
         }
@@ -382,16 +307,7 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_ExistingData_WHEN_Merge_Removals_THEN_ItemsAndStateAreRemoved_And_Flagged()
         {
             var hash = "h1";
-            var clientTorrent = new ClientModels.Torrent
-            {
-                Name = "T1",
-                State = "downloading",
-                UploadSpeed = 0,
-                Category = "Cat/Sub",
-                Tags = new[] { "x", "y" },
-                Tracker = "udp://t1",
-                TrackersCount = 1
-            };
+            var clientTorrent = ClientTorrentFactory.Create(name: "T1", state: TorrentState.Downloading, uploadSpeed: 0, category: "Cat/Sub", tags: new[] { "x", "y" }, tracker: "udp://t1", trackersCount: 1);
             var client = new ClientModels.MainData(
                 responseId: 1,
                 fullUpdate: true,
@@ -410,7 +326,7 @@ namespace Lantean.QBTMud.Test.Services
                     allTimeDownloaded: 0,
                     allTimeUploaded: 0,
                     averageTimeQueue: 0,
-                    connectionStatus: "connected",
+                    connectionStatus: ConnectionStatus.Connected,
                     dHTNodes: 0,
                     downloadInfoData: 0,
                     downloadInfoSpeed: 0,
@@ -478,7 +394,7 @@ namespace Lantean.QBTMud.Test.Services
                 fullUpdate: true,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = new ClientModels.Torrent { Name = "T1", State = "downloading", UploadSpeed = 0, Tags = Array.Empty<string>(), Tracker = "udp://t1", TrackersCount = 1, Category = string.Empty }
+                    [hash] = ClientTorrentFactory.Create(name: "T1", state: TorrentState.Downloading, uploadSpeed: 0, tags: Array.Empty<string>(), tracker: "udp://t1", trackersCount: 1, category: string.Empty)
                 },
                 torrentsRemoved: null,
                 categories: new Dictionary<string, ClientModels.Category>(),
@@ -521,7 +437,7 @@ namespace Lantean.QBTMud.Test.Services
                 fullUpdate: true,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [knownHash] = new ClientModels.Torrent { Name = "T1", State = "downloading", UploadSpeed = 0, Tags = Array.Empty<string>(), Tracker = "udp://t1", TrackersCount = 1, Category = string.Empty }
+                    [knownHash] = ClientTorrentFactory.Create(name: "T1", state: TorrentState.Downloading, uploadSpeed: 0, tags: Array.Empty<string>(), tracker: "udp://t1", trackersCount: 1, category: string.Empty)
                 },
                 torrentsRemoved: null,
                 categories: new Dictionary<string, ClientModels.Category>(),
@@ -582,16 +498,7 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_TagRemovedNotPresentOnTorrent_WHEN_Merge_THEN_NoTagStateChange()
         {
             var hash = "h1";
-            var clientTorrent = new ClientModels.Torrent
-            {
-                Name = "T1",
-                State = "downloading",
-                UploadSpeed = 0,
-                Tags = new[] { "keep" },
-                Tracker = string.Empty,
-                TrackersCount = 0,
-                Category = string.Empty
-            };
+            var clientTorrent = ClientTorrentFactory.Create(name: "T1", state: TorrentState.Downloading, uploadSpeed: 0, tags: new[] { "keep" }, tracker: string.Empty, trackersCount: 0, category: string.Empty);
 
             var existing = _target.CreateMainData(
                 new ClientModels.MainData(
@@ -658,16 +565,7 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_NewTrackerUrl_WHEN_Merge_THEN_TrackerStateCreated()
         {
             var hash = "h1";
-            var clientTorrent = new ClientModels.Torrent
-            {
-                Name = "T1",
-                State = "downloading",
-                UploadSpeed = 0,
-                Tags = Array.Empty<string>(),
-                Tracker = string.Empty,
-                TrackersCount = 0,
-                Category = string.Empty
-            };
+            var clientTorrent = ClientTorrentFactory.Create(name: "T1", state: TorrentState.Downloading, uploadSpeed: 0, tags: Array.Empty<string>(), tracker: string.Empty, trackersCount: 0, category: string.Empty);
 
             var existing = _target.CreateMainData(
                 new ClientModels.MainData(
@@ -707,15 +605,15 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_MissingStatusEntries_WHEN_TorrentRemoved_THEN_RemovalContinuesGracefully()
         {
             var hash = "h1";
-            var torrents = new Dictionary<string, Torrent> { [hash] = BuildTorrent(hash) };
+            var torrents = new Dictionary<string, MudTorrent> { [hash] = BuildTorrent(hash) };
             var tags = new HashSet<string>();
-            var categories = new Dictionary<string, Category>();
+            var categories = new Dictionary<string, MudCategory>();
             var trackers = new Dictionary<string, IReadOnlyList<string>>();
             var tagState = new Dictionary<string, HashSet<string>> { [FilterHelper.TAG_ALL] = new HashSet<string> { hash }, [FilterHelper.TAG_UNTAGGED] = new HashSet<string>() };
             var categoriesState = new Dictionary<string, HashSet<string>> { [FilterHelper.CATEGORY_ALL] = new HashSet<string>(), [FilterHelper.CATEGORY_UNCATEGORIZED] = new HashSet<string>() };
             var statusState = new Dictionary<string, HashSet<string>> { { nameof(Status.Downloading), new HashSet<string> { hash } } };
             var trackersState = new Dictionary<string, HashSet<string>> { { FilterHelper.TRACKER_ALL, new HashSet<string> { hash } } };
-            var main = new MainData(torrents, tags, categories, trackers, new ServerState(), tagState, categoriesState, statusState, trackersState);
+            var main = new MudMainData(torrents, tags, categories, trackers, new MudServerState(), tagState, categoriesState, statusState, trackersState);
 
             var delta = new ClientModels.MainData(1, false, null, new[] { hash }, null, null, null, null, null, null, null);
 
@@ -733,7 +631,7 @@ namespace Lantean.QBTMud.Test.Services
             var categoriesState = new Dictionary<string, HashSet<string>>();
             var statusState = new Dictionary<string, HashSet<string>>();
             var trackersState = new Dictionary<string, HashSet<string>>();
-            var main = new MainData(new Dictionary<string, Torrent>(), Array.Empty<string>(), new Dictionary<string, Category>(), new Dictionary<string, IReadOnlyList<string>>(), new ServerState(), tagState, categoriesState, statusState, trackersState);
+            var main = new MudMainData(new Dictionary<string, MudTorrent>(), Array.Empty<string>(), new Dictionary<string, MudCategory>(), new Dictionary<string, IReadOnlyList<string>>(), new MudServerState(), tagState, categoriesState, statusState, trackersState);
             TorrentDataManager.UpdateTagStateForAddition(main, BuildTorrent("h1"), "h1");
 
             main.TagState[FilterHelper.TAG_UNTAGGED].Should().Contain("h1");
@@ -743,7 +641,7 @@ namespace Lantean.QBTMud.Test.Services
         public void GIVEN_NewTags_WHEN_UpdateTagStateForUpdate_THEN_UnTaggedCleared_And_TagsAdded()
         {
             var tagState = new Dictionary<string, HashSet<string>> { { FilterHelper.TAG_UNTAGGED, new HashSet<string> { "h1" } } };
-            var main = new MainData(new Dictionary<string, Torrent>(), Array.Empty<string>(), new Dictionary<string, Category>(), new Dictionary<string, IReadOnlyList<string>>(), new ServerState(), tagState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
+            var main = new MudMainData(new Dictionary<string, MudTorrent>(), Array.Empty<string>(), new Dictionary<string, MudCategory>(), new Dictionary<string, IReadOnlyList<string>>(), new MudServerState(), tagState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
             var newTags = new List<string> { string.Empty, "x" };
 
             TorrentDataManager.UpdateTagStateForUpdate(main, "h1", new List<string>(), newTags);
@@ -760,7 +658,7 @@ namespace Lantean.QBTMud.Test.Services
                 { FilterHelper.TAG_UNTAGGED, new HashSet<string>() },
                 { "x", new HashSet<string> { "h1" } }
             };
-            var main = new MainData(new Dictionary<string, Torrent>(), Array.Empty<string>(), new Dictionary<string, Category>(), new Dictionary<string, IReadOnlyList<string>>(), new ServerState(), tagState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
+            var main = new MudMainData(new Dictionary<string, MudTorrent>(), Array.Empty<string>(), new Dictionary<string, MudCategory>(), new Dictionary<string, IReadOnlyList<string>>(), new MudServerState(), tagState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
 
             TorrentDataManager.UpdateTagStateForRemoval(main, "h1", new List<string> { "x", string.Empty });
 
@@ -776,7 +674,7 @@ namespace Lantean.QBTMud.Test.Services
                 { "A/B", new HashSet<string> { "h1" } },
                 { "A", new HashSet<string> { "h1" } }
             };
-            var main = new MainData(new Dictionary<string, Torrent>(), Array.Empty<string>(), new Dictionary<string, Category>(), new Dictionary<string, IReadOnlyList<string>>(), new ServerState { UseSubcategories = true }, new Dictionary<string, HashSet<string>>(), categoriesState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
+            var main = new MudMainData(new Dictionary<string, MudTorrent>(), Array.Empty<string>(), new Dictionary<string, MudCategory>(), new Dictionary<string, IReadOnlyList<string>>(), new MudServerState { UseSubcategories = true }, new Dictionary<string, HashSet<string>>(), categoriesState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
             TorrentDataManager.UpdateCategoryState(main, BuildTorrent("h1", "New", new[] { "x" }), "h1", "A/B");
 
             main.CategoriesState["A/B"].Should().BeEmpty();
@@ -791,27 +689,18 @@ namespace Lantean.QBTMud.Test.Services
             {
                 { FilterHelper.CATEGORY_UNCATEGORIZED, new HashSet<string> { "h1" } }
             };
-            var main = new MainData(new Dictionary<string, Torrent>(), Array.Empty<string>(), new Dictionary<string, Category>(), new Dictionary<string, IReadOnlyList<string>>(), new ServerState(), new Dictionary<string, HashSet<string>>(), categoriesState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
+            var main = new MudMainData(new Dictionary<string, MudTorrent>(), Array.Empty<string>(), new Dictionary<string, MudCategory>(), new Dictionary<string, IReadOnlyList<string>>(), new MudServerState(), new Dictionary<string, HashSet<string>>(), categoriesState, new Dictionary<string, HashSet<string>>(), new Dictionary<string, HashSet<string>>());
 
             TorrentDataManager.UpdateCategoryStateForRemoval(main, "h1", null);
 
             main.CategoriesState[FilterHelper.CATEGORY_UNCATEGORIZED].Should().BeEmpty();
         }
 
-        private Torrent BuildTorrent(string hash, string category = "", IEnumerable<string>? tags = null, string tracker = "", string state = "downloading")
+        private MudTorrent BuildTorrent(string hash, string category = "", IEnumerable<string>? tags = null, string tracker = "", TorrentState? state = TorrentState.Downloading)
         {
             return _target.CreateTorrent(
                 hash,
-                new ClientModels.Torrent
-                {
-                    Name = "Name",
-                    Category = category,
-                    Tags = tags?.ToArray(),
-                    Tracker = tracker,
-                    State = state,
-                    UploadSpeed = 0,
-                    TrackersCount = 0
-                });
+                ClientTorrentFactory.Create(name: "Name", category: category, tags: tags?.ToArray(), tracker: tracker, state: state, uploadSpeed: 0, trackersCount: 0));
         }
 
         [Fact]
@@ -824,8 +713,8 @@ namespace Lantean.QBTMud.Test.Services
                 fullUpdate: true,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash1] = new ClientModels.Torrent { Name = "T1", State = "downloading", UploadSpeed = 0, Tags = new[] { "x" }, Tracker = string.Empty, TrackersCount = 0, Category = string.Empty },
-                    [hash2] = new ClientModels.Torrent { Name = "T2", State = "downloading", UploadSpeed = 0, Tags = new[] { "x", "y" }, Tracker = string.Empty, TrackersCount = 0, Category = string.Empty }
+                    [hash1] = ClientTorrentFactory.Create(name: "T1", state: TorrentState.Downloading, uploadSpeed: 0, tags: new[] { "x" }, tracker: string.Empty, trackersCount: 0, category: string.Empty),
+                    [hash2] = ClientTorrentFactory.Create(name: "T2", state: TorrentState.Downloading, uploadSpeed: 0, tags: new[] { "x", "y" }, tracker: string.Empty, trackersCount: 0, category: string.Empty)
                 },
                 torrentsRemoved: null,
                 categories: new Dictionary<string, ClientModels.Category>(),
@@ -875,16 +764,7 @@ namespace Lantean.QBTMud.Test.Services
                     new Dictionary<string, IReadOnlyList<string>>(), null, null));
 
             var hash = "z1";
-            var addTorrent = new ClientModels.Torrent
-            {
-                Name = "Zed",
-                State = "downloading",
-                UploadSpeed = 0,
-                Category = "",
-                Tags = Array.Empty<string>(),
-                Tracker = "",
-                TrackersCount = 0
-            };
+            var addTorrent = ClientTorrentFactory.Create(name: "Zed", state: TorrentState.Downloading, uploadSpeed: 0, category: "", tags: Array.Empty<string>(), tracker: "", trackersCount: 0);
 
             var delta = new ClientModels.MainData(
                 responseId: 1,
@@ -930,16 +810,7 @@ namespace Lantean.QBTMud.Test.Services
                 fullUpdate: true,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = new ClientModels.Torrent
-                    {
-                        Name = "A",
-                        State = "stalledDL",
-                        UploadSpeed = 0,
-                        Category = "",
-                        Tags = Array.Empty<string>(),
-                        Tracker = "",
-                        TrackersCount = 0
-                    }
+                    [hash] = ClientTorrentFactory.Create(name: "A", state: TorrentState.StalledDownloading, uploadSpeed: 0, category: "", tags: Array.Empty<string>(), tracker: "", trackersCount: 0)
                 },
                 torrentsRemoved: null,
                 categories: new Dictionary<string, ClientModels.Category>(),
@@ -952,7 +823,7 @@ namespace Lantean.QBTMud.Test.Services
                     allTimeDownloaded: 0,
                     allTimeUploaded: 0,
                     averageTimeQueue: 0,
-                    connectionStatus: "connected",
+                    connectionStatus: ConnectionStatus.Connected,
                     dHTNodes: 0,
                     downloadInfoData: 0,
                     downloadInfoSpeed: 0,
@@ -983,16 +854,7 @@ namespace Lantean.QBTMud.Test.Services
                 fullUpdate: false,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = new ClientModels.Torrent
-                    {
-                        Name = "A",
-                        State = "stalledDL",
-                        UploadSpeed = 10,
-                        Category = "Cat/Sub",
-                        Tags = new[] { " x\tid " },
-                        Tracker = "udp://zzz",
-                        TrackersCount = 1
-                    }
+                    [hash] = ClientTorrentFactory.Create(name: "A", state: TorrentState.StalledDownloading, uploadSpeed: 10, category: "Cat/Sub", tags: new[] { " x\tid " }, tracker: "udp://zzz", trackersCount: 1)
                 },
                 torrentsRemoved: null,
                 categories: new Dictionary<string, ClientModels.Category>(),
@@ -1031,7 +893,7 @@ namespace Lantean.QBTMud.Test.Services
             var start = new ClientModels.MainData(
                 responseId: 1,
                 fullUpdate: true,
-                torrents: new Dictionary<string, ClientModels.Torrent> { [h] = new ClientModels.Torrent { Name = "N", State = "downloading", UploadSpeed = 0, Category = "C", Tags = Array.Empty<string>(), Tracker = "t1", TrackersCount = 1 } },
+                torrents: new Dictionary<string, ClientModels.Torrent> { [h] = ClientTorrentFactory.Create(name: "N", state: TorrentState.Downloading, uploadSpeed: 0, category: "C", tags: Array.Empty<string>(), tracker: "t1", trackersCount: 1) },
                 torrentsRemoved: null,
                 categories: new Dictionary<string, ClientModels.Category> { ["C"] = new ClientModels.Category("C", "/a", null) },
                 categoriesRemoved: null,
@@ -1074,7 +936,7 @@ namespace Lantean.QBTMud.Test.Services
                     new Dictionary<string, IReadOnlyList<string>>(), null,
                     new ClientModels.ServerState(
                         allTimeDownloaded: 1, allTimeUploaded: 2, averageTimeQueue: 3,
-                        connectionStatus: "connected", dHTNodes: 4, downloadInfoData: 5,
+                        connectionStatus: ConnectionStatus.Connected, dHTNodes: 4, downloadInfoData: 5,
                         downloadInfoSpeed: 6, downloadRateLimit: 7, freeSpaceOnDisk: 8, globalRatio: 9.0f,
                         queuedIOJobs: 10, queuing: true, readCacheHits: 11.0f, readCacheOverload: 12.0f,
                         refreshInterval: 13, totalBuffersSize: 14, totalPeerConnections: 15, totalQueuedSize: 16,
@@ -1091,7 +953,7 @@ namespace Lantean.QBTMud.Test.Services
                 trackers: new Dictionary<string, IReadOnlyList<string>>(), trackersRemoved: null,
                 serverState: new ClientModels.ServerState(
                     allTimeDownloaded: 100, allTimeUploaded: 200, averageTimeQueue: 300,
-                    connectionStatus: "stopped", dHTNodes: 40, downloadInfoData: 50,
+                    connectionStatus: ConnectionStatus.Disconnected, dHTNodes: 40, downloadInfoData: 50,
                     downloadInfoSpeed: 60, downloadRateLimit: 70, freeSpaceOnDisk: 80, globalRatio: 1.5f,
                     queuedIOJobs: 1000, queuing: false, readCacheHits: 0.5f, readCacheOverload: 0.2f,
                     refreshInterval: 99, totalBuffersSize: 77, totalPeerConnections: 88, totalQueuedSize: 66,
@@ -1105,7 +967,7 @@ namespace Lantean.QBTMud.Test.Services
             filterChanged.Should().BeFalse();
 
             var s = existing.ServerState;
-            s.ConnectionStatus.Should().Be("stopped");
+            s.ConnectionStatus.Should().Be(ConnectionStatus.Disconnected);
             s.DHTNodes.Should().Be(40);
             s.DownloadInfoSpeed.Should().Be(60);
             s.UploadRateLimit.Should().Be(22);
@@ -1122,7 +984,7 @@ namespace Lantean.QBTMud.Test.Services
                     new Dictionary<string, IReadOnlyList<string>>(), null,
                     new ClientModels.ServerState(
                         allTimeDownloaded: 1, allTimeUploaded: 2, averageTimeQueue: 3,
-                        connectionStatus: "connected", dHTNodes: 4, downloadInfoData: 5,
+                        connectionStatus: ConnectionStatus.Connected, dHTNodes: 4, downloadInfoData: 5,
                         downloadInfoSpeed: 6, downloadRateLimit: 7, freeSpaceOnDisk: 8, globalRatio: 9.0f,
                         queuedIOJobs: 10, queuing: true, readCacheHits: 11.0f, readCacheOverload: 12.0f,
                         refreshInterval: 13, totalBuffersSize: 14, totalPeerConnections: 15, totalQueuedSize: 16,
@@ -1143,7 +1005,7 @@ namespace Lantean.QBTMud.Test.Services
                 trackersRemoved: null,
                 serverState: new ClientModels.ServerState(
                     allTimeDownloaded: 1, allTimeUploaded: 2, averageTimeQueue: 3,
-                    connectionStatus: "connected", dHTNodes: 4, downloadInfoData: 5,
+                    connectionStatus: ConnectionStatus.Connected, dHTNodes: 4, downloadInfoData: 5,
                     downloadInfoSpeed: 6, downloadRateLimit: 7, freeSpaceOnDisk: 8, globalRatio: 9.0f,
                     queuedIOJobs: 10, queuing: true, readCacheHits: 11.0f, readCacheOverload: 12.0f,
                     refreshInterval: 13, totalBuffersSize: 14, totalPeerConnections: 15, totalQueuedSize: 16,
@@ -1165,7 +1027,7 @@ namespace Lantean.QBTMud.Test.Services
                     new Dictionary<string, IReadOnlyList<string>>(), null,
                     new ClientModels.ServerState(
                         allTimeDownloaded: 1, allTimeUploaded: 2, averageTimeQueue: 3,
-                        connectionStatus: "connected", dHTNodes: 4, downloadInfoData: 5,
+                        connectionStatus: ConnectionStatus.Connected, dHTNodes: 4, downloadInfoData: 5,
                         downloadInfoSpeed: 6, downloadRateLimit: 7, freeSpaceOnDisk: 8, globalRatio: 9.0f,
                         queuedIOJobs: 10, queuing: true, readCacheHits: 11.0f, readCacheOverload: 12.0f,
                         refreshInterval: 13, totalBuffersSize: 14, totalPeerConnections: 15, totalQueuedSize: 16,
@@ -1242,18 +1104,7 @@ namespace Lantean.QBTMud.Test.Services
                 fullUpdate: false,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = new ClientModels.Torrent
-                    {
-                        Name = "Torrent Name",
-                        State = "downloading",
-                        Downloaded = 0,
-                        TotalSize = 100,
-                        UploadSpeed = 0,
-                        Category = string.Empty,
-                        Tags = Array.Empty<string>(),
-                        Tracker = string.Empty,
-                        TrackersCount = 0
-                    }
+                    [hash] = ClientTorrentFactory.Create(name: "MudTorrent Name", state: TorrentState.Downloading, downloaded: 0, totalSize: 100, uploadSpeed: 0, category: string.Empty, tags: Array.Empty<string>(), tracker: string.Empty, trackersCount: 0)
                 },
                 torrentsRemoved: null,
                 categories: null,
@@ -1269,7 +1120,7 @@ namespace Lantean.QBTMud.Test.Services
             changed.Should().BeTrue();
             filterChanged.Should().BeTrue();
             transitions.Should().ContainSingle();
-            transitions[0].Name.Should().Be("Torrent Name");
+            transitions[0].Name.Should().Be("MudTorrent Name");
             transitions[0].IsAdded.Should().BeTrue();
         }
 
@@ -1283,18 +1134,7 @@ namespace Lantean.QBTMud.Test.Services
                     fullUpdate: true,
                     torrents: new Dictionary<string, ClientModels.Torrent>
                     {
-                        [hash] = new ClientModels.Torrent
-                        {
-                            Name = "Torrent Name",
-                            State = "downloading",
-                            Downloaded = 10,
-                            TotalSize = 100,
-                            UploadSpeed = 0,
-                            Category = string.Empty,
-                            Tags = Array.Empty<string>(),
-                            Tracker = string.Empty,
-                            TrackersCount = 0
-                        }
+                        [hash] = ClientTorrentFactory.Create(name: "MudTorrent Name", state: TorrentState.Downloading, downloaded: 10, totalSize: 100, uploadSpeed: 0, category: string.Empty, tags: Array.Empty<string>(), tracker: string.Empty, trackersCount: 0)
                     },
                     torrentsRemoved: null,
                     categories: null,
@@ -1310,14 +1150,7 @@ namespace Lantean.QBTMud.Test.Services
                 fullUpdate: false,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = new ClientModels.Torrent
-                    {
-                        Name = "Torrent Name",
-                        State = "downloading",
-                        Downloaded = 100,
-                        TotalSize = 100,
-                        UploadSpeed = 0
-                    }
+                    [hash] = ClientTorrentFactory.Create(name: "MudTorrent Name", state: TorrentState.Downloading, downloaded: 100, totalSize: 100, uploadSpeed: 0)
                 },
                 torrentsRemoved: null,
                 categories: null,
@@ -1334,7 +1167,7 @@ namespace Lantean.QBTMud.Test.Services
             filterChanged.Should().BeFalse();
             transitions.Should().ContainSingle();
             transitions[0].Hash.Should().Be(hash);
-            transitions[0].Name.Should().Be("Torrent Name");
+            transitions[0].Name.Should().Be("MudTorrent Name");
             transitions[0].IsAdded.Should().BeFalse();
             transitions[0].PreviousIsFinished.Should().BeFalse();
             transitions[0].CurrentIsFinished.Should().BeTrue();
@@ -1363,18 +1196,7 @@ namespace Lantean.QBTMud.Test.Services
                 fullUpdate: false,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = new ClientModels.Torrent
-                    {
-                        Name = "  ",
-                        State = "downloading",
-                        Downloaded = 0,
-                        TotalSize = 100,
-                        UploadSpeed = 0,
-                        Category = string.Empty,
-                        Tags = Array.Empty<string>(),
-                        Tracker = string.Empty,
-                        TrackersCount = 0
-                    }
+                    [hash] = ClientTorrentFactory.Create(name: "  ", state: TorrentState.Downloading, downloaded: 0, totalSize: 100, uploadSpeed: 0, category: string.Empty, tags: Array.Empty<string>(), tracker: string.Empty, trackersCount: 0)
                 },
                 torrentsRemoved: null,
                 categories: null,
@@ -1405,18 +1227,7 @@ namespace Lantean.QBTMud.Test.Services
                     fullUpdate: true,
                     torrents: new Dictionary<string, ClientModels.Torrent>
                     {
-                        [hash] = new ClientModels.Torrent
-                        {
-                            Name = " ",
-                            State = "downloading",
-                            Downloaded = 10,
-                            TotalSize = 100,
-                            UploadSpeed = 0,
-                            Category = string.Empty,
-                            Tags = Array.Empty<string>(),
-                            Tracker = string.Empty,
-                            TrackersCount = 0
-                        }
+                        [hash] = ClientTorrentFactory.Create(name: " ", state: TorrentState.Downloading, downloaded: 10, totalSize: 100, uploadSpeed: 0, category: string.Empty, tags: Array.Empty<string>(), tracker: string.Empty, trackersCount: 0)
                     },
                     torrentsRemoved: null,
                     categories: null,
@@ -1432,14 +1243,7 @@ namespace Lantean.QBTMud.Test.Services
                 fullUpdate: false,
                 torrents: new Dictionary<string, ClientModels.Torrent>
                 {
-                    [hash] = new ClientModels.Torrent
-                    {
-                        Name = " ",
-                        State = "downloading",
-                        Downloaded = 100,
-                        TotalSize = 100,
-                        UploadSpeed = 0
-                    }
+                    [hash] = ClientTorrentFactory.Create(name: " ", state: TorrentState.Downloading, downloaded: 100, totalSize: 100, uploadSpeed: 0)
                 },
                 torrentsRemoved: null,
                 categories: null,
