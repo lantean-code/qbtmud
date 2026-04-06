@@ -607,7 +607,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), false, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
+                .ReturnsAsync(ApiResult.Success())
                 .Verifiable();
 
             var result = await _target.InvokeDeleteTorrentDialog(false, "Hash");
@@ -621,7 +621,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), true, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
+                .ReturnsAsync(ApiResult.Success())
                 .Verifiable();
 
             var result = await _target.InvokeDeleteTorrentDialog(false, true, "Hash");
@@ -666,7 +666,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(ApiResult.Success<IReadOnlyList<QbtTorrent>>(new List<QbtTorrent> { new(name: "Name") }));
             Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), true, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
+                .ReturnsAsync(ApiResult.Success())
                 .Verifiable();
 
             var result = await _target.InvokeDeleteTorrentDialog(true, true, "Hash");
@@ -697,7 +697,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(ApiResult.Success<IReadOnlyList<QbtTorrent>>(new List<QbtTorrent> { new(name: "Name") }));
             Mock.Get(_apiClient)
                 .Setup(a => a.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences => preferences.DeleteTorrentContentFiles ?? false)))
-                .Returns(Task.CompletedTask)
+                .ReturnsAsync(ApiResult.Success())
                 .Verifiable();
 
             await _target.InvokeDeleteTorrentDialog(true, false, "Hash");
@@ -722,7 +722,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsFailure(ApiFailureKind.ServerError, "Message", HttpStatusCode.InternalServerError);
             Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), false, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
+                .ReturnsAsync(ApiResult.Success())
                 .Verifiable();
 
             var result = await _target.InvokeDeleteTorrentDialog(true, "Hash");
@@ -748,7 +748,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(Array.Empty<QbtTorrent>());
             Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), false, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
+                .ReturnsAsync(ApiResult.Success())
                 .Verifiable();
 
             var result = await _target.InvokeDeleteTorrentDialog(true, "Hash");
@@ -771,7 +771,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHashes("Hash", "Other"), false, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask)
+                .ReturnsAsync(ApiResult.Success())
                 .Verifiable();
 
             var result = await _target.InvokeDeleteTorrentDialog(true, "Hash", "Other");
@@ -783,6 +783,39 @@ namespace Lantean.QBTMud.Test.Services
                     DialogWorkflow.ConfirmDialogOptions),
                 Times.Once);
             Mock.Get(_apiClient).Verify();
+        }
+
+        [Fact]
+        public async Task GIVEN_DeleteWithoutConfirmation_WHEN_DeleteFails_THEN_ShouldReturnFalseAndShowError()
+        {
+            Mock.Get(_apiClient)
+                .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), false, It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Delete failed", HttpStatusCode.InternalServerError);
+
+            var result = await _target.InvokeDeleteTorrentDialog(false, "Hash");
+
+            result.Should().BeFalse();
+            VerifySnackbar("Delete failed", Severity.Error);
+        }
+
+        [Fact]
+        public async Task GIVEN_ConfirmationAccepted_WHEN_DeleteFails_THEN_ShouldReturnFalseAndShowError()
+        {
+            var reference = CreateReference(DialogResult.Ok(false));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.GetTorrentListAsync(null, null, null, null, null, null, null, null, null, null, TorrentSelector.FromHash("Hash"), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult.Success<IReadOnlyList<QbtTorrent>>(new List<QbtTorrent> { new(name: "Name") }));
+            Mock.Get(_apiClient)
+                .Setup(a => a.DeleteTorrentsAsync(TorrentSelectorTestHelper.FromHash("Hash"), false, It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Delete failed", HttpStatusCode.InternalServerError);
+
+            var result = await _target.InvokeDeleteTorrentDialog(true, "Hash");
+
+            result.Should().BeFalse();
+            VerifySnackbar("Delete failed", Severity.Error);
         }
 
         [Fact]

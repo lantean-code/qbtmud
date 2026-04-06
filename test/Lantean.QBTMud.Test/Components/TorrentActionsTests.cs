@@ -24,9 +24,9 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StartTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.StopTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.SetForceStartAsync(It.IsAny<TorrentSelector>(), true, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.Success());
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.Success());
+            apiClientMock.Setup(c => c.SetForceStartAsync(It.IsAny<TorrentSelector>(), true, It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.Success());
 
             var torrents = Torrents(
                 CreateTorrent("One", state: TorrentState.StoppedDownloading),
@@ -48,6 +48,32 @@ namespace Lantean.QBTMud.Test.Components
             apiClientMock.Verify(c => c.SetForceStartAsync(TorrentSelectorTestHelper.FromHashes(hashes), true, It.IsAny<CancellationToken>()), Times.Once);
             snackbarMock.Verify(s => s.Add(It.Is<string>(m => string.Equals(m, "Torrent started.", StringComparison.Ordinal)), Severity.Normal, null, null), Times.Once);
             snackbarMock.Verify(s => s.Add(It.Is<string>(m => m.Contains("stopped", StringComparison.OrdinalIgnoreCase)), Severity.Normal, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_MenuItems_WHEN_StartStopForceStartReturnFailure_THEN_ErrorShownAndSuccessSuppressed()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock.Setup(c => c.SetForceStartAsync(It.IsAny<TorrentSelector>(), true, It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var torrents = Torrents(
+                CreateTorrent("One", state: TorrentState.StoppedDownloading),
+                CreateTorrent("Two", state: TorrentState.Downloading));
+            var hashes = Hashes("One", "Two");
+
+            var target = RenderMenuItems(hashes, torrents, Tags("Tag"), Categories("Category"));
+
+            await target.InvokeAsync(() => FindMenuItem(target, "start").Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => FindMenuItem(target, "stop").Instance.OnClick.InvokeAsync());
+            await target.InvokeAsync(() => FindMenuItem(target, "forceStart").Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Exactly(3));
+            snackbarMock.Verify(s => s.Add(It.Is<string>(m => string.Equals(m, "Torrent started.", StringComparison.Ordinal)), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string?>()), Times.Never);
+            snackbarMock.Verify(s => s.Add(It.Is<string>(m => string.Equals(m, "Torrent stopped.", StringComparison.Ordinal)), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string?>()), Times.Never);
+            snackbarMock.Verify(s => s.Add(It.Is<string>(m => string.Equals(m, "Torrent force started.", StringComparison.Ordinal)), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -100,8 +126,8 @@ namespace Lantean.QBTMud.Test.Components
             var torrents = Torrents(
                 CreateTorrent("One", automaticTorrentManagement: true, downloadLimit: 111, uploadLimit: 222),
                 CreateTorrent("Two", automaticTorrentManagement: true, downloadLimit: 111, uploadLimit: 222));
-            apiClientMock.Setup(c => c.SetAutomaticTorrentManagementAsync(It.IsAny<TorrentSelector>(), false, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.SetAutomaticTorrentManagementAsync(It.IsAny<TorrentSelector>(), true, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.SetAutomaticTorrentManagementAsync(It.IsAny<TorrentSelector>(), false, It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.Success());
+            apiClientMock.Setup(c => c.SetAutomaticTorrentManagementAsync(It.IsAny<TorrentSelector>(), true, It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.Success());
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             dialogWorkflowMock.Setup(d => d.InvokeDownloadRateDialog(111, Hashes("One", "Two"))).Returns(Task.CompletedTask);
             dialogWorkflowMock.Setup(d => d.InvokeUploadRateDialog(222, Hashes("One", "Two"))).Returns(Task.CompletedTask);
@@ -148,12 +174,34 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_AutoTmmToggle_WHEN_ApiReturnsFailure_THEN_StateRestoredAndErrorShown()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.SetAutomaticTorrentManagementAsync(TorrentSelectorTestHelper.FromHashes(Hashes("One", "Two")), false, It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var torrents = Torrents(
+                CreateTorrent("One", automaticTorrentManagement: true),
+                CreateTorrent("Two", automaticTorrentManagement: true));
+
+            var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
+
+            await target.InvokeAsync(() => FindMenuItem(target, "autoTorrentManagement").Instance.OnClick.InvokeAsync());
+
+            torrents["One"].AutomaticTorrentManagement.Should().BeTrue();
+            torrents["Two"].AutomaticTorrentManagement.Should().BeTrue();
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_SequentialAndForceActions_WHEN_Invoked_THEN_ApiCalled()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.ToggleSequentialDownloadAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.SetFirstLastPiecePriorityAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.ReannounceTorrentsAsync(It.IsAny<TorrentSelector>(), null, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.ToggleSequentialDownloadAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.Success());
+            apiClientMock.Setup(c => c.SetFirstLastPiecePriorityAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.Success());
+            apiClientMock.Setup(c => c.ReannounceTorrentsAsync(It.IsAny<TorrentSelector>(), null, It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.Success());
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             dialogWorkflowMock.Setup(d => d.ForceRecheckAsync(Hashes("Alpha", "Beta"), false)).Returns(Task.CompletedTask);
             TestContext.UseSnackbarMock();
@@ -219,6 +267,46 @@ namespace Lantean.QBTMud.Test.Components
             await Assert.ThrowsAsync<InvalidOperationException>(() => target.InvokeAsync(() => firstLast.Instance.OnClick.InvokeAsync()));
 
             torrents["Hash"].FirstLastPiecePriority.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_SequentialToggle_WHEN_ApiReturnsFailure_THEN_StateRestoredAndErrorShown()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.ToggleSequentialDownloadAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+
+            var torrents = Torrents(CreateTorrent("Hash", sequentialDownload: true));
+
+            var target = RenderMenuItems(Hashes("Hash"), torrents, Tags("Tag"), Categories("Category"));
+
+            await target.InvokeAsync(() => FindMenuItem(target, "sequentialDownload").Instance.OnClick.InvokeAsync());
+
+            torrents["Hash"].SequentialDownload.Should().BeTrue();
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_FirstLastPiecePriorityToggle_WHEN_ApiReturnsFailure_THEN_StateRestoredAndErrorShown()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.SetFirstLastPiecePriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+
+            var torrents = Torrents(CreateTorrent("Hash", firstLastPiecePriority: true));
+
+            var target = RenderMenuItems(Hashes("Hash"), torrents, Tags("Tag"), Categories("Category"));
+
+            await target.InvokeAsync(() => FindMenuItem(target, "firstLastPiecePrio").Instance.OnClick.InvokeAsync());
+
+            torrents["Hash"].FirstLastPiecePriority.Should().BeTrue();
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
         }
 
         [Fact]
@@ -364,8 +452,8 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_SuperSeedingChildren_WHEN_Clicked_THEN_TogglesState()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Done")), false, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Other")), true, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Done")), false, It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.Success());
+            apiClientMock.Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Other")), true, It.IsAny<CancellationToken>())).ReturnsAsync(ApiResult.Success());
             TestContext.UseSnackbarMock();
 
             var torrents = Torrents(
@@ -402,6 +490,28 @@ namespace Lantean.QBTMud.Test.Components
 
             torrents["Done"].SuperSeeding.Should().BeTrue();
             torrents["Other"].SuperSeeding.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GIVEN_SuperSeedingToggle_WHEN_ApiReturnsFailure_THEN_StateRestoredAndErrorShown()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Done")), false, It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var torrents = Torrents(
+                CreateTorrent("Done", progress: 1f, superSeeding: true),
+                CreateTorrent("Other", progress: 1f, superSeeding: false));
+
+            var target = RenderMenuItems(Hashes("Done", "Other"), torrents, Tags("Tag"), Categories("Category"));
+
+            await target.InvokeAsync(() => FindMenuItem(target, "superSeeding").Instance.OnClick.InvokeAsync());
+
+            torrents["Done"].SuperSeeding.Should().BeTrue();
+            torrents["Other"].SuperSeeding.Should().BeFalse();
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
         }
 
         [Fact]

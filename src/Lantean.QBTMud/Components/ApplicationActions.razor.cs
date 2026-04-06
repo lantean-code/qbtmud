@@ -95,7 +95,29 @@ namespace Lantean.QBTMud.Components
                 AlternativeWebuiEnabled = false,
             };
 
-            await ApiClient.SetApplicationPreferencesAsync(preferences);
+            var result = await ApiClient.SetApplicationPreferencesAsync(preferences);
+            if (!result.IsSuccess)
+            {
+                if (result.Failure.IsAuthenticationFailure())
+                {
+                    ConnectivityStateService.MarkConnected();
+                    NavigationManager.NavigateTo("login");
+                    return;
+                }
+
+                if (result.Failure.IsConnectivityFailure())
+                {
+                    MarkLostConnection();
+                    return;
+                }
+
+                var message = string.IsNullOrWhiteSpace(result.Failure?.UserMessage)
+                    ? LanguageLocalizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.")
+                    : result.Failure!.UserMessage;
+
+                SnackbarWorkflow.ShowTransientMessage(message, Severity.Error);
+                return;
+            }
 
             NavigationManager.NavigateToHome(forceLoad: true);
         }

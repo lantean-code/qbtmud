@@ -235,8 +235,8 @@ namespace Lantean.QBTMud.Services
 
             if (!confirmTorrentDeletion)
             {
-                await _apiClient.DeleteTorrentsAsync(TorrentSelector.FromHashes(hashes), deleteTorrentContentFiles);
-                return true;
+                var deleteResult = await _apiClient.DeleteTorrentsAsync(TorrentSelector.FromHashes(hashes), deleteTorrentContentFiles);
+                return !TryHandleApiFailure(deleteResult);
             }
 
             var parameters = new DialogParameters
@@ -275,8 +275,8 @@ namespace Lantean.QBTMud.Services
                 return false;
             }
 
-            await _apiClient.DeleteTorrentsAsync(TorrentSelector.FromHashes(hashes), deleteFiles);
-            return true;
+            var confirmedDeleteResult = await _apiClient.DeleteTorrentsAsync(TorrentSelector.FromHashes(hashes), deleteFiles);
+            return !TryHandleApiFailure(confirmedDeleteResult);
 
             async Task SaveDeleteFilesPreference(bool deleteFiles)
             {
@@ -885,6 +885,21 @@ namespace Lantean.QBTMud.Services
             }
 
             _snackbarWorkflow.ShowTransientMessage(message, severity);
+        }
+
+        private bool TryHandleApiFailure(ApiResult result)
+        {
+            if (result.IsSuccess)
+            {
+                return false;
+            }
+
+            var message = string.IsNullOrWhiteSpace(result.Failure?.UserMessage)
+                ? _languageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")
+                : result.Failure!.UserMessage;
+
+            _snackbarWorkflow.ShowTransientMessage(message, Severity.Error);
+            return true;
         }
 
         private async Task<AppSettings> GetAppSettingsSafeAsync()

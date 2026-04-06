@@ -457,7 +457,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock();
-            apiClientMock.Setup(c => c.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>())).ReturnsAsync(ApiResult.Success());
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -471,6 +471,31 @@ namespace Lantean.QBTMud.Test.Components
             apiClientMock.Verify(c => c.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(p => p.AlternativeWebuiEnabled == false)), Times.Once);
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Be(TestContext.Services.GetRequiredService<NavigationManager>().BaseUri);
             snackbarMock.Invocations.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_ResetWebUI_WHEN_UpdateFails_THEN_DoesNotNavigateAndShowsError()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Reset failed", HttpStatusCode.InternalServerError);
+
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/other");
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var resetItem = FindMenuItem(target, "ResetWebUI");
+            await target.InvokeAsync(() => resetItem.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().Be("http://localhost/other");
+            snackbarMock.Verify(s => s.Add("Reset failed", Severity.Error, null, null), Times.Once);
         }
 
         [Fact]
