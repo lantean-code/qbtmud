@@ -209,35 +209,6 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_SelectedNodeAndDisconnected_WHEN_MarkItemsReadInvoked_THEN_ShouldReturnWithoutApiCall()
-        {
-            _apiClientMock
-                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null))
-                .Returns(Task.CompletedTask);
-
-            var target = RenderTarget(disconnected: true);
-            await SelectFeedNode(target, "RssFeedNode-Feed1");
-            var button = FindByTestId<MudIconButton>(target, "RssMarkItemsRead");
-
-            await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
-
-            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null), Times.Never);
-        }
-
-        [Fact]
-        public async Task GIVEN_DisconnectedClient_WHEN_UpdateAllInvoked_THEN_ShouldReturnWithoutRefresh()
-        {
-            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
-
-            var target = RenderTarget(disconnected: true);
-            var button = FindByTestId<MudIconButton>(target, "RssUpdateAll");
-
-            await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
-
-            _apiClientMock.Verify(client => client.RefreshRssItemAsync(It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
         public async Task GIVEN_FeedContextCopyUrl_WHEN_Clicked_THEN_ShouldCopyUrlAndNotify()
         {
             var target = RenderTarget();
@@ -590,56 +561,6 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_FeedContextCallbacks_WHEN_DisconnectedAfterCapture_THEN_ShouldReturnOnDisconnectedGuards()
-        {
-            var target = RenderTarget();
-            await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
-
-            var updateCallback = FindPopoverByTestId<MudMenuItem>("RssContextUpdate").Instance.OnClick;
-            var markReadCallback = FindPopoverByTestId<MudMenuItem>("RssContextMarkItemsRead").Instance.OnClick;
-            var renameCallback = FindPopoverByTestId<MudMenuItem>("RssContextRename").Instance.OnClick;
-            var editUrlCallback = FindPopoverByTestId<MudMenuItem>("RssContextEditFeedUrl").Instance.OnClick;
-            var deleteCallback = FindPopoverByTestId<MudMenuItem>("RssContextDelete").Instance.OnClick;
-            var addSubscriptionCallback = FindPopoverByTestId<MudMenuItem>("RssContextNewSubscription").Instance.OnClick;
-
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkLostConnection();
-            target.Render();
-
-            await target.InvokeAsync(() => updateCallback.InvokeAsync());
-            await target.InvokeAsync(() => markReadCallback.InvokeAsync());
-            await target.InvokeAsync(() => renameCallback.InvokeAsync());
-            await target.InvokeAsync(() => editUrlCallback.InvokeAsync());
-            await target.InvokeAsync(() => deleteCallback.InvokeAsync());
-            await target.InvokeAsync(() => addSubscriptionCallback.InvokeAsync());
-
-            _apiClientMock.Verify(client => client.RefreshRssItemAsync(It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null), Times.Never);
-            _apiClientMock.Verify(client => client.MoveRssItemAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.SetRssFeedUrlAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.RemoveRssItemAsync(It.IsAny<string>()), Times.Never);
-            _apiClientMock.Verify(client => client.AddRssFeedAsync(It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
-            _dialogWorkflowMock.Verify(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
-            _dialogWorkflowMock.Verify(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task GIVEN_FolderNewFolderCallback_WHEN_DisconnectedAfterCapture_THEN_ShouldReturnWithoutDialogOrApiCall()
-        {
-            var target = RenderTarget();
-            await OpenFeedContextMenu(target, "RssFeedNode-Folder");
-
-            var addFolderCallback = FindPopoverByTestId<MudMenuItem>("RssContextNewFolder").Instance.OnClick;
-
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkLostConnection();
-            target.Render();
-
-            await target.InvokeAsync(() => addFolderCallback.InvokeAsync());
-
-            _apiClientMock.Verify(client => client.AddRssFolderAsync(It.IsAny<string>()), Times.Never);
-            _dialogWorkflowMock.Verify(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>()), Times.Never);
-        }
-
-        [Fact]
         public async Task GIVEN_ContextNewFolderFails_WHEN_ClickedFromEmptyArea_THEN_ShouldShowError()
         {
             _dialogWorkflowMock
@@ -907,18 +828,6 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_DisconnectedFeedContext_WHEN_Opened_THEN_ShouldOnlyExposeCopyAction()
-        {
-            var target = RenderTarget(disconnected: true);
-            await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
-
-            FindPopoverByTestId<MudMenuItem>("RssContextCopyFeedUrl").Should().NotBeNull();
-            FindPopoverByTestIdOrDefault<MudMenuItem>("RssContextUpdate").Should().BeNull();
-            FindPopoverByTestIdOrDefault<MudMenuItem>("RssContextMarkItemsRead").Should().BeNull();
-            FindPopoverByTestIdOrDefault<MudMenuItem>("RssContextNewSubscription").Should().BeNull();
-        }
-
-        [Fact]
         public async Task GIVEN_ConnectedFeedContext_WHEN_Opened_THEN_ShouldNotExposeNewFolderAction()
         {
             var target = RenderTarget();
@@ -1114,7 +1023,6 @@ namespace Lantean.QBTMud.Test.Pages
 
         private IRenderedComponent<Rss> RenderTarget(
             bool drawerOpen = false,
-            bool disconnected = false,
             Breakpoint breakpoint = Breakpoint.Lg,
             Orientation orientation = Orientation.Landscape,
             IReadOnlyDictionary<string, RssItem>? rssItems = null)
@@ -1124,16 +1032,6 @@ namespace Lantean.QBTMud.Test.Pages
                 _apiClientMock
                     .Setup(client => client.GetAllRssItemsAsync(true))
                     .ReturnsAsync(rssItems);
-            }
-
-            var connectivityStateService = TestContext.Services.GetRequiredService<IConnectivityStateService>();
-            if (disconnected)
-            {
-                connectivityStateService.MarkLostConnection();
-            }
-            else
-            {
-                connectivityStateService.MarkConnected();
             }
 
             return TestContext.Render<Rss>(parameters =>

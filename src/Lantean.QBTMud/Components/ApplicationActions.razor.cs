@@ -22,7 +22,7 @@ namespace Lantean.QBTMud.Components
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
-        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
+        protected ILostConnectionWorkflow LostConnectionWorkflow { get; set; } = default!;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -100,14 +100,13 @@ namespace Lantean.QBTMud.Components
             {
                 if (result.Failure.IsAuthenticationFailure())
                 {
-                    ConnectivityStateService.MarkConnected();
                     NavigationManager.NavigateTo("login");
                     return;
                 }
 
                 if (result.Failure.IsConnectivityFailure())
                 {
-                    MarkLostConnection();
+                    await MarkLostConnectionAsync();
                     return;
                 }
 
@@ -140,14 +139,13 @@ namespace Lantean.QBTMud.Components
                 if (logoutResult.Failure.IsAuthenticationFailure())
                 {
                     await SpeedHistoryService.ClearAsync();
-                    ConnectivityStateService.MarkConnected();
                     NavigationManager.NavigateTo("login");
                     return;
                 }
 
                 if (logoutResult.Failure.IsConnectivityFailure())
                 {
-                    MarkLostConnection();
+                    await MarkLostConnectionAsync();
                     return;
                 }
 
@@ -215,12 +213,6 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            if (ConnectivityStateService.IsLostConnection)
-            {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable"), Severity.Warning);
-                return;
-            }
-
             _startAllInProgress = true;
             var startResult = await ApiClient.StartTorrentsAsync(TorrentSelector.AllTorrents());
             if (startResult.IsSuccess)
@@ -229,12 +221,11 @@ namespace Lantean.QBTMud.Components
             }
             else if (startResult.Failure.IsAuthenticationFailure())
             {
-                ConnectivityStateService.MarkConnected();
                 NavigationManager.NavigateTo("login");
             }
             else if (startResult.Failure.IsConnectivityFailure())
             {
-                MarkLostConnection();
+                await MarkLostConnectionAsync();
             }
             else
             {
@@ -251,12 +242,6 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            if (ConnectivityStateService.IsLostConnection)
-            {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable"), Severity.Warning);
-                return;
-            }
-
             _stopAllInProgress = true;
             var stopResult = await ApiClient.StopTorrentsAsync(TorrentSelector.AllTorrents());
             if (stopResult.IsSuccess)
@@ -265,12 +250,11 @@ namespace Lantean.QBTMud.Components
             }
             else if (stopResult.Failure.IsAuthenticationFailure())
             {
-                ConnectivityStateService.MarkConnected();
                 NavigationManager.NavigateTo("login");
             }
             else if (stopResult.Failure.IsConnectivityFailure())
             {
-                MarkLostConnection();
+                await MarkLostConnectionAsync();
             }
             else
             {
@@ -280,9 +264,9 @@ namespace Lantean.QBTMud.Components
             _stopAllInProgress = false;
         }
 
-        private void MarkLostConnection()
+        private Task MarkLostConnectionAsync()
         {
-            ConnectivityStateService.MarkLostConnection();
+            return LostConnectionWorkflow.MarkLostConnectionAsync();
         }
     }
 }

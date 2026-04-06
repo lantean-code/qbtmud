@@ -2361,32 +2361,8 @@ namespace Lantean.QBTMud.Test.Pages
             saveButton.Instance.Disabled.Should().BeFalse();
         }
 
-        [Fact]
-        public async Task GIVEN_LostConnectionWithPendingChanges_WHEN_PageRendered_THEN_SaveAndUndoRemainDisabled()
+        private IRenderedComponent<AppSettingsPage> RenderPage(bool drawerOpen = false, AppSettingsModel? cascadedAppSettings = null)
         {
-            var target = RenderPage(lostConnection: true);
-            var updateChecksSwitch = FindSwitch(target, "AppSettingsUpdateChecksEnabled");
-            var saveButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsSaveButton");
-            var undoButton = FindComponentByTestId<MudIconButton>(target, "AppSettingsUndoButton");
-
-            await target.InvokeAsync(() => updateChecksSwitch.Instance.ValueChanged.InvokeAsync(false));
-
-            saveButton.Instance.Disabled.Should().BeTrue();
-            undoButton.Instance.Disabled.Should().BeTrue();
-        }
-
-        private IRenderedComponent<AppSettingsPage> RenderPage(bool drawerOpen = false, bool lostConnection = false, AppSettingsModel? cascadedAppSettings = null)
-        {
-            var connectivityStateService = TestContext.Services.GetRequiredService<IConnectivityStateService>();
-            if (lostConnection)
-            {
-                connectivityStateService.MarkLostConnection();
-            }
-            else
-            {
-                connectivityStateService.MarkConnected();
-            }
-
             return TestContext.Render<AppSettingsPage>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", drawerOpen);

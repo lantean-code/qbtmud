@@ -162,7 +162,7 @@ namespace Lantean.QBTMud.Test.Pages
         public async Task GIVEN_LostConnectionChanged_WHEN_ComponentRerendersViaUiEvent_THEN_ShouldRenderLostConnectionBranchExecutes()
         {
             var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashLostConn", "Lost Connection MudTorrent") });
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkLostConnection();
+            await TestContext.Services.GetRequiredService<ILostConnectionWorkflow>().MarkLostConnectionAsync();
 
             var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
             await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("lost-connection-filter"));
@@ -564,10 +564,10 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_LostConnectionChangedOnInstance_WHEN_ReRendered_THEN_ShouldRenderProcessesLostConnectionBranch()
+        public async Task GIVEN_LostConnectionChangedOnInstance_WHEN_ReRendered_THEN_ShouldRenderProcessesLostConnectionBranch()
         {
             var target = RenderWithDefaults(torrents: new List<MudTorrent> { CreateTorrent("HashLost", "Lost MudTorrent") });
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkLostConnection();
+            await TestContext.Services.GetRequiredService<ILostConnectionWorkflow>().MarkLostConnectionAsync();
 
             target.Render();
 
@@ -603,7 +603,6 @@ namespace Lantean.QBTMud.Test.Pages
         private IRenderedComponent<TorrentList> RenderWithDefaults(EventCallback<FilterSearchState>? searchCallback = null, IReadOnlyList<MudTorrent>? torrents = null)
         {
             var mainData = CreateMainData(torrents);
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkConnected();
 
             var callback = searchCallback ?? EventCallback.Factory.Create<FilterSearchState>(this, _ => { });
 

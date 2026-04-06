@@ -1,6 +1,7 @@
 using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
+using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Pages;
@@ -722,12 +723,20 @@ namespace Lantean.QBTMud.Test.Pages
             var jobId = 51;
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var dialogReference = new Mock<IDialogReference>(MockBehavior.Strict);
+            dialogReference.Setup(dialog => dialog.Close());
             apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsAsync(new List<SearchPlugin> { plugin });
             apiMock.SetupSequence(client => client.GetSearchesStatusAsync())
                 .ReturnsAsync(Array.Empty<SearchStatus>())
                 .ReturnsFailure<IReadOnlyList<SearchStatus>>(ApiFailureKind.NoResponse, "Network down");
             apiMock.Setup(client => client.StartSearchAsync("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsAsync(jobId);
             apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
+            dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(dialogReference.Object);
 
             var serverState = new UiServerState();
             serverState.ConnectionStatus = ConnectionStatus.Connected;
@@ -764,10 +773,9 @@ namespace Lantean.QBTMud.Test.Pages
 
             await handler(CancellationToken.None);
 
-            target.WaitForAssertion(() =>
-            {
-                TestContext.Services.GetRequiredService<IConnectivityStateService>().IsLostConnection.Should().BeTrue();
-            });
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
 
             target.Render();
         }
@@ -785,6 +793,7 @@ namespace Lantean.QBTMud.Test.Pages
             apiMock.Setup(client => client.StartSearchAsync("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId)).ReturnsAsync(jobId);
             apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
 
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
             snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
@@ -823,7 +832,9 @@ namespace Lantean.QBTMud.Test.Pages
 
             await handler(CancellationToken.None);
 
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().IsLostConnection.Should().BeFalse();
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Never);
             snackbarMock.Verify(
                 snackbar => snackbar.Add(
                     It.Is<string>(message => message.Contains("Search polling failed: Server error", StringComparison.Ordinal)),
@@ -1923,9 +1934,17 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var dialogReference = new Mock<IDialogReference>(MockBehavior.Strict);
+            dialogReference.Setup(dialog => dialog.Close());
             apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsAsync(new List<SearchPlugin> { plugin });
             apiMock.Setup(client => client.GetSearchesStatusAsync())
                 .ReturnsFailure(ApiFailureKind.NoResponse, "initial failure");
+            dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(dialogReference.Object);
 
             var serverState = new UiServerState();
             var mainData = new UiMainData(
@@ -1943,10 +1962,9 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Render<MudSnackbarProvider>();
             var target = TestContext.Render<Search>(parameters => parameters.AddCascadingValue(mainData));
 
-            target.WaitForAssertion(() =>
-            {
-                TestContext.Services.GetRequiredService<IConnectivityStateService>().IsLostConnection.Should().BeTrue();
-            });
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
         }
 
         [Fact]
@@ -1954,6 +1972,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
             var apiMock = TestContext.UseApiClientMock();
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
             apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsAsync(new List<SearchPlugin> { plugin });
             apiMock.Setup(client => client.GetSearchesStatusAsync())
                 .ReturnsFailure(ApiFailureKind.ServerError, "initial failure", HttpStatusCode.InternalServerError);
@@ -1979,7 +1998,11 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                TestContext.Services.GetRequiredService<IConnectivityStateService>().IsLostConnection.Should().BeFalse();
+                dialogServiceMock.Verify(
+                    service => service.ShowAsync<LostConnectionDialog>(
+                        It.IsAny<string?>(),
+                        It.IsAny<DialogOptions>()),
+                    Times.Never);
                 snackbarMock.Verify(
                     snackbar => snackbar.Add(
                         It.Is<string>(message => message.Contains("Search polling stopped: initial failure", StringComparison.Ordinal)),

@@ -34,9 +34,6 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
-        [Inject]
-        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
-
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 

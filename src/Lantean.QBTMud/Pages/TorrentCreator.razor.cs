@@ -47,9 +47,6 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
-        [Inject]
-        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
-
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -179,13 +176,6 @@ namespace Lantean.QBTMud.Pages
 
         private async Task RefreshTasksAsync()
         {
-            if (ConnectivityStateService.IsLostConnection)
-            {
-                SnackbarWorkflow.ShowTransientMessage($"{LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")}.", Severity.Warning);
-                _timerCancellationToken.CancelIfNotDisposed();
-                return;
-            }
-
             _isLoading = true;
             try
             {

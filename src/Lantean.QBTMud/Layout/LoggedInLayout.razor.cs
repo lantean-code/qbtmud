@@ -36,13 +36,12 @@ namespace Lantean.QBTMud.Layout
         private bool _startupRecoveryPending;
         private bool _startupUpdateCheckRequested;
         private bool _updateSnackbarShown;
-        private Task? _connectivityChangeTask;
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
+        protected ILostConnectionWorkflow LostConnectionWorkflow { get; set; } = default!;
 
         [Inject]
         protected ITorrentDataManager DataManager { get; set; } = default!;
@@ -157,7 +156,6 @@ namespace Lantean.QBTMud.Layout
         private Task? _locationChangeTask;
         private bool _navigationHandlerAttached;
         private bool _welcomeWizardLaunched;
-        private bool _lostConnectionDialogShown;
         private bool _localeMismatchWarningShown;
         private bool _showPwaInstallPrompt;
         private Task? _pwaInstallPromptDelayTask;
@@ -168,7 +166,6 @@ namespace Lantean.QBTMud.Layout
 
             _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(_defaultRefreshInterval), retryCount: 3);
             AppSettingsService.SettingsChanged += OnAppSettingsChanged;
-            ConnectivityStateService.ConnectivityChanged += OnConnectivityChanged;
 
             if (!_navigationHandlerAttached)
             {
@@ -218,11 +215,6 @@ namespace Lantean.QBTMud.Layout
             if (!authState.TryGetValue(out var isAuthenticated))
             {
                 await TryHandleStartupFailureAsync(authState.Failure!, _timerCancellationToken.Token);
-                return;
-            }
-
-            if (ConnectivityStateService.IsLostConnection)
-            {
                 return;
             }
 
@@ -278,7 +270,6 @@ namespace Lantean.QBTMud.Layout
             Version = version ?? string.Empty;
             MainData = DataManager.CreateMainData(data!);
             _startupRecoveryPending = false;
-            ConnectivityStateService.MarkConnected();
             MarkTorrentsDirty();
 
             _requestId = data!.ResponseId;
@@ -320,11 +311,6 @@ namespace Lantean.QBTMud.Layout
             {
                 _startupUpdateCheckRequested = true;
                 await TryRunStartupUpdateCheckAsync();
-            }
-
-            if (ConnectivityStateService.IsLostConnection)
-            {
-                await ShowLostConnectionDialogAsync();
             }
         }
 
@@ -406,28 +392,6 @@ namespace Lantean.QBTMud.Layout
             var dialogResult = await dialogReference.Result;
 
             return dialogResult is { Canceled: false };
-        }
-
-        private async Task ShowLostConnectionDialogAsync()
-        {
-            if (_lostConnectionDialogShown)
-            {
-                return;
-            }
-
-            _lostConnectionDialogShown = true;
-
-            var options = new DialogOptions
-            {
-                CloseOnEscapeKey = false,
-                BackdropClick = false,
-                NoHeader = true,
-                FullWidth = true,
-                MaxWidth = MaxWidth.ExtraSmall,
-                BackgroundClass = "background-blur background-blur-strong"
-            };
-
-            await DialogService.ShowAsync<LostConnectionDialog>(title: null, options);
         }
 
         private async Task SynchronizeLocalePreferenceAsync()
@@ -581,7 +545,7 @@ namespace Lantean.QBTMud.Layout
 
                 if (dataResult.Failure.IsConnectivityFailure())
                 {
-                    ConnectivityStateService.MarkLostConnection();
+                    await LostConnectionWorkflow.MarkLostConnectionAsync();
                     _timerCancellationToken.CancelIfNotDisposed();
                     await InvokeAsync(StateHasChanged);
                     return ManagedTimerTickResult.Stop;
@@ -626,7 +590,6 @@ namespace Lantean.QBTMud.Layout
                 await TryProcessTorrentNotificationsAsync(transitionBatch, cancellationToken);
             }
 
-            ConnectivityStateService.MarkConnected();
             _requestId = data.ResponseId;
 
             if (shouldRender)
@@ -642,7 +605,6 @@ namespace Lantean.QBTMud.Layout
             IsAuthenticated = false;
             _authConfirmed = false;
             _startupRecoveryPending = false;
-            ConnectivityStateService.MarkConnected();
 
             await ClearPendingDownloadAsync(cancellationToken);
             _timerCancellationToken.CancelIfNotDisposed();
@@ -1055,11 +1017,6 @@ namespace Lantean.QBTMud.Layout
             StateHasChanged();
         }
 
-        private void OnConnectivityChanged(bool isLostConnection)
-        {
-            _connectivityChangeTask = HandleConnectivityChangedAsync(isLostConnection);
-        }
-
         private async ValueTask OnPreferencesUpdated(Preferences preferences)
         {
             ArgumentNullException.ThrowIfNull(preferences);
@@ -1106,22 +1063,7 @@ namespace Lantean.QBTMud.Layout
                 }
 
                 AppSettingsService.SettingsChanged -= OnAppSettingsChanged;
-                ConnectivityStateService.ConnectivityChanged -= OnConnectivityChanged;
                 PreferencesUpdateService.PreferencesUpdated -= OnPreferencesUpdated;
-
-                if (_connectivityChangeTask is not null)
-                {
-                    try
-                    {
-                        await _connectivityChangeTask;
-                    }
-                    catch (InvalidOperationException) when (_disposedValue)
-                    {
-                    }
-                    catch (ObjectDisposedException) when (_disposedValue)
-                    {
-                    }
-                }
             }
 
             _disposedValue = true;
@@ -1156,12 +1098,11 @@ namespace Lantean.QBTMud.Layout
             if (failure.IsConnectivityFailure())
             {
                 _startupRecoveryPending = false;
-                ConnectivityStateService.MarkLostConnection();
+                await LostConnectionWorkflow.MarkLostConnectionAsync();
                 return true;
             }
 
             _startupRecoveryPending = true;
-            ConnectivityStateService.MarkConnected();
             SnackbarWorkflow.ShowLocalizedMessage(
                 "AppConnectivity",
                 "qBittorrent returned an error. Please try again.",
@@ -1169,25 +1110,6 @@ namespace Lantean.QBTMud.Layout
                 configure: null,
                 key: _startupApiErrorSnackbarKey);
             return true;
-        }
-
-        private async Task HandleConnectivityChangedAsync(bool isLostConnection)
-        {
-            try
-            {
-                if (!isLostConnection)
-                {
-                    _lostConnectionDialogShown = false;
-                }
-
-                await InvokeAsync(StateHasChanged);
-            }
-            catch (InvalidOperationException) when (_disposedValue)
-            {
-            }
-            catch (ObjectDisposedException) when (_disposedValue)
-            {
-            }
         }
 
         private async Task<ManagedTimerTickResult> RetryStartupTickAsync(CancellationToken cancellationToken)
@@ -1241,7 +1163,6 @@ namespace Lantean.QBTMud.Layout
             Version = version ?? string.Empty;
             MainData = DataManager.CreateMainData(data!);
             _startupRecoveryPending = false;
-            ConnectivityStateService.MarkConnected();
             MarkTorrentsDirty();
 
             _requestId = data!.ResponseId;
@@ -1283,13 +1204,12 @@ namespace Lantean.QBTMud.Layout
             if (failure.IsConnectivityFailure())
             {
                 _startupRecoveryPending = false;
-                ConnectivityStateService.MarkLostConnection();
+                await LostConnectionWorkflow.MarkLostConnectionAsync();
                 _timerCancellationToken.CancelIfNotDisposed();
                 await InvokeAsync(StateHasChanged);
                 return ManagedTimerTickResult.Stop;
             }
 
-            ConnectivityStateService.MarkConnected();
             SnackbarWorkflow.ShowLocalizedMessage(
                 "AppConnectivity",
                 "qBittorrent returned an error. Please try again.",

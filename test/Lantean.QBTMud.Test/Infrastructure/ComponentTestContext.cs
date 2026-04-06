@@ -88,7 +88,8 @@ namespace Lantean.QBTMud.Test.Infrastructure
 
             // App services
             Services.AddQBittorrentApiClient(_apiClientName);
-            Services.AddScoped<IConnectivityStateService, ConnectivityStateService>();
+            Services.AddScoped<LostConnectionWorkflow>();
+            Services.AddScoped<ILostConnectionWorkflow>(serviceProvider => serviceProvider.GetRequiredService<LostConnectionWorkflow>());
             Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
             Services.AddScoped<IAppSettingsService, AppSettingsService>();
             Services.AddScoped<IWebApiCapabilityService, WebApiCapabilityService>();

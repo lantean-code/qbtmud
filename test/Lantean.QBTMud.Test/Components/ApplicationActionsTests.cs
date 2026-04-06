@@ -100,11 +100,19 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public async Task GIVEN_LostConnection_WHEN_StartAllInvoked_THEN_ShowsWarningAndSkipsApi()
+        public async Task GIVEN_StartAll_WHEN_NoResponse_THEN_ShowsLostConnectionDialog()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkLostConnection();
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var dialogReference = new Mock<IDialogReference>(MockBehavior.Strict);
+            dialogReference.Setup(dialog => dialog.Close());
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.NoResponse, "Unavailable");
+            dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(dialogReference.Object);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -115,8 +123,10 @@ namespace Lantean.QBTMud.Test.Components
             var startItem = FindMenuItem(target, "StartAllTorrents");
             await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
 
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("not reachable", StringComparison.OrdinalIgnoreCase)), Severity.Warning, null, null), Times.Once);
-            apiClientMock.Verify(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()), Times.Never);
+            apiClientMock.Verify(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()), Times.Once);
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
         }
 
         [Fact]
@@ -212,11 +222,19 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public async Task GIVEN_StopAllLostConnection_WHEN_Invoked_THEN_ShowsWarning()
+        public async Task GIVEN_StopAll_WHEN_NoResponse_THEN_ShowsLostConnectionDialog()
         {
-            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            TestContext.UseApiClientMock();
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().MarkLostConnection();
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
+            var dialogReference = new Mock<IDialogReference>(MockBehavior.Strict);
+            dialogReference.Setup(dialog => dialog.Close());
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.NoResponse, "Unavailable");
+            dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(dialogReference.Object);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -227,7 +245,10 @@ namespace Lantean.QBTMud.Test.Components
             var stopItem = FindMenuItem(target, "StopAllTorrents");
             await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
 
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("not reachable", StringComparison.OrdinalIgnoreCase)), Severity.Warning, null, null), Times.Once);
+            apiClientMock.Verify(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()), Times.Once);
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
         }
 
         [Fact]
@@ -528,7 +549,10 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
             var speedHistoryMock = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
+            var dialogReference = new Mock<IDialogReference>(MockBehavior.Strict);
+            dialogReference.Setup(dialog => dialog.Close());
 
             apiClientMock
                 .Setup(c => c.LogoutAsync())
@@ -536,6 +560,11 @@ namespace Lantean.QBTMud.Test.Components
             dialogWorkflowMock
                 .Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
                 .Returns<string, string, Func<Task>>((_, _, callback) => callback());
+            dialogServiceMock
+                .Setup(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()))
+                .ReturnsAsync(dialogReference.Object);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -546,9 +575,11 @@ namespace Lantean.QBTMud.Test.Components
             var logoutItem = FindMenuItem(target, "Logout");
             await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
 
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().IsLostConnection.Should().BeTrue();
             apiClientMock.Verify(c => c.LogoutAsync(), Times.Once);
             speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Never);
+            dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().NotEndWith("/login");
         }
 
@@ -579,7 +610,6 @@ namespace Lantean.QBTMud.Test.Components
             var logoutItem = FindMenuItem(target, "Logout");
             await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
 
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().IsLostConnection.Should().BeFalse();
             apiClientMock.Verify(c => c.LogoutAsync(), Times.Once);
             speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Once);
             dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
@@ -612,7 +642,6 @@ namespace Lantean.QBTMud.Test.Components
             var logoutItem = FindMenuItem(target, "Logout");
             await target.InvokeAsync(() => logoutItem.Instance.OnClick.InvokeAsync());
 
-            TestContext.Services.GetRequiredService<IConnectivityStateService>().IsLostConnection.Should().BeFalse();
             apiClientMock.Verify(c => c.LogoutAsync(), Times.Once);
             speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Never);
             snackbarMock.Verify(

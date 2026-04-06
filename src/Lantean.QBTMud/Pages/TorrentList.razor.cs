@@ -34,10 +34,6 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
-        [Inject]
-        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
-
-        [Inject]
         public ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
@@ -89,7 +85,6 @@ namespace Lantean.QBTMud.Pages
 
         private object? _lastRenderedTorrents;
         private Preferences? _lastPreferences;
-        private bool _lastLostConnection;
         private bool _hasRendered;
         private int _lastSelectionCount;
         private int _lastTorrentsVersion = -1;
@@ -126,7 +121,6 @@ namespace Lantean.QBTMud.Pages
                 _hasRendered = true;
                 _lastRenderedTorrents = Torrents;
                 _lastPreferences = Preferences;
-                _lastLostConnection = ConnectivityStateService.IsLostConnection;
                 _lastTorrentsVersion = TorrentsVersion;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
@@ -146,7 +140,6 @@ namespace Lantean.QBTMud.Pages
                 _lastTorrentsVersion = TorrentsVersion;
                 _lastRenderedTorrents = Torrents;
                 _lastPreferences = Preferences;
-                _lastLostConnection = ConnectivityStateService.IsLostConnection;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
@@ -156,7 +149,6 @@ namespace Lantean.QBTMud.Pages
             {
                 _lastRenderedTorrents = Torrents;
                 _lastPreferences = Preferences;
-                _lastLostConnection = ConnectivityStateService.IsLostConnection;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;
@@ -165,14 +157,6 @@ namespace Lantean.QBTMud.Pages
             if (!ReferenceEquals(_lastPreferences, Preferences))
             {
                 _lastPreferences = Preferences;
-                _lastSelectionCount = SelectedItems.Count;
-                _toolbarButtonsEnabled = _lastSelectionCount > 0;
-                return true;
-            }
-
-            if (_lastLostConnection != ConnectivityStateService.IsLostConnection)
-            {
-                _lastLostConnection = ConnectivityStateService.IsLostConnection;
                 _lastSelectionCount = SelectedItems.Count;
                 _toolbarButtonsEnabled = _lastSelectionCount > 0;
                 return true;

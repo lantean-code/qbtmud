@@ -97,17 +97,6 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_LostConnection_WHEN_Rendered_THEN_ShowsWarningAndSkipsApiCall()
-        {
-            RenderPage(lostConnection: true);
-
-            Mock.Get(_apiClient).Verify(client => client.GetTorrentCreationTasksAsync(), Times.Never);
-            Mock.Get(_snackbar).Verify(
-                snackbar => snackbar.Add("qBittorrent client is not reachable.", Severity.Warning, It.IsAny<Action<SnackbarOptions>>()),
-                Times.Once);
-        }
-
-        [Fact]
         public void GIVEN_NonTerminalTask_WHEN_Rendered_THEN_StartsPolling()
         {
             Mock.Get(_apiClient)
@@ -805,18 +794,8 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_timer).Verify(timer => timer.DisposeAsync(), Times.Once);
         }
 
-        private IRenderedComponent<TorrentCreator> RenderPage(bool lostConnection = false)
+        private IRenderedComponent<TorrentCreator> RenderPage()
         {
-            var connectivityStateService = TestContext.Services.GetRequiredService<IConnectivityStateService>();
-            if (lostConnection)
-            {
-                connectivityStateService.MarkLostConnection();
-            }
-            else
-            {
-                connectivityStateService.MarkConnected();
-            }
-
             return TestContext.Render<TorrentCreator>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", false);

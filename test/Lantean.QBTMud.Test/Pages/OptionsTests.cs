@@ -71,15 +71,6 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_LostConnection_WHEN_Rendered_THEN_DisablesSaveAndUndo()
-        {
-            var target = RenderPage(lostConnection: true);
-
-            FindIconButton(target, Icons.Material.Outlined.Save).Instance.Disabled.Should().BeTrue();
-            FindIconButton(target, Icons.Material.Outlined.Undo).Instance.Disabled.Should().BeTrue();
-        }
-
-        [Fact]
         public async Task GIVEN_PreferencesChanged_WHEN_Toggled_THEN_EnablesSaveAndUndo()
         {
             var target = RenderPage();
@@ -404,23 +395,13 @@ namespace Lantean.QBTMud.Test.Pages
                 .NotContain(button => button.Instance.Icon == Icons.Material.Outlined.NavigateBefore);
         }
 
-        private IRenderedComponent<Options> RenderPage(Preferences? preferences = null, bool drawerOpen = false, bool lostConnection = false, bool configureApi = true)
+        private IRenderedComponent<Options> RenderPage(Preferences? preferences = null, bool drawerOpen = false, bool configureApi = true)
         {
             if (configureApi)
             {
                 Mock.Get(_apiClient)
                     .Setup(client => client.GetApplicationPreferencesAsync())
                     .ReturnsAsync(preferences ?? CreatePreferences());
-            }
-
-            var connectivityStateService = TestContext.Services.GetRequiredService<IConnectivityStateService>();
-            if (lostConnection)
-            {
-                connectivityStateService.MarkLostConnection();
-            }
-            else
-            {
-                connectivityStateService.MarkConnected();
             }
 
             return TestContext.Render<Options>(parameters =>

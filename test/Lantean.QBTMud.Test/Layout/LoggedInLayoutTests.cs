@@ -138,6 +138,7 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.RemoveAll<ITorrentCompletionNotificationService>();
             TestContext.Services.RemoveAll<IWelcomeWizardPlanBuilder>();
             TestContext.Services.RemoveAll<IWelcomeWizardStateService>();
+            TestContext.Services.RemoveAll<ILostConnectionWorkflow>();
             TestContext.Services.AddSingleton(_apiClient);
             TestContext.Services.AddSingleton(_dataManager);
             TestContext.Services.AddSingleton(_speedHistoryService);
@@ -151,6 +152,8 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.AddSingleton(_torrentCompletionNotificationService);
             TestContext.Services.AddSingleton(_welcomeWizardPlanBuilder);
             TestContext.Services.AddSingleton(_welcomeWizardStateService);
+            TestContext.Services.AddScoped<LostConnectionWorkflow>();
+            TestContext.Services.AddScoped<ILostConnectionWorkflow>(serviceProvider => serviceProvider.GetRequiredService<LostConnectionWorkflow>());
         }
 
         [Fact]
@@ -1086,13 +1089,39 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public async Task GIVEN_ConnectivityStateChangesToLost_WHEN_Rendered_THEN_ShowsLostConnectionDialog()
+        public async Task GIVEN_LostConnectionWorkflowMarksLostConnection_WHEN_Rendered_THEN_ShowsLostConnectionDialog()
         {
             _dialogService.ClearInvocations();
             var target = RenderLayout(new List<IManagedTimer>());
 
-            var connectivityStateService = TestContext.Services.GetRequiredService<IConnectivityStateService>();
-            await target.InvokeAsync(() => connectivityStateService.MarkLostConnection());
+            var lostConnectionWorkflow = TestContext.Services.GetRequiredService<ILostConnectionWorkflow>();
+            await target.InvokeAsync(() => lostConnectionWorkflow.MarkLostConnectionAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()), Times.Once);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_LostConnectionWorkflowAlreadyMarkedLost_WHEN_LayoutRerenders_THEN_ShowsLostConnectionDialogOnlyOnce()
+        {
+            _dialogService.ClearInvocations();
+            var target = RenderLayout(new List<IManagedTimer>());
+            var lostConnectionWorkflow = TestContext.Services.GetRequiredService<ILostConnectionWorkflow>();
+
+            await target.InvokeAsync(() => lostConnectionWorkflow.MarkLostConnectionAsync());
+
+            target.WaitForAssertion(() =>
+            {
+                _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                    It.IsAny<string?>(),
+                    It.IsAny<DialogOptions>()), Times.Once);
+            });
+
+            target.Render();
 
             target.WaitForAssertion(() =>
             {
@@ -1598,7 +1627,6 @@ namespace Lantean.QBTMud.Test.Layout
             var result = await handler!(CancellationToken.None);
 
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
-            target.WaitForAssertion(() => probe.Instance.ConnectivityStateService.IsLostConnection.Should().BeTrue());
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Once);
@@ -1631,7 +1659,6 @@ namespace Lantean.QBTMud.Test.Layout
             var result = await handler!(CancellationToken.None);
 
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
-            target.WaitForAssertion(() => probe.Instance.ConnectivityStateService.IsLostConnection.Should().BeTrue());
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Once);
@@ -1665,7 +1692,6 @@ namespace Lantean.QBTMud.Test.Layout
             var result = await handler!(CancellationToken.None);
 
             result.Action.Should().Be(ManagedTimerTickAction.Continue);
-            probe.Instance.ConnectivityStateService.IsLostConnection.Should().BeFalse();
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Never);
@@ -1707,7 +1733,6 @@ namespace Lantean.QBTMud.Test.Layout
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
             target.WaitForAssertion(() => _navigationManager.LastNavigationUri.Should().Be("login"));
             _navigationManager.ForceLoad.Should().BeFalse();
-            probe.Instance.ConnectivityStateService.IsLostConnection.Should().BeFalse();
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Never);
@@ -1742,7 +1767,6 @@ namespace Lantean.QBTMud.Test.Layout
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
             target.WaitForAssertion(() => _navigationManager.LastNavigationUri.Should().Be("login"));
             _navigationManager.ForceLoad.Should().BeFalse();
-            probe.Instance.ConnectivityStateService.IsLostConnection.Should().BeFalse();
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Never);
@@ -2716,9 +2740,6 @@ namespace Lantean.QBTMud.Test.Layout
 
             [CascadingParameter(Name = "SortDirectionChanged")]
             public EventCallback<SortDirection> SortDirectionChanged { get; set; }
-
-            [Inject]
-            public IConnectivityStateService ConnectivityStateService { get; set; } = default!;
         }
 
         private sealed class TestNavigationManager : NavigationManager

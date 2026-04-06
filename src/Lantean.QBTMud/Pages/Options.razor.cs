@@ -37,9 +37,6 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected IPreferencesUpdateService PreferencesUpdateService { get; set; } = default!;
 
-        [Inject]
-        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
-
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 

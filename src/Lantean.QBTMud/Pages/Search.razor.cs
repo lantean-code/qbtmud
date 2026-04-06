@@ -39,7 +39,7 @@ namespace Lantean.QBTMud.Pages
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
+        protected ILostConnectionWorkflow LostConnectionWorkflow { get; set; } = default!;
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
@@ -1155,9 +1155,9 @@ namespace Lantean.QBTMud.Pages
             return JSRuntime.InvokeVoidAsync("open", url, url).AsTask();
         }
 
-        private void MarkLostConnection()
+        private async Task MarkLostConnection()
         {
-            ConnectivityStateService.MarkLostConnection();
+            await LostConnectionWorkflow.MarkLostConnectionAsync();
             _timerCancellationToken.CancelIfNotDisposed();
 
             foreach (var job in _jobs)
@@ -1195,14 +1195,13 @@ namespace Lantean.QBTMud.Pages
         {
             if (failure.IsAuthenticationFailure())
             {
-                ConnectivityStateService.MarkConnected();
                 NavigationManager.NavigateTo("login");
                 return true;
             }
 
             if (failure.IsConnectivityFailure())
             {
-                MarkLostConnection();
+                await MarkLostConnection();
                 await InvokeAsync(StateHasChanged);
                 return true;
             }
@@ -1214,14 +1213,13 @@ namespace Lantean.QBTMud.Pages
         {
             if (failure.IsAuthenticationFailure())
             {
-                ConnectivityStateService.MarkConnected();
                 NavigationManager.NavigateTo("login");
                 return true;
             }
 
             if (failure.IsConnectivityFailure())
             {
-                MarkLostConnection();
+                await MarkLostConnection();
                 await InvokeAsync(StateHasChanged);
                 return true;
             }

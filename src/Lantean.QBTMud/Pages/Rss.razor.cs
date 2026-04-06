@@ -85,9 +85,6 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
-        [Inject]
-        protected IConnectivityStateService ConnectivityStateService { get; set; } = default!;
-
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -109,9 +106,7 @@ namespace Lantean.QBTMud.Pages
 
         protected string? SelectedArticle { get; set; }
 
-        protected bool CanMarkSelectionAsRead => _selectedNode is not null && !IsClientDisconnected;
-
-        private bool IsClientDisconnected => ConnectivityStateService.IsLostConnection;
+        protected bool CanMarkSelectionAsRead => _selectedNode is not null;
 
         protected override async Task OnInitializedAsync()
         {
@@ -141,27 +136,22 @@ namespace Lantean.QBTMud.Pages
 
         protected IReadOnlyList<RssTreeItem> TreeItems => FeedItems;
 
-        protected bool ContextCanUpdate => _contextNode is not null && !IsClientDisconnected;
+        protected bool ContextCanUpdate => _contextNode is not null;
 
-        protected bool ContextCanMarkRead => _contextNode is not null && !IsClientDisconnected;
+        protected bool ContextCanMarkRead => _contextNode is not null;
 
-        protected bool ContextCanRename => _contextNode is not null && !_contextNode.IsUnread && !IsClientDisconnected;
+        protected bool ContextCanRename => _contextNode is not null && !_contextNode.IsUnread;
 
-        protected bool ContextCanEditUrl => _contextNode?.Feed is not null && !IsClientDisconnected;
+        protected bool ContextCanEditUrl => _contextNode?.Feed is not null;
 
-        protected bool ContextCanDelete => _contextNode is not null && !_contextNode.IsUnread && !string.IsNullOrEmpty(_contextNode.Path) && !IsClientDisconnected;
+        protected bool ContextCanDelete => _contextNode is not null && !_contextNode.IsUnread && !string.IsNullOrEmpty(_contextNode.Path);
 
-        protected bool ContextCanAddSubscription => !IsClientDisconnected;
+        protected bool ContextCanAddSubscription => true;
 
         protected bool ContextCanAddFolder
         {
             get
             {
-                if (IsClientDisconnected)
-                {
-                    return false;
-                }
-
                 if (_contextIsEmptyArea)
                 {
                     return true;
@@ -171,7 +161,7 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        protected bool ContextCanUpdateAll => _contextIsEmptyArea && !IsClientDisconnected;
+        protected bool ContextCanUpdateAll => _contextIsEmptyArea;
 
         protected bool ContextCanCopyUrl => _contextNode?.Feed is not null;
 
@@ -310,7 +300,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task MarkAsRead()
         {
-            if (_selectedNode is null || IsClientDisconnected)
+            if (_selectedNode is null)
             {
                 return;
             }
@@ -320,11 +310,6 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task RefreshAllFeeds()
         {
-            if (IsClientDisconnected)
-            {
-                return;
-            }
-
             await RefreshFeedsForNode(null);
         }
 
@@ -398,11 +383,6 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task UpdateContextUpdate()
         {
-            if (IsClientDisconnected)
-            {
-                return;
-            }
-
             if (_contextNode is null)
             {
                 return;
@@ -420,7 +400,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task UpdateContextMarkRead()
         {
-            if (_contextNode is null || IsClientDisconnected)
+            if (_contextNode is null)
             {
                 return;
             }
@@ -430,7 +410,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task UpdateContextRename()
         {
-            if (_contextNode is null || _contextNode.IsUnread || IsClientDisconnected)
+            if (_contextNode is null || _contextNode.IsUnread)
             {
                 return;
             }
@@ -458,7 +438,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task UpdateContextEditUrl()
         {
-            if (_contextNode?.Feed is null || IsClientDisconnected)
+            if (_contextNode?.Feed is null)
             {
                 return;
             }
@@ -485,7 +465,7 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task UpdateContextDelete()
         {
-            if (_contextNode is null || IsClientDisconnected)
+            if (_contextNode is null)
             {
                 return;
             }
@@ -510,21 +490,11 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task UpdateContextAddSubscription()
         {
-            if (IsClientDisconnected)
-            {
-                return;
-            }
-
             await AddSubscriptionAtNode(_contextNode);
         }
 
         protected async Task UpdateContextAddFolder()
         {
-            if (IsClientDisconnected)
-            {
-                return;
-            }
-
             var parentPath = DetermineParentPathForNewFolder(_contextNode);
             var folderName = await DialogWorkflow.ShowStringFieldDialog(
                 LanguageLocalizer.Translate("RSSWidget", "Please choose a folder name"),
