@@ -90,8 +90,14 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddQBittorrentApiClient(_apiClientName);
             Services.AddScoped<LostConnectionWorkflow>();
             Services.AddScoped<ILostConnectionWorkflow>(serviceProvider => serviceProvider.GetRequiredService<LostConnectionWorkflow>());
+            Services.AddScoped<IShellSessionWorkflow, ShellSessionWorkflow>();
+            Services.AddScoped<IPendingDownloadWorkflow, PendingDownloadWorkflow>();
+            Services.AddScoped<IStartupExperienceWorkflow, StartupExperienceWorkflow>();
+            Services.AddScoped<IStatusBarWorkflow, StatusBarWorkflow>();
             Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
-            Services.AddScoped<IAppSettingsService, AppSettingsService>();
+            Services.AddScoped<AppSettingsService>();
+            Services.AddScoped<IAppSettingsService>(serviceProvider => serviceProvider.GetRequiredService<AppSettingsService>());
+            Services.AddScoped<IAppSettingsStateService>(serviceProvider => serviceProvider.GetRequiredService<AppSettingsService>());
             Services.AddScoped<IWebApiCapabilityService, WebApiCapabilityService>();
             Services.AddScoped<IClientDataStorageAdapter, ClientDataStorageAdapter>();
             Services.AddSingleton<IStorageCatalogService, StorageCatalogService>();

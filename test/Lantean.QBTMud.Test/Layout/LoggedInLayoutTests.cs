@@ -44,6 +44,7 @@ namespace Lantean.QBTMud.Test.Layout
         private readonly Mock<IDialogService> _dialogServiceMock;
         private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
         private readonly IAppSettingsService _appSettingsService = Mock.Of<IAppSettingsService>();
+        private readonly IAppSettingsStateService _appSettingsStateService = Mock.Of<IAppSettingsStateService>();
         private readonly IAppUpdateService _appUpdateService = Mock.Of<IAppUpdateService>();
         private readonly ITorrentCompletionNotificationService _torrentCompletionNotificationService = Mock.Of<ITorrentCompletionNotificationService>();
         private readonly IWelcomeWizardPlanBuilder _welcomeWizardPlanBuilder = Mock.Of<IWelcomeWizardPlanBuilder>();
@@ -58,9 +59,13 @@ namespace Lantean.QBTMud.Test.Layout
 
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock.Setup(c => c.CheckAuthStateAsync()).ReturnsAsync(true);
+            apiClientMock.Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
             apiClientMock.Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync(CreatePreferences());
+            apiClientMock.Setup(c => c.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(CreatePreferences());
             apiClientMock.Setup(c => c.GetApplicationVersionAsync()).ReturnsAsync("Version");
+            apiClientMock.Setup(c => c.GetApplicationVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync("Version");
             apiClientMock.Setup(c => c.GetMainDataAsync(It.IsAny<int>())).ReturnsAsync(CreateClientMainData());
+            apiClientMock.Setup(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(CreateClientMainData());
 
             var dataManagerMock = Mock.Get(_dataManager);
             dataManagerMock.Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(CreateMainData());
@@ -134,6 +139,7 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.RemoveAll<IDialogService>();
             TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.RemoveAll<IAppSettingsService>();
+            TestContext.Services.RemoveAll<IAppSettingsStateService>();
             TestContext.Services.RemoveAll<IAppUpdateService>();
             TestContext.Services.RemoveAll<ITorrentCompletionNotificationService>();
             TestContext.Services.RemoveAll<IWelcomeWizardPlanBuilder>();
@@ -148,6 +154,7 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.AddSingleton(_dialogService);
             TestContext.Services.AddSingleton(_snackbar);
             TestContext.Services.AddSingleton(_appSettingsService);
+            TestContext.Services.AddSingleton(_appSettingsStateService);
             TestContext.Services.AddSingleton(_appUpdateService);
             TestContext.Services.AddSingleton(_torrentCompletionNotificationService);
             TestContext.Services.AddSingleton(_welcomeWizardPlanBuilder);
@@ -805,7 +812,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             _snackbar.ClearInvocations();
             await TestContext.LocalStorage.SetItemAsStringAsync(_preferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
-            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync((ClientModels.Preferences)null!);
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>())).ReturnsAsync((ClientModels.Preferences)null!);
 
             TestContext.Render<LoggedInLayout>(parameters =>
             {
@@ -970,7 +977,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, "magnet:?xt=urn:btih:ABC", Xunit.TestContext.Current.CancellationToken);
 
-            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync()).ReturnsAsync(false);
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -988,7 +995,7 @@ namespace Lantean.QBTMud.Test.Layout
             _dialogService.ClearInvocations();
 
             Mock.Get(_apiClient)
-                .Setup(c => c.CheckAuthStateAsync())
+                .Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsFailure(ApiFailureKind.NoResponse, "Unavailable");
 
             var target = RenderLayout(new List<IManagedTimer>());
@@ -1014,7 +1021,7 @@ namespace Lantean.QBTMud.Test.Layout
             _snackbar.ClearInvocations();
 
             Mock.Get(_apiClient)
-                .Setup(c => c.CheckAuthStateAsync())
+                .Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError);
 
             var target = RenderLayout(new List<IManagedTimer>());
@@ -1042,7 +1049,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.CheckAuthStateAsync())
+            Mock.Get(_apiClient).SetupSequence(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError)
                 .ReturnsAsync(true);
 
@@ -1364,8 +1371,8 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync()).Returns(Task.CompletedTask);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync()).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1384,8 +1391,8 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: true));
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync()).Returns(Task.CompletedTask);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync()).ReturnsAsync(false);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1404,7 +1411,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync()).ReturnsFailure(ApiFailureKind.ServerError, "Fail", HttpStatusCode.InternalServerError);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).ReturnsFailure(ApiFailureKind.ServerError, "Fail", HttpStatusCode.InternalServerError);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1423,8 +1430,8 @@ namespace Lantean.QBTMud.Test.Layout
             var toggleTaskSource = new TaskCompletionSource<bool>();
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync()).Returns(toggleTaskSource.Task);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync()).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).Returns(toggleTaskSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1432,7 +1439,7 @@ namespace Lantean.QBTMud.Test.Layout
             var firstClick = target.InvokeAsync(() => button.Find("button").Click());
             await target.InvokeAsync(() => button.Find("button").Click());
 
-            Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimitsAsync(), Times.Once);
+            Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>()), Times.Once);
 
             toggleTaskSource.SetResult(true);
             await firstClick;
@@ -1579,7 +1586,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var tickSource = new TaskCompletionSource<bool>();
 
-            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync()).Returns(tickSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).Returns(tickSource.Task);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -1597,9 +1604,9 @@ namespace Lantean.QBTMud.Test.Layout
             var probeBody = CreateProbeBody();
             var mainData = CreateMainData(serverState: CreateServerState());
 
-            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync()).Returns(tickSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).Returns(tickSource.Task);
             Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData())
                 .ReturnsFailure(ApiFailureKind.NoResponse, "qBittorrent client is not reachable.");
 
@@ -1640,7 +1647,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             _dialogService.ClearInvocations();
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData())
                 .ReturnsFailure(ApiFailureKind.NoResponse, "qBittorrent client is not reachable.");
 
@@ -1673,7 +1680,7 @@ namespace Lantean.QBTMud.Test.Layout
             _dialogService.ClearInvocations();
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData())
                 .ReturnsFailure(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError);
 
@@ -1712,7 +1719,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             _dialogService.ClearInvocations();
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData())
                 .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Unauthorized);
 
@@ -1746,7 +1753,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             _dialogService.ClearInvocations();
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData())
                 .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Forbidden", HttpStatusCode.Forbidden);
 
@@ -1780,7 +1787,7 @@ namespace Lantean.QBTMud.Test.Layout
             var initialData = CreateMainData(serverState: CreateServerState());
             var updatedData = CreateMainData(serverState: CreateServerState(connectionStatus: ConnectionStatus.Connected));
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: true));
 
@@ -1815,7 +1822,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = true;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
@@ -1850,7 +1857,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = false;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
@@ -1897,7 +1904,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = false;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
@@ -1931,7 +1938,7 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState());
             var filterChanged = false;
 
-            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>()))
+            Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false))
                 .ReturnsAsync(CreateClientMainData(fullUpdate: false));
 
@@ -1972,11 +1979,16 @@ namespace Lantean.QBTMud.Test.Layout
         {
             await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, pending, Xunit.TestContext.Current.CancellationToken);
 
-            RenderLayout(new List<IManagedTimer>());
+            var target = RenderLayout(new List<IManagedTimer>());
 
-            var stored = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
-
-            stored.Should().BeNull();
+            target.WaitForAssertion(() =>
+            {
+                var stored = TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken)
+                    .AsTask()
+                    .GetAwaiter()
+                    .GetResult();
+                stored.Should().BeNull();
+            });
         }
 
         [Fact]
@@ -1985,11 +1997,16 @@ namespace Lantean.QBTMud.Test.Layout
             var pending = new string('a', 8200);
             await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, pending, Xunit.TestContext.Current.CancellationToken);
 
-            RenderLayout(new List<IManagedTimer>());
+            var target = RenderLayout(new List<IManagedTimer>());
 
-            var stored = await TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken);
-
-            stored.Should().BeNull();
+            target.WaitForAssertion(() =>
+            {
+                var stored = TestContext.SessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, Xunit.TestContext.Current.CancellationToken)
+                    .AsTask()
+                    .GetAwaiter()
+                    .GetResult();
+                stored.Should().BeNull();
+            });
         }
 
         [Fact]
@@ -2204,9 +2221,9 @@ namespace Lantean.QBTMud.Test.Layout
 
             await target.InvokeAsync(() =>
             {
-                Mock.Get(_appSettingsService).Raise(
+                Mock.Get(_appSettingsStateService).Raise(
                     service => service.SettingsChanged += null,
-                    _appSettingsService,
+                    _appSettingsStateService,
                     new AppSettingsChangedEventArgs(updatedSettings));
             });
 
@@ -2295,8 +2312,8 @@ namespace Lantean.QBTMud.Test.Layout
         {
             DisposeDefaultTarget();
             var completionSource = new TaskCompletionSource<bool>();
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync()).Returns(completionSource.Task);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync()).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).Returns(completionSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>());
             var button = target.FindComponents<MudIconButton>()
@@ -2304,11 +2321,11 @@ namespace Lantean.QBTMud.Test.Layout
 
             var firstClick = button.Find("button").TriggerEventAsync("onclick", new MouseEventArgs());
 
-            target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimitsAsync(), Times.Once));
+            target.WaitForAssertion(() => Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>()), Times.Once));
 
             await target.InvokeAsync(() => button.Instance.OnClick.InvokeAsync(null));
 
-            Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimitsAsync(), Times.Once);
+            Mock.Get(_apiClient).Verify(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>()), Times.Once);
 
             completionSource.SetResult(true);
             await firstClick;
@@ -2386,7 +2403,7 @@ namespace Lantean.QBTMud.Test.Layout
         public void GIVEN_BlankVersion_WHEN_PageTitleResolved_THEN_OmitsVersionText()
         {
             DisposeDefaultTarget();
-            Mock.Get(_apiClient).Setup(c => c.GetApplicationVersionAsync()).ReturnsAsync(" ");
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(" ");
 
             var target = RenderLayout(new List<IManagedTimer>());
             var pageTitle = target.FindComponent<PageTitle>();
@@ -2467,7 +2484,7 @@ namespace Lantean.QBTMud.Test.Layout
             {
                 Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData ?? CreateMainData());
             }
-            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync(preferences ?? CreatePreferences());
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(preferences ?? CreatePreferences());
 
             return context.Render<LoggedInLayout>(parameters =>
             {

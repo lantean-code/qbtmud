@@ -80,9 +80,15 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IAppWarmupService, AppWarmupService>();
             builder.Services.AddScoped<IAppBuildInfoService, AppBuildInfoService>();
             builder.Services.AddScoped<IAppUpdateService, AppUpdateService>();
-            builder.Services.AddScoped<IAppSettingsService, AppSettingsService>();
+            builder.Services.AddScoped<AppSettingsService>();
+            builder.Services.AddScoped<IAppSettingsService>(serviceProvider => serviceProvider.GetRequiredService<AppSettingsService>());
+            builder.Services.AddScoped<IAppSettingsStateService>(serviceProvider => serviceProvider.GetRequiredService<AppSettingsService>());
             builder.Services.AddScoped<LostConnectionWorkflow>();
             builder.Services.AddScoped<ILostConnectionWorkflow>(serviceProvider => serviceProvider.GetRequiredService<LostConnectionWorkflow>());
+            builder.Services.AddScoped<IShellSessionWorkflow, ShellSessionWorkflow>();
+            builder.Services.AddScoped<IPendingDownloadWorkflow, PendingDownloadWorkflow>();
+            builder.Services.AddScoped<IStartupExperienceWorkflow, StartupExperienceWorkflow>();
+            builder.Services.AddScoped<IStatusBarWorkflow, StatusBarWorkflow>();
             builder.Services.AddScoped<IBrowserNotificationService, BrowserNotificationService>();
             builder.Services.AddScoped<IInternalUrlProvider, InternalUrlProvider>();
             builder.Services.AddScoped<IMagnetLinkService, MagnetLinkService>();

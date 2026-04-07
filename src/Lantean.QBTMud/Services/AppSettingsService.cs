@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Services
     /// <summary>
     /// Provides persistent qbtmud-specific application settings.
     /// </summary>
-    public sealed class AppSettingsService : IAppSettingsService
+    public sealed class AppSettingsService : IAppSettingsService, IAppSettingsStateService
     {
         private const string _legacyDarkModeStorageKey = "MainLayout.IsDarkMode";
 
