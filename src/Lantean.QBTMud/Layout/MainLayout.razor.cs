@@ -312,7 +312,7 @@ namespace Lantean.QBTMud.Layout
 
             _themeModePreference = themeModePreference;
             _pendingThemeModeUpdate = true;
-            StateHasChanged();
+            _ = InvokeAsync(StateHasChanged);
         }
 
         private void EnsureThemeApplied()

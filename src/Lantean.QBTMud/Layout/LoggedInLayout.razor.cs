@@ -540,7 +540,7 @@ namespace Lantean.QBTMud.Layout
         private void OnAppSettingsChanged(object? sender, AppSettingsChangedEventArgs args)
         {
             AppSettingsState = args.Settings.Clone();
-            StateHasChanged();
+            _ = InvokeAsync(StateHasChanged);
         }
 
         private async ValueTask OnPreferencesUpdated(Preferences preferences)
