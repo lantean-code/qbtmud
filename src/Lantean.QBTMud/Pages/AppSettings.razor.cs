@@ -37,9 +37,6 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
-        [CascadingParameter(Name = "AppSettings")]
-        public AppSettingsModel? CascadedAppSettings { get; set; }
-
         protected bool IsLoading { get; private set; } = true;
 
         protected int ActiveTab { get; private set; }
@@ -73,16 +70,8 @@ namespace Lantean.QBTMud.Pages
         protected override async Task OnInitializedAsync()
         {
             var storageRoutingSettingsTask = StorageRoutingService.GetSettingsAsync();
-            if (CascadedAppSettings is not null)
-            {
-                Settings = CascadedAppSettings.Clone();
-                _savedSettings = Settings.Clone();
-            }
-            else
-            {
-                Settings = await AppSettingsService.GetSettingsAsync();
-                _savedSettings = Settings.Clone();
-            }
+            Settings = await AppSettingsService.GetSettingsAsync();
+            _savedSettings = Settings.Clone();
 
             StorageRoutingSettings = await storageRoutingSettingsTask;
             _savedStorageRoutingSettings = StorageRoutingSettings.Clone();

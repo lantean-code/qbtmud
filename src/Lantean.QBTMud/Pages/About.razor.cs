@@ -22,9 +22,6 @@ namespace Lantean.QBTMud.Pages
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
-        [CascadingParameter(Name = "Version")]
-        public string? Version { get; set; }
-
         protected string? QtVersion { get; private set; }
 
         protected string? LibtorrentVersion { get; private set; }
@@ -58,13 +55,11 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            if (Version is null)
+            string? version = null;
+            var versionResult = await ApiClient.GetApplicationVersionAsync();
+            if (versionResult.TryGetValue(out var applicationVersion))
             {
-                var versionResult = await ApiClient.GetApplicationVersionAsync();
-                if (versionResult.TryGetValue(out var applicationVersion))
-                {
-                    Version = applicationVersion;
-                }
+                version = applicationVersion;
             }
 
             QtVersion = buildInfo.QTVersion;
@@ -72,7 +67,7 @@ namespace Lantean.QBTMud.Pages
             BoostVersion = buildInfo.BoostVersion;
             OpensslVersion = buildInfo.OpenSSLVersion;
             ZlibVersion = buildInfo.ZLibVersion;
-            QBittorrentVersion = Version;
+            QBittorrentVersion = version;
             Bitness = buildInfo.Bitness;
 
             try

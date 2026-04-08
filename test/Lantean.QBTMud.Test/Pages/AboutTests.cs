@@ -95,21 +95,31 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_VersionProvided_WHEN_Rendered_THEN_SkipsApplicationVersionRequest()
+        public void GIVEN_ApplicationVersionUnavailable_WHEN_Rendered_THEN_ShowsWebUiWithoutVersionText()
         {
             _apiClient.ClearInvocations();
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationVersionAsync())
+                .ReturnsAsync(ApiResult<string>.FailureResult(new ApiFailure
+                {
+                    Kind = ApiFailureKind.NoResponse,
+                    Operation = "test",
+                    UserMessage = "NoResponse",
+                    Detail = "NoResponse",
+                    ResponseBody = "NoResponse",
+                    IsTransient = true
+                }));
 
-            var target = RenderPage("Version");
+            var target = RenderPage();
 
             GetChildContentText(FindComponentByTestId<MudText>(target, "AboutVersionTitle").Instance.ChildContent)
-                .Should()
-                .Be("qBittorrent Version WebUI (64-bit)");
+                .Should().Be("qBittorrent WebUI (64-bit)");
             GetChildContentText(FindComponentByTestId<MudText>(target, "QbtMudCurrentBuild").Instance.ChildContent)
                 .Should()
                 .Be("1.0.0");
 
             Mock.Get(_apiClient).Verify(client => client.GetBuildInfoAsync(), Times.Once);
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationVersionAsync(), Times.Never);
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationVersionAsync(), Times.Once);
         }
 
         [Fact]
@@ -128,9 +138,13 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_EmptyVersionProvided_WHEN_Rendered_THEN_ShowsWebUiWithoutVersionText()
+        public void GIVEN_EmptyApplicationVersion_WHEN_Rendered_THEN_ShowsWebUiWithoutVersionText()
         {
-            var target = RenderPage(string.Empty);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationVersionAsync())
+                .ReturnsAsync(" ");
+
+            var target = RenderPage();
 
             GetChildContentText(FindComponentByTestId<MudText>(target, "AboutVersionTitle").Instance.ChildContent)
                 .Should()
@@ -248,15 +262,11 @@ namespace Lantean.QBTMud.Test.Pages
             });
         }
 
-        private IRenderedComponent<About> RenderPage(string? version = null)
+        private IRenderedComponent<About> RenderPage()
         {
             return TestContext.Render<About>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", false);
-                if (version is not null)
-                {
-                    parameters.AddCascadingValue("Version", version);
-                }
             });
         }
 

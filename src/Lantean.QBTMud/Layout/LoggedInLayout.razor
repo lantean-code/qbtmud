@@ -12,37 +12,33 @@
 <CascadingValue Value="Torrents">
     <CascadingValue Value="_torrentsVersion" Name="TorrentsVersion">
         <CascadingValue Value="@MainData">
-            <CascadingValue Value="AppSettingsState" Name="AppSettings">
-                <CascadingValue Value="Preferences">
-                    <CascadingValue Value="SortColumnChanged" Name="SortColumnChanged">
-                        <CascadingValue Value="SortColumn" Name="SortColumn">
-                            <CascadingValue Value="SortDirectionChanged" Name="SortDirectionChanged">
-                                <CascadingValue Value="SortDirection" Name="SortDirection">
-                                    <CascadingValue Value="CategoryChanged" Name="CategoryChanged">
-                                        <CascadingValue Value="StatusChanged" Name="StatusChanged">
-                                            <CascadingValue Value="TagChanged" Name="TagChanged">
-                                                <CascadingValue Value="TrackerChanged" Name="TrackerChanged">
-                                                    <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
-                                                        <CascadingValue Value="Version" Name="Version">
-                                                            <div class="app-shell">
-                                                                @Body
-                                                                <StatusBar MainData="@MainData"
-                                                                           Preferences="Preferences"
-                                                                           IsDarkMode="IsDarkMode"
-                                                                           CurrentBreakpoint="CurrentBreakpoint"
-                                                                           CurrentOrientation="CurrentOrientation"
-                                                                           ToggleAlternativeSpeedLimitsInProgress="_toggleAltSpeedLimitsInProgress"
-                                                                           OnToggleTimerDrawer="ToggleTimerDrawerAsync"
-                                                                           OnToggleAlternativeSpeedLimits="ToggleAlternativeSpeedLimits"
-                                                                           OnShowGlobalDownloadRateLimit="ShowGlobalDownloadRateLimit"
-                                                                           OnShowGlobalUploadRateLimit="ShowGlobalUploadRateLimit" />
-                                                                @if (_showPwaInstallPrompt)
-                                                                {
-                                                                    <PwaInstallPrompt />
-                                                                }
-                                                            </div>
-                                                        </CascadingValue>
-                                                    </CascadingValue>
+            <CascadingValue Value="Preferences">
+                <CascadingValue Value="SortColumnChanged" Name="SortColumnChanged">
+                    <CascadingValue Value="SortColumn" Name="SortColumn">
+                        <CascadingValue Value="SortDirectionChanged" Name="SortDirectionChanged">
+                            <CascadingValue Value="SortDirection" Name="SortDirection">
+                                <CascadingValue Value="CategoryChanged" Name="CategoryChanged">
+                                    <CascadingValue Value="StatusChanged" Name="StatusChanged">
+                                        <CascadingValue Value="TagChanged" Name="TagChanged">
+                                            <CascadingValue Value="TrackerChanged" Name="TrackerChanged">
+                                                <CascadingValue Value="SearchTermChanged" Name="SearchTermChanged">
+                                                    <div class="app-shell">
+                                                        @Body
+                                                        <StatusBar MainData="@MainData"
+                                                                   Preferences="Preferences"
+                                                                   IsDarkMode="IsDarkMode"
+                                                                   CurrentBreakpoint="CurrentBreakpoint"
+                                                                   CurrentOrientation="CurrentOrientation"
+                                                                   ToggleAlternativeSpeedLimitsInProgress="_toggleAltSpeedLimitsInProgress"
+                                                                   OnToggleTimerDrawer="ToggleTimerDrawerAsync"
+                                                                   OnToggleAlternativeSpeedLimits="ToggleAlternativeSpeedLimits"
+                                                                   OnShowGlobalDownloadRateLimit="ShowGlobalDownloadRateLimit"
+                                                                   OnShowGlobalUploadRateLimit="ShowGlobalUploadRateLimit" />
+                                                        @if (_showPwaInstallPrompt)
+                                                        {
+                                                            <PwaInstallPrompt />
+                                                        }
+                                                    </div>
                                                 </CascadingValue>
                                             </CascadingValue>
                                         </CascadingValue>

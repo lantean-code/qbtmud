@@ -53,9 +53,6 @@ namespace Lantean.QBTMud.Layout
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
         [Inject]
-        protected IAppSettingsStateService AppSettingsStateService { get; set; } = default!;
-
-        [Inject]
         protected IPreferencesUpdateService PreferencesUpdateService { get; set; } = default!;
 
         [CascadingParameter]
@@ -91,8 +88,6 @@ namespace Lantean.QBTMud.Layout
 
         protected Preferences? Preferences { get; set; }
 
-        protected AppSettings? AppSettingsState { get; set; }
-
         protected string? SortColumn { get; set; }
 
         protected SortDirection SortDirection { get; set; }
@@ -120,13 +115,15 @@ namespace Lantean.QBTMud.Layout
         private bool _welcomeWizardLaunched;
         private bool _showPwaInstallPrompt;
         private Task? _pwaInstallPromptDelayTask;
+        private bool _startupUpdateCheckReady;
+        private bool _startupUpdateChecksEnabled;
+        private string? _startupDismissedReleaseTag;
 
         protected override void OnInitialized()
         {
             base.OnInitialized();
 
             _refreshTimer ??= ManagedTimerFactory.Create("MainDataRefresh", TimeSpan.FromMilliseconds(_defaultRefreshInterval), retryCount: 3);
-            AppSettingsStateService.SettingsChanged += OnAppSettingsChanged;
 
             if (!_navigationHandlerAttached)
             {
@@ -221,12 +218,12 @@ namespace Lantean.QBTMud.Layout
                 await LaunchWelcomeWizardFlowAsync();
             }
 
-            if (!_startupUpdateCheckRequested && IsAuthenticated && AppSettingsState is not null)
+            if (!_startupUpdateCheckRequested && IsAuthenticated && _startupUpdateCheckReady)
             {
                 _startupUpdateCheckRequested = true;
                 await StartupExperienceWorkflow.RunUpdateCheckAsync(
-                    AppSettingsState.UpdateChecksEnabled,
-                    AppSettingsState.DismissedReleaseTag,
+                    _startupUpdateChecksEnabled,
+                    _startupDismissedReleaseTag,
                     _timerCancellationToken.Token);
             }
         }
@@ -537,12 +534,6 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
-        private void OnAppSettingsChanged(object? sender, AppSettingsChangedEventArgs args)
-        {
-            AppSettingsState = args.Settings.Clone();
-            _ = InvokeAsync(StateHasChanged);
-        }
-
         private async ValueTask OnPreferencesUpdated(Preferences preferences)
         {
             ArgumentNullException.ThrowIfNull(preferences);
@@ -588,7 +579,6 @@ namespace Lantean.QBTMud.Layout
                     _navigationHandlerAttached = false;
                 }
 
-                AppSettingsStateService.SettingsChanged -= OnAppSettingsChanged;
                 PreferencesUpdateService.PreferencesUpdated -= OnPreferencesUpdated;
             }
 
@@ -635,13 +625,15 @@ namespace Lantean.QBTMud.Layout
 
         private async Task ApplyLoadResultAsync(ShellSessionLoadResult loadResult, CancellationToken cancellationToken)
         {
-            AppSettingsState = loadResult.AppSettings;
             Preferences = loadResult.Preferences;
             Version = loadResult.Version ?? string.Empty;
             MainData = loadResult.MainData;
             _startupRecoveryPending = false;
             MarkTorrentsDirty();
             _requestId = loadResult.RequestId;
+            _startupUpdateCheckReady = loadResult.AppSettings is not null;
+            _startupUpdateChecksEnabled = loadResult.AppSettings?.UpdateChecksEnabled ?? false;
+            _startupDismissedReleaseTag = loadResult.AppSettings?.DismissedReleaseTag;
 
             if (MainData is not null)
             {

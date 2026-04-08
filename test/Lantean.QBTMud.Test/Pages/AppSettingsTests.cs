@@ -2001,22 +2001,6 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public void GIVEN_CascadedAppSettings_WHEN_PageRendered_THEN_UsesCascadedSettingsWithoutCallingGetSettings()
-        {
-            var cascadedSettings = AppSettingsModel();
-            cascadedSettings.ThemeModePreference = ThemeModePreference.Dark;
-            _appSettingsService.ClearInvocations();
-
-            var target = RenderPage(cascadedAppSettings: cascadedSettings);
-            var themeModeSelect = FindComponentByTestId<MudSelect<ThemeModePreference>>(target, "AppSettingsThemeModePreference");
-
-            themeModeSelect.Instance.GetState(x => x.Value).Should().Be(ThemeModePreference.Dark);
-            Mock.Get(_appSettingsService).Verify(
-                service => service.GetSettingsAsync(It.IsAny<CancellationToken>()),
-                Times.Never);
-        }
-
-        [Fact]
         public async Task GIVEN_ReloadThrowsHttpRequest_WHEN_ReloadClicked_THEN_ShowsRefreshErrorSnackbar()
         {
             Mock.Get(_appSettingsService)
@@ -2361,15 +2345,11 @@ namespace Lantean.QBTMud.Test.Pages
             saveButton.Instance.Disabled.Should().BeFalse();
         }
 
-        private IRenderedComponent<AppSettingsPage> RenderPage(bool drawerOpen = false, AppSettingsModel? cascadedAppSettings = null)
+        private IRenderedComponent<AppSettingsPage> RenderPage(bool drawerOpen = false)
         {
             return TestContext.Render<AppSettingsPage>(parameters =>
             {
                 parameters.AddCascadingValue("DrawerOpen", drawerOpen);
-                if (cascadedAppSettings is not null)
-                {
-                    parameters.AddCascadingValue("AppSettings", cascadedAppSettings);
-                }
             });
         }
 

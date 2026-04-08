@@ -44,7 +44,6 @@ namespace Lantean.QBTMud.Test.Layout
         private readonly Mock<IDialogService> _dialogServiceMock;
         private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>();
         private readonly IAppSettingsService _appSettingsService = Mock.Of<IAppSettingsService>();
-        private readonly IAppSettingsStateService _appSettingsStateService = Mock.Of<IAppSettingsStateService>();
         private readonly IAppUpdateService _appUpdateService = Mock.Of<IAppUpdateService>();
         private readonly ITorrentCompletionNotificationService _torrentCompletionNotificationService = Mock.Of<ITorrentCompletionNotificationService>();
         private readonly IWelcomeWizardPlanBuilder _welcomeWizardPlanBuilder = Mock.Of<IWelcomeWizardPlanBuilder>();
@@ -139,7 +138,6 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.RemoveAll<IDialogService>();
             TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.RemoveAll<IAppSettingsService>();
-            TestContext.Services.RemoveAll<IAppSettingsStateService>();
             TestContext.Services.RemoveAll<IAppUpdateService>();
             TestContext.Services.RemoveAll<ITorrentCompletionNotificationService>();
             TestContext.Services.RemoveAll<IWelcomeWizardPlanBuilder>();
@@ -154,7 +152,6 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.AddSingleton(_dialogService);
             TestContext.Services.AddSingleton(_snackbar);
             TestContext.Services.AddSingleton(_appSettingsService);
-            TestContext.Services.AddSingleton(_appSettingsStateService);
             TestContext.Services.AddSingleton(_appUpdateService);
             TestContext.Services.AddSingleton(_torrentCompletionNotificationService);
             TestContext.Services.AddSingleton(_welcomeWizardPlanBuilder);
@@ -2212,30 +2209,6 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public async Task GIVEN_AppSettingsSaved_WHEN_SettingsChanged_THEN_UpdatesCascadingAppSettings()
-        {
-            DisposeDefaultTarget();
-            var target = RenderLayout(new List<IManagedTimer>(), body: CreateProbeBody());
-            var updatedSettings = AppSettings.Default.Clone();
-            updatedSettings.ThemeModePreference = ThemeModePreference.Dark;
-
-            await target.InvokeAsync(() =>
-            {
-                Mock.Get(_appSettingsStateService).Raise(
-                    service => service.SettingsChanged += null,
-                    _appSettingsStateService,
-                    new AppSettingsChangedEventArgs(updatedSettings));
-            });
-
-            target.WaitForAssertion(() =>
-            {
-                var probe = target.FindComponent<LayoutProbe>();
-                probe.Instance.AppSettings.Should().NotBeNull();
-                probe.Instance.AppSettings!.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
-            });
-        }
-
-        [Fact]
         public async Task GIVEN_PwaPromptDelayScheduled_WHEN_Disposed_THEN_DoesNotThrow()
         {
             DisposeDefaultTarget();
@@ -2724,9 +2697,6 @@ namespace Lantean.QBTMud.Test.Layout
 
             [CascadingParameter]
             public MudMainData? MudMainData { get; set; }
-
-            [CascadingParameter(Name = "AppSettings")]
-            public AppSettings? AppSettings { get; set; }
 
             [CascadingParameter]
             public ClientModels.Preferences? Preferences { get; set; }
