@@ -19,16 +19,12 @@ namespace Lantean.QBTMud.Test.Pages
         private readonly IApiClient _apiClient;
         private readonly IDialogWorkflow _dialogWorkflow;
         private readonly ISnackbar _snackbar;
-        private readonly ILanguageInitializationService _languageInitializationService;
-        private readonly IPreferencesUpdateService _preferencesUpdateService;
 
         public OptionsTests()
         {
             _apiClient = Mock.Of<IApiClient>();
             _dialogWorkflow = Mock.Of<IDialogWorkflow>();
             _snackbar = Mock.Of<ISnackbar>();
-            _languageInitializationService = Mock.Of<ILanguageInitializationService>();
-            _preferencesUpdateService = Mock.Of<IPreferencesUpdateService>();
 
             TestContext.Services.RemoveAll<IApiClient>();
             TestContext.Services.AddSingleton(_apiClient);
@@ -36,10 +32,6 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.AddSingleton(_dialogWorkflow);
             TestContext.Services.RemoveAll<ISnackbar>();
             TestContext.Services.AddSingleton(_snackbar);
-            TestContext.Services.RemoveAll<ILanguageInitializationService>();
-            TestContext.Services.AddSingleton(_languageInitializationService);
-            TestContext.Services.RemoveAll<IPreferencesUpdateService>();
-            TestContext.Services.AddSingleton(_preferencesUpdateService);
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync())
@@ -47,12 +39,6 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_apiClient)
                 .Setup(client => client.GetNetworkInterfacesAsync())
                 .ReturnsAsync(Array.Empty<NetworkInterface>());
-            Mock.Get(_languageInitializationService)
-                .Setup(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()))
-                .Returns(ValueTask.CompletedTask);
-            Mock.Get(_preferencesUpdateService)
-                .Setup(service => service.PublishAsync(It.IsAny<Preferences>()))
-                .Returns(ValueTask.CompletedTask);
 
             TestContext.Render<MudPopoverProvider>();
         }
@@ -101,10 +87,6 @@ namespace Lantean.QBTMud.Test.Pages
             var preferences = CreatePreferences();
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationPreferencesAsync())
-                .ReturnsAsync(preferences)
-                .ReturnsAsync(preferences);
-            Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .Returns(Task.CompletedTask);
 
@@ -120,15 +102,10 @@ namespace Lantean.QBTMud.Test.Pages
             var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
             await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
 
-            Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferencesAsync(), Times.Exactly(2));
+            Mock.Get(_apiClient).Verify(client => client.GetApplicationPreferencesAsync(), Times.Once);
             Mock.Get(_apiClient).Verify(client => client.SetApplicationPreferencesAsync(
                     It.Is<UpdatePreferences>(value => value.ConfirmTorrentDeletion == true)),
                 Times.Once);
-            Mock.Get(_snackbar).Verify(
-                snackbar => snackbar.Add("Options saved.", Severity.Success, It.IsAny<Action<SnackbarOptions>>()),
-                Times.Once);
-            Mock.Get(_preferencesUpdateService)
-                .Verify(service => service.PublishAsync(It.IsAny<Preferences>()), Times.Once);
 
             target.WaitForAssertion(() =>
             {
@@ -141,10 +118,6 @@ namespace Lantean.QBTMud.Test.Pages
         {
             var preferences = CreatePreferences();
 
-            Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationPreferencesAsync())
-                .ReturnsAsync(preferences)
-                .ReturnsAsync(preferences);
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .Returns(Task.CompletedTask);
@@ -184,10 +157,6 @@ namespace Lantean.QBTMud.Test.Pages
             var preferences = CreatePreferences();
 
             Mock.Get(_apiClient)
-                .SetupSequence(client => client.GetApplicationPreferencesAsync())
-                .ReturnsAsync(preferences)
-                .ReturnsAsync(preferences);
-            Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
                 .Returns(Task.CompletedTask);
 
@@ -204,9 +173,6 @@ namespace Lantean.QBTMud.Test.Pages
 
             var storedLocale = await TestContext.LocalStorage.GetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, Xunit.TestContext.Current.CancellationToken);
             storedLocale.Should().Be("fr");
-
-            Mock.Get(_languageInitializationService)
-                .Verify(service => service.EnsureLanguageResourcesInitialized(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

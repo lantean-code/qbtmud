@@ -52,9 +52,6 @@ namespace Lantean.QBTMud.Layout
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
-        [Inject]
-        protected IPreferencesUpdateService PreferencesUpdateService { get; set; } = default!;
-
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
 
@@ -130,8 +127,6 @@ namespace Lantean.QBTMud.Layout
                 NavigationManager.LocationChanged += NavigationManagerOnLocationChanged;
                 _navigationHandlerAttached = true;
             }
-
-            PreferencesUpdateService.PreferencesUpdated += OnPreferencesUpdated;
         }
 
         private IReadOnlyList<MudTorrent> GetTorrents()
@@ -534,15 +529,6 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
-        private async ValueTask OnPreferencesUpdated(Preferences preferences)
-        {
-            ArgumentNullException.ThrowIfNull(preferences);
-
-            Preferences = preferences;
-            Menu?.ShowMenu(preferences);
-            await InvokeAsync(StateHasChanged);
-        }
-
         protected virtual async ValueTask DisposeAsync(bool disposing)
         {
             if (_disposedValue)
@@ -578,8 +564,6 @@ namespace Lantean.QBTMud.Layout
                     NavigationManager.LocationChanged -= NavigationManagerOnLocationChanged;
                     _navigationHandlerAttached = false;
                 }
-
-                PreferencesUpdateService.PreferencesUpdated -= OnPreferencesUpdated;
             }
 
             _disposedValue = true;

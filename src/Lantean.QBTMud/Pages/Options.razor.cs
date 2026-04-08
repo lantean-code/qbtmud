@@ -31,12 +31,6 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
-        [Inject]
-        protected ILanguageInitializationService LanguageInitializationService { get; set; } = default!;
-
-        [Inject]
-        protected IPreferencesUpdateService PreferencesUpdateService { get; set; } = default!;
-
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -161,26 +155,10 @@ namespace Lantean.QBTMud.Pages
             if (!string.IsNullOrWhiteSpace(selectedLocale))
             {
                 await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, selectedLocale);
-                await LanguageInitializationService.EnsureLanguageResourcesInitialized();
             }
-
-            SnackbarWorkflow.ShowTransientMessage(TranslateOptions("Options saved."), Severity.Success);
-
-            var refreshedPreferences = await ApiClient.GetApplicationPreferencesAsync();
-            if (!refreshedPreferences.TryGetValue(out var preferences))
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateOptions("Unable to reload options."), Severity.Warning);
-                UpdatePreferences = null;
-                _suppressNavigationPrompt = true;
-                NavigationManager.NavigateToHome();
-                return;
-            }
-
-            Preferences = preferences;
             UpdatePreferences = null;
             _suppressNavigationPrompt = true;
-            await PreferencesUpdateService.PublishAsync(preferences);
-            NavigationManager.NavigateToHome();
+            NavigationManager.NavigateToHome(forceLoad: true);
         }
 
         private string TranslateOptions(string source, params object[] arguments)
