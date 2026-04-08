@@ -145,7 +145,30 @@ namespace Lantean.QBTMud.Test.Components
             var startItem = FindMenuItem(target, "StartAllTorrents");
             await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
 
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("Unable to start torrents", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
+            snackbarMock.Verify(s => s.Add("boom", Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StartAll_WHEN_AuthenticationRequired_THEN_ShowsErrorWithoutNavigatingToLogin()
+        {
+            var navigationManager = UseTestNavigationManager();
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Unauthorized);
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var startItem = FindMenuItem(target, "StartAllTorrents");
+            await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().NotEndWith("/login");
+            snackbarMock.Verify(s => s.Add("Unauthorized", Severity.Error, null, null), Times.Once);
         }
 
         [Fact]
@@ -164,7 +187,30 @@ namespace Lantean.QBTMud.Test.Components
             var stopItem = FindMenuItem(target, "StopAllTorrents");
             await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
 
-            snackbarMock.Verify(s => s.Add(It.Is<string>(msg => msg.Contains("Unable to stop torrents", StringComparison.OrdinalIgnoreCase)), Severity.Error, null, null), Times.Once);
+            snackbarMock.Verify(s => s.Add("fail", Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StopAll_WHEN_AuthenticationRequired_THEN_ShowsErrorWithoutNavigatingToLogin()
+        {
+            var navigationManager = UseTestNavigationManager();
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Unauthorized);
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var stopItem = FindMenuItem(target, "StopAllTorrents");
+            await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().NotEndWith("/login");
+            snackbarMock.Verify(s => s.Add("Unauthorized", Severity.Error, null, null), Times.Once);
         }
 
         [Fact]
@@ -522,6 +568,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_Logout_WHEN_Confirmed_THEN_LogsOutAndNavigates()
         {
+            var navigationManager = UseTestNavigationManager();
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             var speedHistoryMock = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
@@ -541,7 +588,8 @@ namespace Lantean.QBTMud.Test.Components
 
             apiClientMock.Verify(c => c.LogoutAsync(), Times.Once);
             speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Once);
-            TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/login");
+            navigationManager.Uri.Should().EndWith("/login");
+            navigationManager.LastForceLoad.Should().BeTrue();
         }
 
         [Fact]
@@ -586,6 +634,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_Logout_WHEN_AlreadyUnauthorized_THEN_NavigatesToLoginWithoutLostConnectionDialog()
         {
+            var navigationManager = UseTestNavigationManager();
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             var dialogServiceMock = TestContext.AddSingletonMock<IDialogService>(MockBehavior.Strict);
@@ -615,7 +664,8 @@ namespace Lantean.QBTMud.Test.Components
             dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Never);
-            TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/login");
+            navigationManager.Uri.Should().EndWith("/login");
+            navigationManager.LastForceLoad.Should().BeTrue();
         }
 
         [Fact]
@@ -646,7 +696,7 @@ namespace Lantean.QBTMud.Test.Components
             speedHistoryMock.Verify(s => s.ClearAsync(It.IsAny<CancellationToken>()), Times.Never);
             snackbarMock.Verify(
                 snackbar => snackbar.Add(
-                    It.Is<string>(message => message.Contains("returned an error", StringComparison.OrdinalIgnoreCase)),
+                    "Server",
                     Severity.Error,
                     It.IsAny<Action<SnackbarOptions>>(),
                     It.IsAny<string>()),
@@ -744,6 +794,30 @@ namespace Lantean.QBTMud.Test.Components
             {
                 spec.RssProcessingEnabled = rssEnabled;
             });
+        }
+
+        private TestNavigationManager UseTestNavigationManager()
+        {
+            var navigationManager = new TestNavigationManager();
+            TestContext.Services.RemoveAll<NavigationManager>();
+            TestContext.Services.AddSingleton<NavigationManager>(navigationManager);
+            return navigationManager;
+        }
+
+        private sealed class TestNavigationManager : NavigationManager
+        {
+            public TestNavigationManager()
+            {
+                Initialize("http://localhost/", "http://localhost/");
+            }
+
+            public bool LastForceLoad { get; private set; }
+
+            protected override void NavigateToCore(string uri, bool forceLoad)
+            {
+                LastForceLoad = forceLoad;
+                Uri = ToAbsoluteUri(uri).ToString();
+            }
         }
     }
 }

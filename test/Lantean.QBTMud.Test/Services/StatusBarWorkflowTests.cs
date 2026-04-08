@@ -12,8 +12,10 @@ namespace Lantean.QBTMud.Test.Services
         private readonly IApiClient _apiClient = Mock.Of<IApiClient>(MockBehavior.Strict);
         private readonly IDialogWorkflow _dialogWorkflow = Mock.Of<IDialogWorkflow>(MockBehavior.Strict);
         private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>(MockBehavior.Loose);
+        private readonly ILostConnectionWorkflow _lostConnectionWorkflow = Mock.Of<ILostConnectionWorkflow>();
         private readonly ILanguageLocalizer _languageLocalizer = Mock.Of<ILanguageLocalizer>();
         private readonly ISnackbarWorkflow _snackbarWorkflow;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
         public StatusBarWorkflowTests()
         {
@@ -21,6 +23,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] arguments) => FormatLocalizedString(source, arguments));
             _snackbarWorkflow = new SnackbarWorkflow(_languageLocalizer, _snackbar);
+            _apiFeedbackWorkflow = new ApiFeedbackWorkflow(_lostConnectionWorkflow, _snackbarWorkflow, _languageLocalizer);
         }
 
         [Fact]
@@ -165,7 +168,7 @@ namespace Lantean.QBTMud.Test.Services
 
         private StatusBarWorkflow CreateTarget()
         {
-            return new StatusBarWorkflow(_apiClient, _dialogWorkflow, _snackbarWorkflow, _languageLocalizer);
+            return new StatusBarWorkflow(_apiClient, _dialogWorkflow, _snackbarWorkflow, _languageLocalizer, _apiFeedbackWorkflow);
         }
 
         private static string FormatLocalizedString(string source, object[] arguments)

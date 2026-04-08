@@ -31,6 +31,9 @@ namespace Lantean.QBTMud.Pages
         protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
+        [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
@@ -166,7 +169,9 @@ namespace Lantean.QBTMud.Pages
                 var persistResult = await ApiClient.SetApplicationCookiesAsync(nextCookies);
                 if (!persistResult.IsSuccess)
                 {
-                    SnackbarWorkflow.ShowTransientMessage(Translate("Unable to update cookies. Please try again."), Severity.Error);
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        persistResult,
+                        _ => Translate("Unable to update cookies. Please try again."));
                     return;
                 }
 
@@ -186,8 +191,8 @@ namespace Lantean.QBTMud.Pages
         {
             _cookies.Clear();
 
-            var cookies = await ApiClient.GetApplicationCookiesAsync();
-            if (!cookies.TryGetValue(out var cookieList))
+            var cookiesResult = await ApiClient.GetApplicationCookiesAsync();
+            if (!cookiesResult.TryGetValue(out var cookieList))
             {
                 return false;
             }

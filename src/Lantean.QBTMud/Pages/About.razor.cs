@@ -49,8 +49,8 @@ namespace Lantean.QBTMud.Pages
         {
             QbtMudBuildInfo = AppBuildInfoService.GetCurrentBuildInfo();
 
-            var info = await ApiClient.GetBuildInfoAsync();
-            if (!info.TryGetValue(out var buildInfo))
+            var buildInfoResult = await ApiClient.GetBuildInfoAsync();
+            if (!buildInfoResult.TryGetValue(out var buildInfo))
             {
                 return;
             }

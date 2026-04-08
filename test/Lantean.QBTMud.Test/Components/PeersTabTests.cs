@@ -219,6 +219,9 @@ namespace Lantean.QBTMud.Test.Components
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowAddPeersDialog())
                 .ReturnsAsync(peers);
+            Mock.Get(_apiClient)
+                .Setup(client => client.AddPeersAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<PeerId>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             var target = RenderPeersTab(false);
             var addButton = FindIconButton(target, Icons.Material.Filled.AddCircle);
@@ -261,6 +264,9 @@ namespace Lantean.QBTMud.Test.Components
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
                 .ReturnsAsync(CreatePeers(true, "US", "Country"));
+            Mock.Get(_apiClient)
+                .Setup(client => client.BanPeersAsync(It.IsAny<IEnumerable<PeerId>>()))
+                .Returns(Task.CompletedTask);
 
             var target = RenderPeersTab(true);
             var table = target.FindComponent<DynamicTable<MudPeer>>();
@@ -329,6 +335,9 @@ namespace Lantean.QBTMud.Test.Components
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
                 .ReturnsAsync(CreatePeers(true, "US", "Country"));
+            Mock.Get(_apiClient)
+                .Setup(client => client.BanPeersAsync(It.IsAny<IEnumerable<PeerId>>()))
+                .Returns(Task.CompletedTask);
 
             var target = RenderPeersTab(true);
             var peer = GetSinglePeer(target);

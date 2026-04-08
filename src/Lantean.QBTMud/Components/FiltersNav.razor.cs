@@ -48,6 +48,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected ITorrentQueryState TorrentQueryState { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [CascadingParameter]
         public MudMainData? MainData { get; set; }
 
@@ -310,16 +313,21 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveCategoriesAsync(categories: [ContextMenuCategory]);
+            var removeResult = await ApiClient.RemoveCategoriesAsync(categories: [ContextMenuCategory]);
+            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(removeResult))
+            {
+                return;
+            }
 
             Categories.Remove(ContextMenuCategory);
         }
 
         protected async Task RemoveUnusedCategories()
         {
-            var removedCategories = await ApiClient.RemoveUnusedCategoriesAsync();
-            if (!removedCategories.TryGetValue(out var removedCategoryList))
+            var removedCategoriesResult = await ApiClient.RemoveUnusedCategoriesAsync();
+            if (!removedCategoriesResult.TryGetValue(out var removedCategoryList))
             {
+                await ApiFeedbackWorkflow.HandleFailureAsync(removedCategoriesResult);
                 return;
             }
 
@@ -352,7 +360,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHashes(hashes), trackerItem.Urls);
+            var removeResult = await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHashes(hashes), trackerItem.Urls);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(removeResult);
         }
 
         protected async Task AddTag()
@@ -368,7 +377,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.CreateTagsAsync(tags);
+            var createResult = await ApiClient.CreateTagsAsync(tags);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(createResult);
         }
 
         protected async Task RemoveTag()
@@ -378,16 +388,21 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.DeleteTagsAsync(tags: [ContextMenuTag]);
+            var deleteResult = await ApiClient.DeleteTagsAsync(tags: [ContextMenuTag]);
+            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(deleteResult))
+            {
+                return;
+            }
 
             Tags.Remove(ContextMenuTag);
         }
 
         protected async Task RemoveUnusedTags()
         {
-            var removedTags = await ApiClient.RemoveUnusedTagsAsync();
-            if (!removedTags.TryGetValue(out var removedTagList))
+            var removedTagsResult = await ApiClient.RemoveUnusedTagsAsync();
+            if (!removedTagsResult.TryGetValue(out var removedTagList))
             {
+                await ApiFeedbackWorkflow.HandleFailureAsync(removedTagsResult);
                 return;
             }
 
@@ -405,7 +420,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.StartTorrentsAsync(TorrentSelector.FromHashes(hashes));
+            var startResult = await ApiClient.StartTorrentsAsync(TorrentSelector.FromHashes(hashes));
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(startResult);
         }
 
         protected async Task StopTorrents(string type)
@@ -416,7 +432,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.StopTorrentsAsync(TorrentSelector.FromHashes(hashes));
+            var stopResult = await ApiClient.StopTorrentsAsync(TorrentSelector.FromHashes(hashes));
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(stopResult);
         }
 
         protected async Task RemoveTorrents(string type)

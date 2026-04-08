@@ -26,6 +26,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         protected string? SelectedRuleName { get; set; }
 
         protected Dictionary<string, AutoDownloadingRule?> Rules { get; set; } = [];
@@ -227,7 +230,11 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
             else
             {
-                await ApiClient.RemoveRssAutoDownloadingRuleAsync(SelectedRuleName);
+                var removeResult = await ApiClient.RemoveRssAutoDownloadingRuleAsync(SelectedRuleName);
+                if (await ApiFeedbackWorkflow.HandleIfFailureAsync(removeResult))
+                {
+                    return;
+                }
             }
 
             Rules.Remove(SelectedRuleName);
@@ -318,12 +325,20 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            await ApiClient.SetRssAutoDownloadingRuleAsync(SelectedRuleName, SelectedRule);
+            var setRuleResult = await ApiClient.SetRssAutoDownloadingRuleAsync(SelectedRuleName, SelectedRule);
+            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(setRuleResult))
+            {
+                return;
+            }
 
             var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(SelectedRuleName);
-            MatchingArticles = matchingArticlesResult.TryGetValue(out var matchingArticles)
-                ? matchingArticles
-                : null;
+            if (!matchingArticlesResult.TryGetValue(out var matchingArticles))
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(matchingArticlesResult);
+                return;
+            }
+
+            MatchingArticles = matchingArticles;
 
             _unsavedRuleNames.Remove(SelectedRuleName);
         }

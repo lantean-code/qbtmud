@@ -79,6 +79,9 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAllTagsAsync())
                 .ReturnsAsync(new[] { "Other" });
+            Mock.Get(_apiClient)
+                .Setup(client => client.CreateTagsAsync(It.IsAny<IEnumerable<string>>()))
+                .Returns(Task.CompletedTask);
 
             var target = RenderPage();
             var addButton = FindIconButton(target, Icons.Material.Filled.NewLabel);
@@ -94,6 +97,9 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_TagProvided_WHEN_DeleteClicked_THEN_DeletesTag()
         {
+            Mock.Get(_apiClient)
+                .Setup(client => client.DeleteTagsAsync(tags: new[] { "Tag" }))
+                .Returns(Task.CompletedTask);
             var target = RenderPage(new List<string> { "Tag" });
 
             var deleteButton = FindIconButton(target, Icons.Material.Filled.Delete);
@@ -123,6 +129,9 @@ namespace Lantean.QBTMud.Test.Pages
             ColumnDefinition<string>? column = null;
             try
             {
+                Mock.Get(_apiClient)
+                    .Setup(client => client.DeleteTagsAsync(tags: new[] { "Tag" }))
+                    .Returns(Task.CompletedTask);
                 target = RenderPage(new List<string> { "Tag" });
                 var table = target.FindComponent<DynamicTable<string>>();
                 column = table.Instance.ColumnDefinitions.Single(definition => definition.Header == "Actions");

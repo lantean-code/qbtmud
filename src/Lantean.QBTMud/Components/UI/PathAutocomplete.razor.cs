@@ -174,8 +174,8 @@ namespace Lantean.QBTMud.Components.UI
                 return [];
             }
 
-            var directoryContent = await ApiClient.GetDirectoryContentAsync(parentPath, mode);
-            if (!directoryContent.TryGetValue(out var candidates))
+            var directoryContentResult = await ApiClient.GetDirectoryContentAsync(parentPath, mode);
+            if (!directoryContentResult.TryGetValue(out var candidates))
             {
                 return [];
             }

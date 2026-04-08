@@ -24,7 +24,9 @@ namespace Lantean.QBTMud.Test.Services
         private readonly IApiClient _apiClient = Mock.Of<IApiClient>();
         private readonly ISnackbarWorkflow _snackbarWorkflow = Mock.Of<ISnackbarWorkflow>();
         private readonly IAppSettingsService _appSettingsService = Mock.Of<IAppSettingsService>();
+        private readonly ILostConnectionWorkflow _lostConnectionWorkflow = Mock.Of<ILostConnectionWorkflow>();
         private readonly ILanguageLocalizer _languageLocalizer;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
         private readonly DialogWorkflow _target;
 
@@ -45,7 +47,8 @@ namespace Lantean.QBTMud.Test.Services
                     TorrentAddedSnackbarsEnabledWithNotifications = false
                 });
 
-            _target = new DialogWorkflow(_dialogService, _apiClient, _snackbarWorkflow, _languageLocalizer, _appSettingsService);
+            _apiFeedbackWorkflow = new ApiFeedbackWorkflow(_lostConnectionWorkflow, _snackbarWorkflow, _languageLocalizer);
+            _target = new DialogWorkflow(_dialogService, _apiClient, _snackbarWorkflow, _languageLocalizer, _appSettingsService, _apiFeedbackWorkflow);
         }
 
         [Fact]

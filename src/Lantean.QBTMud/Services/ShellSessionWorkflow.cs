@@ -121,10 +121,10 @@ namespace Lantean.QBTMud.Services
 
         private async Task<ShellSessionLoadResult> LoadCoreAsync(int requestId, string operation, CancellationToken cancellationToken)
         {
-            var authState = await _apiClient.CheckAuthStateAsync(cancellationToken);
-            if (!authState.TryGetValue(out var isAuthenticated))
+            var authStateResult = await _apiClient.CheckAuthStateAsync(cancellationToken);
+            if (!authStateResult.TryGetValue(out var isAuthenticated))
             {
-                return HandleLoadFailure(authState.Failure!);
+                return HandleLoadFailure(authStateResult.Failure!);
             }
 
             if (!isAuthenticated)
@@ -133,13 +133,13 @@ namespace Lantean.QBTMud.Services
             }
 
             var appSettingsTask = _appSettingsService.RefreshSettingsAsync(cancellationToken);
-            var preferencesTask = _apiClient.GetApplicationPreferencesAsync(cancellationToken);
-            var versionTask = _apiClient.GetApplicationVersionAsync(cancellationToken);
-            var mainDataTask = _apiClient.GetMainDataAsync(requestId, cancellationToken);
+            var preferencesResultTask = _apiClient.GetApplicationPreferencesAsync(cancellationToken);
+            var versionResultTask = _apiClient.GetApplicationVersionAsync(cancellationToken);
+            var mainDataResultTask = _apiClient.GetMainDataAsync(requestId, cancellationToken);
 
             try
             {
-                await Task.WhenAll(appSettingsTask, preferencesTask, versionTask, mainDataTask);
+                await Task.WhenAll(appSettingsTask, preferencesResultTask, versionResultTask, mainDataResultTask);
             }
             catch (Exception exception)
             {
@@ -156,11 +156,11 @@ namespace Lantean.QBTMud.Services
             Preferences? preferences = null;
             string? version = null;
             ClientMainData? data = null;
-            if (!preferencesTask.Result.TryGetValue(out preferences)
-                || !versionTask.Result.TryGetValue(out version)
-                || !mainDataTask.Result.TryGetValue(out data))
+            if (!preferencesResultTask.Result.TryGetValue(out preferences)
+                || !versionResultTask.Result.TryGetValue(out version)
+                || !mainDataResultTask.Result.TryGetValue(out data))
             {
-                var failure = preferencesTask.Result.Failure ?? versionTask.Result.Failure ?? mainDataTask.Result.Failure;
+                var failure = preferencesResultTask.Result.Failure ?? versionResultTask.Result.Failure ?? mainDataResultTask.Result.Failure;
                 if (failure is not null)
                 {
                     return HandleLoadFailure(failure);

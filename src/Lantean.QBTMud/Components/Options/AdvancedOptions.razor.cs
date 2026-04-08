@@ -82,8 +82,8 @@ namespace Lantean.QBTMud.Components.Options
 
         protected override async Task OnInitializedAsync()
         {
-            var networkInterfaces = await ApiClient.GetNetworkInterfacesAsync();
-            NetworkInterfaces = networkInterfaces.TryGetValue(out var interfaces) ? interfaces : [];
+            var networkInterfacesResult = await ApiClient.GetNetworkInterfacesAsync();
+            NetworkInterfaces = networkInterfacesResult.TryGetValue(out var interfaces) ? interfaces : [];
         }
 
         protected override bool SetOptions()
@@ -182,8 +182,8 @@ namespace Lantean.QBTMud.Components.Options
             UpdatePreferences.CurrentNetworkInterface = value;
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
 
-            var addresses = await ApiClient.GetNetworkInterfaceAddressListAsync(value);
-            NetworkInterfaceAddresses = addresses.TryGetValue(out var networkInterfaceAddresses) ? networkInterfaceAddresses : [];
+            var addressesResult = await ApiClient.GetNetworkInterfaceAddressListAsync(value);
+            NetworkInterfaceAddresses = addressesResult.TryGetValue(out var networkInterfaceAddresses) ? networkInterfaceAddresses : [];
         }
 
         protected async Task CurrentInterfaceAddressChanged(string value)

@@ -79,10 +79,10 @@ namespace Lantean.QBTMud.Components
         {
             if (Active && Hash is not null)
             {
-                var webSeeds = await ApiClient.GetTorrentWebSeedsAsync(Hash);
-                if (!webSeeds.TryGetValue(out var torrentWebSeeds))
+                var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
+                if (!webSeedsResult.TryGetValue(out var torrentWebSeeds))
                 {
-                    if (webSeeds.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    if (webSeedsResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
                     {
                         _timerCancellationToken.CancelIfNotDisposed();
                         return ManagedTimerTickResult.Stop;
@@ -115,8 +115,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var webSeeds = await ApiClient.GetTorrentWebSeedsAsync(Hash);
-            WebSeeds = webSeeds.TryGetValue(out var torrentWebSeeds) ? torrentWebSeeds : [];
+            var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
+            WebSeeds = webSeedsResult.TryGetValue(out var torrentWebSeeds) ? torrentWebSeeds : [];
 
             await InvokeAsync(StateHasChanged);
         }

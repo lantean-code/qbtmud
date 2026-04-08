@@ -18,6 +18,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
+        [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
@@ -230,9 +233,9 @@ namespace Lantean.QBTMud.Components.Dialogs
                 var result = await operation();
                 if (!result.IsSuccess)
                 {
-                    SnackbarWorkflow.ShowTransientMessage(
-                        TranslateApp("Search plugin operation failed: %1", result.Failure?.UserMessage ?? string.Empty),
-                        Severity.Error);
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        result,
+                        message => TranslateApp("Search plugin operation failed: %1", message ?? string.Empty));
                     return false;
                 }
 

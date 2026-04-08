@@ -61,6 +61,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         protected PeerList? PeerList { get; set; }
 
         protected IEnumerable<MudPeer> Peers => PeerList?.Peers.Select(p => p.Value) ?? [];
@@ -136,7 +139,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.AddPeersAsync(TorrentSelector.FromHash(Hash), peers);
+            var addResult = await ApiClient.AddPeersAsync(TorrentSelector.FromHash(Hash), peers);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(addResult);
         }
 
         protected Task BanPeerToolbar()
@@ -160,7 +164,8 @@ namespace Lantean.QBTMud.Components
             {
                 return;
             }
-            await ApiClient.BanPeersAsync([new PeerId(peer.IPAddress, peer.Port)]);
+            var banResult = await ApiClient.BanPeersAsync([new PeerId(peer.IPAddress, peer.Port)]);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(banResult);
         }
 
         protected Task TableDataContextMenu(TableDataContextMenuEventArgs<MudPeer> eventArgs)

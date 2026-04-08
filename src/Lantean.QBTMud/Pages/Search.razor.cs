@@ -1195,7 +1195,8 @@ namespace Lantean.QBTMud.Pages
         {
             if (failure.IsAuthenticationFailure())
             {
-                NavigationManager.NavigateTo("login");
+                _timerCancellationToken.CancelIfNotDisposed();
+                NavigationManager.NavigateTo("login", forceLoad: true);
                 return true;
             }
 
@@ -1213,7 +1214,8 @@ namespace Lantean.QBTMud.Pages
         {
             if (failure.IsAuthenticationFailure())
             {
-                NavigationManager.NavigateTo("login");
+                _timerCancellationToken.CancelIfNotDisposed();
+                NavigationManager.NavigateTo("login", forceLoad: true);
                 return true;
             }
 

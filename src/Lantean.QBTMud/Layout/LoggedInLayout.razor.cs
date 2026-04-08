@@ -320,7 +320,7 @@ namespace Lantean.QBTMud.Layout
 
             await PendingDownloadWorkflow.ClearAsync(cancellationToken);
             _timerCancellationToken.CancelIfNotDisposed();
-            await InvokeAsync(() => NavigationManager.NavigateTo("login"));
+            await InvokeAsync(() => NavigationManager.NavigateTo("login", forceLoad: true));
         }
 
         private Task UpdateRefreshIntervalAsync(int newInterval, CancellationToken cancellationToken)

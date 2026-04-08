@@ -135,8 +135,8 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             try
             {
-                var directories = await ApiClient.GetDirectoryContentAsync(_currentPath, DirectoryContentMode.Directories);
-                if (!directories.TryGetValue(out var directoryPaths))
+                var directoriesResult = await ApiClient.GetDirectoryContentAsync(_currentPath, DirectoryContentMode.Directories);
+                if (!directoriesResult.TryGetValue(out var directoryPaths))
                 {
                     _entries.Clear();
                     _loadError = Translate("Unable to load directory content.");
@@ -151,8 +151,8 @@ namespace Lantean.QBTMud.Components.Dialogs
                 var fileEntries = new List<PathBrowseEntry>();
                 if (Mode != DirectoryContentMode.Directories)
                 {
-                    var files = await ApiClient.GetDirectoryContentAsync(_currentPath, DirectoryContentMode.Files);
-                    if (!files.TryGetValue(out var filePaths))
+                    var filesResult = await ApiClient.GetDirectoryContentAsync(_currentPath, DirectoryContentMode.Files);
+                    if (!filesResult.TryGetValue(out var filePaths))
                     {
                         _entries.Clear();
                         _loadError = Translate("Unable to load directory content.");
@@ -194,8 +194,8 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private async Task<string> GetDefaultPathAsync()
         {
-            var defaultPath = await ApiClient.GetDefaultSavePathAsync();
-            if (defaultPath.TryGetValue(out var path))
+            var defaultPathResult = await ApiClient.GetDefaultSavePathAsync();
+            if (defaultPathResult.TryGetValue(out var path))
             {
                 return string.IsNullOrWhiteSpace(path) ? string.Empty : path;
             }

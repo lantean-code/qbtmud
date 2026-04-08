@@ -30,6 +30,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -71,10 +74,10 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                var categories = await ApiClient.GetAllCategoriesAsync();
-                if (!categories.TryGetValue(out var categoryDictionary))
+                var categoriesResult = await ApiClient.GetAllCategoriesAsync();
+                if (!categoriesResult.TryGetValue(out var categoryDictionary))
                 {
-                    _categories = [];
+                    await ApiFeedbackWorkflow.HandleFailureAsync(categoriesResult);
                     return;
                 }
 
@@ -95,7 +98,8 @@ namespace Lantean.QBTMud.Pages
             {
                 return;
             }
-            await ApiClient.RemoveCategoriesAsync(categories: [name]);
+            var removeResult = await ApiClient.RemoveCategoriesAsync(categories: [name]);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(removeResult);
         }
 
         protected async Task AddCategory()

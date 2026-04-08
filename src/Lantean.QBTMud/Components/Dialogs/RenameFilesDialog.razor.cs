@@ -372,8 +372,8 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            var contents = await ApiClient.GetTorrentContentsAsync(Hash);
-            FileList = contents.TryGetValue(out var fileContents)
+            var contentsResult = await ApiClient.GetTorrentContentsAsync(Hash);
+            FileList = contentsResult.TryGetValue(out var fileContents)
                 ? GetRenamedItems(DataManager.CreateContentsList(fileContents).Values)
                 : [];
         }

@@ -22,9 +22,6 @@ namespace Lantean.QBTMud.Components
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
-        protected ILostConnectionWorkflow LostConnectionWorkflow { get; set; } = default!;
-
-        [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
@@ -38,6 +35,9 @@ namespace Lantean.QBTMud.Components
 
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         [Parameter]
         public bool IsMenu { get; set; }
@@ -96,25 +96,14 @@ namespace Lantean.QBTMud.Components
             };
 
             var result = await ApiClient.SetApplicationPreferencesAsync(preferences);
-            if (!result.IsSuccess)
+            if (!result.IsSuccess && result.Failure.IsAuthenticationFailure())
             {
-                if (result.Failure.IsAuthenticationFailure())
-                {
-                    NavigationManager.NavigateTo("login");
-                    return;
-                }
+                NavigationManager.NavigateTo("login", forceLoad: true);
+                return;
+            }
 
-                if (result.Failure.IsConnectivityFailure())
-                {
-                    await MarkLostConnectionAsync();
-                    return;
-                }
-
-                var message = string.IsNullOrWhiteSpace(result.Failure?.UserMessage)
-                    ? LanguageLocalizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.")
-                    : result.Failure!.UserMessage;
-
-                SnackbarWorkflow.ShowTransientMessage(message, Severity.Error);
+            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(result))
+            {
                 return;
             }
 
@@ -132,27 +121,21 @@ namespace Lantean.QBTMud.Components
                 if (logoutResult.IsSuccess)
                 {
                     await SpeedHistoryService.ClearAsync();
-                    NavigationManager.NavigateTo("login");
+                    NavigationManager.NavigateTo("login", forceLoad: true);
                     return;
                 }
 
                 if (logoutResult.Failure.IsAuthenticationFailure())
                 {
                     await SpeedHistoryService.ClearAsync();
-                    NavigationManager.NavigateTo("login");
+                    NavigationManager.NavigateTo("login", forceLoad: true);
                     return;
                 }
 
-                if (logoutResult.Failure.IsConnectivityFailure())
+                if (await ApiFeedbackWorkflow.HandleIfFailureAsync(logoutResult))
                 {
-                    await MarkLostConnectionAsync();
                     return;
                 }
-
-                SnackbarWorkflow.ShowLocalizedMessage(
-                    "AppConnectivity",
-                    "qBittorrent returned an error. Please try again.",
-                    Severity.Error);
             });
         }
 
@@ -161,7 +144,11 @@ namespace Lantean.QBTMud.Components
             await DialogWorkflow.ShowConfirmDialog(
                 LanguageLocalizer.Translate("AppApplicationActions", "Quit?"),
                 LanguageLocalizer.Translate("AppApplicationActions", "Are you sure you want to exit qBittorrent?"),
-                async () => await ApiClient.ShutdownAsync());
+                async () =>
+                {
+                    var shutdownResult = await ApiClient.ShutdownAsync();
+                    await ApiFeedbackWorkflow.HandleIfFailureAsync(shutdownResult);
+                });
         }
 
         private async Task RegisterMagnetHandler()
@@ -215,21 +202,13 @@ namespace Lantean.QBTMud.Components
 
             _startAllInProgress = true;
             var startResult = await ApiClient.StartTorrentsAsync(TorrentSelector.AllTorrents());
-            if (startResult.IsSuccess)
+            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(startResult))
             {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents started."), Severity.Success);
-            }
-            else if (startResult.Failure.IsAuthenticationFailure())
-            {
-                NavigationManager.NavigateTo("login");
-            }
-            else if (startResult.Failure.IsConnectivityFailure())
-            {
-                await MarkLostConnectionAsync();
+                _startAllInProgress = false;
             }
             else
             {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "Unable to start torrents."), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents started."), Severity.Success);
             }
 
             _startAllInProgress = false;
@@ -244,29 +223,16 @@ namespace Lantean.QBTMud.Components
 
             _stopAllInProgress = true;
             var stopResult = await ApiClient.StopTorrentsAsync(TorrentSelector.AllTorrents());
-            if (stopResult.IsSuccess)
+            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(stopResult))
             {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents stopped."), Severity.Info);
-            }
-            else if (stopResult.Failure.IsAuthenticationFailure())
-            {
-                NavigationManager.NavigateTo("login");
-            }
-            else if (stopResult.Failure.IsConnectivityFailure())
-            {
-                await MarkLostConnectionAsync();
+                _stopAllInProgress = false;
             }
             else
             {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("HttpServer", "Unable to stop torrents."), Severity.Error);
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents stopped."), Severity.Info);
             }
 
             _stopAllInProgress = false;
-        }
-
-        private Task MarkLostConnectionAsync()
-        {
-            return LostConnectionWorkflow.MarkLostConnectionAsync();
         }
     }
 }

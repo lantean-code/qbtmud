@@ -13,6 +13,7 @@ namespace Lantean.QBTMud.Services
         private readonly IDialogWorkflow _dialogWorkflow;
         private readonly ISnackbarWorkflow _snackbarWorkflow;
         private readonly ILanguageLocalizer _languageLocalizer;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StatusBarWorkflow"/> class.
@@ -21,16 +22,19 @@ namespace Lantean.QBTMud.Services
         /// <param name="dialogWorkflow">The dialog workflow.</param>
         /// <param name="snackbarWorkflow">The snackbar workflow.</param>
         /// <param name="languageLocalizer">The language localizer.</param>
+        /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
         public StatusBarWorkflow(
             IApiClient apiClient,
             IDialogWorkflow dialogWorkflow,
             ISnackbarWorkflow snackbarWorkflow,
-            ILanguageLocalizer languageLocalizer)
+            ILanguageLocalizer languageLocalizer,
+            IApiFeedbackWorkflow apiFeedbackWorkflow)
         {
             _apiClient = apiClient;
             _dialogWorkflow = dialogWorkflow;
             _snackbarWorkflow = snackbarWorkflow;
             _languageLocalizer = languageLocalizer;
+            _apiFeedbackWorkflow = apiFeedbackWorkflow;
         }
 
         /// <inheritdoc />
@@ -39,24 +43,20 @@ namespace Lantean.QBTMud.Services
             var toggleResult = await _apiClient.ToggleAlternativeSpeedLimitsAsync(cancellationToken);
             if (!toggleResult.IsSuccess)
             {
-                _snackbarWorkflow.ShowTransientMessage(
-                    _languageLocalizer.Translate(
-                        "AppLoggedInLayout",
-                        "Unable to toggle alternative speed limits: %1",
-                        toggleResult.Failure?.UserMessage ?? string.Empty),
-                    Severity.Error);
+                await _apiFeedbackWorkflow.HandleFailureAsync(
+                    toggleResult,
+                    message => _languageLocalizer.Translate("AppLoggedInLayout", "Unable to toggle alternative speed limits: %1", message ?? string.Empty),
+                    cancellationToken: cancellationToken);
                 return null;
             }
 
             var isEnabledResult = await _apiClient.GetAlternativeSpeedLimitsStateAsync(cancellationToken);
             if (!isEnabledResult.TryGetValue(out var isEnabled))
             {
-                _snackbarWorkflow.ShowTransientMessage(
-                    _languageLocalizer.Translate(
-                        "AppLoggedInLayout",
-                        "Unable to toggle alternative speed limits: %1",
-                        isEnabledResult.Failure?.UserMessage ?? string.Empty),
-                    Severity.Error);
+                await _apiFeedbackWorkflow.HandleFailureAsync(
+                    isEnabledResult,
+                    message => _languageLocalizer.Translate("AppLoggedInLayout", "Unable to toggle alternative speed limits: %1", message ?? string.Empty),
+                    cancellationToken: cancellationToken);
                 return null;
             }
 

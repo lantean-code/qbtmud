@@ -82,8 +82,8 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            var categories = await ApiClient.GetAllCategoriesAsync();
-            if (categories.TryGetValue(out var categoryDictionary))
+            var categoriesResult = await ApiClient.GetAllCategoriesAsync();
+            if (categoriesResult.TryGetValue(out var categoryDictionary))
             {
                 foreach (var (name, value) in categoryDictionary.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase))
                 {
@@ -93,13 +93,13 @@ namespace Lantean.QBTMud.Components.Dialogs
                 }
             }
 
-            var tags = await ApiClient.GetAllTagsAsync();
-            AvailableTags = tags.TryGetValue(out var availableTags)
+            var tagsResult = await ApiClient.GetAllTagsAsync();
+            AvailableTags = tagsResult.TryGetValue(out var availableTags)
                 ? availableTags.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList()
                 : [];
 
-            var preferences = await ApiClient.GetApplicationPreferencesAsync();
-            if (!preferences.TryGetValue(out var applicationPreferences))
+            var preferencesResult = await ApiClient.GetApplicationPreferencesAsync();
+            if (!preferencesResult.TryGetValue(out var applicationPreferences))
             {
                 return;
             }

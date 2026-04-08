@@ -23,8 +23,8 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected override async Task OnInitializedAsync()
         {
-            var preferences = await ApiClient.GetApplicationPreferencesAsync();
-            if (preferences.TryGetValue(out var applicationPreferences))
+            var preferencesResult = await ApiClient.GetApplicationPreferencesAsync();
+            if (preferencesResult.TryGetValue(out var applicationPreferences))
             {
                 _savePath = applicationPreferences.SavePath;
             }

@@ -31,6 +31,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ISettingsStorageService SettingsStorage { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -148,7 +151,9 @@ namespace Lantean.QBTMud.Pages
             var updateResult = await ApiClient.SetApplicationPreferencesAsync(UpdatePreferences);
             if (!updateResult.IsSuccess)
             {
-                SnackbarWorkflow.ShowTransientMessage(TranslateOptions("Unable to save options."), Severity.Error);
+                await ApiFeedbackWorkflow.HandleFailureAsync(
+                    updateResult,
+                    _ => TranslateOptions("Unable to save options."));
                 return;
             }
 

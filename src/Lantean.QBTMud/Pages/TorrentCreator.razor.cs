@@ -47,6 +47,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected NavigationManager NavigationManager { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -110,9 +113,11 @@ namespace Lantean.QBTMud.Pages
             var createResult = await ApiClient.AddTorrentCreationTaskAsync(request);
             if (!createResult.IsSuccess)
             {
-                SnackbarWorkflow.ShowTransientMessage(
-                    $"{LanguageLocalizer.Translate("TorrentCreator", "Unable to create torrent.")} {createResult.Failure?.UserMessage}",
-                    Severity.Error);
+                await ApiFeedbackWorkflow.HandleFailureAsync(
+                    createResult,
+                    message => string.IsNullOrWhiteSpace(message)
+                        ? TranslateTorrentCreator("Unable to create torrent.")
+                        : $"{TranslateTorrentCreator("Unable to create torrent.")} {message}");
                 return;
             }
 
@@ -141,9 +146,9 @@ namespace Lantean.QBTMud.Pages
             var deleteResult = await ApiClient.DeleteTorrentCreationTaskAsync(task.TaskId);
             if (!deleteResult.IsSuccess)
             {
-                SnackbarWorkflow.ShowTransientMessage(
-                    TranslateTorrentCreator("Unable to delete task: %1", deleteResult.Failure?.UserMessage ?? string.Empty),
-                    Severity.Error);
+                await ApiFeedbackWorkflow.HandleFailureAsync(
+                    deleteResult,
+                    message => TranslateTorrentCreator("Unable to delete task: %1", message ?? string.Empty));
                 return;
             }
 

@@ -56,6 +56,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         protected HashSet<string> ExpandedNodes { get; set; } = [];
 
         protected Dictionary<string, ContentItem>? FileList { get; set; }
@@ -252,8 +255,8 @@ namespace Lantean.QBTMud.Components
 
             _previousHash = Hash;
 
-            var contents = await ApiClient.GetTorrentContentsAsync(Hash);
-            if (!contents.TryGetValue(out var fileContents))
+            var contentsResult = await ApiClient.GetTorrentContentsAsync(Hash);
+            if (!contentsResult.TryGetValue(out var fileContents))
             {
                 FileList = null;
                 MarkFilesDirty();
@@ -289,7 +292,8 @@ namespace Lantean.QBTMud.Components
                 fileIndexes = [contentItem.Index];
             }
 
-            await ApiClient.SetFilePriorityAsync(Hash, fileIndexes, MapPriority(priority));
+            var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, fileIndexes, MapPriority(priority));
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(setPriorityResult);
         }
 
         protected Task RenameFileToolbar()

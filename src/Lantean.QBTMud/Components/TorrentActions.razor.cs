@@ -50,6 +50,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [Parameter]
         [EditorRequired]
         public IEnumerable<string> Hashes { get; set; } = default!;
@@ -201,7 +204,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            ShowApiFailure(result);
+            await HandleApiFailureAsync(result);
         }
 
         protected async Task Start()
@@ -213,7 +216,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            ShowApiFailure(result);
+            await HandleApiFailureAsync(result);
         }
 
         protected async Task ForceStart()
@@ -225,7 +228,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            ShowApiFailure(result);
+            await HandleApiFailureAsync(result);
         }
 
         protected async Task Remove()
@@ -330,7 +333,11 @@ namespace Lantean.QBTMud.Components
 
         protected async Task SetCategory(string category)
         {
-            await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(Hashes), category);
+            var result = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(Hashes), category);
+            if (!result.IsSuccess)
+            {
+                await HandleApiFailureAsync(result);
+            }
         }
 
         protected async Task ToggleAutoTMM()
@@ -347,7 +354,7 @@ namespace Lantean.QBTMud.Components
                     if (!disableResult.IsSuccess)
                     {
                         RevertTorrentState(stateChanges, (torrent, value) => torrent.AutomaticTorrentManagement = value);
-                        ShowApiFailure(disableResult);
+                        await HandleApiFailureAsync(disableResult);
                         return;
                     }
                 }
@@ -358,7 +365,7 @@ namespace Lantean.QBTMud.Components
                     if (!enableResult.IsSuccess)
                     {
                         RevertTorrentState(stateChanges, (torrent, value) => torrent.AutomaticTorrentManagement = value);
-                        ShowApiFailure(enableResult);
+                        await HandleApiFailureAsync(enableResult);
                         return;
                     }
                 }
@@ -422,7 +429,7 @@ namespace Lantean.QBTMud.Components
                     if (!disableResult.IsSuccess)
                     {
                         RevertTorrentState(stateChanges, (torrent, value) => torrent.SuperSeeding = value);
-                        ShowApiFailure(disableResult);
+                        await HandleApiFailureAsync(disableResult);
                         return;
                     }
                 }
@@ -433,7 +440,7 @@ namespace Lantean.QBTMud.Components
                     if (!enableResult.IsSuccess)
                     {
                         RevertTorrentState(stateChanges, (torrent, value) => torrent.SuperSeeding = value);
-                        ShowApiFailure(enableResult);
+                        await HandleApiFailureAsync(enableResult);
                         return;
                     }
                 }
@@ -452,27 +459,47 @@ namespace Lantean.QBTMud.Components
 
         protected async Task ForceReannounce()
         {
-            await ApiClient.ReannounceTorrentsAsync(TorrentSelector.FromHashes(Hashes));
+            var result = await ApiClient.ReannounceTorrentsAsync(TorrentSelector.FromHashes(Hashes));
+            if (!result.IsSuccess)
+            {
+                await HandleApiFailureAsync(result);
+            }
         }
 
         protected async Task MoveToTop()
         {
-            await ApiClient.MaxTorrentPriorityAsync(TorrentSelector.FromHashes(Hashes));
+            var result = await ApiClient.MaxTorrentPriorityAsync(TorrentSelector.FromHashes(Hashes));
+            if (!result.IsSuccess)
+            {
+                await HandleApiFailureAsync(result);
+            }
         }
 
         protected async Task MoveUp()
         {
-            await ApiClient.IncreaseTorrentPriorityAsync(TorrentSelector.FromHashes(Hashes));
+            var result = await ApiClient.IncreaseTorrentPriorityAsync(TorrentSelector.FromHashes(Hashes));
+            if (!result.IsSuccess)
+            {
+                await HandleApiFailureAsync(result);
+            }
         }
 
         protected async Task MoveDown()
         {
-            await ApiClient.DecreaseTorrentPriorityAsync(TorrentSelector.FromHashes(Hashes));
+            var result = await ApiClient.DecreaseTorrentPriorityAsync(TorrentSelector.FromHashes(Hashes));
+            if (!result.IsSuccess)
+            {
+                await HandleApiFailureAsync(result);
+            }
         }
 
         protected async Task MoveToBottom()
         {
-            await ApiClient.MinTorrentPriorityAsync(TorrentSelector.FromHashes(Hashes));
+            var result = await ApiClient.MinTorrentPriorityAsync(TorrentSelector.FromHashes(Hashes));
+            if (!result.IsSuccess)
+            {
+                await HandleApiFailureAsync(result);
+            }
         }
 
         protected async Task Copy(string value)
@@ -496,7 +523,8 @@ namespace Lantean.QBTMud.Components
                 var exportUrlResult = await ApiClient.GetExportUrlAsync(torrent.Hash);
                 if (!exportUrlResult.TryGetValue(out var url))
                 {
-                    continue;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(exportUrlResult);
+                    return;
                 }
 
                 await JSRuntime.FileDownload(url, $"{torrent.Name}.torrent");
@@ -540,7 +568,7 @@ namespace Lantean.QBTMud.Components
                 if (!result.IsSuccess)
                 {
                     RevertTorrentState(stateChanges, (torrent, value) => torrent.SequentialDownload = value);
-                    ShowApiFailure(result);
+                    await HandleApiFailureAsync(result);
                     return;
                 }
             }
@@ -561,7 +589,7 @@ namespace Lantean.QBTMud.Components
                 if (!result.IsSuccess)
                 {
                     RevertTorrentState(stateChanges, (torrent, value) => torrent.FirstLastPiecePriority = value);
-                    ShowApiFailure(result);
+                    await HandleApiFailureAsync(result);
                     return;
                 }
             }
@@ -588,18 +616,9 @@ namespace Lantean.QBTMud.Components
             }
         }
 
-        private void ShowApiFailure(ApiResult result)
+        private Task HandleApiFailureAsync(ApiResult result)
         {
-            if (result.IsSuccess)
-            {
-                return;
-            }
-
-            var message = string.IsNullOrWhiteSpace(result.Failure?.UserMessage)
-                ? LanguageLocalizer.Translate("HttpServer", "qBittorrent client is not reachable")
-                : result.Failure!.UserMessage;
-
-            SnackbarWorkflow.ShowTransientMessage(message, Severity.Error);
+            return ApiFeedbackWorkflow.HandleFailureAsync(result);
         }
 
         private IEnumerable<UIAction> Actions => GetActions();
@@ -964,7 +983,12 @@ namespace Lantean.QBTMud.Components
 
             if (allHaveTag)
             {
-                await ApiClient.RemoveTorrentTagsAsync(TorrentSelector.FromHashes(selectedHashes), [tag]);
+                var removeResult = await ApiClient.RemoveTorrentTagsAsync(TorrentSelector.FromHashes(selectedHashes), [tag]);
+                if (!removeResult.IsSuccess)
+                {
+                    await HandleApiFailureAsync(removeResult);
+                    return;
+                }
 
                 foreach (var hash in selectedHashes)
                 {
@@ -976,7 +1000,12 @@ namespace Lantean.QBTMud.Components
             }
             else
             {
-                await ApiClient.AddTorrentTagsAsync(TorrentSelector.FromHashes(selectedHashes), [tag]);
+                var addResult = await ApiClient.AddTorrentTagsAsync(TorrentSelector.FromHashes(selectedHashes), [tag]);
+                if (!addResult.IsSuccess)
+                {
+                    await HandleApiFailureAsync(addResult);
+                    return;
+                }
 
                 foreach (var hash in selectedHashes)
                 {
@@ -1010,7 +1039,12 @@ namespace Lantean.QBTMud.Components
 
             if (allHaveCategory)
             {
-                await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(selectedHashes), string.Empty);
+                var clearResult = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(selectedHashes), string.Empty);
+                if (!clearResult.IsSuccess)
+                {
+                    await HandleApiFailureAsync(clearResult);
+                    return;
+                }
 
                 foreach (var hash in selectedHashes)
                 {
@@ -1019,7 +1053,12 @@ namespace Lantean.QBTMud.Components
             }
             else
             {
-                await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(selectedHashes), category);
+                var setResult = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(selectedHashes), category);
+                if (!setResult.IsSuccess)
+                {
+                    await HandleApiFailureAsync(setResult);
+                    return;
+                }
 
                 foreach (var hash in selectedHashes)
                 {

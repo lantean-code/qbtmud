@@ -31,6 +31,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -72,8 +75,14 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                var tags = await ApiClient.GetAllTagsAsync();
-                _tags = tags.TryGetValue(out var tagList) ? tagList : [];
+                var tagsResult = await ApiClient.GetAllTagsAsync();
+                if (!tagsResult.TryGetValue(out var tagList))
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(tagsResult);
+                    return;
+                }
+
+                _tags = tagList;
             }
             finally
             {
@@ -88,7 +97,8 @@ namespace Lantean.QBTMud.Pages
             {
                 return;
             }
-            await ApiClient.DeleteTagsAsync(tags: [tag]);
+            var deleteResult = await ApiClient.DeleteTagsAsync(tags: [tag]);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(deleteResult);
         }
 
         protected async Task AddTag()
@@ -103,9 +113,10 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            var existingTags = await ApiClient.GetAllTagsAsync();
-            if (!existingTags.TryGetValue(out var existingTagList))
+            var existingTagsResult = await ApiClient.GetAllTagsAsync();
+            if (!existingTagsResult.TryGetValue(out var existingTagList))
             {
+                await ApiFeedbackWorkflow.HandleFailureAsync(existingTagsResult);
                 return;
             }
 
@@ -114,7 +125,8 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            await ApiClient.CreateTagsAsync([tag]);
+            var createResult = await ApiClient.CreateTagsAsync([tag]);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(createResult);
         }
 
         protected IEnumerable<ColumnDefinition<string>> Columns => GetColumnDefinitions();

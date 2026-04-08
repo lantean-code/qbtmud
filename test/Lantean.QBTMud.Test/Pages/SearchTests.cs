@@ -209,6 +209,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_PluginLoadReturnsForbidden_WHEN_Render_THEN_NavigatesToLogin()
         {
+            var navigationManager = UseTestNavigationManager();
             var apiMock = TestContext.UseApiClientMock();
             apiMock.Setup(client => client.GetSearchPluginsAsync())
                 .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
@@ -222,7 +223,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Be("http://localhost/login");
+                navigationManager.Uri.Should().Be("http://localhost/login");
+                navigationManager.LastForceLoad.Should().BeTrue();
             });
 
             target.FindComponents<MudAlert>().Where(component => HasTestId(component, "SearchUnavailableAlert")).Should().BeEmpty();
@@ -354,6 +356,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public void GIVEN_PluginLoadReturnsForbidden_WHEN_Render_THEN_DoesNotShowPluginLoadErrorSnackbar()
         {
+            var navigationManager = UseTestNavigationManager();
             var apiMock = TestContext.UseApiClientMock();
             apiMock.Setup(client => client.GetSearchPluginsAsync())
                 .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
@@ -370,7 +373,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Be("http://localhost/login");
+                navigationManager.Uri.Should().Be("http://localhost/login");
+                navigationManager.LastForceLoad.Should().BeTrue();
             });
 
             snackbarMock.Verify(
@@ -1447,6 +1451,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_PluginLoadReturnsForbidden_WHEN_HydrateJobsRuns_THEN_MetadataPreservedAndNavigatesToLogin()
         {
+            var navigationManager = UseTestNavigationManager();
             await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
             await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
             {
@@ -1471,7 +1476,8 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Be("http://localhost/login");
+                navigationManager.Uri.Should().Be("http://localhost/login");
+                navigationManager.LastForceLoad.Should().BeTrue();
             });
 
             var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
@@ -1927,6 +1933,44 @@ namespace Lantean.QBTMud.Test.Pages
 
             tickResult.Should().Be(ManagedTimerTickResult.Stop);
             apiMock.Verify(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()), Times.Once());
+        }
+
+        [Fact]
+        public async Task GIVEN_PollingAuthFailure_WHEN_TimerTickRuns_THEN_CancelsPollingAndNavigatesToLoginWithForceLoad()
+        {
+            var navigationManager = UseTestNavigationManager();
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata
+                {
+                    Id = 905,
+                    Pattern = "AuthFailure",
+                    Category = SearchForm.AllCategoryId,
+                    Plugins = new List<string> { "movies" }
+                }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsAsync(new List<SearchPlugin> { plugin });
+            apiMock.SetupSequence(client => client.GetSearchesStatusAsync())
+                .ReturnsAsync(new List<SearchStatus> { new SearchStatus(905, SearchJobStatus.Running, 1) })
+                .ReturnsFailure<IReadOnlyList<SearchStatus>>(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
+            apiMock.Setup(client => client.GetSearchResultsAsync(905, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 1));
+
+            var capture = CapturePollHandlerRegistration();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+            var target = TestContext.Render<Search>();
+
+            var tickResult = await capture.InvokeAsync(CancellationToken.None);
+
+            tickResult.Should().Be(ManagedTimerTickResult.Continue);
+            capture.SubscriptionToken.IsCancellationRequested.Should().BeTrue();
+            navigationManager.Uri.Should().Be("http://localhost/login");
+            navigationManager.LastForceLoad.Should().BeTrue();
         }
 
         [Fact]
@@ -2453,6 +2497,77 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Services.AddSingleton(factory.Object);
 
             return cancellationToken => handler!.Invoke(cancellationToken);
+        }
+
+        private PollHandlerRegistration CapturePollHandlerRegistration()
+        {
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            var subscriptionToken = CancellationToken.None;
+            var timer = new Mock<IManagedTimer>();
+            timer.SetupGet(t => t.State).Returns(ManagedTimerState.Running);
+            timer.Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, token) =>
+                {
+                    handler = callback;
+                    subscriptionToken = token;
+                })
+                .ReturnsAsync(true);
+
+            var factory = new Mock<IManagedTimerFactory>();
+            factory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<TimeSpan>())).Returns(timer.Object);
+
+            TestContext.Services.RemoveAll<IManagedTimerFactory>();
+            TestContext.Services.AddSingleton(factory.Object);
+
+            return new PollHandlerRegistration(cancellationToken => handler!.Invoke(cancellationToken), () => subscriptionToken);
+        }
+
+        private TestNavigationManager UseTestNavigationManager()
+        {
+            var navigationManager = new TestNavigationManager();
+            TestContext.Services.RemoveAll<NavigationManager>();
+            TestContext.Services.AddSingleton<NavigationManager>(navigationManager);
+            return navigationManager;
+        }
+
+        private sealed class PollHandlerRegistration
+        {
+            private readonly Func<CancellationToken, Task<ManagedTimerTickResult>> _invokeAsync;
+            private readonly Func<CancellationToken> _subscriptionTokenAccessor;
+
+            public PollHandlerRegistration(
+                Func<CancellationToken, Task<ManagedTimerTickResult>> invokeAsync,
+                Func<CancellationToken> subscriptionTokenAccessor)
+            {
+                _invokeAsync = invokeAsync;
+                _subscriptionTokenAccessor = subscriptionTokenAccessor;
+            }
+
+            public CancellationToken SubscriptionToken
+            {
+                get { return _subscriptionTokenAccessor(); }
+            }
+
+            public Task<ManagedTimerTickResult> InvokeAsync(CancellationToken cancellationToken)
+            {
+                return _invokeAsync(cancellationToken);
+            }
+        }
+
+        private sealed class TestNavigationManager : NavigationManager
+        {
+            public TestNavigationManager()
+            {
+                Initialize("http://localhost/", "http://localhost/");
+            }
+
+            public bool LastForceLoad { get; private set; }
+
+            protected override void NavigateToCore(string uri, bool forceLoad)
+            {
+                LastForceLoad = forceLoad;
+                Uri = ToAbsoluteUri(uri).ToString();
+            }
         }
     }
 }

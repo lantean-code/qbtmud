@@ -1699,7 +1699,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
             target.WaitForAssertion(() => _navigationManager.LastNavigationUri.Should().Be("login"));
-            _navigationManager.ForceLoad.Should().BeFalse();
+            _navigationManager.ForceLoad.Should().BeTrue();
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Never);
@@ -1733,7 +1733,7 @@ namespace Lantean.QBTMud.Test.Layout
 
             result.Action.Should().Be(ManagedTimerTickAction.Stop);
             target.WaitForAssertion(() => _navigationManager.LastNavigationUri.Should().Be("login"));
-            _navigationManager.ForceLoad.Should().BeFalse();
+            _navigationManager.ForceLoad.Should().BeTrue();
             _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
                 It.IsAny<string?>(),
                 It.IsAny<DialogOptions>()), Times.Never);

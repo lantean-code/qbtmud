@@ -65,11 +65,11 @@ namespace Lantean.QBTMud.Components
                 _piecesFailed = false;
             }
 
-            var properties = await ApiClient.GetTorrentPropertiesAsync(Hash);
-            if (!properties.TryGetValue(out var torrentProperties))
+            var propertiesResult = await ApiClient.GetTorrentPropertiesAsync(Hash);
+            if (!propertiesResult.TryGetValue(out var torrentProperties))
             {
                 MarkPiecesFailed();
-                if (properties.Failure?.Kind == ApiFailureKind.NotFound)
+                if (propertiesResult.Failure?.Kind == ApiFailureKind.NotFound)
                 {
                     _timerCancellationToken.CancelIfNotDisposed();
                 }
@@ -112,12 +112,12 @@ namespace Lantean.QBTMud.Components
         {
             if (Active && Hash is not null)
             {
-                var properties = await ApiClient.GetTorrentPropertiesAsync(Hash);
-                if (!properties.TryGetValue(out var torrentProperties))
+                var propertiesResult = await ApiClient.GetTorrentPropertiesAsync(Hash);
+                if (!propertiesResult.TryGetValue(out var torrentProperties))
                 {
                     MarkPiecesFailed();
                     await InvokeAsync(StateHasChanged);
-                    if (properties.Failure?.Kind is ApiFailureKind.NotFound or ApiFailureKind.AuthenticationRequired)
+                    if (propertiesResult.Failure?.Kind is ApiFailureKind.NotFound or ApiFailureKind.AuthenticationRequired)
                     {
                         _timerCancellationToken.CancelIfNotDisposed();
                         return ManagedTimerTickResult.Stop;

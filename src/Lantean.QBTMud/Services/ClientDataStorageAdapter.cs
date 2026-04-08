@@ -43,8 +43,8 @@ namespace Lantean.QBTMud.Services
                 return new Dictionary<string, JsonElement>(StringComparer.Ordinal);
             }
 
-            var loaded = await _apiClient.LoadClientDataAsync(normalizedKeys, cancellationToken);
-            if (!loaded.TryGetValue(out var loadedData))
+            var loadedResult = await _apiClient.LoadClientDataAsync(normalizedKeys, cancellationToken);
+            if (!loadedResult.TryGetValue(out var loadedData))
             {
                 return new Dictionary<string, JsonElement>(StringComparer.Ordinal);
             }
@@ -59,8 +59,8 @@ namespace Lantean.QBTMud.Services
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var loaded = await _apiClient.LoadClientDataAsync(keys: null, cancellationToken);
-            if (!loaded.TryGetValue(out var loadedData))
+            var loadedResult = await _apiClient.LoadClientDataAsync(keys: null, cancellationToken);
+            if (!loadedResult.TryGetValue(out var loadedData))
             {
                 return new Dictionary<string, JsonElement>(StringComparer.Ordinal);
             }

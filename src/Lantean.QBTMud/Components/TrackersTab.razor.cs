@@ -56,6 +56,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         protected IReadOnlyList<TorrentTracker>? TrackerList { get; set; }
 
         protected IEnumerable<TorrentTracker>? Trackers => GetTrackers();
@@ -80,8 +83,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            var trackers = await ApiClient.GetTorrentTrackersAsync(Hash);
-            TrackerList = trackers.TryGetValue(out var torrentTrackers) ? torrentTrackers : [];
+            var trackersResult = await ApiClient.GetTorrentTrackersAsync(Hash);
+            TrackerList = trackersResult.TryGetValue(out var torrentTrackers) ? torrentTrackers : [];
 
             await InvokeAsync(StateHasChanged);
         }
@@ -184,7 +187,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.AddTrackersToTorrentAsync(TorrentSelector.FromHash(Hash), trackers);
+            var addResult = await ApiClient.AddTrackersToTorrentAsync(TorrentSelector.FromHash(Hash), trackers);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(addResult);
         }
 
         protected Task EditTrackerToolbar()
@@ -228,7 +232,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHash(Hash), [tracker.Url]);
+            var removeResult = await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHash(Hash), [tracker.Url]);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(removeResult);
         }
 
         protected Task CopyTrackerUrlToolbar()
@@ -269,10 +274,10 @@ namespace Lantean.QBTMud.Components
         {
             if (Active && Hash is not null)
             {
-                var trackers = await ApiClient.GetTorrentTrackersAsync(Hash);
-                if (!trackers.TryGetValue(out var torrentTrackers))
+                var trackersResult = await ApiClient.GetTorrentTrackersAsync(Hash);
+                if (!trackersResult.TryGetValue(out var torrentTrackers))
                 {
-                    if (trackers.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    if (trackersResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
                     {
                         _timerCancellationToken.CancelIfNotDisposed();
                         return ManagedTimerTickResult.Stop;
