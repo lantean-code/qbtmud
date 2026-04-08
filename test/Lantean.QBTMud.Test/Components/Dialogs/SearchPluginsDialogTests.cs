@@ -64,12 +64,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
-        public async Task GIVEN_NullPluginResponse_WHEN_Rendered_THEN_ShowsEmptyList()
+        public async Task GIVEN_EmptyPluginResponse_WHEN_Rendered_THEN_ShowsEmptyList()
         {
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .Returns(Task.FromResult<IReadOnlyList<SearchPlugin>>(null!));
+                .ReturnsAsync(new List<SearchPlugin>());
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -299,32 +299,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             apiClientMock.Verify(client => client.InstallSearchPluginsAsync(It.Is<IEnumerable<string>>(sources => sources.SequenceEqual(new[] { "/path/plugin.py" })), It.IsAny<CancellationToken>()), Times.Once);
             pathField.Instance.Value.Should().BeEmpty();
-        }
-
-        [Fact]
-        public async Task GIVEN_InstallPathFails_WHEN_Clicked_THEN_ShowsErrorAndKeepsInput()
-        {
-            var plugins = new List<SearchPlugin> { CreatePlugin("Plugin", true, string.Empty) };
-            var apiClientMock = Mock.Get(_apiClient);
-            apiClientMock
-                .Setup(client => client.GetSearchPluginsAsync())
-                .ReturnsAsync(plugins);
-            apiClientMock
-                .Setup(client => client.InstallSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new InvalidOperationException("Failed"));
-
-            var snackbarMock = Mock.Get(_snackbar);
-
-            var dialog = await _target.RenderDialogAsync();
-
-            var pathField = FindComponentByTestId<PathAutocomplete>(dialog.Component, "SearchPluginInstallPath");
-            await dialog.Component.InvokeAsync(() => pathField.Instance.ValueChanged.InvokeAsync("/path/plugin.py"));
-
-            var installButton = FindComponentByTestId<MudButton>(dialog.Component, "SearchPluginInstallPathButton");
-            await installButton.Find("button").ClickAsync(new MouseEventArgs());
-
-            snackbarMock.Verify(snackbar => snackbar.Add(It.Is<string>(message => message.Contains("Search plugin operation failed: Failed")), Severity.Error), Times.Once);
-            pathField.Instance.Value.Should().Be("/path/plugin.py");
         }
 
         [Fact]

@@ -94,7 +94,6 @@
                 <MudTh>@LanguageLocalizer.Translate("SearchPluginsTable", "Name")</MudTh>
                 <MudTh>@LanguageLocalizer.Translate("AppTemp", "Identifier")</MudTh>
                 <MudTh>@LanguageLocalizer.Translate("SearchPluginsTable", "Version")</MudTh>
-                <MudTh>@LanguageLocalizer.Translate("AppTemp", "Last update")</MudTh>
                 <MudTh>@LanguageLocalizer.Translate("SearchPluginsTable", "Url")</MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -119,7 +118,6 @@
                     <MudChip T="string" Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small">@context.Name</MudChip>
                 </MudTd>
                 <MudTd DataLabel="@LanguageLocalizer.Translate("SearchPluginsTable", "Version")">@context.Version</MudTd>
-                <MudTd DataLabel="@LanguageLocalizer.Translate("AppTemp", "Last update")">@GetLastUpdatedText(context)</MudTd>
                 <MudTd DataLabel="@LanguageLocalizer.Translate("SearchPluginsTable", "Url")">
                     @if (string.IsNullOrWhiteSpace(context.Url))
                     {

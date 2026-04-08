@@ -51,27 +51,22 @@ namespace Lantean.QBTMud.Components.Dialogs
         private async Task LoadPlugins()
         {
             _loading = true;
-            try
+            var pluginsResult = await ApiClient.GetSearchPluginsAsync();
+            if (!pluginsResult.TryGetValue(out var plugins))
             {
-                var pluginsResult = await ApiClient.GetSearchPluginsAsync();
-                Plugins = pluginsResult.TryGetValue(out var plugins) ? [.. plugins] : [];
-                SelectedPluginNames = [];
-                if (!pluginsResult.IsSuccess)
-                {
-                    SnackbarWorkflow.ShowTransientMessage(
-                        TranslateApp("Failed to load search plugins: %1", pluginsResult.Failure?.UserMessage ?? string.Empty),
-                        Severity.Error);
-                }
+                Plugins = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(
+                    pluginsResult,
+                    message => TranslateApp("Failed to load search plugins: %1", message ?? string.Empty));
             }
-            catch (Exception exception)
+            else
             {
-                SnackbarWorkflow.ShowTransientMessage(TranslateApp("Failed to load search plugins: %1", exception.Message), Severity.Error);
+                Plugins = [.. plugins];
             }
-            finally
-            {
-                _loading = false;
-                await InvokeAsync(StateHasChanged);
-            }
+
+            SelectedPluginNames = [];
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
         }
 
         protected async Task InstallFromUrl()
@@ -203,21 +198,14 @@ namespace Lantean.QBTMud.Components.Dialogs
             return IsSelected(plugin) ? Color.Primary : Color.Default;
         }
 
-        protected string GetEnabledIcon(SearchPlugin plugin)
+        protected static string GetEnabledIcon(SearchPlugin plugin)
         {
             return plugin.Enabled ? Icons.Material.Filled.ToggleOn : Icons.Material.Outlined.ToggleOff;
         }
 
-        protected Color GetEnabledColor(SearchPlugin plugin)
+        protected static Color GetEnabledColor(SearchPlugin plugin)
         {
             return plugin.Enabled ? Color.Success : Color.Default;
-        }
-
-        protected string GetLastUpdatedText(SearchPlugin plugin)
-        {
-            // qBittorrent's search/plugins API does not expose the last update timestamp,
-            // so we display a placeholder until the client model is extended.
-            return TranslateApp("Not available");
         }
 
         protected void CloseDialog()
@@ -228,35 +216,25 @@ namespace Lantean.QBTMud.Components.Dialogs
         private async Task<bool> RunOperation(Func<Task<ApiResult>> operation, Func<string> successMessage, bool refresh = true)
         {
             OperationInProgress = true;
-            try
+            var result = await operation();
+            if (!result.IsSuccess)
             {
-                var result = await operation();
-                if (!result.IsSuccess)
-                {
-                    await ApiFeedbackWorkflow.HandleFailureAsync(
-                        result,
-                        message => TranslateApp("Search plugin operation failed: %1", message ?? string.Empty));
-                    return false;
-                }
-
+                await ApiFeedbackWorkflow.HandleFailureAsync(
+                    result,
+                    message => TranslateApp("Search plugin operation failed: %1", message ?? string.Empty));
+            }
+            else
+            {
                 SnackbarWorkflow.ShowTransientMessage(successMessage(), Severity.Success);
                 _hasChanges = true;
                 if (refresh)
                 {
                     await LoadPlugins();
                 }
-                return true;
-            }
-            catch (InvalidOperationException exception)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateApp("Search plugin operation failed: %1", exception.Message), Severity.Error);
-            }
-            finally
-            {
-                OperationInProgress = false;
             }
 
-            return false;
+            OperationInProgress = false;
+            return result.IsSuccess;
         }
 
         private string TranslateApp(string source, params object[] arguments)
