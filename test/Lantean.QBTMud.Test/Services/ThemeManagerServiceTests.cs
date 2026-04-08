@@ -79,27 +79,45 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public void GIVEN_NewThemeModePreference_WHEN_SetThemeModePreferenceInvoked_THEN_RaisesThemeModePreferenceChangedEvent()
+        public void GIVEN_NewThemeModePreference_WHEN_ApplyPersistedThemeModePreferenceInvoked_THEN_RaisesThemeModePreferenceChangedEvent()
         {
             ThemeModePreferenceChangedEventArgs? captured = null;
             _target.ThemeModePreferenceChanged += (_, args) => captured = args;
 
-            _target.SetThemeModePreference(ThemeModePreference.Dark);
+            _target.ApplyPersistedThemeModePreference(ThemeModePreference.Dark);
 
             _target.CurrentThemeModePreference.Should().Be(ThemeModePreference.Dark);
             captured.Should().NotBeNull();
             captured!.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
+            Mock.Get(_appSettingsService)
+                .Verify(service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
-        public void GIVEN_UnchangedThemeModePreference_WHEN_SetThemeModePreferenceInvoked_THEN_DoesNotRaiseThemeModePreferenceChangedEvent()
+        public void GIVEN_UnchangedThemeModePreference_WHEN_ApplyPersistedThemeModePreferenceInvoked_THEN_DoesNotRaiseThemeModePreferenceChangedEvent()
         {
             ThemeModePreferenceChangedEventArgs? captured = null;
             _target.ThemeModePreferenceChanged += (_, args) => captured = args;
 
-            _target.SetThemeModePreference(ThemeModePreference.System);
+            _target.ApplyPersistedThemeModePreference(ThemeModePreference.System);
 
             captured.Should().BeNull();
+            Mock.Get(_appSettingsService)
+                .Verify(service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public void GIVEN_InvalidThemeModePreference_WHEN_ApplyPersistedThemeModePreferenceInvoked_THEN_NormalizesToSystem()
+        {
+            ThemeModePreferenceChangedEventArgs? captured = null;
+            _target.ThemeModePreferenceChanged += (_, args) => captured = args;
+
+            _target.ApplyPersistedThemeModePreference((ThemeModePreference)999);
+
+            _target.CurrentThemeModePreference.Should().Be(ThemeModePreference.System);
+            captured.Should().BeNull();
+            Mock.Get(_appSettingsService)
+                .Verify(service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]

@@ -635,7 +635,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             _settings.ThemeModePreference = value;
             await PersistAppSettingsAsync();
-            ThemeManagerService.SetThemeModePreference(_settings.ThemeModePreference);
+            ThemeManagerService.ApplyPersistedThemeModePreference(_settings.ThemeModePreference);
         }
 
         private async Task OnLocaleChanged(string? value)

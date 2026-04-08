@@ -262,7 +262,7 @@ namespace Lantean.QBTMud.Pages
 
                 if (previousThemeModePreference != Settings.ThemeModePreference)
                 {
-                    ThemeManagerService.SetThemeModePreference(Settings.ThemeModePreference);
+                    ThemeManagerService.ApplyPersistedThemeModePreference(Settings.ThemeModePreference);
                 }
             }
 

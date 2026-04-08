@@ -212,7 +212,7 @@ namespace Lantean.QBTMud.Test.Pages
                     It.IsAny<CancellationToken>()),
                 Times.Once);
             Mock.Get(_themeManagerService).Verify(
-                service => service.SetThemeModePreference(It.IsAny<ThemeModePreference>()),
+                service => service.ApplyPersistedThemeModePreference(It.IsAny<ThemeModePreference>()),
                 Times.Never);
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add(
@@ -235,7 +235,7 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
 
             Mock.Get(_themeManagerService).Verify(
-                service => service.SetThemeModePreference(ThemeModePreference.Dark),
+                service => service.ApplyPersistedThemeModePreference(ThemeModePreference.Dark),
                 Times.Once);
         }
 

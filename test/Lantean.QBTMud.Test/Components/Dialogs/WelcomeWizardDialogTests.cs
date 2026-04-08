@@ -667,7 +667,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<CancellationToken>()),
                 Times.Once);
             Mock.Get(_themeManagerService).Verify(
-                service => service.SetThemeModePreference(ThemeModePreference.Dark),
+                service => service.ApplyPersistedThemeModePreference(ThemeModePreference.Dark),
                 Times.Once);
         }
 
@@ -687,7 +687,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
                 Times.Never);
             Mock.Get(_themeManagerService).Verify(
-                service => service.SetThemeModePreference(It.IsAny<ThemeModePreference>()),
+                service => service.ApplyPersistedThemeModePreference(It.IsAny<ThemeModePreference>()),
                 Times.Never);
         }
 

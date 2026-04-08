@@ -79,10 +79,10 @@ namespace Lantean.QBTMud.Services
         Task ApplyTheme(string themeId);
 
         /// <summary>
-        /// Applies the specified theme mode preference for live shell consumers.
+        /// Applies a persisted theme mode preference for live shell consumers.
         /// </summary>
-        /// <param name="themeModePreference">The updated theme mode preference.</param>
-        void SetThemeModePreference(ThemeModePreference themeModePreference);
+        /// <param name="themeModePreference">The persisted theme mode preference to apply.</param>
+        void ApplyPersistedThemeModePreference(ThemeModePreference themeModePreference);
 
         /// <summary>
         /// Saves a local theme definition.

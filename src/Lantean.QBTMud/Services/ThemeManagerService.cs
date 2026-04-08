@@ -247,10 +247,10 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <summary>
-        /// Applies the specified theme mode preference for live shell consumers.
+        /// Applies a persisted theme mode preference for live shell consumers.
         /// </summary>
-        /// <param name="themeModePreference">The updated theme mode preference.</param>
-        public void SetThemeModePreference(ThemeModePreference themeModePreference)
+        /// <param name="themeModePreference">The persisted theme mode preference to apply.</param>
+        public void ApplyPersistedThemeModePreference(ThemeModePreference themeModePreference)
         {
             var normalizedPreference = NormalizeThemeModePreference(themeModePreference);
             if (_currentThemeModePreference == normalizedPreference)
