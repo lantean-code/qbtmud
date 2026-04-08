@@ -2,7 +2,6 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Layout;
-using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -18,12 +17,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var target = RenderLayout(
                 drawerOpen: false,
-                drawerOpenChanged: EventCallback.Factory.Create<bool>(this, value => _drawerCallbackValue = value),
-                statusChanged: EventCallback.Factory.Create<Status>(this, _ => { }),
-                categoryChanged: EventCallback.Factory.Create<string>(this, _ => { }),
-                tagChanged: EventCallback.Factory.Create<string>(this, _ => { }),
-                trackerChanged: EventCallback.Factory.Create<string>(this, _ => { }),
-                searchTermChanged: EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
+                drawerOpenChanged: EventCallback.Factory.Create<bool>(this, value => _drawerCallbackValue = value));
             var drawer = target.FindComponent<MudDrawer>();
 
             await target.InvokeAsync(() => drawer.Instance.OpenChanged.InvokeAsync(true));
@@ -37,12 +31,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var target = RenderLayout(
                 drawerOpen: true,
-                drawerOpenChanged: default,
-                statusChanged: EventCallback.Factory.Create<Status>(this, _ => { }),
-                categoryChanged: EventCallback.Factory.Create<string>(this, _ => { }),
-                tagChanged: EventCallback.Factory.Create<string>(this, _ => { }),
-                trackerChanged: EventCallback.Factory.Create<string>(this, _ => { }),
-                searchTermChanged: EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
+                drawerOpenChanged: default);
             var drawer = target.FindComponent<MudDrawer>();
 
             await target.InvokeAsync(() => drawer.Instance.OpenChanged.InvokeAsync(false));
@@ -52,46 +41,25 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public void GIVEN_RenderedLayout_WHEN_InspectingChildren_THEN_RendersFiltersAndSearchCascade()
+        public void GIVEN_RenderedLayout_WHEN_InspectingChildren_THEN_RendersFiltersNavWithoutSearchCascade()
         {
             var target = RenderLayout(
                 drawerOpen: false,
-                drawerOpenChanged: EventCallback.Factory.Create<bool>(this, value => _drawerCallbackValue = value),
-                statusChanged: EventCallback.Factory.Create<Status>(this, _ => { }),
-                categoryChanged: EventCallback.Factory.Create<string>(this, _ => { }),
-                tagChanged: EventCallback.Factory.Create<string>(this, _ => { }),
-                trackerChanged: EventCallback.Factory.Create<string>(this, _ => { }),
-                searchTermChanged: EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
+                drawerOpenChanged: EventCallback.Factory.Create<bool>(this, value => _drawerCallbackValue = value));
             var filters = target.FindComponent<FiltersNav>();
-            var searchCascade = target.FindComponents<CascadingValue<EventCallback<FilterSearchState>>>()
-                .Single(component => string.Equals(component.Instance.Name, "SearchTermChanged", StringComparison.Ordinal));
 
-            filters.Instance.StatusChanged.HasDelegate.Should().BeTrue();
-            filters.Instance.CategoryChanged.HasDelegate.Should().BeTrue();
-            filters.Instance.TagChanged.HasDelegate.Should().BeTrue();
-            filters.Instance.TrackerChanged.HasDelegate.Should().BeTrue();
-            searchCascade.Instance.Value.HasDelegate.Should().BeTrue();
+            filters.Should().NotBeNull();
         }
 
         private IRenderedComponent<ListLayout> RenderLayout(
             bool drawerOpen,
-            EventCallback<bool> drawerOpenChanged,
-            EventCallback<Status> statusChanged,
-            EventCallback<string> categoryChanged,
-            EventCallback<string> tagChanged,
-            EventCallback<string> trackerChanged,
-            EventCallback<FilterSearchState> searchTermChanged)
+            EventCallback<bool> drawerOpenChanged)
         {
             return TestContext.Render<ListLayout>(parameters =>
             {
                 parameters.Add(p => p.Body, builder => { });
                 parameters.AddCascadingValue("DrawerOpen", drawerOpen);
                 parameters.AddCascadingValue("DrawerOpenChanged", drawerOpenChanged);
-                parameters.AddCascadingValue("StatusChanged", statusChanged);
-                parameters.AddCascadingValue("CategoryChanged", categoryChanged);
-                parameters.AddCascadingValue("TagChanged", tagChanged);
-                parameters.AddCascadingValue("TrackerChanged", trackerChanged);
-                parameters.AddCascadingValue("SearchTermChanged", searchTermChanged);
             });
         }
     }

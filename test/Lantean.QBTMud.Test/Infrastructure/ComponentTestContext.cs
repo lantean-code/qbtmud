@@ -94,6 +94,7 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddScoped<IPendingDownloadWorkflow, PendingDownloadWorkflow>();
             Services.AddScoped<IStartupExperienceWorkflow, StartupExperienceWorkflow>();
             Services.AddScoped<IStatusBarWorkflow, StatusBarWorkflow>();
+            Services.AddScoped<ITorrentQueryState, TorrentQueryState>();
             Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
             Services.AddScoped<AppSettingsService>();
             Services.AddScoped<IAppSettingsService>(serviceProvider => serviceProvider.GetRequiredService<AppSettingsService>());

@@ -1288,7 +1288,7 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
-        public async Task GIVEN_FilterCallbacks_WHEN_Invoked_THEN_StateUpdatesAndVersionChanges()
+        public async Task GIVEN_TorrentQueryStateUpdated_WHEN_FilterAndSortValuesChange_THEN_StateUpdatesAndVersionChanges()
         {
             var torrents = new List<MudTorrent>
             {
@@ -1296,32 +1296,33 @@ namespace Lantean.QBTMud.Test.Layout
                 CreateTorrent("Hash2", "Beta", "Cat2", Array.Empty<string>(), "Tracker2", TorrentState.StoppedUploading)
             };
             var mainData = CreateMainData(torrents: torrents, serverState: CreateServerState());
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
             var target = RenderLayoutWithProbe(mainData);
             var probe = target.FindComponent<LayoutProbe>();
             var initialVersion = probe.Instance.TorrentsVersion;
 
-            await target.InvokeAsync(() => probe.Instance.CategoryChanged.InvokeAsync(FilterHelper.CATEGORY_ALL));
-            await target.InvokeAsync(() => probe.Instance.StatusChanged.InvokeAsync(Status.All));
-            await target.InvokeAsync(() => probe.Instance.TagChanged.InvokeAsync(FilterHelper.TAG_ALL));
-            await target.InvokeAsync(() => probe.Instance.TrackerChanged.InvokeAsync(FilterHelper.TRACKER_ALL));
-            await target.InvokeAsync(() => probe.Instance.SearchTermChanged.InvokeAsync(new FilterSearchState(null, TorrentFilterField.Name, false, true)));
+            await target.InvokeAsync(() => queryState.SetCategory(FilterHelper.CATEGORY_ALL));
+            await target.InvokeAsync(() => queryState.SetStatus(Status.All));
+            await target.InvokeAsync(() => queryState.SetTag(FilterHelper.TAG_ALL));
+            await target.InvokeAsync(() => queryState.SetTracker(FilterHelper.TRACKER_ALL));
+            await target.InvokeAsync(() => queryState.SetSearch(new FilterSearchState(null, TorrentFilterField.Name, false, true)));
 
-            await target.InvokeAsync(() => probe.Instance.CategoryChanged.InvokeAsync("Cat1"));
-            await target.InvokeAsync(() => probe.Instance.StatusChanged.InvokeAsync(Status.Downloading));
-            await target.InvokeAsync(() => probe.Instance.TagChanged.InvokeAsync("Tag1"));
-            await target.InvokeAsync(() => probe.Instance.TrackerChanged.InvokeAsync("Tracker1"));
-            await target.InvokeAsync(() => probe.Instance.SearchTermChanged.InvokeAsync(new FilterSearchState("Alpha", TorrentFilterField.Name, false, true)));
-            await target.InvokeAsync(() => probe.Instance.SortColumnChanged.InvokeAsync("Name"));
-            await target.InvokeAsync(() => probe.Instance.SortDirectionChanged.InvokeAsync(SortDirection.Descending));
+            await target.InvokeAsync(() => queryState.SetCategory("Cat1"));
+            await target.InvokeAsync(() => queryState.SetStatus(Status.Downloading));
+            await target.InvokeAsync(() => queryState.SetTag("Tag1"));
+            await target.InvokeAsync(() => queryState.SetTracker("Tracker1"));
+            await target.InvokeAsync(() => queryState.SetSearch(new FilterSearchState("Alpha", TorrentFilterField.Name, false, true)));
+            await target.InvokeAsync(() => queryState.SetSortColumn("Name"));
+            await target.InvokeAsync(() => queryState.SetSortDirection(SortDirection.Descending));
 
             target.WaitForAssertion(() =>
             {
                 probe.Instance.TorrentsVersion.Should().BeGreaterThan(initialVersion);
             });
 
-            probe.Instance.SortColumn.Should().Be("Name");
-            probe.Instance.SortDirection.Should().Be(SortDirection.Descending);
+            queryState.SortColumn.Should().Be("Name");
+            queryState.SortDirection.Should().Be(SortDirection.Descending);
         }
 
         [Fact]
@@ -2642,33 +2643,6 @@ namespace Lantean.QBTMud.Test.Layout
 
             [CascadingParameter]
             public ClientModels.Preferences? Preferences { get; set; }
-
-            [CascadingParameter(Name = "SortColumn")]
-            public string? SortColumn { get; set; }
-
-            [CascadingParameter(Name = "SortDirection")]
-            public SortDirection SortDirection { get; set; }
-
-            [CascadingParameter(Name = "CategoryChanged")]
-            public EventCallback<string> CategoryChanged { get; set; }
-
-            [CascadingParameter(Name = "StatusChanged")]
-            public EventCallback<Status> StatusChanged { get; set; }
-
-            [CascadingParameter(Name = "TagChanged")]
-            public EventCallback<string> TagChanged { get; set; }
-
-            [CascadingParameter(Name = "TrackerChanged")]
-            public EventCallback<string> TrackerChanged { get; set; }
-
-            [CascadingParameter(Name = "SearchTermChanged")]
-            public EventCallback<FilterSearchState> SearchTermChanged { get; set; }
-
-            [CascadingParameter(Name = "SortColumnChanged")]
-            public EventCallback<string> SortColumnChanged { get; set; }
-
-            [CascadingParameter(Name = "SortDirectionChanged")]
-            public EventCallback<SortDirection> SortDirectionChanged { get; set; }
         }
 
         private sealed class TestNavigationManager : NavigationManager

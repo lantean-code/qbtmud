@@ -88,6 +88,7 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IPendingDownloadWorkflow, PendingDownloadWorkflow>();
             builder.Services.AddScoped<IStartupExperienceWorkflow, StartupExperienceWorkflow>();
             builder.Services.AddScoped<IStatusBarWorkflow, StatusBarWorkflow>();
+            builder.Services.AddScoped<ITorrentQueryState, TorrentQueryState>();
             builder.Services.AddScoped<IBrowserNotificationService, BrowserNotificationService>();
             builder.Services.AddScoped<IInternalUrlProvider, InternalUrlProvider>();
             builder.Services.AddScoped<IMagnetLinkService, MagnetLinkService>();

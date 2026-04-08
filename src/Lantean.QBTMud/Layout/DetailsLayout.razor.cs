@@ -24,6 +24,9 @@ namespace Lantean.QBTMud.Layout
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected ITorrentQueryState TorrentQueryState { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -32,12 +35,6 @@ namespace Lantean.QBTMud.Layout
 
         [CascadingParameter]
         public IEnumerable<Torrent>? Torrents { get; set; }
-
-        [CascadingParameter(Name = "SortColumn")]
-        public string? SortColumn { get; set; }
-
-        [CascadingParameter(Name = "SortDirection")]
-        public SortDirection SortDirection { get; set; }
 
         protected string? SelectedTorrent { get; set; }
 
@@ -176,8 +173,8 @@ namespace Lantean.QBTMud.Layout
                 return [];
             }
 
-            var sortSelector = TorrentList.BuildColumnsDefinitions(LanguageLocalizer).FirstOrDefault(t => t.Id == SortColumn)?.SortSelector ?? (t => t.Name);
-            return Torrents.OrderByDirection(SortDirection, sortSelector).ToList();
+            var sortSelector = TorrentList.BuildColumnsDefinitions(LanguageLocalizer).FirstOrDefault(t => t.Id == TorrentQueryState.SortColumn)?.SortSelector ?? (t => t.Name);
+            return Torrents.OrderByDirection(TorrentQueryState.SortDirection, sortSelector).ToList();
         }
     }
 }

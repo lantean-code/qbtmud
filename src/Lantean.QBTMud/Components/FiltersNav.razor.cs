@@ -28,13 +28,13 @@ namespace Lantean.QBTMud.Components
         private bool _trackersExpanded = true;
         private readonly Dictionary<string, TrackerFilterItem> _trackerItems = new(StringComparer.Ordinal);
 
-        protected string Status { get; set; } = Models.Status.All.ToString();
+        protected string Status => TorrentQueryState.Status.ToString();
 
-        protected string Category { get; set; } = FilterHelper.CATEGORY_ALL;
+        protected string Category => TorrentQueryState.Category;
 
-        protected string Tag { get; set; } = FilterHelper.TAG_ALL;
+        protected string Tag => TorrentQueryState.Tag;
 
-        protected string Tracker { get; set; } = FilterHelper.TRACKER_ALL;
+        protected string Tracker => TorrentQueryState.Tracker;
 
         [Inject]
         protected ISettingsStorageService SettingsStorage { get; set; } = default!;
@@ -45,23 +45,14 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
 
+        [Inject]
+        protected ITorrentQueryState TorrentQueryState { get; set; } = default!;
+
         [CascadingParameter]
         public MudMainData? MainData { get; set; }
 
         [CascadingParameter]
         public Preferences? Preferences { get; set; }
-
-        [Parameter]
-        public EventCallback<string> CategoryChanged { get; set; }
-
-        [Parameter]
-        public EventCallback<Status> StatusChanged { get; set; }
-
-        [Parameter]
-        public EventCallback<string> TagChanged { get; set; }
-
-        [Parameter]
-        public EventCallback<string> TrackerChanged { get; set; }
 
         protected Dictionary<string, int> Tags => GetTags();
 
@@ -101,36 +92,31 @@ namespace Lantean.QBTMud.Components
             var status = await SettingsStorage.GetItemAsStringAsync(_statusSelectionStorageKey);
             if (status is not null)
             {
-                Status = status;
-                await StatusChanged.InvokeAsync(Enum.Parse<Status>(status));
+                TorrentQueryState.SetStatus(Enum.Parse<Status>(status));
             }
 
             var category = await SettingsStorage.GetItemAsStringAsync(_categorySelectionStorageKey);
             if (category is not null)
             {
-                Category = category;
-                await CategoryChanged.InvokeAsync(category);
+                TorrentQueryState.SetCategory(category);
             }
 
             var tag = await SettingsStorage.GetItemAsStringAsync(_tagSelectionStorageKey);
             if (tag is not null)
             {
-                Tag = tag;
-                await TagChanged.InvokeAsync(tag);
+                TorrentQueryState.SetTag(tag);
             }
 
             var tracker = await SettingsStorage.GetItemAsStringAsync(_trackerSelectionStorageKey);
             if (tracker is not null)
             {
-                Tracker = tracker;
-                await TrackerChanged.InvokeAsync(tracker);
+                TorrentQueryState.SetTracker(tracker);
             }
         }
 
         protected async Task StatusValueChanged(string value)
         {
-            Status = value;
-            await StatusChanged.InvokeAsync(Enum.Parse<Status>(value));
+            TorrentQueryState.SetStatus(Enum.Parse<Status>(value));
 
             if (value != Models.Status.All.ToString())
             {
@@ -168,8 +154,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task CategoryValueChanged(string value)
         {
-            Category = value;
-            await CategoryChanged.InvokeAsync(value);
+            TorrentQueryState.SetCategory(value);
 
             if (value != FilterHelper.CATEGORY_ALL)
             {
@@ -208,8 +193,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task TagValueChanged(string value)
         {
-            Tag = value;
-            await TagChanged.InvokeAsync(value);
+            TorrentQueryState.SetTag(value);
 
             if (value != FilterHelper.TAG_ALL)
             {
@@ -248,8 +232,7 @@ namespace Lantean.QBTMud.Components
 
         protected async Task TrackerValueChanged(string value)
         {
-            Tracker = value;
-            await TrackerChanged.InvokeAsync(value);
+            TorrentQueryState.SetTracker(value);
 
             if (value != FilterHelper.TRACKER_ALL)
             {

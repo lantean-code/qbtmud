@@ -238,6 +238,9 @@ namespace Lantean.QBTMud.Test.Layout
         private IRenderedComponent<DetailsLayout> RenderLayout(string? selectedHash, IEnumerable<MudTorrent> torrents, string? absoluteUri = null)
         {
             _navigationManager.SetUri(absoluteUri ?? (selectedHash is null ? "http://localhost/" : $"http://localhost/details/{selectedHash}"));
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            queryState.SetSortColumn("Name");
+            queryState.SetSortDirection(SortDirection.Ascending);
 
             return TestContext.Render<DetailsLayout>(parameters =>
             {
@@ -245,22 +248,21 @@ namespace Lantean.QBTMud.Test.Layout
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("DrawerOpenChanged", EventCallback.Factory.Create<bool>(this, _ => { }));
                 parameters.AddCascadingValue(torrents);
-                parameters.AddCascadingValue("SortColumn", "Name");
-                parameters.AddCascadingValue("SortDirection", SortDirection.Ascending);
             });
         }
 
         private IRenderedComponent<DetailsLayout> RenderLayoutWithoutTorrents(string absoluteUri)
         {
             _navigationManager.SetUri(absoluteUri);
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            queryState.SetSortColumn("Name");
+            queryState.SetSortDirection(SortDirection.Ascending);
 
             return TestContext.Render<DetailsLayout>(parameters =>
             {
                 parameters.Add(p => p.Body, builder => { });
                 parameters.AddCascadingValue("DrawerOpen", false);
                 parameters.AddCascadingValue("DrawerOpenChanged", EventCallback.Factory.Create<bool>(this, _ => { }));
-                parameters.AddCascadingValue("SortColumn", "Name");
-                parameters.AddCascadingValue("SortDirection", SortDirection.Ascending);
             });
         }
 

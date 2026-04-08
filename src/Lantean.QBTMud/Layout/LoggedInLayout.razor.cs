@@ -52,6 +52,9 @@ namespace Lantean.QBTMud.Layout
         [Inject]
         protected IManagedTimerFactory ManagedTimerFactory { get; set; } = default!;
 
+        [Inject]
+        protected ITorrentQueryState TorrentQueryState { get; set; } = default!;
+
         [CascadingParameter]
         public Breakpoint CurrentBreakpoint { get; set; }
 
@@ -75,29 +78,9 @@ namespace Lantean.QBTMud.Layout
 
         protected MudMainData? MainData { get; set; }
 
-        protected string Category { get; set; } = FilterHelper.CATEGORY_ALL;
-
-        protected string Tag { get; set; } = FilterHelper.TAG_ALL;
-
-        protected string Tracker { get; set; } = FilterHelper.TRACKER_ALL;
-
-        protected Status Status { get; set; } = Status.All;
-
         protected Preferences? Preferences { get; set; }
 
-        protected string? SortColumn { get; set; }
-
-        protected SortDirection SortDirection { get; set; }
-
         protected string Version { get; set; } = "";
-
-        protected string? SearchText { get; set; }
-
-        protected TorrentFilterField SearchField { get; set; } = TorrentFilterField.Name;
-
-        protected bool UseRegexSearch { get; set; }
-
-        protected bool IsRegexValid { get; set; } = true;
 
         protected IReadOnlyList<MudTorrent> Torrents => GetTorrents();
 
@@ -127,6 +110,8 @@ namespace Lantean.QBTMud.Layout
                 NavigationManager.LocationChanged += NavigationManagerOnLocationChanged;
                 _navigationHandlerAttached = true;
             }
+
+            TorrentQueryState.Changed += OnTorrentQueryStateChanged;
         }
 
         private IReadOnlyList<MudTorrent> GetTorrents()
@@ -144,15 +129,15 @@ namespace Lantean.QBTMud.Layout
             }
 
             var filterState = new FilterState(
-                Category,
-                Status,
-                Tag,
-                Tracker,
+                TorrentQueryState.Category,
+                TorrentQueryState.Status,
+                TorrentQueryState.Tag,
+                TorrentQueryState.Tracker,
                 MainData.ServerState.UseSubcategories,
-                SearchText,
-                SearchField,
-                UseRegexSearch,
-                IsRegexValid);
+                TorrentQueryState.SearchText,
+                TorrentQueryState.SearchField,
+                TorrentQueryState.UseRegexSearch,
+                TorrentQueryState.IsRegexValid);
             _visibleTorrents = MainData.Torrents.Values.Filter(filterState).ToList();
             _torrentsDirty = false;
 
@@ -379,20 +364,6 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
-        protected EventCallback<string> CategoryChanged => EventCallback.Factory.Create<string>(this, OnCategoryChanged);
-
-        protected EventCallback<Status> StatusChanged => EventCallback.Factory.Create<Status>(this, OnStatusChanged);
-
-        protected EventCallback<string> TagChanged => EventCallback.Factory.Create<string>(this, OnTagChanged);
-
-        protected EventCallback<string> TrackerChanged => EventCallback.Factory.Create<string>(this, OnTrackerChanged);
-
-        protected EventCallback<FilterSearchState> SearchTermChanged => EventCallback.Factory.Create<FilterSearchState>(this, OnSearchTermChanged);
-
-        protected EventCallback<string> SortColumnChanged => EventCallback.Factory.Create<string>(this, columnId => SortColumn = columnId);
-
-        protected EventCallback<SortDirection> SortDirectionChanged => EventCallback.Factory.Create<SortDirection>(this, sortDirection => SortDirection = sortDirection);
-
         protected async Task ToggleTimerDrawerAsync()
         {
             var nextValue = !TimerDrawerOpen;
@@ -408,70 +379,6 @@ namespace Lantean.QBTMud.Layout
             var webUiLabel = LanguageLocalizer.Translate("OptionsDialog", "WebUI");
             var versionPart = string.IsNullOrWhiteSpace(Version) ? string.Empty : $" {Version}";
             return $"qBittorrent{versionPart} {webUiLabel}";
-        }
-
-        private void OnCategoryChanged(string category)
-        {
-            if (Category == category)
-            {
-                return;
-            }
-
-            Category = category;
-            MarkTorrentsDirty();
-        }
-
-        private void OnStatusChanged(Status status)
-        {
-            if (Status == status)
-            {
-                return;
-            }
-
-            Status = status;
-            MarkTorrentsDirty();
-        }
-
-        private void OnTagChanged(string tag)
-        {
-            if (Tag == tag)
-            {
-                return;
-            }
-
-            Tag = tag;
-            MarkTorrentsDirty();
-        }
-
-        private void OnTrackerChanged(string tracker)
-        {
-            if (Tracker == tracker)
-            {
-                return;
-            }
-
-            Tracker = tracker;
-            MarkTorrentsDirty();
-        }
-
-        private void OnSearchTermChanged(FilterSearchState state)
-        {
-            var hasChanges =
-                SearchText != state.Text ||
-                SearchField != state.Field ||
-                UseRegexSearch != state.UseRegex ||
-                IsRegexValid != state.IsRegexValid;
-
-            if (!hasChanges)
-            {
-                return;
-            }
-
-            SearchText = state.Text;
-            SearchField = state.Field;
-            UseRegexSearch = state.UseRegex;
-            IsRegexValid = state.IsRegexValid;
-            MarkTorrentsDirty();
         }
 
         protected async Task ToggleAlternativeSpeedLimits()
@@ -529,6 +436,17 @@ namespace Lantean.QBTMud.Layout
             }
         }
 
+        private void OnTorrentQueryStateChanged(object? sender, TorrentQueryStateChangedEventArgs args)
+        {
+            if (args.ChangeKind != TorrentQueryStateChangeKind.Filter || _disposedValue)
+            {
+                return;
+            }
+
+            MarkTorrentsDirty();
+            StateHasChanged();
+        }
+
         protected virtual async ValueTask DisposeAsync(bool disposing)
         {
             if (_disposedValue)
@@ -564,6 +482,8 @@ namespace Lantean.QBTMud.Layout
                     NavigationManager.LocationChanged -= NavigationManagerOnLocationChanged;
                     _navigationHandlerAttached = false;
                 }
+
+                TorrentQueryState.Changed -= OnTorrentQueryStateChanged;
             }
 
             _disposedValue = true;

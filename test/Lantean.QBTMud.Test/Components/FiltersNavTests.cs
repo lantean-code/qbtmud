@@ -6,8 +6,8 @@ using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient.Models;
@@ -35,29 +35,19 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
             await TestContext.LocalStorage.SetItemAsStringAsync(_statusStorageKey, Status.Downloading.ToString(), Xunit.TestContext.Current.CancellationToken);
             await TestContext.LocalStorage.SetItemAsStringAsync(_categoryStorageKey, "Movies", Xunit.TestContext.Current.CancellationToken);
             await TestContext.LocalStorage.SetItemAsStringAsync(_tagStorageKey, "Tag1", Xunit.TestContext.Current.CancellationToken);
             await TestContext.LocalStorage.SetItemAsStringAsync(_trackerStorageKey, "tracker.example.com", Xunit.TestContext.Current.CancellationToken);
 
-            Status? status = null;
-            string? category = null;
-            string? tag = null;
-            string? tracker = null;
+            var target = RenderFiltersNav(mainData, CreatePreferences(useSubcategories: true, confirmDeletion: true));
 
-            var target = RenderFiltersNav(mainData, CreatePreferences(useSubcategories: true, confirmDeletion: true), parameters =>
-            {
-                parameters.Add(p => p.StatusChanged, EventCallback.Factory.Create<Status>(this, value => status = value));
-                parameters.Add(p => p.CategoryChanged, EventCallback.Factory.Create<string>(this, value => category = value));
-                parameters.Add(p => p.TagChanged, EventCallback.Factory.Create<string>(this, value => tag = value));
-                parameters.Add(p => p.TrackerChanged, EventCallback.Factory.Create<string>(this, value => tracker = value));
-            });
-
-            status.Should().Be(Status.Downloading);
-            category.Should().Be("Movies");
-            tag.Should().Be("Tag1");
-            tracker.Should().Be("tracker.example.com");
+            queryState.Status.Should().Be(Status.Downloading);
+            queryState.Category.Should().Be("Movies");
+            queryState.Tag.Should().Be("Tag1");
+            queryState.Tracker.Should().Be("tracker.example.com");
 
             FindComponentByTestId<CustomNavLink>(target, "Status-Downloading").Instance.Active.Should().BeTrue();
             FindComponentByTestId<CustomNavLink>(target, "Category-Movies").Instance.Active.Should().BeTrue();
@@ -71,24 +61,14 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
-            var statusInvoked = false;
-            var categoryInvoked = false;
-            var tagInvoked = false;
-            var trackerInvoked = false;
+            var target = RenderFiltersNav(mainData, null);
 
-            var target = RenderFiltersNav(mainData, null, parameters =>
-            {
-                parameters.Add(p => p.StatusChanged, EventCallback.Factory.Create<Status>(this, _ => statusInvoked = true));
-                parameters.Add(p => p.CategoryChanged, EventCallback.Factory.Create<string>(this, _ => categoryInvoked = true));
-                parameters.Add(p => p.TagChanged, EventCallback.Factory.Create<string>(this, _ => tagInvoked = true));
-                parameters.Add(p => p.TrackerChanged, EventCallback.Factory.Create<string>(this, _ => trackerInvoked = true));
-            });
-
-            statusInvoked.Should().BeFalse();
-            categoryInvoked.Should().BeFalse();
-            tagInvoked.Should().BeFalse();
-            trackerInvoked.Should().BeFalse();
+            queryState.Status.Should().Be(Status.All);
+            queryState.Category.Should().Be(FilterHelper.CATEGORY_ALL);
+            queryState.Tag.Should().Be(FilterHelper.TAG_ALL);
+            queryState.Tracker.Should().Be(FilterHelper.TRACKER_ALL);
 
             FindComponentByTestId<CustomNavLink>(target, "Status-All").Instance.Active.Should().BeTrue();
             FindComponentByTestId<CustomNavLink>(target, "Category-All").Instance.Active.Should().BeTrue();
@@ -102,23 +82,20 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
-            Status? status = null;
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
-            var target = RenderFiltersNav(mainData, null, parameters =>
-            {
-                parameters.Add(p => p.StatusChanged, EventCallback.Factory.Create<Status>(this, value => status = value));
-            });
+            var target = RenderFiltersNav(mainData, null);
 
             var downloading = FindComponentByTestId<CustomNavLink>(target, "Status-Downloading");
             await target.InvokeAsync(() => downloading.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            status.Should().Be(Status.Downloading);
+            queryState.Status.Should().Be(Status.Downloading);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_statusStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be(Status.Downloading.ToString());
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Status-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            status.Should().Be(Status.All);
+            queryState.Status.Should().Be(Status.All);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_statusStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
@@ -128,23 +105,20 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
-            string? category = null;
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
-            var target = RenderFiltersNav(mainData, null, parameters =>
-            {
-                parameters.Add(p => p.CategoryChanged, EventCallback.Factory.Create<string>(this, value => category = value));
-            });
+            var target = RenderFiltersNav(mainData, null);
 
             var movies = FindComponentByTestId<CustomNavLink>(target, "Category-Movies");
             await target.InvokeAsync(() => movies.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            category.Should().Be("Movies");
+            queryState.Category.Should().Be("Movies");
             (await TestContext.LocalStorage.GetItemAsStringAsync(_categoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("Movies");
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Category-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            category.Should().Be(FilterHelper.CATEGORY_ALL);
+            queryState.Category.Should().Be(FilterHelper.CATEGORY_ALL);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_categoryStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
@@ -154,23 +128,20 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
-            string? tag = null;
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
-            var target = RenderFiltersNav(mainData, null, parameters =>
-            {
-                parameters.Add(p => p.TagChanged, EventCallback.Factory.Create<string>(this, value => tag = value));
-            });
+            var target = RenderFiltersNav(mainData, null);
 
             var tagLink = FindComponentByTestId<CustomNavLink>(target, "Tag-Tag1");
             await target.InvokeAsync(() => tagLink.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            tag.Should().Be("Tag1");
+            queryState.Tag.Should().Be("Tag1");
             (await TestContext.LocalStorage.GetItemAsStringAsync(_tagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("Tag1");
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Tag-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            tag.Should().Be(FilterHelper.TAG_ALL);
+            queryState.Tag.Should().Be(FilterHelper.TAG_ALL);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_tagStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
@@ -180,23 +151,20 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.UseApiClientMock();
             TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
             var mainData = CreateMainData();
-            string? tracker = null;
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
 
-            var target = RenderFiltersNav(mainData, null, parameters =>
-            {
-                parameters.Add(p => p.TrackerChanged, EventCallback.Factory.Create<string>(this, value => tracker = value));
-            });
+            var target = RenderFiltersNav(mainData, null);
 
             var trackerLink = FindComponentByTestId<CustomNavLink>(target, "Tracker-tracker.example.com");
             await target.InvokeAsync(() => trackerLink.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            tracker.Should().Be("tracker.example.com");
+            queryState.Tracker.Should().Be("tracker.example.com");
             (await TestContext.LocalStorage.GetItemAsStringAsync(_trackerStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().Be("tracker.example.com");
 
             var all = FindComponentByTestId<CustomNavLink>(target, "Tracker-All");
             await target.InvokeAsync(() => all.Instance.OnClick.InvokeAsync(new MouseEventArgs()));
 
-            tracker.Should().Be(FilterHelper.TRACKER_ALL);
+            queryState.Tracker.Should().Be(FilterHelper.TRACKER_ALL);
             (await TestContext.LocalStorage.GetItemAsStringAsync(_trackerStorageKey, Xunit.TestContext.Current.CancellationToken)).Should().BeNull();
         }
 
@@ -710,8 +678,7 @@ namespace Lantean.QBTMud.Test.Components
 
         private IRenderedComponent<FiltersNav> RenderFiltersNav(
             MudMainData? mainData = null,
-            Preferences? preferences = null,
-            Action<ComponentParameterCollectionBuilder<FiltersNav>>? configure = null)
+            Preferences? preferences = null)
         {
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
 
@@ -726,8 +693,6 @@ namespace Lantean.QBTMud.Test.Components
                 {
                     parameters.AddCascadingValue(preferences);
                 }
-
-                configure?.Invoke(parameters);
             });
 
             return target;

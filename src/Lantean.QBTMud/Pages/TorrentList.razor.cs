@@ -34,6 +34,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected IKeyboardService KeyboardService { get; set; } = default!;
 
+        [Inject]
+        protected ITorrentQueryState TorrentQueryState { get; set; } = default!;
+
         public ISnackbarWorkflow SnackbarWorkflow { get; set; } = default!;
 
         [Inject]
@@ -50,15 +53,6 @@ namespace Lantean.QBTMud.Pages
 
         [CascadingParameter(Name = "TorrentsVersion")]
         public int TorrentsVersion { get; set; }
-
-        [CascadingParameter(Name = "SearchTermChanged")]
-        public EventCallback<FilterSearchState> SearchTermChanged { get; set; }
-
-        [CascadingParameter(Name = "SortColumnChanged")]
-        public EventCallback<string> SortColumnChanged { get; set; }
-
-        [CascadingParameter(Name = "SortDirectionChanged")]
-        public EventCallback<SortDirection> SortDirectionChanged { get; set; }
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
@@ -97,6 +91,12 @@ namespace Lantean.QBTMud.Pages
         protected override void OnInitialized()
         {
             base.OnInitialized();
+
+            SearchText = TorrentQueryState.SearchText;
+            SearchField = TorrentQueryState.SearchField;
+            UseRegex = TorrentQueryState.UseRegexSearch;
+            IsRegexValid = TorrentQueryState.IsRegexValid;
+            ValidateRegex();
 
             NavigationManager.LocationChanged += OnLocationChanged;
         }
@@ -182,12 +182,14 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task SortDirectionChangedHandler(SortDirection sortDirection)
         {
-            await SortDirectionChanged.InvokeAsync(sortDirection);
+            TorrentQueryState.SetSortDirection(sortDirection);
+            await InvokeAsync(StateHasChanged);
         }
 
         protected async Task SortColumnChangedHandler(string columnId)
         {
-            await SortColumnChanged.InvokeAsync(columnId);
+            TorrentQueryState.SetSortColumn(columnId);
+            await InvokeAsync(StateHasChanged);
         }
 
         protected async Task SearchTextChanged(string text)
@@ -260,7 +262,8 @@ namespace Lantean.QBTMud.Pages
         private async Task PublishSearchStateAsync()
         {
             var state = new FilterSearchState(SearchText, SearchField, UseRegex, IsRegexValid);
-            await SearchTermChanged.InvokeAsync(state);
+            TorrentQueryState.SetSearch(state);
+            await InvokeAsync(StateHasChanged);
         }
 
         private void ValidateRegex()

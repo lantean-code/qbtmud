@@ -67,9 +67,6 @@ namespace Lantean.QBTMud.Test.Pages
                 parameters.AddCascadingValue(mainData);
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
-                parameters.AddCascadingValue("SearchTermChanged", EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
-                parameters.AddCascadingValue("SortColumnChanged", EventCallback.Factory.Create<string>(this, _ => { }));
-                parameters.AddCascadingValue("SortDirectionChanged", EventCallback.Factory.Create<SortDirection>(this, _ => { }));
             });
 
             Mock.Get(_keyboardService).Verify(s => s.RegisterKeypressEvent(It.IsAny<KeyboardEvent>(), It.IsAny<Func<KeyboardEvent, Task>>()), Times.Exactly(8));
@@ -85,53 +82,47 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_SearchText_WHEN_Changed_THEN_PublishesFilterStateAndValidatesRegex()
         {
-            var filterState = default(FilterSearchState);
-            var callback = EventCallback.Factory.Create<FilterSearchState>(this, state => filterState = state);
-
-            var target = RenderWithDefaults(callback);
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            var target = RenderWithDefaults();
 
             var searchTextField = target.FindComponent<MudTextField<string>>();
             await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("test"));
 
-            filterState.Text.Should().Be("test");
-            filterState.UseRegex.Should().BeFalse();
-            filterState.IsRegexValid.Should().BeTrue();
+            queryState.SearchText.Should().Be("test");
+            queryState.UseRegexSearch.Should().BeFalse();
+            queryState.IsRegexValid.Should().BeTrue();
         }
 
         [Fact]
         public async Task GIVEN_InvalidRegexPattern_WHEN_RegexEnabledAndTextChanged_THEN_PublishesInvalidRegexState()
         {
-            var filterState = default(FilterSearchState);
-            var callback = EventCallback.Factory.Create<FilterSearchState>(this, state => filterState = state);
-
-            var target = RenderWithDefaults(callback);
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            var target = RenderWithDefaults();
             var regexCheckbox = FindComponentByTestId<MudCheckBox<bool>>(target, "TorrentListUseRegex");
             await target.InvokeAsync(() => regexCheckbox.Instance.ValueChanged.InvokeAsync(true));
 
             var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
             await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("["));
 
-            filterState.Text.Should().Be("[");
-            filterState.UseRegex.Should().BeTrue();
-            filterState.IsRegexValid.Should().BeFalse();
+            queryState.SearchText.Should().Be("[");
+            queryState.UseRegexSearch.Should().BeTrue();
+            queryState.IsRegexValid.Should().BeFalse();
         }
 
         [Fact]
         public async Task GIVEN_RegexEnabled_WHEN_ValidPatternProvided_THEN_PublishesValidRegexState()
         {
-            var filterState = default(FilterSearchState);
-            var callback = EventCallback.Factory.Create<FilterSearchState>(this, state => filterState = state);
-
-            var target = RenderWithDefaults(callback);
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            var target = RenderWithDefaults();
             var regexCheckbox = FindComponentByTestId<MudCheckBox<bool>>(target, "TorrentListUseRegex");
             await target.InvokeAsync(() => regexCheckbox.Instance.ValueChanged.InvokeAsync(true));
 
             var searchTextField = FindComponentByTestId<MudTextField<string>>(target, "TorrentListSearchText");
             await target.InvokeAsync(() => searchTextField.Instance.TextChanged.InvokeAsync("^ubuntu.*$"));
 
-            filterState.Text.Should().Be("^ubuntu.*$");
-            filterState.UseRegex.Should().BeTrue();
-            filterState.IsRegexValid.Should().BeTrue();
+            queryState.SearchText.Should().Be("^ubuntu.*$");
+            queryState.UseRegexSearch.Should().BeTrue();
+            queryState.IsRegexValid.Should().BeTrue();
         }
 
         [Fact]
@@ -188,15 +179,13 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_SearchFieldChanged_WHEN_NewFieldSelected_THEN_PublishesUpdatedSearchField()
         {
-            var filterState = default(FilterSearchState);
-            var callback = EventCallback.Factory.Create<FilterSearchState>(this, state => filterState = state);
-
-            var target = RenderWithDefaults(callback);
+            var queryState = TestContext.Services.GetRequiredService<ITorrentQueryState>();
+            var target = RenderWithDefaults();
             var searchFieldSelect = FindComponentByTestId<MudSelect<TorrentFilterField>>(target, "TorrentListSearchField");
 
             await target.InvokeAsync(() => searchFieldSelect.Instance.ValueChanged.InvokeAsync(TorrentFilterField.SavePath));
 
-            filterState.Field.Should().Be(TorrentFilterField.SavePath);
+            queryState.SearchField.Should().Be(TorrentFilterField.SavePath);
         }
 
         [Fact]
@@ -429,9 +418,6 @@ namespace Lantean.QBTMud.Test.Pages
                 parameters.AddCascadingValue<IReadOnlyList<MudTorrent>>(torrents);
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
-                parameters.AddCascadingValue("SearchTermChanged", EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
-                parameters.AddCascadingValue("SortColumnChanged", EventCallback.Factory.Create<string>(this, _ => { }));
-                parameters.AddCascadingValue("SortDirectionChanged", EventCallback.Factory.Create<SortDirection>(this, _ => { }));
                 parameters.Add(p => p.Preferences, queueDisabledPreferences);
             });
 
@@ -451,9 +437,6 @@ namespace Lantean.QBTMud.Test.Pages
                 parameters.AddCascadingValue<IReadOnlyList<MudTorrent>>(torrents);
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
-                parameters.AddCascadingValue("SearchTermChanged", EventCallback.Factory.Create<FilterSearchState>(this, _ => { }));
-                parameters.AddCascadingValue("SortColumnChanged", EventCallback.Factory.Create<string>(this, _ => { }));
-                parameters.AddCascadingValue("SortDirectionChanged", EventCallback.Factory.Create<SortDirection>(this, _ => { }));
                 parameters.Add(p => p.Preferences, queueEnabledPreferences);
             });
 
@@ -600,11 +583,9 @@ namespace Lantean.QBTMud.Test.Pages
             torrentText.Should().Be("Hash");
         }
 
-        private IRenderedComponent<TorrentList> RenderWithDefaults(EventCallback<FilterSearchState>? searchCallback = null, IReadOnlyList<MudTorrent>? torrents = null)
+        private IRenderedComponent<TorrentList> RenderWithDefaults(IReadOnlyList<MudTorrent>? torrents = null)
         {
             var mainData = CreateMainData(torrents);
-
-            var callback = searchCallback ?? EventCallback.Factory.Create<FilterSearchState>(this, _ => { });
 
             return TestContext.Render<TorrentList>(parameters =>
             {
@@ -612,9 +593,6 @@ namespace Lantean.QBTMud.Test.Pages
                 parameters.AddCascadingValue<IReadOnlyList<MudTorrent>>(torrents ?? Array.Empty<MudTorrent>());
                 parameters.AddCascadingValue("TorrentsVersion", 1);
                 parameters.AddCascadingValue("DrawerOpen", false);
-                parameters.AddCascadingValue("SearchTermChanged", callback);
-                parameters.AddCascadingValue("SortColumnChanged", EventCallback.Factory.Create<string>(this, _ => { }));
-                parameters.AddCascadingValue("SortDirectionChanged", EventCallback.Factory.Create<SortDirection>(this, _ => { }));
             });
         }
 
