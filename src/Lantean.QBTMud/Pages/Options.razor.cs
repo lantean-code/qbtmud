@@ -3,7 +3,6 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
-using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
 
