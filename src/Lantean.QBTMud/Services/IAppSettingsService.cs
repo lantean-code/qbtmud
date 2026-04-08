@@ -8,11 +8,6 @@ namespace Lantean.QBTMud.Services
     public interface IAppSettingsService
     {
         /// <summary>
-        /// Occurs when the effective settings value changes.
-        /// </summary>
-        event EventHandler<AppSettingsChangedEventArgs>? SettingsChanged;
-
-        /// <summary>
         /// Gets the current qbtmud app settings.
         /// </summary>
         /// <param name="cancellationToken">The cancellation token for the request.</param>

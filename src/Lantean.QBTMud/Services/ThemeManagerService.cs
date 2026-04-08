@@ -38,6 +38,7 @@ namespace Lantean.QBTMud.Services
         private ThemeCatalogItem? _currentTheme;
         private string? _currentThemeId;
         private string _currentFontFamily = "Nunito Sans";
+        private ThemeModePreference _currentThemeModePreference = ThemeModePreference.System;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ThemeManagerService"/> class.
@@ -68,6 +69,11 @@ namespace Lantean.QBTMud.Services
         /// Occurs when the active theme changes.
         /// </summary>
         public event EventHandler<ThemeChangedEventArgs>? ThemeChanged;
+
+        /// <summary>
+        /// Occurs when the theme mode preference changes.
+        /// </summary>
+        public event EventHandler<ThemeModePreferenceChangedEventArgs>? ThemeModePreferenceChanged;
 
         /// <summary>
         /// Gets the available themes.
@@ -102,6 +108,14 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <summary>
+        /// Gets the current theme mode preference.
+        /// </summary>
+        public ThemeModePreference CurrentThemeModePreference
+        {
+            get { return _currentThemeModePreference; }
+        }
+
+        /// <summary>
         /// Gets a value indicating whether the most recent reload had repository loading issues.
         /// </summary>
         public bool LastReloadHadRepositoryIssues
@@ -129,6 +143,8 @@ namespace Lantean.QBTMud.Services
                 }
 
                 await _themeFontCatalog.EnsureInitialized();
+                var settings = await _appSettingsService.GetSettingsAsync();
+                _currentThemeModePreference = NormalizeThemeModePreference(settings.ThemeModePreference);
 
                 await LoadLocalThemes();
                 await LoadBundledThemes();
@@ -228,6 +244,22 @@ namespace Lantean.QBTMud.Services
             ApplyThemeInternal(theme);
             await _settingsStorage.SetItemAsync(_selectedThemeStorageKey, theme.Id);
             await _settingsStorage.SetItemAsync(_selectedThemeDefinitionStorageKey, ThemeSerialization.CloneDefinition(theme.Theme));
+        }
+
+        /// <summary>
+        /// Applies the specified theme mode preference for live shell consumers.
+        /// </summary>
+        /// <param name="themeModePreference">The updated theme mode preference.</param>
+        public void SetThemeModePreference(ThemeModePreference themeModePreference)
+        {
+            var normalizedPreference = NormalizeThemeModePreference(themeModePreference);
+            if (_currentThemeModePreference == normalizedPreference)
+            {
+                return;
+            }
+
+            _currentThemeModePreference = normalizedPreference;
+            ThemeModePreferenceChanged?.Invoke(this, new ThemeModePreferenceChangedEventArgs(normalizedPreference));
         }
 
         /// <summary>
@@ -792,6 +824,13 @@ namespace Lantean.QBTMud.Services
 
             uri = resolved;
             return true;
+        }
+
+        private static ThemeModePreference NormalizeThemeModePreference(ThemeModePreference themeModePreference)
+        {
+            return Enum.IsDefined(themeModePreference)
+                ? themeModePreference
+                : ThemeModePreference.System;
         }
 
         private string TranslateApp(string source, params object[] arguments)

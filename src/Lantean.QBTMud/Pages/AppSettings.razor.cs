@@ -26,6 +26,9 @@ namespace Lantean.QBTMud.Pages
         protected IAppSettingsService AppSettingsService { get; set; } = default!;
 
         [Inject]
+        protected IThemeManagerService ThemeManagerService { get; set; } = default!;
+
+        [Inject]
         protected IStorageRoutingService StorageRoutingService { get; set; } = default!;
 
         [Inject]
@@ -253,8 +256,14 @@ namespace Lantean.QBTMud.Pages
 
             if (settingsChanged)
             {
+                var previousThemeModePreference = _savedSettings.ThemeModePreference;
                 Settings = await AppSettingsService.SaveSettingsAsync(Settings);
                 _savedSettings = Settings.Clone();
+
+                if (previousThemeModePreference != Settings.ThemeModePreference)
+                {
+                    ThemeManagerService.SetThemeModePreference(Settings.ThemeModePreference);
+                }
             }
 
             if (storageRoutingChanged)

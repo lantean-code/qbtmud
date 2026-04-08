@@ -47,6 +47,62 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_ThemeModePreferenceConfiguredInAppSettings_WHEN_Initialized_THEN_CurrentThemeModePreferenceMatchesSettings()
+        {
+            var settings = AppSettings.Default.Clone();
+            settings.ThemeModePreference = ThemeModePreference.Dark;
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(settings);
+            SetupHttpClient(CreateIndexResponse());
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.CurrentThemeModePreference.Should().Be(ThemeModePreference.Dark);
+        }
+
+        [Fact]
+        public async Task GIVEN_InvalidThemeModePreferenceConfiguredInAppSettings_WHEN_Initialized_THEN_CurrentThemeModePreferenceFallsBackToSystem()
+        {
+            var settings = AppSettings.Default.Clone();
+            settings.ThemeModePreference = (ThemeModePreference)999;
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(settings);
+            SetupHttpClient(CreateIndexResponse());
+            SetupFontCatalogValid("Nunito Sans");
+
+            await _target.EnsureInitialized();
+
+            _target.CurrentThemeModePreference.Should().Be(ThemeModePreference.System);
+        }
+
+        [Fact]
+        public void GIVEN_NewThemeModePreference_WHEN_SetThemeModePreferenceInvoked_THEN_RaisesThemeModePreferenceChangedEvent()
+        {
+            ThemeModePreferenceChangedEventArgs? captured = null;
+            _target.ThemeModePreferenceChanged += (_, args) => captured = args;
+
+            _target.SetThemeModePreference(ThemeModePreference.Dark);
+
+            _target.CurrentThemeModePreference.Should().Be(ThemeModePreference.Dark);
+            captured.Should().NotBeNull();
+            captured!.ThemeModePreference.Should().Be(ThemeModePreference.Dark);
+        }
+
+        [Fact]
+        public void GIVEN_UnchangedThemeModePreference_WHEN_SetThemeModePreferenceInvoked_THEN_DoesNotRaiseThemeModePreferenceChangedEvent()
+        {
+            ThemeModePreferenceChangedEventArgs? captured = null;
+            _target.ThemeModePreferenceChanged += (_, args) => captured = args;
+
+            _target.SetThemeModePreference(ThemeModePreference.System);
+
+            captured.Should().BeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_ServerThemes_WHEN_Initialized_THEN_AppliesFirstThemeAndRaisesEvent()
         {
             var themeJson = CreateThemeJson("ThemeId", "Name", "Nunito Sans");

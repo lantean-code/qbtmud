@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Services
     /// <summary>
     /// Provides persistent qbtmud-specific application settings.
     /// </summary>
-    public sealed class AppSettingsService : IAppSettingsService, IAppSettingsStateService
+    public sealed class AppSettingsService : IAppSettingsService
     {
         private const string _legacyDarkModeStorageKey = "MainLayout.IsDarkMode";
 
@@ -24,9 +24,6 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <inheritdoc />
-        public event EventHandler<AppSettingsChangedEventArgs>? SettingsChanged;
-
-        /// <inheritdoc />
         public async Task<AppSettings> GetSettingsAsync(CancellationToken cancellationToken = default)
         {
             return await LoadSettingsAsync(forceReload: false, cancellationToken);
@@ -35,21 +32,7 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task<AppSettings> RefreshSettingsAsync(CancellationToken cancellationToken = default)
         {
-            var previousSettings = _cachedSettings?.Clone();
-            var refreshedSettings = await LoadSettingsAsync(forceReload: true, cancellationToken);
-
-            if (previousSettings is not null && AreEquivalent(previousSettings, refreshedSettings))
-            {
-                return refreshedSettings;
-            }
-
-            var settingsChanged = SettingsChanged;
-            if (settingsChanged is not null)
-            {
-                settingsChanged.Invoke(this, new AppSettingsChangedEventArgs(refreshedSettings.Clone()));
-            }
-
-            return refreshedSettings;
+            return await LoadSettingsAsync(forceReload: true, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -61,12 +44,6 @@ namespace Lantean.QBTMud.Services
             _cachedSettings = normalized.Clone();
 
             await _settingsStorageService.SetItemAsync(AppSettings.StorageKey, normalized, cancellationToken);
-
-            var settingsChanged = SettingsChanged;
-            if (settingsChanged is not null)
-            {
-                settingsChanged.Invoke(this, new AppSettingsChangedEventArgs(_cachedSettings.Clone()));
-            }
 
             return _cachedSettings.Clone();
         }
@@ -174,18 +151,6 @@ namespace Lantean.QBTMud.Services
             {
                 _initializationSemaphore.Release();
             }
-        }
-
-        private static bool AreEquivalent(AppSettings left, AppSettings right)
-        {
-            return left.UpdateChecksEnabled == right.UpdateChecksEnabled
-                && left.NotificationsEnabled == right.NotificationsEnabled
-                && left.ThemeModePreference == right.ThemeModePreference
-                && left.DownloadFinishedNotificationsEnabled == right.DownloadFinishedNotificationsEnabled
-                && left.TorrentAddedNotificationsEnabled == right.TorrentAddedNotificationsEnabled
-                && left.TorrentAddedSnackbarsEnabledWithNotifications == right.TorrentAddedSnackbarsEnabledWithNotifications
-                && string.Equals(left.DismissedReleaseTag, right.DismissedReleaseTag, StringComparison.Ordinal)
-                && string.Equals(left.ThemeRepositoryIndexUrl, right.ThemeRepositoryIndexUrl, StringComparison.Ordinal);
         }
     }
 }

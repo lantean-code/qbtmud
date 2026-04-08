@@ -97,7 +97,6 @@ namespace Lantean.QBTMud.Test.Infrastructure
             Services.AddScoped<IDialogWorkflow, DialogWorkflow>();
             Services.AddScoped<AppSettingsService>();
             Services.AddScoped<IAppSettingsService>(serviceProvider => serviceProvider.GetRequiredService<AppSettingsService>());
-            Services.AddScoped<IAppSettingsStateService>(serviceProvider => serviceProvider.GetRequiredService<AppSettingsService>());
             Services.AddScoped<IWebApiCapabilityService, WebApiCapabilityService>();
             Services.AddScoped<IClientDataStorageAdapter, ClientDataStorageAdapter>();
             Services.AddSingleton<IStorageCatalogService, StorageCatalogService>();

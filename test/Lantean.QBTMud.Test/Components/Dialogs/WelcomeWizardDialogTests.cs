@@ -653,6 +653,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         public async Task GIVEN_ThemeStep_WHEN_ThemeModePreferenceChanged_THEN_PersistsAppSettings()
         {
             var dialog = await _target.RenderDialogAsync();
+            _themeManagerService.ClearInvocations();
 
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
             await nextButton.Find("button").ClickAsync(new MouseEventArgs());
@@ -665,12 +666,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.Is<AppSettings>(settings => settings.ThemeModePreference == ThemeModePreference.Dark),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
+            Mock.Get(_themeManagerService).Verify(
+                service => service.SetThemeModePreference(ThemeModePreference.Dark),
+                Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_ThemeStep_WHEN_ThemeModePreferenceUnchanged_THEN_DoesNotPersistAppSettings()
         {
             var dialog = await _target.RenderDialogAsync();
+            _themeManagerService.ClearInvocations();
 
             var nextButton = FindButton(dialog.Component, "WelcomeWizardNext");
             await nextButton.Find("button").ClickAsync(new MouseEventArgs());
@@ -680,6 +685,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             Mock.Get(_appSettingsService).Verify(
                 service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+            Mock.Get(_themeManagerService).Verify(
+                service => service.SetThemeModePreference(It.IsAny<ThemeModePreference>()),
                 Times.Never);
         }
 

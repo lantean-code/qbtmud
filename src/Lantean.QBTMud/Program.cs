@@ -82,7 +82,6 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IAppUpdateService, AppUpdateService>();
             builder.Services.AddScoped<AppSettingsService>();
             builder.Services.AddScoped<IAppSettingsService>(serviceProvider => serviceProvider.GetRequiredService<AppSettingsService>());
-            builder.Services.AddScoped<IAppSettingsStateService>(serviceProvider => serviceProvider.GetRequiredService<AppSettingsService>());
             builder.Services.AddScoped<LostConnectionWorkflow>();
             builder.Services.AddScoped<ILostConnectionWorkflow>(serviceProvider => serviceProvider.GetRequiredService<LostConnectionWorkflow>());
             builder.Services.AddScoped<IShellSessionWorkflow, ShellSessionWorkflow>();
