@@ -352,6 +352,22 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_TimerTick_WHEN_ApiReturnsServerError_THEN_RefreshContinuesAndRetainsRows()
+        {
+            ApiClientMock
+                .SetupSequence(c => c.GetTorrentContentsAsync("Hash"))
+                .ReturnsAsync(CreateFiles("root/file1.txt"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderFilesTab();
+
+            var result = await target.InvokeAsync(async () => await GetTickHandler(target)(CancellationToken.None));
+
+            result.Should().Be(ManagedTimerTickResult.Continue);
+            ApiClientMock.Verify(c => c.GetTorrentContentsAsync("Hash"), Times.Exactly(2));
+        }
+
+        [Fact]
         public async Task GIVEN_ExpandedFolder_WHEN_ToggledAgain_THEN_FolderCollapses()
         {
             ApiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
@@ -786,6 +802,19 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public void GIVEN_InitialLoadFails_WHEN_Rendered_THEN_NoRowsAreShown()
+        {
+            ApiClientMock
+                .Setup(c => c.GetTorrentContentsAsync("Hash"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderFilesTab();
+
+            target.WaitForAssertion(() => HasElementByTestId(target, "Priority-file1.txt").Should().BeFalse());
+            target.FindComponent<DynamicTable<ContentItem>>().Instance.Items.Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_SameHash_WHEN_ParametersUpdated_THEN_InitialLoadNotRepeated()
         {
             ApiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
@@ -835,6 +864,19 @@ namespace Lantean.QBTMud.Test.Components
 
             var columnButton = FindComponentByTestId<MudIconButton>(target, "ColumnOptions");
             await target.InvokeAsync(() => columnButton.Find("button").Click());
+        }
+
+        [Fact]
+        public async Task GIVEN_TableRendered_WHEN_ColumnDefinitionsRequested_THEN_ContainsPriorityColumn()
+        {
+            ApiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash")).ReturnsAsync(CreateFiles("folder/file1.txt"));
+
+            var target = RenderFilesTab();
+            await TriggerTimerTickAsync(target);
+
+            var table = target.FindComponent<DynamicTable<ContentItem>>();
+
+            table.Instance.ColumnDefinitions.Should().ContainSingle(column => column.Id == "priority");
         }
 
         [Fact]

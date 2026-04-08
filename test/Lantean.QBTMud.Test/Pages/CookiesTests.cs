@@ -251,6 +251,31 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_ReloadFailsAfterUpdate_WHEN_AddConfirmed_THEN_ShowsLoadError()
+        {
+            var newCookie = new ApplicationCookie("Name", "Domain", "/", "Value", null);
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowCookiePropertiesDialog("Add Cookie", null))
+                .ReturnsAsync(newCookie);
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetApplicationCookiesAsync())
+                .ReturnsAsync(Array.Empty<ApplicationCookie>())
+                .ReturnsFailure<IReadOnlyList<ApplicationCookie>>(ApiFailureKind.ServerError, "Failure");
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
+            var addButton = FindIconButton(target, Icons.Material.Filled.Add);
+
+            await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Unable to load cookies. Please try again.", Severity.Error, It.IsAny<Action<SnackbarOptions>>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_SaveInProgress_WHEN_DeleteClickedAgain_THEN_SkipsSecondUpdate()
         {
             var existingCookie = new ApplicationCookie("Existing", "example.com", "/", "Value", null);

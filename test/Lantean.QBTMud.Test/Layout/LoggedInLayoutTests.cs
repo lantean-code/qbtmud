@@ -1071,6 +1071,95 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_StartupAuthCheckFailsWithApiError_WHEN_RecoveryTickRequiresAuthentication_THEN_NavigatesToLoginAndStops()
+        {
+            DisposeDefaultTarget();
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+
+            Mock.Get(_apiClient).SetupSequence(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError)
+                .ReturnsAsync(false);
+
+            Mock.Get(_refreshTimer)
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            var target = RenderLayout(new List<IManagedTimer>(), body: CreateProbeBody());
+
+            target.FindComponent<MudProgressLinear>().Should().NotBeNull();
+            target.WaitForAssertion(() => handler.Should().NotBeNull());
+
+            var result = await handler!(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Stop);
+            target.WaitForAssertion(() => _navigationManager.LastNavigationUri.Should().Be("login"));
+            _navigationManager.ForceLoad.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_StartupAuthCheckFailsWithApiError_WHEN_RecoveryTickLosesConnection_THEN_ShowsLostConnectionAndStops()
+        {
+            DisposeDefaultTarget();
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+
+            Mock.Get(_apiClient).SetupSequence(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError)
+                .ReturnsFailure<bool>(ApiFailureKind.NoResponse, "Unavailable");
+
+            Mock.Get(_refreshTimer)
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            var target = RenderLayout(new List<IManagedTimer>(), body: CreateProbeBody());
+
+            target.FindComponent<MudProgressLinear>().Should().NotBeNull();
+            target.WaitForAssertion(() => handler.Should().NotBeNull());
+
+            var result = await handler!(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Stop);
+            _dialogServiceMock.Verify(service => service.ShowAsync<LostConnectionDialog>(
+                It.IsAny<string?>(),
+                It.IsAny<DialogOptions>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StartupAuthCheckFailsWithApiError_WHEN_RecoveryTickFailsAgain_THEN_ContinuesStartupRecovery()
+        {
+            DisposeDefaultTarget();
+            Func<CancellationToken, Task<ManagedTimerTickResult>>? handler = null;
+            _snackbar.ClearInvocations();
+
+            Mock.Get(_apiClient).SetupSequence(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError)
+                .ReturnsFailure<bool>(ApiFailureKind.ServerError, "Server", HttpStatusCode.InternalServerError);
+
+            Mock.Get(_refreshTimer)
+                .Setup(t => t.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .Callback<Func<CancellationToken, Task<ManagedTimerTickResult>>, CancellationToken>((callback, _) => handler = callback)
+                .ReturnsAsync(true);
+
+            var target = RenderLayout(new List<IManagedTimer>(), body: CreateProbeBody());
+
+            target.FindComponent<MudProgressLinear>().Should().NotBeNull();
+            target.WaitForAssertion(() => handler.Should().NotBeNull());
+
+            var result = await handler!(CancellationToken.None);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Continue);
+            target.FindComponent<MudProgressLinear>().Should().NotBeNull();
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    "qBittorrent returned an error. Please try again.",
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    "logged-in-layout-startup-api-error"),
+                Times.Exactly(2));
+        }
+
+        [Fact]
         public void GIVEN_DataManagerReturnsNullMainData_WHEN_RenderedWithProbe_THEN_ProvidesEmptyTorrentList()
         {
             DisposeDefaultTarget();

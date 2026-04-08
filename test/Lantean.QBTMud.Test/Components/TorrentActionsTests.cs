@@ -196,6 +196,29 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_AutoTmmDisabled_WHEN_EnableCallReturnsFailure_THEN_StateRestoredAndErrorShown()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.SetAutomaticTorrentManagementAsync(TorrentSelectorTestHelper.FromHashes(Hashes("One", "Two")), true, It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var torrents = Torrents(
+                CreateTorrent("One", automaticTorrentManagement: false),
+                CreateTorrent("Two", automaticTorrentManagement: false));
+
+            var target = RenderMenuItems(Hashes("One", "Two"), torrents, Tags("Tag"), Categories("Category"));
+
+            await target.InvokeAsync(() => FindMenuItem(target, "autoTorrentManagement").Instance.OnClick.InvokeAsync());
+
+            torrents["One"].AutomaticTorrentManagement.Should().BeFalse();
+            torrents["Two"].AutomaticTorrentManagement.Should().BeFalse();
+            apiClientMock.Verify(c => c.SetAutomaticTorrentManagementAsync(TorrentSelectorTestHelper.FromHashes(Hashes("One", "Two")), true, It.IsAny<CancellationToken>()), Times.Once);
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_SequentialAndForceActions_WHEN_Invoked_THEN_ApiCalled()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
@@ -344,6 +367,34 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_ExportAction_WHEN_GetExportUrlReturnsFailure_THEN_ErrorShownAndFileDownloadSkipped()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.GetExportUrlAsync("Hash"))
+                .ReturnsAsync(ApiResult<string>.FailureResult(new ApiFailure
+                {
+                    Kind = ApiFailureKind.ServerError,
+                    Operation = "test",
+                    StatusCode = System.Net.HttpStatusCode.InternalServerError,
+                    UserMessage = "Failure",
+                    Detail = "Failure",
+                    ResponseBody = "Failure",
+                    IsTransient = true,
+                }));
+            var downloadInvocation = TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true);
+            downloadInvocation.SetVoidResult();
+
+            var target = RenderMenuItems(Hashes("Hash"), Torrents(CreateTorrent("Hash")), Tags("Tag"), Categories("Category"));
+
+            await target.InvokeAsync(() => FindMenuItem(target, "export").Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
+            downloadInvocation.Invocations.Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_CopyChildren_WHEN_AllCopyOptionsInvoked_THEN_AllValuesCopied()
         {
             TestContext.UseApiClientMock();
@@ -449,6 +500,100 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_TagChildren_WHEN_TagMutationReturnsFailure_THEN_ErrorShownAndSelectionStateUnchanged()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.RemoveTorrentTagsAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Hash" }), It.Is<IEnumerable<string>>(t => t.Single() == "Tag"), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock
+                .Setup(c => c.AddTorrentTagsAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Other" }), It.Is<IEnumerable<string>>(t => t.Single() == "Tag"), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+
+            var removeTagTarget = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Children);
+                parameters.Add(p => p.ParentAction, new UIAction("tags", "Tags", Icons.Material.Filled.Label, Color.Info, string.Empty));
+                parameters.Add(p => p.Hashes, Hashes("Hash"));
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("Hash", tags: new[] { "Tag" })));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var removeTagChild = removeTagTarget.FindComponents<MudListItem<string>>().First();
+            await removeTagTarget.InvokeAsync(() => removeTagChild.Instance.OnClick.InvokeAsync());
+
+            removeTagTarget.FindComponents<MudListItem<string>>().First().Instance.IconColor.Should().Be(Color.Info);
+
+            var addTagTarget = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Children);
+                parameters.Add(p => p.ParentAction, new UIAction("tags", "Tags", Icons.Material.Filled.Label, Color.Info, string.Empty));
+                parameters.Add(p => p.Hashes, Hashes("Other"));
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("Other", tags: Array.Empty<string>())));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var addTagChild = addTagTarget.FindComponents<MudListItem<string>>().First();
+            await addTagTarget.InvokeAsync(() => addTagChild.Instance.OnClick.InvokeAsync());
+
+            addTagTarget.FindComponents<MudListItem<string>>().First().Instance.IconColor.Should().Be(Color.Transparent);
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task GIVEN_CategoryChildren_WHEN_CategoryMutationReturnsFailure_THEN_ErrorShownAndSelectionStateUnchanged()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.SetTorrentCategoryAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Hash" }), string.Empty, It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock
+                .Setup(c => c.SetTorrentCategoryAsync(TorrentSelectorTestHelper.FromHashes(new[] { "New" }), "Category", It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+
+            var categoryRemoveTarget = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Children);
+                parameters.Add(p => p.ParentAction, new UIAction("category", "Category", Icons.Material.Filled.List, Color.Info, string.Empty));
+                parameters.Add(p => p.Hashes, Hashes("Hash"));
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("Hash", category: "Category")));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var categoryRemoveChild = categoryRemoveTarget.FindComponents<MudListItem<string>>().First();
+            await categoryRemoveTarget.InvokeAsync(() => categoryRemoveChild.Instance.OnClick.InvokeAsync());
+
+            categoryRemoveTarget.FindComponents<MudListItem<string>>().First().Instance.IconColor.Should().Be(Color.Info);
+
+            var categoryAddTarget = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Children);
+                parameters.Add(p => p.ParentAction, new UIAction("category", "Category", Icons.Material.Filled.List, Color.Info, string.Empty));
+                parameters.Add(p => p.Hashes, Hashes("New"));
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("New", category: string.Empty)));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var categoryAddChild = categoryAddTarget.FindComponents<MudListItem<string>>().First();
+            await categoryAddTarget.InvokeAsync(() => categoryAddChild.Instance.OnClick.InvokeAsync());
+
+            categoryAddTarget.FindComponents<MudListItem<string>>().First().Instance.IconColor.Should().Be(Color.Transparent);
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Exactly(2));
+        }
+
+        [Fact]
         public async Task GIVEN_SuperSeedingChildren_WHEN_Clicked_THEN_TogglesState()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
@@ -515,6 +660,33 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_MixedSuperSeedingState_WHEN_EnableCallReturnsFailure_THEN_StateRestoredAndErrorShown()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Done")), false, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            apiClientMock
+                .Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Other")), true, It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var torrents = Torrents(
+                CreateTorrent("Done", progress: 1f, superSeeding: true),
+                CreateTorrent("Other", progress: 1f, superSeeding: false));
+
+            var target = RenderMenuItems(Hashes("Done", "Other"), torrents, Tags("Tag"), Categories("Category"));
+
+            await target.InvokeAsync(() => FindMenuItem(target, "superSeeding").Instance.OnClick.InvokeAsync());
+
+            torrents["Done"].SuperSeeding.Should().BeTrue();
+            torrents["Other"].SuperSeeding.Should().BeFalse();
+            apiClientMock.Verify(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Done")), false, It.IsAny<CancellationToken>()), Times.Once);
+            apiClientMock.Verify(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Other")), true, It.IsAny<CancellationToken>()), Times.Once);
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_QueueChildren_WHEN_Clicked_THEN_PrioritiesAdjusted()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
@@ -547,6 +719,51 @@ namespace Lantean.QBTMud.Test.Components
             apiClientMock.Verify(c => c.IncreaseTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()), Times.Once);
             apiClientMock.Verify(c => c.DecreaseTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()), Times.Once);
             apiClientMock.Verify(c => c.MinTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ReannounceAndQueueChildren_WHEN_ApiReturnsFailure_THEN_ErrorShownForEachFailure()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(c => c.ReannounceTorrentsAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), null, It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock
+                .Setup(c => c.MaxTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock
+                .Setup(c => c.IncreaseTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock
+                .Setup(c => c.DecreaseTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock
+                .Setup(c => c.MinTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+
+            var menuTarget = RenderMenuItems(Hashes("Hash"), Torrents(CreateTorrent("Hash")), Tags("Tag"), Categories("Category"));
+            await menuTarget.InvokeAsync(() => FindMenuItem(menuTarget, "forceReannounce").Instance.OnClick.InvokeAsync());
+
+            var queueTarget = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.Children);
+                parameters.Add(p => p.ParentAction, new UIAction("queue", "Queue", Icons.Material.Filled.Queue, Color.Info, string.Empty));
+                parameters.Add(p => p.Hashes, Hashes("Hash"));
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("Hash")));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var queueItems = queueTarget.FindComponents<MudListItem<string>>();
+            await queueTarget.InvokeAsync(() => queueItems[0].Instance.OnClick.InvokeAsync());
+            await queueTarget.InvokeAsync(() => queueItems[1].Instance.OnClick.InvokeAsync());
+            await queueTarget.InvokeAsync(() => queueItems[2].Instance.OnClick.InvokeAsync());
+            await queueTarget.InvokeAsync(() => queueItems[3].Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Exactly(5));
         }
 
         [Fact]

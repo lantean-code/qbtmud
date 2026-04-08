@@ -79,6 +79,67 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_GetAllCategoriesFails_WHEN_Rendered_THEN_ErrorShownAndTorrentListNotRequested()
+        {
+            var apiClientMock = Mock.Get(_apiClient);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(client => client.GetAllCategoriesAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            await _target.RenderDialogAsync(new[] { "Hash" });
+
+            snackbarMock.Verify(snackbar => snackbar.Add("Failure", Severity.Error, null, null), Times.Once);
+            apiClientMock.Verify(client => client.GetTorrentListAsync(
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<TorrentSelector?>(),
+                It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_GetTorrentCategoriesFails_WHEN_Rendered_THEN_ErrorShown()
+        {
+            var hashes = new[] { "Hash" };
+            var apiClientMock = Mock.Get(_apiClient);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(client => client.GetAllCategoriesAsync())
+                .ReturnsAsync(new Dictionary<string, Category>
+                {
+                    { "Movies", new Category("Movies", null, null) },
+                });
+            apiClientMock
+                .Setup(client => client.GetTorrentListAsync(
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var dialog = await _target.RenderDialogAsync(hashes);
+
+            FindComponentByTestId<MudListItem<string>>(dialog.Component, "Category-Movies").Instance.Icon.Should().Be(Icons.Material.Filled.RadioButtonUnchecked);
+            snackbarMock.Verify(snackbar => snackbar.Add("Failure", Severity.Error, null, null), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_AllTorrentsHaveCategory_WHEN_Clicked_THEN_RemovesCategory()
         {
             var hashes = new[] { "Hash" };
@@ -206,6 +267,58 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_CategoryNotPresent_WHEN_SetCategoryFails_THEN_ErrorShownAndTorrentCategoriesNotReloaded()
+        {
+            var hashes = new[] { "Hash" };
+            var apiClientMock = Mock.Get(_apiClient);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(client => client.GetAllCategoriesAsync())
+                .ReturnsAsync(new Dictionary<string, Category>
+                {
+                    { "Movies", new Category("Movies", null, null) },
+                });
+            apiClientMock
+                .Setup(client => client.GetTorrentListAsync(
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Torrent> { CreateTorrent("Other") });
+            apiClientMock
+                .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var dialog = await _target.RenderDialogAsync(hashes);
+
+            var listItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "Category-Movies");
+            await listItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("Failure", Severity.Error, null, null), Times.Once);
+            apiClientMock.Verify(client => client.GetTorrentListAsync(
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<TorrentSelector?>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_EmptyCategory_WHEN_Rendered_THEN_RendersUncheckedIcon()
         {
             var hashes = new[] { "Hash" };
@@ -279,6 +392,58 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_AllTorrentsHaveCategory_WHEN_ClearCategoryFails_THEN_ErrorShownAndTorrentCategoriesNotReloaded()
+        {
+            var hashes = new[] { "Hash" };
+            var apiClientMock = Mock.Get(_apiClient);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(client => client.GetAllCategoriesAsync())
+                .ReturnsAsync(new Dictionary<string, Category>
+                {
+                    { "Movies", new Category("Movies", null, null) },
+                });
+            apiClientMock
+                .Setup(client => client.GetTorrentListAsync(
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies"), CreateTorrent("Movies") });
+            apiClientMock
+                .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var dialog = await _target.RenderDialogAsync(hashes);
+
+            var listItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "Category-Movies");
+            await listItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("Failure", Severity.Error, null, null), Times.Once);
+            apiClientMock.Verify(client => client.GetTorrentListAsync(
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<TorrentSelector?>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_AddCategoryConfirmed_WHEN_Clicked_THEN_CategoryAdded()
         {
             var hashes = new[] { "Hash" };
@@ -329,6 +494,66 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_AddCategoryConfirmed_WHEN_SetCategoryFails_THEN_ErrorShownAndCategoryNotAdded()
+        {
+            var hashes = new[] { "Hash" };
+            var apiClientMock = Mock.Get(_apiClient);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(client => client.GetAllCategoriesAsync())
+                .ReturnsAsync(new Dictionary<string, Category>
+                {
+                    { "Movies", new Category("Movies", null, null) },
+                });
+            apiClientMock
+                .Setup(client => client.GetTorrentListAsync(
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
+            apiClientMock
+                .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var dialogWorkflowMock = Mock.Get(_dialogWorkflow);
+            dialogWorkflowMock
+                .Setup(workflow => workflow.InvokeAddCategoryDialog(It.IsAny<string?>(), It.IsAny<string?>()))
+                .ReturnsAsync("NewCategory");
+
+            var dialog = await _target.RenderDialogAsync(hashes);
+
+            var addItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "CategoryAdd");
+            await addItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("Failure", Severity.Error, null, null), Times.Once);
+            apiClientMock.Verify(client => client.GetTorrentListAsync(
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<TorrentSelector?>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+            dialog.Component.FindComponents<MudListItem<string>>()
+                .Any(item => item.Instance.Text == "NewCategory")
+                .Should().BeFalse();
+        }
+
+        [Fact]
         public async Task GIVEN_RemoveInvoked_WHEN_Clicked_THEN_CategoryRemoved()
         {
             var hashes = new[] { "Hash" };
@@ -366,6 +591,58 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             apiClientMock.Verify(client => client.SetTorrentCategoryAsync(
                 It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                 string.Empty,
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RemoveInvoked_WHEN_ClearCategoryFails_THEN_ErrorShownAndTorrentCategoriesNotReloaded()
+        {
+            var hashes = new[] { "Hash" };
+            var apiClientMock = Mock.Get(_apiClient);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            apiClientMock
+                .Setup(client => client.GetAllCategoriesAsync())
+                .ReturnsAsync(new Dictionary<string, Category>
+                {
+                    { "Movies", new Category("Movies", null, null) },
+                });
+            apiClientMock
+                .Setup(client => client.GetTorrentListAsync(
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
+            apiClientMock
+                .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var dialog = await _target.RenderDialogAsync(hashes);
+
+            var removeItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "CategoryRemove");
+            await removeItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("Failure", Severity.Error, null, null), Times.Once);
+            apiClientMock.Verify(client => client.GetTorrentListAsync(
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<TorrentSelector?>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 

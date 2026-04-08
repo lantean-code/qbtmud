@@ -1903,11 +1903,55 @@ namespace Lantean.QBTMud.Test.Pages
 
             var handler = CapturePollHandler();
             TestContext.Render<MudPopoverProvider>();
-            var target = TestContext.Render<Search>();
+            TestContext.Render<Search>();
 
             var tickResult = await handler(CancellationToken.None);
 
             tickResult.Should().Be(ManagedTimerTickResult.Continue);
+            snackbarMock.Verify();
+        }
+
+        [Fact]
+        public async Task GIVEN_PollingStatusRequestThrowsException_WHEN_TimerTickRuns_THEN_PollingStopsAndShowsFailureSnackbar()
+        {
+            var jobId = 913;
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata
+                {
+                    Id = jobId,
+                    Pattern = "Ubuntu",
+                    Category = SearchForm.AllCategoryId,
+                    Plugins = new List<string> { "movies" }
+                }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsAsync(new List<SearchPlugin> { plugin });
+            apiMock.SetupSequence(client => client.GetSearchesStatusAsync())
+                .ReturnsAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 1) })
+                .ThrowsAsync(new InvalidOperationException("PollingBoom"));
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 1));
+
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
+            snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
+            snackbarMock.Setup(snackbar => snackbar.Add(
+                "Search polling stopped: PollingBoom",
+                Severity.Error,
+                It.IsAny<Action<SnackbarOptions>>(),
+                It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
+
+            var handler = CapturePollHandler();
+            TestContext.Render<MudPopoverProvider>();
+            var target = TestContext.Render<Search>();
+
+            var tickResult = await handler(CancellationToken.None);
+
+            tickResult.Should().Be(ManagedTimerTickResult.Stop);
             snackbarMock.Verify();
         }
 
@@ -1964,6 +2008,44 @@ namespace Lantean.QBTMud.Test.Pages
             TestContext.Render<MudPopoverProvider>();
             TestContext.Render<MudSnackbarProvider>();
             var target = TestContext.Render<Search>();
+
+            var tickResult = await capture.InvokeAsync(CancellationToken.None);
+
+            tickResult.Should().Be(ManagedTimerTickResult.Continue);
+            capture.SubscriptionToken.IsCancellationRequested.Should().BeTrue();
+            navigationManager.Uri.Should().Be("http://localhost/login");
+            navigationManager.LastForceLoad.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GIVEN_ResultPollingAuthFailure_WHEN_TimerTickRuns_THEN_CancelsPollingAndNavigatesToLoginWithForceLoad()
+        {
+            var navigationManager = UseTestNavigationManager();
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata
+                {
+                    Id = 914,
+                    Pattern = "AuthResultFailure",
+                    Category = SearchForm.AllCategoryId,
+                    Plugins = new List<string> { "movies" }
+                }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync())
+                .ReturnsAsync(new List<SearchStatus> { new SearchStatus(914, SearchJobStatus.Running, 1) });
+            apiMock.SetupSequence(client => client.GetSearchResultsAsync(914, It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 1))
+                .ReturnsFailure<SearchResults>(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
+
+            var capture = CapturePollHandlerRegistration();
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+            TestContext.Render<Search>();
 
             var tickResult = await capture.InvokeAsync(CancellationToken.None);
 

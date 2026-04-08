@@ -296,6 +296,43 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_DirectoriesLoadFails_WHEN_Rendered_THEN_ShowsLoadError()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure");
+
+            var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
+
+            dialog.Component.WaitForAssertion(() =>
+            {
+                GetAlertText(FindComponentByTestId<MudAlert>(dialog.Component, "PathBrowserLoadError"))
+                    .Should()
+                    .Be("Unable to load directory content.");
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_FilesLoadFails_WHEN_Rendered_THEN_ShowsLoadError()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
+                .ReturnsAsync(Array.Empty<string>());
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Files))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure");
+
+            var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
+
+            dialog.Component.WaitForAssertion(() =>
+            {
+                GetAlertText(FindComponentByTestId<MudAlert>(dialog.Component, "PathBrowserLoadError"))
+                    .Should()
+                    .Be("Unable to load directory content.");
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_SelectFolderNotAllowed_WHEN_Clicked_THEN_DoesNotClose()
         {
             Mock.Get(_apiClient)

@@ -152,6 +152,27 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_SaveFails_WHEN_Clicked_THEN_ShowsLocalizedErrorAndStaysOnPage()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure");
+            var snackbarMock = Mock.Get(_snackbar);
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/settings");
+
+            var target = RenderPage();
+            await ActivateTab(target, 0);
+            await SetSwitchValue(target, "ConfirmTorrentDeletion", true);
+
+            var saveButton = FindIconButton(target, Icons.Material.Outlined.Save);
+            await target.InvokeAsync(() => saveButton.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("Unable to save options.", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()), Times.Once);
+            navigationManager.Uri.Should().Be("http://localhost/settings");
+        }
+
+        [Fact]
         public async Task GIVEN_LocaleChanged_WHEN_Saved_THEN_ShouldPersistLocaleToLocalStorage()
         {
             var preferences = CreatePreferences();

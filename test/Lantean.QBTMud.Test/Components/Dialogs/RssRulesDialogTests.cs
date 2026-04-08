@@ -158,6 +158,30 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_SavedRuleRemoveFails_WHEN_Removed_THEN_ShowsErrorAndKeepsSelection()
+        {
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>
+            {
+                { "RuleA", CreateRule(enabled: false) },
+            });
+            Mock.Get(_apiClient)
+                .Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "remove failure");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var removeButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesRemove");
+            await removeButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("remove failure", Severity.Error, null, null), Times.Once);
+            FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA").Should().NotBeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_InvalidSelection_WHEN_SelectedValueChanged_THEN_DoesNotCallApi()
         {
             SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
@@ -335,6 +359,66 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 Times.Once);
 
             FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRulesArticle-ArticleA").Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_SaveFails_WHEN_SaveClicked_THEN_ShowsErrorAndDoesNotLoadMatchingArticles()
+        {
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("RuleA");
+
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "save failure");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("save failure", Severity.Error, null, null), Times.Once);
+            apiClientMock.Verify(client => client.GetRssMatchingArticlesAsync("RuleA"), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_MatchingArticlesLoadFailsAfterSave_WHEN_SaveClicked_THEN_ShowsError()
+        {
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            SetupApiClient(new Dictionary<string, AutoDownloadingRule>());
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync("RuleA");
+
+            var apiClientMock = Mock.Get(_apiClient);
+            apiClientMock
+                .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
+                .Returns(Task.CompletedTask);
+            apiClientMock
+                .Setup(client => client.GetRssMatchingArticlesAsync("RuleA"))
+                .ReturnsFailure<IApiClient, IReadOnlyDictionary<string, IReadOnlyList<string>>>(ApiFailureKind.ServerError, "matching failure");
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var addButton = FindComponentByTestId<MudIconButton>(dialog.Component, "RssRulesAdd");
+            await addButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var ruleItem = FindComponentByTestId<MudListItem<string>>(dialog.Component, "RssRule-RuleA");
+            await ruleItem.Find("div").ClickAsync(new MouseEventArgs());
+
+            var saveButton = FindComponentByTestId<MudButton>(dialog.Component, "RssRulesSave");
+            await saveButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("matching failure", Severity.Error, null, null), Times.Once);
         }
 
         private void SetupApiClient(Dictionary<string, AutoDownloadingRule> rules)

@@ -101,6 +101,23 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_AddCategoryFails_WHEN_InvokeAddCategoryDialog_THEN_ShouldReturnNullAndShowError()
+        {
+            var reference = CreateReference(DialogResult.Ok(new MudCategory("Name", "SavePath")));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("New Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.AddCategoryAsync("Name", "SavePath"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var result = await _target.InvokeAddCategoryDialog();
+
+            result.Should().BeNull();
+            VerifySnackbar("Failure", Severity.Error);
+        }
+
+        [Fact]
         public async Task GIVEN_FileOptions_WHEN_InvokeAddTorrentFileDialog_THEN_ShouldUploadFilesAndDisposeStreams()
         {
             var streamOne = new TrackingStream();
@@ -1025,6 +1042,23 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_SetGlobalDownloadLimitFails_WHEN_InvokeGlobalDownloadRateDialog_THEN_ShouldReturnNullAndShowError()
+        {
+            var reference = CreateReference(DialogResult.Ok(5L));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Global Download Speed Limit", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.SetGlobalDownloadLimitAsync(5120))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var result = await _target.InvokeGlobalDownloadRateDialog(2048);
+
+            result.Should().BeNull();
+            VerifySnackbar("Failure", Severity.Error);
+        }
+
+        [Fact]
         public async Task GIVEN_GlobalDownloadRateDialog_WHEN_BuildingParameters_THEN_UsesGlobalRangeAndValueFuncs()
         {
             var reference = CreateReference(DialogResult.Cancel());
@@ -1071,6 +1105,23 @@ namespace Lantean.QBTMud.Test.Services
 
             result.Should().BeNull();
             Mock.Get(_apiClient).Verify(a => a.SetGlobalUploadLimitAsync(It.IsAny<long>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_SetGlobalUploadLimitFails_WHEN_InvokeGlobalUploadRateDialog_THEN_ShouldReturnNullAndShowError()
+        {
+            var reference = CreateReference(DialogResult.Ok(6L));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<SliderFieldDialog<long>>("Global Upload Speed Limit", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.SetGlobalUploadLimitAsync(6144))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var result = await _target.InvokeGlobalUploadRateDialog(1024);
+
+            result.Should().BeNull();
+            VerifySnackbar("Failure", Severity.Error);
         }
 
         [Fact]
@@ -1135,6 +1186,43 @@ namespace Lantean.QBTMud.Test.Services
             var result = await _target.InvokeEditCategoryDialog("Category");
 
             result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GIVEN_GetAllCategoriesFails_WHEN_InvokeEditCategoryDialog_THEN_ShouldReturnNullAndShowError()
+        {
+            Mock.Get(_apiClient)
+                .Setup(a => a.GetAllCategoriesAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var result = await _target.InvokeEditCategoryDialog("Category");
+
+            result.Should().BeNull();
+            VerifySnackbar("Failure", Severity.Error);
+        }
+
+        [Fact]
+        public async Task GIVEN_EditCategoryFails_WHEN_InvokeEditCategoryDialog_THEN_ShouldReturnNullAndShowError()
+        {
+            var categories = new Dictionary<string, QbtCategory>
+            {
+                { "Category", new QbtCategory("Category", "SavePath", new DownloadPathOption(true, "DownloadPath")) }
+            };
+            Mock.Get(_apiClient)
+                .Setup(a => a.GetAllCategoriesAsync())
+                .ReturnsAsync(categories);
+            var reference = CreateReference(DialogResult.Ok(new MudCategory("Name", "SavePath")));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<CategoryPropertiesDialog>("Edit Category", It.IsAny<DialogParameters>(), DialogWorkflow.NonBlurFormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.EditCategoryAsync("Name", "SavePath"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var result = await _target.InvokeEditCategoryDialog("Category");
+
+            result.Should().BeNull();
+            VerifySnackbar("Failure", Severity.Error);
         }
 
         [Fact]

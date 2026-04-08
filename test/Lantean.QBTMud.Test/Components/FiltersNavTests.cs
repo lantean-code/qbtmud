@@ -10,7 +10,9 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using MudBlazor;
+using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
+using System.Net;
 using ClientCategory = QBittorrent.ApiClient.Models.Category;
 using ClientTorrent = QBittorrent.ApiClient.Models.Torrent;
 using MudCategory = Lantean.QBTMud.Models.Category;
@@ -342,7 +344,8 @@ namespace Lantean.QBTMud.Test.Components
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
                     It.IsAny<bool?>(),
-                    It.IsAny<TorrentSelector>()))
+                    It.IsAny<TorrentSelector>(),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<ClientTorrent> { ClientTorrentFactory.Create(category: "Movies") });
             apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsAsync(new Dictionary<string, ClientCategory>
             {
@@ -359,6 +362,43 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => removeUnused.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.RemoveCategoriesAsync(categories: new[] { "Games" }), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RemoveUnusedCategoriesFails_WHEN_Clicked_THEN_ErrorShownAndCategoriesRemain()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+
+            apiClientMock
+                .Setup(c => c.GetTorrentListAsync(
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<TorrentSelector?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<ClientTorrent> { ClientTorrentFactory.Create(category: "Movies") });
+            apiClientMock
+                .Setup(c => c.GetAllCategoriesAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderFiltersNav(mainData);
+
+            await OpenMenuAsync(target, 1);
+
+            var removeUnused = WaitForMenuItemByTestId("CategoryRemoveUnused");
+            await target.InvokeAsync(() => removeUnused.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
         }
 
         [Fact]
@@ -418,6 +458,46 @@ namespace Lantean.QBTMud.Test.Components
             await target.InvokeAsync(() => removeUnused.Instance.OnClick.InvokeAsync());
 
             apiClientMock.Verify(c => c.DeleteTagsAsync(tags: new[] { "Tag2" }), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RemoveUnusedTagsFails_WHEN_Clicked_THEN_ErrorShownAndTagsRemain()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+
+            apiClientMock
+                .Setup(c => c.GetTorrentListAsync(
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<bool?>(),
+                    It.IsAny<TorrentSelector?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<ClientTorrent>
+                {
+                    ClientTorrentFactory.Create(tags: new List<string> { "Tag1" })
+                });
+            apiClientMock
+                .Setup(c => c.GetAllTagsAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderFiltersNav(mainData);
+
+            await OpenMenuAsync(target, 2);
+
+            var removeUnused = WaitForMenuItemByTestId("TagRemoveUnused");
+            await target.InvokeAsync(() => removeUnused.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
         }
 
         [Fact]
@@ -596,6 +676,39 @@ namespace Lantean.QBTMud.Test.Components
 
             apiClientMock.VerifyAll();
             dialogMock.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_TorrentControlsWithContext_WHEN_StartAndStopFail_THEN_ErrorShownForEachFailure()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+            var mainData = CreateMainData();
+            var preferences = CreatePreferences(useSubcategories: true, confirmDeletion: true);
+
+            apiClientMock
+                .Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(s => s.Hashes!.SequenceEqual(new[] { "Hash1", "Hash3" })), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+            apiClientMock
+                .Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(s => s.Hashes!.SequenceEqual(new[] { "Hash1", "Hash2" })), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            var target = RenderFiltersNav(mainData, preferences);
+
+            var downloading = FindComponentByTestId<CustomNavLink>(target, "Status-Downloading");
+            await target.InvokeAsync(() => downloading.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
+
+            var start = WaitForMenuItemByTestId("_statusType-Start");
+            await target.InvokeAsync(() => start.Instance.OnClick.InvokeAsync());
+
+            var movies = FindComponentByTestId<CustomNavLink>(target, "Category-Movies");
+            await target.InvokeAsync(() => movies.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
+
+            var stop = WaitForMenuItemByTestId("_categoryType-Stop");
+            await target.InvokeAsync(() => stop.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Exactly(2));
         }
 
         [Fact]

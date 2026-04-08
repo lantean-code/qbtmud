@@ -5,6 +5,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -141,6 +142,118 @@ namespace Lantean.QBTMud.Test.Components
 
             target.WaitForState(() => target.RenderCount > 0);
             Mock.Get(_apiClient).Verify(client => client.GetTorrentPeersDataAsync(It.IsAny<string>(), It.IsAny<int>()), Times.Never);
+        }
+
+        [Fact]
+        public void GIVEN_InitialPeerLoadFails_WHEN_Rendered_THEN_ShowsNoRows()
+        {
+            Mock.Get(_apiClient)
+                .Setup(c => c.GetTorrentPeersDataAsync("Hash", 0))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderPeersTab(true);
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponent<DynamicTable<MudPeer>>().Instance.Items.Should().BeEmpty();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_ExistingPeerList_WHEN_TimerTickReturnsDelta_THEN_MergesPeersIntoExistingList()
+        {
+            var initialPeers = new TorrentPeers(
+                true,
+                new Dictionary<string, ClientPeer>
+                {
+                    ["Key"] = new ClientPeer("Client", PeerConnectionType.Bittorrent, "Country", "US", 1, 2, "Files", "Flags", "FlagsDescription", "IPAddress", "ClientId", "ClientId", 6881, 0.5f, 0.4f, 3, 4)
+                },
+                null,
+                1,
+                true);
+            var deltaPeers = new TorrentPeers(
+                false,
+                new Dictionary<string, ClientPeer>
+                {
+                    ["Key"] = new ClientPeer("UpdatedClient", PeerConnectionType.Bittorrent, "Country", "US", 1, 2, "Files", "Flags", "FlagsDescription", "IPAddress", "ClientId", "ClientId", 6882, 0.5f, 0.4f, 3, 4)
+                },
+                null,
+                2,
+                true);
+
+            Mock.Get(_apiClient)
+                .SetupSequence(c => c.GetTorrentPeersDataAsync("Hash", It.IsAny<int>()))
+                .ReturnsAsync(initialPeers)
+                .ReturnsAsync(deltaPeers);
+
+            var target = RenderPeersTab(true);
+            var table = target.FindComponent<DynamicTable<MudPeer>>();
+
+            target.WaitForAssertion(() =>
+            {
+                table.Instance.Items.Should().ContainSingle();
+                table.Instance.Items!.Single().Port.Should().Be(6881);
+            });
+
+            var result = await TriggerTimerTickAsync(target, Xunit.TestContext.Current.CancellationToken);
+
+            result.Action.Should().Be(ManagedTimerTickAction.Continue);
+            target.WaitForAssertion(() =>
+            {
+                table.Instance.Items.Should().ContainSingle();
+                table.Instance.Items!.Single().Port.Should().Be(6882);
+                table.Instance.ColumnDefinitions.Should().ContainSingle(column => column.Id == "country/region");
+                table.Instance.ColumnDefinitions.Should().ContainSingle(column => column.Id == "flags");
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_ExistingPeerList_WHEN_ParametersSetReturnsDelta_THEN_MergesPeersIntoExistingList()
+        {
+            var initialPeers = new TorrentPeers(
+                true,
+                new Dictionary<string, ClientPeer>
+                {
+                    ["Key"] = new ClientPeer("Client", PeerConnectionType.Bittorrent, "Country", "US", 1, 2, "Files", "Flags", "FlagsDescription", "IPAddress", "ClientId", "ClientId", 6881, 0.5f, 0.4f, 3, 4)
+                },
+                null,
+                1,
+                true);
+            var deltaPeers = new TorrentPeers(
+                false,
+                new Dictionary<string, ClientPeer>
+                {
+                    ["Key"] = new ClientPeer("UpdatedClient", PeerConnectionType.Bittorrent, "Country", "US", 1, 2, "Files", "Flags", "FlagsDescription", "IPAddress", "ClientId", "ClientId", 6882, 0.5f, 0.4f, 3, 4)
+                },
+                null,
+                2,
+                true);
+
+            Mock.Get(_apiClient)
+                .SetupSequence(c => c.GetTorrentPeersDataAsync("Hash", It.IsAny<int>()))
+                .ReturnsAsync(initialPeers)
+                .ReturnsAsync(deltaPeers);
+
+            var target = RenderPeersTab(true);
+            var table = target.FindComponent<DynamicTable<MudPeer>>();
+
+            target.WaitForAssertion(() =>
+            {
+                table.Instance.Items.Should().ContainSingle();
+                table.Instance.Items!.Single().Port.Should().Be(6881);
+            });
+
+            await target.InvokeAsync(() => target.Instance.SetParametersAsync(ParameterView.FromDictionary(new Dictionary<string, object?>
+            {
+                [nameof(PeersTab.Active)] = true,
+                [nameof(PeersTab.Hash)] = "Hash"
+            })));
+
+            target.WaitForAssertion(() =>
+            {
+                table.Instance.Items.Should().ContainSingle();
+                table.Instance.Items!.Single().Port.Should().Be(6882);
+            });
         }
 
         [Fact]
@@ -512,6 +625,23 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
+        }
+
+        [Fact]
+        public async Task GIVEN_ActiveTab_WHEN_TimerTickGetsServerError_THEN_ContinueIsReturned()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
+                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentPeersDataAsync("Hash", 1))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderPeersTab(true);
+
+            var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
+
+            result.Should().Be(ManagedTimerTickResult.Continue);
         }
 
         [Fact]

@@ -90,6 +90,30 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_LoadWithKeysFails_WHEN_LoadPrefixedEntriesAsyncWithKeys_THEN_ShouldReturnEmpty()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+                .ReturnsFailure<IApiClient, IReadOnlyDictionary<string, JsonElement>>(ApiFailureKind.ServerError, "Failure");
+
+            var result = await _target.LoadPrefixedEntriesAsync(["QbtMud.Key"], TestContext.Current.CancellationToken);
+
+            result.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_LoadWithoutKeysFails_WHEN_LoadPrefixedEntriesAsyncWithoutKeys_THEN_ShouldReturnEmpty()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+                .ReturnsFailure<IApiClient, IReadOnlyDictionary<string, JsonElement>>(ApiFailureKind.ServerError, "Failure");
+
+            var result = await _target.LoadPrefixedEntriesAsync(TestContext.Current.CancellationToken);
+
+            result.Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_NullValues_WHEN_StorePrefixedEntriesAsync_THEN_ShouldThrowArgumentNullException()
         {
             var act = async () => await _target.StorePrefixedEntriesAsync((IReadOnlyDictionary<string, object?>)null!, TestContext.Current.CancellationToken);

@@ -127,6 +127,31 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_InitialLoadFails_WHEN_Rendered_THEN_ShowsErrorAndLeavesTableEmpty()
+        {
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetAllCategoriesAsync())
+                .ReturnsAsync(ApiResult<IReadOnlyDictionary<string, ClientCategory>>.FailureResult(new ApiFailure
+                {
+                    Kind = ApiFailureKind.ServerError,
+                    Operation = "test",
+                    UserMessage = "Failure",
+                    Detail = "Failure",
+                    ResponseBody = "Failure",
+                    IsTransient = true
+                }));
+
+            var target = RenderPage();
+            var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
+
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(snackbar => snackbar.Add("Failure", Severity.Error, null, null), Times.Once);
+            target.FindComponent<DynamicTable<MudCategory>>().Instance.Items.Should().BeEmpty();
+        }
+
+        [Fact]
         public void GIVEN_CategoryProvided_WHEN_Rendered_THEN_ShowsTableItem()
         {
             var target = RenderPage(new Dictionary<string, MudCategory>
@@ -253,6 +278,7 @@ namespace Lantean.QBTMud.Test.Pages
             columns.Should().ContainSingle(column => column.Header == "Name");
             columns.Should().ContainSingle(column => column.Header == "Save path");
             columns.Should().ContainSingle(column => column.Header == "Actions");
+            columns.Should().ContainSingle(column => column.Id == "actions");
         }
 
         [Fact]

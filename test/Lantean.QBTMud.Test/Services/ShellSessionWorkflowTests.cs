@@ -2,13 +2,11 @@ using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
-using Lantean.QBTMud.Test;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
-using QBittorrent.ApiClient.Models;
 using System.Net;
 
 using ClientMainData = QBittorrent.ApiClient.Models.MainData;
@@ -250,6 +248,34 @@ namespace Lantean.QBTMud.Test.Services
 
             result.Outcome.Should().Be(ShellSessionLoadOutcome.Ready);
             result.RequestId.Should().Be(42);
+        }
+
+        [Fact]
+        public async Task GIVEN_PreferencesLoadRequiresAuthentication_WHEN_LoadingShellSession_THEN_ShouldReturnAuthenticationRequired()
+        {
+            var target = CreateTarget();
+            Mock.Get(_apiClient)
+                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsFailure<IApiClient, ClientPreferences>(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Forbidden);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationVersionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Version");
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetMainDataAsync(0, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CreateClientMainData());
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettings.Default.Clone());
+
+            var result = await target.LoadAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Outcome.Should().Be(ShellSessionLoadOutcome.AuthenticationRequired);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
         }
 
         [Fact]

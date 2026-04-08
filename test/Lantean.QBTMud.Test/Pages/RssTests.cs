@@ -305,6 +305,22 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_FeedContextUpdateFails_WHEN_Clicked_THEN_ShouldShowFailureAndSkipRefresh()
+        {
+            _apiClientMock
+                .Setup(client => client.RefreshRssItemAsync("Feed1"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "refresh failure");
+            var target = RenderTarget();
+
+            await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
+            var updateItem = FindPopoverByTestId<MudMenuItem>("RssContextUpdate");
+            await target.InvokeAsync(() => updateItem.Instance.OnClick.InvokeAsync());
+
+            _snackbarMock.Verify(snackbar => snackbar.Add("refresh failure", Severity.Error, null, null), Times.Once);
+            _apiClientMock.Verify(client => client.GetAllRssItemsAsync(true), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_FeedContextMarkRead_WHEN_Clicked_THEN_ShouldMarkSingleFeedRead()
         {
             _apiClientMock
@@ -318,6 +334,22 @@ namespace Lantean.QBTMud.Test.Pages
 
             _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync("Feed1", null), Times.Once);
             _apiClientMock.Verify(client => client.MarkRssItemAsReadAsync(@"Folder\Feed2", null), Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_FeedContextMarkReadFails_WHEN_Clicked_THEN_ShouldShowFailureAndSkipRefresh()
+        {
+            _apiClientMock
+                .Setup(client => client.MarkRssItemAsReadAsync("Feed1", null))
+                .ReturnsFailure(ApiFailureKind.ServerError, "mark read failure");
+            var target = RenderTarget();
+
+            await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
+            var markItem = FindPopoverByTestId<MudMenuItem>("RssContextMarkItemsRead");
+            await target.InvokeAsync(() => markItem.Instance.OnClick.InvokeAsync());
+
+            _snackbarMock.Verify(snackbar => snackbar.Add("mark read failure", Severity.Error, null, null), Times.Once);
+            _apiClientMock.Verify(client => client.GetAllRssItemsAsync(true), Times.Once);
         }
 
         [Fact]
@@ -1019,6 +1051,19 @@ namespace Lantean.QBTMud.Test.Pages
             var target = RenderTarget();
 
             FindByTestId<MudList<RssTreeNode>>(target, "RssFeedListDesktop").Should().NotBeNull();
+        }
+
+        [Fact]
+        public void GIVEN_RssLoadFails_WHEN_Rendered_THEN_ShouldRenderWithEmptyTree()
+        {
+            _apiClientMock
+                .Setup(client => client.GetAllRssItemsAsync(true))
+                .ReturnsFailure(ApiFailureKind.ServerError, "load failure");
+
+            var target = RenderTarget();
+
+            FindByTestId<MudList<RssTreeNode>>(target, "RssFeedListDesktop").Should().NotBeNull();
+            target.FindAll(ToDataTestIdSelector("RssFeedNode-Feed1")).Should().BeEmpty();
         }
 
         private IRenderedComponent<Rss> RenderTarget(

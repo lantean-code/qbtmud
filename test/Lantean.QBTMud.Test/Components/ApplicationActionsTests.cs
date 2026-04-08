@@ -669,6 +669,33 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_ResetWebUi_WHEN_AuthenticationRequired_THEN_NavigatesToLoginWithForceLoad()
+        {
+            var navigationManager = UseTestNavigationManager();
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var dialogWorkflowMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
+
+            apiClientMock
+                .Setup(c => c.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Unauthorized);
+            dialogWorkflowMock
+                .Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
+                .Returns<string, string, Func<Task>>((_, _, callback) => callback());
+
+            var target = TestContext.Render<ApplicationActions>(parameters =>
+            {
+                parameters.Add(p => p.IsMenu, true);
+                parameters.Add(p => p.Preferences, null);
+            });
+
+            var resetItem = FindMenuItem(target, "ResetWebUI");
+            await target.InvokeAsync(() => resetItem.Instance.OnClick.InvokeAsync());
+
+            navigationManager.Uri.Should().EndWith("/login");
+            navigationManager.LastForceLoad.Should().BeTrue();
+        }
+
+        [Fact]
         public async Task GIVEN_Logout_WHEN_ApiError_THEN_ShowsErrorWithoutNavigatingToLogin()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
