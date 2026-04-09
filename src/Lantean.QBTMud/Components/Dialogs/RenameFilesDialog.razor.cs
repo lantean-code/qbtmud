@@ -17,7 +17,8 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private string? _sortColumn;
         private SortDirection _sortDirection;
-        private IReadOnlyList<ColumnDefinition<FileRow>>? _columnDefinitions;
+        private List<ColumnDefinition<FileRow>>? _columnDefinitions;
+        private List<FileRow> _sourceFileList = [];
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
@@ -42,7 +43,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected HashSet<FileRow> SelectedItems { get; set; } = [];
 
-        protected IEnumerable<FileRow> FileList { get; private set; } = [];
+        protected List<FileRow> FileList { get; private set; } = [];
 
         protected IEnumerable<FileRow> Files => GetFiles();
 
@@ -83,10 +84,14 @@ namespace Lantean.QBTMud.Components.Dialogs
             return list.AsReadOnly();
         }
 
-        private IEnumerable<FileRow> GetRenamedItems(IEnumerable<ContentItem> items)
+        private List<FileRow> GetRenamedItems()
         {
+            var selectedNames = SelectedItems.Select(item => item.Name).ToHashSet(StringComparer.Ordinal);
             var renamedFiles = FileNameMatcher.GetRenamedFiles(
-                SelectedItems,
+                _sourceFileList
+                    .Where(item => selectedNames.Contains(item.Name))
+                    .Select(CloneFileRow)
+                    .ToList(),
                 Search,
                 UseRegex,
                 Replacement,
@@ -98,19 +103,26 @@ namespace Lantean.QBTMud.Components.Dialogs
                 ReplaceAll,
                 FileEnumerationStart);
 
-            foreach (var item in items)
+            var previewRows = new List<FileRow>(_sourceFileList.Count);
+            foreach (var item in _sourceFileList)
             {
-                var fileRow = CreateFileRow(item);
+                var fileRow = CloneFileRow(item);
                 var renamedRow = renamedFiles.FirstOrDefault(r => r.Name == fileRow.Name);
                 if (renamedRow is not null)
                 {
-                    yield return renamedRow;
+                    previewRows.Add(renamedRow);
                 }
                 else
                 {
-                    yield return fileRow;
+                    previewRows.Add(fileRow);
                 }
             }
+
+            SelectedItems = previewRows
+                .Where(item => selectedNames.Contains(item.Name))
+                .ToHashSet();
+
+            return previewRows;
         }
 
         private static FileRow CreateFileRow(ContentItem item)
@@ -126,32 +138,6 @@ namespace Lantean.QBTMud.Components.Dialogs
             };
 
             return fileRow;
-        }
-
-        protected async Task DoRename()
-        {
-            if (Hash is null)
-            {
-                return;
-            }
-
-            await RenameAsync(Hash, Files.Where(f => f.Renamed).ToList());
-        }
-
-        private async Task RenameAsync(string hash, List<FileRow> matchedFiles)
-        {
-            if (matchedFiles == null || matchedFiles.Count == 0 || string.IsNullOrEmpty(hash))
-            {
-                return;
-            }
-
-            for (int i = matchedFiles.Count - 1; i >= 0; i--)
-            {
-                var file = matchedFiles[i];
-                var (success, errorMessage) = await RenameItem(hash, file);
-                file.Renamed = success;
-                file.ErrorMessage = errorMessage;
-            }
         }
 
         private async Task<(bool, string?)> RenameItem(string hash, FileRow match)
@@ -239,6 +225,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected void SelectedItemsChanged(HashSet<FileRow> selectedItems)
         {
             SelectedItems = selectedItems;
+            RefreshPreview();
         }
 
         protected string Search { get; set; } = "";
@@ -246,6 +233,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected void SearchChanged(string value)
         {
             Search = value;
+            RefreshPreview();
         }
 
         protected bool UseRegex { get; set; }
@@ -253,6 +241,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task UseRegexChanged(bool value)
         {
             UseRegex = value;
+            RefreshPreview();
 
             await UpdatePreferences(p => p.UseRegex = value);
         }
@@ -262,6 +251,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task MatchAllOccurrencesChanged(bool value)
         {
             MatchAllOccurrences = value;
+            RefreshPreview();
 
             await UpdatePreferences(p => p.MatchAllOccurrences = value);
         }
@@ -271,6 +261,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task CaseSensitiveChanged(bool value)
         {
             CaseSensitive = value;
+            RefreshPreview();
 
             await UpdatePreferences(p => p.CaseSensitive = value);
         }
@@ -280,6 +271,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task ReplacementChanged(string value)
         {
             Replacement = value;
+            RefreshPreview();
 
             await UpdatePreferences(p => p.Replace = value);
         }
@@ -289,6 +281,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task AppliesToChanged(AppliesTo value)
         {
             AppliesToValue = value;
+            RefreshPreview();
 
             await UpdatePreferences(p => p.AppliesTo = value);
         }
@@ -298,6 +291,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task IncludeFilesChanged(bool value)
         {
             IncludeFiles = value;
+            RefreshPreview();
 
             await UpdatePreferences(p => p.IncludeFiles = value);
         }
@@ -307,6 +301,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task IncludeFoldersChanged(bool value)
         {
             IncludeFolders = value;
+            RefreshPreview();
 
             await UpdatePreferences(p => p.IncludeFolders = value);
         }
@@ -316,6 +311,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task FileEnumerationStartChanged(int value)
         {
             FileEnumerationStart = value;
+            RefreshPreview();
 
             await UpdatePreferences(p => p.FileEnumerationStart = value);
         }
@@ -325,6 +321,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task ReplaceAllChanged(bool value)
         {
             ReplaceAll = value;
+            RefreshPreview();
 
             await UpdatePreferences(p => p.ReplaceAll = value);
         }
@@ -383,7 +380,8 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            FileList = GetRenamedItems(DataManager.CreateContentsList(fileContents).Values);
+            _sourceFileList = DataManager.CreateContentsList(fileContents).Values.Select(CreateFileRow).ToList();
+            RefreshPreview();
         }
 
         protected void Cancel()
@@ -400,18 +398,10 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return;
             }
 
-            var renamedFiles = FileNameMatcher.GetRenamedFiles(
-                SelectedItems,
-                Search,
-                UseRegex,
-                Replacement,
-                MatchAllOccurrences,
-                CaseSensitive,
-                AppliesToValue,
-                IncludeFiles,
-                IncludeFolders,
-                ReplaceAll,
-                FileEnumerationStart);
+            var previewRows = Files.ToList();
+            var renamedFiles = previewRows
+                .Where(file => !string.Equals(file.NewName, file.OriginalName, StringComparison.Ordinal))
+                .ToList();
 
             var hasFailure = false;
 
@@ -456,14 +446,14 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         protected IEnumerable<ColumnDefinition<FileRow>> Columns => GetColumnDefinitions();
 
-        private IReadOnlyList<ColumnDefinition<FileRow>> GetColumnDefinitions()
+        private List<ColumnDefinition<FileRow>> GetColumnDefinitions()
         {
             _columnDefinitions ??= BuildColumnDefinitions();
 
             return _columnDefinitions;
         }
 
-        private IReadOnlyList<ColumnDefinition<FileRow>> BuildColumnDefinitions()
+        private List<ColumnDefinition<FileRow>> BuildColumnDefinitions()
         {
             return
             [
@@ -490,6 +480,32 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             return LanguageLocalizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.");
+        }
+
+        private void RefreshPreview()
+        {
+            if (_sourceFileList.Count == 0)
+            {
+                FileList = [];
+                return;
+            }
+
+            FileList = GetRenamedItems();
+        }
+
+        private static FileRow CloneFileRow(FileRow row)
+        {
+            return new FileRow
+            {
+                ErrorMessage = row.ErrorMessage,
+                IsFolder = row.IsFolder,
+                Level = row.Level,
+                Name = row.Name,
+                NewName = row.NewName,
+                OriginalName = row.OriginalName,
+                Path = row.Path,
+                Renamed = row.Renamed,
+            };
         }
 
         private sealed class MultiRenamePreferences

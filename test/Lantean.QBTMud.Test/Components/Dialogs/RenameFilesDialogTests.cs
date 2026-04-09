@@ -286,33 +286,17 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSwitchValue(dialog.Component, "RenameFilesIncludeFolders", true);
             await SetSelectValue(dialog.Component, "RenameFilesReplaceType", true);
 
-            var selectedRows = new List<FileRow>
-            {
-                CreateFileRow(contentItems[0]),
-                CreateFileRow(contentItems[1]),
-            };
-            selectedRows[0].Renamed.Should().BeFalse();
-            selectedRows[0].ErrorMessage.Should().BeNull();
-            selectedRows[0].Equals(null).Should().BeFalse();
+            var renamedFile = GetPreviewRow(dialog.Component, "NameFile.txt");
+            var renamedFolder = GetPreviewRow(dialog.Component, "NameFolder/");
 
-            var renamedFiles = FileNameMatcher.GetRenamedFiles(
-                selectedRows,
-                "Name",
-                false,
-                "Replacement",
-                false,
-                false,
-                AppliesTo.FilenameExtension,
-                true,
-                true,
-                true,
-                0);
+            renamedFile.NewName.Should().Be("ReplacementFile.txt");
+            renamedFolder.NewName.Should().Be("ReplacementFolder");
+            renamedFile.Renamed.Should().BeFalse();
+            renamedFile.ErrorMessage.Should().BeNull();
+            renamedFile.Equals(null).Should().BeFalse();
 
-            var renamedFile = renamedFiles.Single(r => !r.IsFolder);
-            var renamedFolder = renamedFiles.Single(r => r.IsFolder);
-
-            var filePaths = GetReplaceAllPaths(renamedFile);
-            var folderPaths = GetReplaceAllPaths(renamedFolder);
+            var filePaths = GetReplaceAllPaths(renamedFile!);
+            var folderPaths = GetReplaceAllPaths(renamedFolder!);
 
             apiClientMock.Setup(c => c.RenameFileAsync("Hash", filePaths.OldPath, filePaths.NewPath)).Returns(Task.CompletedTask);
             apiClientMock.Setup(c => c.RenameFolderAsync("Hash", folderPaths.OldPath, folderPaths.NewPath)).Returns(Task.CompletedTask);
@@ -349,26 +333,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSwitchValue(dialog.Component, "RenameFilesIncludeFiles", true);
             await SetSelectValue(dialog.Component, "RenameFilesReplaceType", false);
 
-            var selectedRows = new List<FileRow>
-            {
-                CreateFileRow(contentItems[0]),
-            };
-
-            var renamedFiles = FileNameMatcher.GetRenamedFiles(
-                selectedRows,
-                "Name",
-                false,
-                "Replacement",
-                false,
-                false,
-                AppliesTo.FilenameExtension,
-                true,
-                false,
-                false,
-                0);
-
-            var renamedFile = renamedFiles.Single();
-            var filePaths = GetReplaceAllPaths(renamedFile);
+            var renamedFile = GetPreviewRow(dialog.Component, "NameFile.txt");
+            renamedFile.NewName.Should().Be("ReplacementFile.txt");
+            var filePaths = GetReplaceAllPaths(renamedFile!);
 
             apiClientMock.Setup(c => c.RenameFileAsync("Hash", filePaths.OldPath, filePaths.NewPath)).Returns(Task.CompletedTask);
 
@@ -404,26 +371,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSwitchValue(dialog.Component, "RenameFilesIncludeFolders", true);
             await SetSelectValue(dialog.Component, "RenameFilesReplaceType", false);
 
-            var selectedRows = new List<FileRow>
-            {
-                CreateFileRow(contentItems[0]),
-            };
-
-            var renamedFiles = FileNameMatcher.GetRenamedFiles(
-                selectedRows,
-                "Name",
-                false,
-                "Replacement",
-                false,
-                false,
-                AppliesTo.FilenameExtension,
-                true,
-                true,
-                false,
-                0);
-
-            var renamedFolder = renamedFiles.Single();
-            var folderPaths = GetReplaceAllPaths(renamedFolder);
+            var renamedFolder = GetPreviewRow(dialog.Component, "NameFolder/");
+            renamedFolder.NewName.Should().Be("ReplacementFolder");
+            var folderPaths = GetReplaceAllPaths(renamedFolder!);
 
             apiClientMock.Setup(c => c.RenameFolderAsync("Hash", folderPaths.OldPath, folderPaths.NewPath)).Returns(Task.CompletedTask);
 
@@ -454,6 +404,17 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private static IRenderedComponent<DynamicTable<FileRow>> FindTable(IRenderedComponent<RenameFilesDialog> component)
         {
             return FindComponentByTestId<DynamicTable<FileRow>>(component, "RenameFilesTable");
+        }
+
+        private static FileRow GetPreviewRow(IRenderedComponent<RenameFilesDialog> component, string name)
+        {
+            var table = FindTable(component);
+            table.Instance.Items.Should().NotBeNull();
+
+            var item = table.Instance.Items!.Single(item => item is not null && item.Name == name);
+            item.Should().NotBeNull();
+
+            return item!;
         }
 
         private static async Task SetTextFieldValue(IRenderedComponent<RenameFilesDialog> component, string testId, string value)
@@ -495,21 +456,6 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private static Dictionary<string, ContentItem> CreateContentMap(IEnumerable<ContentItem> items)
         {
             return items.ToDictionary(item => item.Name, StringComparer.Ordinal);
-        }
-
-        private static FileRow CreateFileRow(ContentItem item)
-        {
-            var fileRow = new FileRow
-            {
-                IsFolder = item.IsFolder,
-                Level = item.Level,
-                NewName = item.DisplayName,
-                OriginalName = item.DisplayName,
-                Name = item.Name,
-                Path = item.Path,
-            };
-
-            return fileRow;
         }
 
         private static (string OldPath, string NewPath) GetReplaceAllPaths(FileRow row)
