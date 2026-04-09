@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
+using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
 using System.Text.Json;
 
@@ -649,34 +650,30 @@ namespace Lantean.QBTMud.Components.Dialogs
             _selectedLanguage = _languageOptions.FirstOrDefault(item => string.Equals(item.Code, value, StringComparison.OrdinalIgnoreCase));
             var locale = value;
 
-            try
+            var setLocaleResult = await ApiClient.SetApplicationPreferencesAsync(new UpdatePreferences
             {
-                await ApiClient.SetApplicationPreferencesAsync(new UpdatePreferences
-                {
-                    Locale = locale
-                });
+                Locale = locale
+            });
 
-                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, locale);
-                await LanguageInitializationService.EnsureLanguageResourcesInitialized();
+            if (!setLocaleResult.IsSuccess)
+            {
+                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", GetDefaultApiFailureMessage(setLocaleResult.Failure)), Severity.Error);
+                return;
+            }
 
-                await InvokeAsync(StateHasChanged);
-            }
-            catch (HttpRequestException ex)
+            await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, locale);
+            await LanguageInitializationService.EnsureLanguageResourcesInitialized();
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private string GetDefaultApiFailureMessage(ApiFailure? failure)
+        {
+            if (!string.IsNullOrWhiteSpace(failure?.UserMessage))
             {
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", ex.Message), Severity.Error);
+                return failure.UserMessage;
             }
-            catch (InvalidOperationException ex)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", ex.Message), Severity.Error);
-            }
-            catch (JSException ex)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", ex.Message), Severity.Error);
-            }
-            catch (JsonException ex)
-            {
-                SnackbarWorkflow.ShowTransientMessage(TranslateWizard("Unable to update language: %1", ex.Message), Severity.Error);
-            }
+
+            return LanguageLocalizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.");
         }
 
         private string GetStorageTypeDisplayName(StorageType storageType)

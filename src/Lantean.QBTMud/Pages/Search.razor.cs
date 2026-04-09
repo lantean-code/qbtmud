@@ -288,9 +288,12 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task CloseJob(SearchJobViewModel job)
         {
-            await StopAndDeleteJob(job);
+            if (!await StopAndDeleteJob(job))
+            {
+                return;
+            }
+
             await RemoveJobAsync(job);
-            await StopPollingIfAllJobsCompletedAsync();
         }
 
         protected async Task CloseAllJobs()
@@ -744,7 +747,10 @@ namespace Lantean.QBTMud.Pages
             if (existingJob is not null)
             {
                 replaceIndex = _jobs.IndexOf(existingJob);
-                await StopAndDeleteJob(existingJob);
+                if (!await StopAndDeleteJob(existingJob))
+                {
+                    return false;
+                }
             }
 
             var searchIdResult = await ApiClient.StartSearchAsync(pattern, plugins, category);
@@ -767,16 +773,25 @@ namespace Lantean.QBTMud.Pages
             return true;
         }
 
-        private async Task StopAndDeleteJob(SearchJobViewModel job)
+        private async Task<bool> StopAndDeleteJob(SearchJobViewModel job)
         {
             if (job.IsRunning)
             {
-                await ApiClient.StopSearchAsync(job.Id);
+                var stopResult = await ApiClient.StopSearchAsync(job.Id);
+                if (await TryHandleSearchCommandFailureAsync(stopResult))
+                {
+                    return false;
+                }
             }
 
-            await ApiClient.DeleteSearchAsync(job.Id);
+            var deleteResult = await ApiClient.DeleteSearchAsync(job.Id);
+            if (await TryHandleSearchCommandFailureAsync(deleteResult))
+            {
+                return false;
+            }
 
             await RemoveJobMetadataAsync(job.Id);
+            return true;
         }
 
         private async Task LoadPreferencesAsync()
@@ -1239,6 +1254,32 @@ namespace Lantean.QBTMud.Pages
                 key: _searchPollingApiErrorSnackbarKey,
                 failure.UserMessage);
             return true;
+        }
+
+        private async Task<bool> TryHandleSearchCommandFailureAsync(ApiResult result)
+        {
+            if (result.IsSuccess)
+            {
+                return false;
+            }
+
+            if (await TryHandleSearchRequestFailureAsync(result.Failure!))
+            {
+                return true;
+            }
+
+            SnackbarWorkflow.ShowTransientMessage(GetDefaultApiFailureMessage(result.Failure), Severity.Error);
+            return true;
+        }
+
+        private string GetDefaultApiFailureMessage(ApiFailure? failure)
+        {
+            if (!string.IsNullOrWhiteSpace(failure?.UserMessage))
+            {
+                return failure.UserMessage;
+            }
+
+            return LanguageLocalizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.");
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

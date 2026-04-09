@@ -34,6 +34,9 @@ namespace Lantean.QBTMud.Test.Pages
             _apiClientMock
                 .Setup(client => client.GetAllRssItemsAsync(true))
                 .ReturnsAsync(CreateRssItems());
+            _apiClientMock
+                .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
         }
 
         [Fact]

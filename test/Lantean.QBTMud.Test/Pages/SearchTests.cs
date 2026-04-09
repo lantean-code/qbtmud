@@ -1582,15 +1582,13 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_StopAndDeleteFail_WHEN_CloseAllJobs_THEN_Succeeds()
+        public async Task GIVEN_DeleteFails_WHEN_CloseAllJobs_THEN_JobRemains()
         {
             var target = await RenderSearchWithResultsAsync(303, new List<SearchResult>
         {
             new SearchResult("http://desc/close", "Close", 1_000_000, "http://files/close", 1, 5, "http://site/close", "movies", null)
         }, SearchJobStatus.Stopped, 1, apiMock =>
         {
-            apiMock.Setup(client => client.StopSearchAsync(303))
-                .ReturnsFailure(ApiFailureKind.ServerError, "stop", HttpStatusCode.InternalServerError);
             apiMock.Setup(client => client.DeleteSearchAsync(303))
                 .ReturnsFailure(ApiFailureKind.ServerError, "delete", HttpStatusCode.InternalServerError);
         });
@@ -1598,10 +1596,10 @@ namespace Lantean.QBTMud.Test.Pages
             var closeAllButton = FindComponentByTestId<MudIconButton>(target, "CloseAllJobsButton");
             await target.InvokeAsync(() => closeAllButton.Find("button").Click());
 
-            target.WaitForAssertion(() => target.FindComponents<DynamicTable<SearchResult>>().Should().BeEmpty());
+            target.WaitForAssertion(() => target.FindComponents<DynamicTable<SearchResult>>().Should().HaveCount(1));
             var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
-            stored!.Should().BeEmpty();
+            stored!.Should().HaveCount(1);
         }
 
         [Fact]
@@ -2334,7 +2332,7 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
-        public async Task GIVEN_RunningJobAndStopFailsWithHttp_WHEN_CloseAllJobsClicked_THEN_DeleteStillExecutes()
+        public async Task GIVEN_RunningJobAndStopFailsWithHttp_WHEN_CloseAllJobsClicked_THEN_DeleteDoesNotExecute()
         {
             var jobId = 912;
             await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
@@ -2361,11 +2359,15 @@ namespace Lantean.QBTMud.Test.Pages
 
             target.WaitForAssertion(() =>
             {
-                target.FindComponents<DynamicTable<SearchResult>>().Should().BeEmpty();
+                target.FindComponents<DynamicTable<SearchResult>>().Should().HaveCount(1);
             });
 
             apiMock.Verify(client => client.StopSearchAsync(jobId), Times.Once());
-            apiMock.Verify(client => client.DeleteSearchAsync(jobId), Times.Once());
+            apiMock.Verify(client => client.DeleteSearchAsync(jobId), Times.Never());
+
+            var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
+            stored.Should().NotBeNull();
+            stored!.Should().HaveCount(1);
         }
 
         [Fact]

@@ -31,6 +31,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; } = default!;
 
@@ -169,22 +172,22 @@ namespace Lantean.QBTMud.Components.Dialogs
                 ? newName
                 : Path.Combine(parentPath, newName);
 
-            try
+            ApiResult renameResult;
+            if (match.IsFolder)
             {
-                if (match.IsFolder)
-                {
-                    await ApiClient.RenameFileAsync(hash, oldPath, newPath);
-                }
-                else
-                {
-                    await ApiClient.RenameFileAsync(hash, oldPath, newPath);
-                }
+                renameResult = await ApiClient.RenameFolderAsync(hash, oldPath, newPath);
+            }
+            else
+            {
+                renameResult = await ApiClient.RenameFileAsync(hash, oldPath, newPath);
+            }
+
+            if (renameResult.IsSuccess)
+            {
                 return (true, null);
             }
-            catch (HttpRequestException ex)
-            {
-                return (false, ex.Message != "" ? ex.Message : $"Error with request: {ex.StatusCode}.");
-            }
+
+            return (false, GetFailureMessage(renameResult.Failure));
         }
 
         private IEnumerable<FileRow> GetChildren(FileRow folder, int level)
@@ -373,9 +376,14 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var contentsResult = await ApiClient.GetTorrentContentsAsync(Hash);
-            FileList = contentsResult.TryGetValue(out var fileContents)
-                ? GetRenamedItems(DataManager.CreateContentsList(fileContents).Values)
-                : [];
+            if (!contentsResult.TryGetValue(out var fileContents))
+            {
+                FileList = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(contentsResult);
+                return;
+            }
+
+            FileList = GetRenamedItems(DataManager.CreateContentsList(fileContents).Values);
         }
 
         protected void Cancel()
@@ -405,22 +413,24 @@ namespace Lantean.QBTMud.Components.Dialogs
                 ReplaceAll,
                 FileEnumerationStart);
 
+            var hasFailure = false;
+
             if (ReplaceAll)
             {
                 foreach (var renamedFile in renamedFiles.Where(f => !f.IsFolder))
                 {
-                    var oldPath = renamedFile.Path + renamedFile.OriginalName;
-                    var newPath = renamedFile.Path + renamedFile.NewName;
-
-                    await ApiClient.RenameFileAsync(Hash, oldPath, newPath);
+                    var (success, errorMessage) = await RenameItem(Hash, renamedFile);
+                    renamedFile.Renamed = success;
+                    renamedFile.ErrorMessage = errorMessage;
+                    hasFailure |= !success && !string.IsNullOrWhiteSpace(errorMessage);
                 }
 
                 foreach (var renamedFile in renamedFiles.Where(f => f.IsFolder).OrderBy(f => f.Path.Split(Extensions.DirectorySeparator)))
                 {
-                    var oldPath = renamedFile.Path + renamedFile.OriginalName;
-                    var newPath = renamedFile.Path + renamedFile.NewName;
-
-                    await ApiClient.RenameFolderAsync(Hash, oldPath, newPath);
+                    var (success, errorMessage) = await RenameItem(Hash, renamedFile);
+                    renamedFile.Renamed = success;
+                    renamedFile.ErrorMessage = errorMessage;
+                    hasFailure |= !success && !string.IsNullOrWhiteSpace(errorMessage);
                 }
             }
             else
@@ -428,19 +438,17 @@ namespace Lantean.QBTMud.Components.Dialogs
                 var first = renamedFiles.FirstOrDefault();
                 if (first is not null)
                 {
-                    if (first.IsFolder)
-                    {
-                        var oldPath = first.Path + first.OriginalName;
-                        var newPath = first.Path + first.NewName;
-                        await ApiClient.RenameFolderAsync(Hash, oldPath, newPath);
-                    }
-                    else
-                    {
-                        var oldPath = first.Path + first.OriginalName;
-                        var newPath = first.Path + first.NewName;
-                        await ApiClient.RenameFileAsync(Hash, oldPath, newPath);
-                    }
+                    var (success, errorMessage) = await RenameItem(Hash, first);
+                    first.Renamed = success;
+                    first.ErrorMessage = errorMessage;
+                    hasFailure = !success && !string.IsNullOrWhiteSpace(errorMessage);
                 }
+            }
+
+            if (hasFailure)
+            {
+                await InvokeAsync(StateHasChanged);
+                return;
             }
 
             MudDialog.Close();
@@ -472,6 +480,16 @@ namespace Lantean.QBTMud.Components.Dialogs
                     c => c.NewName,
                     id: "renamed"),
             ];
+        }
+
+        private string GetFailureMessage(ApiFailure? failure)
+        {
+            if (!string.IsNullOrWhiteSpace(failure?.UserMessage))
+            {
+                return failure.UserMessage;
+            }
+
+            return LanguageLocalizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.");
         }
 
         private sealed class MultiRenamePreferences

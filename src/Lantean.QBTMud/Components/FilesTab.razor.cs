@@ -326,7 +326,11 @@ namespace Lantean.QBTMud.Components
                     LanguageLocalizer.Translate("TorrentContentTreeView", "Renaming"),
                     LanguageLocalizer.Translate("TorrentContentTreeView", "New name:"),
                     name,
-                    async value => await ApiClient.RenameFileAsync(Hash, contentItem.Name, contentItem.Path + value));
+                    async value =>
+                    {
+                        var renameResult = await ApiClient.RenameFileAsync(Hash, contentItem.Name, contentItem.Path + value);
+                        await ApiFeedbackWorkflow.HandleIfFailureAsync(renameResult);
+                    });
             }
             else
             {
@@ -598,7 +602,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.SetFilePriorityAsync(Hash, files, priority);
+            var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, files, priority);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(setPriorityResult);
         }
 
         protected async Task CurrentlyFilteredFiles(ClientPriority priority)
@@ -615,7 +620,8 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            await ApiClient.SetFilePriorityAsync(Hash, files, priority);
+            var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, files, priority);
+            await ApiFeedbackWorkflow.HandleIfFailureAsync(setPriorityResult);
         }
 
         protected IEnumerable<ColumnDefinition<ContentItem>> Columns => GetColumnDefinitions();

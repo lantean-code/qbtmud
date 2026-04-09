@@ -212,7 +212,11 @@ namespace Lantean.QBTMud.Components
                 TranslateTrackerList("Tracker editing"),
                 TranslateTrackerList("Tracker URL:"),
                 tracker.Url,
-                async value => await ApiClient.EditTrackerAsync(Hash, tracker.Url, value));
+                async value =>
+                {
+                    var editResult = await ApiClient.EditTrackerAsync(Hash, tracker.Url, value);
+                    await ApiFeedbackWorkflow.HandleIfFailureAsync(editResult);
+                });
         }
 
         protected Task RemoveTrackerToolbar()

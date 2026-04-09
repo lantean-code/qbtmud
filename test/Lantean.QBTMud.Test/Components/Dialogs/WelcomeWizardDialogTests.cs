@@ -905,52 +905,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .ThrowsAsync(new HttpRequestException("Message"));
-
-            var dialog = await _target.RenderDialogAsync();
-
-            var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
-            await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
-
-            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task GIVEN_LanguageUpdateThrowsInvalidOperation_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
-        {
-            Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .ThrowsAsync(new InvalidOperationException("Message"));
-
-            var dialog = await _target.RenderDialogAsync();
-
-            var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
-            await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
-
-            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task GIVEN_LanguageUpdateThrowsJsException_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
-        {
-            Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .ThrowsAsync(new JSException("Message"));
-
-            var dialog = await _target.RenderDialogAsync();
-
-            var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
-            await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
-
-            Mock.Get(_snackbar).Verify(snackbar => snackbar.Add(It.IsAny<string>(), Severity.Error, It.IsAny<Action<SnackbarOptions>>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task GIVEN_LanguageUpdateThrowsJsonException_WHEN_LocaleSelected_THEN_ShowsSnackbarError()
-        {
-            Mock.Get(_apiClient)
-                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .ThrowsAsync(new JsonException("Message"));
+                .ReturnsFailure(ApiFailureKind.ServerError, "Message");
 
             var dialog = await _target.RenderDialogAsync();
 

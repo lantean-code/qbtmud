@@ -360,6 +360,13 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
+            var markReadResult = await ApiClient.MarkRssItemAsReadAsync(article.Feed, article.Id);
+            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(markReadResult))
+            {
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
             article.IsRead = true;
             var localArticle = Articles.FirstOrDefault(a => a.Id == article.Id);
             if (localArticle is not null)
@@ -367,7 +374,6 @@ namespace Lantean.QBTMud.Pages
                 localArticle.IsRead = true;
             }
 
-            await ApiClient.MarkRssItemAsReadAsync(article.Feed, article.Id);
             UpdateUnreadCountsAfterRead(article);
             await InvokeAsync(StateHasChanged);
         }

@@ -287,14 +287,15 @@ namespace Lantean.QBTMud.Services
             }
 
             var confirmedDeleteResult = await _apiClient.DeleteTorrentsAsync(TorrentSelector.FromHashes(hashes), deleteFiles);
-            return !await _apiFeedbackWorkflow.HandleIfFailureAsync(confirmedDeleteResult);
+            return await _apiFeedbackWorkflow.HandleIfFailureAsync(confirmedDeleteResult);
 
             async Task SaveDeleteFilesPreference(bool deleteFiles)
             {
-                await _apiClient.SetApplicationPreferencesAsync(new UpdatePreferences
+                var savePreferencesResult = await _apiClient.SetApplicationPreferencesAsync(new UpdatePreferences
                 {
                     DeleteTorrentContentFiles = deleteFiles,
                 });
+                await _apiFeedbackWorkflow.HandleIfFailureAsync(savePreferencesResult);
             }
         }
 
