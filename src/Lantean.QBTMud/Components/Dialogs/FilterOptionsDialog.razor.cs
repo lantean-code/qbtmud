@@ -1,8 +1,8 @@
+using System.Reflection;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Reflection;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {

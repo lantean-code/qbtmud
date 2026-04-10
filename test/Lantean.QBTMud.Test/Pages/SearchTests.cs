@@ -1,3 +1,4 @@
+using System.Net;
 using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
@@ -15,7 +16,6 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Net;
 using UiCategory = Lantean.QBTMud.Models.Category;
 using UiMainData = Lantean.QBTMud.Models.MainData;
 using UiServerState = Lantean.QBTMud.Models.ServerState;

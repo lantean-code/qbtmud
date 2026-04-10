@@ -1,11 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Text;
 using ByteSizeLib;
 using Lantean.QBTMud.Models;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Text;
 
 namespace Lantean.QBTMud.Helpers
 {

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
@@ -15,11 +17,7 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Diagnostics;
-using System.Net;
-
 using ClientModels = QBittorrent.ApiClient.Models;
-
 using MudCategory = Lantean.QBTMud.Models.Category;
 using MudMainData = Lantean.QBTMud.Models.MainData;
 using MudServerState = Lantean.QBTMud.Models.ServerState;

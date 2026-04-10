@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -8,7 +9,6 @@ using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Text.RegularExpressions;
 using MudMainData = Lantean.QBTMud.Models.MainData;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
 

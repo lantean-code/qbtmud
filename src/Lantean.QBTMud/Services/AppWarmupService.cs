@@ -1,7 +1,7 @@
+using System.Diagnostics;
 using Blazor.BrowserCapabilities;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
-using System.Diagnostics;
 
 namespace Lantean.QBTMud.Services
 {

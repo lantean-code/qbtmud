@@ -1,5 +1,5 @@
-using Lantean.QBTMud.Services;
 using System.Collections.Concurrent;
+using Lantean.QBTMud.Services;
 
 namespace Lantean.QBTMud.Test.Infrastructure
 {

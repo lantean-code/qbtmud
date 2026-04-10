@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text.Json;
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -7,8 +9,6 @@ using Lantean.QBTMud.Theming;
 using Microsoft.Extensions.Logging;
 using Moq;
 using MudBlazor;
-using System.Net;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Services
 {

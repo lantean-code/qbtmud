@@ -1,3 +1,4 @@
+using System.Net;
 using AwesomeAssertions;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -7,8 +8,6 @@ using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
-using System.Net;
-
 using ClientMainData = QBittorrent.ApiClient.Models.MainData;
 using ClientPreferences = QBittorrent.ApiClient.Models.Preferences;
 using MudMainData = Lantean.QBTMud.Models.MainData;

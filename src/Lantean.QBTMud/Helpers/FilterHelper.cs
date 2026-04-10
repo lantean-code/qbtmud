@@ -1,6 +1,6 @@
+using System.Text.RegularExpressions;
 using Lantean.QBTMud.Models;
 using QBittorrent.ApiClient.Models;
-using System.Text.RegularExpressions;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud.Helpers

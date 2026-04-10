@@ -1,5 +1,5 @@
-using Lantean.QBTMud.Models;
 using System.Reflection;
+using Lantean.QBTMud.Models;
 
 namespace Lantean.QBTMud.Services
 {

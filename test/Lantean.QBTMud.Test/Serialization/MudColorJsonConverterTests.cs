@@ -1,8 +1,8 @@
+using System.Text;
+using System.Text.Json;
 using AwesomeAssertions;
 using Lantean.QBTMud.Serialization;
 using MudBlazor.Utilities;
-using System.Text;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Serialization
 {

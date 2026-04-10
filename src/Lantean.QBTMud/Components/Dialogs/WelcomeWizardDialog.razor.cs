@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -8,7 +9,6 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {

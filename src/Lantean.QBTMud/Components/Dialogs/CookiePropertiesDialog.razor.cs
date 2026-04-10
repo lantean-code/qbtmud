@@ -1,9 +1,9 @@
+using System.Globalization;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QBittorrent.ApiClient.Models;
-using System.Globalization;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {

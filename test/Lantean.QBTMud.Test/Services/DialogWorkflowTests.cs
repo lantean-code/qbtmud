@@ -1,3 +1,4 @@
+using System.Net;
 using AwesomeAssertions;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Filter;
@@ -10,7 +11,6 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Net;
 using MudCategory = Lantean.QBTMud.Models.Category;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
 using QbtCategory = QBittorrent.ApiClient.Models.Category;

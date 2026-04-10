@@ -1,7 +1,7 @@
+using System.Text.RegularExpressions;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System.Text.RegularExpressions;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {

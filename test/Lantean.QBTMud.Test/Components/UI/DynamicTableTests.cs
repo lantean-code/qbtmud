@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
@@ -12,7 +13,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using System.Diagnostics;
 
 namespace Lantean.QBTMud.Test.Components.UI
 {

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Text.Json;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
@@ -5,8 +7,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
 using MudBlazor;
-using System.Diagnostics;
-using System.Text.Json;
 using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
 
 namespace Lantean.QBTMud.Pages

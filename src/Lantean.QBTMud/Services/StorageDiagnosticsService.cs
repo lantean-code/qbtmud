@@ -1,7 +1,7 @@
+using System.Text.Json;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Microsoft.JSInterop;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Services
 {

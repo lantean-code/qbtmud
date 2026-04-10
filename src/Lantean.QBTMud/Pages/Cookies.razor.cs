@@ -1,3 +1,4 @@
+using System.Globalization;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -6,7 +7,6 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Globalization;
 
 namespace Lantean.QBTMud.Pages
 {

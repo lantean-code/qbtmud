@@ -1,3 +1,4 @@
+using System.Collections;
 using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
@@ -9,7 +10,6 @@ using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Utilities;
 using QBittorrent.ApiClient.Models;
-using System.Collections;
 
 namespace Lantean.QBTMud.Test.Components
 {

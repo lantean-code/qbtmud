@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.AppSettingsTabs;
@@ -7,7 +8,6 @@ using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;
-using System.Text.Json;
 using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
 
 namespace Lantean.QBTMud.Test.Components.AppSettingsTabs

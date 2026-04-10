@@ -1,8 +1,8 @@
+using System.ComponentModel;
+using System.Reflection;
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using QBittorrent.ApiClient.Models;
-using System.ComponentModel;
-using System.Reflection;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
 namespace Lantean.QBTMud

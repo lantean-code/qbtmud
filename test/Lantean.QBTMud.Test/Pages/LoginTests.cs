@@ -1,3 +1,4 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Pages;
@@ -10,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
-using System.Net;
 
 namespace Lantean.QBTMud.Test.Pages
 {

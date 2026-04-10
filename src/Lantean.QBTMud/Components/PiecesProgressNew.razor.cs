@@ -1,10 +1,10 @@
+using System.Globalization;
+using System.Text;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Utilities;
 using QBittorrent.ApiClient.Models;
-using System.Globalization;
-using System.Text;
 
 namespace Lantean.QBTMud.Components
 {

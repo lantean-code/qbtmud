@@ -1,6 +1,6 @@
+using System.Linq.Expressions;
 using AwesomeAssertions;
 using Lantean.QBTMud.Filter;
-using System.Linq.Expressions;
 
 namespace Lantean.QBTMud.Test.Filter
 {

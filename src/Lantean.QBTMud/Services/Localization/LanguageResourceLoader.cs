@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Options;
 using System.Globalization;
+using Microsoft.Extensions.Options;
 
 namespace Lantean.QBTMud.Services.Localization
 {

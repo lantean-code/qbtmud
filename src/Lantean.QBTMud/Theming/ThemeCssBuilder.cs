@@ -1,7 +1,7 @@
-using MudBlazor;
-using MudBlazor.Utilities;
 using System.Globalization;
 using System.Text;
+using MudBlazor;
+using MudBlazor.Utilities;
 
 namespace Lantean.QBTMud.Theming
 {

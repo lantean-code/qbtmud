@@ -1,3 +1,4 @@
+using System.Net;
 using Blazor.BrowserCapabilities;
 using Bunit;
 using Lantean.QBTMud.Configuration;
@@ -11,7 +12,6 @@ using Moq;
 using MudBlazor;
 using MudBlazor.Services;
 using QBittorrent.ApiClient;
-using System.Net;
 
 namespace Lantean.QBTMud.Test.Infrastructure
 {

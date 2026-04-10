@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AwesomeAssertions;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
@@ -5,7 +6,6 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.JSInterop;
 using Moq;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Services
 {

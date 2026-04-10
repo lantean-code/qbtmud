@@ -83,20 +83,32 @@ namespace WebUiTranslationsConverter
                 {
                     case "--source":
                         if (!TryReadValue(args, ref i, out source))
+                        {
                             return null;
+                        }
+
                         break;
 
                     case "--output":
                         if (!TryReadValue(args, ref i, out output))
+                        {
                             return null;
+                        }
+
                         break;
 
                     case "--mode":
                         if (!TryReadValue(args, ref i, out var modeValue))
+                        {
                             return null;
+                        }
+
                         mode = ParseMode(modeValue);
                         if (mode == ConversionMode.Unknown)
+                        {
                             return null;
+                        }
+
                         break;
 
                     case "--help":
@@ -131,9 +143,14 @@ namespace WebUiTranslationsConverter
         private static ConversionMode ParseMode(string value)
         {
             if (string.Equals(value, "en", StringComparison.OrdinalIgnoreCase))
+            {
                 return ConversionMode.EnglishOnly;
+            }
+
             if (string.Equals(value, "all", StringComparison.OrdinalIgnoreCase))
+            {
                 return ConversionMode.All;
+            }
 
             return ConversionMode.Unknown;
         }

@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
@@ -14,8 +16,6 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Globalization;
-using System.Text.Json;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {

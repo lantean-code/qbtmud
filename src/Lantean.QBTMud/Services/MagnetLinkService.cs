@@ -1,6 +1,6 @@
+using System.Net;
 using Lantean.QBTMud.Interop;
 using Microsoft.JSInterop;
-using System.Net;
 
 namespace Lantean.QBTMud.Services
 {

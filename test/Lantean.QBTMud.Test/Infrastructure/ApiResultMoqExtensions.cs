@@ -1,7 +1,7 @@
+using System.Net;
 using Moq.Language;
 using Moq.Language.Flow;
 using QBittorrent.ApiClient;
-using System.Net;
 
 namespace Moq
 {
