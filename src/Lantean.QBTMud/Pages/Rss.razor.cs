@@ -1,3 +1,4 @@
+using System.Globalization;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -6,7 +7,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using QBittorrent.ApiClient;
-using System.Globalization;
 
 namespace Lantean.QBTMud.Pages
 {
@@ -361,7 +361,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             var markReadResult = await ApiClient.MarkRssItemAsReadAsync(article.Feed, article.Id);
-            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(markReadResult))
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(markReadResult))
             {
                 await InvokeAsync(StateHasChanged);
                 return;
@@ -601,7 +601,7 @@ namespace Lantean.QBTMud.Pages
             foreach (var feedPath in feeds)
             {
                 var markReadResult = await ApiClient.MarkRssItemAsReadAsync(feedPath);
-                if (await ApiFeedbackWorkflow.HandleIfFailureAsync(markReadResult))
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(markReadResult))
                 {
                     return;
                 }
@@ -625,7 +625,7 @@ namespace Lantean.QBTMud.Pages
             foreach (var feedPath in feedPaths.Distinct(StringComparer.Ordinal))
             {
                 var refreshResult = await ApiClient.RefreshRssItemAsync(feedPath);
-                if (await ApiFeedbackWorkflow.HandleIfFailureAsync(refreshResult))
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(refreshResult))
                 {
                     return;
                 }

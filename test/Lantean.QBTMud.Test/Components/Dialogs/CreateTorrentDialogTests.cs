@@ -437,7 +437,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static BuildInfo CreateBuildInfo(string libTorrentVersion)
         {
-            return new BuildInfo("QT", libTorrentVersion, "Boost", "OpenSSL", "ZLib", 64);
+            return new BuildInfo("QT", libTorrentVersion, "Boost", "OpenSSL", "ZLib", 64, BuildPlatform.Linux);
         }
 
         private static IRenderedComponent<FieldSwitch> FindFieldSwitch(IRenderedComponent<CreateTorrentDialog> component, string testId)

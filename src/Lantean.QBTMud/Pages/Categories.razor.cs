@@ -99,7 +99,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
             var removeResult = await ApiClient.RemoveCategoriesAsync(categories: [name]);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(removeResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(removeResult);
         }
 
         protected async Task AddCategory()

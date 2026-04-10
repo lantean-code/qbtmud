@@ -1,3 +1,4 @@
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
@@ -190,7 +191,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             var feedsResult = await ApiClient.GetAllRssItemsAsync(false);
             Feeds = feedsResult.TryGetValue(out var feeds)
-                ? feeds.ToDictionary(f => f.Key, f => f.Value.Url)
+                ? RssItemTreeHelper.EnumerateFeeds(feeds).ToDictionary(f => f.Key, f => f.Value.Url, StringComparer.Ordinal)
                 : new Dictionary<string, string>();
         }
 
@@ -231,7 +232,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             else
             {
                 var removeResult = await ApiClient.RemoveRssAutoDownloadingRuleAsync(SelectedRuleName);
-                if (await ApiFeedbackWorkflow.HandleIfFailureAsync(removeResult))
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(removeResult))
                 {
                     return;
                 }
@@ -326,7 +327,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var setRuleResult = await ApiClient.SetRssAutoDownloadingRuleAsync(SelectedRuleName, SelectedRule);
-            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(setRuleResult))
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(setRuleResult))
             {
                 return;
             }

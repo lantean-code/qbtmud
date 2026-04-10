@@ -102,7 +102,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
 
-            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(result))
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(result))
             {
                 return;
             }
@@ -132,7 +132,7 @@ namespace Lantean.QBTMud.Components
                     return;
                 }
 
-                if (await ApiFeedbackWorkflow.HandleIfFailureAsync(logoutResult))
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(logoutResult))
                 {
                     return;
                 }
@@ -147,7 +147,7 @@ namespace Lantean.QBTMud.Components
                 async () =>
                 {
                     var shutdownResult = await ApiClient.ShutdownAsync();
-                    await ApiFeedbackWorkflow.HandleIfFailureAsync(shutdownResult);
+                    await ApiFeedbackWorkflow.ProcessResultAsync(shutdownResult);
                 });
         }
 
@@ -202,7 +202,7 @@ namespace Lantean.QBTMud.Components
 
             _startAllInProgress = true;
             var startResult = await ApiClient.StartTorrentsAsync(TorrentSelector.AllTorrents());
-            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(startResult))
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(startResult))
             {
                 _startAllInProgress = false;
             }
@@ -223,7 +223,7 @@ namespace Lantean.QBTMud.Components
 
             _stopAllInProgress = true;
             var stopResult = await ApiClient.StopTorrentsAsync(TorrentSelector.AllTorrents());
-            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(stopResult))
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(stopResult))
             {
                 _stopAllInProgress = false;
             }

@@ -21,7 +21,7 @@ namespace Lantean.QBTMud.Test.Services
             var items = new Dictionary<string, RssItem>
             {
                 // key != uid on purpose in another test; here keep them equal
-                ["feed-a"] = new RssItem(
+                ["feed-a"] = CreateFeed(
                     articles: new[]
                     {
                         new ClientRssArticle(
@@ -48,7 +48,7 @@ namespace Lantean.QBTMud.Test.Services
                     url: "http://feed/a"),
 
                 // feed with one read article
-                ["feed-b"] = new RssItem(
+                ["feed-b"] = CreateFeed(
                     articles: new[]
                     {
                         new ClientRssArticle(
@@ -65,7 +65,7 @@ namespace Lantean.QBTMud.Test.Services
                     url: "http://feed/b"),
 
                 // feed with null article list -> should create feed only
-                ["feed-c"] = new RssItem(
+                ["feed-c"] = CreateFeed(
                     articles: null,
                     hasError: false,
                     isLoading: false,
@@ -128,7 +128,7 @@ namespace Lantean.QBTMud.Test.Services
             // arrange: provide nulls in fields (the implementation uses '!' but does not normalize)
             var items = new Dictionary<string, RssItem>
             {
-                ["feed-null"] = new RssItem(
+                ["feed-null"] = CreateFeed(
                     articles: new[]
                     {
                         new ClientRssArticle(
@@ -179,7 +179,7 @@ namespace Lantean.QBTMud.Test.Services
             // arrange: key != uid
             var items = new Dictionary<string, RssItem>
             {
-                ["dict-key"] = new RssItem(
+                ["dict-key"] = CreateFeed(
                     articles: new[]
                     {
                         new ClientRssArticle(
@@ -212,7 +212,7 @@ namespace Lantean.QBTMud.Test.Services
             // arrange
             var items = new Dictionary<string, RssItem>
             {
-                ["fa"] = new RssItem(
+                ["fa"] = CreateFeed(
                     articles: new[]
                     {
                         new ClientRssArticle(
@@ -229,7 +229,7 @@ namespace Lantean.QBTMud.Test.Services
                     hasError: false, isLoading: false,
                     lastBuildDate: "lb", title: "TA", uid: "fa", url: "http://fa"),
 
-                ["fb"] = new RssItem(
+                ["fb"] = CreateFeed(
                     articles: new[]
                     {
                         new ClientRssArticle(
@@ -261,7 +261,7 @@ namespace Lantean.QBTMud.Test.Services
             // arrange
             var items = new Dictionary<string, RssItem>
             {
-                ["fa"] = new RssItem(
+                ["fa"] = CreateFeed(
                     articles: new[]
                     {
                         new ClientRssArticle(
@@ -278,7 +278,7 @@ namespace Lantean.QBTMud.Test.Services
                     hasError: false, isLoading: false,
                     lastBuildDate: "lb", title: "TA", uid: "fa", url: "http://fa"),
 
-                ["fb"] = new RssItem(
+                ["fb"] = CreateFeed(
                     articles: new[]
                     {
                         new ClientRssArticle(
@@ -302,6 +302,18 @@ namespace Lantean.QBTMud.Test.Services
             list.Feeds["fa"].UnreadCount.Should().Be(0);
             list.Feeds["fb"].UnreadCount.Should().Be(1);
             list.UnreadCount.Should().Be(1);
+        }
+
+        private static RssFeedItem CreateFeed(
+            IReadOnlyList<ClientRssArticle>? articles,
+            bool? hasError,
+            bool? isLoading,
+            string? lastBuildDate,
+            string? title,
+            string uid,
+            string url)
+        {
+            return new RssFeedItem(articles, hasError, isLoading, lastBuildDate, null, title, uid, url);
         }
     }
 }

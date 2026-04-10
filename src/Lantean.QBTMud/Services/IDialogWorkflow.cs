@@ -32,7 +32,7 @@ namespace Lantean.QBTMud.Services
         /// </summary>
         /// <param name="confirmTorrentDeletion">Whether confirmation is required before deletion.</param>
         /// <param name="hashes">The torrent hashes to delete.</param>
-        /// <returns><c>true</c> if deletion was executed; otherwise, <c>false</c>.</returns>
+        /// <returns><c>true</c> if deletion completed successfully; otherwise, <c>false</c>.</returns>
         Task<bool> InvokeDeleteTorrentDialog(bool confirmTorrentDeletion, params string[] hashes);
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Lantean.QBTMud.Services
         /// <param name="confirmTorrentDeletion">Whether confirmation is required before deletion.</param>
         /// <param name="deleteTorrentContentFiles">Whether the delete dialog should default to removing content files.</param>
         /// <param name="hashes">The torrent hashes to delete.</param>
-        /// <returns><c>true</c> if deletion was executed; otherwise, <c>false</c>.</returns>
+        /// <returns><c>true</c> if deletion completed successfully; otherwise, <c>false</c>.</returns>
         Task<bool> InvokeDeleteTorrentDialog(bool confirmTorrentDeletion, bool deleteTorrentContentFiles, params string[] hashes);
 
         /// <summary>

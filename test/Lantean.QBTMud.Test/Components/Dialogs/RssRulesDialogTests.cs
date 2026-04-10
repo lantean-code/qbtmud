@@ -469,9 +469,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             };
         }
 
-        private static RssItem CreateFeed(string title, string url)
+        private static RssFeedItem CreateFeed(string title, string url)
         {
-            return new RssItem(null, false, false, null, title, title, url);
+            return new RssFeedItem(null, false, false, null, null, title, title, url);
         }
     }
 

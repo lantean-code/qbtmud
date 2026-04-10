@@ -1,3 +1,4 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
@@ -12,7 +13,6 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Net;
 
 namespace Lantean.QBTMud.Test.Components
 {
@@ -583,8 +583,9 @@ namespace Lantean.QBTMud.Test.Components
         {
             return new TorrentTracker(
                 url,
-                TrackerStatus.Working,
-                tier,
+                updating: false,
+                status: TrackerStatus.Working,
+                tier: tier,
                 peers: 1,
                 seeds: 2,
                 leeches: 3,

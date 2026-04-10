@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
@@ -5,7 +6,6 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QBittorrent.ApiClient;
-using System.Collections.ObjectModel;
 
 namespace Lantean.QBTMud.Components.Dialogs
 {
@@ -150,13 +150,13 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             var newName = match.NewName!;
 
-            var parentPath = Path.GetDirectoryName(match.Name);
+            var parentPath = global::Lantean.QBTMud.Extensions.GetDirectoryPath(match.Name);
             var oldPath = string.IsNullOrEmpty(parentPath)
                 ? match.OriginalName
-                : Path.Combine(parentPath, match.OriginalName);
+                : string.Concat(parentPath, global::Lantean.QBTMud.Extensions.DirectorySeparator, match.OriginalName);
             var newPath = string.IsNullOrEmpty(parentPath)
                 ? newName
-                : Path.Combine(parentPath, newName);
+                : string.Concat(parentPath, global::Lantean.QBTMud.Extensions.DirectorySeparator, newName);
 
             ApiResult renameResult;
             if (match.IsFolder)

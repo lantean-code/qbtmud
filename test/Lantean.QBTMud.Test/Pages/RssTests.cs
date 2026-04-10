@@ -1104,7 +1104,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             return new Dictionary<string, RssItem>(StringComparer.Ordinal)
             {
-                ["Feed1"] = new RssItem(
+                ["Feed1"] = CreateFeed(
                     new List<ClientRssArticle>
                     {
                         new ClientRssArticle("Category", "Comments", "2020-01-01", "Description", "Article1", article1Link, null, "Article 1", article1TorrentUrl, article1Read),
@@ -1116,17 +1116,20 @@ namespace Lantean.QBTMud.Test.Pages
                     "Feed 1",
                     "Feed1Uid",
                     "http://feed1"),
-                [@"Folder\Feed2"] = new RssItem(
-                    new List<ClientRssArticle>
-                    {
-                        new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", article3Link, null, "Article 3", "http://torrent3", article3Read)
-                    },
-                    feed2HasError,
-                    false,
-                    "2020-01-01",
-                    "Feed 2",
-                    "Feed2Uid",
-                    "http://feed2")
+                ["Folder"] = new RssFolderItem(new Dictionary<string, RssItem>(StringComparer.Ordinal)
+                {
+                    ["Feed2"] = CreateFeed(
+                        new List<ClientRssArticle>
+                        {
+                            new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", article3Link, null, "Article 3", "http://torrent3", article3Read)
+                        },
+                        feed2HasError,
+                        false,
+                        "2020-01-01",
+                        "Feed 2",
+                        "Feed2Uid",
+                        "http://feed2")
+                })
             };
         }
 
@@ -1134,17 +1137,20 @@ namespace Lantean.QBTMud.Test.Pages
         {
             return new Dictionary<string, RssItem>(StringComparer.Ordinal)
             {
-                [@"Folder\Feed2"] = new RssItem(
-                    new List<ClientRssArticle>
-                    {
-                        new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", "http://news3", null, "Article 3", "http://torrent3", false)
-                    },
-                    false,
-                    false,
-                    "2020-01-01",
-                    "Feed 2",
-                    "Feed2Uid",
-                    "http://feed2")
+                ["Folder"] = new RssFolderItem(new Dictionary<string, RssItem>(StringComparer.Ordinal)
+                {
+                    ["Feed2"] = CreateFeed(
+                        new List<ClientRssArticle>
+                        {
+                            new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", "http://news3", null, "Article 3", "http://torrent3", false)
+                        },
+                        false,
+                        false,
+                        "2020-01-01",
+                        "Feed 2",
+                        "Feed2Uid",
+                        "http://feed2")
+                })
             };
         }
 
@@ -1157,7 +1163,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             return new Dictionary<string, RssItem>(StringComparer.Ordinal)
             {
-                ["Feed1"] = new RssItem(
+                ["Feed1"] = CreateFeed(
                     new List<ClientRssArticle>(),
                     false,
                     false,
@@ -1165,18 +1171,33 @@ namespace Lantean.QBTMud.Test.Pages
                     "Feed 1",
                     "Feed1Uid",
                     "http://feed1"),
-                [@"Folder\Feed2"] = new RssItem(
-                    new List<ClientRssArticle>
-                    {
-                        new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", "http://news3", null, "Article 3", "http://torrent3", true)
-                    },
-                    false,
-                    false,
-                    "2020-01-01",
-                    "Feed 2",
-                    "Feed2Uid",
-                    "http://feed2")
+                ["Folder"] = new RssFolderItem(new Dictionary<string, RssItem>(StringComparer.Ordinal)
+                {
+                    ["Feed2"] = CreateFeed(
+                        new List<ClientRssArticle>
+                        {
+                            new ClientRssArticle("Category", "Comments", "2020-01-03", "Description", "Article3", "http://news3", null, "Article 3", "http://torrent3", true)
+                        },
+                        false,
+                        false,
+                        "2020-01-01",
+                        "Feed 2",
+                        "Feed2Uid",
+                        "http://feed2")
+                })
             };
+        }
+
+        private static RssFeedItem CreateFeed(
+            IReadOnlyList<ClientRssArticle>? articles,
+            bool? hasError,
+            bool? isLoading,
+            string? lastBuildDate,
+            string? title,
+            string uid,
+            string url)
+        {
+            return new RssFeedItem(articles, hasError, isLoading, lastBuildDate, null, title, uid, url);
         }
 
         private static IRenderedComponent<TComponent> FindByTestId<TComponent>(IRenderedComponent<Rss> target, string testId)

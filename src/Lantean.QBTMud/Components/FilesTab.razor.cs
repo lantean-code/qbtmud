@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Filter;
 using Lantean.QBTMud.Helpers;
@@ -8,7 +9,6 @@ using MudBlazor;
 using MudBlazor.Extensions;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Collections.ObjectModel;
 using ClientPriority = QBittorrent.ApiClient.Models.Priority;
 using MudPriority = Lantean.QBTMud.Models.Priority;
 
@@ -293,7 +293,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, fileIndexes, MapPriority(priority));
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(setPriorityResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(setPriorityResult);
         }
 
         protected Task RenameFileToolbar()
@@ -329,7 +329,7 @@ namespace Lantean.QBTMud.Components
                     async value =>
                     {
                         var renameResult = await ApiClient.RenameFileAsync(Hash, contentItem.Name, contentItem.Path + value);
-                        await ApiFeedbackWorkflow.HandleIfFailureAsync(renameResult);
+                        await ApiFeedbackWorkflow.ProcessResultAsync(renameResult);
                     });
             }
             else
@@ -603,7 +603,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, files, priority);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(setPriorityResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(setPriorityResult);
         }
 
         protected async Task CurrentlyFilteredFiles(ClientPriority priority)
@@ -621,7 +621,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var setPriorityResult = await ApiClient.SetFilePriorityAsync(Hash, files, priority);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(setPriorityResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(setPriorityResult);
         }
 
         protected IEnumerable<ColumnDefinition<ContentItem>> Columns => GetColumnDefinitions();

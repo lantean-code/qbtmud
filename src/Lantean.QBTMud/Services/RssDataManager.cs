@@ -1,3 +1,4 @@
+using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
 using ClientRssArticle = QBittorrent.ApiClient.Models.RssArticle;
 using ClientRssItem = QBittorrent.ApiClient.Models.RssItem;
@@ -11,13 +12,13 @@ namespace Lantean.QBTMud.Services
         {
             var articles = new List<MudRssArticle>();
             var feeds = new Dictionary<string, RssFeed>(StringComparer.Ordinal);
-            foreach (var (key, rssItem) in rssItems)
+            foreach (var (key, rssItem) in RssItemTreeHelper.EnumerateFeeds(rssItems))
             {
                 feeds.Add(
                     key,
                     new RssFeed(
-                        rssItem.HasError,
-                        rssItem.IsLoading,
+                        rssItem.HasError ?? false,
+                        rssItem.IsLoading ?? false,
                         rssItem.LastBuildDate,
                         rssItem.Title,
                         rssItem.Uid,

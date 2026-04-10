@@ -98,7 +98,7 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
             var deleteResult = await ApiClient.DeleteTagsAsync(tags: [tag]);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(deleteResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(deleteResult);
         }
 
         protected async Task AddTag()
@@ -126,7 +126,7 @@ namespace Lantean.QBTMud.Pages
             }
 
             var createResult = await ApiClient.CreateTagsAsync([tag]);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(createResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(createResult);
         }
 
         protected IEnumerable<ColumnDefinition<string>> Columns => GetColumnDefinitions();

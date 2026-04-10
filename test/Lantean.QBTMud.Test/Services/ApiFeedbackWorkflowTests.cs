@@ -9,201 +9,158 @@ namespace Lantean.QBTMud.Test.Services
 {
     public sealed class ApiFeedbackWorkflowTests
     {
+        private readonly Mock<ILostConnectionWorkflow> _lostConnectionWorkflow;
+        private readonly Mock<ILanguageLocalizer> _languageLocalizer;
+        private readonly Mock<ISnackbar> _snackbar;
+        private readonly ApiFeedbackWorkflow _target;
+
+        public ApiFeedbackWorkflowTests()
+        {
+            _lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
+            _languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
+            _snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
+
+            var snackbarWorkflow = new SnackbarWorkflow(_languageLocalizer.Object, _snackbar.Object);
+            _target = new ApiFeedbackWorkflow(_lostConnectionWorkflow.Object, snackbarWorkflow, _languageLocalizer.Object);
+        }
+
         [Fact]
         public async Task GIVEN_FailedApiResultWithUserMessage_WHEN_HandlingFailure_THEN_ShouldShowUserMessage()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
             var result = ApiResult.FailureResult(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
 
-            snackbar
+            _snackbar
                 .Setup(service => service.Add("UserMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
-                .Returns((Snackbar?)null)
-                .Verifiable();
+                .Returns((Snackbar?)null);
 
-            await target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+            await _target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
-            snackbar.Verify();
+            _snackbar.Verify(service => service.Add("UserMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_FailedApiResultWithoutUserMessage_WHEN_HandlingFailure_THEN_ShouldShowLocalizedDefaultMessage()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
             var result = ApiResult.FailureResult(CreateFailure(ApiFailureKind.ServerError, null));
 
-            languageLocalizer
+            _languageLocalizer
                 .Setup(localizer => localizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.", It.IsAny<object[]>()))
-                .Returns("DefaultMessage")
-                .Verifiable();
-            snackbar
+                .Returns("DefaultMessage");
+            _snackbar
                 .Setup(service => service.Add("DefaultMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
-                .Returns((Snackbar?)null)
-                .Verifiable();
+                .Returns((Snackbar?)null);
 
-            await target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+            await _target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
-            languageLocalizer.Verify();
-            snackbar.Verify();
+            _languageLocalizer.Verify(localizer => localizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.", It.IsAny<object[]>()), Times.Once);
+            _snackbar.Verify(service => service.Add("DefaultMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_FailedConnectivityApiResult_WHEN_HandlingFailure_THEN_ShouldMarkLostConnection()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
             var result = ApiResult.FailureResult(CreateFailure(ApiFailureKind.NoResponse, "UserMessage"));
 
-            lostConnectionWorkflow
+            _lostConnectionWorkflow
                 .Setup(workflow => workflow.MarkLostConnectionAsync())
-                .Returns(Task.CompletedTask)
-                .Verifiable();
+                .Returns(Task.CompletedTask);
 
-            await target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+            await _target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
-            lostConnectionWorkflow.Verify();
+            _lostConnectionWorkflow.Verify(workflow => workflow.MarkLostConnectionAsync(), Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_SuccessfulApiResult_WHEN_HandlingIfFailure_THEN_ShouldReturnFalseWithoutFeedback()
+        public async Task GIVEN_SuccessfulApiResult_WHEN_ProcessingResult_THEN_ShouldReturnTrueWithoutFeedback()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
+            var succeeded = await _target.ProcessResultAsync(ApiResult.Success(), cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
-            var handled = await target.HandleIfFailureAsync(ApiResult.Success(), cancellationToken: Xunit.TestContext.Current.CancellationToken);
-
-            handled.Should().BeFalse();
+            succeeded.Should().BeTrue();
+            _lostConnectionWorkflow.VerifyNoOtherCalls();
+            _languageLocalizer.VerifyNoOtherCalls();
+            _snackbar.VerifyNoOtherCalls();
         }
 
         [Fact]
-        public async Task GIVEN_FailedApiResultWithUserMessage_WHEN_HandlingIfFailure_THEN_ShouldReturnTrueAndShowUserMessage()
+        public async Task GIVEN_FailedApiResultWithUserMessage_WHEN_ProcessingResult_THEN_ShouldReturnFalseAndShowUserMessage()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
             var result = ApiResult.FailureResult(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
 
-            snackbar
+            _snackbar
                 .Setup(service => service.Add("UserMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
-                .Returns((Snackbar?)null)
-                .Verifiable();
+                .Returns((Snackbar?)null);
 
-            var handled = await target.HandleIfFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+            var succeeded = await _target.ProcessResultAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
-            handled.Should().BeTrue();
-            snackbar.Verify();
+            succeeded.Should().BeFalse();
+            _snackbar.Verify(service => service.Add("UserMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
-        public async Task GIVEN_FailedConnectivityApiResult_WHEN_HandlingIfFailure_THEN_ShouldReturnTrueAndMarkLostConnection()
+        public async Task GIVEN_FailedConnectivityApiResult_WHEN_ProcessingResult_THEN_ShouldReturnFalseAndMarkLostConnection()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
             var result = ApiResult.FailureResult(CreateFailure(ApiFailureKind.NoResponse, "UserMessage"));
 
-            lostConnectionWorkflow
+            _lostConnectionWorkflow
                 .Setup(workflow => workflow.MarkLostConnectionAsync())
-                .Returns(Task.CompletedTask)
-                .Verifiable();
+                .Returns(Task.CompletedTask);
 
-            var handled = await target.HandleIfFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+            var succeeded = await _target.ProcessResultAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
-            handled.Should().BeTrue();
-            lostConnectionWorkflow.Verify();
+            succeeded.Should().BeFalse();
+            _lostConnectionWorkflow.Verify(workflow => workflow.MarkLostConnectionAsync(), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_FailedGenericApiResultWithUserMessage_WHEN_HandlingFailure_THEN_ShouldShowUserMessage()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
             var result = ApiResult<string>.FailureResult(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
 
-            snackbar
+            _snackbar
                 .Setup(service => service.Add("UserMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
-                .Returns((Snackbar?)null)
-                .Verifiable();
+                .Returns((Snackbar?)null);
 
-            await target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+            await _target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
-            snackbar.Verify();
+            _snackbar.Verify(service => service.Add("UserMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_FailedGenericApiResultWithoutUserMessage_WHEN_HandlingFailure_THEN_ShouldShowLocalizedDefaultMessage()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
             var result = ApiResult<string>.FailureResult(CreateFailure(ApiFailureKind.ServerError, null));
 
-            languageLocalizer
+            _languageLocalizer
                 .Setup(localizer => localizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.", It.IsAny<object[]>()))
-                .Returns("DefaultMessage")
-                .Verifiable();
-            snackbar
+                .Returns("DefaultMessage");
+            _snackbar
                 .Setup(service => service.Add("DefaultMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
-                .Returns((Snackbar?)null)
-                .Verifiable();
+                .Returns((Snackbar?)null);
 
-            await target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+            await _target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
-            languageLocalizer.Verify();
-            snackbar.Verify();
+            _languageLocalizer.Verify(localizer => localizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.", It.IsAny<object[]>()), Times.Once);
+            _snackbar.Verify(service => service.Add("DefaultMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_FailedGenericConnectivityApiResult_WHEN_HandlingFailure_THEN_ShouldMarkLostConnection()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
             var result = ApiResult<string>.FailureResult(CreateFailure(ApiFailureKind.Timeout, "UserMessage"));
 
-            lostConnectionWorkflow
+            _lostConnectionWorkflow
                 .Setup(workflow => workflow.MarkLostConnectionAsync())
-                .Returns(Task.CompletedTask)
-                .Verifiable();
+                .Returns(Task.CompletedTask);
 
-            await target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+            await _target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
-            lostConnectionWorkflow.Verify();
+            _lostConnectionWorkflow.Verify(workflow => workflow.MarkLostConnectionAsync(), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_SuccessfulApiResult_WHEN_HandlingFailure_THEN_ShouldThrowInvalidOperationException()
         {
-            var target = CreateTarget(
-                new Mock<ILostConnectionWorkflow>(MockBehavior.Strict),
-                new SnackbarWorkflow(Mock.Of<ILanguageLocalizer>(), Mock.Of<ISnackbar>()),
-                new Mock<ILanguageLocalizer>(MockBehavior.Strict));
-
-            Func<Task> action = async () => await target.HandleFailureAsync(ApiResult.Success(), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+            Func<Task> action = async () => await _target.HandleFailureAsync(ApiResult.Success(), cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
             await action.Should().ThrowAsync<InvalidOperationException>();
         }
@@ -211,12 +168,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_SuccessfulGenericApiResult_WHEN_HandlingFailure_THEN_ShouldThrowInvalidOperationException()
         {
-            var target = CreateTarget(
-                new Mock<ILostConnectionWorkflow>(MockBehavior.Strict),
-                new SnackbarWorkflow(Mock.Of<ILanguageLocalizer>(), Mock.Of<ISnackbar>()),
-                new Mock<ILanguageLocalizer>(MockBehavior.Strict));
-
-            Func<Task> action = async () => await target.HandleFailureAsync(ApiResult<string>.Success("Value"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+            Func<Task> action = async () => await _target.HandleFailureAsync(ApiResult<string>.Success("Value"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
             await action.Should().ThrowAsync<InvalidOperationException>();
         }
@@ -224,49 +176,29 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_FailedApiResultAndCustomMessage_WHEN_HandlingFailure_THEN_ShouldUseCustomMessageAndSeverity()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
             var result = ApiResult.FailureResult(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
 
-            snackbar
+            _snackbar
                 .Setup(service => service.Add("Custom UserMessage", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
-                .Returns((Snackbar?)null)
-                .Verifiable();
+                .Returns((Snackbar?)null);
 
-            await target.HandleFailureAsync(result, message => $"Custom {message}", Severity.Warning, Xunit.TestContext.Current.CancellationToken);
+            await _target.HandleFailureAsync(result, message => $"Custom {message}", Severity.Warning, Xunit.TestContext.Current.CancellationToken);
 
-            snackbar.Verify();
+            _snackbar.Verify(service => service.Add("Custom UserMessage", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
         public async Task GIVEN_FailedGenericApiResultAndCustomMessage_WHEN_HandlingFailure_THEN_ShouldUseCustomMessageAndSeverity()
         {
-            var lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
-            var languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
-            var snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
-            var snackbarWorkflow = new SnackbarWorkflow(languageLocalizer.Object, snackbar.Object);
-            var target = CreateTarget(lostConnectionWorkflow, snackbarWorkflow, languageLocalizer);
             var result = ApiResult<string>.FailureResult(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
 
-            snackbar
+            _snackbar
                 .Setup(service => service.Add("Custom UserMessage", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
-                .Returns((Snackbar?)null)
-                .Verifiable();
+                .Returns((Snackbar?)null);
 
-            await target.HandleFailureAsync(result, message => $"Custom {message}", Severity.Warning, Xunit.TestContext.Current.CancellationToken);
+            await _target.HandleFailureAsync(result, message => $"Custom {message}", Severity.Warning, Xunit.TestContext.Current.CancellationToken);
 
-            snackbar.Verify();
-        }
-
-        private static ApiFeedbackWorkflow CreateTarget(
-            Mock<ILostConnectionWorkflow> lostConnectionWorkflow,
-            ISnackbarWorkflow snackbarWorkflow,
-            Mock<ILanguageLocalizer> languageLocalizer)
-        {
-            return new ApiFeedbackWorkflow(lostConnectionWorkflow.Object, snackbarWorkflow, languageLocalizer.Object);
+            _snackbar.Verify(service => service.Add("Custom UserMessage", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()), Times.Once);
         }
 
         private static ApiFailure CreateFailure(ApiFailureKind kind, string? userMessage)

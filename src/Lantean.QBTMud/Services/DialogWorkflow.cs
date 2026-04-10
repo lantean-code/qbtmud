@@ -105,7 +105,7 @@ namespace Lantean.QBTMud.Services
 
             var category = (MudCategory)dialogResult.Data;
             var addCategoryResult = await _apiClient.AddCategoryAsync(category.Name, category.SavePath);
-            if (await _apiFeedbackWorkflow.HandleIfFailureAsync(addCategoryResult))
+            if (!await _apiFeedbackWorkflow.ProcessResultAsync(addCategoryResult))
             {
                 return null;
             }
@@ -247,7 +247,8 @@ namespace Lantean.QBTMud.Services
             if (!confirmTorrentDeletion)
             {
                 var deleteResult = await _apiClient.DeleteTorrentsAsync(TorrentSelector.FromHashes(hashes), deleteTorrentContentFiles);
-                return !await _apiFeedbackWorkflow.HandleIfFailureAsync(deleteResult);
+                var deleteSucceeded = await _apiFeedbackWorkflow.ProcessResultAsync(deleteResult);
+                return deleteSucceeded;
             }
 
             var parameters = new DialogParameters
@@ -287,7 +288,8 @@ namespace Lantean.QBTMud.Services
             }
 
             var confirmedDeleteResult = await _apiClient.DeleteTorrentsAsync(TorrentSelector.FromHashes(hashes), deleteFiles);
-            return await _apiFeedbackWorkflow.HandleIfFailureAsync(confirmedDeleteResult);
+            var confirmedDeleteSucceeded = await _apiFeedbackWorkflow.ProcessResultAsync(confirmedDeleteResult);
+            return confirmedDeleteSucceeded;
 
             async Task SaveDeleteFilesPreference(bool deleteFiles)
             {
@@ -295,7 +297,7 @@ namespace Lantean.QBTMud.Services
                 {
                     DeleteTorrentContentFiles = deleteFiles,
                 });
-                await _apiFeedbackWorkflow.HandleIfFailureAsync(savePreferencesResult);
+                await _apiFeedbackWorkflow.ProcessResultAsync(savePreferencesResult);
             }
         }
 
@@ -321,7 +323,7 @@ namespace Lantean.QBTMud.Services
             }
 
             var recheckResult = await _apiClient.RecheckTorrentsAsync(TorrentSelector.FromHashes(hashArray));
-            await _apiFeedbackWorkflow.HandleIfFailureAsync(recheckResult);
+            await _apiFeedbackWorkflow.ProcessResultAsync(recheckResult);
         }
 
         /// <inheritdoc />
@@ -339,7 +341,7 @@ namespace Lantean.QBTMud.Services
             }
 
             var setRateResult = await _apiClient.SetTorrentDownloadLimitAsync(TorrentSelector.FromHashes(hashes), appliedRate.Value);
-            await _apiFeedbackWorkflow.HandleIfFailureAsync(setRateResult);
+            await _apiFeedbackWorkflow.ProcessResultAsync(setRateResult);
         }
 
         /// <inheritdoc />
@@ -357,7 +359,7 @@ namespace Lantean.QBTMud.Services
             }
 
             var setRateResult = await _apiClient.SetGlobalDownloadLimitAsync(appliedRate.Value);
-            if (await _apiFeedbackWorkflow.HandleIfFailureAsync(setRateResult))
+            if (!await _apiFeedbackWorkflow.ProcessResultAsync(setRateResult))
             {
                 return null;
             }
@@ -391,7 +393,7 @@ namespace Lantean.QBTMud.Services
 
             var updatedCategory = (MudCategory)dialogResult.Data;
             var editCategoryResult = await _apiClient.EditCategoryAsync(updatedCategory.Name, updatedCategory.SavePath);
-            if (await _apiFeedbackWorkflow.HandleIfFailureAsync(editCategoryResult))
+            if (!await _apiFeedbackWorkflow.ProcessResultAsync(editCategoryResult))
             {
                 return null;
             }
@@ -445,7 +447,7 @@ namespace Lantean.QBTMud.Services
 
             var location = (string)dialogResult.Data;
             var setLocationResult = await _apiClient.SetTorrentLocationAsync(TorrentSelector.FromHashes(hashArray), location);
-            await _apiFeedbackWorkflow.HandleIfFailureAsync(setLocationResult);
+            await _apiFeedbackWorkflow.ProcessResultAsync(setLocationResult);
         }
 
         /// <inheritdoc />
@@ -493,7 +495,7 @@ namespace Lantean.QBTMud.Services
                 shareLimit.SeedingTimeLimit,
                 shareLimit.InactiveSeedingTimeLimit,
                 shareLimit.ShareLimitAction ?? ShareLimitAction.Default);
-            await _apiFeedbackWorkflow.HandleIfFailureAsync(setShareLimitResult);
+            await _apiFeedbackWorkflow.ProcessResultAsync(setShareLimitResult);
         }
 
         /// <inheritdoc />
@@ -531,7 +533,7 @@ namespace Lantean.QBTMud.Services
             }
 
             var setRateResult = await _apiClient.SetTorrentUploadLimitAsync(TorrentSelector.FromHashes(hashes), appliedRate.Value);
-            await _apiFeedbackWorkflow.HandleIfFailureAsync(setRateResult);
+            await _apiFeedbackWorkflow.ProcessResultAsync(setRateResult);
         }
 
         /// <inheritdoc />
@@ -549,7 +551,7 @@ namespace Lantean.QBTMud.Services
             }
 
             var setRateResult = await _apiClient.SetGlobalUploadLimitAsync(appliedRate.Value);
-            if (await _apiFeedbackWorkflow.HandleIfFailureAsync(setRateResult))
+            if (!await _apiFeedbackWorkflow.ProcessResultAsync(setRateResult))
             {
                 return null;
             }

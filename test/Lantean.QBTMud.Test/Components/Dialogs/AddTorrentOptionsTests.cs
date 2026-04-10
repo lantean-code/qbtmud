@@ -183,7 +183,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 tempPath: "DownloadPath",
                 tempPathEnabled: true);
 
-            UseApiClientMock(categories: categories, preferences: preferences);
+            UseApiClientMock(categories: categories, preferences: preferences, buildPlatform: BuildPlatform.Linux);
 
             var component = _target.RenderComponent();
             ExpandOptions(component);
@@ -191,11 +191,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await SetSelectValue(component, "Category", "CategorySave");
             GetSavePath(component).Should().Be("CategorySavePath");
             GetUseDownloadPath(component).Should().BeTrue();
-            GetDownloadPath(component).Should().Be(Path.Combine("DownloadPath", "CategorySave"));
+            GetDownloadPath(component).Should().Be(CombineQbittorrentPath("DownloadPath", "CategorySave", BuildPlatform.Linux));
 
             await SetSelectValue(component, "Category", "CategoryCombine");
-            GetSavePath(component).Should().Be(Path.Combine("SavePath", "CategoryCombine"));
-            GetDownloadPath(component).Should().Be(Path.Combine("DownloadPath", "CategoryCombine"));
+            GetSavePath(component).Should().Be(CombineQbittorrentPath("SavePath", "CategoryCombine", BuildPlatform.Linux));
+            GetDownloadPath(component).Should().Be(CombineQbittorrentPath("DownloadPath", "CategoryCombine", BuildPlatform.Linux));
 
             await SetSelectValue(component, "Category", "CategoryDownloadDisabled");
             GetUseDownloadPath(component).Should().BeFalse();
@@ -207,7 +207,105 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             await SetSelectValue(component, "Category", "CategoryDownloadEmpty");
             GetUseDownloadPath(component).Should().BeTrue();
-            GetDownloadPath(component).Should().Be(Path.Combine("DownloadPath", "CategoryDownloadEmpty"));
+            GetDownloadPath(component).Should().Be(CombineQbittorrentPath("DownloadPath", "CategoryDownloadEmpty", BuildPlatform.Linux));
+        }
+
+        [Theory]
+        [InlineData(BuildPlatform.Linux)]
+        [InlineData(BuildPlatform.MacOS)]
+        public async Task GIVEN_UnixQbittorrentPlatform_WHEN_AutomaticModeCategoryChanged_THEN_UsesForwardSlashPaths(BuildPlatform buildPlatform)
+        {
+            var categories = new Dictionary<string, ClientModels.Category>
+            {
+                { "Category", CreateCategory("Category", null, null) },
+            };
+            var preferences = CreatePreferences(
+                autoTmmEnabled: true,
+                savePath: "SavePath",
+                tempPath: "DownloadPath",
+                tempPathEnabled: true);
+
+            UseApiClientMock(categories: categories, preferences: preferences, buildPlatform: buildPlatform);
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            await SetSelectValue(component, "Category", "Category");
+
+            GetSavePath(component).Should().Be("SavePath/Category");
+            GetDownloadPath(component).Should().Be("DownloadPath/Category");
+        }
+
+        [Fact]
+        public async Task GIVEN_WindowsQbittorrentPlatform_WHEN_AutomaticModeCategoryChanged_THEN_UsesBackslashPaths()
+        {
+            var categories = new Dictionary<string, ClientModels.Category>
+            {
+                { "Category", CreateCategory("Category", null, null) },
+            };
+            var preferences = CreatePreferences(
+                autoTmmEnabled: true,
+                savePath: @"SavePath",
+                tempPath: @"DownloadPath",
+                tempPathEnabled: true);
+
+            UseApiClientMock(categories: categories, preferences: preferences, buildPlatform: BuildPlatform.Windows);
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            await SetSelectValue(component, "Category", "Category");
+
+            GetSavePath(component).Should().Be(@"SavePath\Category");
+            GetDownloadPath(component).Should().Be(@"DownloadPath\Category");
+        }
+
+        [Fact]
+        public async Task GIVEN_BuildInfoUnavailableAndWindowsStylePaths_WHEN_AutomaticModeCategoryChanged_THEN_InfersBackslashPaths()
+        {
+            var categories = new Dictionary<string, ClientModels.Category>
+            {
+                { "Category", CreateCategory("Category", null, null) },
+            };
+            var preferences = CreatePreferences(
+                autoTmmEnabled: true,
+                savePath: @"C:\SavePath",
+                tempPath: @"C:\DownloadPath",
+                tempPathEnabled: true);
+
+            UseApiClientMock(categories: categories, preferences: preferences, buildInfoResult: CreateBuildInfoFailureResult());
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            await SetSelectValue(component, "Category", "Category");
+
+            GetSavePath(component).Should().Be(@"C:\SavePath\Category");
+            GetDownloadPath(component).Should().Be(@"C:\DownloadPath\Category");
+        }
+
+        [Fact]
+        public async Task GIVEN_PathAlreadyEndsWithSeparator_WHEN_AutomaticModeCategoryChanged_THEN_DoesNotDuplicateSeparator()
+        {
+            var categories = new Dictionary<string, ClientModels.Category>
+            {
+                { "Category", CreateCategory("Category", null, null) },
+            };
+            var preferences = CreatePreferences(
+                autoTmmEnabled: true,
+                savePath: "/SavePath/",
+                tempPath: "/DownloadPath/",
+                tempPathEnabled: true);
+
+            UseApiClientMock(categories: categories, preferences: preferences, buildPlatform: BuildPlatform.Linux);
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            await SetSelectValue(component, "Category", "Category");
+
+            GetSavePath(component).Should().Be("/SavePath/Category");
+            GetDownloadPath(component).Should().Be("/DownloadPath/Category");
         }
 
         [Fact]
@@ -621,13 +719,62 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private Mock<IApiClient> UseApiClientMock(
             IReadOnlyDictionary<string, ClientModels.Category>? categories = null,
             IEnumerable<string>? tags = null,
-            ClientModels.Preferences? preferences = null)
+            ClientModels.Preferences? preferences = null,
+            BuildPlatform buildPlatform = BuildPlatform.Unknown,
+            ApiResult<BuildInfo>? buildInfoResult = null)
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsAsync(categories ?? new Dictionary<string, ClientModels.Category>());
             apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsAsync(tags?.ToArray() ?? Array.Empty<string>());
+            apiClientMock.Setup(c => c.GetBuildInfoAsync()).ReturnsAsync(buildInfoResult ?? CreateBuildInfoResult(buildPlatform));
             apiClientMock.Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync(preferences ?? CreatePreferences());
             return apiClientMock;
+        }
+
+        private static ApiResult<BuildInfo> CreateBuildInfoResult(BuildPlatform buildPlatform)
+        {
+            return ApiResult<BuildInfo>.Success(CreateBuildInfo(buildPlatform));
+        }
+
+        private static ApiResult<BuildInfo> CreateBuildInfoFailureResult()
+        {
+            return ApiResult<BuildInfo>.FailureResult(new ApiFailure
+            {
+                Kind = ApiFailureKind.UnexpectedResponse,
+                Operation = "GetBuildInfoAsync",
+                UserMessage = "UserMessage",
+            });
+        }
+
+        private static BuildInfo CreateBuildInfo(BuildPlatform buildPlatform)
+        {
+            return new BuildInfo("QTVersion", "LibTorrentVersion", "BoostVersion", "OpenSSLVersion", "ZLibVersion", 64, buildPlatform);
+        }
+
+        private static string CombineQbittorrentPath(string basePath, string childPath, BuildPlatform buildPlatform)
+        {
+            if (string.IsNullOrEmpty(basePath))
+            {
+                return childPath;
+            }
+
+            if (basePath[^1] == '/' || basePath[^1] == '\\')
+            {
+                return string.Concat(basePath, childPath);
+            }
+
+            return string.Concat(basePath, GetQbittorrentPathSeparator(basePath, buildPlatform), childPath);
+        }
+
+        private static char GetQbittorrentPathSeparator(string path, BuildPlatform buildPlatform)
+        {
+            return buildPlatform switch
+            {
+                BuildPlatform.Windows => '\\',
+                BuildPlatform.Linux => '/',
+                BuildPlatform.MacOS => '/',
+                _ => path.Contains('\\', StringComparison.Ordinal) && !path.Contains('/', StringComparison.Ordinal) ? '\\' : '/'
+            };
         }
 
         private static ClientModels.Category CreateCategory(string name, string? savePath, ClientModels.DownloadPathOption? downloadPath)

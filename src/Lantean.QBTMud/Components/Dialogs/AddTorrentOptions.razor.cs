@@ -9,6 +9,7 @@ namespace Lantean.QBTMud.Components.Dialogs
     {
         private readonly List<CategoryOption> _categoryOptions = new();
         private readonly Dictionary<string, CategoryOption> _categoryLookup = new(StringComparer.Ordinal);
+        private BuildPlatform _qBittorrentPlatform = BuildPlatform.Unknown;
         private string _manualSavePath = string.Empty;
         private bool _manualUseDownloadPath;
         private string _manualDownloadPath = string.Empty;
@@ -97,6 +98,12 @@ namespace Lantean.QBTMud.Components.Dialogs
             AvailableTags = tagsResult.TryGetValue(out var availableTags)
                 ? availableTags.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList()
                 : [];
+
+            var buildInfoResult = await ApiClient.GetBuildInfoAsync();
+            if (buildInfoResult.TryGetValue(out var buildInfo))
+            {
+                _qBittorrentPlatform = buildInfo.Platform;
+            }
 
             var preferencesResult = await ApiClient.GetApplicationPreferencesAsync();
             if (!preferencesResult.TryGetValue(out var applicationPreferences))
@@ -345,7 +352,7 @@ namespace Lantean.QBTMud.Components.Dialogs
 
             if (!string.IsNullOrWhiteSpace(_defaultSavePath))
             {
-                return Path.Combine(_defaultSavePath, category.Name);
+                return CombineQbittorrentPath(_defaultSavePath, category.Name);
             }
 
             return _defaultSavePath;
@@ -394,7 +401,7 @@ namespace Lantean.QBTMud.Components.Dialogs
                 return string.Empty;
             }
 
-            return Path.Combine(_defaultDownloadPath, categoryName);
+            return CombineQbittorrentPath(_defaultDownloadPath, categoryName);
         }
 
         private CategoryOption? GetSelectedCategory()
@@ -405,6 +412,32 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             return _categoryLookup.TryGetValue(Category, out var option) ? option : null;
+        }
+
+        private string CombineQbittorrentPath(string basePath, string childPath)
+        {
+            if (string.IsNullOrEmpty(basePath))
+            {
+                return childPath;
+            }
+
+            if (basePath[^1] == '/' || basePath[^1] == '\\')
+            {
+                return string.Concat(basePath, childPath);
+            }
+
+            return string.Concat(basePath, GetQbittorrentPathSeparator(basePath), childPath);
+        }
+
+        private char GetQbittorrentPathSeparator(string path)
+        {
+            return _qBittorrentPlatform switch
+            {
+                BuildPlatform.Windows => '\\',
+                BuildPlatform.Linux => '/',
+                BuildPlatform.MacOS => '/',
+                _ => path.Contains('\\', StringComparison.Ordinal) && !path.Contains('/', StringComparison.Ordinal) ? '\\' : '/'
+            };
         }
 
         protected internal enum ShareLimitMode

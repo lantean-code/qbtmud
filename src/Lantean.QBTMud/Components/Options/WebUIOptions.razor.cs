@@ -147,7 +147,7 @@ namespace Lantean.QBTMud.Components.Options
             WebUiHttpsCertPath = Preferences.WebUiHttpsCertPath;
             WebUiHttpsKeyPath = Preferences.WebUiHttpsKeyPath;
             WebUiUsername = Preferences.WebUiUsername;
-            WebUiPassword = Preferences.WebUiPassword;
+            WebUiPassword = null;
             BypassLocalAuth = Preferences.BypassLocalAuth;
             BypassAuthSubnetWhitelistEnabled = Preferences.BypassAuthSubnetWhitelistEnabled;
             BypassAuthSubnetWhitelist = Preferences.BypassAuthSubnetWhitelist;

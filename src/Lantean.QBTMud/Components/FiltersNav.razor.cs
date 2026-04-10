@@ -314,7 +314,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var removeResult = await ApiClient.RemoveCategoriesAsync(categories: [ContextMenuCategory]);
-            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(removeResult))
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(removeResult))
             {
                 return;
             }
@@ -361,7 +361,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var removeResult = await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHashes(hashes), trackerItem.Urls);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(removeResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(removeResult);
         }
 
         protected async Task AddTag()
@@ -378,7 +378,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var createResult = await ApiClient.CreateTagsAsync(tags);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(createResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(createResult);
         }
 
         protected async Task RemoveTag()
@@ -389,7 +389,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var deleteResult = await ApiClient.DeleteTagsAsync(tags: [ContextMenuTag]);
-            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(deleteResult))
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(deleteResult))
             {
                 return;
             }
@@ -421,7 +421,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var startResult = await ApiClient.StartTorrentsAsync(TorrentSelector.FromHashes(hashes));
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(startResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(startResult);
         }
 
         protected async Task StopTorrents(string type)
@@ -433,7 +433,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var stopResult = await ApiClient.StopTorrentsAsync(TorrentSelector.FromHashes(hashes));
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(stopResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(stopResult);
         }
 
         protected async Task RemoveTorrents(string type)

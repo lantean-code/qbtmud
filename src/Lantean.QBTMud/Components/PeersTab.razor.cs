@@ -1,3 +1,4 @@
+using System.Data;
 using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Models;
@@ -6,7 +7,6 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Data;
 using UIComponents.Flags;
 using MudPeer = Lantean.QBTMud.Models.Peer;
 
@@ -140,7 +140,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var addResult = await ApiClient.AddPeersAsync(TorrentSelector.FromHash(Hash), peers);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(addResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(addResult);
         }
 
         protected Task BanPeerToolbar()
@@ -165,7 +165,7 @@ namespace Lantean.QBTMud.Components
                 return;
             }
             var banResult = await ApiClient.BanPeersAsync([new PeerId(peer.IPAddress, peer.Port)]);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(banResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(banResult);
         }
 
         protected Task TableDataContextMenu(TableDataContextMenuEventArgs<MudPeer> eventArgs)

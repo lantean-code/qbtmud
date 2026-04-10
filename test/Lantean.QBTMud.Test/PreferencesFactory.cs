@@ -107,7 +107,7 @@ namespace Lantean.QBTMud.Test
                 sslEnabled: spec.SslEnabled,
                 sslListenPort: spec.SslListenPort,
                 locale: spec.Locale,
-                LSD: spec.Lsd,
+                lsd: spec.Lsd,
                 mailNotificationAuthEnabled: spec.MailNotificationAuthEnabled,
                 mailNotificationEmail: spec.MailNotificationEmail,
                 mailNotificationEnabled: spec.MailNotificationEnabled,
@@ -142,7 +142,7 @@ namespace Lantean.QBTMud.Test
                 peerTurnoverCutoff: spec.PeerTurnoverCutoff,
                 peerTurnoverInterval: spec.PeerTurnoverInterval,
                 performanceWarning: spec.PerformanceWarning,
-                PEX: spec.Pex,
+                pex: spec.Pex,
                 preallocateAll: spec.PreallocateAll,
                 proxyAuthEnabled: spec.ProxyAuthEnabled,
                 proxyBittorrent: spec.ProxyBittorrent,
@@ -162,6 +162,7 @@ namespace Lantean.QBTMud.Test
                 recheckCompletedTorrents: spec.RecheckCompletedTorrents,
                 refreshInterval: spec.RefreshInterval,
                 requestQueueSize: spec.RequestQueueSize,
+                resolvePeerHostNames: spec.ResolvePeerHostNames,
                 resolvePeerCountries: spec.ResolvePeerCountries,
                 resumeDataStorageType: spec.ResumeDataStorageType,
                 rssAutoDownloadingEnabled: spec.RssAutoDownloadingEnabled,
@@ -211,6 +212,7 @@ namespace Lantean.QBTMud.Test
                 useSubcategories: spec.UseSubcategories,
                 utpTcpMixedMode: spec.UtpTcpMixedMode,
                 validateHttpsTrackerCertificate: spec.ValidateHttpsTrackerCertificate,
+                hostnameCacheTtl: spec.HostnameCacheTtl,
                 webUiAddress: spec.WebUiAddress,
                 webUiApiKey: spec.WebUiApiKey,
                 webUiBanDuration: spec.WebUiBanDuration,
@@ -230,7 +232,6 @@ namespace Lantean.QBTMud.Test
                 webUiUpnp: spec.WebUiUpnp,
                 webUiUseCustomHttpHeadersEnabled: spec.WebUiUseCustomHttpHeadersEnabled,
                 webUiUsername: spec.WebUiUsername,
-                webUiPassword: spec.WebUiPassword,
                 confirmTorrentDeletion: spec.ConfirmTorrentDeletion,
                 confirmTorrentRecheck: spec.ConfirmTorrentRecheck,
                 statusBarExternalIp: spec.StatusBarExternalIp);
@@ -389,6 +390,7 @@ namespace Lantean.QBTMud.Test
             public bool RecheckCompletedTorrents { get; set; }
             public int RefreshInterval { get; set; }
             public int RequestQueueSize { get; set; }
+            public bool? ResolvePeerHostNames { get; set; }
             public bool ResolvePeerCountries { get; set; }
             public ResumeDataStorageType ResumeDataStorageType { get; set; }
             public bool RssAutoDownloadingEnabled { get; set; }
@@ -438,6 +440,7 @@ namespace Lantean.QBTMud.Test
             public bool UseSubcategories { get; set; }
             public UtpTcpMixedMode UtpTcpMixedMode { get; set; }
             public bool ValidateHttpsTrackerCertificate { get; set; }
+            public int? HostnameCacheTtl { get; set; }
             public string WebUiAddress { get; set; } = string.Empty;
             public string WebUiApiKey { get; set; } = string.Empty;
             public int WebUiBanDuration { get; set; }

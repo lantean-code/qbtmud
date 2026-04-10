@@ -179,8 +179,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsAsync(new Dictionary<string, ClientModels.Category>());
             apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsAsync(Array.Empty<string>());
+            apiClientMock.Setup(c => c.GetBuildInfoAsync()).ReturnsAsync(CreateBuildInfo());
             apiClientMock.Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync(CreatePreferences());
             return apiClientMock;
+        }
+
+        private static ApiResult<BuildInfo> CreateBuildInfo()
+        {
+            return ApiResult<BuildInfo>.Success(new BuildInfo("QTVersion", "LibTorrentVersion", "BoostVersion", "OpenSSLVersion", "ZLibVersion", 64, BuildPlatform.Linux));
         }
 
         private static ClientModels.Preferences CreatePreferences()

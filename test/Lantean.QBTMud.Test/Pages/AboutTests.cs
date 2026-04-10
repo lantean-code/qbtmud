@@ -34,7 +34,8 @@ namespace Lantean.QBTMud.Test.Pages
                     "BoostVersion",
                     "OpenSSLVersion",
                     "ZLibVersion",
-                    64));
+                    64,
+                    BuildPlatform.Linux));
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationVersionAsync())

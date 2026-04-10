@@ -188,7 +188,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var addResult = await ApiClient.AddTrackersToTorrentAsync(TorrentSelector.FromHash(Hash), trackers);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(addResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(addResult);
         }
 
         protected Task EditTrackerToolbar()
@@ -215,7 +215,7 @@ namespace Lantean.QBTMud.Components
                 async value =>
                 {
                     var editResult = await ApiClient.EditTrackerAsync(Hash, tracker.Url, value);
-                    await ApiFeedbackWorkflow.HandleIfFailureAsync(editResult);
+                    await ApiFeedbackWorkflow.ProcessResultAsync(editResult);
                 });
         }
 
@@ -237,7 +237,7 @@ namespace Lantean.QBTMud.Components
             }
 
             var removeResult = await ApiClient.RemoveTrackersAsync(TorrentSelector.FromHash(Hash), [tracker.Url]);
-            await ApiFeedbackWorkflow.HandleIfFailureAsync(removeResult);
+            await ApiFeedbackWorkflow.ProcessResultAsync(removeResult);
         }
 
         protected Task CopyTrackerUrlToolbar()

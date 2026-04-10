@@ -9,13 +9,13 @@ namespace Lantean.QBTMud.Services
     public interface IApiFeedbackWorkflow
     {
         /// <summary>
-        /// Handles feedback for a command-style API result when it has failed.
+        /// Processes a command-style API result and triggers failure feedback when needed.
         /// </summary>
         /// <param name="result">The result to inspect.</param>
         /// <param name="severity">The snackbar severity for non-connectivity failures.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns><see langword="true"/> when the failure was handled; otherwise, <see langword="false"/>.</returns>
-        Task<bool> HandleIfFailureAsync(ApiResult result, Severity severity = Severity.Error, CancellationToken cancellationToken = default);
+        /// <returns><see langword="true"/> when <paramref name="result"/> is successful; otherwise, <see langword="false"/> after failure feedback has been processed.</returns>
+        Task<bool> ProcessResultAsync(ApiResult result, Severity severity = Severity.Error, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Handles feedback for a failed command-style API result.

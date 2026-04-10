@@ -1,5 +1,5 @@
-using QBittorrent.ApiClient;
 using System.Text.Json;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Services
 {
@@ -87,7 +87,12 @@ namespace Lantean.QBTMud.Services
                 return;
             }
 
-            await _apiClient.StoreClientDataAsync(normalizedValues, cancellationToken);
+            var payload = normalizedValues.ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value is null ? (JsonElement?)null : JsonSerializer.SerializeToElement(entry.Value),
+                StringComparer.Ordinal);
+
+            await _apiClient.StoreClientDataAsync(payload, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -97,19 +102,19 @@ namespace Lantean.QBTMud.Services
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var removalValues = prefixedKeys
+            var removalKeys = prefixedKeys
                 .Where(key => !string.IsNullOrWhiteSpace(key))
                 .Select(key => key.Trim())
                 .Where(key => key.StartsWith(StorageKeyPrefix, StringComparison.Ordinal))
                 .Distinct(StringComparer.Ordinal)
-                .ToDictionary(key => key, _ => (object?)null, StringComparer.Ordinal);
+                .ToArray();
 
-            if (removalValues.Count == 0)
+            if (removalKeys.Length == 0)
             {
                 return Task.CompletedTask;
             }
 
-            return _apiClient.StoreClientDataAsync(removalValues, cancellationToken);
+            return _apiClient.DeleteClientDataAsync(removalKeys, cancellationToken);
         }
     }
 }

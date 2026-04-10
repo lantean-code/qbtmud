@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
@@ -11,7 +12,6 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Text.Json;
 using MudPriority = Lantean.QBTMud.Models.Priority;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
@@ -23,6 +23,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         public RenameFilesDialogTests()
         {
+            TestContext.AddSingleton(Mock.Of<IApiFeedbackWorkflow>());
             _target = new RenameFilesDialogTestDriver(TestContext);
         }
 
@@ -271,7 +272,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var contentItems = new[]
             {
                 CreateContentItem("NameFile.txt", "NameFile.txt", 1, false, 0),
-                CreateContentItem("NameFolder/", "NameFolder", -1, true, 0),
+                CreateContentItem("NameFolder", "NameFolder", -1, true, 0),
             };
             dataManagerMock
                 .Setup(m => m.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>()))
@@ -280,14 +281,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialog = await _target.RenderDialogAsync("Hash");
 
             await ClickRowAsync(dialog.Component, "NameFile.txt", false);
-            await ClickRowAsync(dialog.Component, "NameFolder/", true);
+            await ClickRowAsync(dialog.Component, "NameFolder", true);
             await SetTextFieldValue(dialog.Component, "RenameFilesSearch", "Name");
             await SetTextFieldValue(dialog.Component, "RenameFilesReplacement", "Replacement");
             await SetSwitchValue(dialog.Component, "RenameFilesIncludeFolders", true);
             await SetSelectValue(dialog.Component, "RenameFilesReplaceType", true);
 
             var renamedFile = GetPreviewRow(dialog.Component, "NameFile.txt");
-            var renamedFolder = GetPreviewRow(dialog.Component, "NameFolder/");
+            var renamedFolder = GetPreviewRow(dialog.Component, "NameFolder");
 
             renamedFile.NewName.Should().Be("ReplacementFile.txt");
             renamedFolder.NewName.Should().Be("ReplacementFolder");
@@ -357,7 +358,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dataManagerMock = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
             var contentItems = new[]
             {
-                CreateContentItem("NameFolder/", "NameFolder", -1, true, 0),
+                CreateContentItem("NameFolder", "NameFolder", -1, true, 0),
             };
             dataManagerMock
                 .Setup(m => m.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>()))
@@ -365,13 +366,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             var dialog = await _target.RenderDialogAsync("Hash");
 
-            await ClickRowAsync(dialog.Component, "NameFolder/", false);
+            await ClickRowAsync(dialog.Component, "NameFolder", false);
             await SetTextFieldValue(dialog.Component, "RenameFilesSearch", "Name");
             await SetTextFieldValue(dialog.Component, "RenameFilesReplacement", "Replacement");
             await SetSwitchValue(dialog.Component, "RenameFilesIncludeFolders", true);
             await SetSelectValue(dialog.Component, "RenameFilesReplaceType", false);
 
-            var renamedFolder = GetPreviewRow(dialog.Component, "NameFolder/");
+            var renamedFolder = GetPreviewRow(dialog.Component, "NameFolder");
             renamedFolder.NewName.Should().Be("ReplacementFolder");
             var folderPaths = GetReplaceAllPaths(renamedFolder!);
 
@@ -460,8 +461,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static (string OldPath, string NewPath) GetReplaceAllPaths(FileRow row)
         {
-            var oldPath = row.Path + row.OriginalName;
-            var newPath = row.Path + row.NewName;
+            var parentPath = global::Lantean.QBTMud.Extensions.GetDirectoryPath(row.Name);
+            var oldPath = string.IsNullOrEmpty(parentPath)
+                ? row.OriginalName!
+                : string.Concat(parentPath, global::Lantean.QBTMud.Extensions.DirectorySeparator, row.OriginalName!);
+            var newPath = string.IsNullOrEmpty(parentPath)
+                ? row.NewName!
+                : string.Concat(parentPath, global::Lantean.QBTMud.Extensions.DirectorySeparator, row.NewName!);
             return (oldPath, newPath);
         }
     }

@@ -30,15 +30,15 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> HandleIfFailureAsync(ApiResult result, Severity severity = Severity.Error, CancellationToken cancellationToken = default)
+        public async Task<bool> ProcessResultAsync(ApiResult result, Severity severity = Severity.Error, CancellationToken cancellationToken = default)
         {
             if (result.IsSuccess)
             {
-                return false;
+                return true;
             }
 
             await HandleFailureCoreAsync(result.Failure, null, severity, cancellationToken);
-            return true;
+            return false;
         }
 
         /// <inheritdoc />

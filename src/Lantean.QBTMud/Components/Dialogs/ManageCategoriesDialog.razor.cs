@@ -110,7 +110,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (nextState == CategoryState.All)
             {
                 var setResult = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(Hashes), category);
-                if (await ApiFeedbackWorkflow.HandleIfFailureAsync(setResult))
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(setResult))
                 {
                     return;
                 }
@@ -118,7 +118,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             else
             {
                 var clearResult = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(Hashes), string.Empty);
-                if (await ApiFeedbackWorkflow.HandleIfFailureAsync(clearResult))
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(clearResult))
                 {
                     return;
                 }
@@ -138,7 +138,7 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var setResult = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(Hashes), addedCategoy);
-            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(setResult))
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(setResult))
             {
                 return;
             }
@@ -149,7 +149,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected async Task RemoveCategory()
         {
             var clearResult = await ApiClient.SetTorrentCategoryAsync(TorrentSelector.FromHashes(Hashes), string.Empty);
-            if (await ApiFeedbackWorkflow.HandleIfFailureAsync(clearResult))
+            if (!await ApiFeedbackWorkflow.ProcessResultAsync(clearResult))
             {
                 return;
             }

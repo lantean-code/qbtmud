@@ -1,3 +1,4 @@
+using System.Net;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
@@ -13,7 +14,6 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
-using System.Net;
 using UIComponents.Flags;
 using ClientPeer = QBittorrent.ApiClient.Models.Peer;
 using MudPeer = Lantean.QBTMud.Models.Peer;
@@ -166,7 +166,7 @@ namespace Lantean.QBTMud.Test.Components
                 true,
                 new Dictionary<string, ClientPeer>
                 {
-                    ["Key"] = new ClientPeer("Client", PeerConnectionType.Bittorrent, "Country", "US", 1, 2, "Files", "Flags", "FlagsDescription", "IPAddress", "ClientId", "ClientId", 6881, 0.5f, 0.4f, 3, 4)
+                    ["Key"] = CreateClientPeer("Client", 6881)
                 },
                 null,
                 1,
@@ -175,7 +175,7 @@ namespace Lantean.QBTMud.Test.Components
                 false,
                 new Dictionary<string, ClientPeer>
                 {
-                    ["Key"] = new ClientPeer("UpdatedClient", PeerConnectionType.Bittorrent, "Country", "US", 1, 2, "Files", "Flags", "FlagsDescription", "IPAddress", "ClientId", "ClientId", 6882, 0.5f, 0.4f, 3, 4)
+                    ["Key"] = CreateClientPeer("UpdatedClient", 6882)
                 },
                 null,
                 2,
@@ -214,7 +214,7 @@ namespace Lantean.QBTMud.Test.Components
                 true,
                 new Dictionary<string, ClientPeer>
                 {
-                    ["Key"] = new ClientPeer("Client", PeerConnectionType.Bittorrent, "Country", "US", 1, 2, "Files", "Flags", "FlagsDescription", "IPAddress", "ClientId", "ClientId", 6881, 0.5f, 0.4f, 3, 4)
+                    ["Key"] = CreateClientPeer("Client", 6881)
                 },
                 null,
                 1,
@@ -223,7 +223,7 @@ namespace Lantean.QBTMud.Test.Components
                 false,
                 new Dictionary<string, ClientPeer>
                 {
-                    ["Key"] = new ClientPeer("UpdatedClient", PeerConnectionType.Bittorrent, "Country", "US", 1, 2, "Files", "Flags", "FlagsDescription", "IPAddress", "ClientId", "ClientId", 6882, 0.5f, 0.4f, 3, 4)
+                    ["Key"] = CreateClientPeer("UpdatedClient", 6882)
                 },
                 null,
                 2,
@@ -759,23 +759,24 @@ namespace Lantean.QBTMud.Test.Components
         private static TorrentPeers CreatePeers(bool? showFlags, string? countryCode, string? country, string? flags = "Flags", string? flagsDescription = "FlagsDescription", int requestId = 1, bool fullUpdate = true)
         {
             var peer = new ClientPeer(
-                "Client",
-                PeerConnectionType.Bittorrent,
-                country,
-                countryCode,
-                1,
-                2,
-                "Files",
-                flags,
-                flagsDescription,
-                "IPAddress",
-                "I2pDestination",
-                "ClientId",
-                6881,
-                0.5f,
-                0.4f,
-                3,
-                4);
+                client: "Client",
+                connection: PeerConnectionType.Bittorrent,
+                country: country,
+                countryCode: countryCode,
+                downloadSpeed: 1,
+                downloaded: 2,
+                files: "Files",
+                flags: flags,
+                flagsDescription: flagsDescription,
+                hostName: null,
+                iPAddress: "IPAddress",
+                i2pDestination: "I2pDestination",
+                clientId: "ClientId",
+                port: 6881,
+                progress: 0.5f,
+                relevance: 0.4f,
+                uploadSpeed: 3,
+                uploaded: 4);
 
             return new TorrentPeers(
                 fullUpdate,
@@ -783,6 +784,29 @@ namespace Lantean.QBTMud.Test.Components
                 null,
                 requestId,
                 showFlags);
+        }
+
+        private static ClientPeer CreateClientPeer(string client, int port)
+        {
+            return new ClientPeer(
+                client: client,
+                connection: PeerConnectionType.Bittorrent,
+                country: "Country",
+                countryCode: "US",
+                downloadSpeed: 1,
+                downloaded: 2,
+                files: "Files",
+                flags: "Flags",
+                flagsDescription: "FlagsDescription",
+                hostName: null,
+                iPAddress: "IPAddress",
+                i2pDestination: "I2pDestination",
+                clientId: "ClientId",
+                port: port,
+                progress: 0.5f,
+                relevance: 0.4f,
+                uploadSpeed: 3,
+                uploaded: 4);
         }
 
         private static Preferences CreatePreferences(bool resolvePeerCountries)
