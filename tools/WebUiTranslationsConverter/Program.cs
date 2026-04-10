@@ -6,9 +6,9 @@ namespace WebUiTranslationsConverter
 {
     internal static class Program
     {
-        private const string FilePrefix = "webui_";
-        private const string FileExtension = ".ts";
-        private const string LanguagesFileName = "webui_languages.json";
+        private const string _filePrefix = "webui_";
+        private const string _fileExtension = ".ts";
+        private const string _languagesFileName = "webui_languages.json";
 
         private static readonly JsonSerializerOptions _options = new JsonSerializerOptions
         {
@@ -65,7 +65,7 @@ namespace WebUiTranslationsConverter
                 Console.WriteLine($"Generated {outputFile} ({translations.Count} entries)");
             }
 
-            var languagesManifestPath = BuildOutputFilePath(options.OutputPath, LanguagesFileName);
+            var languagesManifestPath = BuildOutputFilePath(options.OutputPath, _languagesFileName);
             WriteLanguagesManifest(languagesManifestPath, locales);
 
             return 0;
@@ -164,15 +164,15 @@ namespace WebUiTranslationsConverter
         private static string GetLocale(string filePath)
         {
             var fileName = Path.GetFileName(filePath);
-            if (fileName is null || !fileName.StartsWith(FilePrefix, StringComparison.OrdinalIgnoreCase))
+            if (fileName is null || !fileName.StartsWith(_filePrefix, StringComparison.OrdinalIgnoreCase))
             {
                 return string.Empty;
             }
 
-            var locale = fileName[FilePrefix.Length..];
-            if (locale.EndsWith(FileExtension, StringComparison.OrdinalIgnoreCase))
+            var locale = fileName[_filePrefix.Length..];
+            if (locale.EndsWith(_fileExtension, StringComparison.OrdinalIgnoreCase))
             {
-                locale = locale.Substring(0, locale.Length - FileExtension.Length);
+                locale = locale.Substring(0, locale.Length - _fileExtension.Length);
             }
 
             return locale;

@@ -8,10 +8,10 @@ namespace Lantean.QBTMud.Services.Localization
     /// <summary>
     /// Provides qBittorrent-style translation lookup using context and source keys.
     /// </summary>
-    public sealed class LanguageLocalizer : ILanguageLocalizer
+    public sealed partial class LanguageLocalizer : ILanguageLocalizer
     {
-        private static readonly Regex PlaceholderRegex = new("%([1-9][0-9]?)", RegexOptions.Compiled);
-        private static readonly ConcurrentDictionary<string, string> NormalizedPlaceholderCache = new(StringComparer.Ordinal);
+        private static readonly Regex _placeholderRegex = PlaceholderRegex();
+        private static readonly ConcurrentDictionary<string, string> _normalizedPlaceholderCache = new(StringComparer.Ordinal);
 
         private readonly ILanguageResourceProvider _resourceProvider;
 
@@ -91,11 +91,14 @@ namespace Lantean.QBTMud.Services.Localization
                 return value;
             }
 
-            return NormalizedPlaceholderCache.GetOrAdd(value, static cachedValue => PlaceholderRegex.Replace(cachedValue, match =>
+            return _normalizedPlaceholderCache.GetOrAdd(value, static cachedValue => _placeholderRegex.Replace(cachedValue, match =>
             {
                 var index = int.Parse(match.Groups[1].Value, NumberStyles.Integer, CultureInfo.InvariantCulture);
                 return string.Concat("{", index - 1, "}");
             }));
         }
+
+        [GeneratedRegex("%([1-9][0-9]?)", RegexOptions.Compiled)]
+        private static partial Regex PlaceholderRegex();
     }
 }

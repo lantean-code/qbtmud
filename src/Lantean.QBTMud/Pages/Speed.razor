@@ -26,7 +26,7 @@
                                     Value="_selectedPeriod"
                                     ValueChanged="OnPeriodChanged"
                                     data-test-id="@TestIdHelper.For("PeriodToggleGroup")">
-                        @foreach (var option in PeriodOptions)
+                        @foreach (var option in _periodOptions)
                         {
                             <MudToggleItem Value="option.Period" data-test-id="@TestIdHelper.For($"PeriodToggle-{option.Period}")">@Translate(option.Label)</MudToggleItem>
                         }

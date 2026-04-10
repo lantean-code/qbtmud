@@ -7,7 +7,7 @@ namespace Lantean.QBTMud.Services.Localization
     /// </summary>
     public sealed class LanguageEmbeddedResourceLoader : ILanguageEmbeddedResourceLoader
     {
-        private static readonly JsonSerializerOptions JsonOptions = new()
+        private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             ReadCommentHandling = JsonCommentHandling.Skip,
             AllowTrailingCommas = true
@@ -51,7 +51,7 @@ namespace Lantean.QBTMud.Services.Localization
 
             try
             {
-                return ValueTask.FromResult(JsonSerializer.Deserialize<Dictionary<string, string>>(stream, JsonOptions));
+                return ValueTask.FromResult(JsonSerializer.Deserialize<Dictionary<string, string>>(stream, _jsonOptions));
             }
             catch (JsonException ex)
             {

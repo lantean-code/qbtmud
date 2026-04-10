@@ -4,7 +4,7 @@ namespace Lantean.QBTMud.Helpers
 {
     internal static class RssItemTreeHelper
     {
-        private const char PathSeparator = '\\';
+        private const char _pathSeparator = '\\';
 
         public static IEnumerable<KeyValuePair<string, RssFeedItem>> EnumerateFeeds(IReadOnlyDictionary<string, RssItem> rssItems)
         {
@@ -32,7 +32,7 @@ namespace Lantean.QBTMud.Helpers
 
             foreach (var child in folderItem.Children)
             {
-                var childPath = string.Concat(currentPath, PathSeparator, child.Key);
+                var childPath = string.Concat(currentPath, _pathSeparator, child.Key);
                 foreach (var feedEntry in EnumerateFeeds(childPath, child.Value))
                 {
                     yield return feedEntry;

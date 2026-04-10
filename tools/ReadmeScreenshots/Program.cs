@@ -11,12 +11,12 @@ namespace ReadmeScreenshots
 {
     internal static class Program
     {
-        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
             WriteIndented = true
         };
 
-        private static readonly DateTimeOffset TorrentCreationDate = new DateTimeOffset(2026, 1, 3, 12, 0, 0, TimeSpan.Zero);
+        private static readonly DateTimeOffset _torrentCreationDate = new DateTimeOffset(2026, 1, 3, 12, 0, 0, TimeSpan.Zero);
 
         public static async Task<int> Main(string[] args)
         {
@@ -204,7 +204,7 @@ namespace ReadmeScreenshots
             };
 
             Directory.CreateDirectory(Path.GetDirectoryName(captureStatePath)!);
-            await File.WriteAllTextAsync(captureStatePath, JsonSerializer.Serialize(captureState, JsonOptions));
+            await File.WriteAllTextAsync(captureStatePath, JsonSerializer.Serialize(captureState, _jsonOptions));
             Console.WriteLine($"Wrote {captureStatePath}");
             return 0;
         }
@@ -219,7 +219,7 @@ namespace ReadmeScreenshots
             var edgeExecutablePath = GetOptionalOption(args, "--edge-executable");
             var browserChannel = GetOptionalOption(args, "--browser-channel");
 
-            var captureState = JsonSerializer.Deserialize<ReadmeCaptureState>(await File.ReadAllTextAsync(captureStatePath), JsonOptions)
+            var captureState = JsonSerializer.Deserialize<ReadmeCaptureState>(await File.ReadAllTextAsync(captureStatePath), _jsonOptions)
                 ?? throw new InvalidOperationException("Could not read capture state.");
 
             Directory.CreateDirectory(outputDir);
@@ -638,7 +638,7 @@ namespace ReadmeScreenshots
         private static async Task<FixtureManifest> LoadManifestAsync(string repoRoot)
         {
             var manifestPath = Path.Combine(repoRoot, "tools", "ReadmeScreenshots", "readme-fixtures", "manifest.json");
-            var manifest = JsonSerializer.Deserialize<FixtureManifest>(await File.ReadAllTextAsync(manifestPath), JsonOptions);
+            var manifest = JsonSerializer.Deserialize<FixtureManifest>(await File.ReadAllTextAsync(manifestPath), _jsonOptions);
             return manifest ?? throw new InvalidOperationException($"Could not load fixture manifest from '{manifestPath}'.");
         }
 
@@ -665,7 +665,7 @@ namespace ReadmeScreenshots
             {
                 ["comment"] = comment,
                 ["created by"] = "qbtmud README screenshot fixtures",
-                ["creation date"] = TorrentCreationDate.ToUnixTimeSeconds(),
+                ["creation date"] = _torrentCreationDate.ToUnixTimeSeconds(),
                 ["info"] = info
             };
 

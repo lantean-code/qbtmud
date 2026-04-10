@@ -12,7 +12,7 @@ namespace Lantean.QBTMud.Test.Theming
         {
             get
             {
-                foreach (var entry in ColorMap)
+                foreach (var entry in _colorMap)
                 {
                     yield return new object[] { entry.Key, entry.Value };
                 }
@@ -75,7 +75,7 @@ namespace Lantean.QBTMud.Test.Theming
 
             var result = ThemePaletteHelper.GetColor(theme, unknown, false);
 
-            string.Equals(result.ToString(MudColorOutputFormats.Hex), ColorMap[ThemePaletteColor.Primary], StringComparison.OrdinalIgnoreCase).Should().BeTrue();
+            string.Equals(result.ToString(MudColorOutputFormats.Hex), _colorMap[ThemePaletteColor.Primary], StringComparison.OrdinalIgnoreCase).Should().BeTrue();
         }
 
         [Fact]
@@ -105,8 +105,8 @@ namespace Lantean.QBTMud.Test.Theming
             var light = new PaletteLight();
             var dark = new PaletteDark();
 
-            ApplyPaletteColors(light, ColorMap);
-            ApplyPaletteColors(dark, DarkColorMap);
+            ApplyPaletteColors(light, _colorMap);
+            ApplyPaletteColors(dark, _darkColorMap);
 
             theme.Theme.PaletteLight = light;
             theme.Theme.PaletteDark = (PaletteDark)dark;
@@ -262,7 +262,7 @@ namespace Lantean.QBTMud.Test.Theming
             };
         }
 
-        private static readonly IReadOnlyDictionary<ThemePaletteColor, string> ColorMap =
+        private static readonly IReadOnlyDictionary<ThemePaletteColor, string> _colorMap =
             new Dictionary<ThemePaletteColor, string>
             {
                 { ThemePaletteColor.Primary, "#111111" },
@@ -293,7 +293,7 @@ namespace Lantean.QBTMud.Test.Theming
                 { ThemePaletteColor.ActionDisabledBackground, "#262626" }
             };
 
-        private static readonly IReadOnlyDictionary<ThemePaletteColor, string> DarkColorMap =
+        private static readonly IReadOnlyDictionary<ThemePaletteColor, string> _darkColorMap =
             new Dictionary<ThemePaletteColor, string>
             {
                 { ThemePaletteColor.Primary, "#AAAAAA" },

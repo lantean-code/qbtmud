@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Services.Localization
     /// </summary>
     public sealed class LanguageFileLoader : ILanguageFileLoader
     {
-        private static readonly JsonSerializerOptions JsonOptions = new()
+        private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             ReadCommentHandling = JsonCommentHandling.Skip,
             AllowTrailingCommas = true
@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Services.Localization
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             try
             {
-                var data = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream, JsonOptions, cancellationToken);
+                var data = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream, _jsonOptions, cancellationToken);
                 return data ?? new Dictionary<string, string>(StringComparer.Ordinal);
             }
             catch (JsonException ex)

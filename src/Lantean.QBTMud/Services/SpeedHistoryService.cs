@@ -10,10 +10,10 @@ namespace Lantean.QBTMud.Services
     {
         private const string _storageKey = "SpeedHistory.State";
         private const int _schemaVersion = 1;
-        private static readonly TimeSpan DefaultFlushInterval = TimeSpan.FromSeconds(10);
-        private static readonly TimeSpan MaximumRetention = TimeSpan.FromHours(24);
+        private static readonly TimeSpan _defaultFlushInterval = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan _maximumRetention = TimeSpan.FromHours(24);
 
-        private static readonly IReadOnlyDictionary<SpeedPeriod, BucketConfiguration> BucketConfigurations = new Dictionary<SpeedPeriod, BucketConfiguration>
+        private static readonly IReadOnlyDictionary<SpeedPeriod, BucketConfiguration> _bucketConfigurations = new Dictionary<SpeedPeriod, BucketConfiguration>
         {
             { SpeedPeriod.Min1, new BucketConfiguration(TimeSpan.FromSeconds(2), TimeSpan.FromMinutes(1)) },
             { SpeedPeriod.Min5, new BucketConfiguration(TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(5)) },
@@ -34,10 +34,10 @@ namespace Lantean.QBTMud.Services
         public SpeedHistoryService(ISettingsStorageService settingsStorage, TimeSpan? flushInterval = null)
         {
             _settingsStorage = settingsStorage;
-            _bucketizers = BucketConfigurations.ToDictionary(
+            _bucketizers = _bucketConfigurations.ToDictionary(
                 kvp => kvp.Key,
                 kvp => new Bucketizer(kvp.Key, kvp.Value.BucketSize, kvp.Value.MaxDuration));
-            _flushInterval = flushInterval ?? DefaultFlushInterval;
+            _flushInterval = flushInterval ?? _defaultFlushInterval;
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Services
 
                 foreach (var bucket in persistedBuckets.OrderBy(b => b.StartUtc))
                 {
-                    if ((now - bucket.StartUtc) > MaximumRetention)
+                    if ((now - bucket.StartUtc) > _maximumRetention)
                     {
                         continue;
                     }

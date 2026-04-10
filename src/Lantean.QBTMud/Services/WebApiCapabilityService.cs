@@ -8,7 +8,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class WebApiCapabilityService : IWebApiCapabilityService
     {
-        private static readonly Version ClientDataMinimumVersion = new(2, 13, 1);
+        private static readonly Version _clientDataMinimumVersion = new(2, 13, 1);
 
         private readonly SemaphoreSlim _initializationSemaphore = new(1, 1);
         private readonly IApiClient _apiClient;
@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Services
                 _cachedState = new WebApiCapabilityState(
                     rawVersion,
                     parsedVersion,
-                    supportsClientData: parsedVersion >= ClientDataMinimumVersion);
+                    supportsClientData: parsedVersion >= _clientDataMinimumVersion);
                 return _cachedState;
             }
             finally

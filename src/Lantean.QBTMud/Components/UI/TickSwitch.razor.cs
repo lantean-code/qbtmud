@@ -6,7 +6,7 @@ namespace Lantean.QBTMud.Components.UI
 {
     public partial class TickSwitch<T>
     {
-        private const string HiddenStyle = "display:none;";
+        private const string _hiddenStyle = "display:none;";
 
         private string? _styleBeforeHidden;
 
@@ -66,16 +66,16 @@ namespace Lantean.QBTMud.Components.UI
         {
             if (string.IsNullOrWhiteSpace(style))
             {
-                return HiddenStyle;
+                return _hiddenStyle;
             }
 
             var trimmed = style.Trim();
             if (trimmed.EndsWith(";"))
             {
-                return $"{trimmed}{HiddenStyle}";
+                return $"{trimmed}{_hiddenStyle}";
             }
 
-            return $"{trimmed};{HiddenStyle}";
+            return $"{trimmed};{_hiddenStyle}";
         }
     }
 }

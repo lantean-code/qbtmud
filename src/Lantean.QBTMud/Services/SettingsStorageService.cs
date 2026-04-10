@@ -9,7 +9,7 @@ namespace Lantean.QBTMud.Services
     /// </summary>
     public sealed class SettingsStorageService : ISettingsStorageService
     {
-        private static readonly JsonSerializerOptions SerializerOptions = ThemeSerialization.CreateSerializerOptions(writeIndented: false);
+        private static readonly JsonSerializerOptions _serializerOptions = ThemeSerialization.CreateSerializerOptions(writeIndented: false);
 
         private readonly ILocalStorageService _localStorageService;
         private readonly IStorageRoutingService _storageRoutingService;
@@ -57,7 +57,7 @@ namespace Lantean.QBTMud.Services
                     return default;
                 }
 
-                return JsonSerializer.Deserialize<T>(value.GetRawText(), SerializerOptions);
+                return JsonSerializer.Deserialize<T>(value.GetRawText(), _serializerOptions);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -115,7 +115,7 @@ namespace Lantean.QBTMud.Services
             try
             {
                 var prefixedKey = ToPrefixedKey(key);
-                var valueElement = JsonSerializer.SerializeToElement(data, SerializerOptions);
+                var valueElement = JsonSerializer.SerializeToElement(data, _serializerOptions);
                 await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
                     new Dictionary<string, object?>(StringComparer.Ordinal)
                     {

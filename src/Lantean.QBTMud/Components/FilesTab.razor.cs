@@ -21,8 +21,8 @@ namespace Lantean.QBTMud.Components
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool _disposedValue;
-        private static readonly ReadOnlyCollection<ContentItem> EmptyContentItems = new ReadOnlyCollection<ContentItem>(Array.Empty<ContentItem>());
-        private ReadOnlyCollection<ContentItem> _visibleFiles = EmptyContentItems;
+        private static readonly ReadOnlyCollection<ContentItem> _emptyContentItems = [];
+        private ReadOnlyCollection<ContentItem> _visibleFiles = _emptyContentItems;
         private bool _filesDirty = true;
 
         private List<PropertyFilterDefinition<ContentItem>>? _filterDefinitions;
@@ -431,13 +431,13 @@ namespace Lantean.QBTMud.Components
         {
             if (FileList is null || FileList.Values.Count == 0)
             {
-                return EmptyContentItems;
+                return _emptyContentItems;
             }
 
             var lookup = BuildChildrenLookup();
             if (!lookup.TryGetValue(string.Empty, out var roots))
             {
-                return EmptyContentItems;
+                return _emptyContentItems;
             }
 
             var sortSelector = GetSortSelector();
