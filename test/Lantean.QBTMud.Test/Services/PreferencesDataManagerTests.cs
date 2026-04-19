@@ -753,6 +753,78 @@ namespace Lantean.QBTMud.Test.Services
             actual.StatusBarExternalIp.Should().Be(expected.StatusBarExternalIp);
         }
 
+        [Fact]
+        public void GIVEN_ApiPreferences_WHEN_CreateQBittorrentPreferences_THEN_RuntimeFieldsAreMapped()
+        {
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.Locale = "Locale";
+                spec.AutoTmmEnabled = true;
+                spec.SavePath = "SavePath";
+                spec.TempPath = "TempPath";
+                spec.TempPathEnabled = true;
+                spec.AddStoppedEnabled = true;
+                spec.AddToTopOfQueue = true;
+                spec.TorrentStopCondition = StopCondition.FilesChecked;
+                spec.TorrentContentLayout = TorrentContentLayout.Subfolder;
+                spec.MaxRatioEnabled = true;
+                spec.MaxRatio = 1.5f;
+                spec.MaxSeedingTimeEnabled = true;
+                spec.MaxSeedingTime = 60;
+                spec.MaxInactiveSeedingTimeEnabled = true;
+                spec.MaxInactiveSeedingTime = 120;
+                spec.QueueingEnabled = true;
+                spec.ConfirmTorrentDeletion = true;
+                spec.DeleteTorrentContentFiles = true;
+                spec.ConfirmTorrentRecheck = true;
+                spec.StatusBarExternalIp = true;
+                spec.RssProcessingEnabled = true;
+                spec.UseSubcategories = true;
+                spec.ResolvePeerCountries = true;
+                spec.RefreshInterval = 1234;
+            });
+
+            var result = _target.CreateQBittorrentPreferences(preferences);
+
+            result.Locale.Should().Be("Locale");
+            result.AutoTmmEnabled.Should().BeTrue();
+            result.SavePath.Should().Be("SavePath");
+            result.TempPath.Should().Be("TempPath");
+            result.TempPathEnabled.Should().BeTrue();
+            result.AddStoppedEnabled.Should().BeTrue();
+            result.AddToTopOfQueue.Should().BeTrue();
+            result.TorrentStopCondition.Should().Be(StopCondition.FilesChecked);
+            result.TorrentContentLayout.Should().Be(TorrentContentLayout.Subfolder);
+            result.MaxRatioEnabled.Should().BeTrue();
+            result.MaxRatio.Should().Be(1.5d);
+            result.MaxSeedingTimeEnabled.Should().BeTrue();
+            result.MaxSeedingTime.Should().Be(60);
+            result.MaxInactiveSeedingTimeEnabled.Should().BeTrue();
+            result.MaxInactiveSeedingTime.Should().Be(120);
+            result.QueueingEnabled.Should().BeTrue();
+            result.ConfirmTorrentDeletion.Should().BeTrue();
+            result.DeleteTorrentContentFiles.Should().BeTrue();
+            result.ConfirmTorrentRecheck.Should().BeTrue();
+            result.StatusBarExternalIp.Should().BeTrue();
+            result.RssProcessingEnabled.Should().BeTrue();
+            result.UseSubcategories.Should().BeTrue();
+            result.ResolvePeerCountries.Should().BeTrue();
+            result.RefreshInterval.Should().Be(1234);
+        }
+
+        [Fact]
+        public void GIVEN_ApiPreferencesWithDisabledSubcategories_WHEN_CreateQBittorrentPreferences_THEN_UseSubcategoriesIsFalse()
+        {
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.UseSubcategories = false;
+            });
+
+            var result = _target.CreateQBittorrentPreferences(preferences);
+
+            result.UseSubcategories.Should().BeFalse();
+        }
+
         // ---------- Tests ----------
 
         [Fact]

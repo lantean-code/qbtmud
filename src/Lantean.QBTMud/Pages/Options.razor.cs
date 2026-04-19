@@ -3,6 +3,7 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
+using MudBlazor;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
 
@@ -10,7 +11,7 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Options
     {
-        private bool _reloadAfterSave;
+        private const string _languageReloadSnackbarKey = "options-language-reload";
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
@@ -26,6 +27,9 @@ namespace Lantean.QBTMud.Pages
 
         [Inject]
         protected IPreferencesDataManager PreferencesDataManager { get; set; } = default!;
+
+        [Inject]
+        protected IQBittorrentPreferencesStateService QBittorrentPreferencesStateService { get; set; } = default!;
 
         [Inject]
         protected ISettingsStorageService SettingsStorage { get; set; } = default!;
@@ -65,20 +69,6 @@ namespace Lantean.QBTMud.Pages
             {
                 Preferences = preferences;
             }
-        }
-
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (!_reloadAfterSave)
-            {
-                return;
-            }
-
-            _reloadAfterSave = false;
-
-            await Task.Yield();
-
-            NavigationManager.NavigateToHome(forceLoad: true);
         }
 
         protected void PreferencesChanged(UpdatePreferences preferences)
@@ -156,6 +146,8 @@ namespace Lantean.QBTMud.Pages
             }
 
             var selectedLocale = UpdatePreferences.Locale;
+            var localeChanged = !string.IsNullOrWhiteSpace(selectedLocale)
+                && !string.Equals(selectedLocale, Preferences?.Locale, StringComparison.Ordinal);
             var updateResult = await ApiClient.SetApplicationPreferencesAsync(UpdatePreferences);
             if (!updateResult.IsSuccess)
             {
@@ -165,14 +157,49 @@ namespace Lantean.QBTMud.Pages
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(selectedLocale))
+            if (localeChanged)
             {
-                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, selectedLocale);
+                await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, selectedLocale!);
             }
+
             UpdatePreferences = null;
-            _reloadAfterSave = true;
+            SnackbarWorkflow.ShowTransient("AppOptions", "Options saved.", Severity.Success);
+
+            var preferencesResult = await ApiClient.GetApplicationPreferencesAsync();
+            if (preferencesResult.TryGetValue(out var preferences))
+            {
+                Preferences = preferences;
+                QBittorrentPreferencesStateService.SetPreferences(PreferencesDataManager.CreateQBittorrentPreferences(preferences));
+            }
+            else
+            {
+                await ApiFeedbackWorkflow.HandleFailureAsync(preferencesResult);
+            }
+
+            if (localeChanged)
+            {
+                ShowLanguageReloadPrompt();
+            }
 
             await InvokeAsync(StateHasChanged);
+        }
+
+        private void ShowLanguageReloadPrompt()
+        {
+            SnackbarWorkflow.ShowActionMessage(
+                LanguageLocalizer.Translate("AppLocalization", "Language preference changed on server. Click Reload to apply it."),
+                Severity.Warning,
+                LanguageLocalizer.Translate("AppLocalization", "Reload"),
+                _ =>
+                {
+                    NavigationManager.NavigateToHome(forceLoad: true);
+                    return Task.CompletedTask;
+                },
+                key: _languageReloadSnackbarKey,
+                configure: options =>
+                {
+                    options.CloseAfterNavigation = true;
+                });
         }
 
         private string TranslateOptions(string source, params object[] arguments)

@@ -25,7 +25,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_ShowMenuCalled_WHEN_Rendered_THEN_MenuVisibleWithPreferences()
         {
-            var preferences = PreferencesFactory.CreatePreferences(spec =>
+            var preferences = PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
                 spec.RssProcessingEnabled = true;
             });

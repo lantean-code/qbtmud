@@ -107,9 +107,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 new Dictionary<string, HashSet<string>>());
         }
 
-        private static ClientModels.Preferences CreatePreferences(string tempPath)
+        private static QBittorrentPreferences CreatePreferences(string tempPath)
         {
-            return PreferencesFactory.CreatePreferences(spec =>
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
                 spec.TempPath = tempPath;
             });
@@ -180,7 +180,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 "Comment");
         }
 
-        private async Task<TorrentOptionsDialogRenderContext> RenderDialogAsync(MudMainData mainData, ClientModels.Preferences preferences, string hash)
+        private async Task<TorrentOptionsDialogRenderContext> RenderDialogAsync(MudMainData mainData, QBittorrentPreferences preferences, string hash)
         {
             var provider = TestContext.Render((RenderFragment)(builder =>
             {
@@ -189,14 +189,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 builder.AddAttribute(2, nameof(CascadingValue<>.IsFixed), true);
                 builder.AddAttribute(3, nameof(CascadingValue<>.ChildContent), (RenderFragment)(mainDataBuilder =>
                 {
-                    mainDataBuilder.OpenComponent<CascadingValue<ClientModels.Preferences>>(0);
-                    mainDataBuilder.AddAttribute(1, nameof(CascadingValue<>.Value), preferences);
-                    mainDataBuilder.AddAttribute(2, nameof(CascadingValue<>.IsFixed), true);
-                    mainDataBuilder.AddAttribute(3, nameof(CascadingValue<>.ChildContent), (RenderFragment)(dialogBuilder =>
-                    {
-                        dialogBuilder.OpenComponent<MudDialogProvider>(0);
-                        dialogBuilder.CloseComponent();
-                    }));
+                    mainDataBuilder.OpenComponent<MudDialogProvider>(0);
                     mainDataBuilder.CloseComponent();
                 }));
                 builder.CloseComponent();
@@ -207,6 +200,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var dialogParameters = new DialogParameters
             {
                 { nameof(TorrentOptionsDialog.Hash), hash },
+                { nameof(TorrentOptionsDialog.Preferences), preferences },
             };
 
             var reference = await dialogService.ShowAsync<TorrentOptionsDialog>("MudTorrent Options", dialogParameters);

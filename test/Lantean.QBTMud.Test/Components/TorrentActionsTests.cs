@@ -1374,7 +1374,7 @@ namespace Lantean.QBTMud.Test.Components
             apiClientMock.Verify(c => c.AddTorrentTagsAsync(TorrentSelectorTestHelper.FromHashes(Hashes("One", "Missing")), It.Is<IEnumerable<string>>(tags => tags.Single() == "Tag"), It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        private IRenderedComponent<TorrentActions> RenderMenuItems(IEnumerable<string> hashes, Dictionary<string, TorrentModel> torrents, HashSet<string> tags, Dictionary<string, CategoryModel> categories, Preferences? preferences = null)
+        private IRenderedComponent<TorrentActions> RenderMenuItems(IEnumerable<string> hashes, Dictionary<string, TorrentModel> torrents, HashSet<string> tags, Dictionary<string, CategoryModel> categories, QBittorrentPreferences? preferences = null)
         {
             return TestContext.Render<TorrentActions>(parameters =>
             {

@@ -691,7 +691,60 @@ namespace Lantean.QBTMud.Test.Components
             });
         }
 
-        private IRenderedComponent<PeersTab> RenderPeersTab(bool active, string hash = "Hash", Preferences? preferences = null)
+        [Fact]
+        public void GIVEN_PreferencesWithCountryResolution_WHEN_PeersSpecifyShowFlagsFalse_THEN_PeerValueTakesPrecedence()
+        {
+            var preferences = CreatePreferences(resolvePeerCountries: true);
+
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
+                .ReturnsAsync(CreatePeers(false, "US", "Country", requestId: 1, fullUpdate: true));
+
+            var target = RenderPeersTab(true, preferences: preferences);
+
+            target.WaitForAssertion(() =>
+            {
+                var table = target.FindComponent<DynamicTable<MudPeer>>();
+                var countryColumn = table.Instance.ColumnDefinitions.Single(column => string.Equals(column.Id, "country/region", StringComparison.Ordinal));
+                table.Instance.ColumnFilter(countryColumn).Should().BeFalse();
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_PreferencesChangeCountryResolution_WHEN_PeersDontSpecifyShowFlags_THEN_CountryColumnUpdates()
+        {
+            var preferences = CreatePreferences(resolvePeerCountries: false);
+            var updatedPreferences = CreatePreferences(resolvePeerCountries: true);
+
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentPeersDataAsync("Hash", It.IsAny<int>()))
+                .ReturnsAsync(CreatePeers(null, "US", "Country", requestId: 1, fullUpdate: true));
+
+            var target = RenderPeersTab(true, preferences: preferences);
+
+            target.WaitForAssertion(() =>
+            {
+                var table = target.FindComponent<DynamicTable<MudPeer>>();
+                var countryColumn = table.Instance.ColumnDefinitions.Single(column => string.Equals(column.Id, "country/region", StringComparison.Ordinal));
+                table.Instance.ColumnFilter(countryColumn).Should().BeFalse();
+            });
+
+            target.Instance.Preferences = updatedPreferences;
+            await target.InvokeAsync(() => target.Instance.SetParametersAsync(ParameterView.FromDictionary(new Dictionary<string, object?>
+            {
+                [nameof(PeersTab.Active)] = true,
+                [nameof(PeersTab.Hash)] = "Hash"
+            })));
+
+            target.WaitForAssertion(() =>
+            {
+                var table = target.FindComponent<DynamicTable<MudPeer>>();
+                var countryColumn = table.Instance.ColumnDefinitions.Single(column => string.Equals(column.Id, "country/region", StringComparison.Ordinal));
+                table.Instance.ColumnFilter(countryColumn).Should().BeTrue();
+            });
+        }
+
+        private IRenderedComponent<PeersTab> RenderPeersTab(bool active, string hash = "Hash", QBittorrentPreferences? preferences = null)
         {
             return TestContext.Render<PeersTab>(parameters =>
             {
@@ -809,9 +862,9 @@ namespace Lantean.QBTMud.Test.Components
                 uploaded: 4);
         }
 
-        private static Preferences CreatePreferences(bool resolvePeerCountries)
+        private static QBittorrentPreferences CreatePreferences(bool resolvePeerCountries)
         {
-            return PreferencesFactory.CreatePreferences(spec =>
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
                 spec.ResolvePeerCountries = resolvePeerCountries;
             });

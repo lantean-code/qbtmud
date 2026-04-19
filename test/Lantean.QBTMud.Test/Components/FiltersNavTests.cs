@@ -791,7 +791,7 @@ namespace Lantean.QBTMud.Test.Components
 
         private IRenderedComponent<FiltersNav> RenderFiltersNav(
             MudMainData? mainData = null,
-            Preferences? preferences = null)
+            QBittorrentPreferences? preferences = null)
         {
             _popoverProvider = TestContext.Render<MudPopoverProvider>();
 
@@ -935,9 +935,9 @@ namespace Lantean.QBTMud.Test.Components
                 trackersState);
         }
 
-        private static Preferences CreatePreferences(bool useSubcategories, bool confirmDeletion)
+        private static QBittorrentPreferences CreatePreferences(bool useSubcategories, bool confirmDeletion)
         {
-            return PreferencesFactory.CreatePreferences(spec =>
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
                 spec.ConfirmTorrentDeletion = confirmDeletion;
                 spec.UseSubcategories = useSubcategories;

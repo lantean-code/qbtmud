@@ -611,9 +611,9 @@ namespace Lantean.QBTMud.Test.Pages
                 new Dictionary<string, HashSet<string>>());
         }
 
-        private static Preferences CreatePreferences(bool queueingEnabled)
+        private static QBittorrentPreferences CreatePreferences(bool queueingEnabled)
         {
-            return PreferencesFactory.CreatePreferences(spec =>
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
                 spec.QueueingEnabled = queueingEnabled;
             });

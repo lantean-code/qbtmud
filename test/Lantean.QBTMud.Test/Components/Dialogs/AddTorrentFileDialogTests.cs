@@ -21,6 +21,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
     {
         private readonly IKeyboardService _keyboardService;
         private readonly AddTorrentFileDialogTestDriver _target;
+        private QBittorrentPreferences? _preferences;
 
         public AddTorrentFileDialogTests()
         {
@@ -33,7 +34,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.RemoveAll<IKeyboardService>();
             TestContext.Services.AddSingleton(_keyboardService);
 
-            _target = new AddTorrentFileDialogTestDriver(TestContext);
+            _target = new AddTorrentFileDialogTestDriver(TestContext, () => _preferences);
         }
 
         [Fact]
@@ -180,7 +181,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsAsync(new Dictionary<string, ClientModels.Category>());
             apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsAsync(Array.Empty<string>());
             apiClientMock.Setup(c => c.GetBuildInfoAsync()).ReturnsAsync(CreateBuildInfo());
-            apiClientMock.Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync(CreatePreferences());
+
+            _preferences = CreatePreferences();
+
             return apiClientMock;
         }
 
@@ -189,9 +192,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             return ApiResult.CreateSuccess(new BuildInfo("QTVersion", "LibTorrentVersion", "BoostVersion", "OpenSSLVersion", "ZLibVersion", 64, BuildPlatform.Linux));
         }
 
-        private static ClientModels.Preferences CreatePreferences()
+        private static QBittorrentPreferences CreatePreferences()
         {
-            return PreferencesFactory.CreatePreferences(spec =>
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
                 spec.AddStoppedEnabled = false;
                 spec.AddToTopOfQueue = true;
@@ -222,18 +225,26 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
     internal sealed class AddTorrentFileDialogTestDriver
     {
         private readonly ComponentTestContext _testContext;
+        private readonly Func<QBittorrentPreferences?> _getPreferences;
 
-        public AddTorrentFileDialogTestDriver(ComponentTestContext testContext)
+        public AddTorrentFileDialogTestDriver(ComponentTestContext testContext, Func<QBittorrentPreferences?> getPreferences)
         {
             _testContext = testContext;
+            _getPreferences = getPreferences;
         }
 
         public async Task<AddTorrentFileDialogRenderContext> RenderDialogAsync()
         {
             var provider = _testContext.Render<MudDialogProvider>();
             var dialogService = _testContext.Services.GetRequiredService<IDialogService>();
+            var parameters = new DialogParameters();
+            var preferences = _getPreferences();
+            if (preferences is not null)
+            {
+                parameters.Add(nameof(AddTorrentFileDialog.Preferences), preferences);
+            }
 
-            var reference = await dialogService.ShowAsync<AddTorrentFileDialog>("Upload local torrent");
+            var reference = await dialogService.ShowAsync<AddTorrentFileDialog>("Upload local torrent", parameters);
 
             var dialog = provider.FindComponent<MudDialog>();
             var component = provider.FindComponent<AddTorrentFileDialog>();

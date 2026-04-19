@@ -93,6 +93,7 @@ namespace Lantean.QBTMud
             builder.Services.AddScoped<IBrowserNotificationService, BrowserNotificationService>();
             builder.Services.AddScoped<IInternalUrlProvider, InternalUrlProvider>();
             builder.Services.AddScoped<IMagnetLinkService, MagnetLinkService>();
+            builder.Services.AddScoped<IQBittorrentPreferencesStateService, QBittorrentPreferencesStateService>();
             builder.Services.AddScoped<IWelcomeWizardStateService, WelcomeWizardStateService>();
             builder.Services.AddScoped<IWelcomeWizardPlanBuilder, WelcomeWizardPlanBuilder>();
             builder.Services.AddScoped<ITorrentCompletionNotificationService, TorrentCompletionNotificationService>();

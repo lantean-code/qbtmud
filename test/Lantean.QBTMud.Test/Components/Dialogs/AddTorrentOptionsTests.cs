@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Components.UI;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Test.Infrastructure;
 using Moq;
 using MudBlazor;
@@ -15,10 +16,11 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
     public sealed class AddTorrentOptionsTests : RazorComponentTestBase<AddTorrentOptions>
     {
         private readonly AddTorrentOptionsTestDriver _target;
+        private QBittorrentPreferences? _preferences;
 
         public AddTorrentOptionsTests()
         {
-            _target = new AddTorrentOptionsTestDriver(TestContext);
+            _target = new AddTorrentOptionsTestDriver(TestContext, () => _preferences);
         }
 
         [Fact]
@@ -719,7 +721,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private Mock<IApiClient> UseApiClientMock(
             IReadOnlyDictionary<string, ClientModels.Category>? categories = null,
             IEnumerable<string>? tags = null,
-            ClientModels.Preferences? preferences = null,
+            QBittorrentPreferences? preferences = null,
             BuildPlatform buildPlatform = BuildPlatform.Unknown,
             ApiResult<BuildInfo>? buildInfoResult = null)
         {
@@ -727,7 +729,9 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsAsync(categories ?? new Dictionary<string, ClientModels.Category>());
             apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsAsync(tags?.ToArray() ?? Array.Empty<string>());
             apiClientMock.Setup(c => c.GetBuildInfoAsync()).ReturnsAsync(buildInfoResult ?? CreateBuildInfoResult(buildPlatform));
-            apiClientMock.Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync(preferences ?? CreatePreferences());
+
+            _preferences = preferences ?? CreatePreferences();
+
             return apiClientMock;
         }
 
@@ -782,7 +786,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             return new ClientModels.Category(name, savePath, downloadPath);
         }
 
-        private static ClientModels.Preferences CreatePreferences(
+        private static QBittorrentPreferences CreatePreferences(
             bool autoTmmEnabled = false,
             string? savePath = "SavePath",
             string? tempPath = "TempPath",
@@ -799,7 +803,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             int maxInactiveSeedingTime = 0,
             MaxRatioAction maxRatioAct = MaxRatioAction.StopTorrent)
         {
-            return PreferencesFactory.CreatePreferences(spec =>
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
                 spec.AddStoppedEnabled = addStoppedEnabled;
                 spec.AddToTopOfQueue = addToTopOfQueue;
@@ -823,16 +827,25 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
     internal sealed class AddTorrentOptionsTestDriver
     {
         private readonly ComponentTestContext _testContext;
+        private readonly Func<QBittorrentPreferences?> _getPreferences;
 
-        public AddTorrentOptionsTestDriver(ComponentTestContext testContext)
+        public AddTorrentOptionsTestDriver(ComponentTestContext testContext, Func<QBittorrentPreferences?> getPreferences)
         {
             _testContext = testContext;
+            _getPreferences = getPreferences;
         }
 
         public IRenderedComponent<AddTorrentOptions> RenderComponent(bool showCookieOption = false)
         {
+            var preferences = _getPreferences();
+
             return _testContext.Render<AddTorrentOptions>(parameters =>
             {
+                if (preferences is not null)
+                {
+                    parameters.Add(p => p.Preferences, preferences);
+                }
+
                 parameters.Add(p => p.ShowCookieOption, showCookieOption);
             });
         }

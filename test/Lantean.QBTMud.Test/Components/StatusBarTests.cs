@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Helpers;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -656,7 +657,7 @@ namespace Lantean.QBTMud.Test.Components
             IReadOnlyList<IManagedTimer>? timers = null,
             MudMainData? mainData = null,
             bool includeMainData = true,
-            ClientModels.Preferences? preferences = null,
+            QBittorrentPreferences? preferences = null,
             bool isDarkMode = false,
             Breakpoint breakpoint = Breakpoint.Lg,
             Orientation orientation = Orientation.Portrait,
@@ -734,9 +735,9 @@ namespace Lantean.QBTMud.Test.Components
             };
         }
 
-        private static ClientModels.Preferences CreatePreferences(bool statusBarExternalIp)
+        private static QBittorrentPreferences CreatePreferences(bool statusBarExternalIp)
         {
-            return PreferencesFactory.CreatePreferences(spec =>
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
                 spec.RssProcessingEnabled = false;
                 spec.StatusBarExternalIp = statusBarExternalIp;

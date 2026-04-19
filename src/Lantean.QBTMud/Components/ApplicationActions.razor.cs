@@ -44,7 +44,7 @@ namespace Lantean.QBTMud.Components
 
         [Parameter]
         [EditorRequired]
-        public Preferences? Preferences { get; set; }
+        public QBittorrentPreferences? Preferences { get; set; }
 
         protected IEnumerable<UIAction> Actions => GetActions();
 

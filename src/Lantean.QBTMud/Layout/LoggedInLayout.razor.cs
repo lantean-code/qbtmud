@@ -6,7 +6,6 @@ using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
-using QBittorrent.ApiClient.Models;
 using MudMainData = Lantean.QBTMud.Models.MainData;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
@@ -27,12 +26,19 @@ namespace Lantean.QBTMud.Layout
         private bool _authConfirmed;
         private bool _startupRecoveryPending;
         private bool _startupUpdateCheckRequested;
+        private Task? _preferencesChangeTask;
 
         [Inject]
         protected ILostConnectionWorkflow LostConnectionWorkflow { get; set; } = default!;
 
         [Inject]
         protected IShellSessionWorkflow ShellSessionWorkflow { get; set; } = default!;
+
+        [Inject]
+        protected IPreferencesDataManager PreferencesDataManager { get; set; } = default!;
+
+        [Inject]
+        protected IQBittorrentPreferencesStateService QBittorrentPreferencesStateService { get; set; } = default!;
 
         [Inject]
         protected IPendingDownloadWorkflow PendingDownloadWorkflow { get; set; } = default!;
@@ -78,7 +84,7 @@ namespace Lantean.QBTMud.Layout
 
         protected MudMainData? MainData { get; set; }
 
-        protected Preferences? Preferences { get; set; }
+        protected QBittorrentPreferences? Preferences { get; set; }
 
         protected string Version { get; set; } = "";
 
@@ -112,6 +118,7 @@ namespace Lantean.QBTMud.Layout
             }
 
             TorrentQueryState.Changed += OnTorrentQueryStateChanged;
+            QBittorrentPreferencesStateService.Changed += OnQBittorrentPreferencesChanged;
         }
 
         private IReadOnlyList<MudTorrent> GetTorrents()
@@ -133,7 +140,7 @@ namespace Lantean.QBTMud.Layout
                 TorrentQueryState.Status,
                 TorrentQueryState.Tag,
                 TorrentQueryState.Tracker,
-                MainData.ServerState.UseSubcategories,
+                Preferences?.UseSubcategories ?? MainData.ServerState.UseSubcategories,
                 TorrentQueryState.SearchText,
                 TorrentQueryState.SearchField,
                 TorrentQueryState.UseRegexSearch,
@@ -190,6 +197,11 @@ namespace Lantean.QBTMud.Layout
             if (_locationChangeTask is not null && _locationChangeTask.IsCompleted)
             {
                 _locationChangeTask = null;
+            }
+
+            if (_preferencesChangeTask is not null && _preferencesChangeTask.IsCompleted)
+            {
+                _preferencesChangeTask = null;
             }
 
             if (!_welcomeWizardLaunched && IsAuthenticated && Preferences is not null)
@@ -292,7 +304,7 @@ namespace Lantean.QBTMud.Layout
 
             if (MainData is not null)
             {
-                await UpdateRefreshIntervalAsync(MainData.ServerState.RefreshInterval, cancellationToken);
+                await UpdateRefreshIntervalAsync(Preferences?.RefreshInterval ?? MainData.ServerState.RefreshInterval, cancellationToken);
             }
 
             if (refreshResult.TorrentsDirty)
@@ -484,6 +496,7 @@ namespace Lantean.QBTMud.Layout
                 }
 
                 TorrentQueryState.Changed -= OnTorrentQueryStateChanged;
+                QBittorrentPreferencesStateService.Changed -= OnQBittorrentPreferencesChanged;
             }
 
             _disposedValue = true;
@@ -529,7 +542,11 @@ namespace Lantean.QBTMud.Layout
 
         private async Task ApplyLoadResultAsync(ShellSessionLoadResult loadResult, CancellationToken cancellationToken)
         {
-            Preferences = loadResult.Preferences;
+            var qBittorrentPreferences = loadResult.Preferences is not null
+                ? PreferencesDataManager.CreateQBittorrentPreferences(loadResult.Preferences)
+                : null;
+            Preferences = qBittorrentPreferences;
+            QBittorrentPreferencesStateService.SetPreferences(qBittorrentPreferences);
             Version = loadResult.Version ?? string.Empty;
             MainData = loadResult.MainData;
             _startupRecoveryPending = false;
@@ -547,6 +564,34 @@ namespace Lantean.QBTMud.Layout
             IsAuthenticated = true;
             Menu?.ShowMenu(Preferences);
             await PendingDownloadWorkflow.ProcessAsync(cancellationToken);
+        }
+
+        private void OnQBittorrentPreferencesChanged(object? sender, QBittorrentPreferencesChangedEventArgs args)
+        {
+            if (_disposedValue)
+            {
+                return;
+            }
+
+            _preferencesChangeTask = InvokeAsync(() => ApplyQBittorrentPreferencesChangedAsync(args));
+        }
+
+        private async Task ApplyQBittorrentPreferencesChangedAsync(QBittorrentPreferencesChangedEventArgs args)
+        {
+            Preferences = args.CurrentPreferences;
+
+            if (args.PreviousPreferences?.UseSubcategories != args.CurrentPreferences?.UseSubcategories)
+            {
+                MarkTorrentsDirty();
+            }
+
+            if (Preferences is not null)
+            {
+                await UpdateRefreshIntervalAsync(Preferences.RefreshInterval, _timerCancellationToken.Token);
+            }
+
+            Menu?.ShowMenu(Preferences);
+            StateHasChanged();
         }
     }
 }

@@ -55,7 +55,7 @@ namespace Lantean.QBTMud.Components
         public MudMainData? MainData { get; set; }
 
         [CascadingParameter]
-        public Preferences? Preferences { get; set; }
+        public QBittorrentPreferences? Preferences { get; set; }
 
         protected Dictionary<string, int> Tags => GetTags();
 

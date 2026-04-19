@@ -1,7 +1,6 @@
 using Lantean.QBTMud.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using QBittorrent.ApiClient.Models;
 using MudCategory = Lantean.QBTMud.Models.Category;
 using MudTorrent = Lantean.QBTMud.Models.Torrent;
 
@@ -19,7 +18,7 @@ namespace Lantean.QBTMud.Components.Dialogs
         public Dictionary<string, MudTorrent> Torrents { get; set; } = default!;
 
         [Parameter]
-        public Preferences? Preferences { get; set; }
+        public QBittorrentPreferences? Preferences { get; set; }
 
         [Parameter]
         public IEnumerable<string> Hashes { get; set; } = [];

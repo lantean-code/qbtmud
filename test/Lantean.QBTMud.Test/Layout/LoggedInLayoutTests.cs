@@ -1413,6 +1413,47 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public void GIVEN_StartupPreferences_WHEN_Rendered_THEN_SeedsQBittorrentPreferencesStateAndCascadesSnapshot()
+        {
+            var preferences = CreatePreferences(statusBarExternalIp: true, locale: "en");
+            var expected = new PreferencesDataManager().CreateQBittorrentPreferences(preferences);
+
+            var target = RenderLayout(new List<IManagedTimer>(), preferences: preferences, body: CreateProbeBody());
+
+            target.WaitForAssertion(() =>
+            {
+                var probe = target.FindComponent<LayoutProbe>();
+                probe.Instance.Preferences.Should().Be(expected);
+                TestContext.Services.GetRequiredService<IQBittorrentPreferencesStateService>().Current.Should().Be(expected);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_QBittorrentPreferencesStateChanges_WHEN_Rendered_THEN_CascadedSnapshotAndRefreshIntervalUpdate()
+        {
+            var preferences = CreatePreferences(locale: "en");
+            var updatedPreferences = new PreferencesDataManager().CreateQBittorrentPreferences(preferences) with
+            {
+                StatusBarExternalIp = true,
+                RefreshInterval = 2500
+            };
+            var target = RenderLayout(new List<IManagedTimer>(), preferences: preferences, body: CreateProbeBody());
+            var stateService = TestContext.Services.GetRequiredService<IQBittorrentPreferencesStateService>();
+            _refreshTimer.ClearInvocations();
+
+            await target.InvokeAsync(() => stateService.SetPreferences(updatedPreferences));
+
+            target.WaitForAssertion(() =>
+            {
+                var probe = target.FindComponent<LayoutProbe>();
+                probe.Instance.Preferences.Should().Be(updatedPreferences);
+                Mock.Get(_refreshTimer).Verify(
+                    timer => timer.UpdateIntervalAsync(TimeSpan.FromMilliseconds(2500), It.IsAny<CancellationToken>()),
+                    Times.Once);
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_AlternativeSpeedLimitToggleSucceeds_WHEN_Enabled_THEN_UpdatesStateAndShowsSnackbar()
         {
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
@@ -1623,7 +1664,7 @@ namespace Lantean.QBTMud.Test.Layout
             mainData.ServerState.RefreshInterval = 0;
             _refreshTimer.ClearInvocations();
 
-            RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+            RenderLayout(new List<IManagedTimer>(), mainData: mainData, preferences: CreatePreferences(refreshInterval: 0));
 
             Mock.Get(_refreshTimer).Verify(t => t.UpdateIntervalAsync(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -2707,11 +2748,12 @@ namespace Lantean.QBTMud.Test.Layout
             return new ClientModels.MainData(1, fullUpdate, null, null, null, null, null, null, null, null, null);
         }
 
-        private static ClientModels.Preferences CreatePreferences(bool statusBarExternalIp = false, string? locale = null)
+        private static ClientModels.Preferences CreatePreferences(bool statusBarExternalIp = false, string? locale = null, int refreshInterval = 1500)
         {
             return PreferencesFactory.CreatePreferences(spec =>
             {
                 spec.Locale = locale!;
+                spec.RefreshInterval = refreshInterval;
                 spec.RssProcessingEnabled = false;
                 spec.StatusBarExternalIp = statusBarExternalIp;
             });
@@ -2729,7 +2771,7 @@ namespace Lantean.QBTMud.Test.Layout
             public MudMainData? MudMainData { get; set; }
 
             [CascadingParameter]
-            public ClientModels.Preferences? Preferences { get; set; }
+            public QBittorrentPreferences? Preferences { get; set; }
         }
 
         private sealed class TestNavigationManager : NavigationManager

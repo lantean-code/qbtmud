@@ -43,7 +43,7 @@ namespace Lantean.QBTMud.Pages
         public ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
         [CascadingParameter]
-        public Preferences? Preferences { get; set; }
+        public QBittorrentPreferences? Preferences { get; set; }
 
         [CascadingParameter]
         public IReadOnlyList<MudTorrent>? Torrents { get; set; }
@@ -78,7 +78,7 @@ namespace Lantean.QBTMud.Pages
         protected MudMenu? ContextMenu { get; set; }
 
         private object? _lastRenderedTorrents;
-        private Preferences? _lastPreferences;
+        private QBittorrentPreferences? _lastPreferences;
         private bool _hasRendered;
         private int _lastSelectionCount;
         private int _lastTorrentsVersion = -1;

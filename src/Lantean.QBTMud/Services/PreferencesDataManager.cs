@@ -1,9 +1,45 @@
+using Lantean.QBTMud.Models;
 using QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Services
 {
     public class PreferencesDataManager : IPreferencesDataManager
     {
+        /// <inheritdoc />
+        public QBittorrentPreferences CreateQBittorrentPreferences(Preferences preferences)
+        {
+            ArgumentNullException.ThrowIfNull(preferences);
+
+            return new QBittorrentPreferences
+            {
+                Locale = preferences.Locale,
+                AutoTmmEnabled = preferences.AutoTmmEnabled,
+                SavePath = preferences.SavePath,
+                TempPath = preferences.TempPath,
+                TempPathEnabled = preferences.TempPathEnabled,
+                AddStoppedEnabled = preferences.AddStoppedEnabled,
+                AddToTopOfQueue = preferences.AddToTopOfQueue,
+                TorrentStopCondition = preferences.TorrentStopCondition,
+                TorrentContentLayout = preferences.TorrentContentLayout,
+                MaxRatioEnabled = preferences.MaxRatioEnabled,
+                MaxRatio = preferences.MaxRatio,
+                MaxSeedingTimeEnabled = preferences.MaxSeedingTimeEnabled,
+                MaxSeedingTime = preferences.MaxSeedingTime,
+                MaxInactiveSeedingTimeEnabled = preferences.MaxInactiveSeedingTimeEnabled,
+                MaxInactiveSeedingTime = preferences.MaxInactiveSeedingTime,
+                QueueingEnabled = preferences.QueueingEnabled,
+                ConfirmTorrentDeletion = preferences.ConfirmTorrentDeletion,
+                DeleteTorrentContentFiles = preferences.DeleteTorrentContentFiles,
+                ConfirmTorrentRecheck = preferences.ConfirmTorrentRecheck,
+                StatusBarExternalIp = preferences.StatusBarExternalIp,
+                RssProcessingEnabled = preferences.RssProcessingEnabled,
+                UseSubcategories = preferences.UseSubcategories == true,
+                ResolvePeerCountries = preferences.ResolvePeerCountries,
+                RefreshInterval = preferences.RefreshInterval
+            };
+        }
+
+        /// <inheritdoc />
         public UpdatePreferences MergePreferences(
             UpdatePreferences? original,
             UpdatePreferences changed)

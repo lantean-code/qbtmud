@@ -20,6 +20,7 @@ namespace Lantean.QBTMud.Components
         private readonly CancellationTokenSource _timerCancellationToken = new();
         private IManagedTimer? _refreshTimer;
         private bool? _showFlags;
+        private bool _showFlagsFromPeerData;
         private IReadOnlyList<ColumnDefinition<MudPeer>>? _columnDefinitions;
         private string? _countryColumnId;
 
@@ -38,7 +39,7 @@ namespace Lantean.QBTMud.Components
         public int RefreshInterval { get; set; }
 
         [CascadingParameter]
-        public Preferences? Preferences { get; set; }
+        public QBittorrentPreferences? Preferences { get; set; }
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
@@ -95,6 +96,8 @@ namespace Lantean.QBTMud.Components
                 _oldHash = Hash;
                 _requestId = 0;
                 PeerList = null;
+                _showFlags = null;
+                _showFlagsFromPeerData = false;
             }
 
             var peersResult = await ApiClient.GetTorrentPeersDataAsync(Hash, _requestId);
@@ -113,13 +116,14 @@ namespace Lantean.QBTMud.Components
             }
             _requestId = peers.RequestId;
 
-            if (Preferences is not null && _showFlags is null)
+            if (Preferences is not null && !_showFlagsFromPeerData)
             {
                 _showFlags = Preferences.ResolvePeerCountries;
             }
 
             if (peers.ShowFlags.HasValue)
             {
+                _showFlagsFromPeerData = true;
                 _showFlags = peers.ShowFlags.Value;
             }
 

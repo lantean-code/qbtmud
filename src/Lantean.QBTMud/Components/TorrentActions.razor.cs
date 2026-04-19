@@ -70,7 +70,7 @@ namespace Lantean.QBTMud.Components
         public Dictionary<string, MudTorrent> Torrents { get; set; } = default!;
 
         [Parameter, EditorRequired]
-        public Preferences? Preferences { get; set; }
+        public QBittorrentPreferences? Preferences { get; set; }
 
         [Parameter, EditorRequired]
         public HashSet<string> Tags { get; set; } = default!;

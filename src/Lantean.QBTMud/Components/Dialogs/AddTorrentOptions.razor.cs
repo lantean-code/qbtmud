@@ -21,6 +21,9 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Parameter]
+        public QBittorrentPreferences? Preferences { get; set; }
+
+        [Parameter]
         public bool ShowCookieOption { get; set; }
 
         protected bool Expanded { get; set; }
@@ -105,46 +108,12 @@ namespace Lantean.QBTMud.Components.Dialogs
                 _qBittorrentPlatform = buildInfo.Platform;
             }
 
-            var preferencesResult = await ApiClient.GetApplicationPreferencesAsync();
-            if (!preferencesResult.TryGetValue(out var applicationPreferences))
+            if (Preferences is null)
             {
                 return;
             }
 
-            TorrentManagementMode = applicationPreferences.AutoTmmEnabled;
-
-            _defaultSavePath = applicationPreferences.SavePath ?? string.Empty;
-            _manualSavePath = _defaultSavePath;
-            SavePath = _defaultSavePath;
-
-            _defaultDownloadPath = applicationPreferences.TempPath ?? string.Empty;
-            _defaultDownloadPathEnabled = applicationPreferences.TempPathEnabled;
-            _manualDownloadPath = _defaultDownloadPath;
-            _manualUseDownloadPath = applicationPreferences.TempPathEnabled;
-            UseDownloadPath = _manualUseDownloadPath;
-            DownloadPath = UseDownloadPath ? _manualDownloadPath : string.Empty;
-
-            StartTorrent = !applicationPreferences.AddStoppedEnabled;
-            AddToTopOfQueue = applicationPreferences.AddToTopOfQueue;
-            StopCondition = applicationPreferences.TorrentStopCondition;
-            ContentLayout = applicationPreferences.TorrentContentLayout;
-
-            RatioLimitEnabled = applicationPreferences.MaxRatioEnabled;
-            RatioLimit = applicationPreferences.MaxRatio;
-            SeedingTimeLimitEnabled = applicationPreferences.MaxSeedingTimeEnabled;
-            if (applicationPreferences.MaxSeedingTimeEnabled)
-            {
-                SeedingTimeLimit = applicationPreferences.MaxSeedingTime;
-            }
-            InactiveSeedingTimeLimitEnabled = applicationPreferences.MaxInactiveSeedingTimeEnabled;
-            if (applicationPreferences.MaxInactiveSeedingTimeEnabled)
-            {
-                InactiveSeedingTimeLimit = applicationPreferences.MaxInactiveSeedingTime;
-            }
-            if (TorrentManagementMode)
-            {
-                ApplyAutomaticPaths();
-            }
+            ApplyPreferences(Preferences);
         }
 
         protected void SetTorrentManagementMode(bool value)
@@ -320,6 +289,46 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             return options;
+        }
+
+        private void ApplyPreferences(QBittorrentPreferences preferences)
+        {
+            TorrentManagementMode = preferences.AutoTmmEnabled;
+
+            _defaultSavePath = preferences.SavePath ?? string.Empty;
+            _manualSavePath = _defaultSavePath;
+            SavePath = _defaultSavePath;
+
+            _defaultDownloadPath = preferences.TempPath ?? string.Empty;
+            _defaultDownloadPathEnabled = preferences.TempPathEnabled;
+            _manualDownloadPath = _defaultDownloadPath;
+            _manualUseDownloadPath = preferences.TempPathEnabled;
+            UseDownloadPath = _manualUseDownloadPath;
+            DownloadPath = UseDownloadPath ? _manualDownloadPath : string.Empty;
+
+            StartTorrent = !preferences.AddStoppedEnabled;
+            AddToTopOfQueue = preferences.AddToTopOfQueue;
+            StopCondition = preferences.TorrentStopCondition;
+            ContentLayout = preferences.TorrentContentLayout;
+
+            RatioLimitEnabled = preferences.MaxRatioEnabled;
+            RatioLimit = preferences.MaxRatio;
+            SeedingTimeLimitEnabled = preferences.MaxSeedingTimeEnabled;
+            if (preferences.MaxSeedingTimeEnabled)
+            {
+                SeedingTimeLimit = preferences.MaxSeedingTime;
+            }
+
+            InactiveSeedingTimeLimitEnabled = preferences.MaxInactiveSeedingTimeEnabled;
+            if (preferences.MaxInactiveSeedingTimeEnabled)
+            {
+                InactiveSeedingTimeLimit = preferences.MaxInactiveSeedingTime;
+            }
+
+            if (TorrentManagementMode)
+            {
+                ApplyAutomaticPaths();
+            }
         }
 
         private void ApplyAutomaticPaths()

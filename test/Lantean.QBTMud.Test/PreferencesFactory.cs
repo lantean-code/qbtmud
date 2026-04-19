@@ -4,6 +4,41 @@ namespace Lantean.QBTMud.Test
 {
     internal static class PreferencesFactory
     {
+        internal static Lantean.QBTMud.Models.QBittorrentPreferences CreateQBittorrentPreferences(Action<PreferencesSpec> configure)
+        {
+            var spec = new PreferencesSpec();
+
+            configure.Invoke(spec);
+
+            return new Lantean.QBTMud.Models.QBittorrentPreferences
+            {
+                Locale = spec.Locale,
+                AutoTmmEnabled = spec.AutoTmmEnabled,
+                SavePath = spec.SavePath,
+                TempPath = spec.TempPath,
+                TempPathEnabled = spec.TempPathEnabled,
+                AddStoppedEnabled = spec.AddStoppedEnabled,
+                AddToTopOfQueue = spec.AddToTopOfQueue,
+                TorrentStopCondition = spec.TorrentStopCondition,
+                TorrentContentLayout = spec.TorrentContentLayout,
+                MaxRatioEnabled = spec.MaxRatioEnabled,
+                MaxRatio = spec.MaxRatio,
+                MaxSeedingTimeEnabled = spec.MaxSeedingTimeEnabled,
+                MaxSeedingTime = spec.MaxSeedingTime,
+                MaxInactiveSeedingTimeEnabled = spec.MaxInactiveSeedingTimeEnabled,
+                MaxInactiveSeedingTime = spec.MaxInactiveSeedingTime,
+                QueueingEnabled = spec.QueueingEnabled,
+                ConfirmTorrentDeletion = spec.ConfirmTorrentDeletion,
+                DeleteTorrentContentFiles = spec.DeleteTorrentContentFiles,
+                ConfirmTorrentRecheck = spec.ConfirmTorrentRecheck,
+                StatusBarExternalIp = spec.StatusBarExternalIp,
+                RssProcessingEnabled = spec.RssProcessingEnabled,
+                UseSubcategories = spec.UseSubcategories,
+                ResolvePeerCountries = spec.ResolvePeerCountries,
+                RefreshInterval = spec.RefreshInterval
+            };
+        }
+
         internal static Preferences CreatePreferences(Action<PreferencesSpec> configure)
         {
             var spec = new PreferencesSpec();

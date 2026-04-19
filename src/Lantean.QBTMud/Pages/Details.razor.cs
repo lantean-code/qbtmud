@@ -41,7 +41,7 @@ namespace Lantean.QBTMud.Pages
         public MudMainData MainData { get; set; } = default!;
 
         [CascadingParameter]
-        public Preferences Preferences { get; set; } = default!;
+        public QBittorrentPreferences Preferences { get; set; } = default!;
 
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }

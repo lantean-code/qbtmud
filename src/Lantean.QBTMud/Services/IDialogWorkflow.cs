@@ -215,14 +215,14 @@ namespace Lantean.QBTMud.Services
         /// <param name="hashes">The selected torrent hashes.</param>
         /// <param name="parent">The parent action.</param>
         /// <param name="torrents">The current torrent map.</param>
-        /// <param name="preferences">The client preferences.</param>
+        /// <param name="preferences">The runtime qBittorrent preferences.</param>
         /// <param name="tags">The available tags.</param>
         /// <param name="categories">The available categories.</param>
         Task ShowSubMenu(
             IEnumerable<string> hashes,
             UIAction parent,
             Dictionary<string, MudTorrent> torrents,
-            Preferences? preferences,
+            QBittorrentPreferences? preferences,
             HashSet<string> tags,
             Dictionary<string, MudCategory> categories);
 

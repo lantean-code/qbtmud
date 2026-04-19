@@ -6,6 +6,7 @@ using Lantean.QBTMud.Components.Dialogs;
 using Lantean.QBTMud.Configuration;
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
@@ -815,9 +816,9 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.Services.GetRequiredService<NavigationManager>().Uri.Should().Be(TestContext.Services.GetRequiredService<NavigationManager>().BaseUri);
         }
 
-        private static Preferences CreatePreferences(bool rssEnabled)
+        private static QBittorrentPreferences CreatePreferences(bool rssEnabled)
         {
-            return PreferencesFactory.CreatePreferences(spec =>
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
                 spec.RssProcessingEnabled = rssEnabled;
             });

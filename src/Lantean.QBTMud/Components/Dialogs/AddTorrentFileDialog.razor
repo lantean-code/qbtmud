@@ -48,7 +48,7 @@
                 </MudFileUpload>
             </MudItem>
         </MudGrid>
-        <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="true" />
+        <AddTorrentOptions @ref="TorrentOptions" ShowCookieOption="true" Preferences="Preferences" />
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="Cancel" data-test-id="@TestIdHelper.For("AddTorrentFileClose")">@LanguageLocalizer.Translate("PluginSelectDlg", "Close")</MudButton>

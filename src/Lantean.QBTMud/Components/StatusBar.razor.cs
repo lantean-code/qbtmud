@@ -1,5 +1,6 @@
 using Lantean.QBTMud.Helpers;
 using Lantean.QBTMud.Interop;
+using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Microsoft.AspNetCore.Components;
@@ -27,7 +28,7 @@ namespace Lantean.QBTMud.Components
         public MudMainData? MainData { get; set; }
 
         [Parameter]
-        public Preferences? Preferences { get; set; }
+        public QBittorrentPreferences? Preferences { get; set; }
 
         [Parameter]
         public bool IsDarkMode { get; set; }

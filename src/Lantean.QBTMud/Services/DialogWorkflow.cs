@@ -65,6 +65,8 @@ namespace Lantean.QBTMud.Services
         private readonly ILanguageLocalizer _languageLocalizer;
         private readonly IAppSettingsService _appSettingsService;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
+        private readonly IPreferencesDataManager _preferencesDataManager;
+        private readonly IQBittorrentPreferencesStateService _qBittorrentPreferencesStateService;
 
         public DialogWorkflow(
             IDialogService dialogService,
@@ -72,7 +74,9 @@ namespace Lantean.QBTMud.Services
             ISnackbarWorkflow snackbarWorkflow,
             ILanguageLocalizer languageLocalizer,
             IAppSettingsService appSettingsService,
-            IApiFeedbackWorkflow apiFeedbackWorkflow)
+            IApiFeedbackWorkflow apiFeedbackWorkflow,
+            IPreferencesDataManager preferencesDataManager,
+            IQBittorrentPreferencesStateService qBittorrentPreferencesStateService)
         {
             _dialogService = dialogService;
             _apiClient = apiClient;
@@ -80,6 +84,8 @@ namespace Lantean.QBTMud.Services
             _languageLocalizer = languageLocalizer;
             _appSettingsService = appSettingsService;
             _apiFeedbackWorkflow = apiFeedbackWorkflow;
+            _preferencesDataManager = preferencesDataManager;
+            _qBittorrentPreferencesStateService = qBittorrentPreferencesStateService;
         }
 
         /// <inheritdoc />
@@ -95,6 +101,8 @@ namespace Lantean.QBTMud.Services
             {
                 parameters.Add(nameof(CategoryPropertiesDialog.SavePath), initialSavePath);
             }
+
+            AddCurrentPreferences(parameters, nameof(CategoryPropertiesDialog.Preferences));
 
             var reference = await _dialogService.ShowAsync<CategoryPropertiesDialog>(_languageLocalizer.Translate("TransferListWidget", "New Category"), parameters, NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
@@ -116,8 +124,12 @@ namespace Lantean.QBTMud.Services
         /// <inheritdoc />
         public async Task InvokeAddTorrentFileDialog()
         {
+            var parameters = new DialogParameters();
+            AddCurrentPreferences(parameters, nameof(AddTorrentFileDialog.Preferences));
+
             var result = await _dialogService.ShowAsync<AddTorrentFileDialog>(
                 _languageLocalizer.Translate(_addNewTorrentDialogContext, "Add torrent"),
+                parameters,
                 FormDialogOptions);
             var dialogResult = await result.Result;
             if (dialogResult is null || dialogResult.Canceled || dialogResult.Data is null)
@@ -213,6 +225,7 @@ namespace Lantean.QBTMud.Services
             {
                 { nameof(AddTorrentLinkDialog.Url), url },
             };
+            AddCurrentPreferences(parameters, nameof(AddTorrentLinkDialog.Preferences));
 
             var result = await _dialogService.ShowAsync<AddTorrentLinkDialog>(
                 _languageLocalizer.Translate(_downloadFromUrlContext, "Download from URLs"),
@@ -318,7 +331,10 @@ namespace Lantean.QBTMud.Services
                 {
                     DeleteTorrentContentFiles = deleteFiles,
                 });
-                await _apiFeedbackWorkflow.ProcessResultAsync(savePreferencesResult);
+                if (await _apiFeedbackWorkflow.ProcessResultAsync(savePreferencesResult))
+                {
+                    await RefreshRuntimePreferencesAsync();
+                }
             }
         }
 
@@ -404,6 +420,7 @@ namespace Lantean.QBTMud.Services
                 { nameof(CategoryPropertiesDialog.Category), category?.Name },
                 { nameof(CategoryPropertiesDialog.SavePath), category?.SavePath },
             };
+            AddCurrentPreferences(parameters, nameof(CategoryPropertiesDialog.Preferences));
 
             var reference = await _dialogService.ShowAsync<CategoryPropertiesDialog>(_languageLocalizer.Translate("TransferListWidget", "Edit Category"), parameters, NonBlurFormDialogOptions);
             var dialogResult = await reference.Result;
@@ -783,7 +800,7 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <inheritdoc />
-        public async Task ShowSubMenu(IEnumerable<string> hashes, UIAction parent, Dictionary<string, MudTorrent> torrents, Preferences? preferences, HashSet<string> tags, Dictionary<string, MudCategory> categories)
+        public async Task ShowSubMenu(IEnumerable<string> hashes, UIAction parent, Dictionary<string, MudTorrent> torrents, QBittorrentPreferences? preferences, HashSet<string> tags, Dictionary<string, MudCategory> categories)
         {
             var parameters = new DialogParameters
             {
@@ -1037,6 +1054,27 @@ namespace Lantean.QBTMud.Services
             }
 
             return addTorrentParams;
+        }
+
+        private async Task RefreshRuntimePreferencesAsync()
+        {
+            var preferencesResult = await _apiClient.GetApplicationPreferencesAsync();
+            if (!preferencesResult.TryGetValue(out var preferences))
+            {
+                await _apiFeedbackWorkflow.HandleFailureAsync(preferencesResult);
+                return;
+            }
+
+            _qBittorrentPreferencesStateService.SetPreferences(_preferencesDataManager.CreateQBittorrentPreferences(preferences));
+        }
+
+        private void AddCurrentPreferences(DialogParameters parameters, string parameterName)
+        {
+            var preferences = _qBittorrentPreferencesStateService.Current;
+            if (preferences is not null)
+            {
+                parameters.Add(parameterName, preferences);
+            }
         }
     }
 }

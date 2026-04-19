@@ -25,6 +25,8 @@ namespace Lantean.QBTMud.Test.Services
         private readonly ISnackbarWorkflow _snackbarWorkflow = Mock.Of<ISnackbarWorkflow>();
         private readonly IAppSettingsService _appSettingsService = Mock.Of<IAppSettingsService>();
         private readonly ILostConnectionWorkflow _lostConnectionWorkflow = Mock.Of<ILostConnectionWorkflow>();
+        private readonly IPreferencesDataManager _preferencesDataManager = Mock.Of<IPreferencesDataManager>();
+        private readonly IQBittorrentPreferencesStateService _qBittorrentPreferencesStateService = Mock.Of<IQBittorrentPreferencesStateService>();
         private readonly ILanguageLocalizer _languageLocalizer;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
@@ -48,7 +50,15 @@ namespace Lantean.QBTMud.Test.Services
                 });
 
             _apiFeedbackWorkflow = new ApiFeedbackWorkflow(_lostConnectionWorkflow, _snackbarWorkflow, _languageLocalizer);
-            _target = new DialogWorkflow(_dialogService, _apiClient, _snackbarWorkflow, _languageLocalizer, _appSettingsService, _apiFeedbackWorkflow);
+            _target = new DialogWorkflow(
+                _dialogService,
+                _apiClient,
+                _snackbarWorkflow,
+                _languageLocalizer,
+                _appSettingsService,
+                _apiFeedbackWorkflow,
+                _preferencesDataManager,
+                _qBittorrentPreferencesStateService);
         }
 
         [Fact]
@@ -144,7 +154,7 @@ namespace Lantean.QBTMud.Test.Services
 
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
@@ -179,7 +189,7 @@ namespace Lantean.QBTMud.Test.Services
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeAddTorrentFileDialog();
@@ -207,7 +217,7 @@ namespace Lantean.QBTMud.Test.Services
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
@@ -243,7 +253,7 @@ namespace Lantean.QBTMud.Test.Services
             var fileOptions = new AddTorrentFileOptions(new[] { fileOne.Object, fileTwo.Object, fileThree.Object }, options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             Mock.Get(_apiClient)
@@ -287,7 +297,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var reference = CreateReference(DialogResult.Cancel());
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
 
             await _target.InvokeAddTorrentFileDialog();
@@ -303,7 +313,7 @@ namespace Lantean.QBTMud.Test.Services
             var fileOptions = new AddTorrentFileOptions(Array.Empty<IBrowserFile>(), options);
             var reference = CreateReference(DialogResult.Ok(fileOptions));
             Mock.Get(_dialogService)
-                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", DialogWorkflow.FormDialogOptions))
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
                 .ReturnsAsync(reference);
             Mock.Get(_apiClient)
                 .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
@@ -704,6 +714,14 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_DeleteDialogSavePreferenceCallback_WHEN_Invoked_THEN_ShouldPersistDeleteFilesPreference()
         {
             DialogParameters? capturedParameters = null;
+            var preferences = PreferencesFactory.CreatePreferences(spec =>
+            {
+                spec.DeleteTorrentContentFiles = true;
+            });
+            var qBittorrentPreferences = PreferencesFactory.CreateQBittorrentPreferences(spec =>
+            {
+                spec.DeleteTorrentContentFiles = true;
+            });
             var reference = CreateReference(DialogResult.Cancel());
             Mock.Get(_dialogService)
                 .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
@@ -719,6 +737,16 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(a => a.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences => preferences.DeleteTorrentContentFiles ?? false)))
                 .ReturnsAsync(ApiResult.CreateSuccess())
                 .Verifiable();
+            Mock.Get(_apiClient)
+                .Setup(a => a.GetApplicationPreferencesAsync())
+                .ReturnsAsync(preferences);
+            Mock.Get(_preferencesDataManager)
+                .Setup(manager => manager.CreateQBittorrentPreferences(preferences))
+                .Returns(qBittorrentPreferences);
+            Mock.Get(_qBittorrentPreferencesStateService)
+                .Setup(service => service.SetPreferences(qBittorrentPreferences))
+                .Returns(true)
+                .Verifiable();
 
             await _target.InvokeDeleteTorrentDialog(true, false, "Hash");
 
@@ -728,6 +756,7 @@ namespace Lantean.QBTMud.Test.Services
             await callback!(true);
 
             Mock.Get(_apiClient).Verify();
+            Mock.Get(_qBittorrentPreferencesStateService).Verify();
         }
 
         [Fact]

@@ -10,10 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using MudBlazor;
-using QBittorrent.ApiClient;
-using QBittorrent.ApiClient.Models;
-
-using ClientModels = QBittorrent.ApiClient.Models;
 
 namespace Lantean.QBTMud.Test.Components.Dialogs
 {
@@ -21,6 +17,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
     {
         private readonly IKeyboardService _keyboardService;
         private readonly CategoryPropertiesDialogTestDriver _target;
+        private QBittorrentPreferences? _preferences;
 
         public CategoryPropertiesDialogTests()
         {
@@ -33,13 +30,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             TestContext.Services.RemoveAll<IKeyboardService>();
             TestContext.Services.AddSingleton(_keyboardService);
 
-            _target = new CategoryPropertiesDialogTestDriver(TestContext);
+            _target = new CategoryPropertiesDialogTestDriver(TestContext, () => _preferences);
         }
 
         [Fact]
         public async Task GIVEN_SavePathNull_WHEN_Rendered_THEN_DefaultSavePathApplied()
         {
-            UseApiClientMock("SavePath");
+            UsePreferences("SavePath");
 
             var dialog = await _target.RenderDialogAsync(category: "Category");
 
@@ -53,7 +50,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_EmptyCategory_WHEN_SubmitInvoked_THEN_DoesNotClose()
         {
-            UseApiClientMock("SavePath");
+            UsePreferences("SavePath");
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -66,7 +63,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_EmptySavePath_WHEN_Submitted_THEN_UsesDefaultSavePath()
         {
-            UseApiClientMock("SavePath");
+            UsePreferences("SavePath");
 
             var dialog = await _target.RenderDialogAsync(category: "Category", savePath: string.Empty);
 
@@ -83,7 +80,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_ValidInputs_WHEN_Submitted_THEN_ResultContainsCategory()
         {
-            UseApiClientMock("DefaultSavePath");
+            UsePreferences("DefaultSavePath");
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -106,7 +103,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         [Fact]
         public async Task GIVEN_DialogOpen_WHEN_CancelInvoked_THEN_ResultCanceled()
         {
-            UseApiClientMock("SavePath");
+            UsePreferences("SavePath");
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -130,7 +127,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 })
                 .Returns(Task.CompletedTask);
 
-            UseApiClientMock("SavePath");
+            UsePreferences("SavePath");
 
             var dialog = await _target.RenderDialogAsync(category: "Category", savePath: "SavePath");
 
@@ -145,43 +142,26 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             category.SavePath.Should().Be("SavePath");
         }
 
-        private Mock<IApiClient> UseApiClientMock(string savePath)
+        private void UsePreferences(string savePath)
         {
-            var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
-            apiClientMock.Setup(client => client.GetApplicationPreferencesAsync()).ReturnsAsync(CreatePreferences(savePath));
-            return apiClientMock;
-        }
-
-        private static ClientModels.Preferences CreatePreferences(string savePath)
-        {
-            return PreferencesFactory.CreatePreferences(spec =>
+            var preferences = PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
-                spec.AddStoppedEnabled = false;
-                spec.AddToTopOfQueue = true;
-                spec.AutoTmmEnabled = false;
-                spec.MaxInactiveSeedingTime = 0;
-                spec.MaxInactiveSeedingTimeEnabled = false;
-                spec.MaxRatio = 1.0f;
-                spec.MaxRatioAct = MaxRatioAction.StopTorrent;
-                spec.MaxRatioEnabled = false;
-                spec.MaxSeedingTime = 0;
-                spec.MaxSeedingTimeEnabled = false;
                 spec.SavePath = savePath;
-                spec.TempPath = string.Empty;
-                spec.TempPathEnabled = false;
-                spec.TorrentContentLayout = TorrentContentLayout.Original;
-                spec.TorrentStopCondition = StopCondition.None;
             });
+
+            _preferences = preferences;
         }
     }
 
     internal sealed class CategoryPropertiesDialogTestDriver
     {
         private readonly ComponentTestContext _testContext;
+        private readonly Func<QBittorrentPreferences?> _getPreferences;
 
-        public CategoryPropertiesDialogTestDriver(ComponentTestContext testContext)
+        public CategoryPropertiesDialogTestDriver(ComponentTestContext testContext, Func<QBittorrentPreferences?> getPreferences)
         {
             _testContext = testContext;
+            _getPreferences = getPreferences;
         }
 
         public async Task<CategoryPropertiesDialogRenderContext> RenderDialogAsync(string? category = null, string? savePath = null)
@@ -198,6 +178,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             if (savePath is not null)
             {
                 parameters.Add(nameof(CategoryPropertiesDialog.SavePath), savePath);
+            }
+
+            var preferences = _getPreferences();
+            if (preferences is not null)
+            {
+                parameters.Add(nameof(CategoryPropertiesDialog.Preferences), preferences);
             }
 
             var reference = await dialogService.ShowAsync<CategoryPropertiesDialog>("Category properties", parameters);

@@ -223,9 +223,9 @@ namespace Lantean.QBTMud.Test.Pages
                 new Dictionary<string, HashSet<string>>());
         }
 
-        private static ClientModels.Preferences CreatePreferences()
+        private static QBittorrentPreferences CreatePreferences()
         {
-            return PreferencesFactory.CreatePreferences(spec =>
+            return PreferencesFactory.CreateQBittorrentPreferences(spec =>
             {
                 spec.RssProcessingEnabled = false;
             });
