@@ -5,6 +5,7 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -138,6 +139,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 navigationManager.Uri.Should().Be("http://localhost/");
             });
+            target.FindComponents<NavigationLock>().Should().BeEmpty();
 
             navigationManager.NavigateTo("http://localhost/other");
 

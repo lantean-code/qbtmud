@@ -10,7 +10,7 @@ namespace Lantean.QBTMud.Pages
 {
     public partial class Options
     {
-        private bool _suppressNavigationPrompt;
+        private bool _reloadAfterSave;
 
         [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
@@ -67,6 +67,20 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (!_reloadAfterSave)
+            {
+                return;
+            }
+
+            _reloadAfterSave = false;
+
+            await Task.Yield();
+
+            NavigationManager.NavigateToHome(forceLoad: true);
+        }
+
         protected void PreferencesChanged(UpdatePreferences preferences)
         {
             UpdatePreferences = PreferencesDataManager.MergePreferences(UpdatePreferences, preferences);
@@ -74,11 +88,6 @@ namespace Lantean.QBTMud.Pages
 
         protected async Task ValidateExit(LocationChangingContext context)
         {
-            if (_suppressNavigationPrompt)
-            {
-                return;
-            }
-
             if (UpdatePreferences is null)
             {
                 return;
@@ -161,8 +170,9 @@ namespace Lantean.QBTMud.Pages
                 await SettingsStorage.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, selectedLocale);
             }
             UpdatePreferences = null;
-            _suppressNavigationPrompt = true;
-            NavigationManager.NavigateToHome(forceLoad: true);
+            _reloadAfterSave = true;
+
+            await InvokeAsync(StateHasChanged);
         }
 
         private string TranslateOptions(string source, params object[] arguments)
