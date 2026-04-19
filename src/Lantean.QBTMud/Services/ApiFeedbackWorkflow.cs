@@ -53,7 +53,7 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <inheritdoc />
-        public async Task HandleFailureAsync<T>(ApiResult<T> result, Func<string?, string>? buildMessage = null, Severity severity = Severity.Error, CancellationToken cancellationToken = default)
+        public async Task HandleFailureAsync<T>(ApiResult<T> result, Func<string?, string>? buildMessage = null, Severity severity = Severity.Error, CancellationToken cancellationToken = default) where T : notnull
         {
             if (result.IsSuccess)
             {

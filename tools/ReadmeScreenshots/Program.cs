@@ -593,7 +593,7 @@ namespace ReadmeScreenshots
             throw new InvalidOperationException($"Failed to {operation}: {result.Failure?.UserMessage ?? "Unknown error"}");
         }
 
-        private static async Task<T> GetRequiredValueAsync<T>(Task<ApiResult<T>> resultTask, string operation)
+        private static async Task<T> GetRequiredValueAsync<T>(Task<ApiResult<T>> resultTask, string operation) where T : notnull
         {
             var result = await resultTask;
             if (result.TryGetValue(out var value))

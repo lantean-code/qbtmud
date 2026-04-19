@@ -132,7 +132,7 @@ namespace Lantean.QBTMud.Test.Pages
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(ApiResult<IReadOnlyDictionary<string, ClientCategory>>.FailureResult(new ApiFailure
+                .ReturnsAsync(ApiResult.CreateFailure<IReadOnlyDictionary<string, ClientCategory>>(new ApiFailure
                 {
                     Kind = ApiFailureKind.ServerError,
                     Operation = "test",

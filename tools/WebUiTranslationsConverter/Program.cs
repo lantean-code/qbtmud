@@ -172,7 +172,7 @@ namespace WebUiTranslationsConverter
             var locale = fileName[_filePrefix.Length..];
             if (locale.EndsWith(_fileExtension, StringComparison.OrdinalIgnoreCase))
             {
-                locale = locale.Substring(0, locale.Length - _fileExtension.Length);
+                locale = locale[..^_fileExtension.Length];
             }
 
             return locale;

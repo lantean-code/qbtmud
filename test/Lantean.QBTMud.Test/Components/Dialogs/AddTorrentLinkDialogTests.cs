@@ -130,7 +130,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static ApiResult<BuildInfo> CreateBuildInfo()
         {
-            return ApiResult<BuildInfo>.Success(new BuildInfo("QTVersion", "LibTorrentVersion", "BoostVersion", "OpenSSLVersion", "ZLibVersion", 64, BuildPlatform.Linux));
+            return ApiResult.CreateSuccess(new BuildInfo("QTVersion", "LibTorrentVersion", "BoostVersion", "OpenSSLVersion", "ZLibVersion", 64, BuildPlatform.Linux));
         }
 
         private static ClientModels.Preferences CreatePreferences()

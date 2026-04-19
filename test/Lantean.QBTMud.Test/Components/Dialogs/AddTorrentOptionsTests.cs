@@ -733,12 +733,12 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
         private static ApiResult<BuildInfo> CreateBuildInfoResult(BuildPlatform buildPlatform)
         {
-            return ApiResult<BuildInfo>.Success(CreateBuildInfo(buildPlatform));
+            return ApiResult.CreateSuccess(CreateBuildInfo(buildPlatform));
         }
 
         private static ApiResult<BuildInfo> CreateBuildInfoFailureResult()
         {
-            return ApiResult<BuildInfo>.FailureResult(new ApiFailure
+            return ApiResult.CreateFailure<BuildInfo>(new ApiFailure
             {
                 Kind = ApiFailureKind.UnexpectedResponse,
                 Operation = "GetBuildInfoAsync",

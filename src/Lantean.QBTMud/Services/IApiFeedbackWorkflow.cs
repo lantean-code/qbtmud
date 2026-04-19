@@ -34,6 +34,6 @@ namespace Lantean.QBTMud.Services
         /// <param name="buildMessage">An optional custom message builder that receives the API user message.</param>
         /// <param name="severity">The snackbar severity for non-connectivity failures.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        Task HandleFailureAsync<T>(ApiResult<T> result, Func<string?, string>? buildMessage = null, Severity severity = Severity.Error, CancellationToken cancellationToken = default);
+        Task HandleFailureAsync<T>(ApiResult<T> result, Func<string?, string>? buildMessage = null, Severity severity = Severity.Error, CancellationToken cancellationToken = default) where T : notnull;
     }
 }

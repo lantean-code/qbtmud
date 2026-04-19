@@ -151,10 +151,20 @@ namespace Lantean.QBTMud.Services
             addTorrentParams.Torrents = files;
 
             AddTorrentResult? addTorrentResult = null;
+            bool isPending = false;
             try
             {
                 var addTorrentResultResult = await _apiClient.AddTorrentAsync(addTorrentParams);
-                if (!addTorrentResultResult.TryGetValue(out addTorrentResult))
+                if (addTorrentResultResult.IsSuccess)
+                {
+                    addTorrentResult = addTorrentResultResult.Value;
+                }
+                else if (addTorrentResultResult.IsPending)
+                {
+                    isPending = true;
+                    addTorrentResult = addTorrentResultResult.PendingValue;
+                }
+                else
                 {
                     await _apiFeedbackWorkflow.HandleFailureAsync(
                         addTorrentResultResult,
@@ -170,7 +180,7 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            await ShowAddTorrentSnackbarMessage(addTorrentResult);
+            await ShowAddTorrentSnackbarMessage(addTorrentResult, isPending);
         }
 
         private static string GetUniqueFileName(string fileName, IEnumerable<string> existingNames)
@@ -218,16 +228,27 @@ namespace Lantean.QBTMud.Services
             var addTorrentParams = CreateAddTorrentParams(options);
             addTorrentParams.Urls = options.Urls;
 
+            AddTorrentResult? addTorrentResult = null;
+            bool isPending = false;
             var addTorrentResultResult = await _apiClient.AddTorrentAsync(addTorrentParams);
-            if (!addTorrentResultResult.TryGetValue(out var addTorrentResult))
+            if (addTorrentResultResult.IsFailure)
             {
                 await _apiFeedbackWorkflow.HandleFailureAsync(
                     addTorrentResultResult,
                     _ => TranslateApp("Unable to add torrent. Please try again."));
                 return;
             }
+            else if (addTorrentResultResult.IsPending)
+            {
+                addTorrentResultResult.TryGetPendingValue(out addTorrentResult);
+                isPending = true;
+            }
+            else if (addTorrentResultResult.IsSuccess)
+            {
+                addTorrentResultResult.TryGetValue(out addTorrentResult);
+            }
 
-            await ShowAddTorrentSnackbarMessage(addTorrentResult!);
+            await ShowAddTorrentSnackbarMessage(addTorrentResult!, isPending);
         }
 
         /// <inheritdoc />
@@ -817,19 +838,19 @@ namespace Lantean.QBTMud.Services
             await _dialogService.ShowAsync<ThemePreviewDialog>(_languageLocalizer.Translate("AppThemePreviewDialog", "Theme Preview"), parameters, options);
         }
 
-        private async Task ShowAddTorrentSnackbarMessage(AddTorrentResult result)
+        private async Task ShowAddTorrentSnackbarMessage(AddTorrentResult result, bool isPending)
         {
             var settings = await GetAppSettingsSafeAsync();
             if (settings.NotificationsEnabled && settings.TorrentAddedNotificationsEnabled && !settings.TorrentAddedSnackbarsEnabledWithNotifications)
             {
-                ShowFailureOnlyAddTorrentSnackbarMessage(result);
+                ShowFailureOnlyAddTorrentSnackbarMessage(result, isPending);
                 return;
             }
 
-            ShowDefaultAddTorrentSnackbarMessage(result);
+            ShowDefaultAddTorrentSnackbarMessage(result, isPending);
         }
 
-        private void ShowFailureOnlyAddTorrentSnackbarMessage(AddTorrentResult result)
+        private void ShowFailureOnlyAddTorrentSnackbarMessage(AddTorrentResult result, bool isPending)
         {
             if (result.FailureCount <= 0)
             {
@@ -837,7 +858,7 @@ namespace Lantean.QBTMud.Services
             }
 
             string failureMessage;
-            if (result.SupportsAsync)
+            if (isPending)
             {
                 failureMessage = result.FailureCount == 1
                     ? TranslateApp("failed to add %1 torrent", result.FailureCount)
@@ -852,12 +873,12 @@ namespace Lantean.QBTMud.Services
             _snackbarWorkflow.ShowTransientMessage(message, Severity.Error);
         }
 
-        private void ShowDefaultAddTorrentSnackbarMessage(AddTorrentResult result)
+        private void ShowDefaultAddTorrentSnackbarMessage(AddTorrentResult result, bool isPending)
         {
             var fragments = new List<string>(3);
             if (result.SuccessCount > 0)
             {
-                if (result.SupportsAsync)
+                if (isPending)
                 {
                     fragments.Add(result.SuccessCount == 1
                         ? TranslateApp("Added %1 torrent", result.SuccessCount)
@@ -872,7 +893,7 @@ namespace Lantean.QBTMud.Services
             if (result.FailureCount > 0)
             {
                 string failureMessage;
-                if (result.SupportsAsync)
+                if (isPending)
                 {
                     failureMessage = result.FailureCount == 1
                         ? TranslateApp("failed to add %1 torrent", result.FailureCount)
@@ -891,7 +912,7 @@ namespace Lantean.QBTMud.Services
                 fragments.Add(failureMessage);
             }
 
-            if (result.SupportsAsync && result.PendingCount > 0)
+            if (isPending && result.PendingCount > 0)
             {
                 fragments.Add(result.PendingCount == 1
                     ? TranslateApp("Pending %1 torrent", result.PendingCount)

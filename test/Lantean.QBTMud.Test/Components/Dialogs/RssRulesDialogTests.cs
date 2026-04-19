@@ -460,7 +460,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             {
                 Enabled = enabled,
                 AffectedFeeds = affectedFeeds ?? Array.Empty<string>(),
-                TorrentParams = new TorrentParams
+                TorrentParams = new AutoDownloadingRuleTorrentParams
                 {
                     Stopped = stopped,
                     ContentLayout = contentLayout,

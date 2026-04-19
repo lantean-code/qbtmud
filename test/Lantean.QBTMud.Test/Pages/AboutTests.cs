@@ -101,7 +101,7 @@ namespace Lantean.QBTMud.Test.Pages
             _apiClient.ClearInvocations();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationVersionAsync())
-                .ReturnsAsync(ApiResult<string>.FailureResult(new ApiFailure
+                .ReturnsAsync(ApiResult.CreateFailure<string>(new ApiFailure
                 {
                     Kind = ApiFailureKind.NoResponse,
                     Operation = "test",

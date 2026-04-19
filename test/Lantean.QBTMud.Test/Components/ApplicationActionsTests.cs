@@ -524,7 +524,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock();
-            apiClientMock.Setup(c => c.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>())).ReturnsAsync(ApiResult.Success());
+            apiClientMock.Setup(c => c.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>())).ReturnsAsync(ApiResult.CreateSuccess());
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
