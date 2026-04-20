@@ -75,7 +75,7 @@ namespace Lantean.QBTMud.Services
             }
 
             _pendingDownloadLink = downloadValue;
-            await PersistPendingDownloadAsync(cancellationToken);
+            await _sessionStorageService.SetItemAsync(_pendingDownloadStorageKey, _pendingDownloadLink, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -104,7 +104,7 @@ namespace Lantean.QBTMud.Services
             catch (Exception)
             {
                 _pendingDownloadLink = magnet;
-                await PersistPendingDownloadAsync(cancellationToken);
+                await _sessionStorageService.SetItemAsync(_pendingDownloadStorageKey, _pendingDownloadLink, cancellationToken);
                 throw;
             }
         }
@@ -118,23 +118,7 @@ namespace Lantean.QBTMud.Services
 
         private bool HasAlreadyProcessed(string download)
         {
-            if (string.IsNullOrWhiteSpace(download))
-            {
-                return true;
-            }
-
             return string.Equals(_lastProcessedDownloadToken, download, StringComparison.Ordinal);
-        }
-
-        private async Task PersistPendingDownloadAsync(CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrWhiteSpace(_pendingDownloadLink))
-            {
-                await _sessionStorageService.RemoveItemAsync(_pendingDownloadStorageKey, cancellationToken);
-                return;
-            }
-
-            await _sessionStorageService.SetItemAsync(_pendingDownloadStorageKey, _pendingDownloadLink, cancellationToken);
         }
 
         private async Task SaveLastProcessedDownloadAsync(string download, CancellationToken cancellationToken)

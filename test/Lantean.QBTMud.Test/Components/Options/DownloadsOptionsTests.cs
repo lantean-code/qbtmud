@@ -451,6 +451,13 @@ namespace Lantean.QBTMud.Test.Components.Options
                 values.Should().Contain(StopCondition.MetadataReceived);
             });
 
+            await target.InvokeAsync(() => FindSelect<AutoDeleteMode>(target, "AutoDeleteMode").Instance.OpenMenu());
+            target.WaitForAssertion(() =>
+            {
+                var values = target.FindComponents<MudSelectItem<AutoDeleteMode>>().Select(item => item.Instance.Value).ToList();
+                values.Should().Contain(AutoDeleteMode.Always);
+            });
+
             await target.InvokeAsync(() => FindExistingScanDirType(target, 0).Instance.OpenMenu());
             target.WaitForAssertion(() =>
             {

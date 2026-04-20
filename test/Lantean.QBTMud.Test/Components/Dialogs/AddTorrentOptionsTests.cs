@@ -118,6 +118,18 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public void GIVEN_NoPreferences_WHEN_Rendered_THEN_DefaultsAreNotApplied()
+        {
+            UseApiClientMock(preferences: CreatePreferences(savePath: "SavePath"));
+            _preferences = null;
+
+            var component = _target.RenderComponent();
+            ExpandOptions(component);
+
+            GetSavePath(component).Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_TorrentManagementEnabled_WHEN_Rendered_THEN_AutomaticPathsApplied()
         {
             var preferences = CreatePreferences(

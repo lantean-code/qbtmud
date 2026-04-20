@@ -234,6 +234,51 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_AddTorrentFilePending_WHEN_InvokeAddTorrentFileDialog_THEN_ShouldShowPendingSnackbar()
+        {
+            var stream = new TrackingStream();
+            var file = new Mock<IBrowserFile>(MockBehavior.Strict);
+            file.Setup(f => f.Name).Returns("Name.torrent");
+            file.Setup(f => f.OpenReadStream(4194304, It.IsAny<CancellationToken>())).Returns(stream);
+            var options = CreateTorrentOptions(false, false);
+            var fileOptions = new AddTorrentFileOptions(new[] { file.Object }, options);
+            var reference = CreateReference(DialogResult.Ok(fileOptions));
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.AddTorrentAsync(It.IsAny<AddTorrentParams>()))
+                .ReturnsPending(new AddTorrentResult(0, 0, 1, null));
+
+            await _target.InvokeAddTorrentFileDialog();
+
+            stream.DisposeAsyncCalled.Should().BeTrue();
+            VerifySnackbar("Pending 1 torrent.", Severity.Info);
+            file.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_CurrentPreferences_WHEN_InvokeAddTorrentFileDialog_THEN_ShouldForwardPreferences()
+        {
+            var preferences = PreferencesFactory.CreateQBittorrentPreferences(_ => { });
+            var reference = CreateReference(DialogResult.Cancel());
+            Mock.Get(_qBittorrentPreferencesStateService)
+                .Setup(service => service.Current)
+                .Returns(preferences);
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<AddTorrentFileDialog>("Add torrent", It.IsAny<DialogParameters>(), DialogWorkflow.FormDialogOptions))
+                .ReturnsAsync(reference);
+
+            await _target.InvokeAddTorrentFileDialog();
+
+            Mock.Get(_dialogService).Verify(s => s.ShowAsync<AddTorrentFileDialog>(
+                    "Add torrent",
+                    It.Is<DialogParameters>(parameters => HasReferenceParameter(parameters, nameof(AddTorrentFileDialog.Preferences), preferences)),
+                    DialogWorkflow.FormDialogOptions),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_DuplicateFileNames_WHEN_InvokeAddTorrentFileDialog_THEN_ShouldEnsureUniqueNames()
         {
             var streamOne = new TrackingStream();
@@ -757,6 +802,39 @@ namespace Lantean.QBTMud.Test.Services
 
             Mock.Get(_apiClient).Verify();
             Mock.Get(_qBittorrentPreferencesStateService).Verify();
+        }
+
+        [Fact]
+        public async Task GIVEN_DeleteDialogSavePreferenceRefreshFails_WHEN_CallbackInvoked_THEN_ShouldShowApiFailure()
+        {
+            DialogParameters? capturedParameters = null;
+            var reference = CreateReference(DialogResult.Cancel());
+            Mock.Get(_dialogService)
+                .Setup(s => s.ShowAsync<DeleteDialog>("Remove torrent(s)", It.IsAny<DialogParameters>(), DialogWorkflow.ConfirmDialogOptions))
+                .Callback<string, DialogParameters, DialogOptions?>((_, parameters, _) =>
+                {
+                    capturedParameters = parameters;
+                })
+                .ReturnsAsync(reference);
+            Mock.Get(_apiClient)
+                .Setup(a => a.GetTorrentListAsync(null, null, null, null, null, null, null, null, null, null, TorrentSelector.FromHash("Hash"), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiResult.CreateSuccess<IReadOnlyList<QbtTorrent>>(new List<QbtTorrent> { new(name: "Name") }));
+            Mock.Get(_apiClient)
+                .Setup(a => a.SetApplicationPreferencesAsync(It.Is<UpdatePreferences>(preferences => preferences.DeleteTorrentContentFiles ?? false)))
+                .ReturnsAsync(ApiResult.CreateSuccess());
+            Mock.Get(_apiClient)
+                .Setup(a => a.GetApplicationPreferencesAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Refresh failed", HttpStatusCode.InternalServerError);
+
+            await _target.InvokeDeleteTorrentDialog(true, false, "Hash");
+
+            capturedParameters.Should().NotBeNull();
+            var callback = capturedParameters![nameof(DeleteDialog.SaveDeleteFilesPreference)] as Func<bool, Task>;
+            callback.Should().NotBeNull();
+            await callback!(true);
+
+            VerifySnackbar("Refresh failed", Severity.Error);
+            Mock.Get(_qBittorrentPreferencesStateService).Verify(service => service.SetPreferences(It.IsAny<QBittorrentPreferences>()), Times.Never);
         }
 
         [Fact]
@@ -2251,6 +2329,13 @@ namespace Lantean.QBTMud.Test.Services
         {
             return HasParameter(parameters, nameof(CookiePropertiesDialog.Cookie))
                    && ReferenceEquals(parameters[nameof(CookiePropertiesDialog.Cookie)], cookie);
+        }
+
+        private static bool HasReferenceParameter<T>(DialogParameters parameters, string key, T value)
+            where T : class
+        {
+            return HasParameter(parameters, key)
+                   && ReferenceEquals(parameters[key], value);
         }
 
         private static bool HasSubMenuDialogParameters(DialogParameters parameters, UIAction parent, IEnumerable<string> hashes, IReadOnlyDictionary<string, MudTorrent> torrents)

@@ -1095,6 +1095,32 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_MenuWithoutActivatorOverlay_WHEN_VisibilityChanges_THEN_OverlayStateUpdates()
+        {
+            TestContext.UseApiClientMock();
+            TestContext.AddSingletonMock<IDialogWorkflow>();
+            TestContext.UseSnackbarMock();
+            TestContext.Render<MudPopoverProvider>();
+
+            var target = TestContext.Render<TorrentActions>(parameters =>
+            {
+                parameters.Add(p => p.RenderType, RenderType.MenuWithoutActivator);
+                parameters.Add(p => p.Hashes, Hashes("Hash"));
+                parameters.Add(p => p.Torrents, Torrents(CreateTorrent("Hash")));
+                parameters.Add(p => p.Preferences, null);
+                parameters.Add(p => p.Tags, Tags("Tag"));
+                parameters.Add(p => p.Categories, Categories("Category"));
+            });
+
+            var overlay = target.FindComponent<MudOverlay>();
+
+            await target.InvokeAsync(() => overlay.Instance.VisibleChanged.InvokeAsync(true));
+            await target.InvokeAsync(() => overlay.Instance.VisibleChanged.InvokeAsync(false));
+
+            overlay.Instance.GetState(o => o.Visible).Should().BeFalse();
+        }
+
+        [Fact]
         public async Task GIVEN_MenuRenderType_WHEN_OpenChangedRaisedTwice_THEN_DeleteShortcutRegistersOnce()
         {
             TestContext.UseApiClientMock();

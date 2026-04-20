@@ -305,6 +305,30 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_CategoryMenuActions_WHEN_RemoveFails_THEN_ErrorShownAndCategoryRemains()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+
+            apiClientMock
+                .Setup(c => c.RemoveCategoriesAsync(categories: new[] { "Movies" }))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderFiltersNav(mainData);
+
+            var movies = FindComponentByTestId<CustomNavLink>(target, "Category-Movies");
+            await target.InvokeAsync(() => movies.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
+
+            var removeCategory = WaitForMenuItemByTestId("CategoryRemove");
+            await target.InvokeAsync(() => removeCategory.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
+            mainData.Categories.Should().ContainKey("Movies");
+        }
+
+        [Fact]
         public async Task GIVEN_CategorySubcategoryWithTrailingSlash_WHEN_Clicked_THEN_PrefixPreserved()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
@@ -420,6 +444,30 @@ namespace Lantean.QBTMud.Test.Components
 
             apiClientMock.Verify(c => c.DeleteTagsAsync(tags: new[] { "Tag1" }), Times.Once);
             dialogMock.Invocations.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GIVEN_TagMenuActions_WHEN_RemoveFails_THEN_ErrorShownAndTagRemains()
+        {
+            var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Loose);
+            var mainData = CreateMainData();
+
+            apiClientMock
+                .Setup(c => c.DeleteTagsAsync(tags: new[] { "Tag1" }))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderFiltersNav(mainData);
+
+            var tagLink = FindComponentByTestId<CustomNavLink>(target, "Tag-Tag1");
+            await target.InvokeAsync(() => tagLink.Instance.OnContextMenu.InvokeAsync(new MouseEventArgs()));
+
+            var removeTag = WaitForMenuItemByTestId("TagRemove");
+            await target.InvokeAsync(() => removeTag.Instance.OnClick.InvokeAsync());
+
+            snackbarMock.Verify(s => s.Add("Failure", Severity.Error, null, null), Times.Once);
+            mainData.Tags.Should().Contain("Tag1");
         }
 
         [Fact]

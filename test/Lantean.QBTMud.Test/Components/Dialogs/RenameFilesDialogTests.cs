@@ -118,6 +118,37 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_ContentLoadFails_WHEN_Rendered_THEN_ShouldShowApiFailureAndUseEmptyFileList()
+        {
+            var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
+            var result = ApiResult.CreateFailure<IReadOnlyList<FileData>>(new ApiFailure
+            {
+                Kind = ApiFailureKind.ServerError,
+                Operation = "GetTorrentContentsAsync",
+                UserMessage = "Load failed",
+            });
+            apiClientMock
+                .Setup(c => c.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(result);
+            var feedbackWorkflow = TestContext.Services.GetRequiredService<IApiFeedbackWorkflow>();
+            Mock.Get(feedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(result, null, Severity.Error, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var dialog = await _target.RenderDialogAsync("Hash");
+            var table = FindTable(dialog.Component);
+
+            dialog.Component.WaitForAssertion(() =>
+            {
+                table.Instance.Items.Should().NotBeNull();
+                table.Instance.Items!.Should().BeEmpty();
+            });
+            Mock.Get(feedbackWorkflow).Verify(
+                workflow => workflow.HandleFailureAsync(result, null, Severity.Error, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_RememberPreferencesEnabled_WHEN_OptionsChanged_THEN_PreferencesPersisted()
         {
             TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
@@ -384,6 +415,49 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var result = await dialog.Reference.Result;
             result!.Canceled.Should().BeFalse();
 
+            apiClientMock.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GIVEN_SingleRenameFailsWithoutUserMessage_WHEN_Submitted_THEN_ShowsDefaultErrorAndKeepsDialogOpen()
+        {
+            var apiClientMock = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Strict);
+            apiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash", It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>())).ReturnsAsync(Array.Empty<FileData>());
+
+            var dataManagerMock = TestContext.AddSingletonMock<ITorrentDataManager>(MockBehavior.Strict);
+            var contentItems = new[]
+            {
+                CreateContentItem("NameFile.txt", "NameFile.txt", 1, false, 0),
+            };
+            dataManagerMock
+                .Setup(m => m.CreateContentsList(It.IsAny<IReadOnlyList<FileData>>()))
+                .Returns(CreateContentMap(contentItems));
+
+            var dialog = await _target.RenderDialogAsync("Hash");
+
+            await ClickRowAsync(dialog.Component, "NameFile.txt", false);
+            await SetTextFieldValue(dialog.Component, "RenameFilesSearch", "Name");
+            await SetTextFieldValue(dialog.Component, "RenameFilesReplacement", "Replacement");
+            await SetSwitchValue(dialog.Component, "RenameFilesIncludeFiles", true);
+            await SetSelectValue(dialog.Component, "RenameFilesReplaceType", false);
+
+            var renamedFile = GetPreviewRow(dialog.Component, "NameFile.txt");
+            var filePaths = GetReplaceAllPaths(renamedFile);
+            apiClientMock
+                .Setup(c => c.RenameFileAsync("Hash", filePaths.OldPath, filePaths.NewPath))
+                .ReturnsAsync(ApiResult.CreateFailure(new ApiFailure
+                {
+                    Kind = ApiFailureKind.ServerError,
+                    Operation = "RenameFileAsync",
+                    UserMessage = string.Empty,
+                }));
+
+            var submitButton = FindComponentByTestId<MudButton>(dialog.Component, "RenameFilesSubmit");
+            await submitButton.Find("button").ClickAsync(new MouseEventArgs());
+
+            var failedRow = GetPreviewRow(dialog.Component, "NameFile.txt");
+            failedRow.Renamed.Should().BeFalse();
+            failedRow.ErrorMessage.Should().Be("qBittorrent returned an error. Please try again.");
             apiClientMock.VerifyAll();
         }
 

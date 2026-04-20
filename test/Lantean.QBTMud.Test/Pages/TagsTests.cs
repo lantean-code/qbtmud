@@ -71,6 +71,25 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_AddClicked_WHEN_ExistingTagsLoadFails_THEN_SkipsCreate()
+        {
+            Mock.Get(_dialogWorkflow)
+                .Setup(workflow => workflow.ShowStringFieldDialog("New Tag", "Tag:", null))
+                .ReturnsAsync("Tag");
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetAllTagsAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Load failed");
+
+            var target = RenderPage();
+            var addButton = FindIconButton(target, Icons.Material.Filled.NewLabel);
+
+            await target.InvokeAsync(() => addButton.Instance.OnClick.InvokeAsync());
+
+            Mock.Get(_apiClient).Verify(client => client.GetAllTagsAsync(), Times.Once);
+            Mock.Get(_apiClient).Verify(client => client.CreateTagsAsync(It.IsAny<IEnumerable<string>>()), Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_AddClicked_WHEN_NewTag_THEN_CreatesTag()
         {
             Mock.Get(_dialogWorkflow)
@@ -208,6 +227,22 @@ namespace Lantean.QBTMud.Test.Pages
 
             var table = target.FindComponent<DynamicTable<string>>();
             table.Instance.Items.Should().ContainSingle(tag => tag == "Tag");
+        }
+
+        [Fact]
+        public async Task GIVEN_RefreshClicked_WHEN_LoadFails_THEN_KeepsExistingTags()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetAllTagsAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Load failed");
+
+            var target = RenderPage(["Existing"]);
+            var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
+
+            await target.InvokeAsync(() => refreshButton.Instance.OnClick.InvokeAsync());
+
+            var table = target.FindComponent<DynamicTable<string>>();
+            table.Instance.Items.Should().ContainSingle(tag => tag == "Existing");
         }
 
         [Fact]

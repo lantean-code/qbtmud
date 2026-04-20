@@ -1,3 +1,4 @@
+using System.Net.Http;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.AppSettingsTabs;
@@ -60,6 +61,124 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             _settings.NotificationsEnabled.Should().BeTrue();
             _settingsChangedCount.Should().Be(1);
             _notificationServiceMock.Verify(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_EnableNotifications_WHEN_PermissionUnknown_THEN_DisablesNotificationsAndShowsSynchronizationError()
+        {
+            _notificationServiceMock
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Unknown);
+
+            var target = RenderTarget();
+            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+
+            await target.InvokeAsync(() => notificationsSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            _settings.NotificationsEnabled.Should().BeFalse();
+            _settingsChangedCount.Should().Be(1);
+            _snackbarMock.Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to synchronize notification settings.", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_EnableNotifications_WHEN_PermissionInsecure_THEN_DisablesNotificationsAndShowsWarning()
+        {
+            _notificationServiceMock
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Insecure);
+
+            var target = RenderTarget();
+            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+
+            await target.InvokeAsync(() => notificationsSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            _settings.NotificationsEnabled.Should().BeFalse();
+            _settingsChangedCount.Should().Be(1);
+            _snackbarMock.Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Browser notifications require HTTPS or localhost.", StringComparison.Ordinal)),
+                    Severity.Warning,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_EnableNotifications_WHEN_PermissionDenied_THEN_DisablesNotificationsAndShowsWarning()
+        {
+            _notificationServiceMock
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Denied);
+
+            var target = RenderTarget();
+            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+
+            await target.InvokeAsync(() => notificationsSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            _settings.NotificationsEnabled.Should().BeFalse();
+            _settingsChangedCount.Should().Be(1);
+            _snackbarMock.Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Browser notification permission was not granted.", StringComparison.Ordinal)),
+                    Severity.Warning,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_EnableNotifications_WHEN_PermissionRequestThrowsJsException_THEN_DisablesNotificationsAndShowsError()
+        {
+            _notificationServiceMock
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Microsoft.JSInterop.JSException("Failure"));
+
+            var target = RenderTarget();
+            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+
+            await target.InvokeAsync(() => notificationsSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            _settings.NotificationsEnabled.Should().BeFalse();
+            _settingsChangedCount.Should().Be(1);
+            _snackbarMock.Verify(
+                snackbar => snackbar.Add(
+                    It.Is<string>(message => string.Equals(message, "Unable to update notification permission: Failure", StringComparison.Ordinal)),
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>(),
+                    It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public void GIVEN_GetPermissionThrowsInvalidOperationException_WHEN_Rendered_THEN_UsesUnknownPermission()
+        {
+            _notificationServiceMock
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Failure"));
+
+            var target = RenderTarget(1);
+            var permissionIndicator = FindComponentByTestId<MudChip<string>>(target, "AppSettingsNotificationPermission");
+
+            GetChildContentText(permissionIndicator.Instance.ChildContent).Should().Be("Permission: Unknown");
+        }
+
+        [Fact]
+        public void GIVEN_GetPermissionThrowsHttpRequestException_WHEN_Rendered_THEN_UsesUnknownPermission()
+        {
+            _notificationServiceMock
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new HttpRequestException("Failure"));
+
+            var target = RenderTarget(1);
+            var permissionIndicator = FindComponentByTestId<MudChip<string>>(target, "AppSettingsNotificationPermission");
+
+            GetChildContentText(permissionIndicator.Instance.ChildContent).Should().Be("Permission: Unknown");
         }
 
         [Fact]
@@ -186,6 +305,20 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             ReferenceEquals(initialSwitchInstance, updatedSwitch.Instance).Should().BeFalse();
             updatedSwitch.Instance.Disabled.Should().BeFalse();
             GetChildContentText(permissionIndicator.Instance.ChildContent).Should().Be("Permission: Granted");
+        }
+
+        [Fact]
+        public async Task GIVEN_PermissionDoesNotChange_WHEN_PermissionChangeRaised_THEN_SettingsCallbackNotRaised()
+        {
+            _notificationServiceMock
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Granted);
+
+            var target = RenderTarget(1);
+
+            await target.InvokeAsync(() => target.Instance.OnNotificationPermissionChanged());
+
+            _settingsChangedCount.Should().Be(0);
         }
 
         [Fact]

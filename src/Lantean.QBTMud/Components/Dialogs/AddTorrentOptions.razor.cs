@@ -425,11 +425,6 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         private string CombineQbittorrentPath(string basePath, string childPath)
         {
-            if (string.IsNullOrEmpty(basePath))
-            {
-                return childPath;
-            }
-
             if (basePath[^1] == '/' || basePath[^1] == '\\')
             {
                 return string.Concat(basePath, childPath);

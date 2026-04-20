@@ -245,6 +245,14 @@ namespace Lantean.QBTMud.Test.Pages
             capturedOptions!(options);
             options.Action.Should().Be("Reload");
             options.RequireInteraction.Should().BeTrue();
+            options.OnClick.Should().NotBeNull();
+
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
+            navigationManager.NavigateTo("http://localhost/settings");
+
+            await options.OnClick!(null!);
+
+            navigationManager.Uri.Should().Be("http://localhost/");
         }
 
         [Fact]

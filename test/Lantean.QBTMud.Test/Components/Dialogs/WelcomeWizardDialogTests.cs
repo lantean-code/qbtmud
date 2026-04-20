@@ -335,6 +335,58 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_NotificationPermissionUnknown_WHEN_NotificationsEnabled_THEN_PersistsDisabledSettingAndShowsError()
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Unknown);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => !settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Unable to synchronize notification settings.", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationPermissionRequestReturnsInsecure_WHEN_NotificationsEnabled_THEN_PersistsDisabledSettingAndShowsWarning()
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Insecure);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            await dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => !settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("Browser notifications require HTTPS or localhost.", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_NotificationPermissionInsecure_WHEN_NotificationsStepRendered_THEN_ShowsDisabledToggleAndAlert()
         {
             Mock.Get(_browserNotificationService)

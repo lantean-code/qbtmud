@@ -83,6 +83,21 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_ExtractedDownloadWhitespace_WHEN_CapturingFromUri_THEN_ShouldNotPersistPendingDownload()
+        {
+            var cancellationToken = Xunit.TestContext.Current.CancellationToken;
+            var sessionStorage = new TestSessionStorageService();
+            var magnetLinkService = new Mock<IMagnetLinkService>(MockBehavior.Strict);
+            magnetLinkService.Setup(service => service.ExtractDownloadLink("http://localhost/?download=blank")).Returns(" ");
+            var target = CreateTarget(sessionStorage, magnetLinkService.Object);
+
+            await target.CaptureFromUriAsync("http://localhost/?download=blank", cancellationToken);
+
+            var stored = await sessionStorage.GetItemAsync<string>(_pendingDownloadStorageKey, cancellationToken);
+            stored.Should().BeNull();
+        }
+
+        [Fact]
         public async Task GIVEN_AlreadyProcessedDownload_WHEN_CapturingFromUri_THEN_ShouldNotPersistPendingDownload()
         {
             var cancellationToken = Xunit.TestContext.Current.CancellationToken;
