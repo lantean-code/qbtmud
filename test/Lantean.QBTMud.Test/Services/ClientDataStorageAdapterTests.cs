@@ -50,7 +50,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                .ReturnsSuccessAsync(new Dictionary<string, JsonElement>(StringComparer.Ordinal)
                 {
                     ["QbtMud.KeyA"] = JsonDocument.Parse("{\"enabled\":true}").RootElement.Clone(),
                     ["QbtMud.KeyB"] = JsonDocument.Parse("\"value\"").RootElement.Clone(),
@@ -77,7 +77,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+                .ReturnsSuccessAsync(new Dictionary<string, JsonElement>(StringComparer.Ordinal)
                 {
                     ["QbtMud.One"] = JsonDocument.Parse("1").RootElement.Clone(),
                     ["Two"] = JsonDocument.Parse("2").RootElement.Clone()
@@ -140,7 +140,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.StoreClientDataAsync(It.IsAny<IReadOnlyDictionary<string, JsonElement?>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             await _target.StorePrefixedEntriesAsync(
                 new Dictionary<string, object?>(StringComparer.Ordinal)
@@ -178,7 +178,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.DeleteClientDataAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             await _target.RemovePrefixedEntriesAsync(["QbtMud.Key", " QbtMud.Key ", "Other"], TestContext.Current.CancellationToken);
 

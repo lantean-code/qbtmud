@@ -50,7 +50,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
-                .ReturnsAsync(new List<PeerLog>());
+                .ReturnsSuccessAsync(new List<PeerLog>());
         }
 
         [Fact]
@@ -81,7 +81,7 @@ namespace Lantean.QBTMud.Test.Pages
             var results = new List<PeerLog> { CreatePeerLog(1, "IPAddress", true) };
             Mock.Get(_apiClient)
                 .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
-                .ReturnsAsync(results);
+                .ReturnsSuccessAsync(results);
 
             await TriggerTimerTickAsync(target);
 
@@ -166,7 +166,7 @@ namespace Lantean.QBTMud.Test.Pages
             var results = new List<PeerLog> { CreatePeerLog(1, "IPAddress", false) };
             Mock.Get(_apiClient)
                 .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
-                .ReturnsAsync(results);
+                .ReturnsSuccessAsync(results);
 
             await InvokeSubmitAsync(target);
 
@@ -206,7 +206,7 @@ namespace Lantean.QBTMud.Test.Pages
             var results = CreatePeerLogs(501, true);
             Mock.Get(_apiClient)
                 .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
-                .ReturnsAsync(results);
+                .ReturnsSuccessAsync(results);
 
             await TriggerTimerTickAsync(target);
 

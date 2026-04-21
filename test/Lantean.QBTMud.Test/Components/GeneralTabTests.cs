@@ -93,7 +93,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPropertiesAsync("Hash"))
-                .ReturnsAsync(CreateProperties());
+                .ReturnsSuccessAsync(CreateProperties());
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
                 .ReturnsFailure(ApiFailureKind.NotFound, "Message", HttpStatusCode.NotFound);
@@ -111,10 +111,10 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPropertiesAsync("Hash"))
-                .ReturnsAsync(CreateProperties());
+                .ReturnsSuccessAsync(CreateProperties());
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
-                .ReturnsAsync(new[] { PieceState.Downloaded, PieceState.Downloading });
+                .ReturnsSuccessAsync(new[] { PieceState.Downloaded, PieceState.Downloading });
 
             var target = RenderGeneralTab(true, "Hash");
 
@@ -133,7 +133,7 @@ namespace Lantean.QBTMud.Test.Components
                 .ReturnsFailure(ApiFailureKind.NotFound, "Message", HttpStatusCode.NotFound);
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
-                .ReturnsAsync(new[] { PieceState.Downloaded });
+                .ReturnsSuccessAsync(new[] { PieceState.Downloaded });
 
             var target = RenderGeneralTab(true, "Hash");
             await TriggerTimerTickAsync(target);
@@ -153,7 +153,7 @@ namespace Lantean.QBTMud.Test.Components
                 .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Message", HttpStatusCode.Forbidden);
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
-                .ReturnsAsync(new[] { PieceState.Downloaded });
+                .ReturnsSuccessAsync(new[] { PieceState.Downloaded });
 
             var target = RenderGeneralTab(true, "Hash");
             await TriggerTimerTickAsync(target);
@@ -219,10 +219,10 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPropertiesAsync("Hash"))
-                .ReturnsAsync(CreateProperties());
+                .ReturnsSuccessAsync(CreateProperties());
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
-                .ReturnsAsync(new[] { PieceState.Downloaded });
+                .ReturnsSuccessAsync(new[] { PieceState.Downloaded });
 
             var target = RenderGeneralTab(true, "Hash");
             var handler = GetTickHandler(target);

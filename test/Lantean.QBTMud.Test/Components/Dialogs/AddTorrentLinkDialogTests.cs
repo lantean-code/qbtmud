@@ -122,8 +122,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         private Mock<IApiClient> UseApiClientMock()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsAsync(new Dictionary<string, ClientModels.Category>());
-            apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsAsync(Array.Empty<string>());
+            apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsSuccessAsync(new Dictionary<string, ClientModels.Category>());
+            apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsSuccessAsync(Array.Empty<string>());
             apiClientMock.Setup(c => c.GetBuildInfoAsync()).ReturnsAsync(CreateBuildInfo());
 
             _preferences = CreatePreferences();

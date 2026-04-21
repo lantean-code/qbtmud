@@ -38,7 +38,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -56,7 +56,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.IsAny<TorrentSelector?>(),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Torrent>());
+                .ReturnsSuccessAsync(new List<Torrent>());
 
             var dialog = await _target.RenderDialogAsync(Array.Empty<string>());
 
@@ -113,7 +113,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -146,7 +146,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -168,7 +168,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(new List<Torrent> { CreateTorrent(string.Empty) });
             apiClientMock
                 .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync(hashes);
 
@@ -188,7 +188,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -210,7 +210,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies"), CreateTorrent("Movies") });
             apiClientMock
                 .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync(hashes);
 
@@ -231,7 +231,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -253,7 +253,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
             apiClientMock
                 .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync(hashes);
 
@@ -274,7 +274,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -292,7 +292,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Torrent> { CreateTorrent("Other") });
+                .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent("Other") });
             apiClientMock
                 .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
@@ -325,7 +325,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { string.Empty, new Category(string.Empty, null, null) },
                 });
@@ -343,7 +343,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
+                .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent("Movies") });
 
             var dialog = await _target.RenderDialogAsync(hashes);
 
@@ -358,7 +358,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -376,7 +376,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
+                .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent("Movies") });
 
             var dialogWorkflowMock = Mock.Get(_dialogWorkflow);
             dialogWorkflowMock
@@ -399,7 +399,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -417,7 +417,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies"), CreateTorrent("Movies") });
+                .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent("Movies"), CreateTorrent("Movies") });
             apiClientMock
                 .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
@@ -450,7 +450,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -472,7 +472,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
             apiClientMock
                 .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialogWorkflowMock = Mock.Get(_dialogWorkflow);
             dialogWorkflowMock
@@ -501,7 +501,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -519,7 +519,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
+                .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent("Movies") });
             apiClientMock
                 .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
@@ -560,7 +560,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -578,10 +578,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
+                .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent("Movies") });
             apiClientMock
                 .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync(hashes);
 
@@ -602,7 +602,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "Movies", new Category("Movies", null, null) },
                 });
@@ -620,7 +620,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.IsAny<bool?>(),
                     It.Is<TorrentSelector?>(selector => selector != null && TorrentSelectorTestHelper.HasHashes(selector, hashes)),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Torrent> { CreateTorrent("Movies") });
+                .ReturnsSuccessAsync(new List<Torrent> { CreateTorrent("Movies") });
             apiClientMock
                 .Setup(client => client.SetTorrentCategoryAsync(It.IsAny<TorrentSelector>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);

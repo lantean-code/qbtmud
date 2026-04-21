@@ -37,10 +37,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync())
-                .ReturnsAsync(CreatePreferences());
+                .ReturnsSuccessAsync(CreatePreferences());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetNetworkInterfacesAsync())
-                .ReturnsAsync(Array.Empty<NetworkInterface>());
+                .ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
 
             TestContext.Render<MudPopoverProvider>();
         }
@@ -98,7 +98,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(savedPreferences);
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(preferences, configureApi: false);
             _apiClient.ClearInvocations();
@@ -131,7 +131,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/settings");
@@ -191,7 +191,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             await TestContext.LocalStorage.RemoveItemAsync(LanguageStorageKeys.PreferredLocale, Xunit.TestContext.Current.CancellationToken);
 
@@ -215,7 +215,7 @@ namespace Lantean.QBTMud.Test.Pages
             Action<SnackbarOptions>? capturedOptions = null;
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             Mock.Get(_snackbar)
                 .Setup(snackbar => snackbar.Add(
                     "Language preference changed on server. Click Reload to apply it.",
@@ -273,7 +273,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(savedPreferences);
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(preferences, configureApi: false);
             await ActivateTab(target, 0);
@@ -304,7 +304,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(savedPreferences);
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(preferences, configureApi: false);
             await ActivateTab(target, 2);
@@ -331,7 +331,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsFailure(ApiFailureKind.ServerError, "Refresh failed");
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(preferences, configureApi: false);
             await ActivateTab(target, 0);
@@ -542,7 +542,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 Mock.Get(_apiClient)
                     .Setup(client => client.GetApplicationPreferencesAsync())
-                    .ReturnsAsync(preferences ?? CreatePreferences());
+                    .ReturnsSuccessAsync(preferences ?? CreatePreferences());
             }
 
             return TestContext.Render<Options>(parameters =>

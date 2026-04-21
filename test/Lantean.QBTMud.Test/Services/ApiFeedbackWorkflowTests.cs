@@ -114,7 +114,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_FailedGenericApiResultWithUserMessage_WHEN_HandlingFailure_THEN_ShouldShowUserMessage()
         {
-            var result = ApiResult<string>.CreateFailure(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
 
             _snackbar
                 .Setup(service => service.Add("UserMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
@@ -128,7 +128,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_FailedGenericApiResultWithoutUserMessage_WHEN_HandlingFailure_THEN_ShouldShowLocalizedDefaultMessage()
         {
-            var result = ApiResult<string>.CreateFailure(CreateFailure(ApiFailureKind.ServerError, null));
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.ServerError, null));
 
             _languageLocalizer
                 .Setup(localizer => localizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.", It.IsAny<object[]>()))
@@ -146,7 +146,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_FailedGenericConnectivityApiResult_WHEN_HandlingFailure_THEN_ShouldMarkLostConnection()
         {
-            var result = ApiResult<string>.CreateFailure(CreateFailure(ApiFailureKind.Timeout, "UserMessage"));
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.Timeout, "UserMessage"));
 
             _lostConnectionWorkflow
                 .Setup(workflow => workflow.MarkLostConnectionAsync())
@@ -190,7 +190,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_FailedGenericApiResultAndCustomMessage_WHEN_HandlingFailure_THEN_ShouldUseCustomMessageAndSeverity()
         {
-            var result = ApiResult<string>.CreateFailure(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
 
             _snackbar
                 .Setup(service => service.Add("Custom UserMessage", Severity.Warning, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))

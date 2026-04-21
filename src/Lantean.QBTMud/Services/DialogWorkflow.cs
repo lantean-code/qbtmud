@@ -169,7 +169,7 @@ namespace Lantean.QBTMud.Services
                 var addTorrentResultResult = await _apiClient.AddTorrentAsync(addTorrentParams);
                 if (addTorrentResultResult.IsSuccess)
                 {
-                    addTorrentResult = addTorrentResultResult.Value;
+                    addTorrentResult = addTorrentResultResult.SuccessValue;
                 }
                 else if (addTorrentResultResult.IsPending)
                 {
@@ -258,7 +258,7 @@ namespace Lantean.QBTMud.Services
             }
             else if (addTorrentResultResult.IsSuccess)
             {
-                addTorrentResultResult.TryGetValue(out addTorrentResult);
+                addTorrentResultResult.TryGetSuccessValue(out addTorrentResult);
             }
 
             await ShowAddTorrentSnackbarMessage(addTorrentResult!, isPending);

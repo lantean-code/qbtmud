@@ -65,7 +65,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -85,7 +85,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
-            apiClientMock.Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -220,7 +220,7 @@ namespace Lantean.QBTMud.Test.Components
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             var startSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            apiClientMock.Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).Returns(startSource.Task);
+            apiClientMock.Setup(c => c.StartTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).ReturnsSuccess(startSource.Task);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -247,7 +247,7 @@ namespace Lantean.QBTMud.Test.Components
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             var stopSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            apiClientMock.Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).Returns(stopSource.Task);
+            apiClientMock.Setup(c => c.StopTorrentsAsync(It.Is<TorrentSelector>(selector => TorrentSelectorTestHelper.IsAll(selector)), It.IsAny<CancellationToken>())).ReturnsSuccess(stopSource.Task);
 
             var target = TestContext.Render<ApplicationActions>(parameters =>
             {
@@ -573,7 +573,7 @@ namespace Lantean.QBTMud.Test.Components
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
             var speedHistoryMock = TestContext.AddSingletonMock<ISpeedHistoryService>(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.LogoutAsync()).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.LogoutAsync()).ReturnsSuccess(Task.CompletedTask);
             speedHistoryMock.Setup(s => s.ClearAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             dialogMock.Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
                 .Returns<string, string, Func<Task>>((_, _, callback) => callback());
@@ -737,7 +737,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             var dialogMock = TestContext.AddSingletonMock<IDialogWorkflow>(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.ShutdownAsync()).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.ShutdownAsync()).ReturnsSuccess(Task.CompletedTask);
             dialogMock.Setup(d => d.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Task>>()))
                 .Returns<string, string, Func<Task>>((_, _, callback) => callback());
 

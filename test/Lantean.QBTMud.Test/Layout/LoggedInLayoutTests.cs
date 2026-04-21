@@ -55,14 +55,14 @@ namespace Lantean.QBTMud.Test.Layout
             TestContext.Services.AddSingleton<NavigationManager>(_navigationManager);
 
             var apiClientMock = Mock.Get(_apiClient);
-            apiClientMock.Setup(c => c.CheckAuthStateAsync()).ReturnsAsync(true);
-            apiClientMock.Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
-            apiClientMock.Setup(c => c.GetApplicationPreferencesAsync()).ReturnsAsync(CreatePreferences());
-            apiClientMock.Setup(c => c.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(CreatePreferences());
-            apiClientMock.Setup(c => c.GetApplicationVersionAsync()).ReturnsAsync("Version");
-            apiClientMock.Setup(c => c.GetApplicationVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync("Version");
-            apiClientMock.Setup(c => c.GetMainDataAsync(It.IsAny<int>())).ReturnsAsync(CreateClientMainData());
-            apiClientMock.Setup(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(CreateClientMainData());
+            apiClientMock.Setup(c => c.CheckAuthStateAsync()).ReturnsSuccessAsync(true);
+            apiClientMock.Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(true);
+            apiClientMock.Setup(c => c.GetApplicationPreferencesAsync()).ReturnsSuccessAsync(CreatePreferences());
+            apiClientMock.Setup(c => c.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(CreatePreferences());
+            apiClientMock.Setup(c => c.GetApplicationVersionAsync()).ReturnsSuccessAsync("Version");
+            apiClientMock.Setup(c => c.GetApplicationVersionAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync("Version");
+            apiClientMock.Setup(c => c.GetMainDataAsync(It.IsAny<int>())).ReturnsSuccessAsync(CreateClientMainData());
+            apiClientMock.Setup(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsSuccessAsync(CreateClientMainData());
 
             var dataManagerMock = Mock.Get(_dataManager);
             dataManagerMock.Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(CreateMainData());
@@ -807,7 +807,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             _snackbar.ClearInvocations();
             await TestContext.LocalStorage.SetItemAsStringAsync(_preferredLocaleStorageKey, "en", Xunit.TestContext.Current.CancellationToken);
-            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>())).ReturnsAsync((ClientModels.Preferences)null!);
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync((ClientModels.Preferences)null!);
 
             TestContext.Render<LoggedInLayout>(parameters =>
             {
@@ -972,7 +972,7 @@ namespace Lantean.QBTMud.Test.Layout
             DisposeDefaultTarget();
             await TestContext.SessionStorage.SetItemAsync(_pendingDownloadStorageKey, "magnet:?xt=urn:btih:ABC", Xunit.TestContext.Current.CancellationToken);
 
-            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(false);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -1459,8 +1459,8 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1479,8 +1479,8 @@ namespace Lantean.QBTMud.Test.Layout
             var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: true));
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(false);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1518,8 +1518,8 @@ namespace Lantean.QBTMud.Test.Layout
             var toggleTaskSource = new TaskCompletionSource<bool>();
             _snackbar.ClearInvocations();
 
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).Returns(toggleTaskSource.Task);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).ReturnsSuccess(toggleTaskSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
             var button = target.FindComponents<MudIconButton>().Single(i => i.Instance.Icon == Icons.Material.Outlined.Speed);
@@ -1674,7 +1674,7 @@ namespace Lantean.QBTMud.Test.Layout
         {
             var tickSource = new TaskCompletionSource<bool>();
 
-            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).Returns(tickSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).ReturnsSuccess(tickSource.Task);
 
             var target = RenderLayout(new List<IManagedTimer>());
 
@@ -1692,7 +1692,7 @@ namespace Lantean.QBTMud.Test.Layout
             var probeBody = CreateProbeBody();
             var mainData = CreateMainData(serverState: CreateServerState());
 
-            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).Returns(tickSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).ReturnsSuccess(tickSource.Task);
             Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData);
             Mock.Get(_apiClient).SetupSequence(c => c.GetMainDataAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreateClientMainData())
@@ -2356,8 +2356,8 @@ namespace Lantean.QBTMud.Test.Layout
         {
             DisposeDefaultTarget();
             var completionSource = new TaskCompletionSource<bool>();
-            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).Returns(completionSource.Task);
-            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            Mock.Get(_apiClient).Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>())).ReturnsSuccess(completionSource.Task);
+            Mock.Get(_apiClient).Setup(c => c.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(true);
 
             var target = RenderLayout(new List<IManagedTimer>());
             var button = target.FindComponents<MudIconButton>()
@@ -2447,7 +2447,7 @@ namespace Lantean.QBTMud.Test.Layout
         public void GIVEN_BlankVersion_WHEN_PageTitleResolved_THEN_OmitsVersionText()
         {
             DisposeDefaultTarget();
-            Mock.Get(_apiClient).Setup(c => c.GetApplicationVersionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(" ");
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationVersionAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(" ");
 
             var target = RenderLayout(new List<IManagedTimer>());
             var pageTitle = target.FindComponent<PageTitle>();
@@ -2528,7 +2528,7 @@ namespace Lantean.QBTMud.Test.Layout
             {
                 Mock.Get(_dataManager).Setup(m => m.CreateMainData(It.IsAny<ClientModels.MainData>())).Returns(mainData ?? CreateMainData());
             }
-            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(preferences ?? CreatePreferences());
+            Mock.Get(_apiClient).Setup(c => c.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(preferences ?? CreatePreferences());
 
             return context.Render<LoggedInLayout>(parameters =>
             {

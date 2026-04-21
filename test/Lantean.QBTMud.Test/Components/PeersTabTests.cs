@@ -68,7 +68,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
 
             var target = RenderPeersTab(true);
 
@@ -86,7 +86,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(false, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(false, "US", "Country"));
 
             var target = RenderPeersTab(true);
 
@@ -102,7 +102,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
 
             var target = RenderPeersTab(true);
 
@@ -120,7 +120,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(c => c.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country", null, "FlagsDescription"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country", null, "FlagsDescription"));
 
             var target = RenderPeersTab(true);
 
@@ -334,7 +334,7 @@ namespace Lantean.QBTMud.Test.Components
                 .ReturnsAsync(peers);
             Mock.Get(_apiClient)
                 .Setup(client => client.AddPeersAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<PeerId>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPeersTab(false);
             var addButton = FindIconButton(target, Icons.Material.Filled.AddCircle);
@@ -376,10 +376,10 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
             Mock.Get(_apiClient)
                 .Setup(client => client.BanPeersAsync(It.IsAny<IEnumerable<PeerId>>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPeersTab(true);
             var table = target.FindComponent<DynamicTable<MudPeer>>();
@@ -399,7 +399,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
 
             var target = RenderPeersTab(true);
             var peer = GetSinglePeer(target);
@@ -413,7 +413,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
 
             var target = RenderPeersTab(true);
             var peer = GetSinglePeer(target);
@@ -427,7 +427,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
 
             var target = RenderPeersTab(true);
             var peer = GetSinglePeer(target);
@@ -447,10 +447,10 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
             Mock.Get(_apiClient)
                 .Setup(client => client.BanPeersAsync(It.IsAny<IEnumerable<PeerId>>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPeersTab(true);
             var peer = GetSinglePeer(target);
@@ -471,7 +471,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
 
             var target = RenderPeersTab(true);
             var peer = GetSinglePeer(target);
@@ -491,7 +491,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
 
             var target = RenderPeersTab(true);
             var peer = GetSinglePeer(target);
@@ -511,7 +511,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowColumnsOptionsDialog(
                     It.IsAny<List<ColumnDefinition<MudPeer>>>(),
@@ -539,7 +539,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(false, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(false, "US", "Country"));
 
             var target = RenderPeersTab(true);
             var table = target.FindComponent<DynamicTable<MudPeer>>();
@@ -555,7 +555,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "XYZ", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "XYZ", "Country"));
 
             var target = RenderPeersTab(true);
 
@@ -571,7 +571,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, " ", null));
+                .ReturnsSuccessAsync(CreatePeers(true, " ", null));
 
             var target = RenderPeersTab(true);
 
@@ -597,10 +597,10 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 1))
-                .ReturnsAsync(CreatePeers(true, "US", "Country", requestId: 2));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country", requestId: 2));
 
             var target = RenderPeersTab(true);
 
@@ -615,7 +615,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 1))
                 .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Forbidden", HttpStatusCode.Forbidden);
@@ -632,7 +632,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 1))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
@@ -661,10 +661,10 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(true, "US", "Country"));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 1))
-                .ReturnsAsync(CreatePeers(true, "US", "Country", requestId: 2, fullUpdate: false));
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country", requestId: 2, fullUpdate: false));
 
             var target = RenderPeersTab(true);
             await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
@@ -679,7 +679,7 @@ namespace Lantean.QBTMud.Test.Components
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(null, "US", "Country", requestId: 1, fullUpdate: true));
+                .ReturnsSuccessAsync(CreatePeers(null, "US", "Country", requestId: 1, fullUpdate: true));
 
             var target = RenderPeersTab(true, preferences: preferences);
 
@@ -698,7 +698,7 @@ namespace Lantean.QBTMud.Test.Components
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
-                .ReturnsAsync(CreatePeers(false, "US", "Country", requestId: 1, fullUpdate: true));
+                .ReturnsSuccessAsync(CreatePeers(false, "US", "Country", requestId: 1, fullUpdate: true));
 
             var target = RenderPeersTab(true, preferences: preferences);
 
@@ -718,7 +718,7 @@ namespace Lantean.QBTMud.Test.Components
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", It.IsAny<int>()))
-                .ReturnsAsync(CreatePeers(null, "US", "Country", requestId: 1, fullUpdate: true));
+                .ReturnsSuccessAsync(CreatePeers(null, "US", "Country", requestId: 1, fullUpdate: true));
 
             var target = RenderPeersTab(true, preferences: preferences);
 

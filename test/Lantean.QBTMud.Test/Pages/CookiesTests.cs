@@ -98,7 +98,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(new[] { initialCookies[0], addedCookie });
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowCookiePropertiesDialog("Add Cookie", null))
@@ -131,7 +131,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(updatedCookie);
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(new[] { existingCookie }, configureApi: false);
             var editButton = FindRowEditButton(target);
@@ -174,7 +174,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(Array.Empty<ApplicationCookie>());
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(new[] { existingCookie }, configureApi: false);
             var deleteButton = FindRowDeleteButton(target);
@@ -198,7 +198,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync(new[] { cookieB });
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(new[] { cookieA, cookieB }, configureApi: false);
             var deleteButton = FindRowDeleteButton(target);
@@ -263,7 +263,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsFailure<IReadOnlyList<ApplicationCookie>>(ApiFailureKind.ServerError, "Failure");
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
             var addButton = FindIconButton(target, Icons.Material.Filled.Add);
@@ -283,10 +283,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationCookiesAsync())
-                .ReturnsAsync(new[] { existingCookie });
+                .ReturnsSuccessAsync(new[] { existingCookie });
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(pendingSave.Task);
+                .ReturnsSuccess(pendingSave.Task);
 
             var target = RenderPage(new[] { existingCookie }, configureApi: false);
             var deleteButton = FindRowDeleteButton(target);
@@ -308,7 +308,7 @@ namespace Lantean.QBTMud.Test.Pages
             var pendingLoad = new TaskCompletionSource<IReadOnlyList<ApplicationCookie>>(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationCookiesAsync())
-                .Returns(pendingLoad.Task);
+                .ReturnsSuccess(pendingLoad.Task);
 
             var target = RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
             var addButton = FindIconButton(target, Icons.Material.Filled.Add);
@@ -330,7 +330,7 @@ namespace Lantean.QBTMud.Test.Pages
             var pendingLoad = new TaskCompletionSource<IReadOnlyList<ApplicationCookie>>(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationCookiesAsync())
-                .Returns(pendingLoad.Task);
+                .ReturnsSuccess(pendingLoad.Task);
 
             var target = RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
             var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
@@ -353,10 +353,10 @@ namespace Lantean.QBTMud.Test.Pages
             var pendingSave = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationCookiesAsync())
-                .ReturnsAsync(new[] { existingCookie });
+                .ReturnsSuccessAsync(new[] { existingCookie });
             Mock.Get(_apiClient)
                 .Setup(client => client.SetApplicationCookiesAsync(It.IsAny<IEnumerable<ApplicationCookie>>()))
-                .Returns(pendingSave.Task);
+                .ReturnsSuccess(pendingSave.Task);
 
             var target = RenderPage(new[] { existingCookie }, configureApi: false);
             var deleteButton = FindRowDeleteButton(target);
@@ -387,7 +387,7 @@ namespace Lantean.QBTMud.Test.Pages
             Mock.Get(_apiClient)
                 .SetupSequence(client => client.GetApplicationCookiesAsync())
                 .ReturnsAsync(Array.Empty<ApplicationCookie>())
-                .Returns(pendingReload.Task);
+                .ReturnsSuccess(pendingReload.Task);
             Mock.Get(_dialogWorkflow)
                 .Setup(workflow => workflow.ShowCookiePropertiesDialog("Add Cookie", null))
                 .Returns(pendingDialog.Task);
@@ -437,7 +437,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 Mock.Get(_apiClient)
                     .Setup(client => client.GetApplicationCookiesAsync())
-                    .ReturnsAsync(cookies);
+                    .ReturnsSuccessAsync(cookies);
             }
 
             return TestContext.Render<Cookies>(parameters =>

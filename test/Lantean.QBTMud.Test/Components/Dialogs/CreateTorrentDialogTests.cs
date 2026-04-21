@@ -36,7 +36,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
             var createButton = FindButton(dialog.Component, "CreateTorrentSubmit");
@@ -57,7 +57,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("2.1.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("2.1.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -97,7 +97,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("1.2.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("1.2.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -120,7 +120,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("1.9.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("1.9.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -143,7 +143,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("1.9.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("1.9.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -165,7 +165,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
             var closeButton = FindButton(dialog.Component, "CreateTorrentClose");
@@ -206,7 +206,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -242,7 +242,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await TestContext.LocalStorage.SetItemAsync(_storageKey, state, Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -289,7 +289,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             await TestContext.LocalStorage.SetItemAsync(_storageKey, state, Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("1.2.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("1.2.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -306,7 +306,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("2.1.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("2.1.0"));
 
             var dialog = await _target.RenderDialogAsync();
             await SetSourcePathAsync(dialog.Component, "C:/Source");
@@ -327,7 +327,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo(" "));
+                .ReturnsSuccessAsync(CreateBuildInfo(" "));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -341,7 +341,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("x2.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("x2.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -355,7 +355,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("2.0.0.0.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -379,7 +379,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             await _target.RenderDialogAsync();
 
@@ -393,7 +393,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(CreateBuildInfo("2.0.0"));
+                .ReturnsSuccessAsync(CreateBuildInfo("2.0.0"));
 
             var dialog = await _target.RenderDialogAsync();
 

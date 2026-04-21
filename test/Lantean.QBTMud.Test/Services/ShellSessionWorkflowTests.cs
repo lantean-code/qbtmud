@@ -42,7 +42,7 @@ namespace Lantean.QBTMud.Test.Services
             var target = CreateTarget();
             Mock.Get(_apiClient)
                 .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
+                .ReturnsSuccessAsync(false);
 
             var result = await target.LoadAsync(Xunit.TestContext.Current.CancellationToken);
 
@@ -86,16 +86,16 @@ namespace Lantean.QBTMud.Test.Services
             var settings = AppSettings.Default.Clone();
             Mock.Get(_apiClient)
                 .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+                .ReturnsSuccessAsync(true);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreatePreferences("fr"));
+                .ReturnsSuccessAsync(CreatePreferences("fr"));
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationVersionAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync("Version");
+                .ReturnsSuccessAsync("Version");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(0, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData(responseId: 9, fullUpdate: true));
+                .ReturnsSuccessAsync(CreateClientMainData(responseId: 9, fullUpdate: true));
             Mock.Get(_appSettingsService)
                 .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync((AppSettings)null!);
@@ -137,16 +137,16 @@ namespace Lantean.QBTMud.Test.Services
             await _settingsStorageService.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, "en", Xunit.TestContext.Current.CancellationToken);
             Mock.Get(_apiClient)
                 .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+                .ReturnsSuccessAsync(true);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreatePreferences(" "));
+                .ReturnsSuccessAsync(CreatePreferences(" "));
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationVersionAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync("Version");
+                .ReturnsSuccessAsync("Version");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(0, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData());
+                .ReturnsSuccessAsync(CreateClientMainData());
             Mock.Get(_appSettingsService)
                 .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
@@ -178,16 +178,16 @@ namespace Lantean.QBTMud.Test.Services
                 .Callback<string, Severity, Action<SnackbarOptions>, string>((_, _, configure, _) => capturedOptions = configure);
             Mock.Get(_apiClient)
                 .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+                .ReturnsSuccessAsync(true);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreatePreferences("fr"));
+                .ReturnsSuccessAsync(CreatePreferences("fr"));
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationVersionAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync("Version");
+                .ReturnsSuccessAsync("Version");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(0, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData());
+                .ReturnsSuccessAsync(CreateClientMainData());
             Mock.Get(_appSettingsService)
                 .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
@@ -220,16 +220,16 @@ namespace Lantean.QBTMud.Test.Services
             var mainData = CreateMainData();
             Mock.Get(_apiClient)
                 .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+                .ReturnsSuccessAsync(true);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreatePreferences("en"));
+                .ReturnsSuccessAsync(CreatePreferences("en"));
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationVersionAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync("Version");
+                .ReturnsSuccessAsync("Version");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(42, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData(responseId: 42));
+                .ReturnsSuccessAsync(CreateClientMainData(responseId: 42));
             Mock.Get(_appSettingsService)
                 .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
@@ -255,16 +255,16 @@ namespace Lantean.QBTMud.Test.Services
             var target = CreateTarget();
             Mock.Get(_apiClient)
                 .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+                .ReturnsSuccessAsync(true);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsFailure<IApiClient, ClientPreferences>(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Forbidden);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationVersionAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync("Version");
+                .ReturnsSuccessAsync("Version");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(0, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData());
+                .ReturnsSuccessAsync(CreateClientMainData());
             Mock.Get(_appSettingsService)
                 .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
@@ -283,16 +283,16 @@ namespace Lantean.QBTMud.Test.Services
             var target = CreateTarget();
             Mock.Get(_apiClient)
                 .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+                .ReturnsSuccessAsync(true);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreatePreferences("en"));
+                .ReturnsSuccessAsync(CreatePreferences("en"));
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationVersionAsync(It.IsAny<CancellationToken>()))
                 .Returns(() => Task.FromException<ApiResult<string>>(new InvalidOperationException("Failure")));
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(0, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData());
+                .ReturnsSuccessAsync(CreateClientMainData());
             Mock.Get(_appSettingsService)
                 .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(AppSettings.Default.Clone());
@@ -312,7 +312,7 @@ namespace Lantean.QBTMud.Test.Services
             var mainData = CreateMainData(downloadSpeed: 30, uploadSpeed: 40);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(5, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData(responseId: 11, fullUpdate: true));
+                .ReturnsSuccessAsync(CreateClientMainData(responseId: 11, fullUpdate: true));
             Mock.Get(_dataManager)
                 .Setup(manager => manager.CreateMainData(It.IsAny<ClientMainData>()))
                 .Returns(mainData);
@@ -340,7 +340,7 @@ namespace Lantean.QBTMud.Test.Services
             IReadOnlyList<TorrentTransition> transitions = Array.Empty<TorrentTransition>();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(5, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData(responseId: 12, fullUpdate: false));
+                .ReturnsSuccessAsync(CreateClientMainData(responseId: 12, fullUpdate: false));
             Mock.Get(_dataManager)
                 .Setup(manager => manager.MergeMainData(It.IsAny<ClientMainData>(), currentMainData, out filterChanged, out transitions))
                 .Returns(false);
@@ -364,7 +364,7 @@ namespace Lantean.QBTMud.Test.Services
             IReadOnlyList<TorrentTransition> transitions = Array.Empty<TorrentTransition>();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(5, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData(responseId: 13, fullUpdate: false));
+                .ReturnsSuccessAsync(CreateClientMainData(responseId: 13, fullUpdate: false));
             Mock.Get(_dataManager)
                 .Setup(manager => manager.MergeMainData(It.IsAny<ClientMainData>(), currentMainData, out filterChanged, out transitions))
                 .Returns(false);
@@ -391,7 +391,7 @@ namespace Lantean.QBTMud.Test.Services
             ];
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(5, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData(responseId: 14, fullUpdate: false));
+                .ReturnsSuccessAsync(CreateClientMainData(responseId: 14, fullUpdate: false));
             Mock.Get(_dataManager)
                 .Setup(manager => manager.MergeMainData(It.IsAny<ClientMainData>(), currentMainData, out filterChanged, out transitions))
                 .Returns(true);
@@ -421,7 +421,7 @@ namespace Lantean.QBTMud.Test.Services
             ];
             Mock.Get(_apiClient)
                 .Setup(client => client.GetMainDataAsync(5, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(CreateClientMainData(responseId: 15, fullUpdate: false));
+                .ReturnsSuccessAsync(CreateClientMainData(responseId: 15, fullUpdate: false));
             Mock.Get(_dataManager)
                 .Setup(manager => manager.MergeMainData(It.IsAny<ClientMainData>(), currentMainData, out filterChanged, out transitions))
                 .Returns(true);

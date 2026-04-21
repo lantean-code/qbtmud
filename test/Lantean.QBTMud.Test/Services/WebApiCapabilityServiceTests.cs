@@ -21,7 +21,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAPIVersionAsync())
-                .ReturnsAsync("2.13.1");
+                .ReturnsSuccessAsync("2.13.1");
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -35,7 +35,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAPIVersionAsync())
-                .ReturnsAsync("2.13.0");
+                .ReturnsSuccessAsync("2.13.0");
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -49,7 +49,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAPIVersionAsync())
-                .ReturnsAsync("not-a-version");
+                .ReturnsSuccessAsync("not-a-version");
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -96,7 +96,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAPIVersionAsync())
-                .ReturnsAsync("2.13.1");
+                .ReturnsSuccessAsync("2.13.1");
 
             var first = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
             var second = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
@@ -112,7 +112,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAPIVersionAsync())
-                .ReturnsAsync(" 2.13.1 ");
+                .ReturnsSuccessAsync(" 2.13.1 ");
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -126,7 +126,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAPIVersionAsync())
-                .ReturnsAsync("   ");
+                .ReturnsSuccessAsync("   ");
 
             var result = await _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
 
@@ -141,7 +141,7 @@ namespace Lantean.QBTMud.Test.Services
             var versionCompletion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAPIVersionAsync())
-                .Returns(versionCompletion.Task);
+                .ReturnsSuccess(versionCompletion.Task);
 
             var firstTask = _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);
             var secondTask = _target.GetCapabilityStateAsync(TestContext.Current.CancellationToken);

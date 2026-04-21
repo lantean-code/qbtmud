@@ -33,10 +33,10 @@ namespace Lantean.QBTMud.Test.Pages
 
             _apiClientMock
                 .Setup(client => client.GetAllRssItemsAsync(true))
-                .ReturnsAsync(CreateRssItems());
+                .ReturnsSuccessAsync(CreateRssItems());
             _apiClientMock
                 .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
         }
 
         [Fact]
@@ -150,7 +150,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync("http://new-feed");
             _apiClientMock
                 .Setup(client => client.AddRssFeedAsync("http://new-feed", null))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var button = FindByTestId<MudIconButton>(target, "RssNewSubscription");
@@ -181,7 +181,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _apiClientMock
                 .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var button = FindByTestId<MudIconButton>(target, "RssMarkItemsRead");
@@ -197,7 +197,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _apiClientMock
                 .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             var rssDataManagerMock = TestContext.AddSingletonMock<IRssDataManager>(MockBehavior.Strict);
             rssDataManagerMock
                 .Setup(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, RssItem>>()))
@@ -253,7 +253,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_EmptyAreaContextMenu_WHEN_UpdateAllSelected_THEN_ShouldRefreshAllFeeds()
         {
-            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var container = target.Find($"[data-test-id=\"{TestIdHelper.For("RssFeedListContainerDesktop")}\"]");
@@ -282,7 +282,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_UnreadContextUpdate_WHEN_Clicked_THEN_ShouldRefreshAllFeeds()
         {
-            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
 
             await OpenFeedContextMenu(target, "RssFeedNode-__unread__");
@@ -296,7 +296,7 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_FolderContextUpdate_WHEN_Clicked_THEN_ShouldRefreshOnlyFolderFeeds()
         {
-            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
 
             await OpenFeedContextMenu(target, "RssFeedNode-Folder");
@@ -328,7 +328,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _apiClientMock
                 .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
 
             await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
@@ -361,7 +361,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please choose a folder name", "Folder name:", "Folder"))
                 .ReturnsAsync("RenamedFolder");
-            _apiClientMock.Setup(client => client.MoveRssItemAsync("Folder", "RenamedFolder")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.MoveRssItemAsync("Folder", "RenamedFolder")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Folder");
@@ -450,7 +450,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Edit feed URL...", "Feed URL:", "http://feed1"))
                 .ReturnsAsync("http://changed-url");
-            _apiClientMock.Setup(client => client.SetRssFeedUrlAsync("Feed1", "http://changed-url")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.SetRssFeedUrlAsync("Feed1", "http://changed-url")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
@@ -516,7 +516,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowConfirmDialog(It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
-            _apiClientMock.Setup(client => client.RemoveRssItemAsync("Feed1")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RemoveRssItemAsync("Feed1")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
@@ -534,7 +534,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please choose a folder name", "Folder name:", null))
                 .ReturnsAsync("CreatedFolder");
-            _apiClientMock.Setup(client => client.AddRssFolderAsync(@"Folder\CreatedFolder")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.AddRssFolderAsync(@"Folder\CreatedFolder")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Folder");
@@ -622,7 +622,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please type a RSS feed URL", "Feed URL:", null))
                 .ReturnsAsync("http://folder-feed");
-            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://folder-feed", "Folder")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://folder-feed", "Folder")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Folder");
@@ -639,7 +639,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please type a RSS feed URL", "Feed URL:", null))
                 .ReturnsAsync("http://feed-child");
-            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://feed-child", null)).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://feed-child", null)).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, "RssFeedNode-Feed1");
@@ -656,7 +656,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please type a RSS feed URL", "Feed URL:", null))
                 .ReturnsAsync("http://nested-feed");
-            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://nested-feed", "Folder")).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://nested-feed", "Folder")).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await OpenFeedContextMenu(target, @"RssFeedNode-Folder\Feed2");
@@ -673,7 +673,7 @@ namespace Lantean.QBTMud.Test.Pages
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowStringFieldDialog("Please type a RSS feed URL", "Feed URL:", null))
                 .ReturnsAsync("http://root-feed");
-            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://root-feed", null)).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.AddRssFeedAsync("http://root-feed", null)).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var container = target.Find(ToDataTestIdSelector("RssFeedListContainerDesktop"));
@@ -773,7 +773,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _apiClientMock
                 .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
             await SelectFeedNode(target, "RssFeedNode-Feed1");
             await SelectArticle(target, "Article2");
@@ -786,7 +786,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _apiClientMock
                 .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
             await SelectFeedNode(target, "RssFeedNode-Feed1");
             await SelectArticle(target, "Article1");
@@ -814,7 +814,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .SetupSequence(manager => manager.CreateRssList(It.IsAny<IReadOnlyDictionary<string, RssItem>>()))
                 .Returns(rssDataManager.CreateRssList(CreateRssItems()))
                 .Returns((RssList)null!);
-            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var articleList = FindByTestId<MudList<string>>(target, "RssArticleListDesktop");
@@ -927,7 +927,7 @@ namespace Lantean.QBTMud.Test.Pages
             var items = CreateRssItems(article1Read: false, article2Read: true, article3Read: true);
             _apiClientMock
                 .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget(breakpoint: Breakpoint.Xs, orientation: Orientation.Portrait, rssItems: items);
 
             await SelectFeedNode(target, "RssFeedNode-Feed1");
@@ -943,7 +943,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _apiClientMock
                 .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderTarget();
             await SelectFeedNode(target, "RssFeedNode-Feed1");
             var articleList = FindByTestId<MudList<string>>(target, "RssArticleListDesktop");
@@ -962,10 +962,10 @@ namespace Lantean.QBTMud.Test.Pages
                 .SetupSequence(client => client.GetAllRssItemsAsync(true))
                 .ReturnsAsync(initialItems)
                 .ReturnsAsync(refreshedItems);
-            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
             _apiClientMock
                 .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget(breakpoint: Breakpoint.Xs, orientation: Orientation.Portrait);
             await SelectFeedNode(target, "RssFeedNode-Feed1");
@@ -984,7 +984,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .SetupSequence(client => client.GetAllRssItemsAsync(true))
                 .ReturnsAsync(CreateRssItems())
                 .ReturnsAsync(CreateRssItemsOnlyFeed2());
-            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             await SelectFeedNode(target, "RssFeedNode-Feed1");
@@ -1003,10 +1003,10 @@ namespace Lantean.QBTMud.Test.Pages
             _apiClientMock
                 .SetupSequence(client => client.GetAllRssItemsAsync(true))
                 .ReturnsAsync(CreateRssItems())
-                .Returns(refreshGate.Task)
+                .ReturnsSuccess(refreshGate.Task)
                 .ReturnsAsync(CreateRssItems());
-            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
-            _apiClientMock.Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null)).Returns(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.RefreshRssItemAsync(It.IsAny<string>())).ReturnsSuccess(Task.CompletedTask);
+            _apiClientMock.Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null)).ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget();
             var refreshButton = FindByTestId<MudIconButton>(target, "RssUpdateAll");
@@ -1032,7 +1032,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             _apiClientMock
                 .Setup(client => client.MarkRssItemAsReadAsync(It.IsAny<string>(), null))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTarget(rssItems: CreateEmptyRssItems());
             await SelectFeedNode(target, "RssFeedNode-__unread__");
@@ -1079,7 +1079,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 _apiClientMock
                     .Setup(client => client.GetAllRssItemsAsync(true))
-                    .ReturnsAsync(rssItems);
+                    .ReturnsSuccessAsync(rssItems);
             }
 
             return TestContext.Render<Rss>(parameters =>

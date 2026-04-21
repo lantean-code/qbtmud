@@ -66,7 +66,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, ClientCategory>
+                .ReturnsSuccessAsync(new Dictionary<string, ClientCategory>
                 {
                     { "MudCategory", new ClientCategory("MudCategory", "SavePath", null) }
                 });
@@ -87,7 +87,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, ClientCategory>
+                .ReturnsSuccessAsync(new Dictionary<string, ClientCategory>
                 {
                     { "MudCategory", new ClientCategory("MudCategory", null, null) }
                 });
@@ -107,7 +107,7 @@ namespace Lantean.QBTMud.Test.Pages
             var pendingLoad = new TaskCompletionSource<IReadOnlyDictionary<string, ClientCategory>>(TaskCreationOptions.RunContinuationsAsynchronously);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAllCategoriesAsync())
-                .Returns(pendingLoad.Task);
+                .ReturnsSuccess(pendingLoad.Task);
 
             var target = RenderPage();
             var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);
@@ -189,7 +189,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 Mock.Get(_apiClient)
                     .Setup(client => client.RemoveCategoriesAsync(categories: new[] { "MudCategory" }))
-                    .Returns(Task.CompletedTask);
+                    .ReturnsSuccess(Task.CompletedTask);
 
                 target = RenderPage(new Dictionary<string, MudCategory>
                 {
@@ -229,7 +229,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(client => client.RemoveCategoriesAsync(categories: new[] { "MudCategory" }))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var deleteButton = FindIconButton(target, Icons.Material.Filled.Delete);
 

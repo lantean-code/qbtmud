@@ -604,6 +604,17 @@ namespace ReadmeScreenshots
             throw new InvalidOperationException($"Failed to {operation}: {result.Failure?.UserMessage ?? "Unknown error"}");
         }
 
+        private static async Task<TValue> GetRequiredValueAsync<TValue, TPending>(Task<ApiResult<TValue, TPending>> resultTask, string operation) where TValue : notnull where TPending : notnull
+        {
+            var result = await resultTask;
+            if (result.TryGetSuccessValue(out var value))
+            {
+                return value;
+            }
+
+            throw new InvalidOperationException($"Failed to {operation}: {result.Failure?.UserMessage ?? "Unknown error"}");
+        }
+
         private static bool IsCheckingState(TorrentState? state)
         {
             return state is TorrentState.CheckingUploading

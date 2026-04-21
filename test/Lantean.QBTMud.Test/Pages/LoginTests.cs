@@ -31,7 +31,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.LoginAsync("Username", "Password"))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             navigationManager.NavigateTo("http://localhost/login");

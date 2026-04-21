@@ -144,7 +144,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             });
             Mock.Get(_apiClient)
                 .Setup(client => client.RemoveRssAutoDownloadingRuleAsync("RuleA"))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -241,7 +241,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync("RuleA");
             Mock.Get(_apiClient)
                 .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -277,14 +277,14 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetRssMatchingArticlesAsync("RuleA"))
-                .ReturnsAsync(new Dictionary<string, IReadOnlyList<string>>
+                .ReturnsSuccessAsync(new Dictionary<string, IReadOnlyList<string>>
                 {
                     { "FeedA", new List<string> { "ArticleA" } },
                 });
 
             apiClientMock
                 .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -402,7 +402,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.SetRssAutoDownloadingRuleAsync("RuleA", It.IsAny<AutoDownloadingRule>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             apiClientMock
                 .Setup(client => client.GetRssMatchingArticlesAsync("RuleA"))
                 .ReturnsFailure<IApiClient, IReadOnlyDictionary<string, IReadOnlyList<string>>>(ApiFailureKind.ServerError, "matching failure");
@@ -426,19 +426,19 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetAllRssAutoDownloadingRulesAsync())
-                .ReturnsAsync(rules);
+                .ReturnsSuccessAsync(rules);
             apiClientMock
                 .Setup(client => client.GetRssMatchingArticlesAsync(It.IsAny<string>()))
-                .ReturnsAsync(new Dictionary<string, IReadOnlyList<string>>());
+                .ReturnsSuccessAsync(new Dictionary<string, IReadOnlyList<string>>());
             apiClientMock
                 .Setup(client => client.GetAllCategoriesAsync())
-                .ReturnsAsync(new Dictionary<string, Category>
+                .ReturnsSuccessAsync(new Dictionary<string, Category>
                 {
                     { "CatA", new Category("CatA", null, null) },
                 });
             apiClientMock
                 .Setup(client => client.GetAllRssItemsAsync(false))
-                .ReturnsAsync(new Dictionary<string, RssItem>
+                .ReturnsSuccessAsync(new Dictionary<string, RssItem>
                 {
                     { "FeedA", CreateFeed("FeedA", "http://feed-a") },
                 });

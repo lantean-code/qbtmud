@@ -48,7 +48,7 @@ namespace Lantean.QBTMud.Test.Services
             var target = CreateTarget();
             Mock.Get(_apiClient)
                 .Setup(client => client.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsFailure<IApiClient, bool>(ApiFailureKind.ServerError, "LookupFailure");
@@ -69,10 +69,10 @@ namespace Lantean.QBTMud.Test.Services
             var target = CreateTarget();
             Mock.Get(_apiClient)
                 .Setup(client => client.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAlternativeSpeedLimitsStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(isEnabled);
+                .ReturnsSuccessAsync(isEnabled);
 
             var result = await target.ToggleAlternativeSpeedLimitsAsync(Xunit.TestContext.Current.CancellationToken);
 

@@ -28,7 +28,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetBuildInfoAsync())
-                .ReturnsAsync(new BuildInfo(
+                .ReturnsSuccessAsync(new BuildInfo(
                     "QTVersion",
                     "LibTorrentVersion",
                     "BoostVersion",
@@ -39,7 +39,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationVersionAsync())
-                .ReturnsAsync("Version");
+                .ReturnsSuccessAsync("Version");
 
             Mock.Get(_appBuildInfoService)
                 .Setup(service => service.GetCurrentBuildInfo())
@@ -143,7 +143,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationVersionAsync())
-                .ReturnsAsync(" ");
+                .ReturnsSuccessAsync(" ");
 
             var target = RenderPage();
 

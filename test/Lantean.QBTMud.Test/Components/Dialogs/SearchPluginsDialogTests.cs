@@ -54,7 +54,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .Returns(tcs.Task);
+                .ReturnsSuccess(tcs.Task);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .ReturnsAsync(new List<SearchPlugin>());
+                .ReturnsSuccessAsync(new List<SearchPlugin>());
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -84,7 +84,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .ReturnsAsync(plugins);
+                .ReturnsSuccessAsync(plugins);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -104,7 +104,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .ReturnsAsync(plugins);
+                .ReturnsSuccessAsync(plugins);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -128,7 +128,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .ReturnsAsync(new List<SearchPlugin>());
+                .ReturnsSuccessAsync(new List<SearchPlugin>());
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -163,10 +163,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .ReturnsAsync(plugins);
+                .ReturnsSuccessAsync(plugins);
             apiClientMock
                 .Setup(client => client.DisableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -184,7 +184,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .ReturnsAsync(plugins);
+                .ReturnsSuccessAsync(plugins);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -208,13 +208,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(plugins);
             apiClientMock
                 .Setup(client => client.EnableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             apiClientMock
                 .Setup(client => client.DisableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             apiClientMock
                 .Setup(client => client.UninstallSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -262,7 +262,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(plugins);
             apiClientMock
                 .Setup(client => client.InstallSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -287,7 +287,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(plugins);
             apiClientMock
                 .Setup(client => client.InstallSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -312,7 +312,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                 .ReturnsAsync(plugins);
             apiClientMock
                 .Setup(client => client.UpdateSearchPluginsAsync())
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -330,13 +330,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .ReturnsAsync(plugins);
+                .ReturnsSuccessAsync(plugins);
             apiClientMock
                 .Setup(client => client.EnableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
+                .ReturnsSuccess(tcs.Task);
             apiClientMock
                 .Setup(client => client.DisableSearchPluginsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -387,7 +387,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock
                 .Setup(client => client.GetSearchPluginsAsync())
-                .ReturnsAsync(plugins);
+                .ReturnsSuccessAsync(plugins);
 
             var dialog = await _target.RenderDialogAsync();
 

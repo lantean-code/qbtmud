@@ -36,16 +36,16 @@ namespace Lantean.QBTMud.Test.Pages
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             apiClientMock
                 .Setup(c => c.GetTorrentPropertiesAsync(_hashValue))
-                .ReturnsAsync(CreateTorrentProperties());
+                .ReturnsSuccessAsync(CreateTorrentProperties());
             apiClientMock
                 .Setup(c => c.GetTorrentPieceStatesAsync(_hashValue))
-                .ReturnsAsync(Array.Empty<ClientModels.PieceState>());
+                .ReturnsSuccessAsync(Array.Empty<ClientModels.PieceState>());
             apiClientMock
                 .Setup(c => c.GetTorrentTrackersAsync(_hashValue))
-                .ReturnsAsync(Array.Empty<ClientModels.TorrentTracker>());
+                .ReturnsSuccessAsync(Array.Empty<ClientModels.TorrentTracker>());
             apiClientMock
                 .Setup(c => c.GetTorrentContentsAsync(_hashValue, It.IsAny<IEnumerable<int>?>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Array.Empty<ClientModels.FileData>());
+                .ReturnsSuccessAsync(Array.Empty<ClientModels.FileData>());
 
             var keyboardServiceMock = Mock.Get(_keyboardService);
             keyboardServiceMock

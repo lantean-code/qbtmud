@@ -52,7 +52,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
-                .ReturnsAsync(new List<Log>());
+                .ReturnsSuccessAsync(new List<Log>());
         }
 
         [Fact]
@@ -120,7 +120,7 @@ namespace Lantean.QBTMud.Test.Pages
             var results = new List<Log> { CreateLog(1, "Message", LogType.Warning) };
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
-                .ReturnsAsync(results);
+                .ReturnsSuccessAsync(results);
 
             await TriggerTimerTickAsync(target);
 
@@ -211,7 +211,7 @@ namespace Lantean.QBTMud.Test.Pages
             var results = new List<Log> { CreateLog(1, "Message", LogType.Info) };
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
-                .ReturnsAsync(results);
+                .ReturnsSuccessAsync(results);
 
             await InvokeSubmitAsync(target);
 
@@ -251,7 +251,7 @@ namespace Lantean.QBTMud.Test.Pages
             var results = CreateLogs(501, LogType.Warning);
             Mock.Get(_apiClient)
                 .Setup(c => c.GetLogAsync(It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<int?>()))
-                .ReturnsAsync(results);
+                .ReturnsSuccessAsync(results);
 
             await TriggerTimerTickAsync(target);
 
@@ -285,7 +285,7 @@ namespace Lantean.QBTMud.Test.Pages
             var apiClientMock = new Mock<IApiClient>();
             apiClientMock
                 .Setup(c => c.GetLogAsync(false, true, false, true, It.IsAny<int?>()))
-                .ReturnsAsync(new List<Log>());
+                .ReturnsSuccessAsync(new List<Log>());
             localContext.Services.RemoveAll<IApiClient>();
             localContext.Services.AddSingleton(apiClientMock.Object);
             var managedTimer = new Mock<IManagedTimer>();

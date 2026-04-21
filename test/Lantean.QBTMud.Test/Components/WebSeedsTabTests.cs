@@ -69,7 +69,7 @@ namespace Lantean.QBTMud.Test.Components
             var webSeeds = new[] { new WebSeed("http://seed-1") };
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentWebSeedsAsync("Hash"))
-                .ReturnsAsync(webSeeds);
+                .ReturnsSuccessAsync(webSeeds);
 
             await SetParametersAsync(target, active: true, hash: "Hash");
 
@@ -203,7 +203,7 @@ namespace Lantean.QBTMud.Test.Components
             var webSeeds = new[] { new WebSeed("http://seed-1") };
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentWebSeedsAsync("Hash"))
-                .ReturnsAsync(webSeeds);
+                .ReturnsSuccessAsync(webSeeds);
 
             await SetParametersAsync(target, active: true, hash: "Hash");
 

@@ -192,7 +192,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var candidates = new[] { "C:/Alpha", "C:/Beta" };
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.All))
-                .ReturnsAsync(candidates);
+                .ReturnsSuccessAsync(candidates);
 
             var component = _target.RenderComponent();
             var autocomplete = component.FindComponent<MudAutocomplete<string>>();
@@ -212,7 +212,7 @@ namespace Lantean.QBTMud.Test.Components.UI
             var candidates = new[] { "C:/Alpha", "C:/beta", "C:/other", "C:/Alpha/" };
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.All))
-                .ReturnsAsync(candidates);
+                .ReturnsSuccessAsync(candidates);
 
             var component = _target.RenderComponent();
             var autocomplete = component.FindComponent<MudAutocomplete<string>>();
@@ -231,7 +231,7 @@ namespace Lantean.QBTMud.Test.Components.UI
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.All))
-                .ReturnsAsync(new[] { " ", "C:/Alpha" });
+                .ReturnsSuccessAsync(new[] { " ", "C:/Alpha" });
 
             var component = _target.RenderComponent();
             var autocomplete = component.FindComponent<MudAutocomplete<string>>();

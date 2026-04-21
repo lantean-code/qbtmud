@@ -33,7 +33,7 @@ namespace Lantean.QBTMud.Test.Components
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync(It.IsAny<string>()))
-                .ReturnsAsync(Array.Empty<TorrentTracker>());
+                .ReturnsSuccessAsync(Array.Empty<TorrentTracker>());
 
             _timer = Mock.Of<IManagedTimer>();
             _timerFactory = Mock.Of<IManagedTimerFactory>();
@@ -81,7 +81,7 @@ namespace Lantean.QBTMud.Test.Components
             };
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(trackers);
+                .ReturnsSuccessAsync(trackers);
 
             var target = RenderTrackersTab(active: true);
 
@@ -103,7 +103,7 @@ namespace Lantean.QBTMud.Test.Components
             };
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(trackers);
+                .ReturnsSuccessAsync(trackers);
 
             var target = RenderTrackersTab(active: true);
             var table = target.FindComponent<DynamicTable<TorrentTracker>>();
@@ -200,7 +200,7 @@ namespace Lantean.QBTMud.Test.Components
                 .ReturnsAsync(addedTrackers);
             Mock.Get(_apiClient)
                 .Setup(client => client.AddTrackersToTorrentAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTrackersTab(active: false);
             var addButton = FindIconButton(target, Icons.Material.Filled.AddCircle);
@@ -220,7 +220,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(new[] { CreateTracker("udp://a.example") });
+                .ReturnsSuccessAsync(new[] { CreateTracker("udp://a.example") });
 
             var target = RenderTrackersTab(active: true);
             var editButton = FindIconButton(target, Icons.Material.Filled.Edit);
@@ -239,10 +239,10 @@ namespace Lantean.QBTMud.Test.Components
             var updatedTrackerUrl = "udp://edited.example";
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(new[] { tracker });
+                .ReturnsSuccessAsync(new[] { tracker });
             Mock.Get(_apiClient)
                 .Setup(client => client.EditTrackerAsync("Hash", tracker.Url, updatedTrackerUrl, null))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             _dialogWorkflowMock
                 .Setup(workflow => workflow.InvokeStringFieldDialog("Tracker editing", "Tracker URL:", tracker.Url, It.IsAny<Func<string, Task>>()))
                 .Returns<string, string, string?, Func<string, Task>>(async (_, _, _, onSuccess) => await onSuccess(updatedTrackerUrl));
@@ -262,7 +262,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(new[] { CreateTracker("udp://a.example") });
+                .ReturnsSuccessAsync(new[] { CreateTracker("udp://a.example") });
 
             var target = RenderTrackersTab(active: true);
             var removeButton = FindIconButton(target, Icons.Material.Filled.Delete);
@@ -278,10 +278,10 @@ namespace Lantean.QBTMud.Test.Components
             var tracker = CreateTracker("udp://a.example");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(new[] { tracker });
+                .ReturnsSuccessAsync(new[] { tracker });
             Mock.Get(_apiClient)
                 .Setup(client => client.RemoveTrackersAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTrackersTab(active: true);
             var table = target.FindComponent<DynamicTable<TorrentTracker>>();
@@ -306,7 +306,7 @@ namespace Lantean.QBTMud.Test.Components
 
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(new[] { CreateTracker("udp://a.example") });
+                .ReturnsSuccessAsync(new[] { CreateTracker("udp://a.example") });
 
             var target = RenderTrackersTab(active: true);
             var copyButton = FindIconButton(target, Icons.Material.Filled.FolderCopy);
@@ -322,7 +322,7 @@ namespace Lantean.QBTMud.Test.Components
             var syntheticTracker = CreateTracker("** [DHT]", tier: -1);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(new[] { syntheticTracker, CreateTracker("udp://a.example") });
+                .ReturnsSuccessAsync(new[] { syntheticTracker, CreateTracker("udp://a.example") });
 
             var target = RenderTrackersTab(active: true);
             await TriggerContextMenuAsync(target, syntheticTracker);
@@ -341,7 +341,7 @@ namespace Lantean.QBTMud.Test.Components
             var tracker = CreateTracker("udp://a.example");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(new[] { tracker });
+                .ReturnsSuccessAsync(new[] { tracker });
 
             var target = RenderTrackersTab(active: true);
             await TriggerContextMenuAsync(target, tracker);
@@ -363,10 +363,10 @@ namespace Lantean.QBTMud.Test.Components
             var tracker = CreateTracker("udp://a.example");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(new[] { tracker });
+                .ReturnsSuccessAsync(new[] { tracker });
             Mock.Get(_apiClient)
                 .Setup(client => client.RemoveTrackersAsync(It.IsAny<TorrentSelector>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderTrackersTab(active: true);
             await TriggerLongPressAsync(target, tracker);
@@ -392,7 +392,7 @@ namespace Lantean.QBTMud.Test.Components
             var tracker = CreateTracker("udp://a.example");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(new[] { tracker });
+                .ReturnsSuccessAsync(new[] { tracker });
 
             var target = RenderTrackersTab(active: true);
             await TriggerContextMenuAsync(target, tracker);
@@ -409,7 +409,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentTrackersAsync("Hash"))
-                .ReturnsAsync(new[] { CreateTracker("udp://a.example") });
+                .ReturnsSuccessAsync(new[] { CreateTracker("udp://a.example") });
             _dialogWorkflowMock
                 .Setup(workflow => workflow.ShowColumnsOptionsDialog<TorrentTracker>(
                     It.IsAny<List<ColumnDefinition<TorrentTracker>>>(),

@@ -17,13 +17,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
             api.Setup(a => a.GetNetworkInterfacesAsync())
-                .ReturnsAsync(new List<NetworkInterface>
+                .ReturnsSuccessAsync(new List<NetworkInterface>
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0")
                 });
             api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>()))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var preferences = CreatePreferences();
             var update = new UpdatePreferences();
@@ -58,15 +58,15 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
             api.Setup(a => a.GetNetworkInterfacesAsync())
-                .ReturnsAsync(new List<NetworkInterface>
+                .ReturnsSuccessAsync(new List<NetworkInterface>
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0")
                 });
             api.Setup(a => a.GetNetworkInterfaceAddressListAsync("eth0"))
-                .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
+                .ReturnsSuccessAsync(new[] { "192.168.0.10", "fe80::1" });
             api.Setup(a => a.GetNetworkInterfaceAddressListAsync(""))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var preferences = CreatePreferences();
             var update = new UpdatePreferences();
@@ -99,15 +99,15 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
             api.Setup(a => a.GetNetworkInterfacesAsync())
-                .ReturnsAsync(new List<NetworkInterface>
+                .ReturnsSuccessAsync(new List<NetworkInterface>
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0")
                 });
             api.Setup(a => a.GetNetworkInterfaceAddressListAsync("eth0"))
-                .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
+                .ReturnsSuccessAsync(new[] { "192.168.0.10", "fe80::1" });
             api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.Is<string>(value => value != "eth0")))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var preferences = CreatePreferences();
             var update = new UpdatePreferences();
@@ -139,8 +139,8 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_CoreAdvancedSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsSuccessAsync(Array.Empty<string>());
 
             var preferences = CreatePreferences();
             var update = new UpdatePreferences();
@@ -181,8 +181,8 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_DiskSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsSuccessAsync(Array.Empty<string>());
 
             var preferences = CreatePreferences();
             var update = new UpdatePreferences();
@@ -235,8 +235,8 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_BufferAndConnectionSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsSuccessAsync(Array.Empty<string>());
 
             var preferences = CreatePreferences();
             var update = new UpdatePreferences();
@@ -299,8 +299,8 @@ namespace Lantean.QBTMud.Test.Components.Options
         public async Task GIVEN_TrackerSettings_WHEN_Modified_THEN_ShouldUpdatePreferences()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsSuccessAsync(Array.Empty<string>());
 
             var preferences = CreatePreferences();
             var update = new UpdatePreferences();
@@ -353,8 +353,8 @@ namespace Lantean.QBTMud.Test.Components.Options
         public void GIVEN_EmbeddedTrackerPortValidation_WHEN_InvalidAndValidValues_THEN_ShouldReturnValidationMessages()
         {
             var api = TestContext.AddSingletonMock<IApiClient>(MockBehavior.Loose);
-            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsAsync(Array.Empty<NetworkInterface>());
-            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsAsync(Array.Empty<string>());
+            api.Setup(a => a.GetNetworkInterfacesAsync()).ReturnsSuccessAsync(Array.Empty<NetworkInterface>());
+            api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>())).ReturnsSuccessAsync(Array.Empty<string>());
 
             var preferences = CreatePreferences();
             var update = new UpdatePreferences();
@@ -380,13 +380,13 @@ namespace Lantean.QBTMud.Test.Components.Options
         {
             var api = TestContext.AddSingletonMock<IApiClient>();
             api.Setup(a => a.GetNetworkInterfacesAsync())
-                .ReturnsAsync(new[]
+                .ReturnsSuccessAsync(new[]
                 {
                     new NetworkInterface("Any", string.Empty),
                     new NetworkInterface("Ethernet", "eth0"),
                 });
             api.Setup(a => a.GetNetworkInterfaceAddressListAsync(It.IsAny<string>()))
-                .ReturnsAsync(new[] { "192.168.0.10", "fe80::1" });
+                .ReturnsSuccessAsync(new[] { "192.168.0.10", "fe80::1" });
 
             var preferences = CreatePreferences();
             var update = new UpdatePreferences();

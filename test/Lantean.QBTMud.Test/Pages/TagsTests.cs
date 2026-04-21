@@ -59,7 +59,7 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync("Tag");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAllTagsAsync())
-                .ReturnsAsync(new[] { "Tag" });
+                .ReturnsSuccessAsync(new[] { "Tag" });
 
             var target = RenderPage();
             var addButton = FindIconButton(target, Icons.Material.Filled.NewLabel);
@@ -97,10 +97,10 @@ namespace Lantean.QBTMud.Test.Pages
                 .ReturnsAsync("Tag");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAllTagsAsync())
-                .ReturnsAsync(new[] { "Other" });
+                .ReturnsSuccessAsync(new[] { "Other" });
             Mock.Get(_apiClient)
                 .Setup(client => client.CreateTagsAsync(It.IsAny<IEnumerable<string>>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
 
             var target = RenderPage();
             var addButton = FindIconButton(target, Icons.Material.Filled.NewLabel);
@@ -118,7 +118,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.DeleteTagsAsync(tags: new[] { "Tag" }))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             var target = RenderPage(new List<string> { "Tag" });
 
             var deleteButton = FindIconButton(target, Icons.Material.Filled.Delete);
@@ -150,7 +150,7 @@ namespace Lantean.QBTMud.Test.Pages
             {
                 Mock.Get(_apiClient)
                     .Setup(client => client.DeleteTagsAsync(tags: new[] { "Tag" }))
-                    .Returns(Task.CompletedTask);
+                    .ReturnsSuccess(Task.CompletedTask);
                 target = RenderPage(new List<string> { "Tag" });
                 var table = target.FindComponent<DynamicTable<string>>();
                 column = table.Instance.ColumnDefinitions.Single(definition => definition.Header == "Actions");
@@ -216,7 +216,7 @@ namespace Lantean.QBTMud.Test.Pages
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetAllTagsAsync())
-                .ReturnsAsync(["Tag"]);
+                .ReturnsSuccessAsync(["Tag"]);
 
             var target = RenderPage();
             var refreshButton = FindIconButton(target, Icons.Material.Filled.Refresh);

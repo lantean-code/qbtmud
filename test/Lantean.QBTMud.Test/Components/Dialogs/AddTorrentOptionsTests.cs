@@ -738,8 +738,8 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             ApiResult<BuildInfo>? buildInfoResult = null)
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsAsync(categories ?? new Dictionary<string, ClientModels.Category>());
-            apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsAsync(tags?.ToArray() ?? Array.Empty<string>());
+            apiClientMock.Setup(c => c.GetAllCategoriesAsync()).ReturnsSuccessAsync(categories ?? new Dictionary<string, ClientModels.Category>());
+            apiClientMock.Setup(c => c.GetAllTagsAsync()).ReturnsSuccessAsync(tags?.ToArray() ?? Array.Empty<string>());
             apiClientMock.Setup(c => c.GetBuildInfoAsync()).ReturnsAsync(buildInfoResult ?? CreateBuildInfoResult(buildPlatform));
 
             _preferences = preferences ?? CreatePreferences();

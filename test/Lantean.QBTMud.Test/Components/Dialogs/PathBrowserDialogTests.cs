@@ -27,10 +27,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("/root/", DirectoryContentMode.Directories))
-                .ReturnsAsync(new[] { "/root/Folder", "/root/Alpha" });
+                .ReturnsSuccessAsync(new[] { "/root/Folder", "/root/Alpha" });
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("/root/", DirectoryContentMode.Files))
-                .ReturnsAsync(new[] { "/root/file.txt" });
+                .ReturnsSuccessAsync(new[] { "/root/file.txt" });
 
             var dialog = await _target.RenderDialogAsync(initialPath: "/root/");
 
@@ -46,7 +46,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDefaultSavePathAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(string.Empty);
+                .ReturnsSuccessAsync(string.Empty);
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -63,13 +63,13 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDefaultSavePathAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync("C:/");
+                .ReturnsSuccessAsync("C:/");
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Files))
-                .ReturnsAsync(new[] { "C:/file.txt" });
+                .ReturnsSuccessAsync(new[] { "C:/file.txt" });
 
             var dialog = await _target.RenderDialogAsync();
 
@@ -87,16 +87,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
             var tcs = new TaskCompletionSource<IReadOnlyList<string>>();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("D:/", DirectoryContentMode.Directories))
-                .Returns(tcs.Task);
+                .ReturnsSuccess(tcs.Task);
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("D:/", DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
             var pathField = dialog.Component.FindComponent<MudTextField<string>>();
@@ -133,10 +133,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "A/");
             var pathField = dialog.Component.FindComponent<MudTextField<string>>();
@@ -155,10 +155,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "A/");
             var pathField = dialog.Component.FindComponent<MudTextField<string>>();
@@ -174,10 +174,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/Folder/Sub");
             var upButton = FindIconButton(dialog.Component, Icons.Material.Filled.ArrowUpward);
@@ -197,10 +197,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "Folder");
             var upButton = FindIconButton(dialog.Component, Icons.Material.Filled.ArrowUpward);
@@ -216,10 +216,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "Folder");
             var upButton = FindIconButton(dialog.Component, Icons.Material.Filled.ArrowUpward);
@@ -232,10 +232,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "/");
             var upButton = FindIconButton(dialog.Component, Icons.Material.Filled.ArrowUpward);
@@ -248,10 +248,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("\\", DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("\\", DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "\\");
             var upButton = FindIconButton(dialog.Component, Icons.Material.Filled.ArrowUpward);
@@ -264,10 +264,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "///");
             var upButton = FindIconButton(dialog.Component, Icons.Material.Filled.ArrowUpward);
@@ -280,10 +280,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
             var refreshButton = FindIconButton(dialog.Component, Icons.Material.Filled.Refresh);
@@ -317,7 +317,7 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Files))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Failure");
@@ -337,10 +337,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/Folder", allowFolderSelection: false);
             var selectButton = FindButton(dialog.Component, "SelectFolder");
@@ -355,10 +355,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync(It.IsAny<string>(), DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/Folder", allowFolderSelection: true);
             var selectButton = FindButton(dialog.Component, "SelectFolder");
@@ -374,10 +374,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Files))
-                .ReturnsAsync(new[] { "C:/file.txt" });
+                .ReturnsSuccessAsync(new[] { "C:/file.txt" });
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
             dialog.Component.WaitForAssertion(() =>
@@ -397,10 +397,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Files))
-                .ReturnsAsync(new[] { "C:/z.txt", "C:/a.txt" });
+                .ReturnsSuccessAsync(new[] { "C:/z.txt", "C:/a.txt" });
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
 
@@ -416,10 +416,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
-                .ReturnsAsync(new[] { "Folder" });
+                .ReturnsSuccessAsync(new[] { "Folder" });
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
 
@@ -434,10 +434,10 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
-                .ReturnsAsync(new[] { " " });
+                .ReturnsSuccessAsync(new[] { " " });
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Files))
-                .ReturnsAsync(new[] { "C:/file.txt" });
+                .ReturnsSuccessAsync(new[] { "C:/file.txt" });
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
 
@@ -452,16 +452,16 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Directories))
-                .ReturnsAsync(new[] { "C:/Folder" });
+                .ReturnsSuccessAsync(new[] { "C:/Folder" });
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/", DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/Folder", DirectoryContentMode.Directories))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
             Mock.Get(_apiClient)
                 .Setup(client => client.GetDirectoryContentAsync("C:/Folder", DirectoryContentMode.Files))
-                .ReturnsAsync(Array.Empty<string>());
+                .ReturnsSuccessAsync(Array.Empty<string>());
 
             var dialog = await _target.RenderDialogAsync(initialPath: "C:/");
             var listItem = dialog.Component.FindComponents<MudListItem<string>>().Single();

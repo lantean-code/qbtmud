@@ -30,7 +30,7 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> ProcessResultAsync(ApiResult result, Severity severity = Severity.Error, CancellationToken cancellationToken = default)
+        public async Task<bool> ProcessResultAsync(ApiResultBase result, Severity severity = Severity.Error, CancellationToken cancellationToken = default)
         {
             if (result.IsSuccess)
             {
@@ -42,18 +42,7 @@ namespace Lantean.QBTMud.Services
         }
 
         /// <inheritdoc />
-        public async Task HandleFailureAsync(ApiResult result, Func<string?, string>? buildMessage = null, Severity severity = Severity.Error, CancellationToken cancellationToken = default)
-        {
-            if (result.IsSuccess)
-            {
-                throw new InvalidOperationException("HandleFailureAsync must only be used with failed ApiResult instances.");
-            }
-
-            await HandleFailureCoreAsync(result.Failure, buildMessage, severity, cancellationToken);
-        }
-
-        /// <inheritdoc />
-        public async Task HandleFailureAsync<T>(ApiResult<T> result, Func<string?, string>? buildMessage = null, Severity severity = Severity.Error, CancellationToken cancellationToken = default) where T : notnull
+        public async Task HandleFailureAsync(ApiResultBase result, Func<string?, string>? buildMessage = null, Severity severity = Severity.Error, CancellationToken cancellationToken = default)
         {
             if (result.IsSuccess)
             {

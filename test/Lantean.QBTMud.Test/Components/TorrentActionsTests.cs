@@ -336,7 +336,7 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_CopyAndExportActions_WHEN_Invoked_THEN_ClipboardAndExportCalled()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.GetExportUrlAsync("Hash")).ReturnsAsync("http://export/torrent");
+            apiClientMock.Setup(c => c.GetExportUrlAsync("Hash")).ReturnsSuccessAsync("http://export/torrent");
             TestContext.JSInterop.SetupVoid("qbt.copyTextToClipboard", _ => true).SetVoidResult();
             TestContext.JSInterop.SetupVoid("qbt.triggerFileDownload", _ => true).SetVoidResult();
             TestContext.UseSnackbarMock();
@@ -430,10 +430,10 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_TagAndCategoryChildren_WHEN_Toggled_THEN_ApiUpdatesState()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.RemoveTorrentTagsAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Hash" }), It.Is<IEnumerable<string>>(t => t.Single() == "Tag"), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.AddTorrentTagsAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Other" }), It.Is<IEnumerable<string>>(t => t.Single() == "Tag"), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.SetTorrentCategoryAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Hash" }), string.Empty, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.SetTorrentCategoryAsync(TorrentSelectorTestHelper.FromHashes(new[] { "New" }), "Category", It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.RemoveTorrentTagsAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Hash" }), It.Is<IEnumerable<string>>(t => t.Single() == "Tag"), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            apiClientMock.Setup(c => c.AddTorrentTagsAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Other" }), It.Is<IEnumerable<string>>(t => t.Single() == "Tag"), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            apiClientMock.Setup(c => c.SetTorrentCategoryAsync(TorrentSelectorTestHelper.FromHashes(new[] { "Hash" }), string.Empty, It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            apiClientMock.Setup(c => c.SetTorrentCategoryAsync(TorrentSelectorTestHelper.FromHashes(new[] { "New" }), "Category", It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
             TestContext.UseSnackbarMock();
             TestContext.AddSingletonMock<IDialogWorkflow>();
 
@@ -666,7 +666,7 @@ namespace Lantean.QBTMud.Test.Components
             var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
             apiClientMock
                 .Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Done")), false, It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             apiClientMock
                 .Setup(c => c.SetSuperSeedingAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Other")), true, It.IsAny<CancellationToken>()))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
@@ -690,10 +690,10 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_QueueChildren_WHEN_Clicked_THEN_PrioritiesAdjusted()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.MaxTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.IncreaseTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.DecreaseTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.MinTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.MaxTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            apiClientMock.Setup(c => c.IncreaseTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            apiClientMock.Setup(c => c.DecreaseTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            apiClientMock.Setup(c => c.MinTorrentPriorityAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
             TestContext.UseSnackbarMock();
 
             var torrents = Torrents(CreateTorrent("Hash"));
@@ -952,7 +952,7 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_DuplicateHashes_WHEN_SequentialToggled_THEN_StateChangesOnce()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.ToggleSequentialDownloadAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.ToggleSequentialDownloadAsync(It.IsAny<TorrentSelector>(), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
             TestContext.AddSingletonMock<IDialogWorkflow>();
             TestContext.UseSnackbarMock();
 
@@ -1270,7 +1270,7 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_MudDialogProvided_WHEN_ActionInvoked_THEN_DialogCloses()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.StartTorrentsAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.StartTorrentsAsync(TorrentSelectorTestHelper.FromHashes(Hashes("Hash")), It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
             var dialogMock = new Mock<IMudDialogInstance>(MockBehavior.Strict);
             dialogMock.Setup(d => d.Close());
             TestContext.UseSnackbarMock(MockBehavior.Loose);
@@ -1297,8 +1297,8 @@ namespace Lantean.QBTMud.Test.Components
         public async Task GIVEN_AutoManagementDisabled_WHEN_Toggled_THEN_EnableCallIssued()
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
-            apiClientMock.Setup(c => c.SetAutomaticTorrentManagementAsync(TorrentSelectorTestHelper.FromHashes(Hashes("One", "Two")), true, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            apiClientMock.Setup(c => c.SetAutomaticTorrentManagementAsync(It.IsAny<TorrentSelector>(), false, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            apiClientMock.Setup(c => c.SetAutomaticTorrentManagementAsync(TorrentSelectorTestHelper.FromHashes(Hashes("One", "Two")), true, It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
+            apiClientMock.Setup(c => c.SetAutomaticTorrentManagementAsync(It.IsAny<TorrentSelector>(), false, It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
             TestContext.UseSnackbarMock();
 
             var torrents = Torrents(
@@ -1379,7 +1379,7 @@ namespace Lantean.QBTMud.Test.Components
         {
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
             apiClientMock.Setup(c => c.AddTorrentTagsAsync(TorrentSelectorTestHelper.FromHashes(Hashes("One", "Missing")), It.Is<IEnumerable<string>>(tags => tags.Single() == "Tag"), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
+                .ReturnsSuccess(Task.CompletedTask);
             TestContext.AddSingletonMock<IDialogWorkflow>();
             TestContext.UseSnackbarMock();
 
