@@ -1,4 +1,3 @@
-using System.Net.Http;
 using AwesomeAssertions;
 using Bunit;
 using Lantean.QBTMud.Components.AppSettingsTabs;
@@ -10,7 +9,7 @@ using Moq;
 using MudBlazor;
 using AppSettingsModel = Lantean.QBTMud.Models.AppSettings;
 
-namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
+namespace Lantean.QBTMud.Test.Components.AppSettings
 {
     public sealed class NotificationsAppSettingsTabTests : RazorComponentTestBase<NotificationsAppSettingsTab>
     {
@@ -343,6 +342,54 @@ namespace Lantean.QBTMud.Test.Components.AppSettingsTabs
             _settings.NotificationsEnabled.Should().BeTrue();
             notificationsSwitch.Instance.Value.Should().BeTrue();
             _settingsChangedCount.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task GIVEN_RequestPendingAndPermissionChangesToDeniedBeforeRequestCompletes_WHEN_RequestCompletesWithDefault_THEN_AppliesQueuedPermissionChange()
+        {
+            var requestPermissionCompletion = new TaskCompletionSource<BrowserNotificationPermission>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _notificationServiceMock
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .Returns(requestPermissionCompletion.Task);
+
+            var target = RenderTarget(1);
+            var notificationsSwitch = FindSwitch(target, "AppSettingsNotificationsEnabled");
+
+            var toggleTask = target.InvokeAsync(() => notificationsSwitch.Instance.ValueChanged.InvokeAsync(true));
+            target.WaitForAssertion(() =>
+            {
+                _notificationServiceMock.Verify(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()), Times.Once);
+            });
+
+            _notificationServiceMock
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Denied);
+
+            await target.InvokeAsync(() => target.Instance.OnNotificationPermissionChanged());
+
+            requestPermissionCompletion.SetResult(BrowserNotificationPermission.Default);
+            await toggleTask;
+
+            FindSwitch(target, "AppSettingsNotificationsEnabled").Instance.Value.Should().BeFalse();
+            _settings.NotificationsEnabled.Should().BeFalse();
+            _settingsChangedCount.Should().Be(1);
+        }
+
+        [Fact]
+        public void GIVEN_SubscribeReturnsNoIdentifier_WHEN_ComponentRenders_THEN_SubscriptionRetriesThreeTimes()
+        {
+            _notificationServiceMock
+                .Setup(service => service.SubscribePermissionChangesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0);
+
+            var target = RenderTarget(1);
+
+            target.WaitForAssertion(() =>
+            {
+                _notificationServiceMock.Verify(
+                    service => service.SubscribePermissionChangesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()),
+                    Times.AtLeast(2));
+            });
         }
 
         [Fact]

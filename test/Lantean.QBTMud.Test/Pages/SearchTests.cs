@@ -418,6 +418,64 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_SearchUnavailable_WHEN_SubmitForm_THEN_ShowsUnavailableSnackbar()
+        {
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Plugin load failure", HttpStatusCode.InternalServerError);
+
+            var snackbarMock = TestContext.UseSnackbarMock(MockBehavior.Loose);
+            snackbarMock.SetupGet(snackbar => snackbar.Configuration).Returns(new SnackbarConfiguration());
+            snackbarMock.SetupGet(snackbar => snackbar.ShownSnackbars).Returns(new List<Snackbar>());
+            snackbarMock.Setup(snackbar => snackbar.Add(
+                It.Is<string>(message => message.Contains("Unable to load search plugins: Plugin load failure", StringComparison.Ordinal)),
+                Severity.Warning,
+                It.IsAny<Action<SnackbarOptions>>(),
+                It.IsAny<string>())).Returns((Snackbar?)null).Verifiable();
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+
+            var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
+            criteriaField.Find("input").Input("Ubuntu");
+
+            target.Find("form").Submit();
+
+            target.WaitForAssertion(() => snackbarMock.Verify());
+        }
+
+        [Fact]
+        public async Task GIVEN_MissingSelectedPluginsAndNoEnabledPlugins_WHEN_Rendered_THEN_PluginSelectionClearsAndCategoryFallsBack()
+        {
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
+            {
+                SelectedCategory = "missing-category",
+                SelectedPlugins = new HashSet<string>(new[] { "missing-plugin" }, StringComparer.OrdinalIgnoreCase)
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var disabledPlugin = new SearchPlugin(false, "Legacy", "legacy", new[] { new SearchCategory("legacy", "Legacy") }, "http://plugins/legacy", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsAsync(new List<SearchPlugin> { disabledPlugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsAsync(Array.Empty<SearchStatus>());
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+
+            target.WaitForAssertion(() =>
+            {
+                var pluginSelect = FindComponentByTestId<MudSelect<string>>(target, "PluginSelect");
+                pluginSelect.Instance.GetState(x => x.SelectedValues).Should().BeEmpty();
+
+                var categorySelect = FindComponentByTestId<MudSelect<string>>(target, "CategorySelect");
+                categorySelect.Instance.GetState(x => x.Value).Should().Be(SearchForm.AllCategoryId);
+            });
+        }
+
+        [Fact]
         public void GIVEN_EmptyCriteria_WHEN_SubmitForm_THEN_ShowsEnterCriteriaSnackbar()
         {
             var apiMock = TestContext.UseApiClientMock();
@@ -1267,6 +1325,33 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_StartSearchAuthenticationRequired_WHEN_Submit_THEN_NavigatesToLogin()
+        {
+            var navigationManager = UseTestNavigationManager();
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsAsync(Array.Empty<SearchStatus>());
+            apiMock.Setup(client => client.StartSearchAsync("Ubuntu", It.IsAny<IReadOnlyCollection<string>>(), SearchForm.AllCategoryId))
+                .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Search disabled", HttpStatusCode.Forbidden);
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+            var criteriaField = FindComponentByTestId<MudTextField<string>>(target, "Criteria");
+            criteriaField.Find("input").Input("Ubuntu");
+
+            target.Find("form").Submit();
+
+            target.WaitForAssertion(() =>
+            {
+                navigationManager.Uri.Should().Be("http://localhost/login");
+                navigationManager.LastForceLoad.Should().BeTrue();
+            });
+        }
+
+        [Fact]
         public async Task GIVEN_FilterInputs_WHEN_UserAdjustsValues_THEN_PreferencesPersisted()
         {
             await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences
@@ -1763,6 +1848,36 @@ namespace Lantean.QBTMud.Test.Pages
                 var statusIcons = target.FindComponents<MudIcon>().Where(component => HasTestId(component, "JobStatusIcon")).ToList();
                 statusIcons.Should().HaveCount(3);
                 statusIcons.Should().OnlyContain(component => component.Instance.Icon == Icons.Material.Filled.Stop && component.Instance.Color == Color.Warning);
+            });
+        }
+
+        [Fact]
+        public async Task GIVEN_UnknownJobStatus_WHEN_TabsRender_THEN_DefaultIconAndColorAreUsed()
+        {
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata { Id = 713, Pattern = "Unknown", Plugins = new List<string> { "movies" } }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsAsync(new List<SearchStatus>
+            {
+                new SearchStatus(713, (SearchJobStatus)999, 1)
+            });
+            apiMock.Setup(client => client.GetSearchResultsAsync(713, It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(new SearchResults(new List<SearchResult>(), (SearchJobStatus)999, 1));
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+            target.WaitForAssertion(() =>
+            {
+                var statusIcon = FindComponentByTestId<MudIcon>(target, "JobStatusIcon");
+                statusIcon.Instance.Icon.Should().Be(Icons.Material.Filled.Task);
+                statusIcon.Instance.Color.Should().Be(Color.Default);
             });
         }
 

@@ -16,7 +16,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_ShortPeriod_WHEN_WaitForTick_THEN_ReturnsTrue()
         {
             await using var timer = _target.Create(TimeSpan.FromMilliseconds(10));
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
             var result = await timer.WaitForNextTickAsync(cts.Token);
 

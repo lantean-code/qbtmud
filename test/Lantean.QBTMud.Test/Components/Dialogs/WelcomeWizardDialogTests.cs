@@ -968,6 +968,26 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
         }
 
         [Fact]
+        public async Task GIVEN_LanguageUpdateFailsWithoutUserMessage_WHEN_LocaleSelected_THEN_ShowsDefaultApiFailureMessage()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.SetApplicationPreferencesAsync(It.IsAny<UpdatePreferences>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, string.Empty);
+
+            var dialog = await _target.RenderDialogAsync();
+
+            var languageSelect = FindSelect<string>(dialog.Component, "WelcomeWizardLanguageSelect");
+            await dialog.Component.InvokeAsync(() => languageSelect.Instance.ValueChanged.InvokeAsync("fr"));
+
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(
+                    "Unable to update language: qBittorrent returned an error. Please try again.",
+                    Severity.Error,
+                    It.IsAny<Action<SnackbarOptions>>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_ThemeStep_WHEN_ApplyThemeThrowsJsException_THEN_ShowsSnackbarError()
         {
             Mock.Get(_themeManagerService)
@@ -1241,6 +1261,217 @@ namespace Lantean.QBTMud.Test.Components.Dialogs
                     It.Is<AppSettings>(settings => settings.NotificationsEnabled),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RequestPendingAndPermissionChangesToDeniedBeforeRequestCompletes_WHEN_RequestCompletesWithDefault_THEN_PersistsDisabledSetting()
+        {
+            var requestPermissionCompletion = new TaskCompletionSource<BrowserNotificationPermission>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()))
+                .Returns(requestPermissionCompletion.Task);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+            var notificationSwitch = FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled");
+
+            var toggleTask = dialog.Component.InvokeAsync(() => notificationSwitch.Instance.ValueChanged.InvokeAsync(true));
+            dialog.Component.WaitForAssertion(() =>
+            {
+                Mock.Get(_browserNotificationService).Verify(
+                    service => service.RequestPermissionAsync(It.IsAny<CancellationToken>()),
+                    Times.Once);
+            });
+
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Denied);
+
+            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.OnNotificationPermissionChanged());
+
+            requestPermissionCompletion.SetResult(BrowserNotificationPermission.Default);
+            await toggleTask;
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => !settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_PermissionDoesNotChange_WHEN_PermissionChangeRaised_THEN_SettingsAreNotPersisted()
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Default);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.OnNotificationPermissionChanged());
+
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Theory]
+        [InlineData(BrowserNotificationPermission.Default)]
+        [InlineData(BrowserNotificationPermission.Insecure)]
+        [InlineData(BrowserNotificationPermission.Unsupported)]
+        public async Task GIVEN_NotificationsEnabledAndPermissionDisablesNotifications_WHEN_PermissionChanges_THEN_PersistsDisabledSetting(BrowserNotificationPermission permission)
+        {
+            Mock.Get(_browserNotificationService)
+                .SetupSequence(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Granted)
+                .ReturnsAsync(permission);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false,
+                    UpdateChecksEnabled = true
+                });
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.OnNotificationPermissionChanged());
+
+            FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled").Instance.Value.Should().BeFalse();
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => !settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationsEnabledAndPermissionChangesToUnknown_WHEN_PermissionChanges_THEN_NotificationsRemainEnabled()
+        {
+            Mock.Get(_browserNotificationService)
+                .SetupSequence(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Granted)
+                .ReturnsAsync(BrowserNotificationPermission.Unknown);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false,
+                    UpdateChecksEnabled = true
+                });
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.OnNotificationPermissionChanged());
+
+            FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled").Instance.Value.Should().BeTrue();
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(It.IsAny<AppSettings>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_NotificationsEnabledAndPermissionChangesToUnknownEnum_WHEN_PermissionChanges_THEN_PersistsDisabledSetting()
+        {
+            Mock.Get(_browserNotificationService)
+                .SetupSequence(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BrowserNotificationPermission.Granted)
+                .ReturnsAsync((BrowserNotificationPermission)99);
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AppSettings
+                {
+                    NotificationsEnabled = true,
+                    DownloadFinishedNotificationsEnabled = true,
+                    TorrentAddedNotificationsEnabled = false,
+                    TorrentAddedSnackbarsEnabledWithNotifications = false,
+                    UpdateChecksEnabled = true
+                });
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            await dialog.Component.InvokeAsync(() => dialog.Component.Instance.OnNotificationPermissionChanged());
+
+            FindSwitch(dialog.Component, "WelcomeWizardNotificationsEnabled").Instance.Value.Should().BeFalse();
+            Mock.Get(_appSettingsService).Verify(
+                service => service.SaveSettingsAsync(
+                    It.Is<AppSettings>(settings => !settings.NotificationsEnabled),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Theory]
+        [InlineData("js")]
+        [InlineData("invalid")]
+        [InlineData("http")]
+        public async Task GIVEN_GetPermissionThrows_WHEN_NotificationsStepRendered_THEN_PermissionFallsBackToUnknown(string exceptionKind)
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.GetPermissionAsync(It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    return exceptionKind switch
+                    {
+                        "js" => Task.FromException<BrowserNotificationPermission>(new JSException("Failure")),
+                        "invalid" => Task.FromException<BrowserNotificationPermission>(new InvalidOperationException("Failure")),
+                        _ => Task.FromException<BrowserNotificationPermission>(new HttpRequestException("Failure"))
+                    };
+                });
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            var permissionChip = FindComponentByTestId<MudChip<string>>(dialog.Component, "WelcomeWizardNotificationPermission");
+            GetChildContentText(permissionChip.Instance.ChildContent).Should().Be("Permission: Unknown");
+        }
+
+        [Fact]
+        public async Task GIVEN_SubscribeReturnsNoIdentifier_WHEN_WizardRenders_THEN_SubscriptionRetryPathIsUsed()
+        {
+            Mock.Get(_browserNotificationService)
+                .Setup(service => service.SubscribePermissionChangesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0);
+
+            var dialog = await _target.RenderDialogAsync(
+                pendingStepIds: new[]
+                {
+                    WelcomeWizardStepCatalog.NotificationsStepId
+                });
+
+            dialog.Component.WaitForAssertion(() =>
+            {
+                Mock.Get(_browserNotificationService).Verify(
+                    service => service.SubscribePermissionChangesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()),
+                    Times.AtLeast(2));
+            });
         }
 
         [Fact]

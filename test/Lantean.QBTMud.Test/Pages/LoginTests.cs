@@ -140,6 +140,16 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_LoginPage_WHEN_Rendered_THEN_PageTitleIsLocalizedLogin()
+        {
+            var target = RenderPage();
+
+            var pageTitle = target.FindComponent<PageTitle>();
+
+            GetChildContentText(pageTitle.Instance.ChildContent).Should().Be("Login");
+        }
+
+        [Fact]
         public async Task GIVEN_HiddenPassword_WHEN_ToggleVisibilityClicked_THEN_ShouldTogglePasswordInputType()
         {
             var target = RenderPage();
