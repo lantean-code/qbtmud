@@ -77,11 +77,12 @@ namespace Lantean.QBTMud.Services
         public async Task<ShellSessionRefreshResult> RefreshAsync(int requestId, MudMainData? currentMainData, CancellationToken cancellationToken = default)
         {
             var dataResult = await _apiClient.GetMainDataAsync(requestId, cancellationToken);
-            if (!dataResult.TryGetValue(out var data))
+            if (dataResult.IsFailure)
             {
                 return HandleRefreshFailure(dataResult.Failure!);
             }
 
+            var data = dataResult.Value;
             var shouldRender = false;
             var torrentsDirty = false;
             IReadOnlyList<TorrentTransition> transitionBatch = Array.Empty<TorrentTransition>();
@@ -121,11 +122,12 @@ namespace Lantean.QBTMud.Services
         private async Task<ShellSessionLoadResult> LoadCoreAsync(int requestId, string operation, CancellationToken cancellationToken)
         {
             var authStateResult = await _apiClient.CheckAuthStateAsync(cancellationToken);
-            if (!authStateResult.TryGetValue(out var isAuthenticated))
+            if (authStateResult.IsFailure)
             {
                 return HandleLoadFailure(authStateResult.Failure!);
             }
 
+            var isAuthenticated = authStateResult.Value;
             if (!isAuthenticated)
             {
                 return new ShellSessionLoadResult(ShellSessionLoadOutcome.AuthenticationRequired);
@@ -155,9 +157,9 @@ namespace Lantean.QBTMud.Services
             Preferences? preferences = null;
             string? version = null;
             ClientMainData? data = null;
-            if (!preferencesResultTask.Result.TryGetValue(out preferences)
-                || !versionResultTask.Result.TryGetValue(out version)
-                || !mainDataResultTask.Result.TryGetValue(out data))
+            if (preferencesResultTask.Result.IsFailure
+                || versionResultTask.Result.IsFailure
+                || mainDataResultTask.Result.IsFailure)
             {
                 var failure = preferencesResultTask.Result.Failure ?? versionResultTask.Result.Failure ?? mainDataResultTask.Result.Failure;
                 if (failure is not null)
@@ -165,6 +167,10 @@ namespace Lantean.QBTMud.Services
                     return HandleLoadFailure(failure);
                 }
             }
+
+            preferences = preferencesResultTask.Result.Value;
+            version = versionResultTask.Result.Value;
+            data = mainDataResultTask.Result.Value;
 
             await SynchronizeLocalePreferenceAsync(preferences);
 

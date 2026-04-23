@@ -9,12 +9,14 @@ namespace Lantean.QBTMud.Test.Services
     public sealed class ClientDataStorageAdapterTests
     {
         private readonly IApiClient _apiClient;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
         private readonly ClientDataStorageAdapter _target;
 
         public ClientDataStorageAdapterTests()
         {
             _apiClient = Mock.Of<IApiClient>();
-            _target = new ClientDataStorageAdapter(_apiClient);
+            _apiFeedbackWorkflow = Mock.Of<IApiFeedbackWorkflow>();
+            _target = new ClientDataStorageAdapter(_apiClient, _apiFeedbackWorkflow);
         }
 
         [Fact]
@@ -95,10 +97,22 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_apiClient)
                 .Setup(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
                 .ReturnsFailure<IApiClient, IReadOnlyDictionary<string, JsonElement>>(ApiFailureKind.ServerError, "Failure");
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyDictionary<string, JsonElement>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             var result = await _target.LoadPrefixedEntriesAsync(["QbtMud.Key"], TestContext.Current.CancellationToken);
 
             result.Should().BeEmpty();
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyDictionary<string, JsonElement>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -107,10 +121,22 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_apiClient)
                 .Setup(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
                 .ReturnsFailure<IApiClient, IReadOnlyDictionary<string, JsonElement>>(ApiFailureKind.ServerError, "Failure");
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyDictionary<string, JsonElement>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             var result = await _target.LoadPrefixedEntriesAsync(TestContext.Current.CancellationToken);
 
             result.Should().BeEmpty();
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyDictionary<string, JsonElement>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -141,6 +167,12 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_apiClient)
                 .Setup(client => client.StoreClientDataAsync(It.IsAny<IReadOnlyDictionary<string, JsonElement?>>(), It.IsAny<CancellationToken>()))
                 .ReturnsSuccess(Task.CompletedTask);
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.ProcessResultAsync(
+                    It.IsAny<ApiResult>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
 
             await _target.StorePrefixedEntriesAsync(
                 new Dictionary<string, object?>(StringComparer.Ordinal)
@@ -155,6 +187,10 @@ namespace Lantean.QBTMud.Test.Services
                 .Verify(client => client.StoreClientDataAsync(
                     It.Is<IReadOnlyDictionary<string, JsonElement?>>(payload => MatchesStoredPayload(payload)),
                     It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.ProcessResultAsync(
+                It.IsAny<ApiResult>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -179,6 +215,12 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_apiClient)
                 .Setup(client => client.DeleteClientDataAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsSuccess(Task.CompletedTask);
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.ProcessResultAsync(
+                    It.IsAny<ApiResult>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
 
             await _target.RemovePrefixedEntriesAsync(["QbtMud.Key", " QbtMud.Key ", "Other"], TestContext.Current.CancellationToken);
 
@@ -187,6 +229,10 @@ namespace Lantean.QBTMud.Test.Services
                     p => p.Count() == 1
                         && p.Contains("QbtMud.Key")
                     ), It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.ProcessResultAsync(
+                It.IsAny<ApiResult>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         private static bool MatchesStoredPayload(IReadOnlyDictionary<string, JsonElement?> payload)

@@ -19,6 +19,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected IAppUpdateService AppUpdateService { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -50,17 +53,24 @@ namespace Lantean.QBTMud.Pages
             QbtMudBuildInfo = AppBuildInfoService.GetCurrentBuildInfo();
 
             var buildInfoResult = await ApiClient.GetBuildInfoAsync();
-            if (!buildInfoResult.TryGetValue(out var buildInfo))
+            if (buildInfoResult.IsFailure)
             {
+                await ApiFeedbackWorkflow.HandleFailureAsync(buildInfoResult);
                 return;
             }
 
             string? version = null;
             var versionResult = await ApiClient.GetApplicationVersionAsync();
-            if (versionResult.TryGetValue(out var applicationVersion))
+            if (versionResult.IsFailure)
             {
-                version = applicationVersion;
+                await ApiFeedbackWorkflow.HandleFailureAsync(versionResult);
             }
+            else
+            {
+                version = versionResult.Value;
+            }
+
+            var buildInfo = buildInfoResult.Value;
 
             QtVersion = buildInfo.QTVersion;
             LibtorrentVersion = buildInfo.LibTorrentVersion;

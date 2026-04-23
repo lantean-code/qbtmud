@@ -30,12 +30,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected override async Task OnInitializedAsync()
         {
             var tagsResult = await ApiClient.GetAllTagsAsync();
-            if (!tagsResult.TryGetValue(out var tags))
+            if (tagsResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(tagsResult);
                 return;
             }
 
+            var tags = tagsResult.Value;
             Tags = [.. tags];
             if (!Hashes.Any())
             {
@@ -48,12 +49,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         private async Task GetTorrentTags()
         {
             var torrentsResult = await ApiClient.GetTorrentListAsync(selector: TorrentSelector.FromHashes(Hashes));
-            if (!torrentsResult.TryGetValue(out var torrentList))
+            if (torrentsResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(torrentsResult);
                 return;
             }
 
+            var torrentList = torrentsResult.Value;
             TorrentTags = torrentList.Select(t => t.Tags ?? []).ToList();
         }
 

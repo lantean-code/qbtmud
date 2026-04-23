@@ -96,7 +96,7 @@ namespace Lantean.QBTMud.Components
             };
 
             var result = await ApiClient.SetApplicationPreferencesAsync(preferences);
-            if (!result.IsSuccess && result.Failure.IsAuthenticationFailure())
+            if (result.IsFailure && result.Failure?.IsAuthenticationFailure() == true)
             {
                 NavigationManager.NavigateTo("login", forceLoad: true);
                 return;
@@ -118,24 +118,25 @@ namespace Lantean.QBTMud.Components
                 async () =>
             {
                 var logoutResult = await ApiClient.LogoutAsync();
-                if (logoutResult.IsSuccess)
+                if (logoutResult.IsFailure)
                 {
-                    await SpeedHistoryService.ClearAsync();
-                    NavigationManager.NavigateTo("login", forceLoad: true);
+                    if (logoutResult.Failure?.IsAuthenticationFailure() == true)
+                    {
+                        await SpeedHistoryService.ClearAsync();
+                        NavigationManager.NavigateTo("login", forceLoad: true);
+                        return;
+                    }
+
+                    if (!await ApiFeedbackWorkflow.ProcessResultAsync(logoutResult))
+                    {
+                        return;
+                    }
+
                     return;
                 }
 
-                if (logoutResult.Failure.IsAuthenticationFailure())
-                {
-                    await SpeedHistoryService.ClearAsync();
-                    NavigationManager.NavigateTo("login", forceLoad: true);
-                    return;
-                }
-
-                if (!await ApiFeedbackWorkflow.ProcessResultAsync(logoutResult))
-                {
-                    return;
-                }
+                await SpeedHistoryService.ClearAsync();
+                NavigationManager.NavigateTo("login", forceLoad: true);
             });
         }
 
@@ -201,17 +202,20 @@ namespace Lantean.QBTMud.Components
             }
 
             _startAllInProgress = true;
-            var startResult = await ApiClient.StartTorrentsAsync(TorrentSelector.AllTorrents());
-            if (!await ApiFeedbackWorkflow.ProcessResultAsync(startResult))
+            try
+            {
+                var startResult = await ApiClient.StartTorrentsAsync(TorrentSelector.AllTorrents());
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(startResult))
+                {
+                    return;
+                }
+
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents started."), Severity.Success);
+            }
+            finally
             {
                 _startAllInProgress = false;
             }
-            else
-            {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents started."), Severity.Success);
-            }
-
-            _startAllInProgress = false;
         }
 
         protected async Task StopAllTorrents()
@@ -222,17 +226,20 @@ namespace Lantean.QBTMud.Components
             }
 
             _stopAllInProgress = true;
-            var stopResult = await ApiClient.StopTorrentsAsync(TorrentSelector.AllTorrents());
-            if (!await ApiFeedbackWorkflow.ProcessResultAsync(stopResult))
+            try
+            {
+                var stopResult = await ApiClient.StopTorrentsAsync(TorrentSelector.AllTorrents());
+                if (!await ApiFeedbackWorkflow.ProcessResultAsync(stopResult))
+                {
+                    return;
+                }
+
+                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents stopped."), Severity.Info);
+            }
+            finally
             {
                 _stopAllInProgress = false;
             }
-            else
-            {
-                SnackbarWorkflow.ShowTransientMessage(LanguageLocalizer.Translate("AppApplicationActions", "All torrents stopped."), Severity.Info);
-            }
-
-            _stopAllInProgress = false;
         }
     }
 }

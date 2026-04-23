@@ -176,23 +176,39 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected override async Task OnInitializedAsync()
         {
             var rulesResult = await ApiClient.GetAllRssAutoDownloadingRulesAsync();
-            if (rulesResult.TryGetValue(out var rules))
+            if (rulesResult.IsFailure)
             {
-                foreach (var kvp in rules)
+                await ApiFeedbackWorkflow.HandleFailureAsync(rulesResult);
+            }
+            else
+            {
+                foreach (var kvp in rulesResult.Value)
                 {
                     Rules.Add(kvp.Key, kvp.Value);
                 }
             }
 
             var categoriesResult = await ApiClient.GetAllCategoriesAsync();
-            Categories = categoriesResult.TryGetValue(out var categories)
-                ? categories.Keys
-                : [];
+            if (categoriesResult.IsFailure)
+            {
+                Categories = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(categoriesResult);
+            }
+            else
+            {
+                Categories = categoriesResult.Value.Keys;
+            }
 
             var feedsResult = await ApiClient.GetAllRssItemsAsync(false);
-            Feeds = feedsResult.TryGetValue(out var feeds)
-                ? RssItemTreeHelper.EnumerateFeeds(feeds).ToDictionary(f => f.Key, f => f.Value.Url, StringComparer.Ordinal)
-                : new Dictionary<string, string>();
+            if (feedsResult.IsFailure)
+            {
+                Feeds = new Dictionary<string, string>();
+                await ApiFeedbackWorkflow.HandleFailureAsync(feedsResult);
+            }
+            else
+            {
+                Feeds = RssItemTreeHelper.EnumerateFeeds(feedsResult.Value).ToDictionary(f => f.Key, f => f.Value.Url, StringComparer.Ordinal);
+            }
         }
 
         protected async Task AddRule()
@@ -256,9 +272,15 @@ namespace Lantean.QBTMud.Components.Dialogs
             if (!_unsavedRuleNames.Contains(SelectedRuleName))
             {
                 var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(SelectedRuleName);
-                MatchingArticles = matchingArticlesResult.TryGetValue(out var matchingArticles)
-                    ? matchingArticles
-                    : null;
+                if (matchingArticlesResult.IsFailure)
+                {
+                    MatchingArticles = null;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(matchingArticlesResult);
+                }
+                else
+                {
+                    MatchingArticles = matchingArticlesResult.Value;
+                }
             }
             else
             {
@@ -333,13 +355,13 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var matchingArticlesResult = await ApiClient.GetRssMatchingArticlesAsync(SelectedRuleName);
-            if (!matchingArticlesResult.TryGetValue(out var matchingArticles))
+            if (matchingArticlesResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(matchingArticlesResult);
                 return;
             }
 
-            MatchingArticles = matchingArticles;
+            MatchingArticles = matchingArticlesResult.Value;
 
             _unsavedRuleNames.Remove(SelectedRuleName);
         }

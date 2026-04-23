@@ -776,24 +776,25 @@ namespace Lantean.QBTMud.Pages
         private async Task GetRssList()
         {
             var itemsResult = await ApiClient.GetAllRssItemsAsync(true);
-            if (!itemsResult.TryGetValue(out var items))
+            if (itemsResult.IsFailure)
             {
                 RssList = null;
+                await ApiFeedbackWorkflow.HandleFailureAsync(itemsResult);
                 return;
             }
 
-            RssList = RssDataManager.CreateRssList(items);
+            RssList = RssDataManager.CreateRssList(itemsResult.Value);
         }
 
         private async Task<bool> TryHandleRssCommandFailure(ApiResult result, Func<string?, string> buildMessage)
         {
-            if (result.IsSuccess)
+            if (result.IsFailure)
             {
-                return false;
+                await ApiFeedbackWorkflow.HandleFailureAsync(result, buildMessage);
+                return true;
             }
 
-            await ApiFeedbackWorkflow.HandleFailureAsync(result, buildMessage);
-            return true;
+            return false;
         }
 
         private IEnumerable<RssTreeNode> EnumerateFeedNodes(RssTreeNode node)

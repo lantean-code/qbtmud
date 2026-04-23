@@ -39,6 +39,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected Lantean.QBTMud.Services.Localization.ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         protected IReadOnlyList<PieceState> Pieces { get; set; } = [];
 
         protected TorrentProperties Properties { get; set; } = default!;
@@ -66,29 +69,40 @@ namespace Lantean.QBTMud.Components
             }
 
             var propertiesResult = await ApiClient.GetTorrentPropertiesAsync(Hash);
-            if (!propertiesResult.TryGetValue(out var torrentProperties))
+            if (propertiesResult.IsFailure)
             {
                 MarkPiecesFailed();
                 if (propertiesResult.Failure?.Kind == ApiFailureKind.NotFound)
                 {
                     _timerCancellationToken.CancelIfNotDisposed();
                 }
+                else
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(propertiesResult);
+                }
 
                 await InvokeAsync(StateHasChanged);
                 return;
             }
 
-            Properties = torrentProperties;
+            Properties = propertiesResult.Value;
 
             var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(Hash);
-            if (piecesResult.TryGetValue(out var pieceStates))
+            if (piecesResult.IsFailure)
             {
-                Pieces = pieceStates;
-                MarkPiecesLoaded();
+                if (piecesResult.Failure?.Kind == ApiFailureKind.NotFound)
+                {
+                    MarkPiecesFailed();
+                }
+                else
+                {
+                    await ApiFeedbackWorkflow.HandleFailureAsync(piecesResult);
+                }
             }
-            else if (piecesResult.Failure?.Kind == ApiFailureKind.NotFound)
+            else
             {
-                MarkPiecesFailed();
+                Pieces = piecesResult.Value;
+                MarkPiecesLoaded();
             }
 
             await InvokeAsync(StateHasChanged);
@@ -113,7 +127,7 @@ namespace Lantean.QBTMud.Components
             if (Active && Hash is not null)
             {
                 var propertiesResult = await ApiClient.GetTorrentPropertiesAsync(Hash);
-                if (!propertiesResult.TryGetValue(out var torrentProperties))
+                if (propertiesResult.IsFailure)
                 {
                     MarkPiecesFailed();
                     await InvokeAsync(StateHasChanged);
@@ -123,22 +137,28 @@ namespace Lantean.QBTMud.Components
                         return ManagedTimerTickResult.Stop;
                     }
 
+                    await ApiFeedbackWorkflow.HandleFailureAsync(propertiesResult);
                     return ManagedTimerTickResult.Continue;
                 }
 
-                Properties = torrentProperties;
+                Properties = propertiesResult.Value;
 
                 var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(Hash);
-                if (piecesResult.TryGetValue(out var pieceStates))
+                if (piecesResult.IsFailure)
                 {
-                    Pieces = pieceStates;
-                    MarkPiecesLoaded();
+                    if (piecesResult.Failure?.Kind == ApiFailureKind.NotFound)
+                    {
+                        MarkPiecesFailed();
+                        await InvokeAsync(StateHasChanged);
+                        return ManagedTimerTickResult.Stop;
+                    }
+
+                    await ApiFeedbackWorkflow.HandleFailureAsync(piecesResult);
                 }
-                else if (piecesResult.Failure?.Kind == ApiFailureKind.NotFound)
+                else
                 {
-                    MarkPiecesFailed();
-                    await InvokeAsync(StateHasChanged);
-                    return ManagedTimerTickResult.Stop;
+                    Pieces = piecesResult.Value;
+                    MarkPiecesLoaded();
                 }
 
                 await InvokeAsync(StateHasChanged);

@@ -520,6 +520,33 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_InitialRefreshFails_WHEN_Rendered_THEN_RoutesFailureThroughWorkflow()
+        {
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
+            apiFeedbackWorkflow
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<ClientModels.TorrentCreationTaskStatus>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            TestContext.Services.AddSingleton(apiFeedbackWorkflow.Object);
+
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentCreationTasksAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            RenderPage();
+
+            apiFeedbackWorkflow.Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<ClientModels.TorrentCreationTaskStatus>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_RefreshThrows_WHEN_PollingTicked_THEN_ShowsErrorAndStops()
         {
             var handler = CapturePollHandler();

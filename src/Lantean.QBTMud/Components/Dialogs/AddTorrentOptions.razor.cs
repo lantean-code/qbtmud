@@ -1,4 +1,5 @@
 using Lantean.QBTMud.Models;
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
@@ -19,6 +20,9 @@ namespace Lantean.QBTMud.Components.Dialogs
 
         [Inject]
         protected IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         [Parameter]
         public QBittorrentPreferences? Preferences { get; set; }
@@ -87,9 +91,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected override async Task OnInitializedAsync()
         {
             var categoriesResult = await ApiClient.GetAllCategoriesAsync();
-            if (categoriesResult.TryGetValue(out var categoryDictionary))
+            if (categoriesResult.IsFailure)
             {
-                foreach (var (name, value) in categoryDictionary.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase))
+                await ApiFeedbackWorkflow.HandleFailureAsync(categoriesResult);
+            }
+            else
+            {
+                foreach (var (name, value) in categoriesResult.Value.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase))
                 {
                     var option = new CategoryOption(name, value.SavePath, value.DownloadPath);
                     _categoryOptions.Add(option);
@@ -98,14 +106,24 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var tagsResult = await ApiClient.GetAllTagsAsync();
-            AvailableTags = tagsResult.TryGetValue(out var availableTags)
-                ? availableTags.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList()
-                : [];
+            if (tagsResult.IsFailure)
+            {
+                AvailableTags = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(tagsResult);
+            }
+            else
+            {
+                AvailableTags = tagsResult.Value.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
+            }
 
             var buildInfoResult = await ApiClient.GetBuildInfoAsync();
-            if (buildInfoResult.TryGetValue(out var buildInfo))
+            if (buildInfoResult.IsFailure)
             {
-                _qBittorrentPlatform = buildInfo.Platform;
+                await ApiFeedbackWorkflow.HandleFailureAsync(buildInfoResult);
+            }
+            else
+            {
+                _qBittorrentPlatform = buildInfoResult.Value.Platform;
             }
 
             if (Preferences is null)

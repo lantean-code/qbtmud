@@ -84,7 +84,15 @@ namespace Lantean.QBTMud.Components
             }
 
             var trackersResult = await ApiClient.GetTorrentTrackersAsync(Hash);
-            TrackerList = trackersResult.TryGetValue(out var torrentTrackers) ? torrentTrackers : [];
+            if (trackersResult.IsFailure)
+            {
+                TrackerList = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(trackersResult);
+            }
+            else
+            {
+                TrackerList = trackersResult.Value;
+            }
 
             await InvokeAsync(StateHasChanged);
         }
@@ -279,7 +287,7 @@ namespace Lantean.QBTMud.Components
             if (Active && Hash is not null)
             {
                 var trackersResult = await ApiClient.GetTorrentTrackersAsync(Hash);
-                if (!trackersResult.TryGetValue(out var torrentTrackers))
+                if (trackersResult.IsFailure)
                 {
                     if (trackersResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
                     {
@@ -287,10 +295,11 @@ namespace Lantean.QBTMud.Components
                         return ManagedTimerTickResult.Stop;
                     }
 
+                    await ApiFeedbackWorkflow.HandleFailureAsync(trackersResult);
                     return ManagedTimerTickResult.Continue;
                 }
 
-                TrackerList = torrentTrackers;
+                TrackerList = trackersResult.Value;
                 await InvokeAsync(StateHasChanged);
             }
 

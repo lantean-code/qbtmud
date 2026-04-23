@@ -21,6 +21,9 @@ namespace Lantean.QBTMud.Components.UI
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [Parameter]
         public string? Label { get; set; }
 
@@ -175,11 +178,13 @@ namespace Lantean.QBTMud.Components.UI
             }
 
             var directoryContentResult = await ApiClient.GetDirectoryContentAsync(parentPath, mode);
-            if (!directoryContentResult.TryGetValue(out var candidates))
+            if (directoryContentResult.IsFailure)
             {
+                await ApiFeedbackWorkflow.HandleFailureAsync(directoryContentResult);
                 return [];
             }
 
+            var candidates = directoryContentResult.Value;
             if (string.IsNullOrWhiteSpace(prefix))
             {
                 return candidates;

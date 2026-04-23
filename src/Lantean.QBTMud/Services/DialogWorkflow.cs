@@ -167,21 +167,22 @@ namespace Lantean.QBTMud.Services
             try
             {
                 var addTorrentResultResult = await _apiClient.AddTorrentAsync(addTorrentParams);
-                if (addTorrentResultResult.IsSuccess)
+                if (addTorrentResultResult.IsFailure)
                 {
-                    addTorrentResult = addTorrentResultResult.SuccessValue;
+                    await _apiFeedbackWorkflow.HandleFailureAsync(
+                        addTorrentResultResult,
+                        _ => TranslateApp("Unable to add torrent. Please try again."));
+                    return;
                 }
-                else if (addTorrentResultResult.IsPending)
+
+                if (addTorrentResultResult.IsPending)
                 {
                     isPending = true;
                     addTorrentResult = addTorrentResultResult.PendingValue;
                 }
                 else
                 {
-                    await _apiFeedbackWorkflow.HandleFailureAsync(
-                        addTorrentResultResult,
-                        _ => TranslateApp("Unable to add torrent. Please try again."));
-                    return;
+                    addTorrentResult = addTorrentResultResult.SuccessValue;
                 }
             }
             finally
@@ -192,7 +193,7 @@ namespace Lantean.QBTMud.Services
                 }
             }
 
-            await ShowAddTorrentSnackbarMessage(addTorrentResult, isPending);
+            await ShowAddTorrentSnackbarMessage(addTorrentResult!, isPending);
         }
 
         private static string GetUniqueFileName(string fileName, IEnumerable<string> existingNames)
@@ -251,14 +252,14 @@ namespace Lantean.QBTMud.Services
                     _ => TranslateApp("Unable to add torrent. Please try again."));
                 return;
             }
-            else if (addTorrentResultResult.IsPending)
+            if (addTorrentResultResult.IsPending)
             {
-                addTorrentResultResult.TryGetPendingValue(out addTorrentResult);
                 isPending = true;
+                addTorrentResult = addTorrentResultResult.PendingValue;
             }
-            else if (addTorrentResultResult.IsSuccess)
+            else
             {
-                addTorrentResultResult.TryGetSuccessValue(out addTorrentResult);
+                addTorrentResult = addTorrentResultResult.SuccessValue;
             }
 
             await ShowAddTorrentSnackbarMessage(addTorrentResult!, isPending);
@@ -296,8 +297,13 @@ namespace Lantean.QBTMud.Services
                 string? torrentName = null;
                 var hash = hashes[0];
                 var torrentResult = await _apiClient.GetTorrentAsync(hash, CancellationToken.None);
-                if (torrentResult.TryGetValue(out var torrent))
+                if (torrentResult.IsFailure)
                 {
+                    torrentName = null;
+                }
+                else
+                {
+                    var torrent = torrentResult.Value;
                     torrentName = torrent?.Name;
                 }
 
@@ -408,12 +414,13 @@ namespace Lantean.QBTMud.Services
         public async Task<string?> InvokeEditCategoryDialog(string categoryName)
         {
             var categoriesResult = await _apiClient.GetAllCategoriesAsync();
-            if (!categoriesResult.TryGetValue(out var categories))
+            if (categoriesResult.IsFailure)
             {
                 await _apiFeedbackWorkflow.HandleFailureAsync(categoriesResult);
                 return null;
             }
 
+            var categories = categoriesResult.Value;
             var category = categories.FirstOrDefault(c => c.Key == categoryName).Value;
             var parameters = new DialogParameters
             {
@@ -1059,12 +1066,13 @@ namespace Lantean.QBTMud.Services
         private async Task RefreshRuntimePreferencesAsync()
         {
             var preferencesResult = await _apiClient.GetApplicationPreferencesAsync();
-            if (!preferencesResult.TryGetValue(out var preferences))
+            if (preferencesResult.IsFailure)
             {
                 await _apiFeedbackWorkflow.HandleFailureAsync(preferencesResult);
                 return;
             }
 
+            var preferences = preferencesResult.Value;
             _qBittorrentPreferencesStateService.SetPreferences(_preferencesDataManager.CreateQBittorrentPreferences(preferences));
         }
 

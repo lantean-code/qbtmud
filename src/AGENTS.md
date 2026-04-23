@@ -87,6 +87,8 @@
 
 ## Line endings
 - Use CRLF line terminators for any files you write or modify.
+- After modifying source files, run `dotnet format --include <changed files> --artifacts-path=/tmp/artifacts/qbtmud` for the files changed in the current task only.
+- Do not format unrelated files.
 
 ## Enforcement
 - Generate C# code that follows these standards exactly.

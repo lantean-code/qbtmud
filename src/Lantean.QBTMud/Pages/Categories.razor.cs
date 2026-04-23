@@ -75,12 +75,13 @@ namespace Lantean.QBTMud.Pages
             try
             {
                 var categoriesResult = await ApiClient.GetAllCategoriesAsync();
-                if (!categoriesResult.TryGetValue(out var categoryDictionary))
+                if (categoriesResult.IsFailure)
                 {
                     await ApiFeedbackWorkflow.HandleFailureAsync(categoriesResult);
                     return;
                 }
 
+                var categoryDictionary = categoriesResult.Value;
                 _categories = categoryDictionary.Values
                     .Select(category => new Category(category.Name, category.SavePath ?? string.Empty))
                     .ToList();

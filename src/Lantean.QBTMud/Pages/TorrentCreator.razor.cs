@@ -111,7 +111,7 @@ namespace Lantean.QBTMud.Pages
 
             var request = (TorrentCreationTaskRequest)dialogResult.Data;
             var createResult = await ApiClient.AddTorrentCreationTaskAsync(request);
-            if (!createResult.IsSuccess)
+            if (createResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(
                     createResult,
@@ -144,7 +144,7 @@ namespace Lantean.QBTMud.Pages
         protected async Task DeleteTask(TorrentCreationTaskStatus task)
         {
             var deleteResult = await ApiClient.DeleteTorrentCreationTaskAsync(task.TaskId);
-            if (!deleteResult.IsSuccess)
+            if (deleteResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(
                     deleteResult,
@@ -185,16 +185,18 @@ namespace Lantean.QBTMud.Pages
             try
             {
                 var tasksResult = await ApiClient.GetTorrentCreationTasksAsync();
-                if (tasksResult.TryGetValue(out var tasks))
+                if (tasksResult.IsFailure)
                 {
-                    _tasks = tasks ?? [];
+                    _tasks = [];
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        tasksResult,
+                        message => string.IsNullOrWhiteSpace(message)
+                            ? LanguageLocalizer.Translate("TorrentCreator", "Unable to load torrent creation tasks")
+                            : $"{LanguageLocalizer.Translate("TorrentCreator", "Unable to load torrent creation tasks")}: {message}");
                 }
                 else
                 {
-                    _tasks = [];
-                    SnackbarWorkflow.ShowTransientMessage(
-                        $"{LanguageLocalizer.Translate("TorrentCreator", "Unable to load torrent creation tasks")}: {tasksResult.Failure?.UserMessage}",
-                        Severity.Error);
+                    _tasks = tasksResult.Value ?? [];
                 }
             }
             finally

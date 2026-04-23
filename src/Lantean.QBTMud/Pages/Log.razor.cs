@@ -43,6 +43,9 @@ namespace Lantean.QBTMud.Pages
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         [CascadingParameter(Name = "DrawerOpen")]
         public bool DrawerOpen { get; set; }
 
@@ -110,11 +113,13 @@ namespace Lantean.QBTMud.Pages
         private async Task DoSearch()
         {
             var results = await ApiClient.GetLogAsync(Model.Normal, Model.Info, Model.Warning, Model.Critical, Model.LastKnownId);
-            if (!results.TryGetValue(out var logEntries))
+            if (results.IsFailure)
             {
+                await ApiFeedbackWorkflow.HandleFailureAsync(results);
                 return;
             }
 
+            var logEntries = results.Value;
             if (logEntries.Count > 0)
             {
                 Results ??= [];
@@ -214,7 +219,7 @@ namespace Lantean.QBTMud.Pages
         private async Task<ManagedTimerTickResult> RefreshTickAsync(CancellationToken cancellationToken)
         {
             var results = await ApiClient.GetLogAsync(Model.Normal, Model.Info, Model.Warning, Model.Critical, Model.LastKnownId);
-            if (!results.TryGetValue(out var logEntries))
+            if (results.IsFailure)
             {
                 if (results.Failure?.Kind == ApiFailureKind.AuthenticationRequired)
                 {
@@ -222,9 +227,11 @@ namespace Lantean.QBTMud.Pages
                     return ManagedTimerTickResult.Stop;
                 }
 
+                await ApiFeedbackWorkflow.HandleFailureAsync(results);
                 return ManagedTimerTickResult.Continue;
             }
 
+            var logEntries = results.Value;
             if (logEntries.Count > 0)
             {
                 Results ??= [];

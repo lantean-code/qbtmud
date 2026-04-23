@@ -69,6 +69,33 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public void GIVEN_LoadCookiesFails_WHEN_Initialized_THEN_RoutesFailureThroughWorkflow()
+        {
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
+            apiFeedbackWorkflow
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<ApplicationCookie>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            TestContext.Services.AddSingleton(apiFeedbackWorkflow.Object);
+
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationCookiesAsync())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", System.Net.HttpStatusCode.InternalServerError);
+
+            RenderPage(Array.Empty<ApplicationCookie>(), configureApi: false);
+
+            apiFeedbackWorkflow.Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<ApplicationCookie>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_AddClicked_WHEN_DialogCanceled_THEN_SkipsSave()
         {
             Mock.Get(_dialogWorkflow)

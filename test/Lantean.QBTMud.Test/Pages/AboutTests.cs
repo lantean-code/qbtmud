@@ -103,18 +103,21 @@ namespace Lantean.QBTMud.Test.Pages
                 .Setup(client => client.GetApplicationVersionAsync())
                 .ReturnsAsync(ApiResult.CreateFailure<string>(new ApiFailure
                 {
-                    Kind = ApiFailureKind.NoResponse,
+                    Kind = ApiFailureKind.ServerError,
                     Operation = "test",
-                    UserMessage = "NoResponse",
-                    Detail = "NoResponse",
-                    ResponseBody = "NoResponse",
+                    UserMessage = "Failure",
+                    Detail = "Failure",
+                    ResponseBody = "Failure",
                     IsTransient = true
                 }));
 
             var target = RenderPage();
 
-            GetChildContentText(FindComponentByTestId<MudText>(target, "AboutVersionTitle").Instance.ChildContent)
-                .Should().Be("qBittorrent WebUI (64-bit)");
+            target.WaitForAssertion(() =>
+            {
+                GetChildContentText(FindComponentByTestId<MudText>(target, "AboutVersionTitle").Instance.ChildContent)
+                    .Should().Be("qBittorrent WebUI (64-bit)");
+            });
             GetChildContentText(FindComponentByTestId<MudText>(target, "QbtMudCurrentBuild").Instance.ChildContent)
                 .Should()
                 .Be("1.0.0");

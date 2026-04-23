@@ -41,7 +41,7 @@ namespace Lantean.QBTMud.Services
         public async Task<bool?> ToggleAlternativeSpeedLimitsAsync(CancellationToken cancellationToken = default)
         {
             var toggleResult = await _apiClient.ToggleAlternativeSpeedLimitsAsync(cancellationToken);
-            if (!toggleResult.IsSuccess)
+            if (toggleResult.IsFailure)
             {
                 await _apiFeedbackWorkflow.HandleFailureAsync(
                     toggleResult,
@@ -51,7 +51,7 @@ namespace Lantean.QBTMud.Services
             }
 
             var isEnabledResult = await _apiClient.GetAlternativeSpeedLimitsStateAsync(cancellationToken);
-            if (!isEnabledResult.TryGetValue(out var isEnabled))
+            if (isEnabledResult.IsFailure)
             {
                 await _apiFeedbackWorkflow.HandleFailureAsync(
                     isEnabledResult,
@@ -60,6 +60,7 @@ namespace Lantean.QBTMud.Services
                 return null;
             }
 
+            var isEnabled = isEnabledResult.Value;
             _snackbarWorkflow.ShowTransientMessage(BuildAlternativeSpeedLimitsStatusMessage(isEnabled), Severity.Info);
             return isEnabled;
         }

@@ -65,10 +65,13 @@ namespace Lantean.QBTMud.Pages
         protected override async Task OnInitializedAsync()
         {
             var preferencesResult = await ApiClient.GetApplicationPreferencesAsync();
-            if (preferencesResult.TryGetValue(out var preferences))
+            if (preferencesResult.IsFailure)
             {
-                Preferences = preferences;
+                await ApiFeedbackWorkflow.HandleFailureAsync(preferencesResult);
+                return;
             }
+
+            Preferences = preferencesResult.Value;
         }
 
         protected void PreferencesChanged(UpdatePreferences preferences)
@@ -149,7 +152,7 @@ namespace Lantean.QBTMud.Pages
             var localeChanged = !string.IsNullOrWhiteSpace(selectedLocale)
                 && !string.Equals(selectedLocale, Preferences?.Locale, StringComparison.Ordinal);
             var updateResult = await ApiClient.SetApplicationPreferencesAsync(UpdatePreferences);
-            if (!updateResult.IsSuccess)
+            if (updateResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(
                     updateResult,
@@ -166,14 +169,14 @@ namespace Lantean.QBTMud.Pages
             SnackbarWorkflow.ShowTransient("AppOptions", "Options saved.", Severity.Success);
 
             var preferencesResult = await ApiClient.GetApplicationPreferencesAsync();
-            if (preferencesResult.TryGetValue(out var preferences))
+            if (preferencesResult.IsFailure)
             {
-                Preferences = preferences;
-                QBittorrentPreferencesStateService.SetPreferences(PreferencesDataManager.CreateQBittorrentPreferences(preferences));
+                await ApiFeedbackWorkflow.HandleFailureAsync(preferencesResult);
             }
             else
             {
-                await ApiFeedbackWorkflow.HandleFailureAsync(preferencesResult);
+                Preferences = preferencesResult.Value;
+                QBittorrentPreferencesStateService.SetPreferences(PreferencesDataManager.CreateQBittorrentPreferences(Preferences));
             }
 
             if (localeChanged)

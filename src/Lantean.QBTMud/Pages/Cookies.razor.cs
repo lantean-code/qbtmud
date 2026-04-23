@@ -144,9 +144,12 @@ namespace Lantean.QBTMud.Pages
             _isBusy = true;
             try
             {
-                if (!await LoadCookiesCoreAsync())
+                var loadResult = await LoadCookiesCoreAsync();
+                if (loadResult.IsFailure)
                 {
-                    SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load cookies. Please try again."), Severity.Error);
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        loadResult,
+                        _ => Translate("Unable to load cookies. Please try again."));
                 }
             }
             finally
@@ -167,7 +170,7 @@ namespace Lantean.QBTMud.Pages
             try
             {
                 var persistResult = await ApiClient.SetApplicationCookiesAsync(nextCookies);
-                if (!persistResult.IsSuccess)
+                if (persistResult.IsFailure)
                 {
                     await ApiFeedbackWorkflow.HandleFailureAsync(
                         persistResult,
@@ -175,9 +178,12 @@ namespace Lantean.QBTMud.Pages
                     return;
                 }
 
-                if (!await LoadCookiesCoreAsync())
+                var loadResult = await LoadCookiesCoreAsync();
+                if (loadResult.IsFailure)
                 {
-                    SnackbarWorkflow.ShowTransientMessage(Translate("Unable to load cookies. Please try again."), Severity.Error);
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        loadResult,
+                        _ => Translate("Unable to load cookies. Please try again."));
                 }
             }
             finally
@@ -187,16 +193,17 @@ namespace Lantean.QBTMud.Pages
             }
         }
 
-        private async Task<bool> LoadCookiesCoreAsync()
+        private async Task<ApiResult<IReadOnlyList<ApplicationCookie>>> LoadCookiesCoreAsync()
         {
             _cookies.Clear();
 
             var cookiesResult = await ApiClient.GetApplicationCookiesAsync();
-            if (!cookiesResult.TryGetValue(out var cookieList))
+            if (cookiesResult.IsFailure)
             {
-                return false;
+                return cookiesResult;
             }
 
+            var cookieList = cookiesResult.Value;
             foreach (var cookie in cookieList.OrderBy(c => c.Domain, StringComparer.OrdinalIgnoreCase)
                                           .ThenBy(c => c.Path, StringComparer.OrdinalIgnoreCase)
                                           .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase))
@@ -204,7 +211,7 @@ namespace Lantean.QBTMud.Pages
                 _cookies.Add(new CookieRow(Guid.NewGuid(), cookie));
             }
 
-            return true;
+            return cookiesResult;
         }
 
         private IEnumerable<ColumnDefinition<CookieRow>> GetColumnDefinitions()

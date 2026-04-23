@@ -12,8 +12,6 @@ using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient.Models;
 
-using ClientModels = QBittorrent.ApiClient.Models;
-
 using MudCategory = Lantean.QBTMud.Models.Category;
 using MudMainData = Lantean.QBTMud.Models.MainData;
 using MudServerState = Lantean.QBTMud.Models.ServerState;

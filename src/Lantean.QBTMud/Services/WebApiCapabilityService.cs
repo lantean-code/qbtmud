@@ -35,11 +35,12 @@ namespace Lantean.QBTMud.Services
                 }
 
                 var versionResult = await _apiClient.GetAPIVersionAsync();
-                if (!versionResult.TryGetValue(out var rawVersion))
+                if (versionResult.IsFailure)
                 {
                     return new WebApiCapabilityState(rawWebApiVersion: null, parsedWebApiVersion: null, supportsClientData: false);
                 }
 
+                var rawVersion = versionResult.Value;
                 rawVersion = string.IsNullOrWhiteSpace(rawVersion)
                     ? null
                     : rawVersion.Trim();

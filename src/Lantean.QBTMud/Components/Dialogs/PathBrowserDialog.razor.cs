@@ -136,13 +136,14 @@ namespace Lantean.QBTMud.Components.Dialogs
             try
             {
                 var directoriesResult = await ApiClient.GetDirectoryContentAsync(_currentPath, DirectoryContentMode.Directories);
-                if (!directoriesResult.TryGetValue(out var directoryPaths))
+                if (directoriesResult.IsFailure)
                 {
                     _entries.Clear();
                     _loadError = Translate("Unable to load directory content.");
                     return;
                 }
 
+                var directoryPaths = directoriesResult.Value;
                 var directoryEntries = directoryPaths
                     .Select(path => new PathBrowseEntry(path, GetTailSegment(path), true))
                     .OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
@@ -152,13 +153,14 @@ namespace Lantean.QBTMud.Components.Dialogs
                 if (Mode != DirectoryContentMode.Directories)
                 {
                     var filesResult = await ApiClient.GetDirectoryContentAsync(_currentPath, DirectoryContentMode.Files);
-                    if (!filesResult.TryGetValue(out var filePaths))
+                    if (filesResult.IsFailure)
                     {
                         _entries.Clear();
                         _loadError = Translate("Unable to load directory content.");
                         return;
                     }
 
+                    var filePaths = filesResult.Value;
                     fileEntries = filePaths
                         .Select(path => new PathBrowseEntry(path, GetTailSegment(path), false))
                         .OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
@@ -195,12 +197,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         private async Task<string> GetDefaultPathAsync()
         {
             var defaultPathResult = await ApiClient.GetDefaultSavePathAsync();
-            if (defaultPathResult.TryGetValue(out var path))
+            if (defaultPathResult.IsFailure)
             {
-                return string.IsNullOrWhiteSpace(path) ? string.Empty : path;
+                return string.Empty;
             }
 
-            return string.Empty;
+            var path = defaultPathResult.Value;
+            return string.IsNullOrWhiteSpace(path) ? string.Empty : path;
         }
 
         private bool AllowsFileSelection()

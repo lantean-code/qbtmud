@@ -1,3 +1,4 @@
+using Lantean.QBTMud.Services;
 using Microsoft.AspNetCore.Components;
 using QBittorrent.ApiClient;
 using QBittorrent.ApiClient.Models;
@@ -8,6 +9,9 @@ namespace Lantean.QBTMud.Components.Options
     {
         [Inject]
         public IApiClient ApiClient { get; set; } = default!;
+
+        [Inject]
+        public IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
 
         protected ResumeDataStorageType ResumeDataStorageType { get; private set; }
         protected int MemoryWorkingSetLimit { get; private set; }
@@ -83,7 +87,15 @@ namespace Lantean.QBTMud.Components.Options
         protected override async Task OnInitializedAsync()
         {
             var networkInterfacesResult = await ApiClient.GetNetworkInterfacesAsync();
-            NetworkInterfaces = networkInterfacesResult.TryGetValue(out var interfaces) ? interfaces : [];
+            if (networkInterfacesResult.IsFailure)
+            {
+                NetworkInterfaces = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(networkInterfacesResult);
+            }
+            else
+            {
+                NetworkInterfaces = networkInterfacesResult.Value;
+            }
         }
 
         protected override bool SetOptions()
@@ -183,7 +195,15 @@ namespace Lantean.QBTMud.Components.Options
             await PreferencesChanged.InvokeAsync(UpdatePreferences);
 
             var addressesResult = await ApiClient.GetNetworkInterfaceAddressListAsync(value);
-            NetworkInterfaceAddresses = addressesResult.TryGetValue(out var networkInterfaceAddresses) ? networkInterfaceAddresses : [];
+            if (addressesResult.IsFailure)
+            {
+                NetworkInterfaceAddresses = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(addressesResult);
+            }
+            else
+            {
+                NetworkInterfaceAddresses = addressesResult.Value;
+            }
         }
 
         protected async Task CurrentInterfaceAddressChanged(string value)

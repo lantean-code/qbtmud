@@ -168,12 +168,12 @@ namespace Lantean.QBTMud.Components.Dialogs
                 renameResult = await ApiClient.RenameFileAsync(hash, oldPath, newPath);
             }
 
-            if (renameResult.IsSuccess)
+            if (renameResult.IsFailure)
             {
-                return (true, null);
+                return (false, GetFailureMessage(renameResult.Failure));
             }
 
-            return (false, GetFailureMessage(renameResult.Failure));
+            return (true, null);
         }
 
         private IEnumerable<FileRow> GetChildren(FileRow folder, int level)
@@ -373,13 +373,14 @@ namespace Lantean.QBTMud.Components.Dialogs
             }
 
             var contentsResult = await ApiClient.GetTorrentContentsAsync(Hash);
-            if (!contentsResult.TryGetValue(out var fileContents))
+            if (contentsResult.IsFailure)
             {
                 FileList = [];
                 await ApiFeedbackWorkflow.HandleFailureAsync(contentsResult);
                 return;
             }
 
+            var fileContents = contentsResult.Value;
             _sourceFileList = DataManager.CreateContentsList(fileContents).Values.Select(CreateFileRow).ToList();
             RefreshPreview();
         }

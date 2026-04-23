@@ -21,6 +21,7 @@ namespace Lantean.QBTMud.Test.Components
         private readonly IManagedTimer _timer;
         private readonly IManagedTimerFactory _timerFactory;
         private readonly ILanguageLocalizer _languageLocalizer;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
         private Func<CancellationToken, Task<ManagedTimerTickResult>>? _tickHandler;
 
         public WebSeedsTabTests()
@@ -47,6 +48,10 @@ namespace Lantean.QBTMud.Test.Components
                 .Returns((string _, string source, object[] __) => source);
             TestContext.Services.RemoveAll<ILanguageLocalizer>();
             TestContext.Services.AddSingleton(_languageLocalizer);
+
+            _apiFeedbackWorkflow = Mock.Of<IApiFeedbackWorkflow>();
+            TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            TestContext.Services.AddSingleton(_apiFeedbackWorkflow);
         }
 
         [Fact]
@@ -158,6 +163,58 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
+        }
+
+        [Fact]
+        public async Task GIVEN_ActiveTab_WHEN_InitialLoadFails_THEN_RoutesFailureThroughWorkflow()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentWebSeedsAsync("Hash"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderTarget();
+            await SetParametersAsync(target, active: true, hash: "Hash");
+
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_ActiveTab_WHEN_TimerTickFails_THEN_RoutesFailureThroughWorkflow()
+        {
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetTorrentWebSeedsAsync("Hash"))
+                .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var target = RenderTarget();
+            await SetParametersAsync(target, active: true, hash: "Hash");
+
+            var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
+
+            result.Should().Be(ManagedTimerTickResult.Continue);
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

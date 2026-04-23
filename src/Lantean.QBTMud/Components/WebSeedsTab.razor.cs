@@ -37,6 +37,9 @@ namespace Lantean.QBTMud.Components
         [Inject]
         protected ILanguageLocalizer LanguageLocalizer { get; set; } = default!;
 
+        [Inject]
+        protected IApiFeedbackWorkflow ApiFeedbackWorkflow { get; set; } = default!;
+
         protected IReadOnlyList<WebSeed>? WebSeeds { get; set; }
 
         public async ValueTask DisposeAsync()
@@ -80,7 +83,7 @@ namespace Lantean.QBTMud.Components
             if (Active && Hash is not null)
             {
                 var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
-                if (!webSeedsResult.TryGetValue(out var torrentWebSeeds))
+                if (webSeedsResult.IsFailure)
                 {
                     if (webSeedsResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
                     {
@@ -88,10 +91,11 @@ namespace Lantean.QBTMud.Components
                         return ManagedTimerTickResult.Stop;
                     }
 
+                    await ApiFeedbackWorkflow.HandleFailureAsync(webSeedsResult);
                     return ManagedTimerTickResult.Continue;
                 }
 
-                WebSeeds = torrentWebSeeds;
+                WebSeeds = webSeedsResult.Value;
                 await InvokeAsync(StateHasChanged);
             }
 
@@ -116,7 +120,15 @@ namespace Lantean.QBTMud.Components
             }
 
             var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
-            WebSeeds = webSeedsResult.TryGetValue(out var torrentWebSeeds) ? torrentWebSeeds : [];
+            if (webSeedsResult.IsFailure)
+            {
+                WebSeeds = [];
+                await ApiFeedbackWorkflow.HandleFailureAsync(webSeedsResult);
+            }
+            else
+            {
+                WebSeeds = webSeedsResult.Value;
+            }
 
             await InvokeAsync(StateHasChanged);
         }

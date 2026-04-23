@@ -195,7 +195,7 @@ namespace Lantean.QBTMud.Components
             if (Active && Hash is not null)
             {
                 var filesResult = await ApiClient.GetTorrentContentsAsync(Hash);
-                if (!filesResult.TryGetValue(out IReadOnlyList<FileData>? files))
+                if (filesResult.IsFailure)
                 {
                     if (filesResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
                     {
@@ -203,9 +203,11 @@ namespace Lantean.QBTMud.Components
                         return ManagedTimerTickResult.Stop;
                     }
 
+                    await ApiFeedbackWorkflow.HandleFailureAsync(filesResult);
                     return ManagedTimerTickResult.Continue;
                 }
 
+                IReadOnlyList<FileData>? files = filesResult.Value;
                 if (FileList is null)
                 {
                     FileList = DataManager.CreateContentsList(files);
@@ -256,14 +258,15 @@ namespace Lantean.QBTMud.Components
             _previousHash = Hash;
 
             var contentsResult = await ApiClient.GetTorrentContentsAsync(Hash);
-            if (!contentsResult.TryGetValue(out var fileContents))
+            if (contentsResult.IsFailure)
             {
                 FileList = null;
                 MarkFilesDirty();
+                await ApiFeedbackWorkflow.HandleFailureAsync(contentsResult);
                 return;
             }
 
-            FileList = DataManager.CreateContentsList(fileContents);
+            FileList = DataManager.CreateContentsList(contentsResult.Value);
             MarkFilesDirty();
             PruneSelectionIfMissing();
 

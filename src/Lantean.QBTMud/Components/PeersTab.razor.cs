@@ -101,11 +101,13 @@ namespace Lantean.QBTMud.Components
             }
 
             var peersResult = await ApiClient.GetTorrentPeersDataAsync(Hash, _requestId);
-            if (!peersResult.TryGetValue(out var peers))
+            if (peersResult.IsFailure)
             {
+                await ApiFeedbackWorkflow.HandleFailureAsync(peersResult);
                 return;
             }
 
+            var peers = peersResult.Value;
             if (PeerList is null || peers.FullUpdate)
             {
                 PeerList = PeerDataManager.CreatePeerList(peers);
@@ -241,7 +243,7 @@ namespace Lantean.QBTMud.Components
             if (Active)
             {
                 var peersResult = await ApiClient.GetTorrentPeersDataAsync(Hash, _requestId);
-                if (!peersResult.TryGetValue(out TorrentPeers? peers))
+                if (peersResult.IsFailure)
                 {
                     if (peersResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
                     {
@@ -249,9 +251,11 @@ namespace Lantean.QBTMud.Components
                         return ManagedTimerTickResult.Stop;
                     }
 
+                    await ApiFeedbackWorkflow.HandleFailureAsync(peersResult);
                     return ManagedTimerTickResult.Continue;
                 }
 
+                var peers = peersResult.Value;
                 if (PeerList is null || peers.FullUpdate)
                 {
                     PeerList = PeerDataManager.CreatePeerList(peers);

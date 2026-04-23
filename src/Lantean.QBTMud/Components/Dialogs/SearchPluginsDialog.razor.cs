@@ -51,22 +51,28 @@ namespace Lantean.QBTMud.Components.Dialogs
         private async Task LoadPlugins()
         {
             _loading = true;
-            var pluginsResult = await ApiClient.GetSearchPluginsAsync();
-            if (!pluginsResult.TryGetValue(out var plugins))
+            try
             {
-                Plugins = [];
-                await ApiFeedbackWorkflow.HandleFailureAsync(
-                    pluginsResult,
-                    message => TranslateApp("Failed to load search plugins: %1", message ?? string.Empty));
-            }
-            else
-            {
-                Plugins = [.. plugins];
-            }
+                var pluginsResult = await ApiClient.GetSearchPluginsAsync();
+                if (pluginsResult.IsFailure)
+                {
+                    Plugins = [];
+                    SelectedPluginNames = [];
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        pluginsResult,
+                        message => TranslateApp("Failed to load search plugins: %1", message ?? string.Empty));
+                    return;
+                }
 
-            SelectedPluginNames = [];
-            _loading = false;
-            await InvokeAsync(StateHasChanged);
+                var plugins = pluginsResult.Value;
+                Plugins = [.. plugins];
+                SelectedPluginNames = [];
+            }
+            finally
+            {
+                _loading = false;
+                await InvokeAsync(StateHasChanged);
+            }
         }
 
         protected async Task InstallFromUrl()
@@ -217,24 +223,24 @@ namespace Lantean.QBTMud.Components.Dialogs
         {
             OperationInProgress = true;
             var result = await operation();
-            if (!result.IsSuccess)
+            if (result.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(
                     result,
                     message => TranslateApp("Search plugin operation failed: %1", message ?? string.Empty));
+                OperationInProgress = false;
+                return false;
             }
-            else
+
+            SnackbarWorkflow.ShowTransientMessage(successMessage(), Severity.Success);
+            _hasChanges = true;
+            if (refresh)
             {
-                SnackbarWorkflow.ShowTransientMessage(successMessage(), Severity.Success);
-                _hasChanges = true;
-                if (refresh)
-                {
-                    await LoadPlugins();
-                }
+                await LoadPlugins();
             }
 
             OperationInProgress = false;
-            return result.IsSuccess;
+            return true;
         }
 
         private string TranslateApp(string source, params object[] arguments)

@@ -325,12 +325,13 @@ namespace Lantean.QBTMud.Components
         protected async Task RemoveUnusedCategories()
         {
             var removedCategoriesResult = await ApiClient.RemoveUnusedCategoriesAsync();
-            if (!removedCategoriesResult.TryGetValue(out var removedCategoryList))
+            if (removedCategoriesResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(removedCategoriesResult);
                 return;
             }
 
+            var removedCategoryList = removedCategoriesResult.Value;
             foreach (var removedCategory in removedCategoryList)
             {
                 Categories.Remove(removedCategory);
@@ -400,12 +401,13 @@ namespace Lantean.QBTMud.Components
         protected async Task RemoveUnusedTags()
         {
             var removedTagsResult = await ApiClient.RemoveUnusedTagsAsync();
-            if (!removedTagsResult.TryGetValue(out var removedTagList))
+            if (removedTagsResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(removedTagsResult);
                 return;
             }
 
+            var removedTagList = removedTagsResult.Value;
             foreach (var removedTag in removedTagList)
             {
                 Tags.Remove(removedTag);

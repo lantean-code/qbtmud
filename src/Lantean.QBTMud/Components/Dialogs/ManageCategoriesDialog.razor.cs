@@ -30,12 +30,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         protected override async Task OnInitializedAsync()
         {
             var categoriesResult = await ApiClient.GetAllCategoriesAsync();
-            if (!categoriesResult.TryGetValue(out var categories))
+            if (categoriesResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(categoriesResult);
                 return;
             }
 
+            var categories = categoriesResult.Value;
             Categories = [.. categories.Select(c => c.Key)];
             if (!Hashes.Any())
             {
@@ -48,12 +49,13 @@ namespace Lantean.QBTMud.Components.Dialogs
         private async Task GetTorrentCategories()
         {
             var torrentsResult = await ApiClient.GetTorrentListAsync(selector: TorrentSelector.FromHashes(Hashes));
-            if (!torrentsResult.TryGetValue(out var torrentList))
+            if (torrentsResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(torrentsResult);
                 return;
             }
 
+            var torrentList = torrentsResult.Value;
             TorrentCategories = torrentList.Where(t => !string.IsNullOrEmpty(t.Category)).Select(t => t.Category!).ToList();
         }
 

@@ -14,14 +14,17 @@ namespace Lantean.QBTMud.Services
         public const string StorageKeyPrefix = "QbtMud.";
 
         private readonly IApiClient _apiClient;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClientDataStorageAdapter"/> class.
         /// </summary>
         /// <param name="apiClient">The qBittorrent API client.</param>
-        public ClientDataStorageAdapter(IApiClient apiClient)
+        /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
+        public ClientDataStorageAdapter(IApiClient apiClient, IApiFeedbackWorkflow apiFeedbackWorkflow)
         {
             _apiClient = apiClient;
+            _apiFeedbackWorkflow = apiFeedbackWorkflow;
         }
 
         /// <inheritdoc />
@@ -44,11 +47,13 @@ namespace Lantean.QBTMud.Services
             }
 
             var loadedResult = await _apiClient.LoadClientDataAsync(normalizedKeys, cancellationToken);
-            if (!loadedResult.TryGetValue(out var loadedData))
+            if (loadedResult.IsFailure)
             {
+                await _apiFeedbackWorkflow.HandleFailureAsync(loadedResult, cancellationToken: cancellationToken);
                 return new Dictionary<string, JsonElement>(StringComparer.Ordinal);
             }
 
+            var loadedData = loadedResult.Value;
             return loadedData
                 .Where(entry => entry.Key.StartsWith(StorageKeyPrefix, StringComparison.Ordinal))
                 .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
@@ -60,11 +65,13 @@ namespace Lantean.QBTMud.Services
             cancellationToken.ThrowIfCancellationRequested();
 
             var loadedResult = await _apiClient.LoadClientDataAsync(keys: null, cancellationToken);
-            if (!loadedResult.TryGetValue(out var loadedData))
+            if (loadedResult.IsFailure)
             {
+                await _apiFeedbackWorkflow.HandleFailureAsync(loadedResult, cancellationToken: cancellationToken);
                 return new Dictionary<string, JsonElement>(StringComparer.Ordinal);
             }
 
+            var loadedData = loadedResult.Value;
             return loadedData
                 .Where(entry => entry.Key.StartsWith(StorageKeyPrefix, StringComparison.Ordinal))
                 .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
@@ -92,7 +99,8 @@ namespace Lantean.QBTMud.Services
                 entry => entry.Value is null ? (JsonElement?)null : JsonSerializer.SerializeToElement(entry.Value),
                 StringComparer.Ordinal);
 
-            await _apiClient.StoreClientDataAsync(payload, cancellationToken);
+            var storeResult = await _apiClient.StoreClientDataAsync(payload, cancellationToken);
+            await _apiFeedbackWorkflow.ProcessResultAsync(storeResult, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc />
@@ -114,7 +122,13 @@ namespace Lantean.QBTMud.Services
                 return Task.CompletedTask;
             }
 
-            return _apiClient.DeleteClientDataAsync(removalKeys, cancellationToken);
+            return RemovePrefixedEntriesCoreAsync(removalKeys, cancellationToken);
+        }
+
+        private async Task RemovePrefixedEntriesCoreAsync(IReadOnlyCollection<string> removalKeys, CancellationToken cancellationToken)
+        {
+            var removeResult = await _apiClient.DeleteClientDataAsync(removalKeys, cancellationToken);
+            await _apiFeedbackWorkflow.ProcessResultAsync(removeResult, cancellationToken: cancellationToken);
         }
     }
 }

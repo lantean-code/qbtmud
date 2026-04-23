@@ -46,6 +46,11 @@
 
 ## Line endings
 - Use CRLF line terminators for any files you write or modify.
+
+## Formatting
+- After modifying test files, run `dotnet format --include <changed files> --artifacts-path=/tmp/artifacts/qbtmud` for the files changed in the current task only.
+- Do not format unrelated files.
+
 ## Test Execution
 
 - After each behavior-affecting set of changes, follow the test execution instructions in `AGENTS.md`.

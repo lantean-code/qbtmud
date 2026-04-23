@@ -1669,6 +1669,17 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_DeleteFails_WHEN_CloseAllJobs_THEN_JobRemains()
         {
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
+            apiFeedbackWorkflow
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            TestContext.Services.AddSingleton(apiFeedbackWorkflow.Object);
+
             var target = await RenderSearchWithResultsAsync(303, new List<SearchResult>
         {
             new SearchResult("http://desc/close", "Close", 1_000_000, "http://files/close", 1, 5, "http://site/close", "movies", null)
@@ -1682,6 +1693,11 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => closeAllButton.Find("button").Click());
 
             target.WaitForAssertion(() => target.FindComponents<DynamicTable<SearchResult>>().Should().HaveCount(1));
+            apiFeedbackWorkflow.Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
             var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
             stored.Should().NotBeNull();
             stored!.Should().HaveCount(1);

@@ -76,12 +76,13 @@ namespace Lantean.QBTMud.Pages
             try
             {
                 var tagsResult = await ApiClient.GetAllTagsAsync();
-                if (!tagsResult.TryGetValue(out var tagList))
+                if (tagsResult.IsFailure)
                 {
                     await ApiFeedbackWorkflow.HandleFailureAsync(tagsResult);
                     return;
                 }
 
+                var tagList = tagsResult.Value;
                 _tags = tagList;
             }
             finally
@@ -114,12 +115,13 @@ namespace Lantean.QBTMud.Pages
             }
 
             var existingTagsResult = await ApiClient.GetAllTagsAsync();
-            if (!existingTagsResult.TryGetValue(out var existingTagList))
+            if (existingTagsResult.IsFailure)
             {
                 await ApiFeedbackWorkflow.HandleFailureAsync(existingTagsResult);
                 return;
             }
 
+            var existingTagList = existingTagsResult.Value;
             if (existingTagList.Contains(tag))
             {
                 return;

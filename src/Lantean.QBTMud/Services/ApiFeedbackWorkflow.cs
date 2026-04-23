@@ -46,7 +46,7 @@ namespace Lantean.QBTMud.Services
         {
             if (result.IsSuccess)
             {
-                throw new InvalidOperationException("HandleFailureAsync must only be used with failed ApiResult instances.");
+                throw new InvalidOperationException("HandleFailureAsync must only be used with failed ApiResultBase instances.");
             }
 
             await HandleFailureCoreAsync(result.Failure, buildMessage, severity, cancellationToken);
