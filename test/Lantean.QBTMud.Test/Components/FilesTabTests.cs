@@ -266,6 +266,45 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
+        public async Task GIVEN_RenameDialogConfirms_WHEN_RenameToolbarClicked_THEN_RenameFileInvoked()
+        {
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
+            apiFeedbackWorkflow
+                .Setup(workflow => workflow.ProcessResultAsync(
+                    It.IsAny<ApiResult>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            TestContext.Services.AddSingleton(apiFeedbackWorkflow.Object);
+
+            var files = CreateFiles("root/file1.txt");
+            ApiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash")).ReturnsSuccessAsync(files);
+            ApiClientMock
+                .Setup(c => c.RenameFileAsync("Hash", "root/file1.txt", "rootrenamed.txt", It.IsAny<CancellationToken>()))
+                .ReturnsSuccess(Task.CompletedTask);
+            DialogWorkflowMock
+                .Setup(d => d.InvokeStringFieldDialog("Renaming", "New name:", "file1.txt", It.IsAny<Func<string, Task>>()))
+                .Returns<string, string, string?, Func<string, Task>>(async (_, _, _, onSuccess) => await onSuccess("renamed.txt"));
+
+            var target = RenderFilesTab();
+            await TriggerTimerTickAsync(target);
+
+            var toggle = FindComponentByTestId<MudIconButton>(target, "FolderToggle-root");
+            await target.InvokeAsync(() => toggle.Find("button").Click());
+
+            target.WaitForAssertion(() => HasElementByTestId(target, "Priority-root_file1.txt").Should().BeTrue());
+
+            var row = target.WaitForElement($"[data-test-id=\"{TestIdHelper.For("Row-Files-root_file1.txt")}\"]");
+            await target.InvokeAsync(() => row.Click());
+
+            var toolbarRename = FindComponentByTestId<MudIconButton>(target, "RenameToolbar");
+            await target.InvokeAsync(() => toolbarRename.Find("button").Click());
+
+            ApiClientMock.Verify(c => c.RenameFileAsync("Hash", "root/file1.txt", "rootrenamed.txt", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task GIVEN_TimerTick_WHEN_FileListExists_THEN_MergeApplied()
         {
             var initial = CreateFiles("root/file1.txt");
@@ -336,6 +375,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_TimerTick_WHEN_ApiReturnsForbidden_THEN_RefreshStops()
         {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             ApiClientMock
                 .SetupSequence(c => c.GetTorrentContentsAsync("Hash"))
                 .ReturnsAsync(CreateFiles("root/file1.txt"))
@@ -349,6 +389,7 @@ namespace Lantean.QBTMud.Test.Components
             {
                 ApiClientMock.Verify(c => c.GetTorrentContentsAsync("Hash"), Times.Exactly(2));
             });
+            navigationManager.Uri.Should().EndWith("/login");
         }
 
         [Fact]
@@ -365,6 +406,20 @@ namespace Lantean.QBTMud.Test.Components
 
             result.Should().Be(ManagedTimerTickResult.Continue);
             ApiClientMock.Verify(c => c.GetTorrentContentsAsync("Hash"), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task GIVEN_FilesLoaded_WHEN_TableRendered_THEN_ColumnDefinitionsIncludePriorityAndAvailability()
+        {
+            ApiClientMock.Setup(c => c.GetTorrentContentsAsync("Hash")).ReturnsSuccessAsync(CreateFiles("root/file1.txt"));
+
+            var target = RenderFilesTab();
+            await TriggerTimerTickAsync(target);
+
+            var table = target.FindComponent<DynamicTable<ContentItem>>();
+
+            table.Instance.ColumnDefinitions.Should().Contain(column => column.Id == "priority");
+            table.Instance.ColumnDefinitions.Should().Contain(column => column.Id == "availability");
         }
 
         [Fact]

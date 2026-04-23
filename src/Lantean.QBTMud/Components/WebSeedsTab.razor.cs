@@ -85,13 +85,24 @@ namespace Lantean.QBTMud.Components
                 var webSeedsResult = await ApiClient.GetTorrentWebSeedsAsync(Hash);
                 if (webSeedsResult.IsFailure)
                 {
-                    if (webSeedsResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    var failureKind = webSeedsResult.Failure?.Kind;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(webSeedsResult, failure =>
                     {
-                        _timerCancellationToken.CancelIfNotDisposed();
+                        if (failure.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                        {
+                            _timerCancellationToken.CancelIfNotDisposed();
+                        }
+
+                        return failure.Kind == ApiFailureKind.NotFound
+                            ? ApiFeedbackCustomFailureResult.StopHandling
+                            : ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    });
+
+                    if (failureKind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    {
                         return ManagedTimerTickResult.Stop;
                     }
 
-                    await ApiFeedbackWorkflow.HandleFailureAsync(webSeedsResult);
                     return ManagedTimerTickResult.Continue;
                 }
 

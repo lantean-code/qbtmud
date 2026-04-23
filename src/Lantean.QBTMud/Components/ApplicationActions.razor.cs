@@ -96,12 +96,6 @@ namespace Lantean.QBTMud.Components
             };
 
             var result = await ApiClient.SetApplicationPreferencesAsync(preferences);
-            if (result.IsFailure && result.Failure?.IsAuthenticationFailure() == true)
-            {
-                NavigationManager.NavigateTo("login", forceLoad: true);
-                return;
-            }
-
             if (!await ApiFeedbackWorkflow.ProcessResultAsync(result))
             {
                 return;
@@ -120,18 +114,17 @@ namespace Lantean.QBTMud.Components
                 var logoutResult = await ApiClient.LogoutAsync();
                 if (logoutResult.IsFailure)
                 {
-                    if (logoutResult.Failure?.IsAuthenticationFailure() == true)
-                    {
-                        await SpeedHistoryService.ClearAsync();
-                        NavigationManager.NavigateTo("login", forceLoad: true);
-                        return;
-                    }
+                    await ApiFeedbackWorkflow.HandleFailureAsync(
+                        logoutResult,
+                        async (failure, cancellationToken) =>
+                        {
+                            if (failure.IsAuthenticationFailure())
+                            {
+                                await SpeedHistoryService.ClearAsync(cancellationToken);
+                            }
 
-                    if (!await ApiFeedbackWorkflow.ProcessResultAsync(logoutResult))
-                    {
-                        return;
-                    }
-
+                            return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                        });
                     return;
                 }
 

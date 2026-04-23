@@ -6,6 +6,7 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
 using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Moq;
 using MudBlazor;
@@ -28,6 +29,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly IPreferencesDataManager _preferencesDataManager = Mock.Of<IPreferencesDataManager>();
         private readonly IQBittorrentPreferencesStateService _qBittorrentPreferencesStateService = Mock.Of<IQBittorrentPreferencesStateService>();
         private readonly ILanguageLocalizer _languageLocalizer;
+        private readonly TestNavigationManager _navigationManager;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
         private readonly DialogWorkflow _target;
@@ -39,6 +41,7 @@ namespace Lantean.QBTMud.Test.Services
             localizerMock
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] arguments) => FormatLocalizerString(source, arguments));
+            _navigationManager = new TestNavigationManager();
 
             Mock.Get(_appSettingsService)
                 .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
@@ -49,7 +52,7 @@ namespace Lantean.QBTMud.Test.Services
                     TorrentAddedSnackbarsEnabledWithNotifications = false
                 });
 
-            _apiFeedbackWorkflow = new ApiFeedbackWorkflow(_lostConnectionWorkflow, _snackbarWorkflow, _languageLocalizer);
+            _apiFeedbackWorkflow = new ApiFeedbackWorkflow(_lostConnectionWorkflow, _snackbarWorkflow, _languageLocalizer, _navigationManager);
             _target = new DialogWorkflow(
                 _dialogService,
                 _apiClient,
@@ -2552,6 +2555,20 @@ namespace Lantean.QBTMud.Test.Services
             {
                 DisposeAsyncCalled = true;
                 return base.DisposeAsync();
+            }
+        }
+
+        private sealed class TestNavigationManager : NavigationManager
+        {
+            public TestNavigationManager()
+            {
+                Initialize("http://localhost/", "http://localhost/");
+            }
+
+            protected override void NavigateToCore(string uri, bool forceLoad)
+            {
+                Uri = ToAbsoluteUri(uri).ToString();
+                NotifyLocationChanged(false);
             }
         }
 

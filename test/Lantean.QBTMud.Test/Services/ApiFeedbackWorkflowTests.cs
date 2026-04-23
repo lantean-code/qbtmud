@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
+using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
@@ -12,6 +13,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly Mock<ILostConnectionWorkflow> _lostConnectionWorkflow;
         private readonly Mock<ILanguageLocalizer> _languageLocalizer;
         private readonly Mock<ISnackbar> _snackbar;
+        private readonly TestNavigationManager _navigationManager;
         private readonly ApiFeedbackWorkflow _target;
 
         public ApiFeedbackWorkflowTests()
@@ -19,9 +21,10 @@ namespace Lantean.QBTMud.Test.Services
             _lostConnectionWorkflow = new Mock<ILostConnectionWorkflow>(MockBehavior.Strict);
             _languageLocalizer = new Mock<ILanguageLocalizer>(MockBehavior.Strict);
             _snackbar = new Mock<ISnackbar>(MockBehavior.Strict);
+            _navigationManager = new TestNavigationManager();
 
             var snackbarWorkflow = new SnackbarWorkflow(_languageLocalizer.Object, _snackbar.Object);
-            _target = new ApiFeedbackWorkflow(_lostConnectionWorkflow.Object, snackbarWorkflow, _languageLocalizer.Object);
+            _target = new ApiFeedbackWorkflow(_lostConnectionWorkflow.Object, snackbarWorkflow, _languageLocalizer.Object, _navigationManager);
         }
 
         [Fact]
@@ -68,6 +71,16 @@ namespace Lantean.QBTMud.Test.Services
             await _target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
             _lostConnectionWorkflow.Verify(workflow => workflow.MarkLostConnectionAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_AuthenticationFailure_WHEN_HandlingFailure_THEN_ShouldNavigateToLogin()
+        {
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.AuthenticationRequired, "UserMessage"));
+
+            await _target.HandleFailureAsync(result, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+
+            _navigationManager.Uri.Should().EndWith("/login");
         }
 
         [Fact]
@@ -188,6 +201,142 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_SuccessfulApiResult_WHEN_HandlingFailureWithCustomCallback_THEN_ShouldThrowInvalidOperationException()
+        {
+            Func<Task> action = async () => await _target.HandleFailureAsync(
+                ApiResult.CreateSuccess(),
+                (_, _) => Task.FromResult(ApiFeedbackCustomFailureResult.StopHandling),
+                cancellationToken: Xunit.TestContext.Current.CancellationToken);
+
+            await action.Should().ThrowAsync<InvalidOperationException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_SuccessfulApiResult_WHEN_HandlingFailureWithSyncCustomCallback_THEN_ShouldThrowInvalidOperationException()
+        {
+            Func<Task> action = async () => await _target.HandleFailureAsync(
+                ApiResult.CreateSuccess(),
+                _ => ApiFeedbackCustomFailureResult.StopHandling,
+                cancellationToken: Xunit.TestContext.Current.CancellationToken);
+
+            await action.Should().ThrowAsync<InvalidOperationException>();
+        }
+
+        [Fact]
+        public async Task GIVEN_NonStandardFailureHandledBySyncCustomCallback_WHEN_HandlingFailure_THEN_ShouldNotShowGenericFeedback()
+        {
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.NotFound, "UserMessage"));
+
+            await _target.HandleFailureAsync(
+                result,
+                _ => ApiFeedbackCustomFailureResult.StopHandling,
+                cancellationToken: Xunit.TestContext.Current.CancellationToken);
+
+            _lostConnectionWorkflow.VerifyNoOtherCalls();
+            _languageLocalizer.VerifyNoOtherCalls();
+            _snackbar.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task GIVEN_AuthenticationFailure_WHEN_HandlingFailureWithSyncCustomCallback_THEN_ShouldInvokeCustomCleanupAndSharedHandling()
+        {
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.AuthenticationRequired, "UserMessage"));
+            var callbackInvoked = false;
+
+            await _target.HandleFailureAsync(
+                result,
+                failure =>
+                {
+                    callbackInvoked = failure.Kind == ApiFailureKind.AuthenticationRequired;
+                    return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                },
+                cancellationToken: Xunit.TestContext.Current.CancellationToken);
+
+            callbackInvoked.Should().BeTrue();
+            _navigationManager.Uri.Should().EndWith("/login");
+        }
+
+        [Fact]
+        public async Task GIVEN_NonStandardFailureHandledByCustomCallback_WHEN_HandlingFailureWithCustomCallback_THEN_ShouldNotShowGenericFeedback()
+        {
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.NotFound, "UserMessage"));
+            var customHandler = new Mock<Func<ApiFailure, CancellationToken, Task<ApiFeedbackCustomFailureResult>>>(MockBehavior.Strict);
+            customHandler
+                .Setup(handler => handler(It.Is<ApiFailure>(failure => failure.Kind == ApiFailureKind.NotFound), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiFeedbackCustomFailureResult.StopHandling);
+
+            await _target.HandleFailureAsync(
+                result,
+                customHandler.Object,
+                cancellationToken: Xunit.TestContext.Current.CancellationToken);
+
+            customHandler.Verify(handler => handler(It.Is<ApiFailure>(failure => failure.Kind == ApiFailureKind.NotFound), It.IsAny<CancellationToken>()), Times.Once);
+            _lostConnectionWorkflow.VerifyNoOtherCalls();
+            _languageLocalizer.VerifyNoOtherCalls();
+            _snackbar.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task GIVEN_NonStandardFailureNotHandledByCustomCallback_WHEN_HandlingFailureWithCustomCallback_THEN_ShouldFallBackToGenericFeedback()
+        {
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
+            var customHandler = new Mock<Func<ApiFailure, CancellationToken, Task<ApiFeedbackCustomFailureResult>>>(MockBehavior.Strict);
+            customHandler
+                .Setup(handler => handler(It.Is<ApiFailure>(failure => failure.Kind == ApiFailureKind.ServerError), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiFeedbackCustomFailureResult.ContinueWithWorkflow);
+            _snackbar
+                .Setup(service => service.Add("UserMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
+                .Returns((Snackbar?)null);
+
+            await _target.HandleFailureAsync(
+                result,
+                customHandler.Object,
+                cancellationToken: Xunit.TestContext.Current.CancellationToken);
+
+            customHandler.Verify(handler => handler(It.Is<ApiFailure>(failure => failure.Kind == ApiFailureKind.ServerError), It.IsAny<CancellationToken>()), Times.Once);
+            _snackbar.Verify(service => service.Add("UserMessage", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_AuthenticationFailure_WHEN_HandlingFailureWithCustomCallback_THEN_ShouldInvokeCustomCallbackBeforeSharedHandling()
+        {
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.AuthenticationRequired, "UserMessage"));
+            var customHandler = new Mock<Func<ApiFailure, CancellationToken, Task<ApiFeedbackCustomFailureResult>>>(MockBehavior.Strict);
+            customHandler
+                .Setup(handler => handler(It.Is<ApiFailure>(failure => failure.Kind == ApiFailureKind.AuthenticationRequired), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiFeedbackCustomFailureResult.ContinueWithWorkflow);
+
+            await _target.HandleFailureAsync(
+                result,
+                customHandler.Object,
+                cancellationToken: Xunit.TestContext.Current.CancellationToken);
+
+            customHandler.Verify(handler => handler(It.Is<ApiFailure>(failure => failure.Kind == ApiFailureKind.AuthenticationRequired), It.IsAny<CancellationToken>()), Times.Once);
+            _navigationManager.Uri.Should().EndWith("/login");
+        }
+
+        [Fact]
+        public async Task GIVEN_AuthenticationFailureHandledByCustomCallback_WHEN_HandlingFailureWithCustomCallback_THEN_ShouldStopBeforeSharedHandling()
+        {
+            var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.AuthenticationRequired, "UserMessage"));
+            var customHandler = new Mock<Func<ApiFailure, CancellationToken, Task<ApiFeedbackCustomFailureResult>>>(MockBehavior.Strict);
+            customHandler
+                .Setup(handler => handler(It.Is<ApiFailure>(failure => failure.Kind == ApiFailureKind.AuthenticationRequired), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ApiFeedbackCustomFailureResult.StopHandling);
+
+            await _target.HandleFailureAsync(
+                result,
+                customHandler.Object,
+                cancellationToken: Xunit.TestContext.Current.CancellationToken);
+
+            customHandler.Verify(handler => handler(It.Is<ApiFailure>(failure => failure.Kind == ApiFailureKind.AuthenticationRequired), It.IsAny<CancellationToken>()), Times.Once);
+            _navigationManager.Uri.Should().Be("http://localhost/");
+            _lostConnectionWorkflow.VerifyNoOtherCalls();
+            _languageLocalizer.VerifyNoOtherCalls();
+            _snackbar.VerifyNoOtherCalls();
+        }
+
+        [Fact]
         public async Task GIVEN_FailedGenericApiResultAndCustomMessage_WHEN_HandlingFailure_THEN_ShouldUseCustomMessageAndSeverity()
         {
             var result = ApiResult.CreateFailure(CreateFailure(ApiFailureKind.ServerError, "UserMessage"));
@@ -212,6 +361,19 @@ namespace Lantean.QBTMud.Test.Services
                 ResponseBody = "ResponseBody",
                 UserMessage = userMessage ?? string.Empty
             };
+        }
+
+        private sealed class TestNavigationManager : NavigationManager
+        {
+            public TestNavigationManager()
+            {
+                Initialize("http://localhost/", "http://localhost/");
+            }
+
+            protected override void NavigateToCore(string uri, bool forceLoad)
+            {
+                Uri = ToAbsoluteUri(uri).ToString();
+            }
         }
     }
 }

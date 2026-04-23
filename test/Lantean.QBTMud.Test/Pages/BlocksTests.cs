@@ -222,14 +222,62 @@ namespace Lantean.QBTMud.Test.Pages
         [Fact]
         public async Task GIVEN_TimerTick_WHEN_Forbidden_THEN_NoCrash()
         {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             var target = RenderTarget();
             Mock.Get(_apiClient)
                 .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
                 .ReturnsFailure(ApiFailureKind.AuthenticationRequired, "Message", System.Net.HttpStatusCode.Forbidden);
 
-            await TriggerTimerTickAsync(target);
+            var tickResult = await TriggerTimerTickAsync(target);
 
+            tickResult.Should().Be(ManagedTimerTickResult.Stop);
+            navigationManager.Uri.Should().EndWith("/login");
             Mock.Get(_apiClient).Verify(c => c.GetPeerLogAsync(It.IsAny<int?>()), Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task GIVEN_InitialLoadFails_WHEN_Rendered_THEN_RoutesFailureThroughWorkflow()
+        {
+            await using var localContext = new ComponentTestContext();
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
+            apiFeedbackWorkflow
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<PeerLog>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            var apiClient = new Mock<IApiClient>(MockBehavior.Strict);
+            apiClient
+                .Setup(c => c.GetPeerLogAsync(It.IsAny<int?>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Message", System.Net.HttpStatusCode.InternalServerError);
+            var managedTimer = new Mock<IManagedTimer>(MockBehavior.Strict);
+            var managedTimerFactory = new Mock<IManagedTimerFactory>(MockBehavior.Strict);
+            managedTimerFactory
+                .Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<TimeSpan>()))
+                .Returns(managedTimer.Object);
+            managedTimer
+                .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            localContext.Services.RemoveAll<IApiClient>();
+            localContext.Services.AddSingleton(apiClient.Object);
+            localContext.Services.RemoveAll<IManagedTimerFactory>();
+            localContext.Services.AddSingleton(managedTimerFactory.Object);
+            localContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            localContext.Services.AddSingleton(apiFeedbackWorkflow.Object);
+            localContext.UseSnackbarMock(MockBehavior.Loose);
+
+            _ = localContext.Render<Blocks>(parameters =>
+            {
+                parameters.AddCascadingValue("DrawerOpen", false);
+            });
+
+            apiFeedbackWorkflow.Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<PeerLog>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -274,10 +322,10 @@ namespace Lantean.QBTMud.Test.Pages
             await target.InvokeAsync(() => menu.Instance.OpenMenuAsync(new MouseEventArgs()));
         }
 
-        private async Task TriggerTimerTickAsync(IRenderedComponent<Blocks> target)
+        private async Task<ManagedTimerTickResult> TriggerTimerTickAsync(IRenderedComponent<Blocks> target)
         {
             var handler = GetTickHandler(target);
-            await target.InvokeAsync(() => handler(CancellationToken.None));
+            return await target.InvokeAsync(() => handler(CancellationToken.None));
         }
 
         private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler(IRenderedComponent<Blocks> target)

@@ -613,6 +613,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_ActiveTab_WHEN_TimerTickGetsForbidden_THEN_StopIsReturned()
         {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
                 .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
@@ -625,6 +626,7 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
+            navigationManager.Uri.Should().EndWith("/login");
         }
 
         [Fact]
@@ -642,6 +644,24 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Continue);
+        }
+
+        [Fact]
+        public void GIVEN_PeersLoaded_WHEN_TableRendered_THEN_ColumnDefinitionsIncludeCountryFlagsAndClient()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetTorrentPeersDataAsync("Hash", 0))
+                .ReturnsSuccessAsync(CreatePeers(true, "US", "Country"));
+
+            var target = RenderPeersTab(true);
+
+            target.WaitForAssertion(() =>
+            {
+                var table = target.FindComponent<DynamicTable<MudPeer>>();
+                table.Instance.ColumnDefinitions.Should().Contain(column => column.Id == "country/region");
+                table.Instance.ColumnDefinitions.Should().Contain(column => column.Id == "flags");
+                table.Instance.ColumnDefinitions.Should().Contain(column => column.Id == "client");
+            });
         }
 
         [Fact]

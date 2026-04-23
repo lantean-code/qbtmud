@@ -131,13 +131,24 @@ namespace Lantean.QBTMud.Components
                 {
                     MarkPiecesFailed();
                     await InvokeAsync(StateHasChanged);
-                    if (propertiesResult.Failure?.Kind is ApiFailureKind.NotFound or ApiFailureKind.AuthenticationRequired)
+                    var failureKind = propertiesResult.Failure?.Kind;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(propertiesResult, failure =>
                     {
-                        _timerCancellationToken.CancelIfNotDisposed();
+                        if (failure.Kind is ApiFailureKind.NotFound or ApiFailureKind.AuthenticationRequired)
+                        {
+                            _timerCancellationToken.CancelIfNotDisposed();
+                        }
+
+                        return failure.Kind == ApiFailureKind.NotFound
+                            ? ApiFeedbackCustomFailureResult.StopHandling
+                            : ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    });
+
+                    if (failureKind is ApiFailureKind.NotFound or ApiFailureKind.AuthenticationRequired)
+                    {
                         return ManagedTimerTickResult.Stop;
                     }
 
-                    await ApiFeedbackWorkflow.HandleFailureAsync(propertiesResult);
                     return ManagedTimerTickResult.Continue;
                 }
 
@@ -146,14 +157,23 @@ namespace Lantean.QBTMud.Components
                 var piecesResult = await ApiClient.GetTorrentPieceStatesAsync(Hash);
                 if (piecesResult.IsFailure)
                 {
-                    if (piecesResult.Failure?.Kind == ApiFailureKind.NotFound)
+                    var failureKind = piecesResult.Failure?.Kind;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(piecesResult, failure =>
                     {
-                        MarkPiecesFailed();
+                        if (failure.Kind == ApiFailureKind.NotFound)
+                        {
+                            MarkPiecesFailed();
+                            return ApiFeedbackCustomFailureResult.StopHandling;
+                        }
+
+                        return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    });
+
+                    if (failureKind == ApiFailureKind.NotFound)
+                    {
                         await InvokeAsync(StateHasChanged);
                         return ManagedTimerTickResult.Stop;
                     }
-
-                    await ApiFeedbackWorkflow.HandleFailureAsync(piecesResult);
                 }
                 else
                 {

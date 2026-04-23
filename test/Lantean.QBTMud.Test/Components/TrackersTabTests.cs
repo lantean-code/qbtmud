@@ -6,6 +6,7 @@ using Lantean.QBTMud.Components.UI;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -453,6 +454,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_ActiveTab_WHEN_TimerTickGetsForbidden_THEN_StopIsReturned()
         {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             Mock.Get(_apiClient)
                 .SetupSequence(client => client.GetTorrentTrackersAsync("Hash"))
                 .ReturnsAsync(new[] { CreateTracker("udp://a.example") })
@@ -463,6 +465,7 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
+            navigationManager.Uri.Should().EndWith("/login");
         }
 
         [Fact]
@@ -478,6 +481,71 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
+        }
+
+        [Fact]
+        public async Task GIVEN_ActiveTab_WHEN_TimerTickGetsServerError_THEN_ContinueIsReturned()
+        {
+            Mock.Get(_apiClient)
+                .SetupSequence(client => client.GetTorrentTrackersAsync("Hash"))
+                .ReturnsAsync(new[] { CreateTracker("udp://a.example") })
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var target = RenderTrackersTab(active: true);
+
+            var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
+
+            result.Should().Be(ManagedTimerTickResult.Continue);
+        }
+
+        [Fact]
+        public async Task GIVEN_InitialLoadFails_WHEN_Rendered_THEN_RoutesFailureThroughWorkflow()
+        {
+            await using var localContext = new ComponentTestContext();
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
+            apiFeedbackWorkflow
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<TorrentTracker>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            var apiClient = new Mock<IApiClient>(MockBehavior.Strict);
+            apiClient
+                .Setup(client => client.GetTorrentTrackersAsync("Hash"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+            var managedTimer = new Mock<IManagedTimer>(MockBehavior.Strict);
+            var managedTimerFactory = new Mock<IManagedTimerFactory>(MockBehavior.Strict);
+            managedTimerFactory
+                .Setup(factory => factory.Create(It.IsAny<string>(), It.IsAny<TimeSpan>()))
+                .Returns(managedTimer.Object);
+            managedTimer
+                .Setup(timer => timer.StartAsync(It.IsAny<Func<CancellationToken, Task<ManagedTimerTickResult>>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            var dialogWorkflow = new Mock<IDialogWorkflow>(MockBehavior.Strict);
+            localContext.Services.RemoveAll<IApiClient>();
+            localContext.Services.AddSingleton(apiClient.Object);
+            localContext.Services.RemoveAll<IManagedTimerFactory>();
+            localContext.Services.AddSingleton(managedTimerFactory.Object);
+            localContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            localContext.Services.AddSingleton(apiFeedbackWorkflow.Object);
+            localContext.Services.RemoveAll<IDialogWorkflow>();
+            localContext.Services.AddSingleton(dialogWorkflow.Object);
+            localContext.Render<MudPopoverProvider>();
+
+            _ = localContext.Render<TrackersTab>(parameters =>
+            {
+                parameters.AddCascadingValue("RefreshInterval", 10);
+                parameters.Add(p => p.Active, true);
+                parameters.Add(p => p.Hash, "Hash");
+            });
+
+            apiFeedbackWorkflow.Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<TorrentTracker>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

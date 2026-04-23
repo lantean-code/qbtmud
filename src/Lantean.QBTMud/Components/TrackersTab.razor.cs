@@ -289,13 +289,24 @@ namespace Lantean.QBTMud.Components
                 var trackersResult = await ApiClient.GetTorrentTrackersAsync(Hash);
                 if (trackersResult.IsFailure)
                 {
-                    if (trackersResult.Failure?.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    var failureKind = trackersResult.Failure?.Kind;
+                    await ApiFeedbackWorkflow.HandleFailureAsync(trackersResult, failure =>
                     {
-                        _timerCancellationToken.CancelIfNotDisposed();
+                        if (failure.Kind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                        {
+                            _timerCancellationToken.CancelIfNotDisposed();
+                        }
+
+                        return failure.Kind == ApiFailureKind.NotFound
+                            ? ApiFeedbackCustomFailureResult.StopHandling
+                            : ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    });
+
+                    if (failureKind is ApiFailureKind.AuthenticationRequired or ApiFailureKind.NotFound)
+                    {
                         return ManagedTimerTickResult.Stop;
                     }
 
-                    await ApiFeedbackWorkflow.HandleFailureAsync(trackersResult);
                     return ManagedTimerTickResult.Continue;
                 }
 

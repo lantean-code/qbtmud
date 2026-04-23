@@ -150,7 +150,7 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public async Task GIVEN_StartAll_WHEN_AuthenticationRequired_THEN_ShowsErrorWithoutNavigatingToLogin()
+        public async Task GIVEN_StartAll_WHEN_AuthenticationRequired_THEN_NavigatesToLoginWithoutShowingError()
         {
             var navigationManager = UseTestNavigationManager();
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
@@ -168,8 +168,8 @@ namespace Lantean.QBTMud.Test.Components
             var startItem = FindMenuItem(target, "StartAllTorrents");
             await target.InvokeAsync(() => startItem.Instance.OnClick.InvokeAsync());
 
-            navigationManager.Uri.Should().NotEndWith("/login");
-            snackbarMock.Verify(s => s.Add("Unauthorized", Severity.Error, null, null), Times.Once);
+            navigationManager.Uri.Should().EndWith("/login");
+            snackbarMock.Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>?>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -192,7 +192,7 @@ namespace Lantean.QBTMud.Test.Components
         }
 
         [Fact]
-        public async Task GIVEN_StopAll_WHEN_AuthenticationRequired_THEN_ShowsErrorWithoutNavigatingToLogin()
+        public async Task GIVEN_StopAll_WHEN_AuthenticationRequired_THEN_NavigatesToLoginWithoutShowingError()
         {
             var navigationManager = UseTestNavigationManager();
             var apiClientMock = TestContext.UseApiClientMock(MockBehavior.Strict);
@@ -210,8 +210,8 @@ namespace Lantean.QBTMud.Test.Components
             var stopItem = FindMenuItem(target, "StopAllTorrents");
             await target.InvokeAsync(() => stopItem.Instance.OnClick.InvokeAsync());
 
-            navigationManager.Uri.Should().NotEndWith("/login");
-            snackbarMock.Verify(s => s.Add("Unauthorized", Severity.Error, null, null), Times.Once);
+            navigationManager.Uri.Should().EndWith("/login");
+            snackbarMock.Verify(s => s.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>?>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]

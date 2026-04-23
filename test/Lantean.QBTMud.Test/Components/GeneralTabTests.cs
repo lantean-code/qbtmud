@@ -4,6 +4,7 @@ using Bunit;
 using Lantean.QBTMud.Components;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -71,6 +72,36 @@ namespace Lantean.QBTMud.Test.Components
             {
                 GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Pieces data unavailable");
             });
+        }
+
+        [Fact]
+        public void GIVEN_ActiveTab_WHEN_PiecesRequestFails_THEN_RoutesFailureThroughWorkflow()
+        {
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
+            apiFeedbackWorkflow
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<PieceState>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
+            TestContext.Services.AddSingleton(apiFeedbackWorkflow.Object);
+
+            Mock.Get(_apiClient)
+                .Setup(c => c.GetTorrentPropertiesAsync("Hash"))
+                .ReturnsSuccessAsync(CreateProperties());
+            Mock.Get(_apiClient)
+                .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Message", HttpStatusCode.InternalServerError);
+
+            _ = RenderGeneralTab(true, "Hash");
+
+            apiFeedbackWorkflow.Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<PieceState>>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -147,6 +178,7 @@ namespace Lantean.QBTMud.Test.Components
         [Fact]
         public async Task GIVEN_ActiveTab_WHEN_TimerTicksAndPropertiesForbidden_THEN_ShowsPiecesUnavailable()
         {
+            var navigationManager = TestContext.Services.GetRequiredService<NavigationManager>();
             Mock.Get(_apiClient)
                 .SetupSequence(c => c.GetTorrentPropertiesAsync("Hash"))
                 .ReturnsAsync(CreateProperties())
@@ -162,6 +194,7 @@ namespace Lantean.QBTMud.Test.Components
             {
                 GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("Pieces data unavailable");
             });
+            navigationManager.Uri.Should().EndWith("/login");
         }
 
         [Fact]
@@ -204,6 +237,43 @@ namespace Lantean.QBTMud.Test.Components
             {
                 GetChildContentText(FindComponentByTestId<MudText>(target, "PiecesLinearSummary").Instance.ChildContent).Should().Be("100% complete — 2 downloaded, 0 in progress");
             });
+        }
+
+        [Fact]
+        public async Task GIVEN_ActiveTab_WHEN_TimerTicksAndPropertiesServerError_THEN_ReturnsContinue()
+        {
+            Mock.Get(_apiClient)
+                .SetupSequence(c => c.GetTorrentPropertiesAsync("Hash"))
+                .ReturnsAsync(CreateProperties())
+                .ReturnsFailure(ApiFailureKind.ServerError, "Message", HttpStatusCode.InternalServerError);
+            Mock.Get(_apiClient)
+                .Setup(c => c.GetTorrentPieceStatesAsync("Hash"))
+                .ReturnsSuccessAsync(new[] { PieceState.Downloaded });
+
+            var target = RenderGeneralTab(true, "Hash");
+
+            var result = await TriggerTimerTickAsync(target);
+
+            result.Should().Be(ManagedTimerTickResult.Continue);
+        }
+
+        [Fact]
+        public async Task GIVEN_ActiveTab_WHEN_TimerTicksAndPiecesServerError_THEN_ReturnsContinue()
+        {
+            Mock.Get(_apiClient)
+                .SetupSequence(c => c.GetTorrentPropertiesAsync("Hash"))
+                .ReturnsAsync(CreateProperties())
+                .ReturnsAsync(CreateProperties());
+            Mock.Get(_apiClient)
+                .SetupSequence(c => c.GetTorrentPieceStatesAsync("Hash"))
+                .ReturnsAsync(new[] { PieceState.Downloaded })
+                .ReturnsFailure(ApiFailureKind.ServerError, "Message", HttpStatusCode.InternalServerError);
+
+            var target = RenderGeneralTab(true, "Hash");
+
+            var result = await TriggerTimerTickAsync(target);
+
+            result.Should().Be(ManagedTimerTickResult.Continue);
         }
 
         [Fact]
@@ -251,10 +321,10 @@ namespace Lantean.QBTMud.Test.Components
             });
         }
 
-        private async Task TriggerTimerTickAsync(IRenderedComponent<GeneralTab> target)
+        private async Task<ManagedTimerTickResult> TriggerTimerTickAsync(IRenderedComponent<GeneralTab> target)
         {
             var handler = GetTickHandler(target);
-            await target.InvokeAsync(() => handler(CancellationToken.None));
+            return await target.InvokeAsync(() => handler(CancellationToken.None));
         }
 
         private Func<CancellationToken, Task<ManagedTimerTickResult>> GetTickHandler(IRenderedComponent<GeneralTab> target)

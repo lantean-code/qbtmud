@@ -183,14 +183,22 @@ namespace Lantean.QBTMud.Pages
             var results = await ApiClient.GetPeerLogAsync(Model.LastKnownId);
             if (results.IsFailure)
             {
-                if (results.Failure?.Kind == ApiFailureKind.AuthenticationRequired)
-                {
-                    _timerCancellationToken.CancelIfNotDisposed();
-                    return ManagedTimerTickResult.Stop;
-                }
+                await ApiFeedbackWorkflow.HandleFailureAsync(
+                    results,
+                    failure =>
+                    {
+                        if (failure.Kind == ApiFailureKind.AuthenticationRequired)
+                        {
+                            _timerCancellationToken.CancelIfNotDisposed();
+                        }
 
-                await ApiFeedbackWorkflow.HandleFailureAsync(results);
-                return ManagedTimerTickResult.Continue;
+                        return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    },
+                    cancellationToken: cancellationToken);
+
+                return results.Failure?.Kind == ApiFailureKind.AuthenticationRequired
+                    ? ManagedTimerTickResult.Stop
+                    : ManagedTimerTickResult.Continue;
             }
 
             var peerLogs = results.Value;

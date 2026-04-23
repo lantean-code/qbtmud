@@ -39,9 +39,6 @@ namespace Lantean.QBTMud.Pages
         protected IApiClient ApiClient { get; set; } = default!;
 
         [Inject]
-        protected ILostConnectionWorkflow LostConnectionWorkflow { get; set; } = default!;
-
-        [Inject]
         protected IDialogWorkflow DialogWorkflow { get; set; } = default!;
 
         [Inject]
@@ -172,7 +169,7 @@ namespace Lantean.QBTMud.Pages
             var statusesResult = await ApiClient.GetSearchesStatusAsync();
             if (statusesResult.IsFailure)
             {
-                if (await TryHandleSearchRequestFailureAsync(statusesResult.Failure!))
+                if (await TryHandleSearchRequestFailureAsync(statusesResult))
                 {
                     return;
                 }
@@ -272,7 +269,7 @@ namespace Lantean.QBTMud.Pages
             var stopResult = await ApiClient.StopSearchAsync(job.Id);
             if (stopResult.IsFailure)
             {
-                if (!await TryHandleSearchRequestFailureAsync(stopResult.Failure!))
+                if (!await TryHandleSearchRequestFailureAsync(stopResult))
                 {
                     SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to stop \"%1\": %2", job.Pattern, stopResult.Failure!.UserMessage), Severity.Error);
                 }
@@ -466,7 +463,7 @@ namespace Lantean.QBTMud.Pages
                 EnsureSelectedPluginsValid();
                 EnsureValidCategory();
 
-                if (await TryHandleSearchRequestFailureAsync(pluginsResult.Failure!))
+                if (await TryHandleSearchRequestFailureAsync(pluginsResult))
                 {
                     return;
                 }
@@ -630,7 +627,7 @@ namespace Lantean.QBTMud.Pages
             var statusesResult = await ApiClient.GetSearchesStatusAsync();
             if (statusesResult.IsFailure)
             {
-                if (await TryHandlePollingRequestFailureAsync(statusesResult.Failure!))
+                if (await TryHandlePollingRequestFailureAsync(statusesResult))
                 {
                     return;
                 }
@@ -698,7 +695,7 @@ namespace Lantean.QBTMud.Pages
                     return;
                 }
 
-                if (await TryHandleSearchRequestFailureAsync(resultsResult.Failure!))
+                if (await TryHandleSearchRequestFailureAsync(resultsResult))
                 {
                     return;
                 }
@@ -766,7 +763,7 @@ namespace Lantean.QBTMud.Pages
             var searchIdResult = await ApiClient.StartSearchAsync(pattern, plugins, category);
             if (searchIdResult.IsFailure)
             {
-                if (!await TryHandleSearchRequestFailureAsync(searchIdResult.Failure!))
+                if (!await TryHandleSearchRequestFailureAsync(searchIdResult))
                 {
                     SnackbarWorkflow.ShowTransientMessage(TranslateSearch("Failed to start search: %1", searchIdResult.Failure!.UserMessage), Severity.Error);
                 }
@@ -1180,9 +1177,8 @@ namespace Lantean.QBTMud.Pages
             return JSRuntime.InvokeVoidAsync("open", url, url).AsTask();
         }
 
-        private async Task MarkLostConnection()
+        private void ApplyLostConnectionState()
         {
-            await LostConnectionWorkflow.MarkLostConnectionAsync();
             _timerCancellationToken.CancelIfNotDisposed();
 
             foreach (var job in _jobs)
@@ -1216,18 +1212,45 @@ namespace Lantean.QBTMud.Pages
             return $"{LanguageLocalizer.Translate("SearchJobWidget", "Copy")} {LanguageLocalizer.Translate("SearchJobWidget", source)}";
         }
 
-        private async Task<bool> TryHandleSearchRequestFailureAsync(ApiFailure failure)
+        private async Task<bool> TryHandleSearchRequestFailureAsync(ApiResultBase result)
         {
+            if (result.IsSuccess)
+            {
+                return false;
+            }
+
+            var failure = result.Failure!;
+            if (!failure.IsAuthenticationFailure() && !failure.IsConnectivityFailure())
+            {
+                return false;
+            }
+
+            await ApiFeedbackWorkflow.HandleFailureAsync(
+                result,
+                failure =>
+                {
+                    if (failure.IsAuthenticationFailure())
+                    {
+                        _timerCancellationToken.CancelIfNotDisposed();
+                        return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    }
+
+                    if (failure.IsConnectivityFailure())
+                    {
+                        ApplyLostConnectionState();
+                        return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    }
+
+                    return ApiFeedbackCustomFailureResult.StopHandling;
+                });
+
             if (failure.IsAuthenticationFailure())
             {
-                _timerCancellationToken.CancelIfNotDisposed();
-                NavigationManager.NavigateTo("login", forceLoad: true);
                 return true;
             }
 
             if (failure.IsConnectivityFailure())
             {
-                await MarkLostConnection();
                 await InvokeAsync(StateHasChanged);
                 return true;
             }
@@ -1235,34 +1258,51 @@ namespace Lantean.QBTMud.Pages
             return false;
         }
 
-        private async Task<bool> TryHandlePollingRequestFailureAsync(ApiFailure failure)
+        private async Task<bool> TryHandlePollingRequestFailureAsync(ApiResultBase result)
         {
-            if (failure.IsAuthenticationFailure())
+            if (result.IsSuccess)
             {
-                _timerCancellationToken.CancelIfNotDisposed();
-                NavigationManager.NavigateTo("login", forceLoad: true);
-                return true;
+                return false;
             }
+
+            var failure = result.Failure!;
+
+            await ApiFeedbackWorkflow.HandleFailureAsync(
+                result,
+                failure =>
+                {
+                    if (failure.IsAuthenticationFailure())
+                    {
+                        _timerCancellationToken.CancelIfNotDisposed();
+                        return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    }
+
+                    if (failure.IsConnectivityFailure())
+                    {
+                        ApplyLostConnectionState();
+                        return ApiFeedbackCustomFailureResult.ContinueWithWorkflow;
+                    }
+
+                    foreach (var job in _jobs)
+                    {
+                        job.SetError(TranslateSearch("Search polling failed."));
+                    }
+
+                    SnackbarWorkflow.ShowLocalizedMessage(
+                        "AppSearch",
+                        "Search polling failed: %1",
+                        Severity.Error,
+                        configure: null,
+                        key: _searchPollingApiErrorSnackbarKey,
+                        failure.UserMessage);
+                    return ApiFeedbackCustomFailureResult.StopHandling;
+                });
 
             if (failure.IsConnectivityFailure())
             {
-                await MarkLostConnection();
                 await InvokeAsync(StateHasChanged);
-                return true;
             }
 
-            foreach (var job in _jobs)
-            {
-                job.SetError(TranslateSearch("Search polling failed."));
-            }
-
-            SnackbarWorkflow.ShowLocalizedMessage(
-                "AppSearch",
-                "Search polling failed: %1",
-                Severity.Error,
-                configure: null,
-                key: _searchPollingApiErrorSnackbarKey,
-                failure.UserMessage);
             return true;
         }
 
@@ -1270,7 +1310,7 @@ namespace Lantean.QBTMud.Pages
         {
             if (result.IsFailure)
             {
-                if (await TryHandleSearchRequestFailureAsync(result.Failure!))
+                if (await TryHandleSearchRequestFailureAsync(result))
                 {
                     return true;
                 }
@@ -1280,16 +1320,6 @@ namespace Lantean.QBTMud.Pages
             }
 
             return false;
-        }
-
-        private string GetDefaultApiFailureMessage(ApiFailure? failure)
-        {
-            if (!string.IsNullOrWhiteSpace(failure?.UserMessage))
-            {
-                return failure.UserMessage;
-            }
-
-            return LanguageLocalizer.Translate("HttpServer", "qBittorrent returned an error. Please try again.");
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

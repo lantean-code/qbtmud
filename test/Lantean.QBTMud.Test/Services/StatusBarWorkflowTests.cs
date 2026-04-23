@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Services.Localization;
+using Microsoft.AspNetCore.Components;
 using Moq;
 using MudBlazor;
 using QBittorrent.ApiClient;
@@ -14,6 +15,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly ISnackbar _snackbar = Mock.Of<ISnackbar>(MockBehavior.Loose);
         private readonly ILostConnectionWorkflow _lostConnectionWorkflow = Mock.Of<ILostConnectionWorkflow>();
         private readonly ILanguageLocalizer _languageLocalizer = Mock.Of<ILanguageLocalizer>();
+        private readonly TestNavigationManager _navigationManager = new();
         private readonly ISnackbarWorkflow _snackbarWorkflow;
         private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
@@ -23,7 +25,7 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(localizer => localizer.Translate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>()))
                 .Returns((string _, string source, object[] arguments) => FormatLocalizedString(source, arguments));
             _snackbarWorkflow = new SnackbarWorkflow(_languageLocalizer, _snackbar);
-            _apiFeedbackWorkflow = new ApiFeedbackWorkflow(_lostConnectionWorkflow, _snackbarWorkflow, _languageLocalizer);
+            _apiFeedbackWorkflow = new ApiFeedbackWorkflow(_lostConnectionWorkflow, _snackbarWorkflow, _languageLocalizer, _navigationManager);
         }
 
         [Fact]
@@ -185,6 +187,20 @@ namespace Lantean.QBTMud.Test.Services
             }
 
             return result;
+        }
+
+        private sealed class TestNavigationManager : NavigationManager
+        {
+            public TestNavigationManager()
+            {
+                Initialize("http://localhost/", "http://localhost/");
+            }
+
+            protected override void NavigateToCore(string uri, bool forceLoad)
+            {
+                Uri = ToAbsoluteUri(uri).ToString();
+                NotifyLocationChanged(false);
+            }
         }
     }
 }

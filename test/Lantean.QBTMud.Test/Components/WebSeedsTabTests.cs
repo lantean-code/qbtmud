@@ -50,6 +50,30 @@ namespace Lantean.QBTMud.Test.Components
             TestContext.Services.AddSingleton(_languageLocalizer);
 
             _apiFeedbackWorkflow = Mock.Of<IApiFeedbackWorkflow>();
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                    It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns<ApiResult<IReadOnlyList<WebSeed>>, Func<ApiFailure, ApiFeedbackCustomFailureResult>, Func<string?, string>?, MudBlazor.Severity, CancellationToken>(
+                    (result, handleCustomFailure, _, _, _) =>
+                    {
+                        if (result.IsFailure && result.Failure is not null)
+                        {
+                            handleCustomFailure(result.Failure);
+                        }
+
+                        return Task.CompletedTask;
+                    });
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
             TestContext.Services.RemoveAll<IApiFeedbackWorkflow>();
             TestContext.Services.AddSingleton(_apiFeedbackWorkflow);
         }
@@ -147,6 +171,12 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -163,6 +193,12 @@ namespace Lantean.QBTMud.Test.Components
             var result = await TriggerTimerTickAsync(target, global::Xunit.TestContext.Current.CancellationToken);
 
             result.Should().Be(ManagedTimerTickResult.Stop);
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
+                It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
+                It.IsAny<Func<string?, string>?>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -171,13 +207,6 @@ namespace Lantean.QBTMud.Test.Components
             Mock.Get(_apiClient)
                 .Setup(client => client.GetTorrentWebSeedsAsync("Hash"))
                 .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
-            Mock.Get(_apiFeedbackWorkflow)
-                .Setup(workflow => workflow.HandleFailureAsync(
-                    It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
-                    It.IsAny<Func<string?, string>?>(),
-                    It.IsAny<MudBlazor.Severity>(),
-                    It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
 
             var target = RenderTarget();
             await SetParametersAsync(target, active: true, hash: "Hash");
@@ -196,13 +225,6 @@ namespace Lantean.QBTMud.Test.Components
                 .SetupSequence(client => client.GetTorrentWebSeedsAsync("Hash"))
                 .ReturnsAsync(new[] { new WebSeed("http://seed-1") })
                 .ReturnsFailure(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
-            Mock.Get(_apiFeedbackWorkflow)
-                .Setup(workflow => workflow.HandleFailureAsync(
-                    It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
-                    It.IsAny<Func<string?, string>?>(),
-                    It.IsAny<MudBlazor.Severity>(),
-                    It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
 
             var target = RenderTarget();
             await SetParametersAsync(target, active: true, hash: "Hash");
@@ -212,6 +234,7 @@ namespace Lantean.QBTMud.Test.Components
             result.Should().Be(ManagedTimerTickResult.Continue);
             Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
                 It.IsAny<ApiResult<IReadOnlyList<WebSeed>>>(),
+                It.IsAny<Func<ApiFailure, ApiFeedbackCustomFailureResult>>(),
                 It.IsAny<Func<string?, string>?>(),
                 It.IsAny<MudBlazor.Severity>(),
                 It.IsAny<CancellationToken>()), Times.Once);
