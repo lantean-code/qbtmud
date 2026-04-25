@@ -401,15 +401,20 @@ namespace Lantean.QBTMud.Layout
             }
 
             _toggleAltSpeedLimitsInProgress = true;
-            var isEnabled = await StatusBarWorkflow.ToggleAlternativeSpeedLimitsAsync(_timerCancellationToken.Token);
-            if (isEnabled.HasValue && MainData is not null)
+            try
             {
-                MainData.ServerState.UseAltSpeedLimits = isEnabled.Value;
+                var isEnabled = await StatusBarWorkflow.ToggleAlternativeSpeedLimitsAsync(_timerCancellationToken.Token);
+                if (isEnabled.HasValue && MainData is not null)
+                {
+                    MainData.ServerState.UseAltSpeedLimits = isEnabled.Value;
+                }
             }
+            finally
+            {
+                _toggleAltSpeedLimitsInProgress = false;
 
-            _toggleAltSpeedLimitsInProgress = false;
-
-            await InvokeAsync(StateHasChanged);
+                await InvokeAsync(StateHasChanged);
+            }
         }
 
         protected async Task ShowGlobalDownloadRateLimit()

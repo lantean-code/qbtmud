@@ -792,6 +792,12 @@ namespace Lantean.QBTMud.Pages
             }
 
             var deleteResult = await ApiClient.DeleteSearchAsync(job.Id);
+            if (deleteResult.Failure?.Kind == ApiFailureKind.NotFound)
+            {
+                await RemoveJobMetadataAsync(job.Id);
+                return true;
+            }
+
             if (await TryHandleSearchCommandFailureAsync(deleteResult))
             {
                 return false;

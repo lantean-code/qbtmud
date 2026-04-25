@@ -1536,6 +1536,24 @@ namespace Lantean.QBTMud.Test.Layout
         }
 
         [Fact]
+        public async Task GIVEN_AlternativeSpeedLimitToggleThrows_WHEN_Clicked_THEN_AllowsRetry()
+        {
+            var mainData = CreateMainData(serverState: CreateServerState(useAltSpeedLimits: false));
+
+            Mock.Get(_apiClient)
+                .Setup(c => c.ToggleAlternativeSpeedLimitsAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Toggle failed"));
+
+            var target = RenderLayout(new List<IManagedTimer>(), mainData: mainData);
+            var button = FindComponentByTestId<MudIconButton>(target, "Status-AltSpeedButton");
+
+            var act = async () => await button.Find("button").ClickAsync(new MouseEventArgs());
+
+            await act.Should().ThrowAsync<InvalidOperationException>();
+            button.Instance.Disabled.Should().BeFalse();
+        }
+
+        [Fact]
         public async Task GIVEN_GlobalDownloadRateDialogConfirmed_WHEN_StatusBarIndicatorClicked_THEN_UpdatesStateAndRenderedText()
         {
             var serverState = CreateServerState();
