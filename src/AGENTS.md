@@ -50,10 +50,11 @@
   - If you must keep a background task, add explicit exception handling and a clear shutdown/cancellation path.
 
 ### Routing Safety (qBittorrent Host)
-- qBittorrent only serves `index.html`; force-loading arbitrary URLs breaks navigation.
+- Hash routing (default/direct qBittorrent WebUI hosting): qBittorrent only serves the app entry point, so internal force-loads must be handled by the configured hash-routing `NavigationManager` (for example, `login` becomes `/#/login` before reload).
+- Proxy/path routing: only use path-style internal URLs or path-routed force-loads when the reverse proxy is explicitly configured to serve the app entry point for every qbtmud route. Without that fallback, deep links such as `/login` or `/details/{hash}` can fail on refresh.
 - Never use `NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true)`.
-- Do not call `NavigationManager.NavigateTo(..., forceLoad: true)` directly in components/services/pages; use the `NavigateToHome` helper.
-- If force-load is required, always call `NavigationManager.NavigateToHome(forceLoad: true)`.
+- Use `NavigationManager.NavigateToHome(forceLoad: true)` when reloading the app root.
+- Do not use `NavigationManager.NavigateTo(..., forceLoad: true)` for external URLs or for routes that are not valid in the active routing setup.
 
 ### UI Composition (MudBlazor)
 - When implementing or updating UI, prefer MudBlazor components for structure, layout, spacing, and interaction behavior.
