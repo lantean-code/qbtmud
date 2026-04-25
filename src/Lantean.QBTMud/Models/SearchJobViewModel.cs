@@ -77,6 +77,7 @@ namespace Lantean.QBTMud.Models
 
         public void SetError(string message)
         {
+            Status = SearchJobStatus.Stopped;
             ErrorMessage = message;
             CompletedOn ??= DateTimeOffset.UtcNow;
         }

@@ -142,6 +142,10 @@ namespace Lantean.QBTMud.Services
             {
                 await Task.WhenAll(appSettingsTask, preferencesResultTask, versionResultTask, mainDataResultTask);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception exception)
             {
                 return HandleLoadFailure(

@@ -306,6 +306,36 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_LoadTaskCanceled_WHEN_LoadingShellSession_THEN_ShouldRethrowCancellation()
+        {
+            var target = CreateTarget();
+            using var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+            Mock.Get(_apiClient)
+                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(true);
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(CreatePreferences("en"));
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationVersionAsync(It.IsAny<CancellationToken>()))
+                .Returns(() => Task.FromCanceled<ApiResult<string>>(cancellationTokenSource.Token));
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetMainDataAsync(0, It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(CreateClientMainData());
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(AppSettings.Default.Clone());
+
+            var action = async () => await target.LoadAsync(cancellationTokenSource.Token);
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_RefreshReturnsFullUpdate_WHEN_RefreshingShellSession_THEN_ShouldRecreateMainDataAndReturnUpdated()
         {
             var target = CreateTarget();

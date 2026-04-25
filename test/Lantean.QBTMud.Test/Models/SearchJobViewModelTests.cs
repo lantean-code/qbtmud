@@ -43,6 +43,20 @@ namespace Lantean.QBTMud.Test.Models
         }
 
         [Fact]
+        public void GIVEN_RunningSearchJob_WHEN_SetErrorCalled_THEN_JobStopsRunning()
+        {
+            var job = new SearchJobViewModel(1, "Ubuntu", new[] { "movies" }, SearchForm.AllCategoryId);
+
+            job.SetError("failed");
+
+            job.Status.Should().Be(SearchJobStatus.Stopped);
+            job.IsRunning.Should().BeFalse();
+            job.IsStopped.Should().BeTrue();
+            job.ErrorMessage.Should().Be("failed");
+            job.CompletedOn.Should().NotBeNull();
+        }
+
+        [Fact]
         public void GIVEN_SearchJob_WHEN_MatchesCalled_THEN_ComparesAllCriteria()
         {
             var job = new SearchJobViewModel(2, "Ubuntu", new[] { "movies", "tv" }, SearchForm.AllCategoryId);

@@ -2459,7 +2459,7 @@ namespace Lantean.QBTMud.Test.Pages
 
             snackbarMock.Verify();
             var statusIcon = FindComponentByTestId<MudIcon>(target, "JobStatusIcon");
-            statusIcon.Instance.Icon.Should().Be(Icons.Material.Filled.Sync);
+            statusIcon.Instance.Icon.Should().Be(Icons.Material.Filled.Stop);
         }
 
         [Fact]
