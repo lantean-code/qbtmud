@@ -2539,6 +2539,46 @@ namespace Lantean.QBTMud.Test.Pages
         }
 
         [Fact]
+        public async Task GIVEN_StaleRunningServerJob_WHEN_CloseAllJobsClicked_THEN_RemovesLocalJob()
+        {
+            var jobId = 914;
+            await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences(), Xunit.TestContext.Current.CancellationToken);
+            await TestContext.LocalStorage.SetItemAsync(_jobsStorageKey, new List<SearchJobMetadata>
+            {
+                new SearchJobMetadata { Id = jobId, Pattern = "StaleRunning", Plugins = new List<string> { "movies" } }
+            }, Xunit.TestContext.Current.CancellationToken);
+
+            var plugin = new SearchPlugin(true, "Movies", "movies", new[] { new SearchCategory("movies", "Movies") }, "http://plugins/movies", "1.0");
+            var apiMock = TestContext.UseApiClientMock();
+            apiMock.Setup(client => client.GetSearchPluginsAsync()).ReturnsSuccessAsync(new List<SearchPlugin> { plugin });
+            apiMock.Setup(client => client.GetSearchesStatusAsync()).ReturnsSuccessAsync(new List<SearchStatus> { new SearchStatus(jobId, SearchJobStatus.Running, 0) });
+            apiMock.Setup(client => client.GetSearchResultsAsync(jobId, It.IsAny<int>(), It.IsAny<int>())).ReturnsSuccessAsync(new SearchResults(new List<SearchResult>(), SearchJobStatus.Running, 0));
+            apiMock.Setup(client => client.StopSearchAsync(jobId))
+                .ReturnsFailure(ApiFailureKind.NotFound, "Not found", HttpStatusCode.NotFound);
+            apiMock.Setup(client => client.DeleteSearchAsync(jobId))
+                .ReturnsFailure(ApiFailureKind.NotFound, "Not found", HttpStatusCode.NotFound);
+
+            TestContext.Render<MudPopoverProvider>();
+            TestContext.Render<MudSnackbarProvider>();
+
+            var target = TestContext.Render<Search>();
+            var closeAllButton = FindComponentByTestId<MudIconButton>(target, "CloseAllJobsButton");
+            await target.InvokeAsync(() => closeAllButton.Find("button").Click());
+
+            target.WaitForAssertion(() =>
+            {
+                target.FindComponents<DynamicTable<SearchResult>>().Should().BeEmpty();
+            });
+
+            apiMock.Verify(client => client.StopSearchAsync(jobId), Times.Once());
+            apiMock.Verify(client => client.DeleteSearchAsync(jobId), Times.Once());
+
+            var stored = await TestContext.LocalStorage.GetItemAsync<List<SearchJobMetadata>>(_jobsStorageKey, Xunit.TestContext.Current.CancellationToken);
+            stored.Should().NotBeNull();
+            stored!.Should().BeEmpty();
+        }
+
+        [Fact]
         public async Task GIVEN_PluginSelectionDelegate_WHEN_Invoked_THEN_NullAndJoinedTextPathsReturned()
         {
             await TestContext.LocalStorage.SetItemAsync(_preferencesStorageKey, new SearchPreferences

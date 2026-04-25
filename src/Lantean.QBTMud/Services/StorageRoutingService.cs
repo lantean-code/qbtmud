@@ -103,7 +103,10 @@ namespace Lantean.QBTMud.Services
                     continue;
                 }
 
-                await MigrateCatalogItemAsync(item, currentStorageType, targetStorageType, cancellationToken);
+                if (!await MigrateCatalogItemAsync(item, currentStorageType, targetStorageType, cancellationToken))
+                {
+                    return currentSettings;
+                }
             }
 
             await _localStorageService.SetItemAsync(StorageRoutingSettings.StorageKey, normalizedSettings, cancellationToken);
@@ -152,12 +155,11 @@ namespace Lantean.QBTMud.Services
             return settings.MasterStorageType;
         }
 
-        private async Task MigrateCatalogItemAsync(StorageCatalogItemDefinition item, StorageType sourceStorageType, StorageType targetStorageType, CancellationToken cancellationToken)
+        private async Task<bool> MigrateCatalogItemAsync(StorageCatalogItemDefinition item, StorageType sourceStorageType, StorageType targetStorageType, CancellationToken cancellationToken)
         {
             if (item.MatchMode == StorageCatalogItemMatchMode.ExactKey)
             {
-                await MigrateStorageKeyAsync(item.MatchPattern, item.SerializationMode, sourceStorageType, targetStorageType, cancellationToken);
-                return;
+                return await MigrateStorageKeyAsync(item.MatchPattern, item.SerializationMode, sourceStorageType, targetStorageType, cancellationToken);
             }
 
             if (sourceStorageType == StorageType.LocalStorage)
@@ -165,13 +167,22 @@ namespace Lantean.QBTMud.Services
                 var localEntries = await GetLocalEntriesByPrefixAsync(item.MatchPattern, cancellationToken);
                 foreach (var entry in localEntries)
                 {
-                    await MigrateStorageKeyAsync(entry.Key, item.SerializationMode, sourceStorageType, targetStorageType, cancellationToken, sourceLocalValue: entry.Value);
+                    if (!await MigrateStorageKeyAsync(entry.Key, item.SerializationMode, sourceStorageType, targetStorageType, cancellationToken, sourceLocalValue: entry.Value))
+                    {
+                        return false;
+                    }
                 }
 
-                return;
+                return true;
             }
 
-            var clientEntries = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync(cancellationToken);
+            var clientEntriesResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync(cancellationToken);
+            if (!clientEntriesResult.Succeeded || clientEntriesResult.Entries is null)
+            {
+                return false;
+            }
+
+            var clientEntries = clientEntriesResult.Entries;
             foreach (var entry in clientEntries)
             {
                 var unprefixedKey = ToUnprefixedKey(entry.Key);
@@ -185,11 +196,16 @@ namespace Lantean.QBTMud.Services
                     continue;
                 }
 
-                await MigrateStorageKeyAsync(unprefixedKey, item.SerializationMode, sourceStorageType, targetStorageType, cancellationToken, sourceClientValue: entry.Value);
+                if (!await MigrateStorageKeyAsync(unprefixedKey, item.SerializationMode, sourceStorageType, targetStorageType, cancellationToken, sourceClientValue: entry.Value))
+                {
+                    return false;
+                }
             }
+
+            return true;
         }
 
-        private async Task MigrateStorageKeyAsync(
+        private async Task<bool> MigrateStorageKeyAsync(
             string key,
             StorageItemSerializationMode serializationMode,
             StorageType sourceStorageType,
@@ -205,21 +221,26 @@ namespace Lantean.QBTMud.Services
                 var localValue = sourceLocalValue ?? await _localStorageService.GetItemAsStringAsync(key, cancellationToken);
                 if (localValue is null)
                 {
-                    return;
+                    return true;
                 }
 
                 object? valueToStore = serializationMode == StorageItemSerializationMode.RawString
                     ? localValue
                     : ParseJsonElement(localValue);
 
-                await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
+                var storeResult = await _clientDataStorageAdapter.StorePrefixedEntriesAsync(
                     new Dictionary<string, object?>(StringComparer.Ordinal)
                     {
                         [prefixedKey] = valueToStore
                     },
                     cancellationToken);
+                if (!storeResult.Succeeded)
+                {
+                    return false;
+                }
+
                 await _localStorageService.RemoveItemAsync(key, cancellationToken);
-                return;
+                return true;
             }
 
             if (sourceStorageType == StorageType.ClientData && targetStorageType == StorageType.LocalStorage)
@@ -227,10 +248,16 @@ namespace Lantean.QBTMud.Services
                 JsonElement? clientValue = sourceClientValue;
                 if (!clientValue.HasValue)
                 {
-                    var loaded = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync([prefixedKey], cancellationToken);
+                    var loadedResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync([prefixedKey], cancellationToken);
+                    if (!loadedResult.Succeeded || loadedResult.Entries is null)
+                    {
+                        return false;
+                    }
+
+                    var loaded = loadedResult.Entries;
                     if (!loaded.TryGetValue(prefixedKey, out var loadedValue))
                     {
-                        return;
+                        return true;
                     }
 
                     clientValue = loadedValue;
@@ -246,8 +273,11 @@ namespace Lantean.QBTMud.Services
                     await _localStorageService.SetItemAsStringAsync(key, localValue, cancellationToken);
                 }
 
-                await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([prefixedKey], cancellationToken);
+                var removeResult = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([prefixedKey], cancellationToken);
+                return removeResult.Succeeded;
             }
+
+            return true;
         }
 
         private async Task<IReadOnlyDictionary<string, string?>> GetLocalEntriesByPrefixAsync(string keyPrefix, CancellationToken cancellationToken)

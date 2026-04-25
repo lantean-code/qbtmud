@@ -785,7 +785,8 @@ namespace Lantean.QBTMud.Pages
             if (job.IsRunning)
             {
                 var stopResult = await ApiClient.StopSearchAsync(job.Id);
-                if (await TryHandleSearchCommandFailureAsync(stopResult))
+                if (stopResult.Failure?.Kind != ApiFailureKind.NotFound
+                    && await TryHandleSearchCommandFailureAsync(stopResult))
                 {
                     return false;
                 }

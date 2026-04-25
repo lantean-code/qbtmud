@@ -43,7 +43,8 @@ namespace Lantean.QBTMud.Test.Services
         {
             var result = await _target.LoadPrefixedEntriesAsync(["", " ", "NotPrefixed", "Other"], TestContext.Current.CancellationToken);
 
-            result.Should().BeEmpty();
+            result.Succeeded.Should().BeTrue();
+            result.Entries.Should().BeEmpty();
             Mock.Get(_apiClient).Verify(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>()), Times.Never);
         }
 
@@ -63,7 +64,9 @@ namespace Lantean.QBTMud.Test.Services
                 [" QbtMud.KeyA ", "QbtMud.KeyB", "QbtMud.KeyA", "NotPrefixed", ""],
                 TestContext.Current.CancellationToken);
 
-            result.Keys.Should().Equal("QbtMud.KeyA", "QbtMud.KeyB");
+            result.Succeeded.Should().BeTrue();
+            result.Entries.Should().NotBeNull();
+            result.Entries!.Keys.Should().Equal("QbtMud.KeyA", "QbtMud.KeyB");
 
             Mock.Get(_apiClient)
                 .Verify(client => client.LoadClientDataAsync(It.Is<IEnumerable<string>?>(keys =>
@@ -87,12 +90,14 @@ namespace Lantean.QBTMud.Test.Services
 
             var result = await _target.LoadPrefixedEntriesAsync(TestContext.Current.CancellationToken);
 
-            result.Should().ContainKey("QbtMud.One");
-            result.Should().NotContainKey("Two");
+            result.Succeeded.Should().BeTrue();
+            result.Entries.Should().NotBeNull();
+            result.Entries!.Should().ContainKey("QbtMud.One");
+            result.Entries.Should().NotContainKey("Two");
         }
 
         [Fact]
-        public async Task GIVEN_LoadWithKeysFails_WHEN_LoadPrefixedEntriesAsyncWithKeys_THEN_ShouldReturnEmpty()
+        public async Task GIVEN_LoadWithKeysFails_WHEN_LoadPrefixedEntriesAsyncWithKeys_THEN_ShouldReturnFailure()
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
@@ -107,7 +112,8 @@ namespace Lantean.QBTMud.Test.Services
 
             var result = await _target.LoadPrefixedEntriesAsync(["QbtMud.Key"], TestContext.Current.CancellationToken);
 
-            result.Should().BeEmpty();
+            result.Succeeded.Should().BeFalse();
+            result.Entries.Should().BeNull();
             Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
                 It.IsAny<ApiResult<IReadOnlyDictionary<string, JsonElement>>>(),
                 It.IsAny<Func<string?, string>?>(),
@@ -116,7 +122,7 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_LoadWithoutKeysFails_WHEN_LoadPrefixedEntriesAsyncWithoutKeys_THEN_ShouldReturnEmpty()
+        public async Task GIVEN_LoadWithoutKeysFails_WHEN_LoadPrefixedEntriesAsyncWithoutKeys_THEN_ShouldReturnFailure()
         {
             Mock.Get(_apiClient)
                 .Setup(client => client.LoadClientDataAsync(It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
@@ -131,7 +137,8 @@ namespace Lantean.QBTMud.Test.Services
 
             var result = await _target.LoadPrefixedEntriesAsync(TestContext.Current.CancellationToken);
 
-            result.Should().BeEmpty();
+            result.Succeeded.Should().BeFalse();
+            result.Entries.Should().BeNull();
             Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.HandleFailureAsync(
                 It.IsAny<ApiResult<IReadOnlyDictionary<string, JsonElement>>>(),
                 It.IsAny<Func<string?, string>?>(),
@@ -150,7 +157,7 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_NoValidValues_WHEN_StorePrefixedEntriesAsync_THEN_ShouldReturnWithoutCallingApi()
         {
-            await _target.StorePrefixedEntriesAsync(
+            var result = await _target.StorePrefixedEntriesAsync(
                 new Dictionary<string, object?>(StringComparer.Ordinal)
                 {
                     [""] = "A",
@@ -158,6 +165,7 @@ namespace Lantean.QBTMud.Test.Services
                 },
                 TestContext.Current.CancellationToken);
 
+            result.Succeeded.Should().BeTrue();
             Mock.Get(_apiClient).Verify(client => client.StoreClientDataAsync(It.IsAny<IReadOnlyDictionary<string, JsonElement?>>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -174,7 +182,7 @@ namespace Lantean.QBTMud.Test.Services
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            await _target.StorePrefixedEntriesAsync(
+            var result = await _target.StorePrefixedEntriesAsync(
                 new Dictionary<string, object?>(StringComparer.Ordinal)
                 {
                     [" QbtMud.K1 "] = "V1",
@@ -183,10 +191,38 @@ namespace Lantean.QBTMud.Test.Services
                 },
                 TestContext.Current.CancellationToken);
 
+            result.Succeeded.Should().BeTrue();
             Mock.Get(_apiClient)
                 .Verify(client => client.StoreClientDataAsync(
                     It.Is<IReadOnlyDictionary<string, JsonElement?>>(payload => MatchesStoredPayload(payload)),
                     It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.ProcessResultAsync(
+                It.IsAny<ApiResult>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_StoreFails_WHEN_StorePrefixedEntriesAsync_THEN_ShouldReturnFailure()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.StoreClientDataAsync(It.IsAny<IReadOnlyDictionary<string, JsonElement?>>(), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure");
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.ProcessResultAsync(
+                    It.IsAny<ApiResult>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _target.StorePrefixedEntriesAsync(
+                new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["QbtMud.K1"] = "V1"
+                },
+                TestContext.Current.CancellationToken);
+
+            result.Succeeded.Should().BeFalse();
             Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.ProcessResultAsync(
                 It.IsAny<ApiResult>(),
                 It.IsAny<MudBlazor.Severity>(),
@@ -204,8 +240,9 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_NoValidKeys_WHEN_RemovePrefixedEntriesAsync_THEN_ShouldReturnWithoutCallingApi()
         {
-            await _target.RemovePrefixedEntriesAsync(["", "NotPrefixed"], TestContext.Current.CancellationToken);
+            var result = await _target.RemovePrefixedEntriesAsync(["", "NotPrefixed"], TestContext.Current.CancellationToken);
 
+            result.Succeeded.Should().BeTrue();
             Mock.Get(_apiClient).Verify(client => client.DeleteClientDataAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -222,13 +259,36 @@ namespace Lantean.QBTMud.Test.Services
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            await _target.RemovePrefixedEntriesAsync(["QbtMud.Key", " QbtMud.Key ", "Other"], TestContext.Current.CancellationToken);
+            var result = await _target.RemovePrefixedEntriesAsync(["QbtMud.Key", " QbtMud.Key ", "Other"], TestContext.Current.CancellationToken);
 
+            result.Succeeded.Should().BeTrue();
             Mock.Get(_apiClient)
                 .Verify(client => client.DeleteClientDataAsync(It.Is<IEnumerable<string>>(
                     p => p.Count() == 1
                         && p.Contains("QbtMud.Key")
                     ), It.IsAny<CancellationToken>()), Times.Once);
+            Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.ProcessResultAsync(
+                It.IsAny<ApiResult>(),
+                It.IsAny<MudBlazor.Severity>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_RemoveFails_WHEN_RemovePrefixedEntriesAsync_THEN_ShouldReturnFailure()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.DeleteClientDataAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsFailure(ApiFailureKind.ServerError, "Failure");
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.ProcessResultAsync(
+                    It.IsAny<ApiResult>(),
+                    It.IsAny<MudBlazor.Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _target.RemovePrefixedEntriesAsync(["QbtMud.Key"], TestContext.Current.CancellationToken);
+
+            result.Succeeded.Should().BeFalse();
             Mock.Get(_apiFeedbackWorkflow).Verify(workflow => workflow.ProcessResultAsync(
                 It.IsAny<ApiResult>(),
                 It.IsAny<MudBlazor.Severity>(),
