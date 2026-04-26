@@ -654,7 +654,7 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_ClientDataStoreFails_WHEN_SavingClientDataRouting_THEN_ShouldReturnCurrentSettings()
+        public async Task GIVEN_ClientDataStoreFails_WHEN_SavingClientDataRouting_THEN_ShouldThrowInvalidOperationException()
         {
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
@@ -665,12 +665,13 @@ namespace Lantean.QBTMud.Test.Services
 
             await _localStorageService.SetItemAsStringAsync("AppSettings.State.v1", "{\"theme\":\"dark\"}", TestContext.Current.CancellationToken);
 
-            var result = await _target.SaveSettingsAsync(new StorageRoutingSettings
+            var act = async () => await _target.SaveSettingsAsync(new StorageRoutingSettings
             {
                 MasterStorageType = StorageType.ClientData
             }, TestContext.Current.CancellationToken);
 
-            result.MasterStorageType.Should().Be(StorageType.LocalStorage);
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("Unable to migrate storage item 'general.app-settings'.");
 
             var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v1", TestContext.Current.CancellationToken);
             localValue.Should().Be("{\"theme\":\"dark\"}");
@@ -680,7 +681,7 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_ClientDataLoadFails_WHEN_SavingLocalStorageRouting_THEN_ShouldReturnCurrentSettings()
+        public async Task GIVEN_ClientDataLoadFails_WHEN_SavingLocalStorageRouting_THEN_ShouldThrowInvalidOperationException()
         {
             await _localStorageService.SetItemAsync(StorageRoutingSettings.StorageKey, new StorageRoutingSettings
             {
@@ -693,12 +694,13 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataLoadResult.Failure);
 
-            var result = await _target.SaveSettingsAsync(new StorageRoutingSettings
+            var act = async () => await _target.SaveSettingsAsync(new StorageRoutingSettings
             {
                 MasterStorageType = StorageType.LocalStorage
             }, TestContext.Current.CancellationToken);
 
-            result.MasterStorageType.Should().Be(StorageType.ClientData);
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("Unable to migrate storage item 'general.app-settings'.");
 
             var persisted = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, TestContext.Current.CancellationToken);
             persisted.Should().NotBeNull();
@@ -706,7 +708,7 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
-        public async Task GIVEN_ClientDataRemoveFails_WHEN_SavingLocalStorageRouting_THEN_ShouldReturnCurrentSettings()
+        public async Task GIVEN_ClientDataRemoveFails_WHEN_SavingLocalStorageRouting_THEN_ShouldThrowInvalidOperationException()
         {
             await _localStorageService.SetItemAsync(StorageRoutingSettings.StorageKey, new StorageRoutingSettings
             {
@@ -728,15 +730,20 @@ namespace Lantean.QBTMud.Test.Services
                 .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ClientDataStorageResult.Failure);
 
-            var result = await _target.SaveSettingsAsync(new StorageRoutingSettings
+            var act = async () => await _target.SaveSettingsAsync(new StorageRoutingSettings
             {
                 MasterStorageType = StorageType.LocalStorage
             }, TestContext.Current.CancellationToken);
 
-            result.MasterStorageType.Should().Be(StorageType.ClientData);
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("Unable to migrate storage item 'general.app-settings'.");
 
             var localValue = await _localStorageService.GetItemAsStringAsync("AppSettings.State.v1", TestContext.Current.CancellationToken);
             localValue.Should().Be("{\"enabled\":true}");
+
+            var persisted = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, TestContext.Current.CancellationToken);
+            persisted.Should().NotBeNull();
+            persisted!.MasterStorageType.Should().Be(StorageType.ClientData);
         }
 
         [Fact]

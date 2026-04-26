@@ -105,7 +105,7 @@ namespace Lantean.QBTMud.Services
 
                 if (!await MigrateCatalogItemAsync(item, currentStorageType, targetStorageType, cancellationToken))
                 {
-                    return currentSettings;
+                    throw new InvalidOperationException($"Unable to migrate storage item '{item.Id}'.");
                 }
             }
 
