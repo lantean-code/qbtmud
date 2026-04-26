@@ -59,6 +59,7 @@ namespace Lantean.QBTMud.Test.Layout
             var apiClientMock = Mock.Get(_apiClient);
             apiClientMock.Setup(c => c.CheckAuthStateAsync()).ReturnsSuccessAsync(true);
             apiClientMock.Setup(c => c.CheckAuthStateAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(true);
+            apiClientMock.Setup(c => c.InitializeAsync(It.IsAny<CancellationToken>())).ReturnsSuccess(Task.CompletedTask);
             apiClientMock.Setup(c => c.GetApplicationPreferencesAsync()).ReturnsSuccessAsync(CreatePreferences());
             apiClientMock.Setup(c => c.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>())).ReturnsSuccessAsync(CreatePreferences());
             apiClientMock.Setup(c => c.GetApplicationVersionAsync()).ReturnsSuccessAsync("Version");

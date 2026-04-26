@@ -133,6 +133,32 @@ namespace Lantean.QBTMud.Services
                 return new ShellSessionLoadResult(ShellSessionLoadOutcome.AuthenticationRequired);
             }
 
+            ApiResult initializationResult;
+            try
+            {
+                initializationResult = await _apiClient.InitializeAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                return HandleLoadFailure(
+                    new ApiFailure
+                    {
+                        Kind = ApiFailureKind.UnexpectedResponse,
+                        Operation = operation,
+                        UserMessage = exception.Message,
+                        Detail = exception.Message
+                    });
+            }
+
+            if (initializationResult.IsFailure)
+            {
+                return HandleLoadFailure(initializationResult.Failure!);
+            }
+
             var appSettingsTask = _appSettingsService.RefreshSettingsAsync(cancellationToken);
             var preferencesResultTask = _apiClient.GetApplicationPreferencesAsync(cancellationToken);
             var versionResultTask = _apiClient.GetApplicationVersionAsync(cancellationToken);

@@ -47,6 +47,8 @@ namespace Lantean.QBTMud.Test.Services
             var result = await target.LoadAsync(Xunit.TestContext.Current.CancellationToken);
 
             result.Outcome.Should().Be(ShellSessionLoadOutcome.AuthenticationRequired);
+            Mock.Get(_apiClient)
+                .Verify(client => client.InitializeAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -79,14 +81,157 @@ namespace Lantean.QBTMud.Test.Services
         }
 
         [Fact]
+        public async Task GIVEN_AuthenticatedSession_WHEN_LoadingShellSession_THEN_ShouldInitializeBeforeLoadingStartupData()
+        {
+            var target = CreateTarget();
+            var mainData = CreateMainData();
+            var initializationStep = 0;
+            Mock.Get(_apiClient)
+                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(true);
+            Mock.Get(_apiClient)
+                .Setup(client => client.InitializeAsync(It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    initializationStep.Should().Be(0);
+                    initializationStep = 1;
+                    return Task.FromResult(ApiResult.CreateSuccess());
+                });
+            Mock.Get(_appSettingsService)
+                .Setup(service => service.RefreshSettingsAsync(It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    initializationStep.Should().Be(1);
+                    return Task.FromResult(AppSettings.Default.Clone());
+                });
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    initializationStep.Should().Be(1);
+                    return Task.FromResult(ApiResult.CreateSuccess(CreatePreferences("en")));
+                });
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetApplicationVersionAsync(It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    initializationStep.Should().Be(1);
+                    return Task.FromResult(ApiResult.CreateSuccess("Version"));
+                });
+            Mock.Get(_apiClient)
+                .Setup(client => client.GetMainDataAsync(0, It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    initializationStep.Should().Be(1);
+                    return Task.FromResult(ApiResult.CreateSuccess(CreateClientMainData()));
+                });
+            Mock.Get(_dataManager)
+                .Setup(manager => manager.CreateMainData(It.IsAny<ClientMainData>()))
+                .Returns(mainData);
+            Mock.Get(_speedHistoryService)
+                .Setup(service => service.InitializeAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            Mock.Get(_speedHistoryService)
+                .Setup(service => service.PushSampleAsync(It.IsAny<DateTime>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var result = await target.LoadAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Outcome.Should().Be(ShellSessionLoadOutcome.Ready);
+            initializationStep.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task GIVEN_InitializationRequiresAuthentication_WHEN_LoadingShellSession_THEN_ShouldReturnAuthenticationRequired()
+        {
+            var target = CreateTarget();
+            SetupAuthenticatedSessionWithoutInitialization();
+            Mock.Get(_apiClient)
+                .Setup(client => client.InitializeAsync(It.IsAny<CancellationToken>()))
+                .ReturnsFailure<IApiClient>(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Forbidden);
+
+            var result = await target.LoadAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Outcome.Should().Be(ShellSessionLoadOutcome.AuthenticationRequired);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GIVEN_InitializationLosesConnection_WHEN_LoadingShellSession_THEN_ShouldReturnLostConnection()
+        {
+            var target = CreateTarget();
+            SetupAuthenticatedSessionWithoutInitialization();
+            Mock.Get(_apiClient)
+                .Setup(client => client.InitializeAsync(It.IsAny<CancellationToken>()))
+                .ReturnsFailure<IApiClient>(ApiFailureKind.NoResponse, "Unavailable");
+
+            var result = await target.LoadAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Outcome.Should().Be(ShellSessionLoadOutcome.LostConnection);
+        }
+
+        [Fact]
+        public async Task GIVEN_InitializationReturnsApiError_WHEN_LoadingShellSession_THEN_ShouldReturnRetryableFailureAndShowSnackbar()
+        {
+            var target = CreateTarget();
+            SetupAuthenticatedSessionWithoutInitialization();
+            Mock.Get(_apiClient)
+                .Setup(client => client.InitializeAsync(It.IsAny<CancellationToken>()))
+                .ReturnsFailure<IApiClient>(ApiFailureKind.ServerError, "Failure", HttpStatusCode.InternalServerError);
+
+            var result = await target.LoadAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Outcome.Should().Be(ShellSessionLoadOutcome.RetryableFailure);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("qBittorrent returned an error. Please try again.", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), "logged-in-layout-startup-api-error"),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_InitializationThrows_WHEN_LoadingShellSession_THEN_ShouldReturnRetryableFailureAndShowSnackbar()
+        {
+            var target = CreateTarget();
+            SetupAuthenticatedSessionWithoutInitialization();
+            Mock.Get(_apiClient)
+                .Setup(client => client.InitializeAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Failure"));
+
+            var result = await target.LoadAsync(Xunit.TestContext.Current.CancellationToken);
+
+            result.Outcome.Should().Be(ShellSessionLoadOutcome.RetryableFailure);
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add("qBittorrent returned an error. Please try again.", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), "logged-in-layout-startup-api-error"),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GIVEN_InitializationIsCanceled_WHEN_LoadingShellSession_THEN_ShouldRethrowCancellation()
+        {
+            var target = CreateTarget();
+            using var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+            SetupAuthenticatedSessionWithoutInitialization();
+            Mock.Get(_apiClient)
+                .Setup(client => client.InitializeAsync(It.IsAny<CancellationToken>()))
+                .Returns(() => Task.FromCanceled<ApiResult>(cancellationTokenSource.Token));
+
+            var action = async () => await target.LoadAsync(cancellationTokenSource.Token);
+
+            await action.Should().ThrowAsync<OperationCanceledException>();
+            Mock.Get(_snackbar).Verify(
+                snackbar => snackbar.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task GIVEN_SuccessfulLoadAndMissingRefreshedSettings_WHEN_LoadingShellSession_THEN_ShouldUseFallbackSettingsAndPersistLocale()
         {
             var target = CreateTarget();
             var mainData = CreateMainData(downloadSpeed: 10, uploadSpeed: 20);
             var settings = AppSettings.Default.Clone();
-            Mock.Get(_apiClient)
-                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsSuccessAsync(true);
+            SetupAuthenticatedSession();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsSuccessAsync(CreatePreferences("fr"));
@@ -135,9 +280,7 @@ namespace Lantean.QBTMud.Test.Services
             var target = CreateTarget();
             var mainData = CreateMainData();
             await _settingsStorageService.SetItemAsStringAsync(LanguageStorageKeys.PreferredLocale, "en", Xunit.TestContext.Current.CancellationToken);
-            Mock.Get(_apiClient)
-                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsSuccessAsync(true);
+            SetupAuthenticatedSession();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsSuccessAsync(CreatePreferences(" "));
@@ -176,9 +319,7 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_snackbar)
                 .Setup(snackbar => snackbar.Add(It.IsAny<string>(), It.IsAny<Severity>(), It.IsAny<Action<SnackbarOptions>>(), It.IsAny<string>()))
                 .Callback<string, Severity, Action<SnackbarOptions>, string>((_, _, configure, _) => capturedOptions = configure);
-            Mock.Get(_apiClient)
-                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsSuccessAsync(true);
+            SetupAuthenticatedSession();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsSuccessAsync(CreatePreferences("fr"));
@@ -218,9 +359,7 @@ namespace Lantean.QBTMud.Test.Services
         {
             var target = CreateTarget();
             var mainData = CreateMainData();
-            Mock.Get(_apiClient)
-                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsSuccessAsync(true);
+            SetupAuthenticatedSession();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsSuccessAsync(CreatePreferences("en"));
@@ -253,9 +392,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_PreferencesLoadRequiresAuthentication_WHEN_LoadingShellSession_THEN_ShouldReturnAuthenticationRequired()
         {
             var target = CreateTarget();
-            Mock.Get(_apiClient)
-                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsSuccessAsync(true);
+            SetupAuthenticatedSession();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsFailure<IApiClient, ClientPreferences>(ApiFailureKind.AuthenticationRequired, "Unauthorized", HttpStatusCode.Forbidden);
@@ -281,9 +418,7 @@ namespace Lantean.QBTMud.Test.Services
         public async Task GIVEN_LoadTaskThrows_WHEN_LoadingShellSession_THEN_ShouldReturnRetryableFailure()
         {
             var target = CreateTarget();
-            Mock.Get(_apiClient)
-                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsSuccessAsync(true);
+            SetupAuthenticatedSession();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsSuccessAsync(CreatePreferences("en"));
@@ -311,9 +446,7 @@ namespace Lantean.QBTMud.Test.Services
             var target = CreateTarget();
             using var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
-            Mock.Get(_apiClient)
-                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
-                .ReturnsSuccessAsync(true);
+            SetupAuthenticatedSession();
             Mock.Get(_apiClient)
                 .Setup(client => client.GetApplicationPreferencesAsync(It.IsAny<CancellationToken>()))
                 .ReturnsSuccessAsync(CreatePreferences("en"));
@@ -496,6 +629,21 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_snackbar).Verify(
                 snackbar => snackbar.Add("qBittorrent returned an error. Please try again.", Severity.Error, It.IsAny<Action<SnackbarOptions>>(), "logged-in-layout-refresh-api-error"),
                 Times.Once);
+        }
+
+        private void SetupAuthenticatedSession()
+        {
+            SetupAuthenticatedSessionWithoutInitialization();
+            Mock.Get(_apiClient)
+                .Setup(client => client.InitializeAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccess(Task.CompletedTask);
+        }
+
+        private void SetupAuthenticatedSessionWithoutInitialization()
+        {
+            Mock.Get(_apiClient)
+                .Setup(client => client.CheckAuthStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsSuccessAsync(true);
         }
 
         private ShellSessionWorkflow CreateTarget()
