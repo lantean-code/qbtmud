@@ -6,6 +6,8 @@ using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Microsoft.JSInterop;
 using Moq;
+using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -16,6 +18,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IStorageCatalogService _storageCatalogService;
         private readonly Mock<IJSRuntime> _jsRuntime;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
         private readonly StorageRoutingService _target;
 
         public StorageRoutingServiceTests()
@@ -24,6 +27,7 @@ namespace Lantean.QBTMud.Test.Services
             _clientDataStorageAdapter = Mock.Of<IClientDataStorageAdapter>();
             _webApiCapabilityService = Mock.Of<IWebApiCapabilityService>();
             _storageCatalogService = new StorageCatalogService();
+            _apiFeedbackWorkflow = Mock.Of<IApiFeedbackWorkflow>();
             _jsRuntime = new Mock<IJSRuntime>(MockBehavior.Strict);
             _jsRuntime
                 .Setup(runtime => runtime.InvokeAsync<BrowserStorageEntry[]?>(
@@ -31,13 +35,21 @@ namespace Lantean.QBTMud.Test.Services
                     It.IsAny<CancellationToken>(),
                     It.IsAny<object?[]?>()))
                 .ReturnsAsync(Array.Empty<BrowserStorageEntry>());
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResultBase>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             _target = new StorageRoutingService(
                 _localStorageService,
                 _clientDataStorageAdapter,
                 _webApiCapabilityService,
                 _storageCatalogService,
-                _jsRuntime.Object);
+                _jsRuntime.Object,
+                _apiFeedbackWorkflow);
         }
 
         [Fact]
@@ -562,6 +574,7 @@ namespace Lantean.QBTMud.Test.Services
             var localStorageService = new TestLocalStorageService();
             var clientDataStorageAdapter = new Mock<IClientDataStorageAdapter>(MockBehavior.Strict);
             var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
 
             await localStorageService.SetItemAsStringAsync("QbtMud.Custom.Key", "value", TestContext.Current.CancellationToken);
 
@@ -580,7 +593,8 @@ namespace Lantean.QBTMud.Test.Services
                 clientDataStorageAdapter.Object,
                 webApiCapabilityService.Object,
                 customCatalogService.Object,
-                jsRuntime.Object);
+                jsRuntime.Object,
+                apiFeedbackWorkflow.Object);
 
             await customTarget.SaveSettingsAsync(new StorageRoutingSettings
             {
@@ -656,12 +670,14 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ClientDataStoreFails_WHEN_SavingClientDataRouting_THEN_ShouldThrowInvalidOperationException()
         {
+            var apiResult = CreateFailureResult();
+
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ClientDataStorageResult.Failure);
+                .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
 
             await _localStorageService.SetItemAsStringAsync("AppSettings.State.v1", "{\"theme\":\"dark\"}", TestContext.Current.CancellationToken);
 
@@ -678,11 +694,14 @@ namespace Lantean.QBTMud.Test.Services
 
             var persisted = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, TestContext.Current.CancellationToken);
             persisted.Should().BeNull();
+            VerifyFailureHandled(apiResult);
         }
 
         [Fact]
         public async Task GIVEN_ClientDataLoadFails_WHEN_SavingLocalStorageRouting_THEN_ShouldThrowInvalidOperationException()
         {
+            var apiResult = CreateFailureResult();
+
             await _localStorageService.SetItemAsync(StorageRoutingSettings.StorageKey, new StorageRoutingSettings
             {
                 MasterStorageType = StorageType.ClientData
@@ -692,7 +711,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ClientDataLoadResult.Failure);
+                .ReturnsAsync(ClientDataLoadResult.FromFailure(apiResult));
 
             var act = async () => await _target.SaveSettingsAsync(new StorageRoutingSettings
             {
@@ -705,11 +724,14 @@ namespace Lantean.QBTMud.Test.Services
             var persisted = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, TestContext.Current.CancellationToken);
             persisted.Should().NotBeNull();
             persisted!.MasterStorageType.Should().Be(StorageType.ClientData);
+            VerifyFailureHandled(apiResult);
         }
 
         [Fact]
         public async Task GIVEN_ClientDataRemoveFails_WHEN_SavingLocalStorageRouting_THEN_ShouldThrowInvalidOperationException()
         {
+            var apiResult = CreateFailureResult();
+
             await _localStorageService.SetItemAsync(StorageRoutingSettings.StorageKey, new StorageRoutingSettings
             {
                 MasterStorageType = StorageType.ClientData
@@ -728,7 +750,7 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(Loaded(new Dictionary<string, JsonElement>(StringComparer.Ordinal)));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ClientDataStorageResult.Failure);
+                .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
 
             var act = async () => await _target.SaveSettingsAsync(new StorageRoutingSettings
             {
@@ -744,6 +766,7 @@ namespace Lantean.QBTMud.Test.Services
             var persisted = await _localStorageService.GetItemAsync<StorageRoutingSettings>(StorageRoutingSettings.StorageKey, TestContext.Current.CancellationToken);
             persisted.Should().NotBeNull();
             persisted!.MasterStorageType.Should().Be(StorageType.ClientData);
+            VerifyFailureHandled(apiResult);
         }
 
         [Fact]
@@ -754,6 +777,7 @@ namespace Lantean.QBTMud.Test.Services
             var webApiCapabilityService = new Mock<IWebApiCapabilityService>(MockBehavior.Strict);
             var storageCatalogService = new StorageCatalogService();
             var jsRuntime = new Mock<IJSRuntime>(MockBehavior.Strict);
+            var apiFeedbackWorkflow = new Mock<IApiFeedbackWorkflow>(MockBehavior.Strict);
 
             var readCompletion = new TaskCompletionSource<StorageRoutingSettings?>(TaskCreationOptions.RunContinuationsAsynchronously);
             localStorageService
@@ -765,7 +789,8 @@ namespace Lantean.QBTMud.Test.Services
                 clientDataStorageAdapter.Object,
                 webApiCapabilityService.Object,
                 storageCatalogService,
-                jsRuntime.Object);
+                jsRuntime.Object,
+                apiFeedbackWorkflow.Object);
 
             var firstTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);
             var secondTask = target.GetSettingsAsync(TestContext.Current.CancellationToken);
@@ -785,6 +810,27 @@ namespace Lantean.QBTMud.Test.Services
         private static ClientDataLoadResult Loaded(IReadOnlyDictionary<string, JsonElement> entries)
         {
             return ClientDataLoadResult.FromEntries(entries);
+        }
+
+        private void VerifyFailureHandled(ApiResultBase apiResult)
+        {
+            Mock.Get(_apiFeedbackWorkflow)
+                .Verify(workflow => workflow.HandleFailureAsync(
+                    apiResult,
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()),
+                    Times.Once);
+        }
+
+        private static ApiResult CreateFailureResult()
+        {
+            return ApiResult.CreateFailure(new ApiFailure
+            {
+                Kind = ApiFailureKind.ServerError,
+                Operation = "Operation",
+                UserMessage = "Failure"
+            });
         }
     }
 }

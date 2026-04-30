@@ -14,17 +14,14 @@ namespace Lantean.QBTMud.Services
         public const string StorageKeyPrefix = "QbtMud.";
 
         private readonly IApiClient _apiClient;
-        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClientDataStorageAdapter"/> class.
         /// </summary>
         /// <param name="apiClient">The qBittorrent API client.</param>
-        /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
-        public ClientDataStorageAdapter(IApiClient apiClient, IApiFeedbackWorkflow apiFeedbackWorkflow)
+        public ClientDataStorageAdapter(IApiClient apiClient)
         {
             _apiClient = apiClient;
-            _apiFeedbackWorkflow = apiFeedbackWorkflow;
         }
 
         /// <inheritdoc />
@@ -49,8 +46,7 @@ namespace Lantean.QBTMud.Services
             var loadedResult = await _apiClient.LoadClientDataAsync(normalizedKeys, cancellationToken);
             if (loadedResult.IsFailure)
             {
-                await _apiFeedbackWorkflow.HandleFailureAsync(loadedResult, cancellationToken: cancellationToken);
-                return ClientDataLoadResult.Failure;
+                return ClientDataLoadResult.FromFailure(loadedResult);
             }
 
             var loadedData = loadedResult.Value;
@@ -68,8 +64,7 @@ namespace Lantean.QBTMud.Services
             var loadedResult = await _apiClient.LoadClientDataAsync(keys: null, cancellationToken);
             if (loadedResult.IsFailure)
             {
-                await _apiFeedbackWorkflow.HandleFailureAsync(loadedResult, cancellationToken: cancellationToken);
-                return ClientDataLoadResult.Failure;
+                return ClientDataLoadResult.FromFailure(loadedResult);
             }
 
             var loadedData = loadedResult.Value;
@@ -102,9 +97,9 @@ namespace Lantean.QBTMud.Services
                 StringComparer.Ordinal);
 
             var storeResult = await _apiClient.StoreClientDataAsync(payload, cancellationToken);
-            if (!await _apiFeedbackWorkflow.ProcessResultAsync(storeResult, cancellationToken: cancellationToken))
+            if (storeResult.IsFailure)
             {
-                return ClientDataStorageResult.Failure;
+                return ClientDataStorageResult.FromFailure(storeResult);
             }
 
             return ClientDataStorageResult.Success;
@@ -135,9 +130,9 @@ namespace Lantean.QBTMud.Services
         private async Task<ClientDataStorageResult> RemovePrefixedEntriesCoreAsync(IReadOnlyCollection<string> removalKeys, CancellationToken cancellationToken)
         {
             var removeResult = await _apiClient.DeleteClientDataAsync(removalKeys, cancellationToken);
-            if (!await _apiFeedbackWorkflow.ProcessResultAsync(removeResult, cancellationToken: cancellationToken))
+            if (removeResult.IsFailure)
             {
-                return ClientDataStorageResult.Failure;
+                return ClientDataStorageResult.FromFailure(removeResult);
             }
 
             return ClientDataStorageResult.Success;

@@ -6,6 +6,8 @@ using Lantean.QBTMud.Services;
 using Microsoft.JSInterop;
 using Microsoft.JSInterop.Infrastructure;
 using Moq;
+using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -14,6 +16,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly Mock<IJSRuntime> _jsRuntime;
         private readonly IClientDataStorageAdapter _clientDataStorageAdapter;
         private readonly IWebApiCapabilityService _webApiCapabilityService;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
         private readonly StorageDiagnosticsService _target;
 
         public StorageDiagnosticsServiceTests()
@@ -21,7 +24,20 @@ namespace Lantean.QBTMud.Test.Services
             _jsRuntime = new Mock<IJSRuntime>(MockBehavior.Strict);
             _clientDataStorageAdapter = Mock.Of<IClientDataStorageAdapter>();
             _webApiCapabilityService = Mock.Of<IWebApiCapabilityService>();
-            _target = new StorageDiagnosticsService(_jsRuntime.Object, _clientDataStorageAdapter, _webApiCapabilityService);
+            _apiFeedbackWorkflow = Mock.Of<IApiFeedbackWorkflow>();
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResultBase>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _target = new StorageDiagnosticsService(
+                _jsRuntime.Object,
+                _clientDataStorageAdapter,
+                _webApiCapabilityService,
+                _apiFeedbackWorkflow);
         }
 
         [Fact]
@@ -149,6 +165,8 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ClientDataLoadFails_WHEN_GetEntriesInvoked_THEN_ShouldReturnLocalOnly()
         {
+            var apiResult = CreateFailureResult();
+
             _jsRuntime
                 .Setup(runtime => runtime.InvokeAsync<BrowserStorageEntry[]?>(
                     "qbt.getLocalStorageEntriesByPrefix",
@@ -160,13 +178,31 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ClientDataLoadResult.Failure);
+                .ReturnsAsync(ClientDataLoadResult.FromFailure(apiResult));
 
             var result = await _target.GetEntriesAsync(TestContext.Current.CancellationToken);
 
             result.Should().ContainSingle();
             result[0].StorageType.Should().Be(StorageType.LocalStorage);
             result[0].DisplayKey.Should().Be("LocalOnly");
+            VerifyFailureHandled(apiResult);
+        }
+
+        [Fact]
+        public async Task GIVEN_ClientStorageTypeRemoveFails_WHEN_RemoveEntryInvoked_THEN_ShouldHandleFailure()
+        {
+            var apiResult = CreateFailureResult();
+
+            Mock.Get(_webApiCapabilityService)
+                .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
+            Mock.Get(_clientDataStorageAdapter)
+                .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
+
+            await _target.RemoveEntryAsync(StorageType.ClientData, "QbtMud.Key", TestContext.Current.CancellationToken);
+
+            VerifyFailureHandled(apiResult);
         }
 
         [Fact]
@@ -270,12 +306,14 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ClientStorageTypeLoadFails_WHEN_ClearEntriesInvoked_THEN_ShouldReturnZero()
         {
+            var apiResult = CreateFailureResult();
+
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ClientDataLoadResult.Failure);
+                .ReturnsAsync(ClientDataLoadResult.FromFailure(apiResult));
 
             var removed = await _target.ClearEntriesAsync(StorageType.ClientData, TestContext.Current.CancellationToken);
 
@@ -283,11 +321,14 @@ namespace Lantean.QBTMud.Test.Services
             Mock.Get(_clientDataStorageAdapter).Verify(
                 adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()),
                 Times.Never);
+            VerifyFailureHandled(apiResult);
         }
 
         [Fact]
         public async Task GIVEN_ClientStorageTypeRemoveFails_WHEN_ClearEntriesInvoked_THEN_ShouldReturnZero()
         {
+            var apiResult = CreateFailureResult();
+
             Mock.Get(_webApiCapabilityService)
                 .Setup(service => service.GetCapabilityStateAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
@@ -300,11 +341,12 @@ namespace Lantean.QBTMud.Test.Services
                     }));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ClientDataStorageResult.Failure);
+                .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
 
             var removed = await _target.ClearEntriesAsync(StorageType.ClientData, TestContext.Current.CancellationToken);
 
             removed.Should().Be(0);
+            VerifyFailureHandled(apiResult);
         }
 
         [Fact]
@@ -333,6 +375,27 @@ namespace Lantean.QBTMud.Test.Services
             result.Single(entry => entry.DisplayKey == "Local").Preview.Should().BeEmpty();
             result.Single(entry => entry.DisplayKey == "Null").Value.Should().BeNull();
             result.Single(entry => entry.DisplayKey == "String").Value.Should().Be("text");
+        }
+
+        private void VerifyFailureHandled(ApiResultBase apiResult)
+        {
+            Mock.Get(_apiFeedbackWorkflow)
+                .Verify(workflow => workflow.HandleFailureAsync(
+                    apiResult,
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()),
+                    Times.Once);
+        }
+
+        private static ApiResult CreateFailureResult()
+        {
+            return ApiResult.CreateFailure(new ApiFailure
+            {
+                Kind = ApiFailureKind.ServerError,
+                Operation = "Operation",
+                UserMessage = "Failure"
+            });
         }
     }
 }

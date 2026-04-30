@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Theming;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Services
 {
@@ -15,6 +16,7 @@ namespace Lantean.QBTMud.Services
         private readonly IStorageRoutingService _storageRoutingService;
         private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IClientDataStorageAdapter _clientDataStorageAdapter;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SettingsStorageService"/> class.
@@ -23,16 +25,19 @@ namespace Lantean.QBTMud.Services
         /// <param name="storageRoutingService">The storage routing service.</param>
         /// <param name="webApiCapabilityService">The Web API capability service.</param>
         /// <param name="clientDataStorageAdapter">The client data storage adapter.</param>
+        /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
         public SettingsStorageService(
             ILocalStorageService localStorageService,
             IStorageRoutingService storageRoutingService,
             IWebApiCapabilityService webApiCapabilityService,
-            IClientDataStorageAdapter clientDataStorageAdapter)
+            IClientDataStorageAdapter clientDataStorageAdapter,
+            IApiFeedbackWorkflow apiFeedbackWorkflow)
         {
             _localStorageService = localStorageService;
             _storageRoutingService = storageRoutingService;
             _webApiCapabilityService = webApiCapabilityService;
             _clientDataStorageAdapter = clientDataStorageAdapter;
+            _apiFeedbackWorkflow = apiFeedbackWorkflow;
         }
 
         /// <inheritdoc />
@@ -52,6 +57,7 @@ namespace Lantean.QBTMud.Services
                 var loadedResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync([prefixedKey], cancellationToken);
                 if (!loadedResult.Succeeded || loadedResult.Entries is null)
                 {
+                    await HandleClientDataFailureAsync(loadedResult.FailureResult, cancellationToken);
                     return await _localStorageService.GetItemAsync<T>(key, cancellationToken);
                 }
 
@@ -86,6 +92,7 @@ namespace Lantean.QBTMud.Services
             var loadedResult = await _clientDataStorageAdapter.LoadPrefixedEntriesAsync([prefixedKey], cancellationToken);
             if (!loadedResult.Succeeded || loadedResult.Entries is null)
             {
+                await HandleClientDataFailureAsync(loadedResult.FailureResult, cancellationToken);
                 return await _localStorageService.GetItemAsStringAsync(key, cancellationToken);
             }
 
@@ -128,6 +135,7 @@ namespace Lantean.QBTMud.Services
 
             if (!storeResult.Succeeded)
             {
+                await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
                 await _localStorageService.SetItemAsync(key, data, cancellationToken);
             }
         }
@@ -155,6 +163,7 @@ namespace Lantean.QBTMud.Services
 
             if (!storeResult.Succeeded)
             {
+                await HandleClientDataFailureAsync(storeResult.FailureResult, cancellationToken);
                 await _localStorageService.SetItemAsStringAsync(key, data, cancellationToken);
             }
         }
@@ -174,7 +183,16 @@ namespace Lantean.QBTMud.Services
             var removeResult = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([ToPrefixedKey(key)], cancellationToken);
             if (!removeResult.Succeeded)
             {
+                await HandleClientDataFailureAsync(removeResult.FailureResult, cancellationToken);
                 await _localStorageService.RemoveItemAsync(key, cancellationToken);
+            }
+        }
+
+        private async Task HandleClientDataFailureAsync(ApiResultBase? failureResult, CancellationToken cancellationToken)
+        {
+            if (failureResult is not null)
+            {
+                await _apiFeedbackWorkflow.HandleFailureAsync(failureResult, cancellationToken: cancellationToken);
             }
         }
 

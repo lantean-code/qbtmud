@@ -4,6 +4,8 @@ using Lantean.QBTMud.Models;
 using Lantean.QBTMud.Services;
 using Lantean.QBTMud.Test.Infrastructure;
 using Moq;
+using MudBlazor;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Test.Services
 {
@@ -13,6 +15,7 @@ namespace Lantean.QBTMud.Test.Services
         private readonly IStorageRoutingService _storageRoutingService;
         private readonly IWebApiCapabilityService _webApiCapabilityService;
         private readonly IClientDataStorageAdapter _clientDataStorageAdapter;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
         private readonly SettingsStorageService _target;
 
         public SettingsStorageServiceTests()
@@ -21,6 +24,7 @@ namespace Lantean.QBTMud.Test.Services
             _storageRoutingService = Mock.Of<IStorageRoutingService>();
             _webApiCapabilityService = Mock.Of<IWebApiCapabilityService>();
             _clientDataStorageAdapter = Mock.Of<IClientDataStorageAdapter>();
+            _apiFeedbackWorkflow = Mock.Of<IApiFeedbackWorkflow>();
 
             Mock.Get(_storageRoutingService)
                 .Setup(service => service.ResolveEffectiveStorageType(It.IsAny<string>(), It.IsAny<StorageRoutingSettings>(), It.IsAny<bool>()))
@@ -33,12 +37,20 @@ namespace Lantean.QBTMud.Test.Services
 
                     return StorageType.LocalStorage;
                 });
+            Mock.Get(_apiFeedbackWorkflow)
+                .Setup(workflow => workflow.HandleFailureAsync(
+                    It.IsAny<ApiResultBase>(),
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             _target = new SettingsStorageService(
                 _localStorageService,
                 _storageRoutingService,
                 _webApiCapabilityService,
-                _clientDataStorageAdapter);
+                _clientDataStorageAdapter,
+                _apiFeedbackWorkflow);
         }
 
         [Fact]
@@ -109,6 +121,8 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ClientDataStoreFails_WHEN_SetItemAsString_THEN_ShouldFallbackToLocalStorage()
         {
+            var apiResult = CreateFailureResult();
+
             Mock.Get(_storageRoutingService)
                 .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new StorageRoutingSettings
@@ -120,12 +134,13 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ClientDataStorageResult.Failure);
+                .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
 
             await _target.SetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", "en_GB", TestContext.Current.CancellationToken);
 
             var storedValue = await _localStorageService.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
             storedValue.Should().Be("en_GB");
+            VerifyFailureHandled(apiResult);
         }
 
         [Fact]
@@ -153,6 +168,8 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ClientDataLoadFails_WHEN_GetItemAsync_THEN_ShouldFallbackToLocalStorage()
         {
+            var apiResult = CreateFailureResult();
+
             await _localStorageService.SetItemAsync("AppSettings.State.v1", new Dictionary<string, bool>(StringComparer.Ordinal)
             {
                 ["enabled"] = true
@@ -169,12 +186,13 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.LoadPrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ClientDataLoadResult.Failure);
+                .ReturnsAsync(ClientDataLoadResult.FromFailure(apiResult));
 
             var result = await _target.GetItemAsync<Dictionary<string, bool>>("AppSettings.State.v1", TestContext.Current.CancellationToken);
 
             result.Should().NotBeNull();
             result!["enabled"].Should().BeTrue();
+            VerifyFailureHandled(apiResult);
         }
 
         [Fact]
@@ -301,6 +319,8 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ClientDataRemoveFails_WHEN_RemoveItemAsync_THEN_ShouldFallbackToLocalStorageRemoval()
         {
+            var apiResult = CreateFailureResult();
+
             await _localStorageService.SetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", "en_GB", TestContext.Current.CancellationToken);
 
             Mock.Get(_storageRoutingService)
@@ -314,12 +334,13 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.RemovePrefixedEntriesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ClientDataStorageResult.Failure);
+                .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
 
             await _target.RemoveItemAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
 
             var storedValue = await _localStorageService.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
             storedValue.Should().BeNull();
+            VerifyFailureHandled(apiResult);
         }
 
         [Fact]
@@ -376,6 +397,8 @@ namespace Lantean.QBTMud.Test.Services
         [Fact]
         public async Task GIVEN_ClientDataSetFails_WHEN_SetItemAsync_THEN_ShouldFallbackToLocalStorage()
         {
+            var apiResult = CreateFailureResult();
+
             Mock.Get(_storageRoutingService)
                 .Setup(service => service.GetSettingsAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new StorageRoutingSettings
@@ -387,13 +410,14 @@ namespace Lantean.QBTMud.Test.Services
                 .ReturnsAsync(new WebApiCapabilityState("2.13.1", new Version(2, 13, 1), true));
             Mock.Get(_clientDataStorageAdapter)
                 .Setup(adapter => adapter.StorePrefixedEntriesAsync(It.IsAny<IReadOnlyDictionary<string, object?>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ClientDataStorageResult.Failure);
+                .ReturnsAsync(ClientDataStorageResult.FromFailure(apiResult));
 
             await _target.SetItemAsync("AppSettings.State.v1", new { enabled = true }, TestContext.Current.CancellationToken);
 
             var result = await _localStorageService.GetItemAsync<Dictionary<string, bool>>("AppSettings.State.v1", TestContext.Current.CancellationToken);
             result.Should().NotBeNull();
             result!["enabled"].Should().BeTrue();
+            VerifyFailureHandled(apiResult);
         }
 
         [Fact]
@@ -588,6 +612,27 @@ namespace Lantean.QBTMud.Test.Services
 
             var result = await _localStorageService.GetItemAsStringAsync("WebUiLocalization.PreferredLocale.v1", TestContext.Current.CancellationToken);
             result.Should().Be("en");
+        }
+
+        private void VerifyFailureHandled(ApiResultBase apiResult)
+        {
+            Mock.Get(_apiFeedbackWorkflow)
+                .Verify(workflow => workflow.HandleFailureAsync(
+                    apiResult,
+                    It.IsAny<Func<string?, string>?>(),
+                    It.IsAny<Severity>(),
+                    It.IsAny<CancellationToken>()),
+                    Times.Once);
+        }
+
+        private static ApiResult CreateFailureResult()
+        {
+            return ApiResult.CreateFailure(new ApiFailure
+            {
+                Kind = ApiFailureKind.ServerError,
+                Operation = "Operation",
+                UserMessage = "Failure"
+            });
         }
     }
 }

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Lantean.QBTMud.Interop;
 using Lantean.QBTMud.Models;
 using Microsoft.JSInterop;
+using QBittorrent.ApiClient;
 
 namespace Lantean.QBTMud.Services
 {
@@ -15,6 +16,7 @@ namespace Lantean.QBTMud.Services
         private readonly IJSRuntime _jsRuntime;
         private readonly IClientDataStorageAdapter _clientDataStorageAdapter;
         private readonly IWebApiCapabilityService _webApiCapabilityService;
+        private readonly IApiFeedbackWorkflow _apiFeedbackWorkflow;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="StorageDiagnosticsService"/> class.
@@ -22,14 +24,17 @@ namespace Lantean.QBTMud.Services
         /// <param name="jsRuntime">The JavaScript runtime.</param>
         /// <param name="clientDataStorageAdapter">The ClientData storage adapter.</param>
         /// <param name="webApiCapabilityService">The Web API capability service.</param>
+        /// <param name="apiFeedbackWorkflow">The API feedback workflow.</param>
         public StorageDiagnosticsService(
             IJSRuntime jsRuntime,
             IClientDataStorageAdapter clientDataStorageAdapter,
-            IWebApiCapabilityService webApiCapabilityService)
+            IWebApiCapabilityService webApiCapabilityService,
+            IApiFeedbackWorkflow apiFeedbackWorkflow)
         {
             _jsRuntime = jsRuntime;
             _clientDataStorageAdapter = clientDataStorageAdapter;
             _webApiCapabilityService = webApiCapabilityService;
+            _apiFeedbackWorkflow = apiFeedbackWorkflow;
         }
 
         /// <inheritdoc />
@@ -76,6 +81,10 @@ namespace Lantean.QBTMud.Services
                             textValue?.Length ?? 0));
                     }
                 }
+                else
+                {
+                    await HandleClientDataFailureAsync(clientEntriesResult.FailureResult, cancellationToken);
+                }
             }
 
             return result
@@ -109,7 +118,11 @@ namespace Lantean.QBTMud.Services
                 return;
             }
 
-            await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([prefixedKey], cancellationToken);
+            var removeResult = await _clientDataStorageAdapter.RemovePrefixedEntriesAsync([prefixedKey], cancellationToken);
+            if (!removeResult.Succeeded)
+            {
+                await HandleClientDataFailureAsync(removeResult.FailureResult, cancellationToken);
+            }
         }
 
         /// <inheritdoc />
@@ -136,11 +149,27 @@ namespace Lantean.QBTMud.Services
                         {
                             removedCount += clientEntriesResult.Entries.Count;
                         }
+                        else
+                        {
+                            await HandleClientDataFailureAsync(removeResult.FailureResult, cancellationToken);
+                        }
+                    }
+                    else if (!clientEntriesResult.Succeeded)
+                    {
+                        await HandleClientDataFailureAsync(clientEntriesResult.FailureResult, cancellationToken);
                     }
                 }
             }
 
             return removedCount;
+        }
+
+        private async Task HandleClientDataFailureAsync(ApiResultBase? failureResult, CancellationToken cancellationToken)
+        {
+            if (failureResult is not null)
+            {
+                await _apiFeedbackWorkflow.HandleFailureAsync(failureResult, cancellationToken: cancellationToken);
+            }
         }
 
         private static string BuildPreview(string? value)
